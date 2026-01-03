@@ -455,6 +455,16 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
     df = pd.concat(frames, ignore_index=True)
     print()
     print(f"📊 Total partidos a procesar: {len(df)}")
+
+    cols_puntos = [
+        "team_q1", "team_q2", "team_q3", "team_q4",
+        "opp_q1", "opp_q2", "opp_q3", "opp_q4",
+    ]
+    df[cols_puntos] = df[cols_puntos].apply(pd.to_numeric, errors="coerce")
+    df = df.dropna(subset=cols_puntos)
+    if len(df) == 0:
+        print("❌ No hay partidos válidos tras limpiar puntajes.")
+        return 0
     
     equipos_bd = obtener_equipos_bd(conexion)
     temporadas = sorted(df["season"].unique())
@@ -495,11 +505,13 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 try:
                     fecha_str = str(row["date"])
                     if "T" in fecha_str:
-                        fecha = datetime.fromisoformat(fecha_str.replace("+00:00", "").replace("Z", ""))
+                        fecha = datetime.fromisoformat(
+                            fecha_str.replace("+00:00", "").replace("Z", "")
+                        ).date()
                     else:
-                        fecha = datetime.strptime(fecha_str[:10], "%Y-%m-%d")
+                        fecha = datetime.strptime(fecha_str[:10], "%Y-%m-%d").date()
                 except:
-                    fecha = datetime.now()
+                    fecha = datetime.now().date()
                 
                 local_total = int(local_q1 + local_q2 + local_q3 + local_q4)
                 visit_total = int(visit_q1 + visit_q2 + visit_q3 + visit_q4)
@@ -515,25 +527,24 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 if season_type not in ("REG", "POST", "PRE"):
                     season_type = "REG"
                 
+                cursor.execute("SAVEPOINT insertar_partido")
                 cursor.execute(
                     """
                     INSERT INTO partidos (
                         temporada_id, fecha_partido, tipo_partido,
                         equipo_local_id, equipo_visitante_id,
-                        puntos_local_q1, puntos_local_q2, puntos_local_q3, puntos_local_q4,
-                        puntos_visitante_q1, puntos_visitante_q2, puntos_visitante_q3, puntos_visitante_q4,
-                        puntos_local_total, puntos_visitante_total,
+                        local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
+                        visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
                         ganador_id, hubo_overtime
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT DO NOTHING
                     RETURNING id
                     """,
                     [
                         str(temporada_id), fecha, season_type,
                         str(equipos_bd[equipo_local]), str(equipos_bd[equipo_visitante]),
-                        int(local_q1), int(local_q2), int(local_q3), int(local_q4),
-                        int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4),
-                        local_total, visit_total,
+                        int(local_q1), int(local_q2), int(local_q3), int(local_q4), 0, local_total,
+                        int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), 0, visit_total,
                         str(ganador_id) if ganador_id else None,
                         row.get("ot_count", 0) > 0 if "ot_count" in row else False
                     ]
@@ -541,9 +552,13 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
                 if cursor.fetchone():
                     insertados += 1
+                cursor.execute("RELEASE SAVEPOINT insertar_partido")
                 
             except Exception as e:
                 errores += 1
+                if errores <= 5:
+                    print(f"   ⚠️  Error en fila {idx}: {e}")
+                cursor.execute("ROLLBACK TO SAVEPOINT insertar_partido")
             
             # Progreso
             if (idx + 1) % 2000 == 0:
