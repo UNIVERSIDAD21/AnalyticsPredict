@@ -523,7 +523,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--include-preseason", action="store_true", default=False, help="Incluye PRE (seasontype=1)")
     p.add_argument("--include-regular", action="store_true", default=True, help="Incluye REG (seasontype=2)")
     p.add_argument("--include-postseason", action="store_true", default=True, help="Incluye POST (seasontype=3)")
-    p.add_argument("--max-games", type=int, default=140, help="Máximo de juegos a descargar.")
+    p.add_argument("--max-games", type=int, default=2000, help="Máximo de juegos a descargar.")
     p.add_argument("--sleep", type=float, default=0.20, help="Pausa entre requests (seg).")
     p.add_argument("--out", default="nba_team_quarters.csv", help="Salida CSV.")
     return p.parse_args()
