@@ -455,6 +455,16 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
     df = pd.concat(frames, ignore_index=True)
     print()
     print(f"📊 Total partidos a procesar: {len(df)}")
+
+    cols_puntos = [
+        "team_q1", "team_q2", "team_q3", "team_q4",
+        "opp_q1", "opp_q2", "opp_q3", "opp_q4",
+    ]
+    df[cols_puntos] = df[cols_puntos].apply(pd.to_numeric, errors="coerce")
+    df = df.dropna(subset=cols_puntos)
+    if len(df) == 0:
+        print("❌ No hay partidos válidos tras limpiar puntajes.")
+        return 0
     
     equipos_bd = obtener_equipos_bd(conexion)
     temporadas = sorted(df["season"].unique())
@@ -544,6 +554,8 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
             except Exception as e:
                 errores += 1
+                if errores <= 5:
+                    print(f"   ⚠️  Error en fila {idx}: {e}")
             
             # Progreso
             if (idx + 1) % 2000 == 0:
