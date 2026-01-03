@@ -37,6 +37,7 @@ from .utilidades import (
     limitar_entre_0_y_1,
     normalizar_nombre,
     parsear_marcador,
+    resolver_nombre_en_modelo,
 )
 
 CLAVES_CUARTOS = ("Q1", "Q2", "Q3", "Q4")
@@ -92,12 +93,12 @@ def predecir_cuartos(
     ubicacion: Ubicacion,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Predice medias y desviaciones para equipo y rival en Q1-Q4."""
-    equipo_norm = normalizar_nombre(equipo)
-    rival_norm = normalizar_nombre(rival)
+    equipo_norm = resolver_nombre_en_modelo(equipo, modelo.entidad_a_indice)
+    rival_norm = resolver_nombre_en_modelo(rival, modelo.entidad_a_indice)
 
-    if equipo_norm not in modelo.entidad_a_indice:
+    if equipo_norm is None:
         raise ValueError(f'Equipo "{equipo}" no está en el modelo.')
-    if rival_norm not in modelo.entidad_a_indice:
+    if rival_norm is None:
         raise ValueError(f'Rival "{rival}" no está en el modelo.')
 
     es_local = 1 if ubicacion == Ubicacion.LOCAL else 0

@@ -244,8 +244,8 @@ class ModeloRidge:
 
     def contiene_equipo(self, nombre: str) -> bool:
         """Verifica si un equipo está en el modelo."""
-        from .utilidades import normalizar_nombre
-        return normalizar_nombre(nombre) in self.entidad_a_indice
+        from .utilidades import resolver_nombre_en_modelo
+        return resolver_nombre_en_modelo(nombre, self.entidad_a_indice) is not None
 
     @property
     def cantidad_equipos(self) -> int:
