@@ -536,7 +536,7 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                         local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
                         visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
                         ganador_id, hubo_overtime
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT DO NOTHING
                     RETURNING id
                     """,
