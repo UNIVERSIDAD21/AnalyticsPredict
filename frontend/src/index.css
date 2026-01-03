@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ══════════════════════════════════════════════════════════════
-   ESTILOS BASE
+   ESTILOS BASE - TEMA FUTURISTA
    ══════════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -12,8 +12,11 @@
   }
 
   body {
-    @apply bg-nba-gris-50 text-nba-gris-900 antialiased;
+    @apply bg-futurista-negro text-texto-principal antialiased font-principal;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background: linear-gradient(135deg, #0a0a0f 0%, #0d1b2a 50%, #1b263b 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 
   /* Eliminar spinners de inputs numéricos */
@@ -26,128 +29,282 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  /* Scrollbar futurista */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0d1b2a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #00f5ff 0%, #00d4ff 100%);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #00f5ff 0%, #ff00ff 100%);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   COMPONENTES REUTILIZABLES
+   COMPONENTES FUTURISTAS
    ══════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* Contenedor principal */
+  /* Contenedor principal - Full width */
   .contenedor {
-    @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8;
   }
 
-  /* Tarjeta base */
+  /* Tarjeta Glassmorphism */
   .tarjeta {
-    @apply bg-white rounded-xl shadow-tarjeta p-6;
+    @apply rounded-xl p-6;
+    background: linear-gradient(135deg, rgba(27, 38, 59, 0.6) 0%, rgba(13, 27, 42, 0.8) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 245, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.05), inset 0 0 60px rgba(0, 245, 255, 0.02);
   }
 
   .tarjeta-hover {
-    @apply tarjeta transition-shadow duration-200 hover:shadow-tarjeta-hover;
+    @apply tarjeta transition-all duration-300;
   }
 
-  /* Botón primario */
+  .tarjeta-hover:hover {
+    border-color: rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.15), inset 0 0 60px rgba(0, 245, 255, 0.05);
+  }
+
+  /* Botón primario con glow */
   .boton-primario {
     @apply inline-flex items-center justify-center px-6 py-3
-           bg-nba-azul text-white font-semibold rounded-lg
-           hover:bg-nba-azul/90 focus:outline-none focus:ring-2
-           focus:ring-nba-azul focus:ring-offset-2
-           disabled:opacity-50 disabled:cursor-not-allowed
-           transition-all duration-200;
+           font-semibold rounded-lg font-futurista uppercase tracking-wider
+           transition-all duration-300;
+    background: linear-gradient(135deg, #00f5ff 0%, #00d4ff 100%);
+    color: #0a0a0f;
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+  }
+
+  .boton-primario:hover:not(:disabled) {
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.5), 0 0 60px rgba(0, 245, 255, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .boton-primario:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    box-shadow: none;
   }
 
   /* Botón secundario */
   .boton-secundario {
     @apply inline-flex items-center justify-center px-6 py-3
-           bg-white text-nba-gris-700 font-semibold rounded-lg
-           border border-nba-gris-300
-           hover:bg-nba-gris-50 focus:outline-none focus:ring-2
-           focus:ring-nba-azul focus:ring-offset-2
-           disabled:opacity-50 disabled:cursor-not-allowed
-           transition-all duration-200;
+           font-semibold rounded-lg
+           transition-all duration-300;
+    background: transparent;
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.3);
   }
 
-  /* Input base */
+  .boton-secundario:hover:not(:disabled) {
+    background: rgba(0, 245, 255, 0.1);
+    border-color: #00f5ff;
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.2);
+  }
+
+  .boton-secundario:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Input futurista */
   .input-base {
-    @apply w-full px-4 py-3 bg-white border border-nba-gris-300 rounded-lg
-           text-nba-gris-900 placeholder-nba-gris-400
-           focus:outline-none focus:ring-2 focus:ring-nba-azul focus:border-transparent
-           disabled:bg-nba-gris-100 disabled:cursor-not-allowed
-           transition-all duration-200;
+    @apply w-full px-4 py-3 rounded-lg
+           text-texto-principal placeholder-texto-terciario
+           transition-all duration-300;
+    background: rgba(13, 27, 42, 0.8);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+  }
+
+  .input-base:focus {
+    @apply outline-none;
+    border-color: #00f5ff;
+    box-shadow: 0 0 15px rgba(0, 245, 255, 0.2), inset 0 0 15px rgba(0, 245, 255, 0.05);
+  }
+
+  .input-base:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    background: rgba(13, 27, 42, 0.5);
   }
 
   .input-error {
-    @apply border-error-500 focus:ring-error-500;
+    border-color: #ff0055 !important;
   }
 
-  /* Select base */
+  .input-error:focus {
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.2), inset 0 0 15px rgba(255, 0, 85, 0.05);
+  }
+
+  /* Select futurista */
   .select-base {
-    @apply input-base appearance-none cursor-pointer
-           bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22%236b7280%22%20stroke-width%3d%222%22%20stroke-linecap%3d%22round%22%20stroke-linejoin%3d%22round%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')]
-           bg-[length:1.5rem] bg-[right_0.75rem_center] bg-no-repeat
-           pr-12;
+    @apply input-base appearance-none cursor-pointer pr-12;
+    background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22%2300f5ff%22%20stroke-width%3d%222%22%20stroke-linecap%3d%22round%22%20stroke-linejoin%3d%22round%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e');
+    background-size: 1.5rem;
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
   }
 
-  /* Labels */
+  /* Labels futuristas */
   .etiqueta {
-    @apply block text-sm font-medium text-nba-gris-700 mb-2;
+    @apply block text-sm font-medium text-neon-cyan mb-2 uppercase tracking-wider;
   }
 
   /* Texto de ayuda */
   .texto-ayuda {
-    @apply text-sm text-nba-gris-500 mt-1;
+    @apply text-sm text-texto-secundario mt-1;
   }
 
   /* Texto de error */
   .texto-error {
-    @apply text-sm text-error-500 mt-1;
+    @apply text-sm text-neon-rojo mt-1;
   }
 
-  /* Badge/Etiqueta */
+  /* Badge/Insignias neón */
   .insignia {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
   }
 
   .insignia-exito {
-    @apply insignia bg-exito-50 text-exito-600;
+    @apply insignia;
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
   }
 
   .insignia-advertencia {
-    @apply insignia bg-advertencia-50 text-advertencia-600;
+    @apply insignia;
+    background: rgba(255, 200, 0, 0.15);
+    color: #ffc800;
+    border: 1px solid rgba(255, 200, 0, 0.3);
+    box-shadow: 0 0 10px rgba(255, 200, 0, 0.2);
   }
 
   .insignia-error {
-    @apply insignia bg-error-50 text-error-600;
+    @apply insignia;
+    background: rgba(255, 0, 85, 0.15);
+    color: #ff0055;
+    border: 1px solid rgba(255, 0, 85, 0.3);
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
   }
 
   .insignia-info {
-    @apply insignia bg-nba-azul/10 text-nba-azul;
+    @apply insignia;
+    background: rgba(0, 245, 255, 0.15);
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
+  }
+
+  /* Toggle Over/Under */
+  .toggle-over-under {
+    @apply flex rounded-lg overflow-hidden;
+    background: rgba(13, 27, 42, 0.8);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+  }
+
+  .toggle-over-under button {
+    @apply flex-1 py-3 px-4 font-semibold uppercase tracking-wider transition-all duration-300;
+    background: transparent;
+    color: #8892b0;
+  }
+
+  .toggle-over-under button.activo-over {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.05) 100%);
+    color: #00ff88;
+    box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.1);
+  }
+
+  .toggle-over-under button.activo-under {
+    background: linear-gradient(135deg, rgba(255, 0, 85, 0.2) 0%, rgba(255, 0, 85, 0.05) 100%);
+    color: #ff0055;
+    box-shadow: inset 0 0 20px rgba(255, 0, 85, 0.1);
   }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   UTILIDADES PERSONALIZADAS
+   UTILIDADES FUTURISTAS
    ══════════════════════════════════════════════════════════════ */
 
 @layer utilities {
-  /* Animación de carga */
-  .animate-cargando {
-    @apply animate-pulse bg-nba-gris-200 rounded;
+  /* Texto con glow */
+  .texto-glow-cyan {
+    text-shadow: 0 0 10px rgba(0, 245, 255, 0.5), 0 0 20px rgba(0, 245, 255, 0.3);
   }
 
-  /* Gradiente de fondo para encabezado */
-  .gradiente-encabezado {
-    @apply bg-gradient-to-r from-nba-azul to-nba-azul/80;
+  .texto-glow-verde {
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 20px rgba(0, 255, 136, 0.3);
   }
 
-  /* Barra de probabilidad */
+  .texto-glow-rojo {
+    text-shadow: 0 0 10px rgba(255, 0, 85, 0.5), 0 0 20px rgba(255, 0, 85, 0.3);
+  }
+
+  /* Líneas decorativas tech */
+  .linea-tech {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #00f5ff 50%, transparent 100%);
+  }
+
+  /* Borde con gradiente neón */
+  .borde-neon {
+    position: relative;
+  }
+
+  .borde-neon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, #00f5ff, #ff00ff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* Barra de probabilidad futurista */
   .barra-probabilidad {
-    @apply h-3 rounded-full overflow-hidden bg-nba-gris-200;
+    @apply h-4 rounded-full overflow-hidden;
+    background: rgba(13, 27, 42, 0.8);
+    border: 1px solid rgba(0, 245, 255, 0.1);
   }
 
-  /* Texto truncado */
-  .texto-truncado {
-    @apply truncate;
+  /* Scan line effect */
+  .scan-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00f5ff, transparent);
+    animation: scanLine 3s linear infinite;
+    opacity: 0.5;
+  }
+
+  /* Grid pattern de fondo */
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Hexagon pattern */
+  .hex-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2300f5ff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 }

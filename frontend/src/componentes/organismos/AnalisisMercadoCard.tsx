@@ -1,5 +1,5 @@
 /**
- * AnalisisMercadoCard.tsx — Muestra el análisis de valor cuando hay cuota
+ * AnalisisMercadoCard.tsx — Análisis de valor con estilo futurista
  */
 
 import { CheckCircle, XCircle, MinusCircle, TrendingUp, Percent, Calculator } from 'lucide-react';
@@ -24,29 +24,32 @@ function obtenerConfigRecomendacion(recomendacion: TipoRecomendacion) {
     case 'VALOR':
       return {
         icono: CheckCircle,
-        texto: '¡Hay Valor!',
+        texto: 'HAY VALOR',
         descripcion: 'La probabilidad del sistema supera significativamente la cuota',
-        colorFondo: 'bg-exito-50',
-        colorTexto: 'text-exito-600',
-        colorIcono: 'text-exito-500',
+        borderColor: 'border-neon-verde/30',
+        bgColor: 'bg-neon-verde/10',
+        textColor: 'text-neon-verde',
+        glow: 'shadow-glow-verde',
       };
     case 'JUSTO':
       return {
         icono: MinusCircle,
-        texto: 'Precio Justo',
+        texto: 'PRECIO JUSTO',
         descripcion: 'La cuota refleja aproximadamente la probabilidad real',
-        colorFondo: 'bg-advertencia-50',
-        colorTexto: 'text-advertencia-600',
-        colorIcono: 'text-advertencia-500',
+        borderColor: 'border-advertencia-500/30',
+        bgColor: 'bg-advertencia-500/10',
+        textColor: 'text-advertencia-500',
+        glow: '',
       };
     case 'EVITAR':
       return {
         icono: XCircle,
-        texto: 'Sin Valor',
+        texto: 'SIN VALOR',
         descripcion: 'La cuota no ofrece valor según el análisis',
-        colorFondo: 'bg-error-50',
-        colorTexto: 'text-error-600',
-        colorIcono: 'text-error-500',
+        borderColor: 'border-neon-rojo/30',
+        bgColor: 'bg-neon-rojo/10',
+        textColor: 'text-neon-rojo',
+        glow: 'shadow-glow-rojo',
       };
   }
 }
@@ -61,7 +64,7 @@ function formatearPorcentaje(valor: number): string {
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Muestra el análisis de valor de mercado
+ * Muestra el análisis de valor de mercado con estilo futurista
  */
 export function AnalisisMercadoCard({ analisis }: PropsAnalisisMercadoCard) {
   const config = obtenerConfigRecomendacion(analisis.recomendacion);
@@ -70,14 +73,14 @@ export function AnalisisMercadoCard({ analisis }: PropsAnalisisMercadoCard) {
   return (
     <Tarjeta className="animate-deslizar-arriba">
       {/* Recomendación principal */}
-      <div className={`${config.colorFondo} -m-6 mb-6 p-6 rounded-t-xl`}>
+      <div className={`-m-6 mb-6 p-5 rounded-t-xl ${config.bgColor} ${config.borderColor} border-b`}>
         <div className="flex items-center gap-3">
-          <Icono className={config.colorIcono} size={32} />
+          <Icono className={`${config.textColor} ${config.glow}`} size={28} />
           <div>
-            <h3 className={`text-xl font-bold ${config.colorTexto}`}>
+            <h3 className={`text-xl font-futurista font-bold tracking-wider ${config.textColor}`}>
               {config.texto}
             </h3>
-            <p className={`text-sm ${config.colorTexto} opacity-80`}>
+            <p className="text-sm text-texto-secundario">
               {config.descripcion}
             </p>
           </div>
@@ -87,45 +90,49 @@ export function AnalisisMercadoCard({ analisis }: PropsAnalisisMercadoCard) {
       {/* Métricas */}
       <div className="grid grid-cols-3 gap-4">
         {/* Edge */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 text-nba-gris-500 mb-1">
-            <TrendingUp size={16} />
-            <span className="text-xs uppercase">Edge</span>
+        <div className="text-center p-3 rounded-lg bg-futurista-oscuro/30">
+          <div className="flex items-center justify-center gap-1 text-texto-terciario mb-2">
+            <TrendingUp size={14} />
+            <span className="text-xs uppercase tracking-wider">Edge</span>
           </div>
-          <div className={`text-2xl font-bold ${analisis.edge >= 0 ? 'text-exito-600' : 'text-error-600'}`}>
+          <div className={`text-2xl font-mono font-bold ${
+            analisis.edge >= 0 ? 'text-neon-verde texto-glow-verde' : 'text-neon-rojo texto-glow-rojo'
+          }`}>
             {formatearPorcentaje(analisis.edge)}
           </div>
         </div>
 
         {/* Probabilidad Implícita */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 text-nba-gris-500 mb-1">
-            <Percent size={16} />
-            <span className="text-xs uppercase">Implícita</span>
+        <div className="text-center p-3 rounded-lg bg-futurista-oscuro/30">
+          <div className="flex items-center justify-center gap-1 text-texto-terciario mb-2">
+            <Percent size={14} />
+            <span className="text-xs uppercase tracking-wider">Implícita</span>
           </div>
-          <div className="text-2xl font-bold text-nba-gris-900">
+          <div className="text-2xl font-mono font-bold text-neon-cyan">
             {(analisis.probabilidad_implicita * 100).toFixed(1)}%
           </div>
         </div>
 
         {/* EV */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 text-nba-gris-500 mb-1">
-            <Calculator size={16} />
-            <span className="text-xs uppercase">EV</span>
+        <div className="text-center p-3 rounded-lg bg-futurista-oscuro/30">
+          <div className="flex items-center justify-center gap-1 text-texto-terciario mb-2">
+            <Calculator size={14} />
+            <span className="text-xs uppercase tracking-wider">EV</span>
           </div>
-          <div className={`text-2xl font-bold ${analisis.valor_esperado >= 0 ? 'text-exito-600' : 'text-error-600'}`}>
+          <div className={`text-2xl font-mono font-bold ${
+            analisis.valor_esperado >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
+          }`}>
             {analisis.valor_esperado >= 0 ? '+' : ''}{analisis.valor_esperado.toFixed(2)}
           </div>
         </div>
       </div>
 
       {/* Nota explicativa */}
-      <div className="mt-6 pt-4 border-t border-nba-gris-200">
-        <p className="text-xs text-nba-gris-500">
-          <strong>Edge:</strong> Diferencia entre probabilidad del sistema y la implícita en la cuota.
-          <strong> EV:</strong> Valor esperado por unidad apostada.
-          Cuota analizada: <strong>{analisis.cuota.toFixed(2)}</strong>
+      <div className="mt-6 pt-4 border-t border-neon-cyan/10">
+        <p className="text-xs text-texto-terciario">
+          <span className="text-neon-cyan">Edge:</span> Diferencia entre probabilidad del sistema y la implícita.
+          <span className="text-neon-cyan ml-2">EV:</span> Valor esperado por unidad.
+          <span className="text-texto-secundario ml-2">Cuota: <span className="font-mono text-neon-cyan">{analisis.cuota.toFixed(2)}</span></span>
         </p>
       </div>
     </Tarjeta>

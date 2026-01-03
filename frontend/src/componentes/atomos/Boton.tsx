@@ -1,10 +1,9 @@
 /**
- * Boton.tsx — Componente de botón reutilizable
+ * Boton.tsx — Componente de botón futurista
  */
 
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
-import { Loader2 } from 'lucide-react';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -36,33 +35,10 @@ interface PropsBoton extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const estilosBase = `
   inline-flex items-center justify-center font-semibold rounded-lg
-  transition-all duration-200
-  focus:outline-none focus:ring-2 focus:ring-offset-2
-  disabled:opacity-50 disabled:cursor-not-allowed
+  transition-all duration-300
+  focus:outline-none
+  disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
 `;
-
-const estilosVariante: Record<VarianteBoton, string> = {
-  primario: `
-    bg-nba-azul text-white
-    hover:bg-nba-azul/90
-    focus:ring-nba-azul
-  `,
-  secundario: `
-    bg-white text-nba-gris-700 border border-nba-gris-300
-    hover:bg-nba-gris-50
-    focus:ring-nba-azul
-  `,
-  fantasma: `
-    bg-transparent text-nba-gris-700
-    hover:bg-nba-gris-100
-    focus:ring-nba-azul
-  `,
-  peligro: `
-    bg-error-500 text-white
-    hover:bg-error-600
-    focus:ring-error-500
-  `,
-};
 
 const estilosTamano: Record<TamanoBoton, string> = {
   sm: 'px-3 py-1.5 text-sm gap-1.5',
@@ -71,11 +47,36 @@ const estilosTamano: Record<TamanoBoton, string> = {
 };
 
 // ══════════════════════════════════════════════════════════════
+// COMPONENTE SPINNER
+// ══════════════════════════════════════════════════════════════
+
+function SpinnerBoton({ tamano }: { tamano: TamanoBoton }) {
+  const sizes = { sm: 14, md: 18, lg: 22 };
+  const size = sizes[tamano];
+
+  return (
+    <div
+      className="relative animate-spin"
+      style={{ width: size, height: size }}
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          border: '2px solid transparent',
+          borderTopColor: 'currentColor',
+          borderRightColor: 'currentColor',
+        }}
+      />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
 // COMPONENTE
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Botón reutilizable con múltiples variantes y estados
+ * Botón reutilizable con estilo futurista neón
  */
 export const Boton = forwardRef<HTMLButtonElement, PropsBoton>(
   (
@@ -96,6 +97,26 @@ export const Boton = forwardRef<HTMLButtonElement, PropsBoton>(
   ) => {
     const estaDeshabilitado = disabled || cargando;
 
+    // Estilos específicos por variante
+    const estilosVariante = {
+      primario: `
+        bg-gradient-to-r from-neon-cyan to-neon-azul text-futurista-negro font-futurista uppercase tracking-wider
+        hover:shadow-glow-cyan hover:-translate-y-0.5
+      `,
+      secundario: `
+        bg-transparent text-neon-cyan border border-neon-cyan/30
+        hover:bg-neon-cyan/10 hover:border-neon-cyan hover:shadow-glow-cyan
+      `,
+      fantasma: `
+        bg-transparent text-texto-secundario
+        hover:bg-futurista-medio hover:text-texto-principal
+      `,
+      peligro: `
+        bg-gradient-to-r from-neon-rojo to-neon-rojo/80 text-white font-futurista uppercase tracking-wider
+        hover:shadow-glow-rojo hover:-translate-y-0.5
+      `,
+    };
+
     return (
       <button
         ref={ref}
@@ -111,7 +132,7 @@ export const Boton = forwardRef<HTMLButtonElement, PropsBoton>(
       >
         {cargando ? (
           <>
-            <Loader2 className="animate-spin" size={tamano === 'sm' ? 16 : tamano === 'lg' ? 24 : 20} />
+            <SpinnerBoton tamano={tamano} />
             {textoCargando || children}
           </>
         ) : (

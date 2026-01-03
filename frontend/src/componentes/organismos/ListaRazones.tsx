@@ -1,5 +1,5 @@
 /**
- * ListaRazones.tsx — Lista de razones que explican la predicción
+ * ListaRazones.tsx — Lista de razones con estilo futurista
  */
 
 import { ArrowUp, ArrowDown, Info } from 'lucide-react';
@@ -24,11 +24,13 @@ function ItemRazon({ razon }: { razon: RazonPrediccion }) {
   const Icono = esSube ? ArrowUp : ArrowDown;
 
   return (
-    <li className="flex items-start gap-3 py-3 border-b border-nba-gris-100 last:border-0">
+    <li className="flex items-start gap-3 py-3 border-b border-neon-cyan/10 last:border-0">
       {/* Indicador de dirección */}
       <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-          esSube ? 'bg-over-claro text-over-oscuro' : 'bg-under-claro text-under-oscuro'
+        className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border ${
+          esSube
+            ? 'bg-neon-verde/10 border-neon-verde/30 text-neon-verde'
+            : 'bg-neon-rojo/10 border-neon-rojo/30 text-neon-rojo'
         }`}
       >
         <Icono size={16} />
@@ -36,14 +38,14 @@ function ItemRazon({ razon }: { razon: RazonPrediccion }) {
 
       {/* Contenido */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-nba-gris-900">
+        <p className="text-sm text-texto-principal">
           {razon.descripcion}
         </p>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-nba-gris-500">
-            Factor: {razon.factor}
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-xs text-texto-terciario font-mono">
+            {razon.factor}
           </span>
-          <span className={`text-xs font-medium ${esSube ? 'text-over-oscuro' : 'text-under-oscuro'}`}>
+          <span className={`text-xs font-mono font-semibold ${esSube ? 'text-neon-verde' : 'text-neon-rojo'}`}>
             {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} pts
           </span>
         </div>
@@ -67,15 +69,17 @@ export function ListaRazones({ razones }: PropsListaRazones) {
   return (
     <Tarjeta className="animate-deslizar-arriba">
       {/* Encabezado */}
-      <div className="flex items-center gap-2 mb-4">
-        <Info className="text-nba-azul" size={20} />
-        <h3 className="text-lg font-semibold text-nba-gris-900">
-          Razones del Análisis
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-neon-cyan/10">
+        <div className="w-8 h-8 rounded-lg bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center">
+          <Info className="text-neon-cyan" size={16} />
+        </div>
+        <h3 className="text-lg font-futurista font-semibold text-texto-principal tracking-wider">
+          RAZONES DEL ANÁLISIS
         </h3>
       </div>
 
       {/* Lista de razones */}
-      <ul className="divide-y divide-nba-gris-100">
+      <ul>
         {razones.map((razon, indice) => (
           <ItemRazon key={`${razon.factor}-${indice}`} razon={razon} />
         ))}

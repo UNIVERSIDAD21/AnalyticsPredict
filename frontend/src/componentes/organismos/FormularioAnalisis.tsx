@@ -1,9 +1,9 @@
 /**
- * FormularioAnalisis.tsx — Formulario principal para analizar partidos
+ * FormularioAnalisis.tsx — Formulario principal con diseño futurista
  */
 
 import { useState, useCallback } from 'react';
-import { Search, RotateCcw } from 'lucide-react';
+import { Search, RotateCcw, Zap } from 'lucide-react';
 import { Boton, Tarjeta } from '../atomos';
 import {
   SelectorEquipo,
@@ -12,7 +12,7 @@ import {
   InputCuota,
   MensajeError,
 } from '../moleculas';
-import { Equipo, Mercado, PeticionAnalisis } from '../../tipos';
+import { Equipo, Mercado, PeticionAnalisis, LadoApuesta } from '../../tipos';
 import { validarPeticionAnalisis } from '../../servicios';
 
 // ══════════════════════════════════════════════════════════════
@@ -23,7 +23,7 @@ interface PropsFormularioAnalisis {
   /** Lista de equipos disponibles */
   equipos: Equipo[];
   /** Callback cuando se envía el formulario */
-  onAnalizar: (peticion: PeticionAnalisis) => void;
+  onAnalizar: (peticion: PeticionAnalisis, ladoSeleccionado?: LadoApuesta) => void;
   /** Indica si está cargando */
   cargando?: boolean;
   /** Indica si los equipos están cargando */
@@ -35,6 +35,7 @@ interface EstadoFormulario {
   equipoVisitante: string;
   mercado: Mercado | '';
   linea: string;
+  ladoApuesta: LadoApuesta;
   cuota: string;
 }
 
@@ -43,6 +44,7 @@ const ESTADO_INICIAL: EstadoFormulario = {
   equipoVisitante: '',
   mercado: '',
   linea: '',
+  ladoApuesta: 'OVER',
   cuota: '',
 };
 
@@ -102,8 +104,8 @@ export function FormularioAnalisis({
         return;
       }
 
-      // Enviar
-      onAnalizar(peticion as PeticionAnalisis);
+      // Enviar con lado seleccionado
+      onAnalizar(peticion as PeticionAnalisis, formulario.ladoApuesta);
     },
     [formulario, onAnalizar]
   );
@@ -112,28 +114,35 @@ export function FormularioAnalisis({
 
   return (
     <Tarjeta className="animate-entrada">
-      <form onSubmit={manejarEnvio} className="space-y-6">
+      <form onSubmit={manejarEnvio} className="space-y-5">
         {/* Título */}
-        <div className="border-b border-nba-gris-200 pb-4">
-          <h2 className="text-xl font-bold text-nba-gris-900">
-            Configurar Análisis
-          </h2>
-          <p className="text-sm text-nba-gris-500 mt-1">
-            Selecciona los equipos y el mercado que deseas analizar
-          </p>
+        <div className="pb-4 border-b border-neon-cyan/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-neon-cyan" />
+            </div>
+            <div>
+              <h2 className="text-lg font-futurista font-bold text-texto-principal tracking-wider">
+                CONFIGURAR ANÁLISIS
+              </h2>
+              <p className="text-xs text-texto-secundario">
+                Selecciona equipos, mercado y tu predicción
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Errores de validación */}
         {errores.length > 0 && (
           <MensajeError
-            titulo="Corrige los siguientes errores"
+            titulo="Corrige los errores"
             mensaje={errores.join('. ')}
             onCerrar={() => setErrores([])}
           />
         )}
 
-        {/* Grid de campos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Campos */}
+        <div className="space-y-4">
           {/* Equipo Local */}
           <SelectorEquipo
             etiqueta="Equipo Local"
@@ -142,7 +151,7 @@ export function FormularioAnalisis({
             onChange={(valor) => actualizarCampo('equipoLocal', valor)}
             equipoExcluido={formulario.equipoVisitante}
             deshabilitado={cargando || cargandoEquipos}
-            placeholder={cargandoEquipos ? 'Cargando equipos...' : 'Selecciona equipo local'}
+            placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona local'}
           />
 
           {/* Equipo Visitante */}
@@ -153,7 +162,7 @@ export function FormularioAnalisis({
             onChange={(valor) => actualizarCampo('equipoVisitante', valor)}
             equipoExcluido={formulario.equipoLocal}
             deshabilitado={cargando || cargandoEquipos}
-            placeholder={cargandoEquipos ? 'Cargando equipos...' : 'Selecciona equipo visitante'}
+            placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona visitante'}
           />
 
           {/* Mercado */}
@@ -163,34 +172,49 @@ export function FormularioAnalisis({
             deshabilitado={cargando}
           />
 
-          {/* Línea */}
+          {/* Línea con selector Over/Under */}
           <InputLinea
             valor={formulario.linea}
             onChange={(valor) => actualizarCampo('linea', valor)}
+            ladoApuesta={formulario.ladoApuesta}
+            onLadoChange={(lado) => actualizarCampo('ladoApuesta', lado)}
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
           />
 
           {/* Cuota */}
-          <div className="md:col-span-2 max-w-xs">
-            <InputCuota
-              valor={formulario.cuota}
-              onChange={(valor) => actualizarCampo('cuota', valor)}
-              deshabilitado={cargando}
-            />
-          </div>
+          <InputCuota
+            valor={formulario.cuota}
+            onChange={(valor) => actualizarCampo('cuota', valor)}
+            deshabilitado={cargando}
+          />
         </div>
 
+        {/* Resumen de apuesta */}
+        {formulario.linea && (
+          <div className="p-3 rounded-lg bg-futurista-oscuro/50 border border-neon-cyan/10">
+            <p className="text-xs text-texto-secundario uppercase tracking-wider mb-1">
+              Tu predicción
+            </p>
+            <p className={`text-sm font-semibold ${
+              formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
+            }`}>
+              {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} puntos
+              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? 'Juego Completo' : formulario.mercado}`}
+            </p>
+          </div>
+        )}
+
         {/* Botones */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-nba-gris-200">
+        <div className="flex flex-col gap-3 pt-4 border-t border-neon-cyan/20">
           <Boton
             type="submit"
             variante="primario"
             tamano="lg"
             cargando={cargando}
             textoCargando="Analizando..."
-            iconoInicio={<Search size={20} />}
-            className="flex-1 sm:flex-none"
+            iconoInicio={<Search size={18} />}
+            anchoCompleto
           >
             Analizar Partido
           </Boton>
@@ -201,7 +225,8 @@ export function FormularioAnalisis({
             tamano="lg"
             onClick={resetearFormulario}
             disabled={cargando}
-            iconoInicio={<RotateCcw size={20} />}
+            iconoInicio={<RotateCcw size={18} />}
+            anchoCompleto
           >
             Limpiar
           </Boton>

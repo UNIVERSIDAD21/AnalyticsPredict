@@ -1,5 +1,5 @@
 /**
- * Tarjeta.tsx — Contenedor tipo card
+ * Tarjeta.tsx — Contenedor glassmorphism futurista
  */
 
 import { HTMLAttributes, forwardRef } from 'react';
@@ -24,12 +24,6 @@ interface PropsTarjeta extends HTMLAttributes<HTMLDivElement> {
 // ESTILOS
 // ══════════════════════════════════════════════════════════════
 
-const estilosVariante: Record<VarianteTarjeta, string> = {
-  normal: 'bg-white shadow-tarjeta',
-  elevada: 'bg-white shadow-elevada',
-  borde: 'bg-white border border-nba-gris-200',
-};
-
 const estilosPadding: Record<string, string> = {
   none: '',
   sm: 'p-4',
@@ -42,7 +36,7 @@ const estilosPadding: Record<string, string> = {
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Tarjeta contenedora con diferentes variantes
+ * Tarjeta contenedora con efecto glassmorphism futurista
  */
 export const Tarjeta = forwardRef<HTMLDivElement, PropsTarjeta>(
   (
@@ -60,10 +54,9 @@ export const Tarjeta = forwardRef<HTMLDivElement, PropsTarjeta>(
       <div
         ref={ref}
         className={clsx(
-          'rounded-xl',
-          estilosVariante[variante],
+          'tarjeta',
           estilosPadding[padding],
-          hover && 'transition-shadow duration-200 hover:shadow-tarjeta-hover cursor-pointer',
+          hover && 'tarjeta-hover cursor-pointer',
           className
         )}
         {...props}
