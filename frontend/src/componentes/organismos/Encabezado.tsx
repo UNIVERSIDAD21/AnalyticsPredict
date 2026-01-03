@@ -2,6 +2,7 @@
  * Encabezado.tsx — Header futurista de la aplicación
  */
 
+import { useEffect, useState } from 'react';
 import { Activity, Zap } from 'lucide-react';
 
 // ══════════════════════════════════════════════════════════════
@@ -12,6 +13,20 @@ import { Activity, Zap } from 'lucide-react';
  * Encabezado principal con estética futurista
  */
 export function Encabezado() {
+  const [rutaActual, setRutaActual] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const manejarRuta = () => setRutaActual(window.location.pathname);
+    window.addEventListener('popstate', manejarRuta);
+    return () => window.removeEventListener('popstate', manejarRuta);
+  }, []);
+
+  const navegar = (ruta: string) => {
+    if (window.location.pathname === ruta) return;
+    window.history.pushState({}, '', ruta);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <header className="relative overflow-hidden border-b border-neon-cyan/20">
       {/* Fondo con efecto */}
@@ -25,7 +40,7 @@ export function Encabezado() {
 
       {/* Contenido */}
       <div className="relative contenedor py-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           {/* Logo y Título */}
           <div className="flex items-center gap-4">
             {/* Logo con glow */}
@@ -50,8 +65,33 @@ export function Encabezado() {
             </div>
           </div>
 
-          {/* Indicador de estado */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2">
+              <button
+                type="button"
+                className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
+                  rutaActual === '/'
+                    ? 'border-neon-cyan text-neon-cyan'
+                    : 'border-neon-cyan/20 text-texto-secundario'
+                }`}
+                onClick={() => navegar('/')}
+              >
+                Análisis
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
+                  rutaActual === '/bitacora'
+                    ? 'border-neon-magenta text-neon-magenta'
+                    : 'border-neon-cyan/20 text-texto-secundario'
+                }`}
+                onClick={() => navegar('/bitacora')}
+              >
+                Bitácora
+              </button>
+            </div>
+
+            {/* Indicador de estado */}
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-futurista-oscuro/50 border border-neon-verde/30">
               <div className="w-2 h-2 rounded-full bg-neon-verde animate-pulse" />
               <span className="text-xs text-neon-verde uppercase tracking-wider font-mono">

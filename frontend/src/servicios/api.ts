@@ -19,6 +19,15 @@ const URL_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
  */
 const TIMEOUT = 30000;
 
+/**
+ * Obtiene el ID del usuario autenticado para la bitácora
+ */
+function obtenerUsuarioId(): string | null {
+  const idEnv = import.meta.env.VITE_USUARIO_ID as string | undefined;
+  const idStorage = typeof window !== 'undefined' ? window.localStorage.getItem('usuarioId') : null;
+  return idStorage || idEnv || null;
+}
+
 // ══════════════════════════════════════════════════════════════
 // CLIENTE AXIOS
 // ══════════════════════════════════════════════════════════════
@@ -58,6 +67,20 @@ clienteAPI.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Interceptor para adjuntar usuario ID en peticiones
+ */
+clienteAPI.interceptors.request.use((config) => {
+  const usuarioId = obtenerUsuarioId();
+  if (usuarioId) {
+    config.headers = {
+      ...config.headers,
+      'X-Usuario-Id': usuarioId,
+    };
+  }
+  return config;
+});
 
 // ══════════════════════════════════════════════════════════════
 // FUNCIONES AUXILIARES

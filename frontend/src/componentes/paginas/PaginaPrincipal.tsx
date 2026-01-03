@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import {
   Encabezado,
   FormularioAnalisis,
+  FormularioGuardarApuesta,
   ResultadoAnalisis,
   TablaEstadisticasEquipos,
 } from '../organismos';
@@ -14,6 +15,7 @@ import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { Activity, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import { LadoApuesta } from '../../tipos';
+import { crearApuesta } from '../../servicios';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE ESTADO VACÍO
@@ -105,6 +107,8 @@ export function PaginaPrincipal() {
   } | null>(null);
 
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
+  const [mostrarGuardar, setMostrarGuardar] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
 
   // Scroll al resultado cuando se completa el análisis (solo en móvil)
   useEffect(() => {
@@ -226,6 +230,10 @@ export function PaginaPrincipal() {
                 <ResultadoAnalisis
                   resultado={resultado}
                   seleccionUsuario={seleccionUsuario}
+                  onGuardar={() => {
+                    setMostrarGuardar(true);
+                    setErrorGuardar(null);
+                  }}
                 />
               )}
 
@@ -262,6 +270,35 @@ export function PaginaPrincipal() {
           </div>
         )}
       </main>
+
+      {resultado && seleccionUsuario && (
+        <FormularioGuardarApuesta
+          abierto={mostrarGuardar}
+          resultado={resultado}
+          ladoSeleccionado={seleccionUsuario.lado}
+          lineaSeleccionada={seleccionUsuario.linea}
+          onCerrar={() => setMostrarGuardar(false)}
+          onGuardar={async (apuesta) => {
+            try {
+              await crearApuesta(apuesta);
+              setMostrarGuardar(false);
+            } catch (error) {
+              const mensaje = error instanceof Error ? error.message : 'No se pudo guardar la apuesta';
+              setErrorGuardar(mensaje);
+            }
+          }}
+        />
+      )}
+
+      {errorGuardar && (
+        <div className="fixed bottom-6 right-6 max-w-md">
+          <MensajeError
+            titulo="No se pudo guardar"
+            mensaje={errorGuardar}
+            onCerrar={() => setErrorGuardar(null)}
+          />
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-neon-cyan/10 bg-futurista-negro/80 backdrop-blur-sm">

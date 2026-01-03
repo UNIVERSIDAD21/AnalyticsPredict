@@ -18,6 +18,10 @@ pandas>=2.1.0
 python-dateutil>=2.8.0
 python-dotenv>=1.0.0
 
+# Base de datos
+psycopg[binary]>=3.2.1
+psycopg-pool>=3.2.2
+
 # HTTP
 requests>=2.31.0
 

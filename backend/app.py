@@ -13,8 +13,10 @@ from fastapi.responses import JSONResponse
 
 from configuracion import CONFIGURACION
 from api.rutas_analisis import router as router_analisis
+from api.rutas_bitacora import router as router_bitacora
 from api.rutas_equipos import router as router_equipos
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
+from db import cerrar_pool
 
 
 @asynccontextmanager
@@ -41,11 +43,13 @@ async def ciclo_de_vida(app: FastAPI):
     print(f"   Documentación: http://{CONFIGURACION.host}:{CONFIGURACION.puerto}/docs")
     print("")
 
-    yield
-
-    print("")
-    print("👋 Cerrando servidor...")
-    print("   Hasta pronto!")
+    try:
+        yield
+    finally:
+        cerrar_pool()
+        print("")
+        print("👋 Cerrando servidor...")
+        print("   Hasta pronto!")
 
 
 app = FastAPI(
@@ -149,6 +153,7 @@ async def manejador_error_general(request: Request, exc: Exception):
 
 app.include_router(router_analisis)
 app.include_router(router_equipos)
+app.include_router(router_bitacora)
 
 
 @app.get(
