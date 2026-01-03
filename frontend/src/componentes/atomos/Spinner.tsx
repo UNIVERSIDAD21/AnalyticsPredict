@@ -1,9 +1,8 @@
 /**
- * Spinner.tsx — Indicador de carga
+ * Spinner.tsx — Indicador de carga futurista
  */
 
 import { clsx } from 'clsx';
-import { Loader2 } from 'lucide-react';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -26,11 +25,11 @@ interface PropsSpinner {
 // ESTILOS
 // ══════════════════════════════════════════════════════════════
 
-const tamanos: Record<TamanoSpinner, number> = {
-  sm: 16,
-  md: 24,
-  lg: 32,
-  xl: 48,
+const tamanos: Record<TamanoSpinner, { size: number; border: number }> = {
+  sm: { size: 20, border: 2 },
+  md: { size: 32, border: 3 },
+  lg: { size: 48, border: 4 },
+  xl: { size: 64, border: 5 },
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -38,7 +37,7 @@ const tamanos: Record<TamanoSpinner, number> = {
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Indicador de carga animado
+ * Indicador de carga animado con estilo neón
  */
 export function Spinner({
   tamano = 'md',
@@ -46,22 +45,57 @@ export function Spinner({
   centrado = false,
   className,
 }: PropsSpinner) {
+  const config = tamanos[tamano];
+
   return (
     <div
       className={clsx(
         'flex items-center gap-3',
-        centrado && 'justify-center',
+        centrado && 'justify-center flex-col',
         className
       )}
       role="status"
       aria-label={texto || 'Cargando...'}
     >
-      <Loader2
-        className="animate-spin text-nba-azul"
-        size={tamanos[tamano]}
-      />
+      {/* Spinner con efecto neón */}
+      <div
+        className="relative"
+        style={{ width: config.size, height: config.size }}
+      >
+        {/* Anillo exterior */}
+        <div
+          className="absolute inset-0 rounded-full animate-spin"
+          style={{
+            border: `${config.border}px solid transparent`,
+            borderTopColor: '#00f5ff',
+            borderRightColor: '#00f5ff',
+            boxShadow: '0 0 15px rgba(0, 245, 255, 0.3)',
+          }}
+        />
+        {/* Anillo interior */}
+        <div
+          className="absolute inset-1 rounded-full animate-spin"
+          style={{
+            border: `${config.border - 1}px solid transparent`,
+            borderBottomColor: '#ff00ff',
+            borderLeftColor: '#ff00ff',
+            animationDirection: 'reverse',
+            animationDuration: '0.8s',
+          }}
+        />
+        {/* Punto central */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-cyan animate-pulse"
+          style={{
+            width: config.size / 4,
+            height: config.size / 4,
+            boxShadow: '0 0 10px rgba(0, 245, 255, 0.5)',
+          }}
+        />
+      </div>
+
       {texto && (
-        <span className="text-nba-gris-600">{texto}</span>
+        <span className="text-texto-secundario text-sm">{texto}</span>
       )}
     </div>
   );

@@ -1,37 +1,69 @@
 /**
- * Encabezado.tsx — Header de la aplicación
+ * Encabezado.tsx — Header futurista de la aplicación
  */
 
-import { Activity } from 'lucide-react';
+import { Activity, Zap } from 'lucide-react';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Encabezado principal de la aplicación
+ * Encabezado principal con estética futurista
  */
 export function Encabezado() {
   return (
-    <header className="bg-nba-azul text-white shadow-lg">
-      <div className="contenedor py-6">
-        <div className="flex items-center gap-3">
-          {/* Logo */}
-          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-            <Activity size={28} />
+    <header className="relative overflow-hidden border-b border-neon-cyan/20">
+      {/* Fondo con efecto */}
+      <div className="absolute inset-0 bg-gradient-to-r from-futurista-negro via-futurista-oscuro to-futurista-negro" />
+
+      {/* Línea decorativa superior */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-cyan to-transparent" />
+
+      {/* Grid pattern sutil */}
+      <div className="absolute inset-0 grid-pattern opacity-30" />
+
+      {/* Contenido */}
+      <div className="relative contenedor py-5">
+        <div className="flex items-center justify-between">
+          {/* Logo y Título */}
+          <div className="flex items-center gap-4">
+            {/* Logo con glow */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-neon-cyan/20 blur-xl rounded-full" />
+              <div className="relative w-14 h-14 rounded-xl flex items-center justify-center border border-neon-cyan/30 bg-futurista-oscuro/80">
+                <Activity className="w-7 h-7 text-neon-cyan" />
+              </div>
+            </div>
+
+            {/* Título */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-futurista font-bold tracking-wider text-texto-principal texto-glow-cyan">
+                NBA ANALYZER
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Zap className="w-3 h-3 text-neon-magenta" />
+                <p className="text-xs md:text-sm text-texto-secundario uppercase tracking-widest">
+                  Sistema de Predicción Avanzada
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Título */}
-          <div>
-            <h1 className="text-2xl font-bold">
-              Analizador NBA
-            </h1>
-            <p className="text-white/70 text-sm">
-              Análisis de apuestas por cuarto y juego completo
-            </p>
+          {/* Indicador de estado */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-futurista-oscuro/50 border border-neon-verde/30">
+              <div className="w-2 h-2 rounded-full bg-neon-verde animate-pulse" />
+              <span className="text-xs text-neon-verde uppercase tracking-wider font-mono">
+                Sistema Activo
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Línea decorativa inferior */}
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent" />
     </header>
   );
 }
