@@ -229,3 +229,28 @@ def obtener_nombre_completo(identificador: str) -> Optional[str]:
             return nombre_completo.title()
     
     return None
+
+
+def resolver_nombre_en_modelo(nombre: str, entidad_a_indice: Dict[str, int]) -> Optional[str]:
+    """Resuelve un nombre de equipo al identificador usado por el modelo."""
+    nombre_norm = normalizar_nombre(nombre)
+    if nombre_norm in entidad_a_indice:
+        return nombre_norm
+
+    nombre_completo = obtener_nombre_completo(nombre)
+    if nombre_completo:
+        nombre_completo_norm = normalizar_nombre(nombre_completo)
+        if nombre_completo_norm in entidad_a_indice:
+            return nombre_completo_norm
+
+    abreviatura = obtener_abreviatura(nombre)
+    abreviatura_norm = normalizar_nombre(abreviatura)
+    if abreviatura_norm in entidad_a_indice:
+        return abreviatura_norm
+
+    nombre_corto = obtener_nombre_corto(nombre)
+    nombre_corto_norm = normalizar_nombre(nombre_corto)
+    if nombre_corto_norm in entidad_a_indice:
+        return nombre_corto_norm
+
+    return None

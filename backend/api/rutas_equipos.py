@@ -12,10 +12,37 @@ from psycopg.rows import dict_row
 
 from configuracion import CONFIGURACION
 from db import obtener_pool
+from motor import cargar_modelo
+from motor.utilidades import resolver_nombre_en_modelo
 from .modelos_respuesta import RespuestaEquipos, RespuestaEstadisticasEquipos
 from motor.tipos import InfoEquipo
 
 router = APIRouter(prefix="/api", tags=["Equipos"])
+
+_modelo_cache = None
+
+
+def obtener_modelo():
+    """Carga el modelo de predicción (con caché en memoria)."""
+    global _modelo_cache
+    if _modelo_cache is None:
+        try:
+            _modelo_cache = cargar_modelo(CONFIGURACION.ruta_modelo)
+        except FileNotFoundError:
+            _modelo_cache = None
+    return _modelo_cache
+
+
+def filtrar_equipos_por_modelo(equipos: List[InfoEquipo]) -> List[InfoEquipo]:
+    """Filtra equipos usando el modelo disponible para evitar selecciones inválidas."""
+    modelo = obtener_modelo()
+    if modelo is None:
+        return equipos
+    return [
+        equipo
+        for equipo in equipos
+        if resolver_nombre_en_modelo(equipo.nombre, modelo.entidad_a_indice) is not None
+    ]
 
 
 def cargar_equipos() -> List[InfoEquipo]:
@@ -53,7 +80,7 @@ def cargar_estadisticas_equipos() -> dict:
 )
 async def listar_equipos() -> RespuestaEquipos:
     """Retorna la lista de equipos disponibles."""
-    equipos = cargar_equipos()
+    equipos = filtrar_equipos_por_modelo(cargar_equipos())
     equipos_ordenados = sorted(equipos, key=lambda e: e.nombre)
     return RespuestaEquipos(
         exito=True,
@@ -103,10 +130,12 @@ async def buscar_equipos(
             )
             filas = cursor.fetchall()
 
+    equipos_filtrados = filtrar_equipos_por_modelo([InfoEquipo(**fila) for fila in filas])
+
     return RespuestaEquipos(
         exito=True,
-        total=len(filas),
-        equipos=filas,
+        total=len(equipos_filtrados),
+        equipos=[equipo.__dict__ for equipo in equipos_filtrados],
     )
 
 
