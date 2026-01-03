@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 """
 db.py — Utilidades de conexión a PostgreSQL.
 """

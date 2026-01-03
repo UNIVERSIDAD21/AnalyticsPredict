@@ -5,18 +5,35 @@ dependencias.py — Dependencias comunes para la API.
 
 from __future__ import annotations
 
+import os
 from uuid import UUID
 
 from fastapi import Header, HTTPException, status
 
+# UUID de usuario de desarrollo (para pruebas sin autenticación real)
+# En producción, esto vendría de un sistema de autenticación real
+USUARIO_DESARROLLO = "00000000-0000-0000-0000-000000000001"
 
-def obtener_usuario_id(x_usuario_id: str | None = Header(None, alias="X-Usuario-Id")) -> UUID:
-    """Obtiene el UUID del usuario autenticado desde el header."""
+
+def obtener_usuario_id(
+    x_usuario_id: str | None = Header(None, alias="X-Usuario-Id")
+) -> UUID:
+    """
+    Obtiene el UUID del usuario autenticado desde el header.
+    
+    En desarrollo, si no se proporciona header, usa un usuario de prueba.
+    """
+    # Si no hay header, usar usuario de desarrollo
     if not x_usuario_id:
+        entorno = os.getenv("ENTORNO", "desarrollo")
+        if entorno == "desarrollo":
+            return UUID(USUARIO_DESARROLLO)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Se requiere el header X-Usuario-Id.",
         )
+    
+    # Validar que sea un UUID válido
     try:
         return UUID(x_usuario_id)
     except ValueError as exc:

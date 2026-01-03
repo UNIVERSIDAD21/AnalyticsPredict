@@ -14,6 +14,19 @@ from typing import Optional, Dict, Tuple
 
 
 # ══════════════════════════════════════════════════════════════
+# MAPEO DE NOMBRES ALTERNATIVOS
+# Los CSVs de ESPN usan nombres diferentes al catálogo oficial
+# ══════════════════════════════════════════════════════════════
+
+MAPEO_NOMBRES_ALTERNATIVOS = {
+    "la clippers": "los angeles clippers",
+    "la lakers": "los angeles lakers",
+    "lac": "los angeles clippers",
+    "lal": "los angeles lakers",
+}
+
+
+# ══════════════════════════════════════════════════════════════
 # NORMALIZACIÓN Y FORMATEO
 # ══════════════════════════════════════════════════════════════
 
@@ -21,8 +34,8 @@ def normalizar_nombre(texto: str) -> str:
     """
     Normaliza el nombre de un equipo para comparaciones consistentes.
 
-    Convierte a minúsculas, elimina espacios extras y reemplaza
-    guiones bajos por espacios.
+    Convierte a minúsculas, elimina espacios extras, reemplaza
+    guiones bajos por espacios, y aplica mapeo de nombres alternativos.
 
     Argumentos:
         texto: Nombre del equipo a normalizar
@@ -33,7 +46,8 @@ def normalizar_nombre(texto: str) -> str:
     texto = (texto or "").strip().lower()
     texto = texto.replace("_", " ")
     texto = re.sub(r"\s+", " ", texto)
-    return texto
+    # Aplicar mapeo de nombres alternativos
+    return MAPEO_NOMBRES_ALTERNATIVOS.get(texto, texto)
 
 
 def formatear_porcentaje(probabilidad: float, decimales: int = 1) -> str:
