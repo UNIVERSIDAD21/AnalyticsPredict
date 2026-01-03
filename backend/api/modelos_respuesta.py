@@ -25,3 +25,9 @@ class RespuestaAnalisis(RespuestaBase):
     """Respuesta para el análisis de partido."""
     datos: Dict[str, Any]
     advertencias: Optional[List[str]] = None
+
+
+class RespuestaEstadisticasEquipos(RespuestaBase):
+    """Respuesta para estadísticas de equipos."""
+    fecha_actualizacion: str
+    equipos: List[Dict[str, Any]]

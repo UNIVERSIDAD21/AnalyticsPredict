@@ -10,7 +10,7 @@ from typing import List
 from fastapi import APIRouter
 
 from configuracion import CONFIGURACION
-from .modelos_respuesta import RespuestaEquipos
+from .modelos_respuesta import RespuestaEquipos, RespuestaEstadisticasEquipos
 from motor.tipos import InfoEquipo
 from motor.utilidades import ABREVIATURAS_NBA, obtener_abreviatura, obtener_nombre_corto
 
@@ -38,6 +38,18 @@ def cargar_equipos() -> List[InfoEquipo]:
     return equipos
 
 
+def cargar_estadisticas_equipos() -> dict:
+    """Carga estadísticas de equipos desde el archivo JSON de datos."""
+    ruta = Path(CONFIGURACION.ruta_estadisticas_equipos)
+    if not ruta.exists():
+        return {
+            "fecha_actualizacion": None,
+            "equipos": [],
+        }
+    with ruta.open("r", encoding="utf-8") as archivo:
+        return json.load(archivo)
+
+
 @router.get(
     "/equipos",
     summary="Listar equipos",
@@ -51,4 +63,21 @@ async def listar_equipos() -> RespuestaEquipos:
         exito=True,
         total=len(equipos_ordenados),
         equipos=[equipo.__dict__ for equipo in equipos_ordenados],
+    )
+
+
+@router.get(
+    "/estadisticas-equipos",
+    summary="Estadísticas de equipos",
+    response_model=RespuestaEstadisticasEquipos,
+)
+async def listar_estadisticas_equipos() -> RespuestaEstadisticasEquipos:
+    """Retorna estadísticas agregadas de los equipos."""
+    datos = cargar_estadisticas_equipos()
+    fecha = datos.get("fecha_actualizacion") or ""
+    equipos = datos.get("equipos") or []
+    return RespuestaEstadisticasEquipos(
+        exito=True,
+        fecha_actualizacion=fecha,
+        equipos=equipos,
     )

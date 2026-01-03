@@ -11,8 +11,9 @@ import {
   InputLinea,
   InputCuota,
   MensajeError,
+  PanelEstadisticasEquipo,
 } from '../moleculas';
-import { Equipo, Mercado, PeticionAnalisis, LadoApuesta } from '../../tipos';
+import { Equipo, Mercado, PeticionAnalisis, LadoApuesta, EstadisticasEquipo } from '../../tipos';
 import { validarPeticionAnalisis } from '../../servicios';
 
 // ══════════════════════════════════════════════════════════════
@@ -22,6 +23,8 @@ import { validarPeticionAnalisis } from '../../servicios';
 interface PropsFormularioAnalisis {
   /** Lista de equipos disponibles */
   equipos: Equipo[];
+  /** Estadísticas de equipos */
+  estadisticas?: EstadisticasEquipo[];
   /** Callback cuando se envía el formulario */
   onAnalizar: (peticion: PeticionAnalisis, ladoSeleccionado?: LadoApuesta) => void;
   /** Indica si está cargando */
@@ -57,6 +60,7 @@ const ESTADO_INICIAL: EstadoFormulario = {
  */
 export function FormularioAnalisis({
   equipos,
+  estadisticas = [],
   onAnalizar,
   cargando = false,
   cargandoEquipos = false,
@@ -111,6 +115,8 @@ export function FormularioAnalisis({
   );
 
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
+  const buscarEstadisticas = (nombre: string) =>
+    estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
 
   return (
     <Tarjeta className="animate-entrada">
@@ -163,6 +169,12 @@ export function FormularioAnalisis({
             equipoExcluido={formulario.equipoLocal}
             deshabilitado={cargando || cargandoEquipos}
             placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona visitante'}
+          />
+
+          <PanelEstadisticasEquipo
+            equipoLocal={buscarEstadisticas(formulario.equipoLocal)}
+            equipoVisitante={buscarEstadisticas(formulario.equipoVisitante)}
+            cargando={cargando}
           />
 
           {/* Mercado */}

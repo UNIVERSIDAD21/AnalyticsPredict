@@ -5,3 +5,4 @@
 export * from './api';
 export * from './equipos';
 export * from './analisis';
+export * from './estadisticas';
