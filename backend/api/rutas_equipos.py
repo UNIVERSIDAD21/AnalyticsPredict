@@ -5,37 +5,33 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from psycopg.rows import dict_row
 
 from configuracion import CONFIGURACION
+from db import obtener_pool
 from .modelos_respuesta import RespuestaEquipos, RespuestaEstadisticasEquipos
 from motor.tipos import InfoEquipo
-from motor.utilidades import ABREVIATURAS_NBA, obtener_abreviatura, obtener_nombre_corto
 
 router = APIRouter(prefix="/api", tags=["Equipos"])
 
 
 def cargar_equipos() -> List[InfoEquipo]:
-    """Carga equipos desde el archivo JSON de datos."""
-    ruta = Path(CONFIGURACION.ruta_equipos)
-    if ruta.exists():
-        with ruta.open("r", encoding="utf-8") as archivo:
-            datos = json.load(archivo)
-        return [InfoEquipo(**equipo) for equipo in datos]
-
-    equipos: List[InfoEquipo] = []
-    for nombre in sorted(ABREVIATURAS_NBA.keys()):
-        equipos.append(
-            InfoEquipo(
-                id=obtener_abreviatura(nombre),
-                nombre=nombre.title(),
-                nombre_corto=obtener_nombre_corto(nombre),
-                abreviatura=obtener_abreviatura(nombre),
+    """Carga equipos desde PostgreSQL."""
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT id, nombre, nombre_corto, abreviatura, conferencia, division
+                FROM equipos
+                WHERE activo = true
+                ORDER BY nombre
+                """
             )
-        )
-    return equipos
+            filas = cursor.fetchall()
+    return [InfoEquipo(**fila) for fila in filas]
 
 
 def cargar_estadisticas_equipos() -> dict:
@@ -63,6 +59,54 @@ async def listar_equipos() -> RespuestaEquipos:
         exito=True,
         total=len(equipos_ordenados),
         equipos=[equipo.__dict__ for equipo in equipos_ordenados],
+    )
+
+
+@router.get(
+    "/equipos/busqueda",
+    summary="Buscar equipos en catálogo",
+    response_model=RespuestaEquipos,
+)
+async def buscar_equipos(
+    conferencia: Optional[str] = Query(None, description="Filtrar por conferencia"),
+    division: Optional[str] = Query(None, description="Filtrar por división"),
+    busqueda: Optional[str] = Query(None, description="Texto de búsqueda"),
+) -> RespuestaEquipos:
+    """Busca equipos en la base de datos con filtros opcionales."""
+    condiciones = ["activo = true"]
+    parametros: List[object] = []
+    if conferencia:
+        condiciones.append("conferencia = %s")
+        parametros.append(conferencia)
+    if division:
+        condiciones.append("division = %s")
+        parametros.append(division)
+    if busqueda:
+        condiciones.append(
+            "(nombre ILIKE %s OR nombre_corto ILIKE %s OR abreviatura ILIKE %s)"
+        )
+        term = f"%{busqueda}%"
+        parametros.extend([term, term, term])
+
+    where_sql = " AND ".join(condiciones)
+
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                f"""
+                SELECT id, nombre, nombre_corto, abreviatura, conferencia, division
+                FROM equipos
+                WHERE {where_sql}
+                ORDER BY nombre
+                """,
+                parametros,
+            )
+            filas = cursor.fetchall()
+
+    return RespuestaEquipos(
+        exito=True,
+        total=len(filas),
+        equipos=filas,
     )
 
 

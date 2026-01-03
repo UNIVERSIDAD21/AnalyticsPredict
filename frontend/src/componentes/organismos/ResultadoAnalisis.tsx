@@ -2,11 +2,12 @@
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
  */
 
-import { Clock, MapPin, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Clock, MapPin, Activity, CheckCircle, AlertTriangle, BookOpen } from 'lucide-react';
 import { ResultadoAnalisis as TipoResultado, NivelConfianza, LadoApuesta } from '../../tipos';
 import { TarjetaProbabilidad } from './TarjetaProbabilidad';
 import { ListaRazones } from './ListaRazones';
 import { AnalisisMercadoCard } from './AnalisisMercadoCard';
+import { Boton } from '../atomos';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -20,6 +21,8 @@ interface PropsResultadoAnalisis {
     lado: LadoApuesta;
     linea: number;
   } | null;
+  /** Acción para guardar en bitácora */
+  onGuardar?: () => void;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -55,7 +58,7 @@ function formatearFecha(fechaISO: string): string {
 /**
  * Muestra todos los resultados del análisis con estilo futurista
  */
-export function ResultadoAnalisis({ resultado, seleccionUsuario }: PropsResultadoAnalisis) {
+export function ResultadoAnalisis({ resultado, seleccionUsuario, onGuardar }: PropsResultadoAnalisis) {
   const mercado = resultado.metadata?.mercado as string;
   const configConfianza = obtenerConfigConfianza(resultado.nivel_confianza);
 
@@ -79,6 +82,7 @@ export function ResultadoAnalisis({ resultado, seleccionUsuario }: PropsResultad
   // Determinar si la predicción del usuario coincide con el sistema
   const sistemaRecomienda: LadoApuesta = probabilidadOver > probabilidadUnder ? 'OVER' : 'UNDER';
   const coincideConSistema = seleccionUsuario?.lado === sistemaRecomienda;
+  const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
 
   return (
     <div className="space-y-6 animate-entrada">
@@ -170,6 +174,18 @@ export function ResultadoAnalisis({ resultado, seleccionUsuario }: PropsResultad
 
       {/* Razones */}
       <ListaRazones razones={resultado.razones} />
+
+      {puedeGuardar && (
+        <div className="tarjeta p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu bitácora</p>
+            <p className="text-xs text-texto-terciario">Se guardará el snapshot del análisis</p>
+          </div>
+          <Boton variante="primario" iconoInicio={<BookOpen size={16} />} onClick={onGuardar}>
+            Guardar en Bitácora
+          </Boton>
+        </div>
+      )}
     </div>
   );
 }

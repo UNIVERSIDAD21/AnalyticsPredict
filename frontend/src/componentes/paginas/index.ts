@@ -3,3 +3,4 @@
  */
 
 export { PaginaPrincipal } from './PaginaPrincipal';
+export { PaginaBitacora } from './PaginaBitacora';

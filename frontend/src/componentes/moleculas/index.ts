@@ -8,3 +8,5 @@ export { InputLinea } from './InputLinea';
 export { InputCuota } from './InputCuota';
 export { MensajeError } from './MensajeError';
 export { PanelEstadisticasEquipo } from './PanelEstadisticasEquipo';
+export { TarjetaApuesta } from './TarjetaApuesta';
+export { ModalResultado } from './ModalResultado';
