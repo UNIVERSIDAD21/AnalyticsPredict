@@ -3,10 +3,15 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Encabezado, FormularioAnalisis, ResultadoAnalisis } from '../organismos';
+import {
+  Encabezado,
+  FormularioAnalisis,
+  ResultadoAnalisis,
+  TablaEstadisticasEquipos,
+} from '../organismos';
 import { MensajeError } from '../moleculas';
 import { Spinner } from '../atomos';
-import { useEquipos, useAnalisis } from '../../hooks';
+import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { Activity, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import { LadoApuesta } from '../../tipos';
 
@@ -85,11 +90,21 @@ export function PaginaPrincipal() {
     limpiar: limpiarAnalisis,
   } = useAnalisis();
 
+  const {
+    equipos: estadisticasEquipos,
+    fechaActualizacion,
+    estado: estadoEstadisticas,
+    error: errorEstadisticas,
+    recargar: recargarEstadisticas,
+  } = useEstadisticasEquipos();
+
   // Estado para la selección Over/Under del usuario
   const [seleccionUsuario, setSeleccionUsuario] = useState<{
     lado: LadoApuesta;
     linea: number;
   } | null>(null);
+
+  const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
 
   // Scroll al resultado cuando se completa el análisis (solo en móvil)
   useEffect(() => {
@@ -108,6 +123,31 @@ export function PaginaPrincipal() {
 
       {/* Contenido principal - Full height */}
       <main className="flex-1 contenedor py-6 lg:py-8">
+        {/* Tabs */}
+        <div className="mb-6 flex items-center gap-3">
+          <button
+            type="button"
+            className={`px-4 py-2 rounded-md text-sm font-semibold border ${
+              tabActivo === 'analisis'
+                ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
+                : 'border-neon-cyan/20 text-texto-secundario'
+            }`}
+            onClick={() => setTabActivo('analisis')}
+          >
+            Análisis
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 rounded-md text-sm font-semibold border ${
+              tabActivo === 'estadisticas'
+                ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
+                : 'border-neon-cyan/20 text-texto-secundario'
+            }`}
+            onClick={() => setTabActivo('estadisticas')}
+          >
+            Estadísticas de equipos
+          </button>
+        </div>
         {/* Error de conexión */}
         {estadoEquipos === 'error' && (
           <div className="mb-6">
@@ -132,13 +172,14 @@ export function PaginaPrincipal() {
         )}
 
         {/* Layout principal de dos columnas */}
-        {estadoEquipos === 'exito' && (
+        {estadoEquipos === 'exito' && tabActivo === 'analisis' && (
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
             {/* Panel Izquierdo - Formulario */}
             <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
               <div className="lg:sticky lg:top-6">
                 <FormularioAnalisis
                   equipos={equipos}
+                  estadisticas={estadisticasEquipos}
                   onAnalizar={(peticion, lado) => {
                     if (lado && peticion.linea) {
                       setSeleccionUsuario({ lado, linea: peticion.linea });
@@ -195,6 +236,29 @@ export function PaginaPrincipal() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {tabActivo === 'estadisticas' && (
+          <div className="space-y-4">
+            {estadoEstadisticas === 'error' && (
+              <MensajeError
+                titulo="Error al cargar estadísticas"
+                mensaje={errorEstadisticas || 'No se pudieron cargar estadísticas'}
+                onCerrar={recargarEstadisticas}
+              />
+            )}
+            {estadoEstadisticas === 'cargando' && (
+              <div className="tarjeta flex items-center justify-center min-h-[300px]">
+                <Spinner tamano="lg" texto="Cargando estadísticas..." centrado />
+              </div>
+            )}
+            {estadoEstadisticas === 'exito' && (
+              <TablaEstadisticasEquipos
+                equipos={estadisticasEquipos}
+                fechaActualizacion={fechaActualizacion}
+              />
+            )}
           </div>
         )}
       </main>

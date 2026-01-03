@@ -65,6 +65,11 @@ class Configuracion:
     )
     """Ruta al archivo JSON con información de equipos"""
 
+    ruta_estadisticas_equipos: str = field(
+        default_factory=lambda: os.getenv("RUTA_ESTADISTICAS_EQUIPOS", "datos/estadisticas_equipos.json")
+    )
+    """Ruta al archivo JSON con estadísticas de equipos"""
+
     # ══════════════════════════════════════════════════════════
     # MODELO
     # ══════════════════════════════════════════════════════════
