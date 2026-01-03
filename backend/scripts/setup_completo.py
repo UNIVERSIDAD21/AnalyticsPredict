@@ -558,7 +558,6 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 errores += 1
                 if errores <= 5:
                     print(f"   ⚠️  Error en fila {idx}: {e}")
-                cursor.execute("ROLLBACK TO SAVEPOINT insertar_partido")
             
             # Progreso
             if (idx + 1) % 2000 == 0:
