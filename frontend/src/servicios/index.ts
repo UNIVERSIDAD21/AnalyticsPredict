@@ -1,0 +1,7 @@
+/**
+ * index.ts — Exportaciones centralizadas de servicios
+ */
+
+export * from './api';
+export * from './equipos';
+export * from './analisis';

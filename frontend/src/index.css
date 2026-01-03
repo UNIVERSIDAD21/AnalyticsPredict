@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════
+   ESTILOS BASE
+   ══════════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-nba-gris-50 text-nba-gris-900 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Eliminar spinners de inputs numéricos */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   COMPONENTES REUTILIZABLES
+   ══════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Contenedor principal */
+  .contenedor {
+    @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Tarjeta base */
+  .tarjeta {
+    @apply bg-white rounded-xl shadow-tarjeta p-6;
+  }
+
+  .tarjeta-hover {
+    @apply tarjeta transition-shadow duration-200 hover:shadow-tarjeta-hover;
+  }
+
+  /* Botón primario */
+  .boton-primario {
+    @apply inline-flex items-center justify-center px-6 py-3
+           bg-nba-azul text-white font-semibold rounded-lg
+           hover:bg-nba-azul/90 focus:outline-none focus:ring-2
+           focus:ring-nba-azul focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  /* Botón secundario */
+  .boton-secundario {
+    @apply inline-flex items-center justify-center px-6 py-3
+           bg-white text-nba-gris-700 font-semibold rounded-lg
+           border border-nba-gris-300
+           hover:bg-nba-gris-50 focus:outline-none focus:ring-2
+           focus:ring-nba-azul focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  /* Input base */
+  .input-base {
+    @apply w-full px-4 py-3 bg-white border border-nba-gris-300 rounded-lg
+           text-nba-gris-900 placeholder-nba-gris-400
+           focus:outline-none focus:ring-2 focus:ring-nba-azul focus:border-transparent
+           disabled:bg-nba-gris-100 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .input-error {
+    @apply border-error-500 focus:ring-error-500;
+  }
+
+  /* Select base */
+  .select-base {
+    @apply input-base appearance-none cursor-pointer
+           bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3d%22http%3a%2f%2fwww.w3.org%2f2000%2fsvg%22%20viewBox%3d%220%200%2024%2024%22%20fill%3d%22none%22%20stroke%3d%22%236b7280%22%20stroke-width%3d%222%22%20stroke-linecap%3d%22round%22%20stroke-linejoin%3d%22round%22%3e%3cpolyline%20points%3d%226%209%2012%2015%2018%209%22%3e%3c%2fpolyline%3e%3c%2fsvg%3e')]
+           bg-[length:1.5rem] bg-[right_0.75rem_center] bg-no-repeat
+           pr-12;
+  }
+
+  /* Labels */
+  .etiqueta {
+    @apply block text-sm font-medium text-nba-gris-700 mb-2;
+  }
+
+  /* Texto de ayuda */
+  .texto-ayuda {
+    @apply text-sm text-nba-gris-500 mt-1;
+  }
+
+  /* Texto de error */
+  .texto-error {
+    @apply text-sm text-error-500 mt-1;
+  }
+
+  /* Badge/Etiqueta */
+  .insignia {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .insignia-exito {
+    @apply insignia bg-exito-50 text-exito-600;
+  }
+
+  .insignia-advertencia {
+    @apply insignia bg-advertencia-50 text-advertencia-600;
+  }
+
+  .insignia-error {
+    @apply insignia bg-error-50 text-error-600;
+  }
+
+  .insignia-info {
+    @apply insignia bg-nba-azul/10 text-nba-azul;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UTILIDADES PERSONALIZADAS
+   ══════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Animación de carga */
+  .animate-cargando {
+    @apply animate-pulse bg-nba-gris-200 rounded;
+  }
+
+  /* Gradiente de fondo para encabezado */
+  .gradiente-encabezado {
+    @apply bg-gradient-to-r from-nba-azul to-nba-azul/80;
+  }
+
+  /* Barra de probabilidad */
+  .barra-probabilidad {
+    @apply h-3 rounded-full overflow-hidden bg-nba-gris-200;
+  }
+
+  /* Texto truncado */
+  .texto-truncado {
+    @apply truncate;
+  }
+}
