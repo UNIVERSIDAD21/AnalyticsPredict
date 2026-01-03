@@ -11,6 +11,7 @@ from configuracion import CONFIGURACION
 from motor import analizar_partido, cargar_modelo, resultado_a_dict
 from motor.tipos import Ubicacion
 from .excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
+from motor.utilidades import resolver_nombre_en_modelo
 from .modelos_peticion import PeticionAnalisis, PeticionAnalisisEnVivo
 from .modelos_respuesta import RespuestaAnalisis
 
@@ -36,10 +37,16 @@ def obtener_modelo():
 
 def validar_equipos(modelo, equipo_local: str, equipo_visitante: str) -> None:
     """Valida que ambos equipos existan en el modelo."""
-    if not modelo.contiene_equipo(equipo_local):
-        raise ErrorEquipoNoEncontrado(equipo_local)
-    if not modelo.contiene_equipo(equipo_visitante):
-        raise ErrorEquipoNoEncontrado(equipo_visitante)
+    equipos_modelo = set(modelo.obtener_equipos())
+    equipo_local_resuelto = resolver_nombre_en_modelo(equipo_local, modelo.entidad_a_indice)
+    equipo_visitante_resuelto = resolver_nombre_en_modelo(
+        equipo_visitante,
+        modelo.entidad_a_indice,
+    )
+    if equipo_local_resuelto is None:
+        raise ErrorEquipoNoEncontrado(equipo_local, equipos_similares=sorted(equipos_modelo))
+    if equipo_visitante_resuelto is None:
+        raise ErrorEquipoNoEncontrado(equipo_visitante, equipos_similares=sorted(equipos_modelo))
 
 
 def ejecutar_analisis(
