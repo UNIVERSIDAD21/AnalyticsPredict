@@ -1,0 +1,49 @@
+# ══════════════════════════════════════════════════════════════
+# Archivos ignorados por Git
+# ══════════════════════════════════════════════════════════════
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Entorno
+.env
+.env.local
+*.env
+
+# Datos locales (excepto los que queremos versionar)
+backend/datos/*.csv
+backend/datos/*.db
+!backend/datos/modelo_entrenado.npz
+!backend/datos/equipos_nba.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Build
+dist/
+build/
+*.egg-info/
