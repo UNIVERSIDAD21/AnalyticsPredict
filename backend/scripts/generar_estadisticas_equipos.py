@@ -113,15 +113,35 @@ def normalizar_nombre_equipo(nombre: str) -> str:
     return MAPA_NOMBRES.get(nombre, nombre)
 
 
+def determinar_temporada_objetivo(data: pd.DataFrame, temporada_arg: str | None) -> int:
+    if "season" not in data.columns:
+        raise SystemExit("No se encontró la columna season en los CSV.")
+
+    seasons = pd.to_numeric(data["season"], errors="coerce")
+    seasons_validos = seasons.dropna()
+    if seasons_validos.empty:
+        raise SystemExit("No se encontraron valores válidos en la columna season.")
+
+    if temporada_arg is not None:
+        temporada_objetivo = int(temporada_arg)
+    else:
+        temporada_objetivo = int(seasons_validos.max())
+
+    return temporada_objetivo
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Genera estadísticas de equipos NBA.")
     parser.add_argument("--csv-dir", default=".", help="Directorio con CSVs")
     parser.add_argument("--equipos-json", default="../backend/datos/equipos_nba.json", help="JSON equipos base")
     parser.add_argument("--out", default="../backend/datos/estadisticas_equipos.json", help="Salida JSON")
+    parser.add_argument("--season", default=None, help="Temporada objetivo (por defecto, la más reciente)")
     args = parser.parse_args()
 
     csv_dir = Path(args.csv_dir)
     data = cargar_csvs(csv_dir)
+    temporada_objetivo = determinar_temporada_objetivo(data, args.season)
+    data = data[pd.to_numeric(data["season"], errors="coerce") == temporada_objetivo].copy()
     equipos_base = json.loads(Path(args.equipos_json).read_text(encoding="utf-8"))
     mapa_info = {e["nombre"]: e for e in equipos_base}
 
