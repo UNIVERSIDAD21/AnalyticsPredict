@@ -264,6 +264,7 @@ export function PaginaPrincipal() {
             {estadoEstadisticas === 'exito' && (
               <TablaEstadisticasEquipos
                 equipos={estadisticasEquipos}
+                equiposCatalogo={equipos}
                 fechaActualizacion={fechaActualizacion}
               />
             )}

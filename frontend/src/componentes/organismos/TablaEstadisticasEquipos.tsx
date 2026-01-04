@@ -4,10 +4,12 @@
 
 import { useMemo, useState } from 'react';
 import { ArrowUpDown, Search } from 'lucide-react';
-import { EstadisticasEquipo } from '../../tipos';
+import { EstadisticasEquipo, Equipo } from '../../tipos';
+import { buscarEquipo } from '../../servicios';
 
 interface PropsTablaEstadisticasEquipos {
   equipos: EstadisticasEquipo[];
+  equiposCatalogo: Equipo[];
   fechaActualizacion: string;
 }
 
@@ -24,6 +26,7 @@ const formatoPct = (valor: number) => `${(valor * 100).toFixed(1)}%`;
 
 export function TablaEstadisticasEquipos({
   equipos,
+  equiposCatalogo,
   fechaActualizacion,
 }: PropsTablaEstadisticasEquipos) {
   const [busqueda, setBusqueda] = useState('');
@@ -32,7 +35,6 @@ export function TablaEstadisticasEquipos({
     columna: 'pct',
     direccion: 'desc',
   });
-  const [seleccionados, setSeleccionados] = useState<string[]>([]);
 
   const columnas: Columna[] = [
     { id: 'equipo', etiqueta: 'Equipo', obtenerValor: (e) => e.nombre },
@@ -133,21 +135,15 @@ export function TablaEstadisticasEquipos({
     });
   };
 
-  const toggleSeleccion = (nombre: string) => {
-    setSeleccionados((prev) => {
-      if (prev.includes(nombre)) {
-        return prev.filter((id) => id !== nombre);
-      }
-      if (prev.length >= 2) {
-        return [prev[1], nombre];
-      }
-      return [...prev, nombre];
-    });
+  const abrirDetalleEquipo = (equipo: EstadisticasEquipo) => {
+    const equipoCatalogo =
+      buscarEquipo(equiposCatalogo, equipo.nombre) ||
+      buscarEquipo(equiposCatalogo, equipo.abreviatura);
+    if (!equipoCatalogo) {
+      return;
+    }
+    window.open(`/equipo/${equipoCatalogo.id}/historial`, '_blank');
   };
-
-  const comparacion = seleccionados
-    .map((nombre) => equipos.find((e) => e.nombre === nombre))
-    .filter(Boolean) as EstadisticasEquipo[];
 
   return (
     <div className="tarjeta space-y-6">
@@ -182,34 +178,10 @@ export function TablaEstadisticasEquipos({
         </div>
       </div>
 
-      {comparacion.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-4">
-          {comparacion.map((equipo) => (
-            <div
-              key={equipo.nombre}
-              className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/60 p-4"
-            >
-              <h3 className="text-sm font-semibold text-texto-principal mb-2">
-                {equipo.nombre}
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-xs text-texto-secundario">
-                <span>Record: {equipo.record.victorias}-{equipo.record.derrotas}</span>
-                <span>Posición: {equipo.posicion}° {equipo.conferencia}</span>
-                <span>PPG Total: {equipo.promedios.anotados.total.toFixed(1)}</span>
-                <span>OPP Total: {equipo.promedios.recibidos.total.toFixed(1)}</span>
-                <span>Over % Total: {formatoPct(equipo.tendencias_over.total)}</span>
-                <span>Línea promedio: {equipo.linea_promedio.toFixed(1)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs text-texto-secundario border-collapse">
           <thead className="text-[11px] uppercase text-texto-terciario">
             <tr>
-              <th className="p-2 text-left">Comparar</th>
               {columnas.map((columna) => (
                 <th key={columna.id} className="p-2 text-left">
                   <button
@@ -228,15 +200,9 @@ export function TablaEstadisticasEquipos({
             {equiposOrdenados.map((equipo) => (
               <tr
                 key={equipo.nombre}
-                className="border-t border-neon-cyan/10 hover:bg-futurista-oscuro/50"
+                className="border-t border-neon-cyan/10 hover:bg-futurista-oscuro/50 cursor-pointer"
+                onClick={() => abrirDetalleEquipo(equipo)}
               >
-                <td className="p-2">
-                  <input
-                    type="checkbox"
-                    checked={seleccionados.includes(equipo.nombre)}
-                    onChange={() => toggleSeleccion(equipo.nombre)}
-                  />
-                </td>
                 {columnas.map((columna) => (
                   <td key={columna.id} className="p-2 whitespace-nowrap">
                     {columna.formato

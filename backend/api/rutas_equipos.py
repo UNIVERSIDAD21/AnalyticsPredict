@@ -7,14 +7,18 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from psycopg.rows import dict_row
 
 from configuracion import CONFIGURACION
 from db import obtener_pool
 from motor_autoentrenamiento import obtener_modelo
 from motor.utilidades import resolver_nombre_en_modelo
-from .modelos_respuesta import RespuestaEquipos, RespuestaEstadisticasEquipos
+from .modelos_respuesta import (
+    RespuestaEquipos,
+    RespuestaEstadisticasEquipos,
+    RespuestaHistorialEquipo,
+)
 from motor.tipos import InfoEquipo
 
 router = APIRouter(prefix="/api", tags=["Equipos"])
@@ -144,4 +148,147 @@ async def listar_estadisticas_equipos() -> RespuestaEstadisticasEquipos:
         exito=True,
         fecha_actualizacion=fecha,
         equipos=equipos,
+    )
+
+
+@router.get(
+    "/equipos/{equipo_id}/partidos",
+    summary="Historial de partidos por equipo",
+    response_model=RespuestaHistorialEquipo,
+)
+async def listar_historial_equipo(
+    equipo_id: str,
+    temporada_id: Optional[str] = Query(None, description="Filtrar por temporada"),
+    como_local: Optional[bool] = Query(
+        None, description="True para local, False para visitante"
+    ),
+    orden: str = Query("desc", description="Orden por fecha: asc o desc"),
+) -> RespuestaHistorialEquipo:
+    """Retorna el historial completo de partidos de un equipo."""
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT id, nombre, abreviatura
+                FROM equipos
+                WHERE id = %s
+                """,
+                (equipo_id,),
+            )
+            equipo = cursor.fetchone()
+
+            if not equipo:
+                raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+            condiciones = [
+                "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
+                "p.local_q1 IS NOT NULL",
+            ]
+            parametros: List[object] = [equipo_id, equipo_id, equipo_id]
+
+            if temporada_id:
+                condiciones.append("p.temporada_id = %s")
+                parametros.append(temporada_id)
+            if como_local is True:
+                condiciones.append("p.equipo_local_id = %s")
+                parametros.append(equipo_id)
+            if como_local is False:
+                condiciones.append("p.equipo_visitante_id = %s")
+                parametros.append(equipo_id)
+
+            where_sql = " AND ".join(condiciones)
+            orden_sql = "ASC" if orden.lower() == "asc" else "DESC"
+
+            cursor.execute(
+                f"""
+                SELECT
+                    p.id,
+                    p.fecha_partido,
+                    t.nombre as temporada,
+                    el.nombre as equipo_local,
+                    el.abreviatura as local_abr,
+                    ev.nombre as equipo_visitante,
+                    ev.abreviatura as visitante_abr,
+                    p.local_q1, p.local_q2, p.local_q3, p.local_q4,
+                    p.local_total,
+                    p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4,
+                    p.visitante_total,
+                    CASE
+                        WHEN p.equipo_local_id = %s THEN 'LOCAL'
+                        ELSE 'VISITANTE'
+                    END as ubicacion_equipo
+                FROM partidos p
+                JOIN equipos el ON p.equipo_local_id = el.id
+                JOIN equipos ev ON p.equipo_visitante_id = ev.id
+                LEFT JOIN temporadas t ON p.temporada_id = t.id
+                WHERE {where_sql}
+                ORDER BY p.fecha_partido {orden_sql}
+                """,
+                parametros,
+            )
+            filas = cursor.fetchall()
+
+            cursor.execute(
+                """
+                SELECT DISTINCT t.id, t.nombre
+                FROM temporadas t
+                JOIN partidos p ON p.temporada_id = t.id
+                WHERE (p.equipo_local_id = %s OR p.equipo_visitante_id = %s)
+                ORDER BY t.nombre DESC
+                """,
+                (equipo_id, equipo_id),
+            )
+            temporadas = cursor.fetchall()
+
+    partidos = []
+    for fila in filas:
+        ubicacion = fila["ubicacion_equipo"]
+        puntos_equipo = {
+            "q1": fila["local_q1"] if ubicacion == "LOCAL" else fila["visitante_q1"],
+            "q2": fila["local_q2"] if ubicacion == "LOCAL" else fila["visitante_q2"],
+            "q3": fila["local_q3"] if ubicacion == "LOCAL" else fila["visitante_q3"],
+            "q4": fila["local_q4"] if ubicacion == "LOCAL" else fila["visitante_q4"],
+            "total": fila["local_total"] if ubicacion == "LOCAL" else fila["visitante_total"],
+        }
+        puntos_rival = {
+            "q1": fila["visitante_q1"] if ubicacion == "LOCAL" else fila["local_q1"],
+            "q2": fila["visitante_q2"] if ubicacion == "LOCAL" else fila["local_q2"],
+            "q3": fila["visitante_q3"] if ubicacion == "LOCAL" else fila["local_q3"],
+            "q4": fila["visitante_q4"] if ubicacion == "LOCAL" else fila["local_q4"],
+            "total": fila["visitante_total"] if ubicacion == "LOCAL" else fila["local_total"],
+        }
+        resultado = "VICTORIA" if puntos_equipo["total"] > puntos_rival["total"] else "DERROTA"
+        fecha = fila["fecha_partido"]
+        partidos.append(
+            {
+                "id": str(fila["id"]),
+                "fecha": fecha.isoformat() if fecha else "",
+                "temporada": fila.get("temporada"),
+                "equipo_local": fila["equipo_local"],
+                "local_abr": fila["local_abr"],
+                "equipo_visitante": fila["equipo_visitante"],
+                "visitante_abr": fila["visitante_abr"],
+                "ubicacion_equipo": ubicacion,
+                "puntos_equipo": puntos_equipo,
+                "puntos_rival": puntos_rival,
+                "resultado": resultado,
+            }
+        )
+
+    return RespuestaHistorialEquipo(
+        exito=True,
+        equipo={
+            "id": str(equipo["id"]),
+            "nombre": equipo["nombre"],
+            "abreviatura": equipo["abreviatura"],
+            "logo_url": equipo.get("logo_url"),
+        },
+        total_partidos=len(partidos),
+        partidos=partidos,
+        filtros_disponibles={
+            "temporadas": [
+                {"id": str(temporada["id"]), "nombre": temporada["nombre"]}
+                for temporada in temporadas
+            ]
+        },
     )

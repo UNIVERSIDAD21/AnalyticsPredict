@@ -3,7 +3,7 @@
  */
 
 import { clienteAPI, extraerMensajeError } from './api';
-import { Equipo, RespuestaEquipos, OpcionEquipo } from '../tipos';
+import { Equipo, RespuestaEquipos, OpcionEquipo, RespuestaHistorialEquipo } from '../tipos';
 
 // ══════════════════════════════════════════════════════════════
 // FUNCIONES
@@ -21,6 +21,41 @@ export async function obtenerEquipos(): Promise<Equipo[]> {
     }
 
     return respuesta.data.equipos;
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+interface ParametrosHistorialEquipo {
+  temporadaId?: string;
+  comoLocal?: boolean;
+  orden?: 'asc' | 'desc';
+}
+
+/**
+ * Obtiene el historial completo de partidos de un equipo
+ */
+export async function obtenerHistorialEquipo(
+  equipoId: string,
+  parametros: ParametrosHistorialEquipo
+): Promise<RespuestaHistorialEquipo> {
+  try {
+    const respuesta = await clienteAPI.get<RespuestaHistorialEquipo>(
+      `/api/equipos/${equipoId}/partidos`,
+      {
+        params: {
+          temporada_id: parametros.temporadaId,
+          como_local: parametros.comoLocal,
+          orden: parametros.orden,
+        },
+      }
+    );
+
+    if (!respuesta.data.exito) {
+      throw new Error('Error al obtener historial del equipo');
+    }
+
+    return respuesta.data;
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
