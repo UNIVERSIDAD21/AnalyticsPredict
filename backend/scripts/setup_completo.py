@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -89,6 +90,59 @@ def obtener_database_url() -> str:
         separador = "&" if "?" in url else "?"
         url = f"{url}{separador}sslmode=require"
     return url
+
+
+def extraer_game_id(espn_url: Optional[str]) -> Optional[str]:
+    """Extrae el gameId desde la URL de ESPN."""
+    if not espn_url or not isinstance(espn_url, str):
+        return None
+    match = re.search(r"/gameId/(\d+)", espn_url)
+    return match.group(1) if match else None
+
+
+def parsear_fecha_calendario(valor: object) -> datetime.date:
+    """Obtiene la fecha calendario sin conversiones de zona horaria."""
+    try:
+        fecha_str = str(valor)
+        base = fecha_str.split("T")[0]
+        return datetime.strptime(base, "%Y-%m-%d").date()
+    except Exception:
+        return datetime.now().date()
+
+
+def asegurar_unicidad_partidos(conexion) -> None:
+    """Asegura columna game_id y elimina duplicados con índices únicos."""
+    with conexion.cursor() as cursor:
+        cursor.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS game_id TEXT")
+        cursor.execute(
+            """
+            WITH duplicados AS (
+                SELECT id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY temporada_id, fecha_partido, tipo_partido,
+                                     equipo_local_id, equipo_visitante_id
+                        ORDER BY id
+                    ) AS rn
+                FROM partidos
+            )
+            DELETE FROM partidos
+            WHERE id IN (SELECT id FROM duplicados WHERE rn > 1)
+            """
+        )
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS partidos_game_id_uniq
+            ON partidos (game_id)
+            WHERE game_id IS NOT NULL
+            """
+        )
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS partidos_clave_unica_uniq
+            ON partidos (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
+            """
+        )
+    conexion.commit()
 
 
 # ══════════════════════════════════════════════════════════════
@@ -434,6 +488,8 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
     print("=" * 70)
     print()
     
+    asegurar_unicidad_partidos(conexion)
+
     # Cargar TODOS los datos
     frames = []
     for path in csv_paths:
@@ -472,6 +528,7 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
     
     insertados = 0
     errores = 0
+    claves_vistas = set()
     
     print()
     print("📤 Insertando partidos...")
@@ -501,17 +558,7 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                     errores += 1
                     continue
                 
-                # Parsear fecha
-                try:
-                    fecha_str = str(row["date"])
-                    if "T" in fecha_str:
-                        fecha = datetime.fromisoformat(
-                            fecha_str.replace("+00:00", "").replace("Z", "")
-                        ).date()
-                    else:
-                        fecha = datetime.strptime(fecha_str[:10], "%Y-%m-%d").date()
-                except:
-                    fecha = datetime.now().date()
+                fecha = parsear_fecha_calendario(row.get("date"))
                 
                 local_total = int(local_q1 + local_q2 + local_q3 + local_q4)
                 visit_total = int(visit_q1 + visit_q2 + visit_q3 + visit_q4)
@@ -526,22 +573,33 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 season_type = str(row.get("season_type", "REG")).upper()
                 if season_type not in ("REG", "POST", "PRE"):
                     season_type = "REG"
+
+                game_id = extraer_game_id(row.get("espn_url"))
+                clave_dedup = (
+                    f"game:{game_id}"
+                    if game_id
+                    else f"{row.get('season')}|{fecha}|{season_type}|{equipo_local}|{equipo_visitante}"
+                )
+                if clave_dedup in claves_vistas:
+                    errores += 1
+                    continue
+                claves_vistas.add(clave_dedup)
                 
                 cursor.execute("SAVEPOINT insertar_partido")
                 cursor.execute(
                     """
                     INSERT INTO partidos (
-                        temporada_id, fecha_partido, tipo_partido,
+                        temporada_id, fecha_partido, tipo_partido, game_id,
                         equipo_local_id, equipo_visitante_id,
                         local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
                         visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
                         ganador_id, hubo_overtime
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT DO NOTHING
                     RETURNING id
                     """,
                     [
-                        str(temporada_id), fecha, season_type,
+                        str(temporada_id), fecha, season_type, game_id,
                         str(equipos_bd[equipo_local]), str(equipos_bd[equipo_visitante]),
                         int(local_q1), int(local_q2), int(local_q3), int(local_q4), 0, local_total,
                         int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), 0, visit_total,

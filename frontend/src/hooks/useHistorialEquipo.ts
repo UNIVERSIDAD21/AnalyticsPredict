@@ -46,8 +46,16 @@ const mapearPartido = (partido: PartidoHistorialAPI): PartidoHistorial => ({
   resultado: partido.resultado,
 });
 
+const obtenerClaveFecha = (fecha: string): number => {
+  const [anio, mes, dia] = fecha.split('T')[0].split('-').map(Number);
+  if (!anio || !mes || !dia) {
+    return 0;
+  }
+  return anio * 10000 + mes * 100 + dia;
+};
+
 const ordenarPorFechaDesc = (partidos: PartidoHistorial[]): PartidoHistorial[] =>
-  [...partidos].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+  [...partidos].sort((a, b) => obtenerClaveFecha(b.fecha) - obtenerClaveFecha(a.fecha));
 
 const construirMapaOponentes = (equipos: Equipo[]): Map<string, ResumenEquipoOponente> => {
   const mapa = new Map<string, ResumenEquipoOponente>();
