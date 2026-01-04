@@ -192,7 +192,7 @@ class FactoresConfianza:
 
     def obtener_nivel(self) -> NivelConfianza:
         """Determina el nivel de confianza basado en el puntaje."""
-        if self.puntaje_total >= 4:
+        if self.puntaje_total >= 3:
             return NivelConfianza.ALTA
         if self.puntaje_total >= 2:
             return NivelConfianza.MEDIA
