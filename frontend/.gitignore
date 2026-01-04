@@ -3,6 +3,9 @@ node_modules/
 
 # Build
 dist/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # Environment
 .env
