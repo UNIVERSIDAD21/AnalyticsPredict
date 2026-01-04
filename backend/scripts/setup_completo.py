@@ -537,8 +537,36 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
                 fecha = parsear_fecha_calendario(row.get("date"))
                 
-                local_total = int(local_q1 + local_q2 + local_q3 + local_q4)
-                visit_total = int(visit_q1 + visit_q2 + visit_q3 + visit_q4)
+                def sumar_ot(prefix: str) -> int:
+                    ot_cols = [col for col in row.index if str(col).startswith(f"{prefix}_ot")]
+                    if not ot_cols:
+                        return 0
+                    valores = [row.get(col) for col in ot_cols]
+                    return int(pd.to_numeric(valores, errors="coerce").fillna(0).sum())
+
+                team_total = row.get("team_total")
+                opp_total = row.get("opp_total")
+                if pd.notna(team_total) and pd.notna(opp_total):
+                    team_total = int(team_total)
+                    opp_total = int(opp_total)
+                else:
+                    team_total = int(local_q1 + local_q2 + local_q3 + local_q4) if location == "HOME" else int(visit_q1 + visit_q2 + visit_q3 + visit_q4)
+                    opp_total = int(visit_q1 + visit_q2 + visit_q3 + visit_q4) if location == "HOME" else int(local_q1 + local_q2 + local_q3 + local_q4)
+
+                if location == "HOME":
+                    local_total = team_total
+                    visit_total = opp_total
+                    local_ot = sumar_ot("team")
+                    visit_ot = sumar_ot("opp")
+                else:
+                    local_total = opp_total
+                    visit_total = team_total
+                    local_ot = sumar_ot("opp")
+                    visit_ot = sumar_ot("team")
+
+                if local_ot == 0 and visit_ot == 0:
+                    local_ot = max(0, local_total - int(local_q1 + local_q2 + local_q3 + local_q4))
+                    visit_ot = max(0, visit_total - int(visit_q1 + visit_q2 + visit_q3 + visit_q4))
                 
                 ganador_id = None
                 if local_total > visit_total:
@@ -565,8 +593,8 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 valores = (
                     str(temporada_id), fecha, season_type, espn_game_id,
                     str(equipos_bd[equipo_local]), str(equipos_bd[equipo_visitante]),
-                    int(local_q1), int(local_q2), int(local_q3), int(local_q4), 0, local_total,
-                    int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), 0, visit_total,
+                    int(local_q1), int(local_q2), int(local_q3), int(local_q4), local_ot, local_total,
+                    int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), visit_ot, visit_total,
                     str(ganador_id) if ganador_id else None,
                     row.get("ot_count", 0) > 0 if "ot_count" in row else False,
                 )

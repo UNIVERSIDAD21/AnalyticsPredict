@@ -194,7 +194,7 @@ class FactoresConfianza:
         """Determina el nivel de confianza basado en el puntaje."""
         if self.puntaje_total >= 3:
             return NivelConfianza.ALTA
-        if self.puntaje_total >= 2:
+        if self.puntaje_total >= 3:
             return NivelConfianza.MEDIA
         return NivelConfianza.BAJA
 
