@@ -140,12 +140,17 @@ class EntrenadorBD:
         self._ultima_fecha_entrenamiento: Optional[datetime] = None
         self._metricas: Dict[str, Any] = {}
     
-    def _obtener_partidos(self, incluir_pretemporada: bool = False) -> List[Dict]:
+    def _obtener_partidos(
+        self,
+        incluir_pretemporada: bool = False,
+        temporadas: Optional[List[str]] = None,
+    ) -> List[Dict]:
         """
         Obtiene todos los partidos válidos de la base de datos.
         
         Args:
             incluir_pretemporada: Si True, incluye partidos de pretemporada
+            temporadas: Lista opcional de IDs de temporada a filtrar
             
         Returns:
             Lista de diccionarios con los datos de cada partido
@@ -172,7 +177,12 @@ class EntrenadorBD:
                 AND p.visitante_q3 IS NOT NULL 
                 AND p.visitante_q4 IS NOT NULL
         """
-        
+        parametros: List[object] = []
+
+        if temporadas:
+            query += " AND p.temporada_id = ANY(%s)"
+            parametros.append(temporadas)
+
         if not incluir_pretemporada:
             query += " AND COALESCE(p.tipo_partido, 'REG') != 'PRE'"
         
@@ -181,7 +191,7 @@ class EntrenadorBD:
         partidos = []
         with self._pool.connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute(query)
+                cursor.execute(query, parametros)
                 columnas = [desc[0] for desc in cursor.description]
                 for fila in cursor.fetchall():
                     partidos.append(dict(zip(columnas, fila)))
@@ -241,7 +251,11 @@ class EntrenadorBD:
         
         return hash_actual != self._ultimo_hash_datos
     
-    def entrenar(self, alpha: float = ALPHA_RIDGE) -> Dict[str, Any]:
+    def entrenar(
+        self,
+        alpha: float = ALPHA_RIDGE,
+        temporadas: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
         Entrena el modelo Ridge desde la base de datos.
         
@@ -254,6 +268,7 @@ class EntrenadorBD:
         
         Args:
             alpha: Parámetro de regularización Ridge (default: 5.0)
+            temporadas: Lista opcional de IDs de temporada a usar en el entrenamiento
             
         Returns:
             Diccionario con el modelo entrenado listo para usar
@@ -265,7 +280,7 @@ class EntrenadorBD:
         inicio = datetime.now()
         
         # 1. Obtener partidos
-        partidos = self._obtener_partidos()
+        partidos = self._obtener_partidos(temporadas=temporadas)
         
         if not partidos:
             raise ValueError(
@@ -347,6 +362,7 @@ class EntrenadorBD:
             "duracion_segundos": duracion,
             "fecha_entrenamiento": self._ultima_fecha_entrenamiento.isoformat(),
             "hash_datos": self._ultimo_hash_datos,
+            "temporadas": list(temporadas) if temporadas else None,
         }
         
         logger.info(f"✅ Modelo entrenado en {duracion:.2f}s")

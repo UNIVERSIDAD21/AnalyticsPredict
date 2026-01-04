@@ -205,6 +205,7 @@ export function PaginaPrincipal() {
                 <FormularioAnalisis
                   equipos={equipos}
                   estadisticas={estadisticasEquipos}
+                  temporadasDisponibles={temporadasDisponibles}
                   onAnalizar={(peticion, lado) => {
                     if (lado && peticion.linea) {
                       setSeleccionUsuario({ lado, linea: peticion.linea });

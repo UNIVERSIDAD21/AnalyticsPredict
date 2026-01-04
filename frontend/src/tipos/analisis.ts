@@ -39,6 +39,7 @@ export interface PeticionAnalisis {
   mercado: Mercado;
   linea: number;
   cuota?: number;
+  temporadas?: string[];
 }
 
 /**

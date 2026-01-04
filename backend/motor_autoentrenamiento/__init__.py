@@ -58,6 +58,7 @@ from .gestor_modelo import (
     GestorModelo,
     ModeloEnMemoria,
     obtener_modelo,
+    obtener_modelo_por_temporadas,
     obtener_metricas_modelo,
     forzar_reentrenamiento,
 )
@@ -76,6 +77,7 @@ __all__ = [
     "GestorModelo",
     "ModeloEnMemoria",
     "obtener_modelo",
+    "obtener_modelo_por_temporadas",
     "obtener_metricas_modelo",
     "forzar_reentrenamiento",
     

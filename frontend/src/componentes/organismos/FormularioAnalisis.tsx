@@ -2,7 +2,7 @@
  * FormularioAnalisis.tsx — Formulario principal con diseño futurista
  */
 
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Search, RotateCcw, Zap } from 'lucide-react';
 import { Boton, Tarjeta } from '../atomos';
 import {
@@ -13,7 +13,14 @@ import {
   MensajeError,
   PanelEstadisticasEquipo,
 } from '../moleculas';
-import { Equipo, Mercado, PeticionAnalisis, LadoApuesta, EstadisticasEquipo } from '../../tipos';
+import {
+  Equipo,
+  Mercado,
+  PeticionAnalisis,
+  LadoApuesta,
+  EstadisticasEquipo,
+  TemporadaDisponible,
+} from '../../tipos';
 import { validarPeticionAnalisis } from '../../servicios';
 
 // ══════════════════════════════════════════════════════════════
@@ -25,6 +32,8 @@ interface PropsFormularioAnalisis {
   equipos: Equipo[];
   /** Estadísticas de equipos */
   estadisticas?: EstadisticasEquipo[];
+  /** Temporadas disponibles */
+  temporadasDisponibles?: TemporadaDisponible[];
   /** Callback cuando se envía el formulario */
   onAnalizar: (peticion: PeticionAnalisis, ladoSeleccionado?: LadoApuesta) => void;
   /** Indica si está cargando */
@@ -40,6 +49,7 @@ interface EstadoFormulario {
   linea: string;
   ladoApuesta: LadoApuesta;
   cuota: string;
+  temporadasSeleccionadas: string[];
 }
 
 const ESTADO_INICIAL: EstadoFormulario = {
@@ -49,6 +59,7 @@ const ESTADO_INICIAL: EstadoFormulario = {
   linea: '',
   ladoApuesta: 'OVER',
   cuota: '',
+  temporadasSeleccionadas: [],
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -61,6 +72,7 @@ const ESTADO_INICIAL: EstadoFormulario = {
 export function FormularioAnalisis({
   equipos,
   estadisticas = [],
+  temporadasDisponibles = [],
   onAnalizar,
   cargando = false,
   cargandoEquipos = false,
@@ -68,6 +80,22 @@ export function FormularioAnalisis({
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
   const [errores, setErrores] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (temporadasDisponibles.length === 0) {
+      return;
+    }
+
+    setFormulario((prev) => {
+      if (prev.temporadasSeleccionadas.length > 0) {
+        return prev;
+      }
+      return {
+        ...prev,
+        temporadasSeleccionadas: temporadasDisponibles.map((temporada) => temporada.id),
+      };
+    });
+  }, [temporadasDisponibles]);
 
   // Actualizar campo del formulario
   const actualizarCampo = useCallback(
@@ -99,6 +127,8 @@ export function FormularioAnalisis({
         mercado: formulario.mercado as Mercado,
         linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
         cuota: formulario.cuota ? parseFloat(formulario.cuota) : undefined,
+        temporadas:
+          temporadasDisponibles.length > 0 ? formulario.temporadasSeleccionadas : undefined,
       };
 
       // Validar
@@ -117,6 +147,22 @@ export function FormularioAnalisis({
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
   const buscarEstadisticas = (nombre: string) =>
     estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
+  const temporadasSeleccionadas = formulario.temporadasSeleccionadas;
+  const toggleTemporada = (temporadaId: string) => {
+    setFormulario((prev) => {
+      const yaSeleccionada = prev.temporadasSeleccionadas.includes(temporadaId);
+      const nuevasTemporadas = yaSeleccionada
+        ? prev.temporadasSeleccionadas.filter((id) => id !== temporadaId)
+        : [...prev.temporadasSeleccionadas, temporadaId];
+      return { ...prev, temporadasSeleccionadas: nuevasTemporadas };
+    });
+  };
+  const seleccionarTodas = () => {
+    setFormulario((prev) => ({
+      ...prev,
+      temporadasSeleccionadas: temporadasDisponibles.map((temporada) => temporada.id),
+    }));
+  };
 
   return (
     <Tarjeta className="animate-entrada">
@@ -176,6 +222,39 @@ export function FormularioAnalisis({
             equipoVisitante={buscarEstadisticas(formulario.equipoVisitante)}
             cargando={cargando}
           />
+
+          {temporadasDisponibles.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-texto-principal">Temporadas</p>
+                <button
+                  type="button"
+                  className="text-xs text-neon-cyan hover:text-neon-cyan/80"
+                  onClick={seleccionarTodas}
+                  disabled={cargando}
+                >
+                  Seleccionar todas
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {temporadasDisponibles.map((temporada) => (
+                  <label
+                    key={temporada.id}
+                    className="flex items-center gap-2 rounded-md border border-neon-cyan/10 bg-futurista-oscuro/40 px-3 py-2 text-xs text-texto-secundario"
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-neon-cyan"
+                      checked={temporadasSeleccionadas.includes(temporada.id)}
+                      onChange={() => toggleTemporada(temporada.id)}
+                      disabled={cargando}
+                    />
+                    <span>{temporada.nombre}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Mercado */}
           <SelectorMercado

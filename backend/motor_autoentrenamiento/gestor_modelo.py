@@ -35,7 +35,7 @@ import asyncio
 import logging
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from .entrenador_bd import EntrenadorBD
 
@@ -133,6 +133,7 @@ class GestorModelo:
     # Configuración
     INTERVALO_VERIFICACION_MINUTOS: int = 30  # Verificar cada 30 minutos
     REENTRENAR_AL_INICIAR: bool = True  # Siempre reentrenar al iniciar
+    CACHE_TTL_MINUTOS: int = 30  # Cache de modelos filtrados por temporadas
     
     def __init__(self, pool: "ConnectionPool"):
         """
@@ -148,6 +149,7 @@ class GestorModelo:
         self._inicializado: bool = False
         self._tarea_verificacion: Optional[asyncio.Task] = None
         self._ultimo_conteo_partidos: int = 0
+        self._cache_modelos_temporadas: Dict[Tuple[str, ...], Dict[str, Any]] = {}
     
     @classmethod
     def obtener_instancia(cls, pool: Optional["ConnectionPool"] = None) -> "GestorModelo":
@@ -241,6 +243,7 @@ class GestorModelo:
                 self._version += 1
                 self._modelo = ModeloEnMemoria(datos_modelo, self._version)
                 self._ultimo_conteo_partidos = datos_modelo["metricas"].get("partidos_entrenamiento", 0)
+                self._cache_modelos_temporadas.clear()
                 
                 logger.info(
                     f"✅ Modelo v{self._version} entrenado: "
@@ -354,6 +357,41 @@ class GestorModelo:
             "verificacion_activa": self._tarea_verificacion is not None and not self._tarea_verificacion.done(),
         }
 
+    def obtener_modelo_por_temporadas(self, temporadas: Optional[List[str]]) -> ModeloEnMemoria:
+        """
+        Obtiene un modelo entrenado con temporadas específicas.
+
+        Usa cache en memoria para evitar reentrenar en cada solicitud.
+        """
+        if not temporadas:
+            return self.modelo
+
+        clave = tuple(sorted(set(temporadas)))
+        ahora = datetime.now()
+        cache = self._cache_modelos_temporadas.get(clave)
+
+        if cache:
+            expira_en = cache["fecha"] + timedelta(minutes=self.CACHE_TTL_MINUTOS)
+            if ahora <= expira_en:
+                return cache["modelo"]
+
+        with self._lock:
+            cache = self._cache_modelos_temporadas.get(clave)
+            if cache:
+                expira_en = cache["fecha"] + timedelta(minutes=self.CACHE_TTL_MINUTOS)
+                if ahora <= expira_en:
+                    return cache["modelo"]
+
+            logger.info("🔄 Entrenando modelo filtrado por temporadas: %s", ",".join(clave))
+            datos_modelo = self._entrenador.entrenar(temporadas=list(clave))
+            modelo = ModeloEnMemoria(datos_modelo, self._version)
+            self._cache_modelos_temporadas[clave] = {
+                "modelo": modelo,
+                "fecha": ahora,
+                "metricas": datos_modelo.get("metricas", {}),
+            }
+            return modelo
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # FUNCIONES DE CONVENIENCIA
@@ -377,6 +415,16 @@ def obtener_modelo() -> ModeloEnMemoria:
             resultado = analizar_partido(modelo, ...)
     """
     return GestorModelo.obtener_instancia().modelo
+
+
+def obtener_modelo_por_temporadas(temporadas: Optional[List[str]]) -> ModeloEnMemoria:
+    """
+    Obtiene un modelo entrenado con temporadas específicas.
+
+    Args:
+        temporadas: Lista opcional de IDs de temporada.
+    """
+    return GestorModelo.obtener_instancia().obtener_modelo_por_temporadas(temporadas)
 
 
 def obtener_metricas_modelo() -> Dict[str, Any]:

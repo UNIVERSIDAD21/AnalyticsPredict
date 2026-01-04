@@ -23,7 +23,7 @@ from fastapi import APIRouter
 # 
 # AHORA:
 from motor import analizar_partido, resultado_a_dict
-from motor_autoentrenamiento import obtener_modelo  # ← NUEVO
+from motor_autoentrenamiento import obtener_modelo_por_temporadas  # ← NUEVO
 from motor.tipos import Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
 from .excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
@@ -85,7 +85,7 @@ def ejecutar_analisis(
     # Siempre retorna el modelo más actualizado desde BD
     # ═══════════════════════════════════════════════════════════════════════════
     try:
-        modelo = obtener_modelo()
+        modelo = obtener_modelo_por_temporadas(peticion.temporadas)
     except RuntimeError as exc:
         raise ErrorAnalisis(
             "El modelo no está disponible. "

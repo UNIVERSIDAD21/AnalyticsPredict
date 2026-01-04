@@ -96,5 +96,9 @@ export function validarPeticionAnalisis(peticion: Partial<PeticionAnalisis>): st
     }
   }
 
+  if (peticion.temporadas && peticion.temporadas.length === 0) {
+    errores.push('Debes seleccionar al menos una temporada');
+  }
+
   return errores;
 }

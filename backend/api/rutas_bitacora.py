@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from psycopg.rows import dict_row
+from psycopg.types.json import Json
 
 from db import obtener_pool
 from .dependencias import obtener_usuario_id
@@ -117,7 +118,7 @@ async def guardar_apuesta(
                     "valor_esperado": peticion.valor_esperado,
                     "prediccion_media": peticion.prediccion_media,
                     "prediccion_desviacion": peticion.prediccion_desviacion,
-                    "razones": peticion.razones,
+                    "razones": Json(peticion.razones),
                 },
             )
             apuesta = cursor.fetchone()
