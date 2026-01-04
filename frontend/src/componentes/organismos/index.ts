@@ -8,6 +8,7 @@ export { TarjetaProbabilidad } from './TarjetaProbabilidad';
 export { ListaRazones } from './ListaRazones';
 export { AnalisisMercadoCard } from './AnalisisMercadoCard';
 export { Encabezado } from './Encabezado';
+export { HistorialEquipo } from './HistorialEquipo';
 export { TablaEstadisticasEquipos } from './TablaEstadisticasEquipos';
 export { FormularioGuardarApuesta } from './FormularioGuardarApuesta';
 export { FiltrosApuestas } from './FiltrosApuestas';
