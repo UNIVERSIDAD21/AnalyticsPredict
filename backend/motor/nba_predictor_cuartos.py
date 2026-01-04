@@ -280,7 +280,11 @@ def seleccionar_mejor_apuesta(candidatos: List[CandidatoApuesta]) -> Optional[Ca
     return max(candidatos, key=lambda c: c.probabilidad)
 
 
-def determinar_confianza(desviacion_total: float) -> FactoresConfianza:
+def determinar_confianza(
+    desviacion_total: float,
+    probabilidad: Optional[float] = None,
+    distancia_z: Optional[float] = None,
+) -> FactoresConfianza:
     """Determina factores de confianza con heurística simple."""
     if desviacion_total < 5.5:
         volatilidad = "baja"
@@ -292,9 +296,23 @@ def determinar_confianza(desviacion_total: float) -> FactoresConfianza:
         volatilidad = "alta"
         puntaje_volatilidad = 0
 
+    puntaje_probabilidad = 0
+    if probabilidad is not None:
+        if probabilidad >= 0.70:
+            puntaje_probabilidad = 2
+        elif probabilidad >= 0.60:
+            puntaje_probabilidad = 1
+
+    puntaje_edge = 0
+    if distancia_z is not None:
+        if distancia_z >= 1.5:
+            puntaje_edge = 2
+        elif distancia_z >= 1.0:
+            puntaje_edge = 1
+
     tamano_muestra = "moderado"
     frescura = "aceptable"
-    puntaje_total = puntaje_volatilidad + 1
+    puntaje_total = puntaje_volatilidad + puntaje_probabilidad + puntaje_edge
 
     return FactoresConfianza(
         tamano_muestra=tamano_muestra,
@@ -364,12 +382,8 @@ def analizar_partido(
             float(np.sqrt(np.sum(desviacion_rival ** 2))),
             linea=linea,
         )
-        factores_confianza = determinar_confianza(desviacion_total)
     else:
         cuarto_predicho = predicciones[mercado]
-        factores_confianza = determinar_confianza(cuarto_predicho.desviacion_total)
-
-    nivel_confianza = factores_confianza.obtener_nivel()
 
     razones = generar_razones_basicas(
         nombre_equipo=equipo,
@@ -403,6 +417,41 @@ def analizar_partido(
         )
 
     mejor_apuesta = seleccionar_mejor_apuesta(candidatos)
+
+    if mercado == "COMPLETO" and prediccion_juego_completo is not None:
+        probabilidad = None
+        distancia_z = None
+        if linea is not None:
+            probabilidad = max(
+                prediccion_juego_completo.probabilidad_over or 0.0,
+                prediccion_juego_completo.probabilidad_under or 0.0,
+            )
+            distancia_z = abs(prediccion_juego_completo.media_total - linea) / max(
+                prediccion_juego_completo.desviacion_total, 1e-9
+            )
+        else:
+            probabilidad = prediccion_juego_completo.probabilidad_ganador
+        factores_confianza = determinar_confianza(
+            prediccion_juego_completo.desviacion_total,
+            probabilidad=probabilidad,
+            distancia_z=distancia_z,
+        )
+    else:
+        probabilidad = None
+        distancia_z = None
+        cuarto_predicho = predicciones[mercado]
+        if mejor_apuesta is not None:
+            probabilidad = mejor_apuesta.probabilidad
+            distancia_z = mejor_apuesta.distancia_z
+        else:
+            probabilidad = cuarto_predicho.probabilidad_ganador
+        factores_confianza = determinar_confianza(
+            cuarto_predicho.desviacion_total,
+            probabilidad=probabilidad,
+            distancia_z=distancia_z,
+        )
+
+    nivel_confianza = factores_confianza.obtener_nivel()
 
     return ResultadoAnalisis(
         equipo=normalizar_nombre(equipo),
