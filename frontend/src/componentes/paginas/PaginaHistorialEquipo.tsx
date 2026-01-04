@@ -16,10 +16,11 @@ interface PropsPaginaHistorialEquipo {
 const PARTIDOS_POR_PAGINA = 20;
 
 const formatearFecha = (fechaISO: string) => {
-  const fecha = new Date(fechaISO);
-  if (Number.isNaN(fecha.getTime())) {
+  const [anio, mes, dia] = fechaISO.split('T')[0].split('-').map(Number);
+  if (!anio || !mes || !dia) {
     return fechaISO;
   }
+  const fecha = new Date(anio, mes - 1, dia);
   return new Intl.DateTimeFormat('es-ES', {
     day: '2-digit',
     month: 'short',
