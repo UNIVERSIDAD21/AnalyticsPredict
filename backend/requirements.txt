@@ -10,9 +10,10 @@ uvicorn[standard]>=0.27.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
-# Cálculos numéricos
+# Cálculos numéricos y Machine Learning
 numpy>=1.26.0
 pandas>=2.1.0
+scikit-learn>=1.3.0
 
 # Utilidades
 python-dateutil>=2.8.0
