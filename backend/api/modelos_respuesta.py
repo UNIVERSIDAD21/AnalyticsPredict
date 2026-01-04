@@ -27,10 +27,18 @@ class RespuestaAnalisis(RespuestaBase):
     advertencias: Optional[List[str]] = None
 
 
+class TemporadaDisponible(BaseModel):
+    """Temporada disponible para filtrar."""
+    id: str
+    nombre: str
+
+
 class RespuestaEstadisticasEquipos(RespuestaBase):
     """Respuesta para estadísticas de equipos."""
     fecha_actualizacion: str
     equipos: List[Dict[str, Any]]
+    temporadas_disponibles: List[TemporadaDisponible] = []
+    temporada_actual: Optional[str] = None
 
 
 class PuntosPartidoHistorial(BaseModel):

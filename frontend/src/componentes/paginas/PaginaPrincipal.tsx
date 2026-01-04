@@ -2,7 +2,7 @@
  * PaginaPrincipal.tsx — Página principal con layout futurista full-screen
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Encabezado,
   FormularioAnalisis,
@@ -99,6 +99,9 @@ export function PaginaPrincipal() {
     estado: estadoEstadisticas,
     error: errorEstadisticas,
     recargar: recargarEstadisticas,
+    temporadasDisponibles,
+    temporadaActual,
+    cambiarTemporada,
   } = useEstadisticasEquipos();
 
   // Estado para la selección Over/Under del usuario
@@ -111,6 +114,7 @@ export function PaginaPrincipal() {
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
+  const historialRef = useRef<HTMLDivElement>(null);
 
   // Scroll al resultado cuando se completa el análisis (solo en móvil)
   useEffect(() => {
@@ -127,6 +131,15 @@ export function PaginaPrincipal() {
       setEquipoHistorialId(null);
     }
   }, [tabActivo]);
+
+  // Scroll al historial cuando se selecciona un equipo
+  useEffect(() => {
+    if (equipoHistorialId && historialRef.current) {
+      setTimeout(() => {
+        historialRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [equipoHistorialId]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -275,13 +288,18 @@ export function PaginaPrincipal() {
                   equipos={estadisticasEquipos}
                   equiposCatalogo={equipos}
                   fechaActualizacion={fechaActualizacion}
+                  temporadasDisponibles={temporadasDisponibles}
+                  temporadaActual={temporadaActual}
+                  onCambiarTemporada={cambiarTemporada}
                   onSeleccionarEquipo={(equipoId) => setEquipoHistorialId(equipoId)}
                 />
                 {equipoHistorialId && (
-                  <HistorialEquipo
-                    equipoId={equipoHistorialId}
-                    onCerrar={() => setEquipoHistorialId(null)}
-                  />
+                  <div ref={historialRef}>
+                    <HistorialEquipo
+                      equipoId={equipoHistorialId}
+                      onCerrar={() => setEquipoHistorialId(null)}
+                    />
+                  </div>
                 )}
               </div>
             )}

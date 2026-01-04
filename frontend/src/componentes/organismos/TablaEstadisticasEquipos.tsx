@@ -3,14 +3,17 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ArrowUpDown, Search } from 'lucide-react';
-import { EstadisticasEquipo, Equipo } from '../../tipos';
+import { ArrowUpDown, Search, Calendar } from 'lucide-react';
+import { EstadisticasEquipo, Equipo, TemporadaDisponible } from '../../tipos';
 import { buscarEquipo } from '../../servicios';
 
 interface PropsTablaEstadisticasEquipos {
   equipos: EstadisticasEquipo[];
   equiposCatalogo: Equipo[];
   fechaActualizacion: string;
+  temporadasDisponibles: TemporadaDisponible[];
+  temporadaActual: string | null;
+  onCambiarTemporada: (temporadaId: string | null) => void;
   onSeleccionarEquipo: (equipoId: string) => void;
 }
 
@@ -29,6 +32,9 @@ export function TablaEstadisticasEquipos({
   equipos,
   equiposCatalogo,
   fechaActualizacion,
+  temporadasDisponibles,
+  temporadaActual,
+  onCambiarTemporada,
   onSeleccionarEquipo,
 }: PropsTablaEstadisticasEquipos) {
   const [busqueda, setBusqueda] = useState('');
@@ -159,6 +165,20 @@ export function TablaEstadisticasEquipos({
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative">
+            <Calendar className="w-4 h-4 text-texto-terciario absolute left-3 top-3" />
+            <select
+              value={temporadaActual || ''}
+              onChange={(event) => onCambiarTemporada(event.target.value || null)}
+              className="pl-9 pr-3 py-2 text-sm rounded-md bg-futurista-oscuro/60 border border-neon-cyan/20 text-texto-principal min-w-[160px]"
+            >
+              {temporadasDisponibles.map((temporada) => (
+                <option key={temporada.id} value={temporada.id}>
+                  {temporada.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="relative">
             <Search className="w-4 h-4 text-texto-terciario absolute left-3 top-3" />
             <input
