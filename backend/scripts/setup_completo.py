@@ -111,9 +111,9 @@ def parsear_fecha_calendario(valor: object) -> datetime.date:
 
 
 def asegurar_unicidad_partidos(conexion) -> None:
-    """Asegura columna game_id y elimina duplicados con índices únicos."""
+    """Asegura columna espn_game_id y elimina duplicados con índices únicos."""
     with conexion.cursor() as cursor:
-        cursor.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS game_id TEXT")
+        cursor.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS espn_game_id TEXT")
         cursor.execute(
             """
             WITH duplicados AS (
@@ -131,14 +131,14 @@ def asegurar_unicidad_partidos(conexion) -> None:
         )
         cursor.execute(
             """
-            CREATE UNIQUE INDEX IF NOT EXISTS partidos_game_id_uniq
-            ON partidos (game_id)
-            WHERE game_id IS NOT NULL
+            CREATE UNIQUE INDEX IF NOT EXISTS partidos_unq_espn_game_id
+            ON partidos (espn_game_id)
+            WHERE espn_game_id IS NOT NULL
             """
         )
         cursor.execute(
             """
-            CREATE UNIQUE INDEX IF NOT EXISTS partidos_clave_unica_uniq
+            CREATE UNIQUE INDEX IF NOT EXISTS partidos_unq_partido_exacto
             ON partidos (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
             """
         )
@@ -574,10 +574,10 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 if season_type not in ("REG", "POST", "PRE"):
                     season_type = "REG"
 
-                game_id = extraer_game_id(row.get("espn_url"))
+                espn_game_id = extraer_game_id(row.get("espn_url"))
                 clave_dedup = (
-                    f"game:{game_id}"
-                    if game_id
+                    f"game:{espn_game_id}"
+                    if espn_game_id
                     else f"{row.get('season')}|{fecha}|{season_type}|{equipo_local}|{equipo_visitante}"
                 )
                 if clave_dedup in claves_vistas:
@@ -586,27 +586,79 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 claves_vistas.add(clave_dedup)
                 
                 cursor.execute("SAVEPOINT insertar_partido")
-                cursor.execute(
-                    """
-                    INSERT INTO partidos (
-                        temporada_id, fecha_partido, tipo_partido, game_id,
-                        equipo_local_id, equipo_visitante_id,
-                        local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
-                        visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
-                        ganador_id, hubo_overtime
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT DO NOTHING
-                    RETURNING id
-                    """,
-                    [
-                        str(temporada_id), fecha, season_type, game_id,
-                        str(equipos_bd[equipo_local]), str(equipos_bd[equipo_visitante]),
-                        int(local_q1), int(local_q2), int(local_q3), int(local_q4), 0, local_total,
-                        int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), 0, visit_total,
-                        str(ganador_id) if ganador_id else None,
-                        row.get("ot_count", 0) > 0 if "ot_count" in row else False
-                    ]
-                )
+                valores_partido = [
+                    str(temporada_id), fecha, season_type, espn_game_id,
+                    str(equipos_bd[equipo_local]), str(equipos_bd[equipo_visitante]),
+                    int(local_q1), int(local_q2), int(local_q3), int(local_q4), 0, local_total,
+                    int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), 0, visit_total,
+                    str(ganador_id) if ganador_id else None,
+                    row.get("ot_count", 0) > 0 if "ot_count" in row else False,
+                ]
+                if espn_game_id:
+                    cursor.execute(
+                        """
+                        INSERT INTO partidos (
+                            temporada_id, fecha_partido, tipo_partido, espn_game_id,
+                            equipo_local_id, equipo_visitante_id,
+                            local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
+                            visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
+                            ganador_id, hubo_overtime
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (espn_game_id) DO UPDATE SET
+                            temporada_id = EXCLUDED.temporada_id,
+                            fecha_partido = EXCLUDED.fecha_partido,
+                            tipo_partido = EXCLUDED.tipo_partido,
+                            equipo_local_id = EXCLUDED.equipo_local_id,
+                            equipo_visitante_id = EXCLUDED.equipo_visitante_id,
+                            local_q1 = EXCLUDED.local_q1,
+                            local_q2 = EXCLUDED.local_q2,
+                            local_q3 = EXCLUDED.local_q3,
+                            local_q4 = EXCLUDED.local_q4,
+                            local_ot = EXCLUDED.local_ot,
+                            local_total = EXCLUDED.local_total,
+                            visitante_q1 = EXCLUDED.visitante_q1,
+                            visitante_q2 = EXCLUDED.visitante_q2,
+                            visitante_q3 = EXCLUDED.visitante_q3,
+                            visitante_q4 = EXCLUDED.visitante_q4,
+                            visitante_ot = EXCLUDED.visitante_ot,
+                            visitante_total = EXCLUDED.visitante_total,
+                            ganador_id = EXCLUDED.ganador_id,
+                            hubo_overtime = EXCLUDED.hubo_overtime
+                        RETURNING id
+                        """,
+                        valores_partido,
+                    )
+                else:
+                    cursor.execute(
+                        """
+                        INSERT INTO partidos (
+                            temporada_id, fecha_partido, tipo_partido, espn_game_id,
+                            equipo_local_id, equipo_visitante_id,
+                            local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
+                            visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
+                            ganador_id, hubo_overtime
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
+                        DO UPDATE SET
+                            local_q1 = EXCLUDED.local_q1,
+                            local_q2 = EXCLUDED.local_q2,
+                            local_q3 = EXCLUDED.local_q3,
+                            local_q4 = EXCLUDED.local_q4,
+                            local_ot = EXCLUDED.local_ot,
+                            local_total = EXCLUDED.local_total,
+                            visitante_q1 = EXCLUDED.visitante_q1,
+                            visitante_q2 = EXCLUDED.visitante_q2,
+                            visitante_q3 = EXCLUDED.visitante_q3,
+                            visitante_q4 = EXCLUDED.visitante_q4,
+                            visitante_ot = EXCLUDED.visitante_ot,
+                            visitante_total = EXCLUDED.visitante_total,
+                            ganador_id = EXCLUDED.ganador_id,
+                            hubo_overtime = EXCLUDED.hubo_overtime,
+                            espn_game_id = COALESCE(EXCLUDED.espn_game_id, partidos.espn_game_id)
+                        RETURNING id
+                        """,
+                        valores_partido,
+                    )
                 
                 if cursor.fetchone():
                     insertados += 1
