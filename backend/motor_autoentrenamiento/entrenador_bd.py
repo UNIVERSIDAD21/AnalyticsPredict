@@ -191,16 +191,16 @@ class EntrenadorBD:
     def _calcular_hash_datos(self, partidos: List[Dict]) -> str:
         """
         Calcula un hash único de los datos para detectar cambios.
-        
+
         Esto permite saber si necesitamos reentrenar sin comparar
         todos los registros uno por uno.
         """
         datos_str = json.dumps([
-            (p['id'], p['local_q1'], p['local_q2'], p['local_q3'], p['local_q4'],
+            (str(p['id']), p['local_q1'], p['local_q2'], p['local_q3'], p['local_q4'],
              p['visitante_q1'], p['visitante_q2'], p['visitante_q3'], p['visitante_q4'])
             for p in partidos
         ], sort_keys=True)
-        
+
         return hashlib.sha256(datos_str.encode()).hexdigest()[:16]
     
     def _obtener_conteo_partidos(self) -> int:
