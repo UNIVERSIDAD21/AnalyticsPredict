@@ -293,9 +293,28 @@ def crear_usuario_desarrollo(conexion) -> None:
     with conexion.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO usuarios (id, email, nombre, rol, activo)
-            VALUES (%s, 'dev@test.local', 'Desarrollo', 'admin', true)
-            ON CONFLICT (id) DO NOTHING
+            INSERT INTO usuarios (
+                id,
+                email,
+                nombre,
+                password_hash,
+                rol,
+                activo,
+                preferencias,
+                bankroll_inicial
+            ) VALUES (
+                %s,
+                'desarrollo@analizadornba.local',
+                'Usuario Desarrollo',
+                'no_auth_dev_only',
+                'admin',
+                true,
+                '{"tema": "oscuro", "notificaciones": false}'::jsonb,
+                1000.00
+            )
+            ON CONFLICT (id) DO UPDATE SET
+                nombre = EXCLUDED.nombre,
+                activo = true
             """,
             (USUARIO_DESARROLLO_ID,)
         )
