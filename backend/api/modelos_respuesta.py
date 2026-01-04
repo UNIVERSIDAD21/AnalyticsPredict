@@ -33,6 +33,56 @@ class RespuestaEstadisticasEquipos(RespuestaBase):
     equipos: List[Dict[str, Any]]
 
 
+class PuntosPartidoHistorial(BaseModel):
+    """Puntos por cuarto y total."""
+
+    q1: int
+    q2: int
+    q3: int
+    q4: int
+    total: int
+
+
+class PartidoHistorial(BaseModel):
+    """Modelo de partido para historial."""
+
+    id: str
+    fecha: str
+    temporada: Optional[str] = None
+    equipo_local: str
+    local_abr: str
+    equipo_visitante: str
+    visitante_abr: str
+    ubicacion_equipo: str
+    puntos_equipo: PuntosPartidoHistorial
+    puntos_rival: PuntosPartidoHistorial
+    resultado: str
+
+
+class InfoEquipoHistorial(BaseModel):
+    """Información básica del equipo en historial."""
+
+    id: str
+    nombre: str
+    abreviatura: str
+    logo_url: Optional[str] = None
+
+
+class FiltrosDisponiblesHistorial(BaseModel):
+    """Filtros disponibles para historial."""
+
+    temporadas: List[Dict[str, str]]
+
+
+class RespuestaHistorialEquipo(RespuestaBase):
+    """Respuesta para historial de partidos de un equipo."""
+
+    equipo: InfoEquipoHistorial
+    total_partidos: int
+    partidos: List[PartidoHistorial]
+    filtros_disponibles: FiltrosDisponiblesHistorial
+
+
 class Apuesta(BaseModel):
     """Modelo de salida para una apuesta."""
 
