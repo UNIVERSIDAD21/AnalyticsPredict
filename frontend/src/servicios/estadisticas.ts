@@ -5,12 +5,25 @@
 import { clienteAPI, extraerMensajeError } from './api';
 import { EstadisticasEquipo, RespuestaEstadisticasEquipos } from '../tipos';
 
+interface ParametrosEstadisticas {
+  temporadaId?: string;
+}
+
 /**
  * Obtiene estadísticas agregadas de equipos
  */
-export async function obtenerEstadisticasEquipos(): Promise<RespuestaEstadisticasEquipos> {
+export async function obtenerEstadisticasEquipos(
+  parametros?: ParametrosEstadisticas
+): Promise<RespuestaEstadisticasEquipos> {
   try {
-    const respuesta = await clienteAPI.get<RespuestaEstadisticasEquipos>('/api/estadisticas-equipos');
+    const respuesta = await clienteAPI.get<RespuestaEstadisticasEquipos>(
+      '/api/estadisticas-equipos',
+      {
+        params: {
+          temporada_id: parametros?.temporadaId,
+        },
+      }
+    );
 
     if (!respuesta.data.exito) {
       throw new Error('Error al obtener estadísticas de equipos');

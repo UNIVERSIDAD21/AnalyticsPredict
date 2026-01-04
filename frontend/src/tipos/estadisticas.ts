@@ -48,8 +48,15 @@ export interface EstadisticasEquipo {
   linea_promedio: number;
 }
 
+export interface TemporadaDisponible {
+  id: string;
+  nombre: string;
+}
+
 export interface RespuestaEstadisticasEquipos {
   exito: boolean;
   fecha_actualizacion: string;
   equipos: EstadisticasEquipo[];
+  temporadas_disponibles: TemporadaDisponible[];
+  temporada_actual: string | null;
 }
