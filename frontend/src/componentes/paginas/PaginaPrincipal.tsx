@@ -7,6 +7,7 @@ import {
   Encabezado,
   FormularioAnalisis,
   FormularioGuardarApuesta,
+  HistorialEquipo,
   ResultadoAnalisis,
   TablaEstadisticasEquipos,
 } from '../organismos';
@@ -109,6 +110,7 @@ export function PaginaPrincipal() {
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
+  const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
 
   // Scroll al resultado cuando se completa el análisis (solo en móvil)
   useEffect(() => {
@@ -119,6 +121,12 @@ export function PaginaPrincipal() {
       }
     }
   }, [resultado]);
+
+  useEffect(() => {
+    if (tabActivo !== 'estadisticas') {
+      setEquipoHistorialId(null);
+    }
+  }, [tabActivo]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -262,11 +270,20 @@ export function PaginaPrincipal() {
               </div>
             )}
             {estadoEstadisticas === 'exito' && (
-              <TablaEstadisticasEquipos
-                equipos={estadisticasEquipos}
-                equiposCatalogo={equipos}
-                fechaActualizacion={fechaActualizacion}
-              />
+              <div className="space-y-6">
+                <TablaEstadisticasEquipos
+                  equipos={estadisticasEquipos}
+                  equiposCatalogo={equipos}
+                  fechaActualizacion={fechaActualizacion}
+                  onSeleccionarEquipo={(equipoId) => setEquipoHistorialId(equipoId)}
+                />
+                {equipoHistorialId && (
+                  <HistorialEquipo
+                    equipoId={equipoHistorialId}
+                    onCerrar={() => setEquipoHistorialId(null)}
+                  />
+                )}
+              </div>
             )}
           </div>
         )}

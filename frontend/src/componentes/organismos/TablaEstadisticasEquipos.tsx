@@ -11,6 +11,7 @@ interface PropsTablaEstadisticasEquipos {
   equipos: EstadisticasEquipo[];
   equiposCatalogo: Equipo[];
   fechaActualizacion: string;
+  onSeleccionarEquipo: (equipoId: string) => void;
 }
 
 type Orden = 'asc' | 'desc';
@@ -28,6 +29,7 @@ export function TablaEstadisticasEquipos({
   equipos,
   equiposCatalogo,
   fechaActualizacion,
+  onSeleccionarEquipo,
 }: PropsTablaEstadisticasEquipos) {
   const [busqueda, setBusqueda] = useState('');
   const [conferencia, setConferencia] = useState('Todas');
@@ -142,7 +144,7 @@ export function TablaEstadisticasEquipos({
     if (!equipoCatalogo) {
       return;
     }
-    window.open(`/equipo/${equipoCatalogo.id}/historial`, '_blank');
+    onSeleccionarEquipo(equipoCatalogo.id);
   };
 
   return (
