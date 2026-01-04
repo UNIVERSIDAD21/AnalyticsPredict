@@ -134,20 +134,249 @@ async def buscar_equipos(
     )
 
 
+def obtener_temporadas_disponibles() -> list:
+    """Obtiene las temporadas disponibles con partidos."""
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT DISTINCT t.id, t.nombre
+                FROM temporadas t
+                JOIN partidos p ON p.temporada_id = t.id
+                WHERE p.local_q1 IS NOT NULL
+                ORDER BY t.nombre DESC
+                """
+            )
+            return cursor.fetchall()
+
+
+def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
+    """Calcula estadísticas de equipos desde la base de datos."""
+    from datetime import datetime
+
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            # Obtener temporada actual si no se especifica
+            temporada_filtro = temporada_id
+            if not temporada_filtro:
+                cursor.execute(
+                    """
+                    SELECT id FROM temporadas
+                    ORDER BY nombre DESC
+                    LIMIT 1
+                    """
+                )
+                temp = cursor.fetchone()
+                temporada_filtro = str(temp["id"]) if temp else None
+
+            # Obtener todos los equipos activos
+            cursor.execute(
+                """
+                SELECT id, nombre, nombre_corto, abreviatura, conferencia, division
+                FROM equipos
+                WHERE activo = true
+                ORDER BY nombre
+                """
+            )
+            equipos_base = cursor.fetchall()
+
+            estadisticas = []
+            for equipo in equipos_base:
+                equipo_id = equipo["id"]
+
+                # Query para obtener partidos del equipo en la temporada
+                condiciones = [
+                    "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
+                    "p.local_q1 IS NOT NULL",
+                    "p.tipo_partido = 'REG'",
+                ]
+                parametros: list = [equipo_id, equipo_id]
+
+                if temporada_filtro:
+                    condiciones.append("p.temporada_id = %s")
+                    parametros.append(temporada_filtro)
+
+                where_sql = " AND ".join(condiciones)
+
+                cursor.execute(
+                    f"""
+                    SELECT
+                        p.equipo_local_id,
+                        p.equipo_visitante_id,
+                        p.local_q1, p.local_q2, p.local_q3, p.local_q4, p.local_total,
+                        p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_total,
+                        p.fecha_partido
+                    FROM partidos p
+                    WHERE {where_sql}
+                    ORDER BY p.fecha_partido DESC
+                    """,
+                    parametros,
+                )
+                partidos = cursor.fetchall()
+
+                if not partidos:
+                    continue
+
+                # Calcular estadísticas
+                victorias = 0
+                derrotas = 0
+                victorias_local = 0
+                derrotas_local = 0
+                victorias_visitante = 0
+                derrotas_visitante = 0
+                puntos_local = []
+                puntos_visitante = []
+                anotados_q1, anotados_q2, anotados_q3, anotados_q4, anotados_total = [], [], [], [], []
+                recibidos_q1, recibidos_q2, recibidos_q3, recibidos_q4, recibidos_total = [], [], [], [], []
+                totales_q1, totales_q2, totales_q3, totales_q4, totales_partido = [], [], [], [], []
+                racha = []
+
+                for partido in partidos:
+                    es_local = str(partido["equipo_local_id"]) == str(equipo_id)
+
+                    if es_local:
+                        pts_equipo = partido["local_total"]
+                        pts_rival = partido["visitante_total"]
+                        q1_e, q2_e, q3_e, q4_e = partido["local_q1"], partido["local_q2"], partido["local_q3"], partido["local_q4"]
+                        q1_r, q2_r, q3_r, q4_r = partido["visitante_q1"], partido["visitante_q2"], partido["visitante_q3"], partido["visitante_q4"]
+                        puntos_local.append(pts_equipo)
+                    else:
+                        pts_equipo = partido["visitante_total"]
+                        pts_rival = partido["local_total"]
+                        q1_e, q2_e, q3_e, q4_e = partido["visitante_q1"], partido["visitante_q2"], partido["visitante_q3"], partido["visitante_q4"]
+                        q1_r, q2_r, q3_r, q4_r = partido["local_q1"], partido["local_q2"], partido["local_q3"], partido["local_q4"]
+                        puntos_visitante.append(pts_equipo)
+
+                    anotados_q1.append(q1_e)
+                    anotados_q2.append(q2_e)
+                    anotados_q3.append(q3_e)
+                    anotados_q4.append(q4_e)
+                    anotados_total.append(pts_equipo)
+
+                    recibidos_q1.append(q1_r)
+                    recibidos_q2.append(q2_r)
+                    recibidos_q3.append(q3_r)
+                    recibidos_q4.append(q4_r)
+                    recibidos_total.append(pts_rival)
+
+                    totales_q1.append(q1_e + q1_r)
+                    totales_q2.append(q2_e + q2_r)
+                    totales_q3.append(q3_e + q3_r)
+                    totales_q4.append(q4_e + q4_r)
+                    totales_partido.append(pts_equipo + pts_rival)
+
+                    if pts_equipo > pts_rival:
+                        victorias += 1
+                        if es_local:
+                            victorias_local += 1
+                        else:
+                            victorias_visitante += 1
+                        if len(racha) < 5:
+                            racha.append("W")
+                    else:
+                        derrotas += 1
+                        if es_local:
+                            derrotas_local += 1
+                        else:
+                            derrotas_visitante += 1
+                        if len(racha) < 5:
+                            racha.append("L")
+
+                # Calcular promedios
+                n = len(partidos)
+                linea_promedio = sum(totales_partido) / n if n else 0
+                linea_q1 = sum(totales_q1) / n if n else 0
+                linea_q2 = sum(totales_q2) / n if n else 0
+                linea_q3 = sum(totales_q3) / n if n else 0
+                linea_q4 = sum(totales_q4) / n if n else 0
+
+                tendencias_over = {
+                    "q1": sum(1 for t in totales_q1 if t > linea_q1) / n if n else 0,
+                    "q2": sum(1 for t in totales_q2 if t > linea_q2) / n if n else 0,
+                    "q3": sum(1 for t in totales_q3 if t > linea_q3) / n if n else 0,
+                    "q4": sum(1 for t in totales_q4 if t > linea_q4) / n if n else 0,
+                    "total": sum(1 for t in totales_partido if t > linea_promedio) / n if n else 0,
+                }
+
+                n_local = len(puntos_local) or 1
+                n_visitante = len(puntos_visitante) or 1
+
+                estadisticas.append({
+                    "nombre": equipo["nombre"],
+                    "abreviatura": equipo["abreviatura"],
+                    "conferencia": equipo["conferencia"] or "",
+                    "record": {"victorias": victorias, "derrotas": derrotas},
+                    "posicion": 0,
+                    "racha": list(reversed(racha)),  # Últimos 5 partidos en orden cronológico
+                    "promedios": {
+                        "anotados": {
+                            "q1": sum(anotados_q1) / n if n else 0,
+                            "q2": sum(anotados_q2) / n if n else 0,
+                            "q3": sum(anotados_q3) / n if n else 0,
+                            "q4": sum(anotados_q4) / n if n else 0,
+                            "total": sum(anotados_total) / n if n else 0,
+                        },
+                        "recibidos": {
+                            "q1": sum(recibidos_q1) / n if n else 0,
+                            "q2": sum(recibidos_q2) / n if n else 0,
+                            "q3": sum(recibidos_q3) / n if n else 0,
+                            "q4": sum(recibidos_q4) / n if n else 0,
+                            "total": sum(recibidos_total) / n if n else 0,
+                        },
+                    },
+                    "local": {
+                        "victorias": victorias_local,
+                        "derrotas": derrotas_local,
+                        "ppg": sum(puntos_local) / n_local if puntos_local else 0,
+                    },
+                    "visitante": {
+                        "victorias": victorias_visitante,
+                        "derrotas": derrotas_visitante,
+                        "ppg": sum(puntos_visitante) / n_visitante if puntos_visitante else 0,
+                    },
+                    "tendencias_over": tendencias_over,
+                    "linea_promedio": linea_promedio,
+                })
+
+            # Calcular posiciones por conferencia
+            for conferencia in ["Este", "Oeste"]:
+                equipos_conf = [e for e in estadisticas if e["conferencia"] == conferencia]
+                equipos_conf.sort(
+                    key=lambda e: (
+                        e["record"]["victorias"] / max(1, e["record"]["victorias"] + e["record"]["derrotas"])
+                    ),
+                    reverse=True,
+                )
+                for idx, eq in enumerate(equipos_conf, start=1):
+                    eq["posicion"] = idx
+
+            return {
+                "fecha_actualizacion": datetime.utcnow().isoformat(),
+                "equipos": sorted(estadisticas, key=lambda e: e["nombre"]),
+                "temporada_actual": temporada_filtro,
+            }
+
+
 @router.get(
     "/estadisticas-equipos",
     summary="Estadísticas de equipos",
     response_model=RespuestaEstadisticasEquipos,
 )
-async def listar_estadisticas_equipos() -> RespuestaEstadisticasEquipos:
-    """Retorna estadísticas agregadas de los equipos."""
-    datos = cargar_estadisticas_equipos()
-    fecha = datos.get("fecha_actualizacion") or ""
-    equipos = datos.get("equipos") or []
+async def listar_estadisticas_equipos(
+    temporada_id: Optional[str] = Query(None, description="Filtrar por temporada específica"),
+) -> RespuestaEstadisticasEquipos:
+    """Retorna estadísticas agregadas de los equipos calculadas desde la BD."""
+    temporadas = obtener_temporadas_disponibles()
+    datos = calcular_estadisticas_desde_bd(temporada_id)
+
     return RespuestaEstadisticasEquipos(
         exito=True,
-        fecha_actualizacion=fecha,
-        equipos=equipos,
+        fecha_actualizacion=datos["fecha_actualizacion"],
+        equipos=datos["equipos"],
+        temporadas_disponibles=[
+            {"id": str(t["id"]), "nombre": t["nombre"]} for t in temporadas
+        ],
+        temporada_actual=datos.get("temporada_actual"),
     )
 
 
