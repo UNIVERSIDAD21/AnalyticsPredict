@@ -218,6 +218,10 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     continue
 
                 # Calcular estadísticas
+                # Contadores de victorias y derrotas. La NBA no tiene empates en el marcador final,
+                # pero en caso de que se encuentren registros con igualdad en el total (por ejemplo, si
+                # los datos no incluyen la prórroga) se tratará ese encuentro como derrota para evitar
+                # alterar el porcentaje de victorias.
                 victorias = 0
                 derrotas = 0
                 victorias_local = 0
@@ -230,6 +234,8 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 recibidos_q1, recibidos_q2, recibidos_q3, recibidos_q4, recibidos_total = [], [], [], [], []
                 totales_q1, totales_q2, totales_q3, totales_q4, totales_partido = [], [], [], [], []
                 racha = []
+                # Acumulador para diferencia de puntos a lo largo de la temporada.
+                diferencia_puntos_total = 0
 
                 for partido in partidos:
                     es_local = str(partido["equipo_local_id"]) == str(equipo_id)
@@ -265,6 +271,12 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     totales_q4.append(q4_e + q4_r)
                     totales_partido.append(pts_equipo + pts_rival)
 
+                    # Acumular diferencia de puntos para el desempate posterior.
+                    diferencia_puntos_total += (pts_equipo - pts_rival)
+
+                    # Determinar ganador: si el total es mayor, contar como victoria; en caso
+                    # contrario (incluyendo la igualdad), como derrota. La igualdad sólo
+                    # debería ocurrir en datos inconsistentes donde no se registran las prórrogas.
                     if pts_equipo > pts_rival:
                         victorias += 1
                         if es_local:
@@ -336,14 +348,25 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     },
                     "tendencias_over": tendencias_over,
                     "linea_promedio": linea_promedio,
+                    # Guardar la diferencia de puntos acumulada para posibles desempates.
+                    "diferencia_puntos": diferencia_puntos_total,
                 })
 
             # Calcular posiciones por conferencia
+            # Calcular posiciones por conferencia aplicando criterios de desempate.
+            # La NBA utiliza una jerarquía de reglas; para esta versión MVP aplicamos tres
+            # niveles: (1) porcentaje de victorias, (2) número total de victorias y
+            # (3) diferencia de puntos. Todos en orden descendente.
             for conferencia in ["Este", "Oeste"]:
                 equipos_conf = [e for e in estadisticas if e["conferencia"] == conferencia]
                 equipos_conf.sort(
                     key=lambda e: (
-                        e["record"]["victorias"] / max(1, e["record"]["victorias"] + e["record"]["derrotas"])
+                        # porcentaje de victorias
+                        e["record"]["victorias"] / max(1, e["record"]["victorias"] + e["record"]["derrotas"]),
+                        # número total de victorias
+                        e["record"]["victorias"],
+                        # diferencia de puntos
+                        e.get("diferencia_puntos", 0),
                     ),
                     reverse=True,
                 )

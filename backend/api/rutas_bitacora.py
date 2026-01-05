@@ -11,6 +11,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+
+# Importar Jsonb para serializar correctamente campos JSON en la base de datos.
+try:
+    # psycopg 3.x
+    from psycopg.types.json import Jsonb  # type: ignore
+except ImportError:
+    # Fallback para versiones antiguas; si no está disponible, definiremos un wrapper
+    Jsonb = None  # type: ignore
 from .dependencias import obtener_usuario_id
 from .modelos_peticion import PeticionActualizarResultado, PeticionCrearApuesta
 from .modelos_respuesta import RespuestaApuesta, RespuestaListaApuestas, RespuestaResumenApuestas
@@ -60,6 +68,19 @@ async def guardar_apuesta(
     usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
+    # Preparar el valor de razones para que Postgres pueda adaptarlo correctamente. Si la clase
+    # Jsonb está disponible (psycopg 3.x), se envuelve en Jsonb; de lo contrario, se utiliza
+    # una serialización manual a JSON mediante json.dumps.
+    import json
+
+    razones_para_db = None
+    if Jsonb is not None:
+        # Utilizar Jsonb para serializar de manera segura la lista de diccionarios.
+        razones_para_db = Jsonb(peticion.razones)
+    else:
+        # Fallback: convertir a cadena JSON. La columna debería ser de tipo JSONB o TEXT.
+        razones_para_db = json.dumps(peticion.razones)
+
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -117,7 +138,8 @@ async def guardar_apuesta(
                     "valor_esperado": peticion.valor_esperado,
                     "prediccion_media": peticion.prediccion_media,
                     "prediccion_desviacion": peticion.prediccion_desviacion,
-                    "razones": peticion.razones,
+                    # Guardar razones serializadas
+                    "razones": razones_para_db,
                 },
             )
             apuesta = cursor.fetchone()

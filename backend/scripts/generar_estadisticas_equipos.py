@@ -87,6 +87,9 @@ def calcular_estadisticas_equipo(df: pd.DataFrame) -> Dict[str, object]:
         "total": float(((df["team_total"] + df["opp_total"]) > linea_promedio).mean()),
     }
 
+    # Diferencia de puntos agregada (anotados - recibidos) a lo largo de la temporada.
+    diferencia_puntos = int(df["team_total"].sum() - df["opp_total"].sum())
+
     return {
         "record": {"victorias": wins, "derrotas": losses},
         "racha": racha,
@@ -106,6 +109,8 @@ def calcular_estadisticas_equipo(df: pd.DataFrame) -> Dict[str, object]:
         },
         "tendencias_over": tendencias_over,
         "linea_promedio": linea_promedio,
+        # Guardar la diferencia de puntos para uso en el ordenamiento.
+        "diferencia_puntos": diferencia_puntos,
     }
 
 
@@ -165,14 +170,20 @@ def main() -> None:
                 "visitante": estadisticas["visitante"],
                 "tendencias_over": estadisticas["tendencias_over"],
                 "linea_promedio": estadisticas["linea_promedio"],
+                # Incluir diferencia de puntos para poder ordenar correctamente.
+                "diferencia_puntos": estadisticas.get("diferencia_puntos", 0),
             }
         )
 
+    # Ordenar equipos dentro de cada conferencia utilizando múltiples criterios:
+    # porcentaje de victorias, luego victorias totales y luego diferencia de puntos.
     for conferencia in {"Este", "Oeste"}:
         equipos_conf = [e for e in equipos if e["conferencia"] == conferencia]
         equipos_conf.sort(
             key=lambda e: (
-                e["record"]["victorias"] / max(1, (e["record"]["victorias"] + e["record"]["derrotas"]))
+                e["record"]["victorias"] / max(1, (e["record"]["victorias"] + e["record"]["derrotas"])),
+                e["record"]["victorias"],
+                e.get("diferencia_puntos", 0),
             ),
             reverse=True,
         )
