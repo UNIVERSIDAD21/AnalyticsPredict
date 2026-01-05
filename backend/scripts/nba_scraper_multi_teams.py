@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-setup_completo.py — Script TODO EN UNO para configurar el sistema NBA.
+nba_scraper_multi_teams.py — Scraper multi-equipos para descargar partidos NBA
+y generar CSVs con estadísticas completas.
 
-VERSIÓN CORREGIDA: Soluciona el error "there is no unique or exclusion 
-constraint matching the ON CONFLICT specification"
-
-El problema era que se usaba un índice parcial (WHERE espn_game_id IS NOT NULL)
-que PostgreSQL NO permite usar en ON CONFLICT. La solución es usar un
-UNIQUE CONSTRAINT real en lugar de un índice parcial.
+Este script se usa para obtener los datos de todos los equipos y guardarlos
+en CSVs. Luego, setup_completo.py puede consumir esos CSVs para poblar la BD.
 
 Uso desde la carpeta backend/scripts:
-    python setup_completo.py
+    python nba_scraper_multi_teams.py
 """
 
 from __future__ import annotations
@@ -741,8 +738,8 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
 def main() -> int:
     print()
     print("╔" + "═" * 68 + "╗")
-    print("║" + " " * 20 + "🏀 SETUP COMPLETO NBA 🏀" + " " * 21 + "║")
-    print("║" + " " * 15 + "Modelo + Usuario + Base de Datos" + " " * 16 + "║")
+    print("║" + " " * 16 + "🏀 NBA SCRAPER MULTI TEAMS 🏀" + " " * 16 + "║")
+    print("║" + " " * 14 + "Descarga partidos y genera CSVs" + " " * 15 + "║")
     print("╚" + "═" * 68 + "╝")
     print()
     
@@ -759,7 +756,7 @@ def main() -> int:
         print()
         print("   Ejecuta este script DESDE la carpeta backend/scripts:")
         print("   cd C:\\Users\\ING-ERIK\\Documents\\Proyectos\\AnalyticsPredict\\backend\\scripts")
-        print("   python setup_completo.py")
+        print("   python nba_scraper_multi_teams.py")
         return 1
     
     print(f"📁 CSVs encontrados: {len(csv_paths)}")
