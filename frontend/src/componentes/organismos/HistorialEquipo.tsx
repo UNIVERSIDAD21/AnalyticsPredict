@@ -228,11 +228,13 @@ export function HistorialEquipo({
                   <th className="p-2 text-right">Q2</th>
                   <th className="p-2 text-right">Q3</th>
                   <th className="p-2 text-right">Q4</th>
+                  <th className="p-2 text-right">OT</th>
                   <th className="p-2 text-right">Total</th>
                   <th className="p-2 text-right">Rival Q1</th>
                   <th className="p-2 text-right">Rival Q2</th>
                   <th className="p-2 text-right">Rival Q3</th>
                   <th className="p-2 text-right">Rival Q4</th>
+                  <th className="p-2 text-right">Rival OT</th>
                   <th className="p-2 text-right">Rival Total</th>
                   <th className="p-2 text-center">Resultado</th>
                 </tr>
@@ -257,6 +259,7 @@ export function HistorialEquipo({
                       <td className="p-2 text-right">{partido.puntosEquipo.q2}</td>
                       <td className="p-2 text-right">{partido.puntosEquipo.q3}</td>
                       <td className="p-2 text-right">{partido.puntosEquipo.q4}</td>
+                      <td className="p-2 text-right">{partido.puntosEquipo.ot}</td>
                       <td className="p-2 text-right font-semibold text-texto-principal">
                         {partido.puntosEquipo.total}
                       </td>
@@ -264,6 +267,7 @@ export function HistorialEquipo({
                       <td className="p-2 text-right">{partido.puntosRival.q2}</td>
                       <td className="p-2 text-right">{partido.puntosRival.q3}</td>
                       <td className="p-2 text-right">{partido.puntosRival.q4}</td>
+                      <td className="p-2 text-right">{partido.puntosRival.ot}</td>
                       <td className="p-2 text-right font-semibold text-texto-principal">
                         {partido.puntosRival.total}
                       </td>

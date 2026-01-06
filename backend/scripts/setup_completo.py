@@ -247,6 +247,94 @@ def obtener_equipos_bd(conexion) -> Dict[str, str]:
         return {row[1]: row[0] for row in cursor.fetchall()}
 
 
+def cargar_equipos_desde_csv(conexion, csv_path: Path) -> int:
+    if not csv_path.exists():
+        print(f"⚠️  No se encontró equipos.csv en {csv_path}")
+        return 0
+
+    df = pd.read_csv(csv_path)
+    df = df.fillna("")
+    for col in ("abreviatura", "nombre", "nombre_corto", "conferencia", "division", "ciudad"):
+        if col not in df.columns:
+            raise ValueError(f"equipos.csv no tiene la columna requerida: {col}")
+
+    def normalizar_conferencia(valor: str) -> str:
+        valor = str(valor).strip().lower()
+        if valor in {"este", "east"}:
+            return "Este"
+        if valor in {"oeste", "west"}:
+            return "Oeste"
+        return ""
+
+    insertados = 0
+    actualizados = 0
+    with conexion.cursor() as cursor:
+        for _, row in df.iterrows():
+            conferencia = normalizar_conferencia(row["conferencia"])
+            if not conferencia:
+                continue
+            cursor.execute(
+                """
+                INSERT INTO equipos (
+                    nombre,
+                    nombre_corto,
+                    abreviatura,
+                    conferencia,
+                    division,
+                    ciudad,
+                    activo
+                ) VALUES (%s, %s, %s, %s, %s, %s, true)
+                ON CONFLICT (abreviatura) DO UPDATE SET
+                    nombre = EXCLUDED.nombre,
+                    nombre_corto = EXCLUDED.nombre_corto,
+                    conferencia = EXCLUDED.conferencia,
+                    division = EXCLUDED.division,
+                    ciudad = EXCLUDED.ciudad,
+                    activo = true
+                RETURNING (xmax = 0) AS insertado
+                """,
+                (
+                    row["nombre"],
+                    row["nombre_corto"],
+                    str(row["abreviatura"]).upper(),
+                    conferencia,
+                    row["division"],
+                    row["ciudad"] or None,
+                ),
+            )
+            resultado = cursor.fetchone()
+            if resultado and resultado[0]:
+                insertados += 1
+            else:
+                actualizados += 1
+
+    conexion.commit()
+    print(f"✅ Equipos migrados: {insertados} insertados, {actualizados} actualizados")
+    return insertados + actualizados
+
+
+def limpiar_datos_bd(conexion) -> None:
+    print()
+    print("=" * 70)
+    print("PASO 0: LIMPIAR DATOS EXISTENTES")
+    print("=" * 70)
+    print()
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            TRUNCATE TABLE
+                apuestas,
+                partidos,
+                estadisticas_equipos,
+                temporadas,
+                modelo_versiones
+            RESTART IDENTITY CASCADE
+            """
+        )
+    conexion.commit()
+    print("✅ Datos eliminados (apuestas, partidos, estadisticas_equipos, temporadas, modelo_versiones)")
+
+
 def obtener_temporadas_bd(conexion, temporadas_csv: List) -> Dict:
     """
     Dado un listado de años de temporada (por ejemplo 2026 para la temporada 2025-2026),
@@ -557,11 +645,20 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
                 if equipo_local not in equipos_bd or equipo_visitante not in equipos_bd:
                     errores += 1
+                    if errores <= 3:
+                        print(
+                            "   ⚠️  Equipo no encontrado en BD:",
+                            equipo_local,
+                            "vs",
+                            equipo_visitante,
+                        )
                     continue
                 
                 temporada_id = temporadas_bd.get(row["season"])
                 if not temporada_id:
                     errores += 1
+                    if errores <= 3:
+                        print(f"   ⚠️  Temporada no encontrada: {row.get('season')}")
                     continue
                 
                 fecha = parsear_fecha_calendario(row.get("date"))
@@ -571,7 +668,8 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                     if not ot_cols:
                         return 0
                     valores = [row.get(col) for col in ot_cols]
-                    return int(pd.to_numeric(valores, errors="coerce").fillna(0).sum())
+                    serie = pd.Series(valores, dtype="float64")
+                    return int(pd.to_numeric(serie, errors="coerce").fillna(0).sum())
 
                 team_total = row.get("team_total")
                 opp_total = row.get("opp_total")
@@ -717,6 +815,15 @@ def main() -> int:
             conexion = psycopg.connect(db_url)
             print("✅ Conexión establecida")
             
+            limpiar_datos_bd(conexion)
+
+            equipos_bd = obtener_equipos_bd(conexion)
+            if not equipos_bd:
+                equipos_csv = Path(__file__).resolve().parents[2] / "scripts" / "equipos.csv"
+                print()
+                print("🏀 Equipos no encontrados en BD. Migrando desde equipos.csv...")
+                cargar_equipos_desde_csv(conexion, equipos_csv)
+
             crear_usuario_desarrollo(conexion)
             poblar_estadisticas_equipos(conexion, csv_paths)
             poblar_partidos(conexion, csv_paths)

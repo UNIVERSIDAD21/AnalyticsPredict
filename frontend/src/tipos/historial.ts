@@ -7,6 +7,7 @@ export interface PuntosPartido {
   q2: number;
   q3: number;
   q4: number;
+  ot: number;
   total: number;
 }
 
