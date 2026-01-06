@@ -76,6 +76,14 @@ export function HistorialEquipo({
     return partidos.slice(0, total);
   }, [partidos, paginaActual]);
 
+  const mostrarOT = useMemo(
+    () =>
+      partidos.some(
+        (partido) => partido.puntosEquipo.ot > 0 || partido.puntosRival.ot > 0
+      ),
+    [partidos]
+  );
+
   const resumen = useMemo(() => {
     const total = partidos.length;
     const victorias = partidos.filter((partido) => partido.resultado === 'VICTORIA').length;
