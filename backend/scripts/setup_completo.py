@@ -668,7 +668,8 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                     if not ot_cols:
                         return 0
                     valores = [row.get(col) for col in ot_cols]
-                    return int(pd.to_numeric(valores, errors="coerce").fillna(0).sum())
+                    serie = pd.Series(valores, dtype="float64")
+                    return int(pd.to_numeric(serie, errors="coerce").fillna(0).sum())
 
                 team_total = row.get("team_total")
                 opp_total = row.get("opp_total")
