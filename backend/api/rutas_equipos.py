@@ -467,9 +467,19 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 e.pop("conference_record", None)
                 e.pop("division_record", None)
 
+            orden_conferencias = {"Este": 0, "Oeste": 1}
+            equipos_ordenados = sorted(
+                estadisticas,
+                key=lambda e: (
+                    orden_conferencias.get(e["conferencia"], 2),
+                    e["posicion"],
+                    e["nombre"],
+                ),
+            )
+
             return {
                 "fecha_actualizacion": datetime.utcnow().isoformat(),
-                "equipos": sorted(estadisticas, key=lambda e: e["nombre"]),
+                "equipos": equipos_ordenados,
                 "temporada_actual": temporada_filtro,
             }
 
@@ -606,15 +616,23 @@ async def listar_historial_equipo(
             "ot": fila["visitante_ot"] if ubicacion == "LOCAL" else fila["local_ot"],
             "total": fila["visitante_total"] if ubicacion == "LOCAL" else fila["local_total"],
         }
+
+        def ajustar_ot(puntos: dict) -> int:
+            base = (puntos["q1"] or 0) + (puntos["q2"] or 0) + (puntos["q3"] or 0) + (puntos["q4"] or 0)
+            total = puntos["total"] or 0
+            ot = puntos["ot"] or 0
+            if ot > 0:
+                return ot
+            diff = total - base
+            return diff if diff > 0 else 0
+
+        puntos_equipo["ot"] = ajustar_ot(puntos_equipo)
+        puntos_rival["ot"] = ajustar_ot(puntos_rival)
         
         # ✅ CORRECCIÓN: Usar ganador_id en lugar de comparar totales
         ganador_id_str = str(fila["ganador_id"]) if fila["ganador_id"] else None
-        if ubicacion == "LOCAL":
-            equipo_actual_id = str(fila["id"])  # Usar el ID correcto
-            resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
-        else:
-            equipo_actual_id = str(fila["id"])
-            resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
+        equipo_actual_id = str(equipo_id)
+        resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
         
         fecha = fila["fecha_partido"]
         partidos.append(

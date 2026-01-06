@@ -40,8 +40,8 @@ export function TablaEstadisticasEquipos({
   const [busqueda, setBusqueda] = useState('');
   const [conferencia, setConferencia] = useState('Todas');
   const [orden, setOrden] = useState<{ columna: string; direccion: Orden }>({
-    columna: 'pct',
-    direccion: 'desc',
+    columna: 'pos',
+    direccion: 'asc',
   });
 
   const columnas: Columna[] = [
@@ -120,6 +120,18 @@ export function TablaEstadisticasEquipos({
   const equiposOrdenados = useMemo(() => {
     const columna = columnas.find((col) => col.id === orden.columna);
     if (!columna) return equiposFiltrados;
+
+    if (columna.id === 'pos' && conferencia === 'Todas') {
+      const ordenConferencia: Record<string, number> = { Este: 0, Oeste: 1 };
+      return [...equiposFiltrados].sort((a, b) => {
+        const confA = ordenConferencia[a.conferencia] ?? 2;
+        const confB = ordenConferencia[b.conferencia] ?? 2;
+        if (confA !== confB) {
+          return confA - confB;
+        }
+        return a.posicion - b.posicion;
+      });
+    }
 
     const ordenados = [...equiposFiltrados].sort((a, b) => {
       const va = columna.obtenerValor(a);
