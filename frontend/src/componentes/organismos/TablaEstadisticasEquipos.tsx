@@ -26,7 +26,10 @@ interface Columna {
   formato?: (equipo: EstadisticasEquipo) => string;
 }
 
-const formatoPct = (valor: number) => `${(valor * 100).toFixed(1)}%`;
+const formatoPct = (valor: number) => {
+  const texto = valor.toFixed(3);
+  return texto.startsWith('0') ? texto.slice(1) : texto;
+};
 
 export function TablaEstadisticasEquipos({
   equipos,
@@ -46,20 +49,29 @@ export function TablaEstadisticasEquipos({
 
   const columnas: Columna[] = [
     { id: 'equipo', etiqueta: 'Equipo', obtenerValor: (e) => e.nombre },
-    { id: 'conf', etiqueta: 'Conf', obtenerValor: (e) => e.conferencia },
+    {
+      id: 'conf',
+      etiqueta: 'Conf',
+      obtenerValor: (e) => `${e.record_conferencia.victorias}-${e.record_conferencia.derrotas}`,
+    },
     { id: 'pos', etiqueta: 'Pos', obtenerValor: (e) => e.posicion },
     {
-      id: 'record',
-      etiqueta: 'Record',
-      obtenerValor: (e) => `${e.record.victorias}-${e.record.derrotas}`,
-    },
-    {
       id: 'pct',
-      etiqueta: '% Victorias',
+      etiqueta: 'PCT',
       obtenerValor: (e) =>
         e.record.victorias / Math.max(1, e.record.victorias + e.record.derrotas),
       formato: (e) =>
         formatoPct(e.record.victorias / Math.max(1, e.record.victorias + e.record.derrotas)),
+    },
+    {
+      id: 'loc',
+      etiqueta: 'Loc',
+      obtenerValor: (e) => `${e.local.victorias}-${e.local.derrotas}`,
+    },
+    {
+      id: 'vis',
+      etiqueta: 'Vis',
+      obtenerValor: (e) => `${e.visitante.victorias}-${e.visitante.derrotas}`,
     },
     { id: 'racha', etiqueta: 'Racha', obtenerValor: (e) => e.racha.join('-') },
     { id: 'ppg_q1', etiqueta: 'PPG Q1', obtenerValor: (e) => e.promedios.anotados.q1 },
@@ -88,16 +100,6 @@ export function TablaEstadisticasEquipos({
       id: 'linea',
       etiqueta: 'Línea Promedio',
       obtenerValor: (e) => e.linea_promedio,
-    },
-    {
-      id: 'record_casa',
-      etiqueta: 'Record Casa',
-      obtenerValor: (e) => `${e.local.victorias}-${e.local.derrotas}`,
-    },
-    {
-      id: 'record_fuera',
-      etiqueta: 'Record Fuera',
-      obtenerValor: (e) => `${e.visitante.victorias}-${e.visitante.derrotas}`,
     },
     { id: 'ppg_casa', etiqueta: 'PPG Casa', obtenerValor: (e) => e.local.ppg },
     { id: 'ppg_fuera', etiqueta: 'PPG Fuera', obtenerValor: (e) => e.visitante.ppg },
