@@ -467,9 +467,19 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 e.pop("conference_record", None)
                 e.pop("division_record", None)
 
+            orden_conferencias = {"Este": 0, "Oeste": 1}
+            equipos_ordenados = sorted(
+                estadisticas,
+                key=lambda e: (
+                    orden_conferencias.get(e["conferencia"], 2),
+                    e["posicion"],
+                    e["nombre"],
+                ),
+            )
+
             return {
                 "fecha_actualizacion": datetime.utcnow().isoformat(),
-                "equipos": sorted(estadisticas, key=lambda e: e["nombre"]),
+                "equipos": equipos_ordenados,
                 "temporada_actual": temporada_filtro,
             }
 
@@ -609,12 +619,8 @@ async def listar_historial_equipo(
         
         # ✅ CORRECCIÓN: Usar ganador_id en lugar de comparar totales
         ganador_id_str = str(fila["ganador_id"]) if fila["ganador_id"] else None
-        if ubicacion == "LOCAL":
-            equipo_actual_id = str(fila["id"])  # Usar el ID correcto
-            resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
-        else:
-            equipo_actual_id = str(fila["id"])
-            resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
+        equipo_actual_id = str(equipo_id)
+        resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
         
         fecha = fila["fecha_partido"]
         partidos.append(
