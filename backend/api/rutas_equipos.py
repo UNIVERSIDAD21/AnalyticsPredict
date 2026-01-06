@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""rutas_equipos.py — Endpoint de equipos."""
+"""rutas_equipos.py — Endpoint de equipos con tiebreakers correctos de la NBA."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from fastapi import APIRouter, Query, HTTPException
 from psycopg.rows import dict_row
@@ -36,7 +36,6 @@ def filtrar_equipos_por_modelo(equipos: List[InfoEquipo]) -> List[InfoEquipo]:
             if resolver_nombre_en_modelo(equipo.nombre, modelo.entidad_a_indice) is not None
         ]
     except Exception:
-        # Si el modelo no está disponible, retorna todos los equipos
         return equipos
 
 
@@ -151,8 +150,12 @@ def obtener_temporadas_disponibles() -> list:
 
 
 def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
-    """Calcula estadísticas de equipos desde la base de datos."""
+    """
+    Calcula estadísticas de equipos desde la base de datos.
+    CORREGIDO v3: Implementa tiebreakers oficiales de la NBA.
+    """
     from datetime import datetime
+    from collections import defaultdict
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -180,6 +183,21 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
             )
             equipos_base = cursor.fetchall()
 
+            # Estructuras para tiebreakers
+            map_conferencia: Dict[str, str] = {}
+            map_division: Dict[str, str] = {}
+            for e in equipos_base:
+                map_conferencia[str(e["id"])] = (e.get("conferencia") or "")
+                map_division[str(e["id"])] = (e.get("division") or "")
+            
+            # Conteos para tiebreakers
+            head_to_head_wins: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+            head_to_head_games: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+            conference_wins_count: Dict[str, int] = defaultdict(int)
+            conference_games_count: Dict[str, int] = defaultdict(int)
+            division_wins_count: Dict[str, int] = defaultdict(int)
+            division_games_count: Dict[str, int] = defaultdict(int)
+
             estadisticas = []
             for equipo in equipos_base:
                 equipo_id = equipo["id"]
@@ -203,9 +221,10 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     SELECT
                         p.equipo_local_id,
                         p.equipo_visitante_id,
-                        p.local_q1, p.local_q2, p.local_q3, p.local_q4, p.local_total,
-                        p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_total,
-                        p.fecha_partido
+                        p.local_q1, p.local_q2, p.local_q3, p.local_q4, p.local_ot, p.local_total,
+                        p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_ot, p.visitante_total,
+                        p.fecha_partido,
+                        p.ganador_id
                     FROM partidos p
                     WHERE {where_sql}
                     ORDER BY p.fecha_partido DESC
@@ -218,10 +237,6 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     continue
 
                 # Calcular estadísticas
-                # Contadores de victorias y derrotas. La NBA no tiene empates en el marcador final,
-                # pero en caso de que se encuentren registros con igualdad en el total (por ejemplo, si
-                # los datos no incluyen la prórroga) se tratará ese encuentro como derrota para evitar
-                # alterar el porcentaje de victorias.
                 victorias = 0
                 derrotas = 0
                 victorias_local = 0
@@ -234,7 +249,6 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 recibidos_q1, recibidos_q2, recibidos_q3, recibidos_q4, recibidos_total = [], [], [], [], []
                 totales_q1, totales_q2, totales_q3, totales_q4, totales_partido = [], [], [], [], []
                 racha = []
-                # Acumulador para diferencia de puntos a lo largo de la temporada.
                 diferencia_puntos_total = 0
 
                 for partido in partidos:
@@ -271,13 +285,20 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     totales_q4.append(q4_e + q4_r)
                     totales_partido.append(pts_equipo + pts_rival)
 
-                    # Acumular diferencia de puntos para el desempate posterior.
                     diferencia_puntos_total += (pts_equipo - pts_rival)
 
-                    # Determinar ganador: si el total es mayor, contar como victoria; en caso
-                    # contrario (incluyendo la igualdad), como derrota. La igualdad sólo
-                    # debería ocurrir en datos inconsistentes donde no se registran las prórrogas.
-                    if pts_equipo > pts_rival:
+                    # ID del rival
+                    opponent_id = str(partido["equipo_visitante_id"]) if es_local else str(partido["equipo_local_id"])
+                    
+                    # Registrar head-to-head
+                    head_to_head_games[str(equipo_id)][opponent_id] += 1
+                    
+                    # ✅ CORRECCIÓN: Usar ganador_id en lugar de comparar totales
+                    # Esto garantiza que partidos con overtime se cuenten correctamente
+                    ganador_id_str = str(partido["ganador_id"]) if partido["ganador_id"] else None
+                    
+                    if ganador_id_str == str(equipo_id):
+                        head_to_head_wins[str(equipo_id)][opponent_id] += 1
                         victorias += 1
                         if es_local:
                             victorias_local += 1
@@ -293,6 +314,18 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                             derrotas_visitante += 1
                         if len(racha) < 5:
                             racha.append("L")
+                    
+                    # Conference record
+                    if map_conferencia.get(str(equipo_id)) == map_conferencia.get(opponent_id):
+                        conference_games_count[str(equipo_id)] += 1
+                        if ganador_id_str == str(equipo_id):
+                            conference_wins_count[str(equipo_id)] += 1
+                    
+                    # Division record
+                    if map_division.get(str(equipo_id)) == map_division.get(opponent_id):
+                        division_games_count[str(equipo_id)] += 1
+                        if ganador_id_str == str(equipo_id):
+                            division_wins_count[str(equipo_id)] += 1
 
                 # Calcular promedios
                 n = len(partidos)
@@ -313,13 +346,23 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 n_local = len(puntos_local) or 1
                 n_visitante = len(puntos_visitante) or 1
 
+                # Calcular ratios para tiebreakers
+                conf_games = conference_games_count.get(str(equipo_id), 0)
+                conf_wins = conference_wins_count.get(str(equipo_id), 0)
+                conference_record_ratio = (conf_wins / conf_games) if conf_games > 0 else 0.0
+                
+                div_games = division_games_count.get(str(equipo_id), 0)
+                div_wins = division_wins_count.get(str(equipo_id), 0)
+                division_record_ratio = (div_wins / div_games) if div_games > 0 else 0.0
+
                 estadisticas.append({
                     "nombre": equipo["nombre"],
                     "abreviatura": equipo["abreviatura"],
                     "conferencia": equipo["conferencia"] or "",
+                    "division": equipo["division"] or "",
                     "record": {"victorias": victorias, "derrotas": derrotas},
                     "posicion": 0,
-                    "racha": list(reversed(racha)),  # Últimos 5 partidos en orden cronológico
+                    "racha": list(reversed(racha)),
                     "promedios": {
                         "anotados": {
                             "q1": sum(anotados_q1) / n if n else 0,
@@ -348,30 +391,81 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     },
                     "tendencias_over": tendencias_over,
                     "linea_promedio": linea_promedio,
-                    # Guardar la diferencia de puntos acumulada para posibles desempates.
                     "diferencia_puntos": diferencia_puntos_total,
+                    "equipo_id": str(equipo_id),
+                    "conference_record": conference_record_ratio,
+                    "division_record": division_record_ratio,
                 })
 
-            # Calcular posiciones por conferencia
-            # Calcular posiciones por conferencia aplicando criterios de desempate.
-            # La NBA utiliza una jerarquía de reglas; para esta versión MVP aplicamos tres
-            # niveles: (1) porcentaje de victorias, (2) número total de victorias y
-            # (3) diferencia de puntos. Todos en orden descendente.
+            # ✅ CORRECCIÓN: Aplicar tiebreakers oficiales de la NBA
             for conferencia in ["Este", "Oeste"]:
                 equipos_conf = [e for e in estadisticas if e["conferencia"] == conferencia]
+                
+                # Orden inicial por porcentaje de victorias
                 equipos_conf.sort(
                     key=lambda e: (
-                        # porcentaje de victorias
                         e["record"]["victorias"] / max(1, e["record"]["victorias"] + e["record"]["derrotas"]),
-                        # número total de victorias
                         e["record"]["victorias"],
-                        # diferencia de puntos
-                        e.get("diferencia_puntos", 0),
                     ),
                     reverse=True,
                 )
-                for idx, eq in enumerate(equipos_conf, start=1):
-                    eq["posicion"] = idx
+                
+                # Aplicar tiebreakers para equipos con mismo récord
+                posicion = 1
+                i = 0
+                while i < len(equipos_conf):
+                    j = i
+                    vict = equipos_conf[i]["record"]["victorias"]
+                    der = equipos_conf[i]["record"]["derrotas"]
+                    
+                    # Identificar equipos con mismo récord
+                    while j < len(equipos_conf) and \
+                          equipos_conf[j]["record"]["victorias"] == vict and \
+                          equipos_conf[j]["record"]["derrotas"] == der:
+                        j += 1
+                    
+                    grupo = equipos_conf[i:j]
+                    
+                    if len(grupo) > 1:
+                        # Tiebreaker para 2+ equipos
+                        grupo_ids = [g["equipo_id"] for g in grupo]
+                        
+                        def _head_to_head_ratio(team_dict):
+                            """Calcula el porcentaje de victorias head-to-head."""
+                            tid = team_dict["equipo_id"]
+                            total_games = 0
+                            total_wins = 0
+                            for oid in grupo_ids:
+                                if oid == tid:
+                                    continue
+                                total_games += head_to_head_games.get(str(tid), {}).get(str(oid), 0)
+                                total_wins += head_to_head_wins.get(str(tid), {}).get(str(oid), 0)
+                            return (total_wins / total_games) if total_games > 0 else 0.0
+                        
+                        # Ordenar grupo aplicando todos los criterios de tiebreak
+                        grupo.sort(
+                            key=lambda e: (
+                                _head_to_head_ratio(e),           # 1. Head-to-head
+                                e.get("division_record", 0),      # 2. Division record (si aplica)
+                                e.get("conference_record", 0),    # 3. Conference record
+                                e.get("diferencia_puntos", 0),    # 4. Point differential
+                            ),
+                            reverse=True,
+                        )
+                    
+                    # Asignar posiciones
+                    for g in grupo:
+                        g["posicion"] = posicion
+                        posicion += 1
+                    
+                    equipos_conf[i:j] = grupo
+                    i = j
+
+            # Limpiar campos internos
+            for e in estadisticas:
+                e.pop("equipo_id", None)
+                e.pop("conference_record", None)
+                e.pop("division_record", None)
 
             return {
                 "fecha_actualizacion": datetime.utcnow().isoformat(),
@@ -461,10 +555,11 @@ async def listar_historial_equipo(
                     el.abreviatura as local_abr,
                     ev.nombre as equipo_visitante,
                     ev.abreviatura as visitante_abr,
-                    p.local_q1, p.local_q2, p.local_q3, p.local_q4,
+                    p.local_q1, p.local_q2, p.local_q3, p.local_q4, p.local_ot,
                     p.local_total,
-                    p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4,
+                    p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_ot,
                     p.visitante_total,
+                    p.ganador_id,
                     CASE
                         WHEN p.equipo_local_id = %s THEN 'LOCAL'
                         ELSE 'VISITANTE'
@@ -500,6 +595,7 @@ async def listar_historial_equipo(
             "q2": fila["local_q2"] if ubicacion == "LOCAL" else fila["visitante_q2"],
             "q3": fila["local_q3"] if ubicacion == "LOCAL" else fila["visitante_q3"],
             "q4": fila["local_q4"] if ubicacion == "LOCAL" else fila["visitante_q4"],
+            "ot": fila["local_ot"] if ubicacion == "LOCAL" else fila["visitante_ot"],
             "total": fila["local_total"] if ubicacion == "LOCAL" else fila["visitante_total"],
         }
         puntos_rival = {
@@ -507,9 +603,19 @@ async def listar_historial_equipo(
             "q2": fila["visitante_q2"] if ubicacion == "LOCAL" else fila["local_q2"],
             "q3": fila["visitante_q3"] if ubicacion == "LOCAL" else fila["local_q3"],
             "q4": fila["visitante_q4"] if ubicacion == "LOCAL" else fila["local_q4"],
+            "ot": fila["visitante_ot"] if ubicacion == "LOCAL" else fila["local_ot"],
             "total": fila["visitante_total"] if ubicacion == "LOCAL" else fila["local_total"],
         }
-        resultado = "VICTORIA" if puntos_equipo["total"] > puntos_rival["total"] else "DERROTA"
+        
+        # ✅ CORRECCIÓN: Usar ganador_id en lugar de comparar totales
+        ganador_id_str = str(fila["ganador_id"]) if fila["ganador_id"] else None
+        if ubicacion == "LOCAL":
+            equipo_actual_id = str(fila["id"])  # Usar el ID correcto
+            resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
+        else:
+            equipo_actual_id = str(fila["id"])
+            resultado = "VICTORIA" if ganador_id_str == equipo_actual_id else "DERROTA"
+        
         fecha = fila["fecha_partido"]
         partidos.append(
             {

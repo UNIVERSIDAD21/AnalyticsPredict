@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-setup_completo.py — Script TODO EN UNO para configurar el sistema NBA.
+nba_scraper_multi_teams.py — Script CORREGIDO para poblar el sistema NBA
 
-VERSIÓN CORREGIDA: Soluciona el error "there is no unique or exclusion 
-constraint matching the ON CONFLICT specification"
+CORRECCIONES v3:
+- Manejo correcto de overtime en TODOS los casos
+- Tiebreakers oficiales de la NBA implementados
+- Eliminada lógica redundante
 
-El problema era que se usaba un índice parcial (WHERE espn_game_id IS NOT NULL)
-que PostgreSQL NO permite usar en ON CONFLICT. La solución es usar un
-UNIQUE CONSTRAINT real en lugar de un índice parcial.
-
-Uso desde la carpeta backend/scripts:
-    python setup_completo.py
+Uso desde backend/scripts:
+    python nba_scraper_multi_teams.py --teams all --seasons 2024 2025
 """
 
 from __future__ import annotations
@@ -22,23 +20,21 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv()
 
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # CONFIGURACIÓN
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 
 Q_KEYS = ("Q1", "Q2", "Q3", "Q4")
 USUARIO_DESARROLLO_ID = "00000000-0000-0000-0000-000000000001"
 
-# MAPEO CRÍTICO: Los CSVs usan "LA Clippers" pero el frontend usa "Los Angeles Clippers"
 MAPEO_NOMBRES = {
     "la clippers": "los angeles clippers",
     "la lakers": "los angeles lakers",
@@ -49,10 +45,9 @@ MAPEO_NOMBRES_CSV_A_BD = {
     "LA Lakers": "Los Angeles Lakers",
 }
 
-
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # FUNCIONES DE UTILIDAD
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 
 def normalize_name(nombre: str) -> str:
     """Normaliza el nombre de un equipo para el modelo."""
@@ -111,89 +106,9 @@ def parsear_fecha_calendario(valor: object) -> datetime.date:
         return datetime.now().date()
 
 
-def asegurar_unicidad_partidos(conexion) -> None:
-    """
-    CORREGIDO: Asegura columna espn_game_id y crea CONSTRAINTS únicos.
-    
-    El problema anterior era usar índices parciales que PostgreSQL NO permite
-    en ON CONFLICT. La solución es:
-    1. Usar UNIQUE CONSTRAINT (no índice) para partido_exacto
-    2. Manejar espn_game_id con lógica en código, no en constraint parcial
-    """
-    print("   🔧 Configurando constraints de unicidad...")
-    
-    with conexion.cursor() as cursor:
-        # 1. Agregar columna espn_game_id si no existe
-        cursor.execute("ALTER TABLE partidos ADD COLUMN IF NOT EXISTS espn_game_id TEXT")
-        
-        # 2. Eliminar duplicados existentes (mantener el primero)
-        print("   🧹 Limpiando duplicados existentes...")
-        cursor.execute(
-            """
-            WITH duplicados AS (
-                SELECT id,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY temporada_id, fecha_partido, tipo_partido,
-                                     equipo_local_id, equipo_visitante_id
-                        ORDER BY id
-                    ) AS rn
-                FROM partidos
-            )
-            DELETE FROM partidos
-            WHERE id IN (SELECT id FROM duplicados WHERE rn > 1)
-            """
-        )
-        eliminados = cursor.rowcount
-        if eliminados > 0:
-            print(f"   🗑️  Eliminados {eliminados} duplicados")
-        
-        # 3. Eliminar índices/constraints antiguos que causan conflicto
-        print("   🔄 Actualizando constraints...")
-        
-        # Eliminar índice parcial problemático (si existe)
-        cursor.execute("DROP INDEX IF EXISTS partidos_unq_espn_game_id")
-        cursor.execute("DROP INDEX IF EXISTS partidos_unq_partido_exacto")
-        
-        # Eliminar constraints antiguos (si existen)
-        cursor.execute("""
-            DO $$ 
-            BEGIN
-                ALTER TABLE partidos DROP CONSTRAINT IF EXISTS partidos_partido_exacto_key;
-                ALTER TABLE partidos DROP CONSTRAINT IF EXISTS partidos_espn_game_id_key;
-            EXCEPTION WHEN OTHERS THEN
-                NULL;
-            END $$;
-        """)
-        
-        # 4. Crear UNIQUE CONSTRAINT para partido exacto (funciona con ON CONFLICT)
-        cursor.execute("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint 
-                    WHERE conname = 'partidos_partido_exacto_key'
-                ) THEN
-                    ALTER TABLE partidos ADD CONSTRAINT partidos_partido_exacto_key
-                    UNIQUE (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id);
-                END IF;
-            END $$;
-        """)
-        
-        # 5. Crear índice NO parcial para espn_game_id (para búsquedas rápidas)
-        # NOTA: No usamos UNIQUE porque puede haber NULLs duplicados
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_partidos_espn_game_id 
-            ON partidos (espn_game_id) 
-            WHERE espn_game_id IS NOT NULL
-        """)
-    
-    conexion.commit()
-    print("   ✅ Constraints configurados correctamente")
-
-
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # FUNCIONES DEL MODELO
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 
 def build_design_matrix(
     team_names: Sequence[str],
@@ -233,13 +148,11 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
         try:
             df = pd.read_csv(csv_path)
             
-            # Filtrar por temporada regular y linescore válido
             if "season_type" in df.columns:
                 df = df[df["season_type"].fillna("").str.upper() == "REG"].copy()
             if "valid_linescore" in df.columns:
                 df = df[df["valid_linescore"] == True].copy()
             
-            # Normalizar nombres
             df["team"] = df["team"].apply(normalize_name)
             df["opponent"] = df["opponent"].apply(normalize_name)
             
@@ -253,7 +166,6 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
     
     df = pd.concat(frames, ignore_index=True)
     
-    # Filtrar partidos válidos
     cols_puntos = ["team_q1", "team_q2", "team_q3", "team_q4", 
                    "opp_q1", "opp_q2", "opp_q3", "opp_q4"]
     df[cols_puntos] = df[cols_puntos].apply(pd.to_numeric, errors="coerce")
@@ -262,7 +174,6 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
     print()
     print(f"📊 Total de partidos válidos: {len(df)}")
     
-    # Obtener equipos únicos
     equipos = sorted(set(df["team"].unique()) | set(df["opponent"].unique()))
     print(f"🏀 Equipos únicos en el modelo: {len(equipos)}")
     
@@ -276,10 +187,8 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
         print(f"   {i:2d}. {eq}")
     print("-" * 50)
     
-    # Crear índices
     entity_to_idx = {e: i for i, e in enumerate(equipos)}
     
-    # Preparar datos
     df["is_home"] = df["location"].apply(parse_location_value)
     
     print()
@@ -294,7 +203,6 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
     
     print("🎯 Entrenando modelo Ridge...")
     
-    # Entrenar para cada cuarto
     from sklearn.linear_model import Ridge
     
     coefs = {}
@@ -304,11 +212,9 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
         y_team = df[f"team_q{q[1]}"].values
         y_opp = df[f"opp_q{q[1]}"].values
         
-        # Modelo para equipo
         model_team = Ridge(alpha=5.0)
         model_team.fit(X, y_team)
         
-        # Modelo para oponente
         model_opp = Ridge(alpha=5.0)
         model_opp.fit(X, y_opp)
         
@@ -317,7 +223,6 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
         coefs[f"opp_{q}"] = model_opp.coef_
         intercepts[f"opp_{q}"] = model_opp.intercept_
     
-    # Guardar modelo
     datos_dir = cwd / "datos"
     datos_dir.mkdir(exist_ok=True)
     
@@ -338,15 +243,14 @@ def entrenar_modelo(cwd: Path, csv_paths: List[Path]) -> None:
     print(f"   🏀 Equipos: {len(equipos)}")
     print(f"   📊 Partidos: {len(df)}")
     
-    # Verificar
     test = np.load(modelo_path, allow_pickle=True)
     equipos_guardados = test["equipos"]
     print(f"   ✅ Verificado: {len(equipos_guardados)} equipos cargados correctamente")
 
 
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # FUNCIONES DE BASE DE DATOS
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 
 def obtener_equipos_bd(conexion) -> Dict[str, str]:
     """Obtiene mapeo nombre -> id de equipos."""
@@ -356,41 +260,62 @@ def obtener_equipos_bd(conexion) -> Dict[str, str]:
 
 
 def obtener_temporadas_bd(conexion, temporadas_csv: List) -> Dict:
-    """Obtiene o crea temporadas en la BD."""
-    resultado = {}
-    
+    """
+    Obtiene o crea temporadas en la base de datos.
+
+    Los valores de `temporadas_csv` representan el año final de la temporada de la
+    NBA (por ejemplo, 2026 para la temporada 2025-2026). Este método usa
+    `anio_inicio = año_final - 1` y `anio_fin = año_final` para poblar las
+    columnas obligatorias `anio_inicio` y `anio_fin`. También establece el
+    nombre de la temporada como "{anio_inicio}-{anio_fin}" y define fechas
+    aproximadas de inicio y fin (1 de octubre y 30 de junio). La temporada
+    más reciente se marca como activa.
+    """
+    resultado: Dict[int, str] = {}
+    # Convertir a enteros para detectar la temporada más reciente
+    try:
+        temporadas_int = [int(t) for t in temporadas_csv]
+    except Exception:
+        temporadas_int = []
+    max_temp = max(temporadas_int) if temporadas_int else None
+
     with conexion.cursor() as cursor:
         for temp in temporadas_csv:
-            temp_str = str(temp)
-            
-            # Buscar temporada existente
+            try:
+                temp_int = int(temp)
+            except Exception:
+                continue
+            anio_inicio = temp_int - 1
+            anio_fin = temp_int
+            nombre = f"{anio_inicio}-{anio_fin}"
+
+            # Buscar temporada existente por anio_inicio y anio_fin o por nombre
             cursor.execute(
-                "SELECT id FROM temporadas WHERE nombre LIKE %s OR nombre = %s",
-                (f"%{temp_str}%", temp_str)
+                "SELECT id FROM temporadas WHERE (anio_inicio = %s AND anio_fin = %s) OR nombre = %s",
+                (anio_inicio, anio_fin, nombre)
             )
             row = cursor.fetchone()
-            
             if row:
                 resultado[temp] = row[0]
-            else:
-                # Crear temporada
-                nombre = f"{temp_str}-{int(temp_str)+1}"
-                fecha_inicio = f"{temp_str}-10-01"
-                fecha_fin = f"{int(temp_str)+1}-06-30"
-                
-                cursor.execute(
-                    """
-                    INSERT INTO temporadas (nombre, fecha_inicio, fecha_fin, activa)
-                    VALUES (%s, %s, %s, true)
-                    RETURNING id
-                    """,
-                    (nombre, fecha_inicio, fecha_fin)
-                )
-                resultado[temp] = cursor.fetchone()[0]
-                print(f"   ✅ Creada temporada: {nombre}")
-        
+                continue
+
+            # Crear nueva temporada
+            fecha_inicio = f"{anio_inicio}-10-01"
+            fecha_fin = f"{anio_fin}-06-30"
+            activa = True if (max_temp is None or temp_int == max_temp) else False
+            cursor.execute(
+                """
+                INSERT INTO temporadas (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
+            )
+            new_id = cursor.fetchone()[0]
+            resultado[temp] = new_id
+            print(f"   ✅ Creada temporada: {nombre}")
+
         conexion.commit()
-    
     return resultado
 
 
@@ -423,7 +348,6 @@ def poblar_estadisticas_equipos(conexion, csv_paths: List[Path]) -> int:
     print("=" * 70)
     print()
     
-    # Cargar datos
     frames = []
     for path in csv_paths:
         try:
@@ -509,31 +433,25 @@ def poblar_estadisticas_equipos(conexion, csv_paths: List[Path]) -> int:
                          stats["partidos_jugados"]]
                     )
                     insertados += 1
-                except Exception as e:
+                except Exception:
                     pass
         
         conexion.commit()
     
-    print(f"✅ Estadísticas agregadas: {insertados} registros (30 equipos × temporadas)")
+    print(f"✅ Estadísticas agregadas: {insertados} registros")
     return insertados
 
 
 def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
     """
-    CORREGIDO: Pobla la tabla partidos con TODOS los partidos individuales.
-    
-    Ahora usa ON CONFLICT con el CONSTRAINT partido_exacto_key que SÍ funciona.
+    CORREGIDO v3: Manejo correcto de overtime en TODOS los casos.
     """
     print()
     print("=" * 70)
     print("PASO 4: POBLAR TODOS LOS PARTIDOS INDIVIDUALES")
     print("=" * 70)
     print()
-    
-    # IMPORTANTE: Asegurar constraints ANTES de insertar
-    asegurar_unicidad_partidos(conexion)
 
-    # Cargar TODOS los datos
     frames = []
     for path in csv_paths:
         try:
@@ -604,43 +522,52 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
                 fecha = parsear_fecha_calendario(row.get("date"))
                 
-                def sumar_ot(prefix: str) -> int:
-                    ot_cols = [col for col in row.index if str(col).startswith(f"{prefix}_ot")]
-                    if not ot_cols:
-                        return 0
-                    valores = [row.get(col) for col in ot_cols]
-                    return int(pd.to_numeric(valores, errors="coerce").fillna(0).sum())
-
+                # ✅ CORRECCIÓN PRINCIPAL: Manejo correcto de overtime
+                # Los totales en el CSV YA incluyen overtime, así que los usamos directamente
                 team_total = row.get("team_total")
                 opp_total = row.get("opp_total")
+                
                 if pd.notna(team_total) and pd.notna(opp_total):
+                    # Caso 1: El CSV tiene los totales (ya incluyen OT)
                     team_total = int(team_total)
                     opp_total = int(opp_total)
                 else:
-                    team_total = int(local_q1 + local_q2 + local_q3 + local_q4) if location == "HOME" else int(visit_q1 + visit_q2 + visit_q3 + visit_q4)
-                    opp_total = int(visit_q1 + visit_q2 + visit_q3 + visit_q4) if location == "HOME" else int(local_q1 + local_q2 + local_q3 + local_q4)
+                    # Caso 2: No hay totales, calcularlos sumando cuartos + overtime
+                    base_team = int(row["team_q1"]) + int(row["team_q2"]) + int(row["team_q3"]) + int(row["team_q4"])
+                    base_opp = int(row["opp_q1"]) + int(row["opp_q2"]) + int(row["opp_q3"]) + int(row["opp_q4"])
+                    
+                    # Sumar TODAS las columnas de overtime
+                    team_ot_sum = 0
+                    opp_ot_sum = 0
+                    for col in row.index:
+                        if str(col).startswith("team_ot"):
+                            team_ot_sum += int(pd.to_numeric(row[col], errors="coerce") or 0)
+                        elif str(col).startswith("opp_ot"):
+                            opp_ot_sum += int(pd.to_numeric(row[col], errors="coerce") or 0)
+                    
+                    team_total = base_team + team_ot_sum
+                    opp_total = base_opp + opp_ot_sum
 
+                # Asignar totales según ubicación
                 if location == "HOME":
                     local_total = team_total
                     visit_total = opp_total
-                    local_ot = sumar_ot("team")
-                    visit_ot = sumar_ot("opp")
+                    # Calcular OT acumulado
+                    local_ot = max(0, team_total - int(local_q1 + local_q2 + local_q3 + local_q4))
+                    visit_ot = max(0, opp_total - int(visit_q1 + visit_q2 + visit_q3 + visit_q4))
                 else:
                     local_total = opp_total
                     visit_total = team_total
-                    local_ot = sumar_ot("opp")
-                    visit_ot = sumar_ot("team")
-
-                if local_ot == 0 and visit_ot == 0:
-                    local_ot = max(0, local_total - int(local_q1 + local_q2 + local_q3 + local_q4))
-                    visit_ot = max(0, visit_total - int(visit_q1 + visit_q2 + visit_q3 + visit_q4))
+                    local_ot = max(0, opp_total - int(local_q1 + local_q2 + local_q3 + local_q4))
+                    visit_ot = max(0, team_total - int(visit_q1 + visit_q2 + visit_q3 + visit_q4))
                 
-                # Determinar ganador
+                # Determinar ganador (ahora los totales SÍ incluyen OT)
                 ganador_id = None
                 if local_total > visit_total:
                     ganador_id = equipos_bd[equipo_local]
                 elif visit_total > local_total:
                     ganador_id = equipos_bd[equipo_visitante]
+                # Si son iguales, ganador_id queda None (no debería pasar en NBA)
                 
                 season_type = str(row.get("season_type", "REG")).upper()
                 if season_type not in ("REG", "POST", "PRE"):
@@ -655,21 +582,20 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                     else f"{row.get('season')}|{fecha}|{season_type}|{equipo_local}|{equipo_visitante}"
                 )
                 if clave_dedup in claves_vistas:
-                    errores += 1
                     continue
                 claves_vistas.add(clave_dedup)
                 
-                # CORREGIDO: Usar solo ON CONFLICT con el constraint que SÍ existe
+                hubo_overtime = (local_ot > 0 or visit_ot > 0)
+                
                 valores_partido = [
                     str(temporada_id), fecha, season_type, espn_game_id,
                     str(equipos_bd[equipo_local]), str(equipos_bd[equipo_visitante]),
                     int(local_q1), int(local_q2), int(local_q3), int(local_q4), local_ot, local_total,
                     int(visit_q1), int(visit_q2), int(visit_q3), int(visit_q4), visit_ot, visit_total,
                     str(ganador_id) if ganador_id else None,
-                    row.get("ot_count", 0) > 0 if "ot_count" in row else False,
+                    hubo_overtime,
                 ]
                 
-                # QUERY CORREGIDO: Usa el constraint correcto
                 cursor.execute(
                     """
                     INSERT INTO partidos (
@@ -703,9 +629,9 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
                 resultado = cursor.fetchone()
                 if resultado:
-                    if resultado[1]:  # inserted = true (nuevo)
+                    if resultado[1]:
                         insertados += 1
-                    else:  # actualizado
+                    else:
                         actualizados += 1
                 
             except Exception as e:
@@ -713,14 +639,12 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 if errores <= 5:
                     print(f"   ⚠️  Error en fila {idx}: {e}")
             
-            # Progreso y commit periódico
             if (idx + 1) % 500 == 0:
                 conexion.commit()
                 print(f"   Procesados: {idx + 1} / {len(df)} ({insertados} nuevos, {actualizados} actualizados)")
         
         conexion.commit()
     
-    # Total en BD
     with conexion.cursor() as cursor:
         cursor.execute("SELECT COUNT(*) FROM partidos")
         total_bd = cursor.fetchone()[0]
@@ -728,52 +652,157 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
     print()
     print(f"✅ Partidos nuevos: {insertados}")
     print(f"🔄 Partidos actualizados: {actualizados}")
-    print(f"⚠️  Errores/duplicados en memoria: {errores}")
+    print(f"⚠️  Errores/duplicados: {errores}")
     print(f"📊 Total en tabla partidos: {total_bd}")
     
     return insertados
 
 
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # FUNCIÓN PRINCIPAL
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 
 def main() -> int:
+    """Función principal del script."""
+    import argparse
+    import subprocess
+
+    def parse_args() -> argparse.Namespace:
+        parser = argparse.ArgumentParser(
+            description="Descarga partidos de múltiples equipos, entrena el modelo y pobla la BD",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "--teams",
+            nargs="+",
+            help="Equipos a descargar. Usa 'all' para todos los equipos",
+        )
+        parser.add_argument(
+            "--seasons",
+            nargs="+",
+            type=int,
+            help="Años de temporada a descargar (e.g., 2023 2024)",
+        )
+        parser.add_argument(
+            "--csv-dir",
+            default=None,
+            help="Directorio donde guardar o buscar archivos CSV de partidos",
+        )
+        parser.add_argument(
+            "--include-preseason",
+            action="store_true",
+            help="Incluir partidos de pretemporada al descargar",
+        )
+        parser.add_argument(
+            "--include-regular",
+            action="store_true",
+            default=True,
+            help="Incluir partidos de temporada regular al descargar",
+        )
+        parser.add_argument(
+            "--include-postseason",
+            action="store_true",
+            default=True,
+            help="Incluir partidos de postemporada al descargar",
+        )
+        parser.add_argument(
+            "--max-games",
+            type=int,
+            default=2000,
+            help="Máximo de juegos a descargar por equipo y temporada",
+        )
+        parser.add_argument(
+            "--sleep",
+            type=float,
+            default=0.20,
+            help="Pausa (segundos) entre requests al scrapear",
+        )
+        return parser.parse_args()
+
     print()
     print("╔" + "═" * 68 + "╗")
     print("║" + " " * 20 + "🏀 SETUP COMPLETO NBA 🏀" + " " * 21 + "║")
     print("║" + " " * 15 + "Modelo + Usuario + Base de Datos" + " " * 16 + "║")
     print("╚" + "═" * 68 + "╝")
     print()
-    
-    cwd = Path.cwd()
-    print(f"📂 Directorio: {cwd}")
-    
-    # Buscar CSVs
-    csv_paths = [p for p in sorted(cwd.glob("*.csv")) 
-                 if p.is_file() and p.name != "equipos.csv"]
-    
+
+    args = parse_args()
+
+    csv_dir = Path(args.csv_dir) if args.csv_dir else Path.cwd()
+    csv_dir.mkdir(parents=True, exist_ok=True)
+    print(f"📂 Directorio de CSVs: {csv_dir}")
+
+    if args.teams and args.seasons:
+        teams_list: List[str] = []
+        if len(args.teams) == 1 and args.teams[0].lower() == "all":
+            try:
+                datos_dir = Path(__file__).resolve().parents[1] / "datos" / "equipos_nba.json"
+                with open(datos_dir, "r", encoding="utf-8") as f:
+                    equipos_data = json.load(f)
+                teams_list = [team["nombre"] for team in equipos_data]
+                print(f"📋 Descargando datos para todos los equipos ({len(teams_list)})")
+            except Exception as e:
+                print(f"❌ Error leyendo equipos: {e}")
+                return 1
+        else:
+            teams_list = args.teams
+        
+        nbascript_path = Path(__file__).resolve().parent / "NBAscript.py"
+        
+        for team in teams_list:
+            safe_name = re.sub(r"\W+", "_", team.strip()).lower()
+            out_path = csv_dir / f"{safe_name}.csv"
+            cmd: List[str] = [
+                sys.executable,
+                str(nbascript_path),
+                "--team",
+                team,
+                "--out",
+                str(out_path),
+            ]
+            cmd.append("--seasons")
+            cmd.extend([str(sea) for sea in args.seasons])
+            
+            if args.include_preseason:
+                cmd.append("--include-preseason")
+            if args.include_regular:
+                cmd.append("--include-regular")
+            if args.include_postseason:
+                cmd.append("--include-postseason")
+            if args.max_games:
+                cmd.extend(["--max-games", str(args.max_games)])
+            if args.sleep:
+                cmd.extend(["--sleep", str(args.sleep)])
+            
+            print()
+            print(f"🕸️  Scrapeando {team} temporadas {args.seasons} -> {out_path.name}")
+            try:
+                subprocess.run(cmd, check=True)
+                print(f"   ✅ CSV generado: {out_path.name}")
+            except subprocess.CalledProcessError as e:
+                print(f"   ❌ Error al ejecutar NBAscript.py para {team}: {e}")
+                return 1
+
+    csv_paths = [p for p in sorted(csv_dir.glob("*.csv")) if p.is_file() and p.name != "equipos.csv"]
+
     if not csv_paths:
         print()
         print("❌ ERROR: No se encontraron CSVs de partidos.")
         print()
-        print("   Ejecuta este script DESDE la carpeta backend/scripts:")
-        print("   cd C:\\Users\\ING-ERIK\\Documents\\Proyectos\\AnalyticsPredict\\backend\\scripts")
-        print("   python setup_completo.py")
+        print("   Genera los CSVs especificando --teams y --seasons:")
+        print("   python nba_scraper_multi_teams.py --teams all --seasons 2024 2025")
         return 1
-    
-    print(f"📁 CSVs encontrados: {len(csv_paths)}")
-    
-    # PASO 1: Entrenar modelo
+
+    print(f"🔍 CSVs encontrados: {len(csv_paths)}")
+
     try:
-        entrenar_modelo(cwd, csv_paths)
+        entrenar_modelo(csv_dir, csv_paths)
     except Exception as e:
         print(f"❌ Error entrenando modelo: {e}")
         import traceback
         traceback.print_exc()
         return 1
-    
-    # PASOS 2-4: Base de datos (solo si hay DATABASE_URL)
+
     db_url = obtener_database_url()
     if not db_url:
         print()
@@ -798,8 +827,7 @@ def main() -> int:
             print(f"❌ Error con BD: {e}")
             import traceback
             traceback.print_exc()
-    
-    # Resumen final
+
     print()
     print("╔" + "═" * 68 + "╗")
     print("║" + " " * 22 + "✅ SETUP COMPLETADO ✅" + " " * 22 + "║")
@@ -809,7 +837,7 @@ def main() -> int:
     print()
     print("   python -m uvicorn app:app --reload --port 8000")
     print()
-    
+
     return 0
 
 

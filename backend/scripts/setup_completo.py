@@ -248,38 +248,67 @@ def obtener_equipos_bd(conexion) -> Dict[str, str]:
 
 
 def obtener_temporadas_bd(conexion, temporadas_csv: List) -> Dict:
-    resultado = {}
-    
+    """
+    Dado un listado de años de temporada (por ejemplo 2026 para la temporada 2025-2026),
+    devuelve un diccionario mapeando ese año al UUID de la temporada en la base de datos.
+    Si la temporada no existe, la crea utilizando las columnas anio_inicio, anio_fin,
+    nombre, fecha_inicio y fecha_fin. El campo anio_inicio se define como `temp - 1`
+    y anio_fin como `temp`. El nombre se compone como "{anio_inicio}-{anio_fin}".
+
+    Esta implementación garantiza que las columnas NOT NULL `anio_inicio` y `anio_fin`
+    se rellenen correctamente, evitando violar los constraints de la tabla temporadas.
+    """
+    resultado: Dict[int, str] = {}
+    # Determinar la temporada máxima para marcarla como activa
+    try:
+        # Convert all season identifiers to integers in case strings are passed
+        temporadas_int = [int(t) for t in temporadas_csv]
+    except Exception:
+        # If conversion fails for some element, default to treating as string
+        temporadas_int = []
+
+    max_temp = max(temporadas_int) if temporadas_int else None
+
     with conexion.cursor() as cursor:
         for temp in temporadas_csv:
-            temp_str = str(temp)
-            
+            try:
+                temp_int = int(temp)
+            except Exception:
+                # Skip invalid season entries
+                continue
+
+            anio_inicio = temp_int - 1
+            anio_fin = temp_int
+            nombre = f"{anio_inicio}-{anio_fin}"
+
+            # Intentar encontrar la temporada por anio_inicio y anio_fin o por nombre
             cursor.execute(
-                "SELECT id FROM temporadas WHERE nombre LIKE %s OR nombre = %s",
-                (f"%{temp_str}%", temp_str)
+                "SELECT id FROM temporadas WHERE (anio_inicio = %s AND anio_fin = %s) OR nombre = %s",
+                (anio_inicio, anio_fin, nombre)
             )
             row = cursor.fetchone()
-            
             if row:
                 resultado[temp] = row[0]
-            else:
-                nombre = f"{temp_str}-{int(temp_str)+1}"
-                fecha_inicio = f"{temp_str}-10-01"
-                fecha_fin = f"{int(temp_str)+1}-06-30"
-                
-                cursor.execute(
-                    """
-                    INSERT INTO temporadas (nombre, fecha_inicio, fecha_fin, activa)
-                    VALUES (%s, %s, %s, true)
-                    RETURNING id
-                    """,
-                    (nombre, fecha_inicio, fecha_fin)
-                )
-                resultado[temp] = cursor.fetchone()[0]
-                print(f"   ✅ Creada temporada: {nombre}")
-        
+                continue
+
+            # No encontrada: insertar una nueva temporada
+            fecha_inicio = f"{anio_inicio}-10-01"
+            fecha_fin = f"{anio_fin}-06-30"
+            # Activa solo la temporada más reciente si se conoce
+            activa = True if (max_temp is None or temp_int == max_temp) else False
+            cursor.execute(
+                """
+                INSERT INTO temporadas (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
+            )
+            new_id = cursor.fetchone()[0]
+            resultado[temp] = new_id
+            print(f"   ✅ Creada temporada: {nombre}")
+
         conexion.commit()
-    
     return resultado
 
 
