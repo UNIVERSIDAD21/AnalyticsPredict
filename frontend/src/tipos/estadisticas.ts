@@ -39,6 +39,7 @@ export interface EstadisticasEquipo {
   abreviatura: string;
   conferencia: string;
   record: RecordEquipo;
+  record_conferencia: RecordEquipo;
   posicion: number;
   racha: string[];
   promedios: PromediosEquipo;

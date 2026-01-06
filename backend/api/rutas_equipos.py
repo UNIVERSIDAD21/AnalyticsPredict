@@ -207,6 +207,8 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
                     "p.local_q1 IS NOT NULL",
                     "p.tipo_partido = 'REG'",
+                    "p.valido = true",
+                    "p.ganador_id IS NOT NULL",
                 ]
                 parametros: list = [equipo_id, equipo_id]
 
@@ -349,6 +351,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 # Calcular ratios para tiebreakers
                 conf_games = conference_games_count.get(str(equipo_id), 0)
                 conf_wins = conference_wins_count.get(str(equipo_id), 0)
+                conf_losses = conf_games - conf_wins
                 conference_record_ratio = (conf_wins / conf_games) if conf_games > 0 else 0.0
                 
                 div_games = division_games_count.get(str(equipo_id), 0)
@@ -361,6 +364,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     "conferencia": equipo["conferencia"] or "",
                     "division": equipo["division"] or "",
                     "record": {"victorias": victorias, "derrotas": derrotas},
+                    "record_conferencia": {"victorias": conf_wins, "derrotas": conf_losses},
                     "posicion": 0,
                     "racha": list(reversed(racha)),
                     "promedios": {
@@ -430,6 +434,8 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                         # Tiebreaker para 2+ equipos
                         grupo_ids = [g["equipo_id"] for g in grupo]
                         
+                        misma_division = len({g.get("division") for g in grupo}) == 1
+
                         def _head_to_head_ratio(team_dict):
                             """Calcula el porcentaje de victorias head-to-head."""
                             tid = team_dict["equipo_id"]
@@ -446,7 +452,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                         grupo.sort(
                             key=lambda e: (
                                 _head_to_head_ratio(e),           # 1. Head-to-head
-                                e.get("division_record", 0),      # 2. Division record (si aplica)
+                                e.get("division_record", 0) if misma_division else 0,  # 2. Division record
                                 e.get("conference_record", 0),    # 3. Conference record
                                 e.get("diferencia_puntos", 0),    # 4. Point differential
                             ),
@@ -539,6 +545,8 @@ async def listar_historial_equipo(
             condiciones = [
                 "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
                 "p.local_q1 IS NOT NULL",
+                "p.valido = true",
+                "p.ganador_id IS NOT NULL",
             ]
             parametros: List[object] = [equipo_id, equipo_id, equipo_id]
 

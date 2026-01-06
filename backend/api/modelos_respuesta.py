@@ -48,6 +48,7 @@ class PuntosPartidoHistorial(BaseModel):
     q2: int
     q3: int
     q4: int
+    ot: int
     total: int
 
 
