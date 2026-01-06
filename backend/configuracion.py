@@ -84,6 +84,18 @@ class Configuracion:
     )
     """Edge mínimo para considerar que hay 'valor' en una apuesta"""
 
+    # ══════════════════════════════════════════════════════════
+    # INGESTIÓN
+    # ══════════════════════════════════════════════════════════
+
+    ingestion_api_enabled: bool = field(
+        default_factory=lambda: os.getenv("INGESTION_API_ENABLED", "false").lower() == "true"
+    )
+    """Habilita el endpoint de sincronización de partidos"""
+
+    ingestion_api_key: str = field(default_factory=lambda: os.getenv("INGESTION_API_KEY", ""))
+    """API key simple para proteger la sincronización"""
+
     def __post_init__(self):
         """Inicialización posterior: configura valores que dependen del entorno."""
 
