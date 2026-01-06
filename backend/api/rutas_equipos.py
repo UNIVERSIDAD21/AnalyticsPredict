@@ -207,6 +207,8 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
                     "p.local_q1 IS NOT NULL",
                     "p.tipo_partido = 'REG'",
+                    "p.valido = true",
+                    "p.ganador_id IS NOT NULL",
                 ]
                 parametros: list = [equipo_id, equipo_id]
 
@@ -543,6 +545,8 @@ async def listar_historial_equipo(
             condiciones = [
                 "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
                 "p.local_q1 IS NOT NULL",
+                "p.valido = true",
+                "p.ganador_id IS NOT NULL",
             ]
             parametros: List[object] = [equipo_id, equipo_id, equipo_id]
 
