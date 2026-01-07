@@ -208,7 +208,6 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     "p.local_q1 IS NOT NULL",
                     "p.tipo_partido = 'REG'",
                     "p.valido = true",
-                    "p.ganador_id IS NOT NULL",
                 ]
                 parametros: list = [equipo_id, equipo_id]
 
@@ -261,13 +260,26 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                         pts_rival = partido["visitante_total"]
                         q1_e, q2_e, q3_e, q4_e = partido["local_q1"], partido["local_q2"], partido["local_q3"], partido["local_q4"]
                         q1_r, q2_r, q3_r, q4_r = partido["visitante_q1"], partido["visitante_q2"], partido["visitante_q3"], partido["visitante_q4"]
-                        puntos_local.append(pts_equipo)
                     else:
                         pts_equipo = partido["visitante_total"]
                         pts_rival = partido["local_total"]
                         q1_e, q2_e, q3_e, q4_e = partido["visitante_q1"], partido["visitante_q2"], partido["visitante_q3"], partido["visitante_q4"]
                         q1_r, q2_r, q3_r, q4_r = partido["local_q1"], partido["local_q2"], partido["local_q3"], partido["local_q4"]
+
+                    if pts_equipo is None or pts_rival is None:
+                        continue
+
+                    if es_local:
+                        puntos_local.append(pts_equipo)
+                    else:
                         puntos_visitante.append(pts_equipo)
+
+                    ganador_id = partido["ganador_id"]
+                    if ganador_id is None:
+                        if partido["local_total"] > partido["visitante_total"]:
+                            ganador_id = partido["equipo_local_id"]
+                        elif partido["visitante_total"] > partido["local_total"]:
+                            ganador_id = partido["equipo_visitante_id"]
 
                     anotados_q1.append(q1_e)
                     anotados_q2.append(q2_e)
@@ -297,7 +309,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     
                     # ✅ CORRECCIÓN: Usar ganador_id en lugar de comparar totales
                     # Esto garantiza que partidos con overtime se cuenten correctamente
-                    ganador_id_str = str(partido["ganador_id"]) if partido["ganador_id"] else None
+                    ganador_id_str = str(ganador_id) if ganador_id else None
                     
                     if ganador_id_str == str(equipo_id):
                         head_to_head_wins[str(equipo_id)][opponent_id] += 1
