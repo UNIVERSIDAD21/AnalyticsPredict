@@ -3,17 +3,15 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import List, Optional, Dict
 
 from fastapi import APIRouter, Query, HTTPException
 from psycopg.rows import dict_row
 
-from configuracion import CONFIGURACION
 from db import obtener_pool
 from motor_autoentrenamiento import obtener_modelo
 from motor.utilidades import resolver_nombre_en_modelo
+from .excepciones import ErrorDatos
 from .modelos_respuesta import (
     RespuestaEquipos,
     RespuestaEstadisticasEquipos,
@@ -55,16 +53,60 @@ def cargar_equipos() -> List[InfoEquipo]:
     return [InfoEquipo(**fila) for fila in filas]
 
 
-def cargar_estadisticas_equipos() -> dict:
-    """Carga estadísticas de equipos desde el archivo JSON de datos."""
-    ruta = Path(CONFIGURACION.ruta_estadisticas_equipos)
-    if not ruta.exists():
-        return {
-            "fecha_actualizacion": None,
-            "equipos": [],
-        }
-    with ruta.open("r", encoding="utf-8") as archivo:
-        return json.load(archivo)
+def validar_datos_estadisticas() -> None:
+    """Valida que existan partidos válidos para estadísticas."""
+    query = """
+        SELECT COUNT(*)
+        FROM partidos
+        WHERE local_q1 IS NOT NULL
+          AND local_q2 IS NOT NULL
+          AND local_q3 IS NOT NULL
+          AND local_q4 IS NOT NULL
+          AND visitante_q1 IS NOT NULL
+          AND visitante_q2 IS NOT NULL
+          AND visitante_q3 IS NOT NULL
+          AND visitante_q4 IS NOT NULL
+          AND tipo_partido = 'REG'
+          AND valido = true
+          AND ganador_id IS NOT NULL
+    """
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(query)
+            conteo = cursor.fetchone()[0]
+
+    if conteo <= 0:
+        raise ErrorDatos(
+            "No hay partidos en la base de datos para calcular estadísticas. "
+            "Carga datos antes de consultar esta sección."
+        )
+
+
+def validar_partidos_disponibles() -> None:
+    """Valida que existan partidos válidos antes de exponer datos."""
+    query = """
+        SELECT COUNT(*)
+        FROM partidos
+        WHERE local_q1 IS NOT NULL
+          AND local_q2 IS NOT NULL
+          AND local_q3 IS NOT NULL
+          AND local_q4 IS NOT NULL
+          AND visitante_q1 IS NOT NULL
+          AND visitante_q2 IS NOT NULL
+          AND visitante_q3 IS NOT NULL
+          AND visitante_q4 IS NOT NULL
+          AND COALESCE(tipo_partido, 'REG') != 'PRE'
+    """
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(query)
+            conteo = cursor.fetchone()[0]
+
+    if conteo <= 0:
+        raise ErrorDatos(
+            "No hay partidos en la base de datos. "
+            "No se pueden listar equipos ni historial hasta que haya datos."
+        )
 
 
 @router.get(
@@ -74,6 +116,7 @@ def cargar_estadisticas_equipos() -> dict:
 )
 async def listar_equipos() -> RespuestaEquipos:
     """Retorna la lista de equipos disponibles."""
+    validar_partidos_disponibles()
     equipos = filtrar_equipos_por_modelo(cargar_equipos())
     equipos_ordenados = sorted(equipos, key=lambda e: e.nombre)
     return RespuestaEquipos(
@@ -94,6 +137,7 @@ async def buscar_equipos(
     busqueda: Optional[str] = Query(None, description="Texto de búsqueda"),
 ) -> RespuestaEquipos:
     """Busca equipos en la base de datos con filtros opcionales."""
+    validar_partidos_disponibles()
     condiciones = ["activo = true"]
     parametros: List[object] = []
     if conferencia:
@@ -532,6 +576,7 @@ async def listar_estadisticas_equipos(
     temporada_id: Optional[str] = Query(None, description="Filtrar por temporada específica"),
 ) -> RespuestaEstadisticasEquipos:
     """Retorna estadísticas agregadas de los equipos calculadas desde la BD."""
+    validar_datos_estadisticas()
     temporadas = obtener_temporadas_disponibles()
     datos = calcular_estadisticas_desde_bd(temporada_id)
 
@@ -560,6 +605,7 @@ async def listar_historial_equipo(
     orden: str = Query("desc", description="Orden por fecha: asc o desc"),
 ) -> RespuestaHistorialEquipo:
     """Retorna el historial completo de partidos de un equipo."""
+    validar_partidos_disponibles()
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
