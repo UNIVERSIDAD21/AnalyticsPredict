@@ -82,8 +82,8 @@ def validar_datos_estadisticas() -> None:
         )
 
 
-def validar_partidos_disponibles() -> None:
-    """Valida que existan partidos válidos antes de exponer datos."""
+def validar_datos_estadisticas() -> None:
+    """Valida que existan partidos válidos para estadísticas."""
     query = """
         SELECT COUNT(*)
         FROM partidos
@@ -95,7 +95,9 @@ def validar_partidos_disponibles() -> None:
           AND visitante_q2 IS NOT NULL
           AND visitante_q3 IS NOT NULL
           AND visitante_q4 IS NOT NULL
-          AND COALESCE(tipo_partido, 'REG') != 'PRE'
+          AND tipo_partido = 'REG'
+          AND valido = true
+          AND ganador_id IS NOT NULL
     """
     with obtener_pool().connection() as conexion:
         with conexion.cursor() as cursor:
@@ -104,8 +106,8 @@ def validar_partidos_disponibles() -> None:
 
     if conteo <= 0:
         raise ErrorDatos(
-            "No hay partidos en la base de datos. "
-            "No se pueden listar equipos ni historial hasta que haya datos."
+            "No hay partidos en la base de datos para calcular estadísticas. "
+            "Carga datos antes de consultar esta sección."
         )
 
 
