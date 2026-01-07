@@ -815,7 +815,8 @@ def main() -> int:
             conexion = psycopg.connect(db_url)
             print("✅ Conexión establecida")
             
-            limpiar_datos_bd(conexion)
+            print()
+            print("🧩 Modo incremental: no se eliminan datos existentes en la BD.")
 
             equipos_bd = obtener_equipos_bd(conexion)
             if not equipos_bd:
