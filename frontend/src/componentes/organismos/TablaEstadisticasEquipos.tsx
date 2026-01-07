@@ -263,7 +263,6 @@ export function TablaEstadisticasEquipos({
                       type="button"
                       className="flex items-center gap-1 hover:text-neon-cyan"
                       onClick={() => alternarOrden(columna.id)}
-                      title={columna.descripcion}
                     >
                       {columna.etiqueta}
                       <ArrowUpDown size={12} />
