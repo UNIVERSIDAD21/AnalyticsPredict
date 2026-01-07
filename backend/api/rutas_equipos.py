@@ -3,17 +3,15 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import List, Optional, Dict
 
 from fastapi import APIRouter, Query, HTTPException
 from psycopg.rows import dict_row
 
-from configuracion import CONFIGURACION
 from db import obtener_pool
 from motor_autoentrenamiento import obtener_modelo
 from motor.utilidades import resolver_nombre_en_modelo
+from .excepciones import ErrorDatos
 from .modelos_respuesta import (
     RespuestaEquipos,
     RespuestaEstadisticasEquipos,
@@ -55,16 +53,33 @@ def cargar_equipos() -> List[InfoEquipo]:
     return [InfoEquipo(**fila) for fila in filas]
 
 
-def cargar_estadisticas_equipos() -> dict:
-    """Carga estadísticas de equipos desde el archivo JSON de datos."""
-    ruta = Path(CONFIGURACION.ruta_estadisticas_equipos)
-    if not ruta.exists():
-        return {
-            "fecha_actualizacion": None,
-            "equipos": [],
-        }
-    with ruta.open("r", encoding="utf-8") as archivo:
-        return json.load(archivo)
+def validar_datos_estadisticas() -> None:
+    """Valida que existan partidos válidos para estadísticas."""
+    query = """
+        SELECT COUNT(*)
+        FROM partidos
+        WHERE local_q1 IS NOT NULL
+          AND local_q2 IS NOT NULL
+          AND local_q3 IS NOT NULL
+          AND local_q4 IS NOT NULL
+          AND visitante_q1 IS NOT NULL
+          AND visitante_q2 IS NOT NULL
+          AND visitante_q3 IS NOT NULL
+          AND visitante_q4 IS NOT NULL
+          AND tipo_partido = 'REG'
+          AND valido = true
+          AND ganador_id IS NOT NULL
+    """
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(query)
+            conteo = cursor.fetchone()[0]
+
+    if conteo <= 0:
+        raise ErrorDatos(
+            "No hay partidos en la base de datos para calcular estadísticas. "
+            "Carga datos antes de consultar esta sección."
+        )
 
 
 @router.get(
@@ -532,6 +547,7 @@ async def listar_estadisticas_equipos(
     temporada_id: Optional[str] = Query(None, description="Filtrar por temporada específica"),
 ) -> RespuestaEstadisticasEquipos:
     """Retorna estadísticas agregadas de los equipos calculadas desde la BD."""
+    validar_datos_estadisticas()
     temporadas = obtener_temporadas_disponibles()
     datos = calcular_estadisticas_desde_bd(temporada_id)
 
