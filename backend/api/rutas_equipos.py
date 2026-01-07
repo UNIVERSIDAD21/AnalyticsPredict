@@ -152,7 +152,7 @@ def obtener_temporadas_disponibles() -> list:
 def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
     """
     Calcula estadísticas de equipos desde la base de datos.
-    CORREGIDO v3: Implementa tiebreakers oficiales de la NBA.
+    CORREGIDO v4: Implementa cálculos exactos según lógica oficial de la NBA.
     """
     from datetime import datetime
     from collections import defaultdict
@@ -203,11 +203,13 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 equipo_id = equipo["id"]
 
                 # Query para obtener partidos del equipo en la temporada
+                # ✅ CRÍTICO: Solo contar partidos con resultado definitivo (ganador_id presente)
                 condiciones = [
                     "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
                     "p.local_q1 IS NOT NULL",
                     "p.tipo_partido = 'REG'",
                     "p.valido = true",
+                    "p.ganador_id IS NOT NULL",  # ✅ Solo partidos con ganador confirmado
                 ]
                 parametros: list = [equipo_id, equipo_id]
 
@@ -254,7 +256,8 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
 
                 for partido in partidos:
                     es_local = str(partido["equipo_local_id"]) == str(equipo_id)
-
+                    
+                    # Obtener puntos del equipo y rival
                     if es_local:
                         pts_equipo = partido["local_total"]
                         pts_rival = partido["visitante_total"]
@@ -266,21 +269,59 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                         q1_e, q2_e, q3_e, q4_e = partido["visitante_q1"], partido["visitante_q2"], partido["visitante_q3"], partido["visitante_q4"]
                         q1_r, q2_r, q3_r, q4_r = partido["local_q1"], partido["local_q2"], partido["local_q3"], partido["local_q4"]
 
+                    # ✅ Validación de datos
                     if pts_equipo is None or pts_rival is None:
                         continue
 
+                    # ID del rival
+                    opponent_id = str(partido["equipo_visitante_id"]) if es_local else str(partido["equipo_local_id"])
+                    
+                    # ✅ CORRECCIÓN CRÍTICA: Usar ganador_id directamente (ya validamos que existe)
+                    ganador_id_str = str(partido["ganador_id"])
+                    gano = (ganador_id_str == str(equipo_id))
+                    
+                    # Actualizar récord general
+                    if gano:
+                        victorias += 1
+                        if es_local:
+                            victorias_local += 1
+                        else:
+                            victorias_visitante += 1
+                        if len(racha) < 5:
+                            racha.append("W")
+                    else:
+                        derrotas += 1
+                        if es_local:
+                            derrotas_local += 1
+                        else:
+                            derrotas_visitante += 1
+                        if len(racha) < 5:
+                            racha.append("L")
+                    
+                    # ✅ Conference record (solo contra equipos de la misma conferencia)
+                    if map_conferencia.get(str(equipo_id)) and map_conferencia.get(str(equipo_id)) == map_conferencia.get(opponent_id):
+                        conference_games_count[str(equipo_id)] += 1
+                        if gano:
+                            conference_wins_count[str(equipo_id)] += 1
+                    
+                    # Division record (solo contra equipos de la misma división)
+                    if map_division.get(str(equipo_id)) and map_division.get(str(equipo_id)) == map_division.get(opponent_id):
+                        division_games_count[str(equipo_id)] += 1
+                        if gano:
+                            division_wins_count[str(equipo_id)] += 1
+                    
+                    # Head-to-head para tiebreakers
+                    head_to_head_games[str(equipo_id)][opponent_id] += 1
+                    if gano:
+                        head_to_head_wins[str(equipo_id)][opponent_id] += 1
+                    
+                    # Puntos para estadísticas
                     if es_local:
                         puntos_local.append(pts_equipo)
                     else:
                         puntos_visitante.append(pts_equipo)
-
-                    ganador_id = partido["ganador_id"]
-                    if ganador_id is None:
-                        if partido["local_total"] > partido["visitante_total"]:
-                            ganador_id = partido["equipo_local_id"]
-                        elif partido["visitante_total"] > partido["local_total"]:
-                            ganador_id = partido["equipo_visitante_id"]
-
+                    
+                    # Estadísticas por cuarto
                     anotados_q1.append(q1_e)
                     anotados_q2.append(q2_e)
                     anotados_q3.append(q3_e)
@@ -300,46 +341,6 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     totales_partido.append(pts_equipo + pts_rival)
 
                     diferencia_puntos_total += (pts_equipo - pts_rival)
-
-                    # ID del rival
-                    opponent_id = str(partido["equipo_visitante_id"]) if es_local else str(partido["equipo_local_id"])
-                    
-                    # Registrar head-to-head
-                    head_to_head_games[str(equipo_id)][opponent_id] += 1
-                    
-                    # ✅ CORRECCIÓN: Usar ganador_id en lugar de comparar totales
-                    # Esto garantiza que partidos con overtime se cuenten correctamente
-                    ganador_id_str = str(ganador_id) if ganador_id else None
-                    
-                    if ganador_id_str == str(equipo_id):
-                        head_to_head_wins[str(equipo_id)][opponent_id] += 1
-                        victorias += 1
-                        if es_local:
-                            victorias_local += 1
-                        else:
-                            victorias_visitante += 1
-                        if len(racha) < 5:
-                            racha.append("W")
-                    else:
-                        derrotas += 1
-                        if es_local:
-                            derrotas_local += 1
-                        else:
-                            derrotas_visitante += 1
-                        if len(racha) < 5:
-                            racha.append("L")
-                    
-                    # Conference record
-                    if map_conferencia.get(str(equipo_id)) == map_conferencia.get(opponent_id):
-                        conference_games_count[str(equipo_id)] += 1
-                        if ganador_id_str == str(equipo_id):
-                            conference_wins_count[str(equipo_id)] += 1
-                    
-                    # Division record
-                    if map_division.get(str(equipo_id)) == map_division.get(opponent_id):
-                        division_games_count[str(equipo_id)] += 1
-                        if ganador_id_str == str(equipo_id):
-                            division_wins_count[str(equipo_id)] += 1
 
                 # Calcular promedios
                 n = len(partidos)
@@ -361,14 +362,21 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                 n_visitante = len(puntos_visitante) or 1
 
                 # Calcular ratios para tiebreakers
+                total_partidos = victorias + derrotas
+                
+                # ✅ Récord de conferencia (solo partidos contra equipos de la misma conferencia)
                 conf_games = conference_games_count.get(str(equipo_id), 0)
                 conf_wins = conference_wins_count.get(str(equipo_id), 0)
                 conf_losses = conf_games - conf_wins
                 conference_record_ratio = (conf_wins / conf_games) if conf_games > 0 else 0.0
                 
+                # Récord de división
                 div_games = division_games_count.get(str(equipo_id), 0)
                 div_wins = division_wins_count.get(str(equipo_id), 0)
                 division_record_ratio = (div_wins / div_games) if div_games > 0 else 0.0
+
+                # ✅ Porcentaje de victorias (PCT) según la NBA
+                pct = victorias / total_partidos if total_partidos > 0 else 0.0
 
                 estadisticas.append({
                     "nombre": equipo["nombre"],
@@ -377,6 +385,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                     "division": equipo["division"] or "",
                     "record": {"victorias": victorias, "derrotas": derrotas},
                     "record_conferencia": {"victorias": conf_wins, "derrotas": conf_losses},
+                    "pct": pct,  # ✅ PCT calculado correctamente
                     "posicion": 0,
                     "racha": list(reversed(racha)),
                     "promedios": {
@@ -417,11 +426,11 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
             for conferencia in ["Este", "Oeste"]:
                 equipos_conf = [e for e in estadisticas if e["conferencia"] == conferencia]
                 
-                # Orden inicial por porcentaje de victorias
+                # Orden inicial por PCT (porcentaje de victorias)
                 equipos_conf.sort(
                     key=lambda e: (
-                        e["record"]["victorias"] / max(1, e["record"]["victorias"] + e["record"]["derrotas"]),
-                        e["record"]["victorias"],
+                        e["pct"],  # ✅ Usar PCT pre-calculado
+                        e["record"]["victorias"],  # Desempate por número de victorias
                     ),
                     reverse=True,
                 )
@@ -558,9 +567,9 @@ async def listar_historial_equipo(
                 "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
                 "p.local_q1 IS NOT NULL",
                 "p.valido = true",
-                "p.ganador_id IS NOT NULL",
+                "p.ganador_id IS NOT NULL",  # ✅ Solo partidos con ganador confirmado
             ]
-            parametros: List[object] = [equipo_id, equipo_id, equipo_id]
+            parametros: List[object] = [equipo_id, equipo_id]
 
             if temporada_id:
                 condiciones.append("p.temporada_id = %s")
@@ -601,7 +610,7 @@ async def listar_historial_equipo(
                 WHERE {where_sql}
                 ORDER BY p.fecha_partido {orden_sql}
                 """,
-                parametros,
+                [equipo_id] + parametros,
             )
             filas = cursor.fetchall()
 
