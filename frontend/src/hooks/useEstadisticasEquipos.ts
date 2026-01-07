@@ -40,6 +40,10 @@ export function useEstadisticasEquipos(): RetornoUseEstadisticasEquipos {
       setEstado('exito');
     } catch (err) {
       const mensaje = err instanceof Error ? err.message : 'Error al cargar estadísticas';
+      setEquipos([]);
+      setFechaActualizacion('');
+      setTemporadasDisponibles([]);
+      setTemporadaActual(null);
       setError(mensaje);
       setEstado('error');
     }
