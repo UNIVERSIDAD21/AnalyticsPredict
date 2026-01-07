@@ -86,6 +86,13 @@ def ejecutar_analisis(
     # ═══════════════════════════════════════════════════════════════════════════
     try:
         modelo = obtener_modelo()
+        partidos_entrenamiento = int((getattr(modelo, 'metricas', {}) or {}).get('partidos_entrenamiento', 0) or 0)
+        if partidos_entrenamiento <= 0:
+            raise ErrorAnalisis(
+                "No hay partidos en la base de datos para entrenar el modelo. "
+                "Primero ejecuta: python backend/scripts/sync_partidos_recientes.py --days 10"
+            )
+
     except RuntimeError as exc:
         raise ErrorAnalisis(
             "El modelo no está disponible. "

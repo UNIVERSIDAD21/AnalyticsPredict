@@ -52,57 +52,61 @@ export function TablaEstadisticasEquipos({
     {
       id: 'conf',
       etiqueta: 'Conf',
-      obtenerValor: (e) => `${e.record_conferencia.victorias}-${e.record_conferencia.derrotas}`,
+      obtenerValor: (e) => `${e.record_conferencia?.victorias ?? 0}-${e.record_conferencia?.derrotas ?? 0}`,
     },
     { id: 'pos', etiqueta: 'Pos', obtenerValor: (e) => e.posicion },
     {
       id: 'pct',
       etiqueta: 'PCT',
       obtenerValor: (e) =>
-        e.record.victorias / Math.max(1, e.record.victorias + e.record.derrotas),
+        (e.record?.victorias ?? 0) /
+        Math.max(1, (e.record?.victorias ?? 0) + (e.record?.derrotas ?? 0)),
       formato: (e) =>
-        formatoPct(e.record.victorias / Math.max(1, e.record.victorias + e.record.derrotas)),
+        formatoPct(
+          (e.record?.victorias ?? 0) /
+            Math.max(1, (e.record?.victorias ?? 0) + (e.record?.derrotas ?? 0))
+        ),
     },
     {
       id: 'loc',
-      etiqueta: 'Loc',
-      obtenerValor: (e) => `${e.local.victorias}-${e.local.derrotas}`,
+      etiqueta: 'Local',
+      obtenerValor: (e) => `${e.local?.victorias ?? 0}-${e.local?.derrotas ?? 0}`,
     },
     {
       id: 'vis',
       etiqueta: 'Vis',
-      obtenerValor: (e) => `${e.visitante.victorias}-${e.visitante.derrotas}`,
+      obtenerValor: (e) => `${e.visitante?.victorias ?? 0}-${e.visitante?.derrotas ?? 0}`,
     },
-    { id: 'racha', etiqueta: 'Racha', obtenerValor: (e) => e.racha.join('-') },
-    { id: 'ppg_q1', etiqueta: 'PPG Q1', obtenerValor: (e) => e.promedios.anotados.q1 },
-    { id: 'ppg_q2', etiqueta: 'PPG Q2', obtenerValor: (e) => e.promedios.anotados.q2 },
-    { id: 'ppg_q3', etiqueta: 'PPG Q3', obtenerValor: (e) => e.promedios.anotados.q3 },
-    { id: 'ppg_q4', etiqueta: 'PPG Q4', obtenerValor: (e) => e.promedios.anotados.q4 },
-    { id: 'ppg_total', etiqueta: 'PPG Total', obtenerValor: (e) => e.promedios.anotados.total },
-    { id: 'opp_q1', etiqueta: 'OPP Q1', obtenerValor: (e) => e.promedios.recibidos.q1 },
-    { id: 'opp_q2', etiqueta: 'OPP Q2', obtenerValor: (e) => e.promedios.recibidos.q2 },
-    { id: 'opp_q3', etiqueta: 'OPP Q3', obtenerValor: (e) => e.promedios.recibidos.q3 },
-    { id: 'opp_q4', etiqueta: 'OPP Q4', obtenerValor: (e) => e.promedios.recibidos.q4 },
-    { id: 'opp_total', etiqueta: 'OPP Total', obtenerValor: (e) => e.promedios.recibidos.total },
+    { id: 'racha', etiqueta: 'Racha', obtenerValor: (e) => (e.racha ?? []).join('-') },
+    { id: 'ppg_q1', etiqueta: 'PPG Q1', obtenerValor: (e) => e.promedios?.anotados?.q1 ?? 0 },
+    { id: 'ppg_q2', etiqueta: 'PPG Q2', obtenerValor: (e) => e.promedios?.anotados?.q2 ?? 0 },
+    { id: 'ppg_q3', etiqueta: 'PPG Q3', obtenerValor: (e) => e.promedios?.anotados?.q3 ?? 0 },
+    { id: 'ppg_q4', etiqueta: 'PPG Q4', obtenerValor: (e) => e.promedios?.anotados?.q4 ?? 0 },
+    { id: 'ppg_total', etiqueta: 'PPG Total', obtenerValor: (e) => e.promedios?.anotados?.total ?? 0 },
+    { id: 'opp_q1', etiqueta: 'OPP Q1', obtenerValor: (e) => e.promedios?.recibidos?.q1 ?? 0 },
+    { id: 'opp_q2', etiqueta: 'OPP Q2', obtenerValor: (e) => e.promedios?.recibidos?.q2 ?? 0 },
+    { id: 'opp_q3', etiqueta: 'OPP Q3', obtenerValor: (e) => e.promedios?.recibidos?.q3 ?? 0 },
+    { id: 'opp_q4', etiqueta: 'OPP Q4', obtenerValor: (e) => e.promedios?.recibidos?.q4 ?? 0 },
+    { id: 'opp_total', etiqueta: 'OPP Total', obtenerValor: (e) => e.promedios?.recibidos?.total ?? 0 },
     {
       id: 'over_q1',
       etiqueta: 'Over % Q1',
-      obtenerValor: (e) => e.tendencias_over.q1,
-      formato: (e) => formatoPct(e.tendencias_over.q1),
+      obtenerValor: (e) => e.tendencias_over?.q1 ?? 0,
+      formato: (e) => formatoPct(e.tendencias_over?.q1 ?? 0),
     },
     {
       id: 'over_total',
       etiqueta: 'Over % Total',
-      obtenerValor: (e) => e.tendencias_over.total,
-      formato: (e) => formatoPct(e.tendencias_over.total),
+      obtenerValor: (e) => e.tendencias_over?.total ?? 0,
+      formato: (e) => formatoPct(e.tendencias_over?.total ?? 0),
     },
     {
       id: 'linea',
       etiqueta: 'Línea Promedio',
-      obtenerValor: (e) => e.linea_promedio,
+      obtenerValor: (e) => e.linea_promedio ?? 0,
     },
-    { id: 'ppg_casa', etiqueta: 'PPG Casa', obtenerValor: (e) => e.local.ppg },
-    { id: 'ppg_fuera', etiqueta: 'PPG Fuera', obtenerValor: (e) => e.visitante.ppg },
+    { id: 'ppg_casa', etiqueta: 'PPG Casa', obtenerValor: (e) => e.local?.ppg ?? 0 },
+    { id: 'ppg_fuera', etiqueta: 'PPG Fuera', obtenerValor: (e) => e.visitante?.ppg ?? 0 },
   ];
 
   const equiposFiltrados = useMemo(() => {
