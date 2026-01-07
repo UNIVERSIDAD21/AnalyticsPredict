@@ -31,6 +31,7 @@ export function useEquipos(): RetornoUseEquipos {
       setEstado('exito');
     } catch (err) {
       const mensaje = err instanceof Error ? err.message : 'Error al cargar equipos';
+      setEquipos([]);
       setError(mensaje);
       setEstado('error');
     }
