@@ -20,7 +20,7 @@ from configuracion import CONFIGURACION
 from api.rutas_analisis import router as router_analisis
 from api.rutas_bitacora import router as router_bitacora
 from api.rutas_equipos import router as router_equipos
-from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
+from api.excepciones import ErrorAnalisis, ErrorDatos, ErrorEquipoNoEncontrado, ErrorValidacion
 from db import obtener_pool, cerrar_pool
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -190,6 +190,21 @@ async def manejador_error_analisis(request: Request, exc: ErrorAnalisis):
             "exito": False,
             "error": {
                 "tipo": "ERROR_ANALISIS",
+                "mensaje": str(exc),
+            },
+        },
+    )
+
+
+@app.exception_handler(ErrorDatos)
+async def manejador_error_datos(request: Request, exc: ErrorDatos):
+    """Maneja errores cuando faltan datos en la base."""
+    return JSONResponse(
+        status_code=409,
+        content={
+            "exito": False,
+            "error": {
+                "tipo": "ERROR_DATOS",
                 "mensaje": str(exc),
             },
         },
