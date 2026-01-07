@@ -22,6 +22,7 @@ type Orden = 'asc' | 'desc';
 interface Columna {
   id: string;
   etiqueta: string;
+  descripcion: string;
   obtenerValor: (equipo: EstadisticasEquipo) => string | number;
   formato?: (equipo: EstadisticasEquipo) => string;
 }
@@ -43,66 +44,115 @@ export function TablaEstadisticasEquipos({
   const [busqueda, setBusqueda] = useState('');
   const [conferencia, setConferencia] = useState('Todas');
   const [orden, setOrden] = useState<{ columna: string; direccion: Orden }>({
-    columna: 'pos',
+    columna: 'equipo',
     direccion: 'asc',
   });
 
   const columnas: Columna[] = [
-    { id: 'equipo', etiqueta: 'Equipo', obtenerValor: (e) => e.nombre },
     {
-      id: 'conf',
-      etiqueta: 'Conf',
-      obtenerValor: (e) => `${e.record_conferencia.victorias}-${e.record_conferencia.derrotas}`,
-    },
-    { id: 'pos', etiqueta: 'Pos', obtenerValor: (e) => e.posicion },
-    {
-      id: 'pct',
-      etiqueta: 'PCT',
-      obtenerValor: (e) =>
-        e.record.victorias / Math.max(1, e.record.victorias + e.record.derrotas),
-      formato: (e) =>
-        formatoPct(e.record.victorias / Math.max(1, e.record.victorias + e.record.derrotas)),
+      id: 'equipo',
+      etiqueta: 'Equipo',
+      descripcion: 'Nombre del equipo listado en la tabla.',
+      obtenerValor: (e) => e.nombre,
     },
     {
-      id: 'loc',
-      etiqueta: 'Loc',
-      obtenerValor: (e) => `${e.local.victorias}-${e.local.derrotas}`,
+      id: 'racha',
+      etiqueta: 'Racha',
+      descripcion: 'Últimos resultados consecutivos del equipo.',
+      obtenerValor: (e) => e.racha.join('-'),
     },
     {
-      id: 'vis',
-      etiqueta: 'Vis',
-      obtenerValor: (e) => `${e.visitante.victorias}-${e.visitante.derrotas}`,
+      id: 'ppg_q1',
+      etiqueta: 'PPG Q1',
+      descripcion: 'Puntos por partido anotados en el 1er cuarto.',
+      obtenerValor: (e) => e.promedios.anotados.q1,
     },
-    { id: 'racha', etiqueta: 'Racha', obtenerValor: (e) => e.racha.join('-') },
-    { id: 'ppg_q1', etiqueta: 'PPG Q1', obtenerValor: (e) => e.promedios.anotados.q1 },
-    { id: 'ppg_q2', etiqueta: 'PPG Q2', obtenerValor: (e) => e.promedios.anotados.q2 },
-    { id: 'ppg_q3', etiqueta: 'PPG Q3', obtenerValor: (e) => e.promedios.anotados.q3 },
-    { id: 'ppg_q4', etiqueta: 'PPG Q4', obtenerValor: (e) => e.promedios.anotados.q4 },
-    { id: 'ppg_total', etiqueta: 'PPG Total', obtenerValor: (e) => e.promedios.anotados.total },
-    { id: 'opp_q1', etiqueta: 'OPP Q1', obtenerValor: (e) => e.promedios.recibidos.q1 },
-    { id: 'opp_q2', etiqueta: 'OPP Q2', obtenerValor: (e) => e.promedios.recibidos.q2 },
-    { id: 'opp_q3', etiqueta: 'OPP Q3', obtenerValor: (e) => e.promedios.recibidos.q3 },
-    { id: 'opp_q4', etiqueta: 'OPP Q4', obtenerValor: (e) => e.promedios.recibidos.q4 },
-    { id: 'opp_total', etiqueta: 'OPP Total', obtenerValor: (e) => e.promedios.recibidos.total },
+    {
+      id: 'ppg_q2',
+      etiqueta: 'PPG Q2',
+      descripcion: 'Puntos por partido anotados en el 2do cuarto.',
+      obtenerValor: (e) => e.promedios.anotados.q2,
+    },
+    {
+      id: 'ppg_q3',
+      etiqueta: 'PPG Q3',
+      descripcion: 'Puntos por partido anotados en el 3er cuarto.',
+      obtenerValor: (e) => e.promedios.anotados.q3,
+    },
+    {
+      id: 'ppg_q4',
+      etiqueta: 'PPG Q4',
+      descripcion: 'Puntos por partido anotados en el 4to cuarto.',
+      obtenerValor: (e) => e.promedios.anotados.q4,
+    },
+    {
+      id: 'ppg_total',
+      etiqueta: 'PPG Total',
+      descripcion: 'Promedio total de puntos anotados por partido.',
+      obtenerValor: (e) => e.promedios.anotados.total,
+    },
+    {
+      id: 'opp_q1',
+      etiqueta: 'OPP Q1',
+      descripcion: 'Puntos recibidos por partido en el 1er cuarto.',
+      obtenerValor: (e) => e.promedios.recibidos.q1,
+    },
+    {
+      id: 'opp_q2',
+      etiqueta: 'OPP Q2',
+      descripcion: 'Puntos recibidos por partido en el 2do cuarto.',
+      obtenerValor: (e) => e.promedios.recibidos.q2,
+    },
+    {
+      id: 'opp_q3',
+      etiqueta: 'OPP Q3',
+      descripcion: 'Puntos recibidos por partido en el 3er cuarto.',
+      obtenerValor: (e) => e.promedios.recibidos.q3,
+    },
+    {
+      id: 'opp_q4',
+      etiqueta: 'OPP Q4',
+      descripcion: 'Puntos recibidos por partido en el 4to cuarto.',
+      obtenerValor: (e) => e.promedios.recibidos.q4,
+    },
+    {
+      id: 'opp_total',
+      etiqueta: 'OPP Total',
+      descripcion: 'Promedio total de puntos recibidos por partido.',
+      obtenerValor: (e) => e.promedios.recibidos.total,
+    },
     {
       id: 'over_q1',
       etiqueta: 'Over % Q1',
+      descripcion: 'Porcentaje de overs en el 1er cuarto.',
       obtenerValor: (e) => e.tendencias_over.q1,
       formato: (e) => formatoPct(e.tendencias_over.q1),
     },
     {
       id: 'over_total',
       etiqueta: 'Over % Total',
+      descripcion: 'Porcentaje de overs en el total del partido.',
       obtenerValor: (e) => e.tendencias_over.total,
       formato: (e) => formatoPct(e.tendencias_over.total),
     },
     {
       id: 'linea',
       etiqueta: 'Línea Promedio',
+      descripcion: 'Media de la línea total publicada para el equipo.',
       obtenerValor: (e) => e.linea_promedio,
     },
-    { id: 'ppg_casa', etiqueta: 'PPG Casa', obtenerValor: (e) => e.local.ppg },
-    { id: 'ppg_fuera', etiqueta: 'PPG Fuera', obtenerValor: (e) => e.visitante.ppg },
+    {
+      id: 'ppg_casa',
+      etiqueta: 'PPG Casa',
+      descripcion: 'Puntos por partido anotados jugando como local.',
+      obtenerValor: (e) => e.local.ppg,
+    },
+    {
+      id: 'ppg_fuera',
+      etiqueta: 'PPG Fuera',
+      descripcion: 'Puntos por partido anotados jugando como visitante.',
+      obtenerValor: (e) => e.visitante.ppg,
+    },
   ];
 
   const equiposFiltrados = useMemo(() => {
@@ -122,18 +172,6 @@ export function TablaEstadisticasEquipos({
   const equiposOrdenados = useMemo(() => {
     const columna = columnas.find((col) => col.id === orden.columna);
     if (!columna) return equiposFiltrados;
-
-    if (columna.id === 'pos' && conferencia === 'Todas') {
-      const ordenConferencia: Record<string, number> = { Este: 0, Oeste: 1 };
-      return [...equiposFiltrados].sort((a, b) => {
-        const confA = ordenConferencia[a.conferencia] ?? 2;
-        const confB = ordenConferencia[b.conferencia] ?? 2;
-        if (confA !== confB) {
-          return confA - confB;
-        }
-        return a.posicion - b.posicion;
-      });
-    }
 
     const ordenados = [...equiposFiltrados].sort((a, b) => {
       const va = columna.obtenerValor(a);
@@ -220,14 +258,20 @@ export function TablaEstadisticasEquipos({
             <tr>
               {columnas.map((columna) => (
                 <th key={columna.id} className="p-2 text-left">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 hover:text-neon-cyan"
-                    onClick={() => alternarOrden(columna.id)}
-                  >
-                    {columna.etiqueta}
-                    <ArrowUpDown size={12} />
-                  </button>
+                  <div className="group relative inline-flex">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:text-neon-cyan"
+                      onClick={() => alternarOrden(columna.id)}
+                      title={columna.descripcion}
+                    >
+                      {columna.etiqueta}
+                      <ArrowUpDown size={12} />
+                    </button>
+                    <span className="pointer-events-none absolute left-0 bottom-full mb-2 w-48 rounded-md bg-futurista-oscuro/95 px-2 py-1 text-[10px] normal-case text-texto-principal opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                      {columna.descripcion}
+                    </span>
+                  </div>
                 </th>
               ))}
             </tr>
