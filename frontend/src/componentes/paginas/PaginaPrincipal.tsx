@@ -115,6 +115,8 @@ export function PaginaPrincipal() {
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
   const historialRef = useRef<HTMLDivElement>(null);
+  const mostrarTabEstadisticas =
+    estadoEstadisticas === 'exito' && estadisticasEquipos.length > 0;
 
   // Scroll al resultado cuando se completa el análisis (solo en móvil)
   useEffect(() => {
@@ -131,6 +133,12 @@ export function PaginaPrincipal() {
       setEquipoHistorialId(null);
     }
   }, [tabActivo]);
+
+  useEffect(() => {
+    if (!mostrarTabEstadisticas && tabActivo === 'estadisticas') {
+      setTabActivo('analisis');
+    }
+  }, [mostrarTabEstadisticas, tabActivo]);
 
   // Scroll al historial cuando se selecciona un equipo
   useEffect(() => {
@@ -161,17 +169,19 @@ export function PaginaPrincipal() {
           >
             Análisis
           </button>
-          <button
-            type="button"
-            className={`px-4 py-2 rounded-md text-sm font-semibold border ${
-              tabActivo === 'estadisticas'
-                ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
-                : 'border-neon-cyan/20 text-texto-secundario'
-            }`}
-            onClick={() => setTabActivo('estadisticas')}
-          >
-            Estadísticas de equipos
-          </button>
+          {mostrarTabEstadisticas && (
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-md text-sm font-semibold border ${
+                tabActivo === 'estadisticas'
+                  ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
+                  : 'border-neon-cyan/20 text-texto-secundario'
+              }`}
+              onClick={() => setTabActivo('estadisticas')}
+            >
+              Estadísticas de equipos
+            </button>
+          )}
         </div>
         {/* Error de conexión */}
         {estadoEquipos === 'error' && (
@@ -268,7 +278,7 @@ export function PaginaPrincipal() {
           </div>
         )}
 
-        {tabActivo === 'estadisticas' && (
+        {tabActivo === 'estadisticas' && mostrarTabEstadisticas && (
           <div className="space-y-4">
             {estadoEstadisticas === 'error' && (
               <MensajeError

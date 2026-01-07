@@ -26,7 +26,8 @@ from motor import analizar_partido, resultado_a_dict
 from motor_autoentrenamiento import obtener_modelo  # ← NUEVO
 from motor.tipos import Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
-from .excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
+from db import obtener_pool
+from .excepciones import ErrorAnalisis, ErrorDatos, ErrorEquipoNoEncontrado, ErrorValidacion
 from .modelos_peticion import PeticionAnalisis, PeticionAnalisisEnVivo
 from .modelos_respuesta import RespuestaAnalisis
 
@@ -71,6 +72,33 @@ def validar_equipos(modelo, equipo_local: str, equipo_visitante: str) -> None:
         )
 
 
+def validar_partidos_disponibles() -> None:
+    """Valida que existan partidos válidos en la base de datos."""
+    query = """
+        SELECT COUNT(*)
+        FROM partidos
+        WHERE local_q1 IS NOT NULL
+          AND local_q2 IS NOT NULL
+          AND local_q3 IS NOT NULL
+          AND local_q4 IS NOT NULL
+          AND visitante_q1 IS NOT NULL
+          AND visitante_q2 IS NOT NULL
+          AND visitante_q3 IS NOT NULL
+          AND visitante_q4 IS NOT NULL
+          AND COALESCE(tipo_partido, 'REG') != 'PRE'
+    """
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(query)
+            conteo = cursor.fetchone()[0]
+
+    if conteo <= 0:
+        raise ErrorDatos(
+            "No hay partidos en la base de datos. "
+            "El análisis solo está disponible cuando existen datos cargados."
+        )
+
+
 def ejecutar_analisis(
     peticion: PeticionAnalisis,
     marcador_q1: Optional[str] = None,
@@ -85,6 +113,7 @@ def ejecutar_analisis(
     # Siempre retorna el modelo más actualizado desde BD
     # ═══════════════════════════════════════════════════════════════════════════
     try:
+        validar_partidos_disponibles()
         modelo = obtener_modelo()
         partidos_entrenamiento = int((getattr(modelo, 'metricas', {}) or {}).get('partidos_entrenamiento', 0) or 0)
         if partidos_entrenamiento <= 0:
