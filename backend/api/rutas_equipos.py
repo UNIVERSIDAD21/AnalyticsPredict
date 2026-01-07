@@ -118,6 +118,7 @@ def validar_datos_estadisticas() -> None:
 )
 async def listar_equipos() -> RespuestaEquipos:
     """Retorna la lista de equipos disponibles."""
+    validar_partidos_disponibles()
     equipos = filtrar_equipos_por_modelo(cargar_equipos())
     equipos_ordenados = sorted(equipos, key=lambda e: e.nombre)
     return RespuestaEquipos(
@@ -138,6 +139,7 @@ async def buscar_equipos(
     busqueda: Optional[str] = Query(None, description="Texto de búsqueda"),
 ) -> RespuestaEquipos:
     """Busca equipos en la base de datos con filtros opcionales."""
+    validar_partidos_disponibles()
     condiciones = ["activo = true"]
     parametros: List[object] = []
     if conferencia:
@@ -605,6 +607,7 @@ async def listar_historial_equipo(
     orden: str = Query("desc", description="Orden por fecha: asc o desc"),
 ) -> RespuestaHistorialEquipo:
     """Retorna el historial completo de partidos de un equipo."""
+    validar_partidos_disponibles()
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
