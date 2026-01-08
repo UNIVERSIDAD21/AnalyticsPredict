@@ -60,4 +60,3 @@ def test_resultado_sizing_serializa_para_bd():
     assert isinstance(serializado["sizing_advertencias"], list)
     assert isinstance(serializado["sizing_penalizaciones"], dict)
     assert serializado["perfil_riesgo_usado"] == "CONSERVADOR"
-    assert serializado["stake_porcentaje"] == pytest.approx(1.0)

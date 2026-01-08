@@ -300,10 +300,7 @@ class ConfiguracionSizing:
 
 @dataclass
 class ResultadoSizing:
-    """Contrato de persistencia para apuestas.
-
-    stake_porcentaje se expresa como fracción (0-1) y se persiste como porcentaje (0-100).
-    """
+    """Contrato de persistencia para apuestas."""
     kelly_full: Optional[float]
     kelly_fraccional: Optional[float]
     fraccion_aplicada: Optional[float]
@@ -317,17 +314,12 @@ class ResultadoSizing:
 
     def como_diccionario(self) -> Dict[str, Any]:
         """Serializa el resultado en formato compatible con BD."""
-        stake_porcentaje_bd = (
-            self.stake_porcentaje * 100
-            if self.stake_porcentaje is not None
-            else None
-        )
         return {
             "kelly_full": self.kelly_full,
             "kelly_fraccional": self.kelly_fraccional,
             "fraccion_kelly": self.fraccion_aplicada,
             "stake_recomendado": self.stake_recomendado,
-            "stake_porcentaje": stake_porcentaje_bd,
+            "stake_porcentaje": self.stake_porcentaje,
             "bankroll_momento": self.bankroll_momento,
             "perfil_riesgo_usado": self.perfil_riesgo_usado.value,
             "sizing_advertencias": list(self.advertencias),
