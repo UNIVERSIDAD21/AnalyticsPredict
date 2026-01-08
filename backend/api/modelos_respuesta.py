@@ -111,10 +111,18 @@ class Apuesta(BaseModel):
     lado: str
     linea: float
     cuota: float
+    cuota_over: Optional[float] = None
+    cuota_under: Optional[float] = None
     stake: float
     probabilidad_sistema: Optional[float] = None
     confianza_sistema: Optional[str] = None
     valor_esperado: Optional[float] = None
+    devig_metodo: Optional[str] = None
+    devig_overround: Optional[float] = None
+    devig_p_mkt_raw: Optional[float] = None
+    devig_p_mkt_fair: Optional[float] = None
+    devig_advertencias: Optional[List[str]] = None
+    edge_real: Optional[float] = None
     prediccion_media: Optional[float] = None
     prediccion_desviacion: Optional[float] = None
     razones: Optional[Any] = None

@@ -17,6 +17,7 @@ import numpy as np
 
 from .calculadora_probabilidad import (
     calcular_intervalo_confianza,
+    calcular_devig,
     calcular_probabilidad_over,
     calcular_probabilidad_victoria,
 )
@@ -330,6 +331,10 @@ def analizar_partido(
     mercado: str,
     linea: Optional[float] = None,
     cuota: Optional[float] = None,
+    cuota_over: Optional[float] = None,
+    cuota_under: Optional[float] = None,
+    lado: LadoApuesta | str = LadoApuesta.OVER,
+    modo_devig: str = "estricto",
     marcador_q1: Optional[str] = None,
     marcador_q2: Optional[str] = None,
     marcador_q3: Optional[str] = None,
@@ -397,12 +402,45 @@ def analizar_partido(
     )
 
     analisis_mercado = None
-    if cuota is not None and linea is not None:
+    try:
+        lado_enum = lado if isinstance(lado, LadoApuesta) else LadoApuesta(lado)
+    except ValueError:
+        raise ValueError("lado debe ser OVER o UNDER.")
+
+    if cuota_over is None and cuota_under is None and cuota is not None:
+        if lado_enum == LadoApuesta.UNDER:
+            cuota_under = cuota
+        else:
+            cuota_over = cuota
+
+    cuota_lado = cuota_over if lado_enum == LadoApuesta.OVER else cuota_under
+    cuota_opuesta = cuota_under if lado_enum == LadoApuesta.OVER else cuota_over
+    if modo_devig not in ("estimado", "estricto"):
+        raise ValueError("modo_devig debe ser 'estimado' o 'estricto'.")
+    modo_estimado = modo_devig == "estimado"
+
+    if cuota_lado is not None and linea is not None:
         if mercado == "COMPLETO":
             probabilidad_over = prediccion_juego_completo.probabilidad_over if prediccion_juego_completo else 0.0
+            probabilidad_under = prediccion_juego_completo.probabilidad_under if prediccion_juego_completo else 0.0
         else:
-            probabilidad_over = predicciones[mercado].probabilidad_over or 0.0
-        analisis_mercado = AnalisisMercado.calcular(probabilidad_over, cuota)
+            prediccion_lado = predicciones[mercado]
+            probabilidad_over = prediccion_lado.probabilidad_over or 0.0
+            probabilidad_under = prediccion_lado.probabilidad_under or 0.0
+
+        probabilidad_lado = (
+            probabilidad_over if lado_enum == LadoApuesta.OVER else probabilidad_under
+        )
+        datos_devig = calcular_devig(
+            cuota_lado,
+            cuota_opuesta,
+            modo_estimado=modo_estimado,
+        )
+        analisis_mercado = AnalisisMercado.calcular(
+            probabilidad_lado,
+            cuota_lado,
+            datos_devig,
+        )
 
     candidatos = []
     if linea is not None and mercado in predicciones:

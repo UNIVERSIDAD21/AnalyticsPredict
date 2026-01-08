@@ -91,37 +91,49 @@ class RazonPrediccion:
 class AnalisisMercado:
     """Análisis del valor de mercado cuando se proporciona una cuota."""
     cuota: float
-    probabilidad_implicita: float
-    edge: float
+    probabilidad_implicita_raw: float
+    probabilidad_implicita_fair: float
+    datos_devig: "DatosDeVig"
+    edge_raw: float
+    edge_real: float
     valor_esperado: float
     recomendacion: TipoRecomendacion
+    probabilidad_implicita: Optional[float] = None
+    edge: Optional[float] = None
 
     @classmethod
     def calcular(
         cls,
         probabilidad_sistema: float,
         cuota: float,
-        umbral_edge_valor: float = 0.10,
-        umbral_probabilidad_minima: float = 0.55
+        datos_devig: "DatosDeVig",
+        umbral_edge_valor: float = 0.05,
     ) -> "AnalisisMercado":
         """Crea un AnalisisMercado calculando todos los valores."""
-        prob_implicita = 1.0 / cuota
-        edge = probabilidad_sistema - prob_implicita
+        prob_implicita_raw = 1.0 / cuota
+        prob_implicita_fair = datos_devig.p_mkt_fair
+        edge_raw = probabilidad_sistema - prob_implicita_raw
+        edge_real = probabilidad_sistema - prob_implicita_fair
         ev = (probabilidad_sistema * cuota) - 1
 
-        if edge > umbral_edge_valor and probabilidad_sistema > umbral_probabilidad_minima:
-            recomendacion = TipoRecomendacion.VALOR
-        elif edge > 0 and probabilidad_sistema > 0.50:
-            recomendacion = TipoRecomendacion.JUSTO
-        else:
+        if ev <= 0 or edge_real <= 0:
             recomendacion = TipoRecomendacion.EVITAR
+        elif edge_real > umbral_edge_valor:
+            recomendacion = TipoRecomendacion.VALOR
+        else:
+            recomendacion = TipoRecomendacion.JUSTO
 
         return cls(
             cuota=cuota,
-            probabilidad_implicita=prob_implicita,
-            edge=edge,
+            probabilidad_implicita_raw=prob_implicita_raw,
+            probabilidad_implicita_fair=prob_implicita_fair,
+            datos_devig=datos_devig,
+            edge_raw=edge_raw,
+            edge_real=edge_real,
             valor_esperado=ev,
-            recomendacion=recomendacion
+            recomendacion=recomendacion,
+            probabilidad_implicita=prob_implicita_raw,
+            edge=edge_raw,
         )
 
 
