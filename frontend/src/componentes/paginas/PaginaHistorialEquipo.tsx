@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * PaginaHistorialEquipo.tsx — Página de historial de partidos por equipo
  */

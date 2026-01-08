@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * analisis.ts — Servicio para análisis de partidos
  */

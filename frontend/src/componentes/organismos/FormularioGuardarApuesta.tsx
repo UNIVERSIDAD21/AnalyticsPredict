@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * FormularioGuardarApuesta.tsx — Modal para guardar una apuesta
  */

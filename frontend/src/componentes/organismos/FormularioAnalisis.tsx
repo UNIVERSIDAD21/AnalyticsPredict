@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * FormularioAnalisis.tsx — Formulario principal con diseño futurista
  */

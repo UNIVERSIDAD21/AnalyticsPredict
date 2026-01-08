@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * index.ts — Exportaciones centralizadas de servicios
  */
