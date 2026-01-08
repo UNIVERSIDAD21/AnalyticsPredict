@@ -2,7 +2,7 @@
  * FormularioAnalisis.tsx — Formulario principal con diseño futurista
  */
 
-import { useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Search, RotateCcw, Zap } from 'lucide-react';
 import { Boton, Tarjeta } from '../atomos';
 import {
@@ -13,8 +13,15 @@ import {
   MensajeError,
   PanelEstadisticasEquipo,
 } from '../moleculas';
-import { Equipo, Mercado, PeticionAnalisis, LadoApuesta, EstadisticasEquipo } from '../../tipos';
-import { validarPeticionAnalisis } from '../../servicios';
+import {
+  Equipo,
+  Mercado,
+  PeticionAnalisis,
+  LadoApuesta,
+  EstadisticasEquipo,
+  TemporadaDisponible,
+} from '../../tipos';
+import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -68,6 +75,10 @@ export function FormularioAnalisis({
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
   const [errores, setErrores] = useState<string[]>([]);
+  const [temporadasDisponibles, setTemporadasDisponibles] = useState<TemporadaDisponible[]>([]);
+  const [temporadasSeleccionadas, setTemporadasSeleccionadas] = useState<string[]>([]);
+  const [cargandoTemporadas, setCargandoTemporadas] = useState(false);
+  const [errorTemporadas, setErrorTemporadas] = useState<string | null>(null);
 
   // Actualizar campo del formulario
   const actualizarCampo = useCallback(
@@ -85,6 +96,9 @@ export function FormularioAnalisis({
   const resetearFormulario = useCallback(() => {
     setFormulario(ESTADO_INICIAL);
     setErrores([]);
+    setTemporadasSeleccionadas([]);
+    setTemporadasDisponibles([]);
+    setErrorTemporadas(null);
   }, []);
 
   // Manejar envío
@@ -99,6 +113,7 @@ export function FormularioAnalisis({
         mercado: formulario.mercado as Mercado,
         linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
         cuota: formulario.cuota ? parseFloat(formulario.cuota) : undefined,
+        temporadas: temporadasSeleccionadas,
       };
 
       // Validar
@@ -117,6 +132,79 @@ export function FormularioAnalisis({
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
   const buscarEstadisticas = (nombre: string) =>
     estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
+
+  const equipoLocalSeleccionado = useMemo(
+    () => buscarEquipo(equipos, formulario.equipoLocal),
+    [equipos, formulario.equipoLocal]
+  );
+  const equipoVisitanteSeleccionado = useMemo(
+    () => buscarEquipo(equipos, formulario.equipoVisitante),
+    [equipos, formulario.equipoVisitante]
+  );
+
+  useEffect(() => {
+    const ids = [equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id].filter(
+      Boolean
+    ) as string[];
+
+    if (ids.length === 0) {
+      setTemporadasDisponibles([]);
+      setTemporadasSeleccionadas([]);
+      setErrorTemporadas(null);
+      return;
+    }
+
+    let activo = true;
+    setCargandoTemporadas(true);
+    setErrorTemporadas(null);
+
+    obtenerTemporadasEquipos(ids)
+      .then((temporadas) => {
+        if (!activo) return;
+        setTemporadasDisponibles(temporadas);
+        setTemporadasSeleccionadas((prev) => {
+          const disponiblesIds = temporadas.map((temporada) => temporada.id);
+          const filtradas = prev.filter((id) => disponiblesIds.includes(id));
+          if (filtradas.length === 0 && disponiblesIds.length > 0) {
+            return [...disponiblesIds];
+          }
+          return filtradas;
+        });
+      })
+      .catch((err) => {
+        if (!activo) return;
+        const mensaje =
+          err instanceof Error ? err.message : 'No se pudieron cargar las temporadas';
+        setErrorTemporadas(mensaje);
+        setTemporadasDisponibles([]);
+        setTemporadasSeleccionadas([]);
+      })
+      .finally(() => {
+        if (activo) {
+          setCargandoTemporadas(false);
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
+
+  const toggleTemporada = useCallback((temporadaId: string) => {
+    setTemporadasSeleccionadas((prev) =>
+      prev.includes(temporadaId)
+        ? prev.filter((id) => id !== temporadaId)
+        : [...prev, temporadaId]
+    );
+  }, []);
+
+  const seleccionarTodasTemporadas = useCallback(() => {
+    setTemporadasSeleccionadas(temporadasDisponibles.map((temporada) => temporada.id));
+  }, [temporadasDisponibles]);
+
+  const limpiarTemporadas = useCallback(() => {
+    setTemporadasSeleccionadas([]);
+  }, []);
 
   return (
     <Tarjeta className="animate-entrada">
@@ -193,6 +281,69 @@ export function FormularioAnalisis({
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
           />
+
+          {/* Temporadas */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
+                Temporadas para el análisis
+              </label>
+              {cargandoTemporadas && (
+                <span className="text-xs text-texto-terciario font-mono">Cargando...</span>
+              )}
+            </div>
+
+            {errorTemporadas && (
+              <p className="text-xs text-neon-rojo">{errorTemporadas}</p>
+            )}
+
+            {!errorTemporadas && temporadasDisponibles.length === 0 && !cargandoTemporadas && (
+              <p className="text-xs text-texto-terciario">
+                Selecciona equipos para ver temporadas disponibles.
+              </p>
+            )}
+
+            {temporadasDisponibles.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {temporadasDisponibles.map((temporada) => {
+                    const seleccionada = temporadasSeleccionadas.includes(temporada.id);
+                    return (
+                      <button
+                        key={temporada.id}
+                        type="button"
+                        onClick={() => toggleTemporada(temporada.id)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
+                          seleccionada
+                            ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
+                            : 'border-neon-cyan/20 text-texto-terciario hover:text-texto-secundario'
+                        }`}
+                      >
+                        {temporada.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={seleccionarTodasTemporadas}
+                    className="text-neon-cyan hover:text-neon-cyan/80 font-semibold"
+                  >
+                    Seleccionar todas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={limpiarTemporadas}
+                    className="text-texto-terciario hover:text-texto-secundario"
+                  >
+                    Limpiar selección
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Cuota */}
           <InputCuota

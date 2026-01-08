@@ -23,9 +23,10 @@ from fastapi import APIRouter
 # 
 # AHORA:
 from motor import analizar_partido, resultado_a_dict
-from motor_autoentrenamiento import obtener_modelo  # ← NUEVO
+from motor_autoentrenamiento import EntrenadorBD, ModeloEnMemoria, obtener_modelo  # ← NUEVO
 from motor.tipos import Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
+from db import obtener_pool
 from .excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from .modelos_peticion import PeticionAnalisis, PeticionAnalisisEnVivo
 from .modelos_respuesta import RespuestaAnalisis
@@ -85,12 +86,19 @@ def ejecutar_analisis(
     # Siempre retorna el modelo más actualizado desde BD
     # ═══════════════════════════════════════════════════════════════════════════
     try:
-        modelo = obtener_modelo()
+        if peticion.temporadas:
+            entrenador = EntrenadorBD(obtener_pool())
+            datos_modelo = entrenador.entrenar(temporadas=peticion.temporadas)
+            modelo = ModeloEnMemoria(datos_modelo)
+        else:
+            modelo = obtener_modelo()
     except RuntimeError as exc:
         raise ErrorAnalisis(
             "El modelo no está disponible. "
             "Verifica que el servidor se haya inicializado correctamente."
         ) from exc
+    except ValueError as exc:
+        raise ErrorValidacion(str(exc)) from exc
     
     # Validar equipos
     validar_equipos(modelo, peticion.equipo_local, peticion.equipo_visitante)

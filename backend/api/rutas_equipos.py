@@ -18,6 +18,7 @@ from .modelos_respuesta import (
     RespuestaEquipos,
     RespuestaEstadisticasEquipos,
     RespuestaHistorialEquipo,
+    RespuestaTemporadasEquipos,
 )
 from motor.tipos import InfoEquipo
 
@@ -80,6 +81,53 @@ async def listar_equipos() -> RespuestaEquipos:
         exito=True,
         total=len(equipos_ordenados),
         equipos=[equipo.__dict__ for equipo in equipos_ordenados],
+    )
+
+
+@router.get(
+    "/equipos/temporadas",
+    summary="Listar temporadas disponibles por equipos",
+    response_model=RespuestaTemporadasEquipos,
+)
+async def listar_temporadas_por_equipos(
+    equipo_ids: List[str] = Query(default=[], description="IDs de equipos"),
+) -> RespuestaTemporadasEquipos:
+    """Retorna las temporadas disponibles para los equipos indicados."""
+    if not equipo_ids:
+        temporadas = obtener_temporadas_disponibles()
+        return RespuestaTemporadasEquipos(
+            exito=True,
+            temporadas=[{"id": str(t["id"]), "nombre": t["nombre"]} for t in temporadas],
+        )
+
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                WITH equipos_temporada AS (
+                    SELECT p.temporada_id, p.equipo_local_id AS equipo_id
+                    FROM partidos p
+                    WHERE p.local_q1 IS NOT NULL
+                    UNION
+                    SELECT p.temporada_id, p.equipo_visitante_id AS equipo_id
+                    FROM partidos p
+                    WHERE p.local_q1 IS NOT NULL
+                )
+                SELECT t.id, t.nombre
+                FROM temporadas t
+                JOIN equipos_temporada et ON et.temporada_id = t.id
+                WHERE et.equipo_id = ANY(%s)
+                GROUP BY t.id, t.nombre
+                HAVING COUNT(DISTINCT et.equipo_id) = %s
+                ORDER BY t.nombre DESC
+                """,
+                (equipo_ids, len(equipo_ids)),
+            )
+            temporadas = cursor.fetchall()
+
+    return RespuestaTemporadasEquipos(
+        exito=True,
+        temporadas=[{"id": str(t["id"]), "nombre": t["nombre"]} for t in temporadas],
     )
 
 

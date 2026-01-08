@@ -20,12 +20,27 @@ class PeticionAnalisis(BaseModel):
     mercado: Literal["Q1", "Q2", "Q3", "Q4", "COMPLETO"]
     linea: float = Field(..., gt=0, description="Línea de puntos a analizar")
     cuota: Optional[float] = Field(None, gt=1.0, description="Cuota decimal opcional")
+    temporadas: Optional[List[str]] = Field(
+        None,
+        description="Lista opcional de temporadas (IDs) para filtrar el análisis",
+    )
 
     @field_validator("equipo_local", "equipo_visitante")
     @classmethod
     def validar_equipo(cls, valor: str) -> str:
         if not valor or not valor.strip():
             raise ValueError("El nombre del equipo no puede estar vacío.")
+        return valor
+
+    @field_validator("temporadas")
+    @classmethod
+    def validar_temporadas(cls, valor: Optional[List[str]]) -> Optional[List[str]]:
+        if valor is None:
+            return valor
+        if len(valor) == 0:
+            raise ValueError("Debes seleccionar al menos una temporada.")
+        if any(not temporada or not temporada.strip() for temporada in valor):
+            raise ValueError("Las temporadas no pueden estar vacías.")
         return valor
 
 

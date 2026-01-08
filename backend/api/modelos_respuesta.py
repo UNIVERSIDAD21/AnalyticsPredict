@@ -41,6 +41,12 @@ class RespuestaEstadisticasEquipos(RespuestaBase):
     temporada_actual: Optional[str] = None
 
 
+class RespuestaTemporadasEquipos(RespuestaBase):
+    """Respuesta para temporadas disponibles por equipos."""
+
+    temporadas: List[TemporadaDisponible] = []
+
+
 class PuntosPartidoHistorial(BaseModel):
     """Puntos por cuarto y total."""
 

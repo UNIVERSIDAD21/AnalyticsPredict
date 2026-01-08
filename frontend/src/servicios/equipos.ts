@@ -3,7 +3,14 @@
  */
 
 import { clienteAPI, extraerMensajeError } from './api';
-import { Equipo, RespuestaEquipos, OpcionEquipo, RespuestaHistorialEquipo } from '../tipos';
+import {
+  Equipo,
+  RespuestaEquipos,
+  OpcionEquipo,
+  RespuestaHistorialEquipo,
+  RespuestaTemporadasEquipos,
+  TemporadaDisponible,
+} from '../tipos';
 
 // ══════════════════════════════════════════════════════════════
 // FUNCIONES
@@ -56,6 +63,32 @@ export async function obtenerHistorialEquipo(
     }
 
     return respuesta.data;
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+/**
+ * Obtiene las temporadas disponibles para uno o más equipos
+ */
+export async function obtenerTemporadasEquipos(
+  equipoIds: string[]
+): Promise<TemporadaDisponible[]> {
+  try {
+    const respuesta = await clienteAPI.get<RespuestaTemporadasEquipos>(
+      '/api/equipos/temporadas',
+      {
+        params: {
+          equipo_ids: equipoIds,
+        },
+      }
+    );
+
+    if (!respuesta.data.exito) {
+      throw new Error('Error al obtener temporadas disponibles');
+    }
+
+    return respuesta.data.temporadas || [];
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
