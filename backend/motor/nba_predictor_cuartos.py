@@ -17,6 +17,7 @@ import numpy as np
 
 from .calculadora_probabilidad import (
     calcular_intervalo_confianza,
+    calcular_kelly,
     calcular_devig,
     calcular_probabilidad_over,
     calcular_probabilidad_victoria,
@@ -25,12 +26,14 @@ from .generador_razones import generar_razones_basicas
 from .tipos import (
     AnalisisMercado,
     CandidatoApuesta,
+    ConfiguracionSizing,
     FactoresConfianza,
     LadoApuesta,
     ModeloRidge,
     NivelConfianza,
     PrediccionCuarto,
     ResultadoAnalisis,
+    ResultadoSizing,
     TipoMercado,
     Ubicacion,
 )
@@ -335,6 +338,8 @@ def analizar_partido(
     cuota_under: Optional[float] = None,
     lado: LadoApuesta | str = LadoApuesta.OVER,
     modo_devig: str = "estricto",
+    config_sizing: Optional[ConfiguracionSizing] = None,
+    modo_devig_estimado: Optional[bool] = None,
     marcador_q1: Optional[str] = None,
     marcador_q2: Optional[str] = None,
     marcador_q3: Optional[str] = None,
@@ -402,6 +407,9 @@ def analizar_partido(
     )
 
     analisis_mercado = None
+    sizing: Optional[ResultadoSizing] = None
+    datos_devig = None
+    probabilidad_lado = None
     try:
         lado_enum = lado if isinstance(lado, LadoApuesta) else LadoApuesta(lado)
     except ValueError:
@@ -417,7 +425,7 @@ def analizar_partido(
     cuota_opuesta = cuota_under if lado_enum == LadoApuesta.OVER else cuota_over
     if modo_devig not in ("estimado", "estricto"):
         raise ValueError("modo_devig debe ser 'estimado' o 'estricto'.")
-    modo_estimado = modo_devig == "estimado"
+    modo_estimado = modo_devig_estimado if modo_devig_estimado is not None else modo_devig == "estimado"
 
     if cuota_lado is not None and linea is not None:
         if mercado == "COMPLETO":
@@ -490,6 +498,22 @@ def analizar_partido(
         )
 
     nivel_confianza = factores_confianza.obtener_nivel()
+    riesgo_alto = factores_confianza.volatilidad == "alta"
+
+    if (
+        config_sizing is not None
+        and analisis_mercado is not None
+        and datos_devig is not None
+        and probabilidad_lado is not None
+        and cuota_lado is not None
+    ):
+        sizing = calcular_kelly(
+            probabilidad=probabilidad_lado,
+            cuota=cuota_lado,
+            config=config_sizing,
+            datos_devig=datos_devig,
+            riesgo_alto=riesgo_alto,
+        )
 
     return ResultadoAnalisis(
         equipo=normalizar_nombre(equipo),
@@ -504,6 +528,7 @@ def analizar_partido(
         nivel_confianza=nivel_confianza,
         factores_confianza=factores_confianza,
         analisis_mercado=analisis_mercado,
+        sizing=sizing,
         mejor_apuesta=mejor_apuesta,
         es_en_vivo=es_en_vivo,
         cuartos_reales=cuartos_reales,

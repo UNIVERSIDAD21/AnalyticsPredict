@@ -276,7 +276,7 @@ class ConfiguracionSizing:
         if isinstance(valor, PerfilRiesgo):
             return valor
         try:
-            return PerfilRiesgo(str(valor))
+            return PerfilRiesgo(str(valor).upper())
         except ValueError:
             return None
 
@@ -303,8 +303,8 @@ class ResultadoSizing:
     """Contrato de persistencia para apuestas."""
     kelly_full: Optional[float]
     kelly_fraccional: Optional[float]
-    fraccion_aplicada: Optional[float]
-    stake_recomendado: Optional[float]
+    fraccion_kelly: Optional[float]
+    stake: Optional[float]
     stake_porcentaje: Optional[float]
     bankroll_momento: Optional[float]
     perfil_riesgo_usado: PerfilRiesgo
@@ -312,20 +312,23 @@ class ResultadoSizing:
     penalizaciones: Dict[str, float] = field(default_factory=dict)
     aplicaron_caps: bool = False
 
-    def como_diccionario(self) -> Dict[str, Any]:
-        """Serializa el resultado en formato compatible con BD."""
+    def asdict_persistencia(self) -> Dict[str, Any]:
+        """Serializa el resultado en formato compatible con la tabla apuestas."""
         return {
             "kelly_full": self.kelly_full,
             "kelly_fraccional": self.kelly_fraccional,
-            "fraccion_kelly": self.fraccion_aplicada,
-            "stake_recomendado": self.stake_recomendado,
+            "fraccion_kelly": self.fraccion_kelly,
+            "stake": self.stake,
             "stake_porcentaje": self.stake_porcentaje,
             "bankroll_momento": self.bankroll_momento,
             "perfil_riesgo_usado": self.perfil_riesgo_usado.value,
             "sizing_advertencias": list(self.advertencias),
             "sizing_penalizaciones": dict(self.penalizaciones),
-            "aplicaron_caps": self.aplicaron_caps,
         }
+
+    def como_diccionario(self) -> Dict[str, Any]:
+        """Alias retrocompatible para serialización de persistencia."""
+        return self.asdict_persistencia()
 
 
 @dataclass
@@ -425,6 +428,7 @@ class ResultadoAnalisis:
     nivel_confianza: NivelConfianza = NivelConfianza.MEDIA
     factores_confianza: FactoresConfianza = None
     analisis_mercado: Optional[AnalisisMercado] = None
+    sizing: Optional["ResultadoSizing"] = None
     mejor_apuesta: Optional[CandidatoApuesta] = None
     es_en_vivo: bool = False
     cuartos_reales: Dict[str, tuple] = field(default_factory=dict)

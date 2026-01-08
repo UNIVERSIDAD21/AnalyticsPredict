@@ -10,6 +10,8 @@ from __future__ import annotations
 import os
 from uuid import UUID
 
+from typing import Optional
+
 from fastapi import Header, HTTPException, status
 
 # UUID de usuario de desarrollo (debe coincidir con setup_completo.py)
@@ -32,6 +34,21 @@ def obtener_usuario_id(
             detail="Se requiere el header X-Usuario-Id.",
         )
     
+    try:
+        return UUID(x_usuario_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="X-Usuario-Id debe ser un UUID válido.",
+        ) from exc
+
+
+def obtener_usuario_id_opcional(
+    x_usuario_id: Optional[str] = Header(None, alias="X-Usuario-Id")
+) -> Optional[UUID]:
+    """Obtiene el UUID si viene en el header, sin fallback de desarrollo."""
+    if not x_usuario_id:
+        return None
     try:
         return UUID(x_usuario_id)
     except ValueError as exc:

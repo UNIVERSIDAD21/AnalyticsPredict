@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 from typing import Tuple, Optional, List
 
-from motor.tipos import DatosDeVig
+from motor.tipos import ConfiguracionSizing, DatosDeVig, ResultadoSizing
 
 
 def cdf_normal(z: float) -> float:
@@ -113,4 +113,102 @@ def calcular_devig(
         p_mkt_raw=p_mkt_raw,
         p_mkt_fair=p_mkt_raw,
         advertencias=advertencias,
+    )
+
+
+def calcular_kelly(
+    probabilidad: float,
+    cuota: float,
+    config: ConfiguracionSizing,
+    datos_devig: DatosDeVig,
+    riesgo_alto: bool = False,
+) -> ResultadoSizing:
+    """Calcula sizing con Kelly fraccional, penalizaciones y caps."""
+    if cuota <= 1.0:
+        raise ValueError("cuota debe ser mayor a 1.0 para calcular Kelly.")
+    if not (0.0 <= probabilidad <= 1.0):
+        raise ValueError("probabilidad debe estar entre 0 y 1.")
+
+    advertencias = list(config.advertencias)
+    penalizaciones: dict[str, float] = {}
+
+    b = float(cuota) - 1.0
+    p = float(probabilidad)
+    q = 1.0 - p
+    kelly_full = (b * p - q) / b
+
+    bankroll = config.bankroll
+    perfil_riesgo = config.perfil_riesgo
+
+    if kelly_full <= 0:
+        advertencias.append("Kelly <= 0: no apostar.")
+        penalizaciones["kelly_negativo"] = 1.0
+        stake_monto = 0.0 if bankroll is not None else None
+        return ResultadoSizing(
+            kelly_full=kelly_full,
+            kelly_fraccional=0.0,
+            fraccion_kelly=0.0,
+            stake=stake_monto,
+            stake_porcentaje=0.0,
+            bankroll_momento=bankroll,
+            perfil_riesgo_usado=perfil_riesgo,
+            advertencias=advertencias,
+            penalizaciones=penalizaciones,
+            aplicaron_caps=False,
+        )
+
+    if perfil_riesgo.value == "CONSERVADOR":
+        fraccion_base = config.fraccion_kelly_conservador
+    elif perfil_riesgo.value == "MEDIO":
+        fraccion_base = config.fraccion_kelly_medio
+    else:
+        fraccion_base = config.fraccion_kelly_agresivo
+
+    multiplicador = 1.0
+    if datos_devig.metodo == "estimado":
+        multiplicador *= 0.5
+        penalizaciones["devig_estimado"] = 0.5
+        advertencias.append("De-vig estimado: stake penalizado.")
+    elif datos_devig.metodo == "no_aplicado":
+        multiplicador *= 0.3
+        penalizaciones["devig_no_aplicado"] = 0.3
+        advertencias.append("Sin devig: stake penalizado.")
+
+    if riesgo_alto:
+        multiplicador *= 0.7
+        penalizaciones["riesgo_alto"] = 0.7
+        advertencias.append("Riesgo alto: desviación alta.")
+
+    kelly_pre_cap = kelly_full * fraccion_base * multiplicador
+    aplicaron_caps = False
+
+    if config.cap_diario and kelly_pre_cap > config.cap_diario:
+        advertencias.append("Cap diario excedido: revisar exposición total.")
+
+    kelly_fraccional = kelly_pre_cap
+    if config.cap_por_apuesta and kelly_fraccional > config.cap_por_apuesta:
+        kelly_fraccional = config.cap_por_apuesta
+        aplicaron_caps = True
+        advertencias.append("Cap por apuesta aplicado.")
+
+    stake_porcentaje = kelly_fraccional * 100.0
+    stake_monto = None
+    if bankroll is not None:
+        stake_monto = bankroll * kelly_fraccional
+        if 0 < stake_monto < config.stake_minimo:
+            advertencias.append("Stake por debajo del mínimo configurado.")
+
+    fraccion_kelly = kelly_fraccional / kelly_full if kelly_full > 0 else 0.0
+
+    return ResultadoSizing(
+        kelly_full=kelly_full,
+        kelly_fraccional=kelly_fraccional,
+        fraccion_kelly=fraccion_kelly,
+        stake=stake_monto,
+        stake_porcentaje=stake_porcentaje,
+        bankroll_momento=bankroll,
+        perfil_riesgo_usado=perfil_riesgo,
+        advertencias=advertencias,
+        penalizaciones=penalizaciones,
+        aplicaron_caps=aplicaron_caps,
     )

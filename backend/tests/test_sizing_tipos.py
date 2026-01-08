@@ -45,8 +45,8 @@ def test_resultado_sizing_serializa_para_bd():
     resultado = ResultadoSizing(
         kelly_full=0.08,
         kelly_fraccional=0.02,
-        fraccion_aplicada=0.25,
-        stake_recomendado=12.5,
+        fraccion_kelly=0.25,
+        stake=12.5,
         stake_porcentaje=0.01,
         bankroll_momento=1250.0,
         perfil_riesgo_usado=PerfilRiesgo.CONSERVADOR,
@@ -55,8 +55,9 @@ def test_resultado_sizing_serializa_para_bd():
         aplicaron_caps=True,
     )
 
-    serializado = resultado.como_diccionario()
+    serializado = resultado.asdict_persistencia()
 
     assert isinstance(serializado["sizing_advertencias"], list)
     assert isinstance(serializado["sizing_penalizaciones"], dict)
     assert serializado["perfil_riesgo_usado"] == "CONSERVADOR"
+    assert "stake_recomendado" not in serializado
