@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * bitacora.ts — Tipos para bitácora de apuestas
  */

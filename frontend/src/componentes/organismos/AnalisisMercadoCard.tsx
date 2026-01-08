@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * AnalisisMercadoCard.tsx — Análisis de valor con estilo futurista
  */

@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * PaginaPrincipal.tsx — Página principal con layout futurista full-screen
  */
