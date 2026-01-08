@@ -126,6 +126,43 @@ class AnalisisMercado:
 
 
 @dataclass
+class DatosDeVig:
+    """Resultado normalizado de quitar el vig para un lado del mercado."""
+    metodo: Literal["exacto", "estimado", "no_aplicado"]
+    overround: Optional[float]
+    p_mkt_raw: float
+    p_mkt_fair: float
+    advertencias: List[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.metodo == "exacto" and self.overround is None:
+            raise ValueError("overround no puede ser None cuando el método es exacto.")
+
+        if self.metodo == "no_aplicado" and self.p_mkt_fair != self.p_mkt_raw:
+            raise ValueError(
+                "p_mkt_fair debe ser igual a p_mkt_raw cuando el método es no_aplicado."
+            )
+
+        if not (0.0 <= self.p_mkt_raw <= 1.0):
+            raise ValueError("p_mkt_raw debe estar entre 0 y 1.")
+
+        if not (0.0 <= self.p_mkt_fair <= 1.0):
+            raise ValueError("p_mkt_fair debe estar entre 0 y 1.")
+
+        if self.overround is not None and self.overround <= 0:
+            raise ValueError("overround debe ser mayor a 0 cuando se proporciona.")
+
+        if self.advertencias is None:
+            raise ValueError("advertencias siempre debe ser una lista.")
+
+    @property
+    def vig_porcentaje(self) -> Optional[float]:
+        if self.overround is None:
+            return None
+        return max((self.overround - 1.0) * 100, 0.0)
+
+
+@dataclass
 class CandidatoApuesta:
     """Candidato de apuesta evaluado por el sistema."""
     cuarto: str
