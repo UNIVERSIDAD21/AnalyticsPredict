@@ -58,6 +58,12 @@ class TipoRecomendacion(str, Enum):
     EVITAR = "EVITAR"
 
 
+class PerfilRiesgo(str, Enum):
+    """Perfil de riesgo para money management."""
+    CONSERVADOR = "CONSERVADOR"
+    MEDIO = "MEDIO"
+    AGRESIVO = "AGRESIVO"
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SECCIÓN 2: ESTRUCTURAS DE DATOS BÁSICAS
 # ══════════════════════════════════════════════════════════════════════════════
@@ -172,6 +178,162 @@ class DatosDeVig:
         if self.overround is None:
             return None
         return max((self.overround - 1.0) * 100, 0.0)
+
+
+DEFAULT_CAP_POR_APUESTA = 0.02
+DEFAULT_CAP_DIARIO = 0.10
+DEFAULT_STAKE_MINIMO = 5.0
+DEFAULT_FRACCION_KELLY_CONSERVADOR = 0.125
+DEFAULT_FRACCION_KELLY_MEDIO = 0.25
+DEFAULT_FRACCION_KELLY_AGRESIVO = 0.5
+
+
+@dataclass
+class ConfiguracionSizing:
+    """Configuración de sizing alineada con usuarios.config_sizing."""
+    cap_por_apuesta: float
+    cap_diario: float
+    stake_minimo: float
+    fraccion_kelly_conservador: float
+    fraccion_kelly_medio: float
+    fraccion_kelly_agresivo: float
+    perfil_riesgo: PerfilRiesgo
+    bankroll: Optional[float]
+    advertencias: List[str] = field(default_factory=list)
+
+    @classmethod
+    def construir_desde_fuentes(
+        cls,
+        config_sizing_usuario: Optional[Dict[str, Any]],
+        bankroll_override: Optional[float],
+        perfil_override: Optional[PerfilRiesgo | str],
+        bankroll_usuario: Optional[float],
+        perfil_default: Optional[PerfilRiesgo | str],
+    ) -> "ConfiguracionSizing":
+        """Construye la configuración con precedencia request > BD > default."""
+        advertencias: List[str] = []
+
+        bankroll = bankroll_override if bankroll_override is not None else bankroll_usuario
+        if bankroll is None:
+            advertencias.append("Sin bankroll disponible para sizing.")
+
+        perfil_riesgo = cls._resolver_perfil(perfil_override)
+        if perfil_riesgo is None:
+            perfil_riesgo = cls._resolver_perfil(perfil_default)
+        if perfil_riesgo is None:
+            perfil_riesgo = PerfilRiesgo.CONSERVADOR
+
+        config = config_sizing_usuario if isinstance(config_sizing_usuario, dict) else None
+        if config_sizing_usuario is not None and config is None:
+            advertencias.append("config_sizing inválido, usando defaults.")
+
+        return cls(
+            cap_por_apuesta=cls._leer_float(
+                config,
+                "cap_por_apuesta",
+                DEFAULT_CAP_POR_APUESTA,
+                advertencias,
+            ),
+            cap_diario=cls._leer_float(
+                config,
+                "cap_diario",
+                DEFAULT_CAP_DIARIO,
+                advertencias,
+            ),
+            stake_minimo=cls._leer_float(
+                config,
+                "stake_minimo",
+                DEFAULT_STAKE_MINIMO,
+                advertencias,
+            ),
+            fraccion_kelly_conservador=cls._leer_float(
+                config,
+                "fraccion_kelly_conservador",
+                DEFAULT_FRACCION_KELLY_CONSERVADOR,
+                advertencias,
+            ),
+            fraccion_kelly_medio=cls._leer_float(
+                config,
+                "fraccion_kelly_medio",
+                DEFAULT_FRACCION_KELLY_MEDIO,
+                advertencias,
+            ),
+            fraccion_kelly_agresivo=cls._leer_float(
+                config,
+                "fraccion_kelly_agresivo",
+                DEFAULT_FRACCION_KELLY_AGRESIVO,
+                advertencias,
+            ),
+            perfil_riesgo=perfil_riesgo,
+            bankroll=bankroll,
+            advertencias=advertencias,
+        )
+
+    @staticmethod
+    def _resolver_perfil(valor: Optional[PerfilRiesgo | str]) -> Optional[PerfilRiesgo]:
+        if valor is None:
+            return None
+        if isinstance(valor, PerfilRiesgo):
+            return valor
+        try:
+            return PerfilRiesgo(str(valor))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _leer_float(
+        config: Optional[Dict[str, Any]],
+        clave: str,
+        default: float,
+        advertencias: List[str],
+    ) -> float:
+        if config is None or clave not in config:
+            if config is not None:
+                advertencias.append(f"config_sizing sin '{clave}', usando default.")
+            return default
+        valor = config.get(clave)
+        if isinstance(valor, (int, float)):
+            return float(valor)
+        advertencias.append(f"config_sizing '{clave}' inválido, usando default.")
+        return default
+
+
+@dataclass
+class ResultadoSizing:
+    """Contrato de persistencia para apuestas.
+
+    stake_porcentaje se expresa como fracción (0-1) y se persiste como porcentaje (0-100).
+    """
+    kelly_full: Optional[float]
+    kelly_fraccional: Optional[float]
+    fraccion_aplicada: Optional[float]
+    stake_recomendado: Optional[float]
+    stake_porcentaje: Optional[float]
+    bankroll_momento: Optional[float]
+    perfil_riesgo_usado: PerfilRiesgo
+    advertencias: List[str] = field(default_factory=list)
+    penalizaciones: Dict[str, float] = field(default_factory=dict)
+    aplicaron_caps: bool = False
+
+    def como_diccionario(self) -> Dict[str, Any]:
+        """Serializa el resultado en formato compatible con BD."""
+        stake_porcentaje_bd = (
+            self.stake_porcentaje * 100
+            if self.stake_porcentaje is not None
+            else None
+        )
+        return {
+            "kelly_full": self.kelly_full,
+            "kelly_fraccional": self.kelly_fraccional,
+            "fraccion_kelly": self.fraccion_aplicada,
+            "stake_recomendado": self.stake_recomendado,
+            "stake_porcentaje": stake_porcentaje_bd,
+            "bankroll_momento": self.bankroll_momento,
+            "perfil_riesgo_usado": self.perfil_riesgo_usado.value,
+            "sizing_advertencias": list(self.advertencias),
+            "sizing_penalizaciones": dict(self.penalizaciones),
+            "aplicaron_caps": self.aplicaron_caps,
+        }
 
 
 @dataclass
