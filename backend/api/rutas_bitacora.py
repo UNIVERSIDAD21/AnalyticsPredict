@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from datetime import date
+import json
 from typing import List, Optional
 from uuid import UUID
 
@@ -24,6 +25,85 @@ from .modelos_peticion import PeticionActualizarResultado, PeticionCrearApuesta
 from .modelos_respuesta import RespuestaApuesta, RespuestaListaApuestas, RespuestaResumenApuestas
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
+
+
+def _serializar_json(valor: object | None) -> object | None:
+    if valor is None:
+        return None
+    if Jsonb is not None:
+        return Jsonb(valor)
+    return json.dumps(valor)
+
+
+def _construir_payload_apuesta(peticion: PeticionCrearApuesta, usuario_id: UUID) -> dict:
+    cuota_over = peticion.cuota_over
+    cuota_under = peticion.cuota_under
+    if cuota_over is None and cuota_under is None and peticion.cuota is not None:
+        if peticion.lado == "UNDER":
+            cuota_under = peticion.cuota
+        else:
+            cuota_over = peticion.cuota
+
+    devig_metodo = peticion.devig_metodo
+    devig_overround = peticion.devig_overround
+    if devig_metodo == "exacto" and (cuota_over is None or cuota_under is None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="devig_metodo=exacto requiere cuota_over y cuota_under.",
+        )
+
+    if peticion.score_total is not None and peticion.score_componentes is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="score_total requiere score_componentes para trazabilidad.",
+        )
+
+    if peticion.kelly_fraccional is not None:
+        if peticion.fraccion_kelly is None or peticion.stake_porcentaje is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="kelly_fraccional requiere fraccion_kelly y stake_porcentaje.",
+            )
+
+    return {
+        "usuario_id": str(usuario_id),
+        "partido_id": peticion.partido_id,
+        "equipo_local": peticion.equipo_local,
+        "equipo_visitante": peticion.equipo_visitante,
+        "fecha_partido": peticion.fecha_partido,
+        "mercado": peticion.mercado,
+        "lado": peticion.lado,
+        "linea": peticion.linea,
+        "cuota": peticion.cuota,
+        "cuota_over": cuota_over,
+        "cuota_under": cuota_under,
+        "stake": peticion.stake,
+        "probabilidad_sistema": peticion.probabilidad_sistema,
+        "confianza_sistema": peticion.confianza_sistema,
+        "valor_esperado": peticion.valor_esperado,
+        "devig_metodo": devig_metodo,
+        "modo_devig": peticion.modo_devig,
+        "devig_overround": devig_overround,
+        "devig_p_mkt_raw": peticion.devig_p_mkt_raw,
+        "devig_p_mkt_fair": peticion.devig_p_mkt_fair,
+        "devig_advertencias": _serializar_json(peticion.devig_advertencias),
+        "edge_real": peticion.edge_real,
+        "score_total": peticion.score_total,
+        "score_componentes": _serializar_json(peticion.score_componentes),
+        "score_explicacion": peticion.score_explicacion,
+        "score_penalizaciones": _serializar_json(peticion.score_penalizaciones),
+        "kelly_full": peticion.kelly_full,
+        "kelly_fraccional": peticion.kelly_fraccional,
+        "fraccion_kelly": peticion.fraccion_kelly,
+        "stake_porcentaje": peticion.stake_porcentaje,
+        "bankroll_momento": peticion.bankroll_momento,
+        "perfil_riesgo_usado": peticion.perfil_riesgo_usado,
+        "sizing_advertencias": _serializar_json(peticion.sizing_advertencias),
+        "sizing_penalizaciones": _serializar_json(peticion.sizing_penalizaciones),
+        "prediccion_media": peticion.prediccion_media,
+        "prediccion_desviacion": peticion.prediccion_desviacion,
+        "razones": _serializar_json(peticion.razones),
+    }
 
 
 def _construir_where(
@@ -68,47 +148,7 @@ async def guardar_apuesta(
     usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
-    cuota_over = peticion.cuota_over
-    cuota_under = peticion.cuota_under
-    if cuota_over is None and cuota_under is None and peticion.cuota is not None:
-        if peticion.lado == "UNDER":
-            cuota_under = peticion.cuota
-        else:
-            cuota_over = peticion.cuota
-
-    devig_metodo = peticion.devig_metodo
-    devig_overround = peticion.devig_overround
-    if devig_metodo == "exacto" and (cuota_over is None or cuota_under is None):
-        devig_metodo = "no_aplicado"
-        devig_overround = None
-
-    # Preparar el valor de razones para que Postgres pueda adaptarlo correctamente. Si la clase
-    # Jsonb está disponible (psycopg 3.x), se envuelve en Jsonb; de lo contrario, se utiliza
-    # una serialización manual a JSON mediante json.dumps.
-    import json
-
-    razones_para_db = None
-    devig_advertencias_para_db = None
-    sizing_advertencias_para_db = None
-    sizing_penalizaciones_para_db = None
-    if Jsonb is not None:
-        # Utilizar Jsonb para serializar de manera segura la lista de diccionarios.
-        razones_para_db = Jsonb(peticion.razones)
-        if peticion.devig_advertencias is not None:
-            devig_advertencias_para_db = Jsonb(peticion.devig_advertencias)
-        if peticion.sizing_advertencias is not None:
-            sizing_advertencias_para_db = Jsonb(peticion.sizing_advertencias)
-        if peticion.sizing_penalizaciones is not None:
-            sizing_penalizaciones_para_db = Jsonb(peticion.sizing_penalizaciones)
-    else:
-        # Fallback: convertir a cadena JSON. La columna debería ser de tipo JSONB o TEXT.
-        razones_para_db = json.dumps(peticion.razones)
-        if peticion.devig_advertencias is not None:
-            devig_advertencias_para_db = json.dumps(peticion.devig_advertencias)
-        if peticion.sizing_advertencias is not None:
-            sizing_advertencias_para_db = json.dumps(peticion.sizing_advertencias)
-        if peticion.sizing_penalizaciones is not None:
-            sizing_penalizaciones_para_db = json.dumps(peticion.sizing_penalizaciones)
+    datos_apuesta = _construir_payload_apuesta(peticion, usuario_id)
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -137,6 +177,10 @@ async def guardar_apuesta(
                     devig_p_mkt_fair,
                     devig_advertencias,
                     edge_real,
+                    score_total,
+                    score_componentes,
+                    score_explicacion,
+                    score_penalizaciones,
                     kelly_full,
                     kelly_fraccional,
                     fraccion_kelly,
@@ -171,6 +215,10 @@ async def guardar_apuesta(
                     %(devig_p_mkt_fair)s,
                     %(devig_advertencias)s,
                     %(edge_real)s,
+                    %(score_total)s,
+                    %(score_componentes)s,
+                    %(score_explicacion)s,
+                    %(score_penalizaciones)s,
                     %(kelly_full)s,
                     %(kelly_fraccional)s,
                     %(fraccion_kelly)s,
@@ -185,42 +233,7 @@ async def guardar_apuesta(
                 )
                 RETURNING *
                 """,
-                {
-                    "usuario_id": str(usuario_id),
-                    "partido_id": peticion.partido_id,
-                    "equipo_local": peticion.equipo_local,
-                    "equipo_visitante": peticion.equipo_visitante,
-                    "fecha_partido": peticion.fecha_partido,
-                    "mercado": peticion.mercado,
-                    "lado": peticion.lado,
-                    "linea": peticion.linea,
-                    "cuota": peticion.cuota,
-                    "cuota_over": cuota_over,
-                    "cuota_under": cuota_under,
-                    "stake": peticion.stake,
-                    "probabilidad_sistema": peticion.probabilidad_sistema,
-                    "confianza_sistema": peticion.confianza_sistema,
-                    "valor_esperado": peticion.valor_esperado,
-                    "devig_metodo": devig_metodo,
-                    "modo_devig": peticion.modo_devig,
-                    "devig_overround": devig_overround,
-                    "devig_p_mkt_raw": peticion.devig_p_mkt_raw,
-                    "devig_p_mkt_fair": peticion.devig_p_mkt_fair,
-                    "devig_advertencias": devig_advertencias_para_db,
-                    "edge_real": peticion.edge_real,
-                    "kelly_full": peticion.kelly_full,
-                    "kelly_fraccional": peticion.kelly_fraccional,
-                    "fraccion_kelly": peticion.fraccion_kelly,
-                    "stake_porcentaje": peticion.stake_porcentaje,
-                    "bankroll_momento": peticion.bankroll_momento,
-                    "perfil_riesgo_usado": peticion.perfil_riesgo_usado,
-                    "sizing_advertencias": sizing_advertencias_para_db,
-                    "sizing_penalizaciones": sizing_penalizaciones_para_db,
-                    "prediccion_media": peticion.prediccion_media,
-                    "prediccion_desviacion": peticion.prediccion_desviacion,
-                    # Guardar razones serializadas
-                    "razones": razones_para_db,
-                },
+                datos_apuesta,
             )
             apuesta = cursor.fetchone()
     return RespuestaApuesta(exito=True, apuesta=apuesta)
