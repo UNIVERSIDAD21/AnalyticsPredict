@@ -68,6 +68,20 @@ async def guardar_apuesta(
     usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
+    cuota_over = peticion.cuota_over
+    cuota_under = peticion.cuota_under
+    if cuota_over is None and cuota_under is None and peticion.cuota is not None:
+        if peticion.lado == "UNDER":
+            cuota_under = peticion.cuota
+        else:
+            cuota_over = peticion.cuota
+
+    devig_metodo = peticion.devig_metodo
+    devig_overround = peticion.devig_overround
+    if devig_metodo == "exacto" and (cuota_over is None or cuota_under is None):
+        devig_metodo = "no_aplicado"
+        devig_overround = None
+
     # Preparar el valor de razones para que Postgres pueda adaptarlo correctamente. Si la clase
     # Jsonb está disponible (psycopg 3.x), se envuelve en Jsonb; de lo contrario, se utiliza
     # una serialización manual a JSON mediante json.dumps.
@@ -181,15 +195,15 @@ async def guardar_apuesta(
                     "lado": peticion.lado,
                     "linea": peticion.linea,
                     "cuota": peticion.cuota,
-                    "cuota_over": peticion.cuota_over,
-                    "cuota_under": peticion.cuota_under,
+                    "cuota_over": cuota_over,
+                    "cuota_under": cuota_under,
                     "stake": peticion.stake,
                     "probabilidad_sistema": peticion.probabilidad_sistema,
                     "confianza_sistema": peticion.confianza_sistema,
                     "valor_esperado": peticion.valor_esperado,
-                    "devig_metodo": peticion.devig_metodo,
+                    "devig_metodo": devig_metodo,
                     "modo_devig": peticion.modo_devig,
-                    "devig_overround": peticion.devig_overround,
+                    "devig_overround": devig_overround,
                     "devig_p_mkt_raw": peticion.devig_p_mkt_raw,
                     "devig_p_mkt_fair": peticion.devig_p_mkt_fair,
                     "devig_advertencias": devig_advertencias_para_db,
