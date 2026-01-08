@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime
+import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import json
@@ -36,6 +37,7 @@ from .tipos import (
     ResultadoSizing,
     TipoMercado,
     Ubicacion,
+    ScoreApuesta,
 )
 from .utilidades import (
     limitar_entre_0_y_1,
@@ -46,6 +48,9 @@ from .utilidades import (
 
 CLAVES_CUARTOS = ("Q1", "Q2", "Q3", "Q4")
 INDICE_CUARTOS = {"Q1": 0, "Q2": 1, "Q3": 2, "Q4": 3}
+RIESGO_DESVIACION_UMBRAL = 7.5
+
+logger = logging.getLogger(__name__)
 
 
 def cargar_modelo(ruta: str) -> ModeloRidge:
@@ -240,6 +245,10 @@ def candidatos_para_cuarto(
     desviacion_equipo: float,
     media_rival: float,
     desviacion_rival: float,
+    cuota_over: Optional[float] = None,
+    cuota_under: Optional[float] = None,
+    modo_devig: str = "estricto",
+    config_sizing: Optional[ConfiguracionSizing] = None,
 ) -> List[CandidatoApuesta]:
     """Genera candidatos de apuesta para un cuarto específico."""
     candidatos: List[CandidatoApuesta] = []
@@ -249,39 +258,125 @@ def candidatos_para_cuarto(
     prob_over_total = calcular_probabilidad_over(media_total, desviacion_total, linea)
     distancia_z_total = abs(media_total - linea) / max(desviacion_total, 1e-9)
 
-    candidatos.append(
-        CandidatoApuesta(
+    if modo_devig not in ("estimado", "estricto"):
+        raise ValueError("modo_devig debe ser 'estimado' o 'estricto'.")
+    modo_estimado = modo_devig == "estimado"
+    riesgo_alto = desviacion_total > RIESGO_DESVIACION_UMBRAL
+
+    def calcular_kelly_base(probabilidad: float, cuota: float) -> Optional[float]:
+        if cuota <= 1.0 or not (0.0 <= probabilidad <= 1.0):
+            return None
+        b = cuota - 1.0
+        q = 1.0 - probabilidad
+        return (b * probabilidad - q) / b
+
+    def construir_candidato(
+        lado: LadoApuesta,
+        probabilidad: float,
+        cuota_lado: float,
+        cuota_opuesta: Optional[float],
+    ) -> CandidatoApuesta:
+        datos_devig = calcular_devig(
+            cuota_lado,
+            cuota_opuesta,
+            modo_estimado=modo_estimado,
+        )
+        edge_real = probabilidad - datos_devig.p_mkt_fair
+        ev = (probabilidad * cuota_lado) - 1.0
+
+        sizing = None
+        kelly_full: Optional[float] = None
+        if config_sizing is not None:
+            sizing = calcular_kelly(
+                probabilidad=probabilidad,
+                cuota=cuota_lado,
+                config=config_sizing,
+                datos_devig=datos_devig,
+                riesgo_alto=riesgo_alto,
+            )
+            kelly_full = sizing.kelly_full
+        else:
+            kelly_full = calcular_kelly_base(probabilidad, cuota_lado)
+
+        score = ScoreApuesta.calcular(
+            ev=ev,
+            edge_real=edge_real,
+            riesgo=desviacion_total,
+            datos_devig=datos_devig,
+            kelly_full=kelly_full,
+            riesgo_referencia=RIESGO_DESVIACION_UMBRAL,
+        )
+
+        return CandidatoApuesta(
             cuarto=cuarto,
             mercado=TipoMercado.TOTAL,
-            lado=LadoApuesta.OVER,
+            lado=lado,
             linea=linea,
-            probabilidad=prob_over_total,
+            probabilidad=probabilidad,
             media=media_total,
             desviacion=desviacion_total,
             distancia_z=distancia_z_total,
+            datos_devig=datos_devig,
+            edge_real=edge_real,
+            ev=ev,
+            score=score,
+            sizing=sizing,
+            cuota=cuota_lado,
         )
-    )
-    candidatos.append(
-        CandidatoApuesta(
-            cuarto=cuarto,
-            mercado=TipoMercado.TOTAL,
-            lado=LadoApuesta.UNDER,
-            linea=linea,
-            probabilidad=1.0 - prob_over_total,
-            media=media_total,
-            desviacion=desviacion_total,
-            distancia_z=distancia_z_total,
+
+    if cuota_over is not None:
+        candidatos.append(
+            construir_candidato(
+                LadoApuesta.OVER,
+                prob_over_total,
+                float(cuota_over),
+                cuota_under,
+            )
         )
-    )
+    if cuota_under is not None:
+        candidatos.append(
+            construir_candidato(
+                LadoApuesta.UNDER,
+                1.0 - prob_over_total,
+                float(cuota_under),
+                cuota_over,
+            )
+        )
 
     return candidatos
 
 
 def seleccionar_mejor_apuesta(candidatos: List[CandidatoApuesta]) -> Optional[CandidatoApuesta]:
-    """Selecciona el candidato con mayor probabilidad."""
+    """Selecciona el candidato con mejor score profesional."""
     if not candidatos:
         return None
-    return max(candidatos, key=lambda c: c.probabilidad)
+
+    aptos = [candidato for candidato in candidatos if candidato.score and candidato.score.gates_pasados]
+    if not aptos:
+        for candidato in candidatos:
+            if candidato.score:
+                logger.info("Candidato no apto: %s", candidato.score.explicacion)
+            else:
+                logger.info("Candidato sin score disponible para evaluar.")
+        return None
+
+    def clave_orden(candidato: CandidatoApuesta) -> tuple:
+        ev = candidato.ev if candidato.ev is not None else float("-inf")
+        edge = candidato.edge_real if candidato.edge_real is not None else float("-inf")
+        prob = candidato.probabilidad if candidato.probabilidad is not None else float("-inf")
+        cuota = candidato.cuota if candidato.cuota is not None else float("-inf")
+        return (
+            candidato.score.score_total,
+            ev,
+            edge,
+            prob,
+            cuota,
+            candidato.mercado.value,
+            candidato.lado.value,
+            candidato.linea,
+        )
+
+    return max(aptos, key=clave_orden)
 
 
 def determinar_confianza(
@@ -460,6 +555,10 @@ def analizar_partido(
             float(desviacion_equipo[indice]),
             float(media_rival[indice]),
             float(desviacion_rival[indice]),
+            cuota_over=cuota_over,
+            cuota_under=cuota_under,
+            modo_devig=modo_devig,
+            config_sizing=config_sizing,
         )
 
     mejor_apuesta = seleccionar_mejor_apuesta(candidatos)

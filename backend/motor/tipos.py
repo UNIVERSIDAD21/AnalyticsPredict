@@ -340,6 +340,10 @@ class ScoreApuesta:
     explicacion: str
     penalizaciones_aplicadas: List[str] = field(default_factory=list)
 
+    CODIGO_RIESGO_ALTO = "RIESGO_ALTO"
+    CODIGO_DEVIG_ESTIMADO = "DEVIG_ESTIMADO"
+    CODIGO_SIN_DEVIG = "SIN_DEVIG"
+
     @classmethod
     def calcular(
         cls,
@@ -358,21 +362,26 @@ class ScoreApuesta:
         penalizacion_riesgo = 0.0
         if riesgo > riesgo_referencia:
             penalizacion_riesgo = -((riesgo - riesgo_referencia) / riesgo_referencia) * 20
-            penalizaciones.append("Riesgo alto")
+            penalizaciones.append(cls.CODIGO_RIESGO_ALTO)
 
         penalizacion_devig = 0.0
         if datos_devig.metodo == "estimado":
             penalizacion_devig = -10.0
-            penalizaciones.append("De-vig estimado")
+            penalizaciones.append(cls.CODIGO_DEVIG_ESTIMADO)
         elif datos_devig.metodo == "no_aplicado":
             penalizacion_devig = -20.0
-            penalizaciones.append("Sin de-vig")
+            penalizaciones.append(cls.CODIGO_SIN_DEVIG)
+
+        riesgo_normalizado = riesgo / riesgo_referencia if riesgo_referencia else 0.0
 
         componentes = {
             "ev": score_ev,
             "edge_real": score_edge,
-            "riesgo": penalizacion_riesgo,
-            "devig": penalizacion_devig,
+            "riesgo_valor": riesgo,
+            "riesgo_referencia": riesgo_referencia,
+            "riesgo_normalizado": riesgo_normalizado,
+            "penalizacion_riesgo": penalizacion_riesgo,
+            "penalizacion_devig": penalizacion_devig,
         }
 
         kelly_valido = kelly_full is not None and kelly_full > 0
