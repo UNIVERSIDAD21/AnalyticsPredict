@@ -40,6 +40,9 @@ export interface PeticionAnalisis {
   mercado: Mercado;
   linea: number;
   cuota?: number;
+  cuota_over?: number;
+  cuota_under?: number;
+  lado?: LadoApuesta;
   temporadas?: string[];
 }
 

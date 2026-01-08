@@ -111,7 +111,7 @@ def ejecutar_analisis(
             ubicacion=Ubicacion.LOCAL,
             mercado=peticion.mercado,
             linea=peticion.linea,
-            cuota=peticion.cuota,
+            cuota=peticion.cuota_analisis,
             marcador_q1=marcador_q1,
             marcador_q2=marcador_q2,
             marcador_q3=marcador_q3,

@@ -9,7 +9,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class PeticionAnalisis(BaseModel):
@@ -20,6 +20,20 @@ class PeticionAnalisis(BaseModel):
     mercado: Literal["Q1", "Q2", "Q3", "Q4", "COMPLETO"]
     linea: float = Field(..., gt=0, description="Línea de puntos a analizar")
     cuota: Optional[float] = Field(None, gt=1.0, description="Cuota decimal opcional")
+    cuota_over: Optional[float] = Field(
+        None,
+        gt=1.0,
+        description="Cuota decimal para el lado OVER (opcional)",
+    )
+    cuota_under: Optional[float] = Field(
+        None,
+        gt=1.0,
+        description="Cuota decimal para el lado UNDER (opcional)",
+    )
+    lado: Literal["OVER", "UNDER"] = Field(
+        "OVER",
+        description="Lado asociado a la cuota legacy (OVER/UNDER)",
+    )
     temporadas: Optional[List[str]] = Field(
         None,
         description="Lista opcional de temporadas (IDs) para filtrar el análisis",
@@ -31,6 +45,29 @@ class PeticionAnalisis(BaseModel):
         if not valor or not valor.strip():
             raise ValueError("El nombre del equipo no puede estar vacío.")
         return valor
+
+    @model_validator(mode="after")
+    def normalizar_cuotas(self) -> "PeticionAnalisis":
+        tiene_over = self.cuota_over is not None
+        tiene_under = self.cuota_under is not None
+
+        if not tiene_over and not tiene_under and self.cuota is not None:
+            if self.lado == "UNDER":
+                object.__setattr__(self, "cuota_under", self.cuota)
+            else:
+                object.__setattr__(self, "cuota_over", self.cuota)
+
+        return self
+
+    @property
+    def cuota_analisis(self) -> Optional[float]:
+        if self.cuota_over is not None and self.cuota_under is not None:
+            return self.cuota_over if self.lado == "OVER" else self.cuota_under
+        if self.cuota_over is not None:
+            return self.cuota_over
+        if self.cuota_under is not None:
+            return self.cuota_under
+        return self.cuota
 
     @field_validator("temporadas")
     @classmethod
