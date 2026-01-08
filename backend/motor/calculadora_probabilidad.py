@@ -6,7 +6,9 @@ calculadora_probabilidad.py — Funciones matemáticas para el motor.
 from __future__ import annotations
 
 import math
-from typing import Tuple
+from typing import Tuple, Optional, List
+
+from motor.tipos import DatosDeVig
 
 
 def cdf_normal(z: float) -> float:
@@ -42,3 +44,73 @@ def calcular_intervalo_confianza(
     """Calcula un intervalo de confianza simétrico."""
     margen = z * desviacion
     return media - margen, media + margen
+
+
+def calcular_devig(
+    cuota_lado_a: float,
+    cuota_lado_b: Optional[float] = None,
+    modo_estimado: bool = False,
+    overround_estimado: float = 1.045,
+) -> DatosDeVig:
+    """Calcula probabilidades de mercado ajustadas por vig."""
+    if cuota_lado_a <= 0:
+        raise ValueError("cuota_lado_a debe ser mayor a 0.")
+
+    p_mkt_raw = 1.0 / float(cuota_lado_a)
+    advertencias: List[str] = []
+
+    if cuota_lado_b is not None:
+        if cuota_lado_b <= 0:
+            raise ValueError("cuota_lado_b debe ser mayor a 0.")
+
+        p_raw_b = 1.0 / float(cuota_lado_b)
+        overround = p_mkt_raw + p_raw_b
+        p_mkt_fair = p_mkt_raw / overround
+
+        if overround < 1.0:
+            advertencias.append(
+                "Overround < 1.0: posible arbitraje o datos erróneos."
+            )
+        elif overround > 1.10:
+            advertencias.append(
+                "Overround > 1.10: cuotas atípicas o error de captura."
+            )
+
+        return DatosDeVig(
+            metodo="exacto",
+            overround=overround,
+            p_mkt_raw=p_mkt_raw,
+            p_mkt_fair=p_mkt_fair,
+            advertencias=advertencias,
+        )
+
+    if modo_estimado:
+        if overround_estimado <= 0:
+            raise ValueError("overround_estimado debe ser mayor a 0.")
+
+        p_mkt_fair = p_mkt_raw / overround_estimado
+        advertencias.extend(
+            [
+                "De-vig estimado: falta cuota del otro lado.",
+                "Penalizar sizing/score porque es una aproximación.",
+            ]
+        )
+
+        return DatosDeVig(
+            metodo="estimado",
+            overround=overround_estimado,
+            p_mkt_raw=p_mkt_raw,
+            p_mkt_fair=p_mkt_fair,
+            advertencias=advertencias,
+        )
+
+    advertencias.append(
+        "Falta cuota del otro lado, no se puede de-vig exacto."
+    )
+    return DatosDeVig(
+        metodo="no_aplicado",
+        overround=None,
+        p_mkt_raw=p_mkt_raw,
+        p_mkt_fair=p_mkt_raw,
+        advertencias=advertencias,
+    )
