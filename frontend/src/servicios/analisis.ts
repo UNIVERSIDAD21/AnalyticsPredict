@@ -97,6 +97,21 @@ export function validarPeticionAnalisis(peticion: Partial<PeticionAnalisis>): st
     }
   }
 
+  const cuotasNuevas = [
+    { valor: peticion.cuota_over, etiqueta: 'cuota OVER' },
+    { valor: peticion.cuota_under, etiqueta: 'cuota UNDER' },
+  ];
+
+  cuotasNuevas.forEach(({ valor, etiqueta }) => {
+    if (valor !== undefined && valor !== null) {
+      if (valor <= 1) {
+        errores.push(`La ${etiqueta} debe ser mayor a 1.00`);
+      } else if (valor > 100) {
+        errores.push(`La ${etiqueta} parece demasiado alta`);
+      }
+    }
+  });
+
   if (peticion.temporadas && peticion.temporadas.length === 0) {
     errores.push('Debes seleccionar al menos una temporada para el análisis');
   }

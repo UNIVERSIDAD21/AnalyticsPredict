@@ -107,13 +107,22 @@ export function FormularioAnalisis({
     (e: React.FormEvent) => {
       e.preventDefault();
 
+      const cuotaValor = formulario.cuota ? parseFloat(formulario.cuota) : undefined;
+      const ladoSeleccionado = formulario.ladoApuesta;
+
+      const cuotaOver = cuotaValor && ladoSeleccionado === 'OVER' ? cuotaValor : undefined;
+      const cuotaUnder = cuotaValor && ladoSeleccionado === 'UNDER' ? cuotaValor : undefined;
+
       // Construir petición
       const peticion: Partial<PeticionAnalisis> = {
         equipo_local: formulario.equipoLocal,
         equipo_visitante: formulario.equipoVisitante,
         mercado: formulario.mercado as Mercado,
         linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
-        cuota: formulario.cuota ? parseFloat(formulario.cuota) : undefined,
+        cuota: cuotaValor,
+        cuota_over: cuotaOver,
+        cuota_under: cuotaUnder,
+        lado: ladoSeleccionado,
         temporadas: temporadasSeleccionadas,
       };
 
@@ -125,7 +134,7 @@ export function FormularioAnalisis({
       }
 
       // Enviar con lado seleccionado
-      onAnalizar(peticion as PeticionAnalisis, formulario.ladoApuesta);
+      onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
     [formulario, onAnalizar]
   );
