@@ -332,6 +332,86 @@ class ResultadoSizing:
 
 
 @dataclass
+class ScoreApuesta:
+    """Score profesional para rankear apuestas y auditar decisiones."""
+    score_total: float
+    componentes: Dict[str, float]
+    gates_pasados: bool
+    explicacion: str
+    penalizaciones_aplicadas: List[str] = field(default_factory=list)
+
+    @classmethod
+    def calcular(
+        cls,
+        ev: float,
+        edge_real: float,
+        riesgo: float,
+        datos_devig: "DatosDeVig",
+        kelly_full: Optional[float],
+        riesgo_referencia: float = 6.0,
+    ) -> "ScoreApuesta":
+        """Calcula el score profesional aplicando gates y penalizaciones."""
+        score_ev = ev * 50
+        score_edge = edge_real * 30
+
+        penalizaciones: List[str] = []
+        penalizacion_riesgo = 0.0
+        if riesgo > riesgo_referencia:
+            penalizacion_riesgo = -((riesgo - riesgo_referencia) / riesgo_referencia) * 20
+            penalizaciones.append("Riesgo alto")
+
+        penalizacion_devig = 0.0
+        if datos_devig.metodo == "estimado":
+            penalizacion_devig = -10.0
+            penalizaciones.append("De-vig estimado")
+        elif datos_devig.metodo == "no_aplicado":
+            penalizacion_devig = -20.0
+            penalizaciones.append("Sin de-vig")
+
+        componentes = {
+            "ev": score_ev,
+            "edge_real": score_edge,
+            "riesgo": penalizacion_riesgo,
+            "devig": penalizacion_devig,
+        }
+
+        kelly_valido = kelly_full is not None and kelly_full > 0
+        gates_pasados = ev > 0 and edge_real > 0 and kelly_valido
+
+        if gates_pasados:
+            score_total = score_ev + score_edge + penalizacion_riesgo + penalizacion_devig
+        else:
+            score_total = -1000.0
+
+        explicacion = (
+            f"Score={score_total:.2f} "
+            f"(EV={ev:.3f}, Edge={edge_real:.3f}, Riesgo={riesgo:.2f}, "
+            f"Devig={datos_devig.metodo})"
+        )
+        if not gates_pasados:
+            explicacion += " [NO APTO: gates]"
+        if penalizaciones:
+            explicacion += f" [Penalizado: {', '.join(penalizaciones)}]"
+
+        return cls(
+            score_total=score_total,
+            componentes=componentes,
+            gates_pasados=gates_pasados,
+            explicacion=explicacion,
+            penalizaciones_aplicadas=penalizaciones,
+        )
+
+    def asdict_persistencia(self) -> Dict[str, Any]:
+        """Serializa el score en formato compatible con la tabla apuestas."""
+        return {
+            "score_total": self.score_total,
+            "score_componentes": dict(self.componentes),
+            "score_explicacion": self.explicacion,
+            "score_penalizaciones": list(self.penalizaciones_aplicadas),
+        }
+
+
+@dataclass
 class CandidatoApuesta:
     """Candidato de apuesta evaluado por el sistema."""
     cuarto: str
@@ -342,6 +422,12 @@ class CandidatoApuesta:
     media: float
     desviacion: float
     distancia_z: float
+    datos_devig: Optional[DatosDeVig] = None
+    edge_real: Optional[float] = None
+    ev: Optional[float] = None
+    score: Optional[ScoreApuesta] = None
+    sizing: Optional[ResultadoSizing] = None
+    cuota: Optional[float] = None
 
     def etiqueta(self, nombre_equipo: str, nombre_rival: str) -> str:
         """Genera una etiqueta legible para mostrar al usuario."""
@@ -354,9 +440,46 @@ class CandidatoApuesta:
 
         return f"{self.lado.value} {self.linea:.1f} ({sujeto})"
 
-    def es_recomendable(self, probabilidad_minima: float = 0.55) -> bool:
-        """Indica si la apuesta supera el umbral de probabilidad mínima."""
-        return self.probabilidad >= probabilidad_minima
+    def es_recomendable(self) -> bool:
+        """Indica si la apuesta supera los gates del score."""
+        if self.score is None:
+            return False
+        return self.score.gates_pasados
+
+    def como_diccionario(self) -> Dict[str, Any]:
+        """Serializa el candidato con nombres compatibles con la BD."""
+        data = {
+            "cuarto": self.cuarto,
+            "mercado": self.mercado.value,
+            "lado": self.lado.value,
+            "linea": self.linea,
+            "probabilidad": self.probabilidad,
+            "media": self.media,
+            "desviacion": self.desviacion,
+            "distancia_z": self.distancia_z,
+            "cuota": self.cuota,
+            "edge_real": self.edge_real,
+            "ev": self.ev,
+        }
+
+        if self.datos_devig is not None:
+            data.update(
+                {
+                    "devig_metodo": self.datos_devig.metodo,
+                    "devig_overround": self.datos_devig.overround,
+                    "devig_p_mkt_raw": self.datos_devig.p_mkt_raw,
+                    "devig_p_mkt_fair": self.datos_devig.p_mkt_fair,
+                    "devig_advertencias": list(self.datos_devig.advertencias),
+                }
+            )
+
+        if self.score is not None:
+            data.update(self.score.asdict_persistencia())
+
+        if self.sizing is not None:
+            data.update(self.sizing.asdict_persistencia())
+
+        return data
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -17,6 +17,7 @@ from .tipos import (
     PrediccionCuarto,
     ResultadoAnalisis,
     ResultadoSizing,
+    ScoreApuesta,
     TipoMercado,
     Ubicacion,
 )
@@ -35,6 +36,7 @@ __all__ = [
     "PrediccionCuarto",
     "ResultadoAnalisis",
     "ResultadoSizing",
+    "ScoreApuesta",
     "TipoMercado",
     "Ubicacion",
 ]
