@@ -38,6 +38,15 @@ class PeticionAnalisis(BaseModel):
         "estricto",
         description="Modo para calcular de-vig cuando falta una cuota",
     )
+    bankroll: Optional[float] = Field(
+        None,
+        gt=0,
+        description="Bankroll del usuario para sizing (override opcional)",
+    )
+    perfil_riesgo: Optional[str] = Field(
+        "CONSERVADOR",
+        description="Perfil de riesgo (CONSERVADOR, MEDIO, AGRESIVO)",
+    )
     temporadas: Optional[List[str]] = Field(
         None,
         description="Lista opcional de temporadas (IDs) para filtrar el análisis",
@@ -62,6 +71,29 @@ class PeticionAnalisis(BaseModel):
                 object.__setattr__(self, "cuota_over", self.cuota)
 
         return self
+
+    @field_validator("modo_devig", mode="before")
+    @classmethod
+    def normalizar_modo_devig(cls, valor: Optional[str]) -> Optional[str]:
+        if valor is None:
+            return valor
+        return str(valor).lower()
+
+    @field_validator("perfil_riesgo", mode="before")
+    @classmethod
+    def normalizar_perfil_riesgo(cls, valor: Optional[str]) -> Optional[str]:
+        if valor is None:
+            return valor
+        return str(valor).upper()
+
+    @field_validator("perfil_riesgo")
+    @classmethod
+    def validar_perfil_riesgo(cls, valor: Optional[str]) -> Optional[str]:
+        if valor is None:
+            return valor
+        if valor not in {"CONSERVADOR", "MEDIO", "AGRESIVO"}:
+            raise ValueError("perfil_riesgo debe ser CONSERVADOR, MEDIO o AGRESIVO.")
+        return valor
 
     @property
     def cuota_analisis(self) -> Optional[float]:
@@ -112,11 +144,20 @@ class PeticionCrearApuesta(BaseModel):
     confianza_sistema: Literal["ALTA", "MEDIA", "BAJA"]
     valor_esperado: Optional[float] = None
     devig_metodo: Optional[str] = None
+    modo_devig: Optional[str] = None
     devig_overround: Optional[float] = None
     devig_p_mkt_raw: Optional[float] = None
     devig_p_mkt_fair: Optional[float] = None
     devig_advertencias: Optional[List[str]] = None
     edge_real: Optional[float] = None
+    kelly_full: Optional[float] = None
+    kelly_fraccional: Optional[float] = None
+    fraccion_kelly: Optional[float] = None
+    stake_porcentaje: Optional[float] = None
+    bankroll_momento: Optional[float] = None
+    perfil_riesgo_usado: Optional[str] = None
+    sizing_advertencias: Optional[List[str]] = None
+    sizing_penalizaciones: Optional[Dict[str, float]] = None
     prediccion_media: Optional[float] = None
     prediccion_desviacion: Optional[float] = None
     razones: List[Dict[str, Any]] = Field(default_factory=list)

@@ -75,16 +75,26 @@ async def guardar_apuesta(
 
     razones_para_db = None
     devig_advertencias_para_db = None
+    sizing_advertencias_para_db = None
+    sizing_penalizaciones_para_db = None
     if Jsonb is not None:
         # Utilizar Jsonb para serializar de manera segura la lista de diccionarios.
         razones_para_db = Jsonb(peticion.razones)
         if peticion.devig_advertencias is not None:
             devig_advertencias_para_db = Jsonb(peticion.devig_advertencias)
+        if peticion.sizing_advertencias is not None:
+            sizing_advertencias_para_db = Jsonb(peticion.sizing_advertencias)
+        if peticion.sizing_penalizaciones is not None:
+            sizing_penalizaciones_para_db = Jsonb(peticion.sizing_penalizaciones)
     else:
         # Fallback: convertir a cadena JSON. La columna debería ser de tipo JSONB o TEXT.
         razones_para_db = json.dumps(peticion.razones)
         if peticion.devig_advertencias is not None:
             devig_advertencias_para_db = json.dumps(peticion.devig_advertencias)
+        if peticion.sizing_advertencias is not None:
+            sizing_advertencias_para_db = json.dumps(peticion.sizing_advertencias)
+        if peticion.sizing_penalizaciones is not None:
+            sizing_penalizaciones_para_db = json.dumps(peticion.sizing_penalizaciones)
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -107,11 +117,20 @@ async def guardar_apuesta(
                     confianza_sistema,
                     valor_esperado,
                     devig_metodo,
+                    modo_devig,
                     devig_overround,
                     devig_p_mkt_raw,
                     devig_p_mkt_fair,
                     devig_advertencias,
                     edge_real,
+                    kelly_full,
+                    kelly_fraccional,
+                    fraccion_kelly,
+                    stake_porcentaje,
+                    bankroll_momento,
+                    perfil_riesgo_usado,
+                    sizing_advertencias,
+                    sizing_penalizaciones,
                     prediccion_media,
                     prediccion_desviacion,
                     razones
@@ -132,11 +151,20 @@ async def guardar_apuesta(
                     %(confianza_sistema)s,
                     %(valor_esperado)s,
                     %(devig_metodo)s,
+                    %(modo_devig)s,
                     %(devig_overround)s,
                     %(devig_p_mkt_raw)s,
                     %(devig_p_mkt_fair)s,
                     %(devig_advertencias)s,
                     %(edge_real)s,
+                    %(kelly_full)s,
+                    %(kelly_fraccional)s,
+                    %(fraccion_kelly)s,
+                    %(stake_porcentaje)s,
+                    %(bankroll_momento)s,
+                    %(perfil_riesgo_usado)s,
+                    %(sizing_advertencias)s,
+                    %(sizing_penalizaciones)s,
                     %(prediccion_media)s,
                     %(prediccion_desviacion)s,
                     %(razones)s
@@ -160,11 +188,20 @@ async def guardar_apuesta(
                     "confianza_sistema": peticion.confianza_sistema,
                     "valor_esperado": peticion.valor_esperado,
                     "devig_metodo": peticion.devig_metodo,
+                    "modo_devig": peticion.modo_devig,
                     "devig_overround": peticion.devig_overround,
                     "devig_p_mkt_raw": peticion.devig_p_mkt_raw,
                     "devig_p_mkt_fair": peticion.devig_p_mkt_fair,
                     "devig_advertencias": devig_advertencias_para_db,
                     "edge_real": peticion.edge_real,
+                    "kelly_full": peticion.kelly_full,
+                    "kelly_fraccional": peticion.kelly_fraccional,
+                    "fraccion_kelly": peticion.fraccion_kelly,
+                    "stake_porcentaje": peticion.stake_porcentaje,
+                    "bankroll_momento": peticion.bankroll_momento,
+                    "perfil_riesgo_usado": peticion.perfil_riesgo_usado,
+                    "sizing_advertencias": sizing_advertencias_para_db,
+                    "sizing_penalizaciones": sizing_penalizaciones_para_db,
                     "prediccion_media": peticion.prediccion_media,
                     "prediccion_desviacion": peticion.prediccion_desviacion,
                     # Guardar razones serializadas
