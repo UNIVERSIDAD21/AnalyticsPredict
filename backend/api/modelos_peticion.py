@@ -34,6 +34,10 @@ class PeticionAnalisis(BaseModel):
         "OVER",
         description="Lado asociado a la cuota legacy (OVER/UNDER)",
     )
+    modo_devig: Literal["estimado", "estricto"] = Field(
+        "estricto",
+        description="Modo para calcular de-vig cuando falta una cuota",
+    )
     temporadas: Optional[List[str]] = Field(
         None,
         description="Lista opcional de temporadas (IDs) para filtrar el análisis",
@@ -101,10 +105,18 @@ class PeticionCrearApuesta(BaseModel):
     lado: Literal["OVER", "UNDER"]
     linea: Decimal = Field(..., gt=0)
     cuota: Decimal = Field(..., ge=Decimal("1.01"))
+    cuota_over: Optional[Decimal] = Field(None, ge=Decimal("1.01"))
+    cuota_under: Optional[Decimal] = Field(None, ge=Decimal("1.01"))
     stake: Decimal = Field(..., gt=0)
     probabilidad_sistema: float = Field(..., ge=0.0, le=1.0)
     confianza_sistema: Literal["ALTA", "MEDIA", "BAJA"]
     valor_esperado: Optional[float] = None
+    devig_metodo: Optional[str] = None
+    devig_overround: Optional[float] = None
+    devig_p_mkt_raw: Optional[float] = None
+    devig_p_mkt_fair: Optional[float] = None
+    devig_advertencias: Optional[List[str]] = None
+    edge_real: Optional[float] = None
     prediccion_media: Optional[float] = None
     prediccion_desviacion: Optional[float] = None
     razones: List[Dict[str, Any]] = Field(default_factory=list)

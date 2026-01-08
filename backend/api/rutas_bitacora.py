@@ -74,12 +74,17 @@ async def guardar_apuesta(
     import json
 
     razones_para_db = None
+    devig_advertencias_para_db = None
     if Jsonb is not None:
         # Utilizar Jsonb para serializar de manera segura la lista de diccionarios.
         razones_para_db = Jsonb(peticion.razones)
+        if peticion.devig_advertencias is not None:
+            devig_advertencias_para_db = Jsonb(peticion.devig_advertencias)
     else:
         # Fallback: convertir a cadena JSON. La columna debería ser de tipo JSONB o TEXT.
         razones_para_db = json.dumps(peticion.razones)
+        if peticion.devig_advertencias is not None:
+            devig_advertencias_para_db = json.dumps(peticion.devig_advertencias)
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -95,10 +100,18 @@ async def guardar_apuesta(
                     lado,
                     linea,
                     cuota,
+                    cuota_over,
+                    cuota_under,
                     stake,
                     probabilidad_sistema,
                     confianza_sistema,
                     valor_esperado,
+                    devig_metodo,
+                    devig_overround,
+                    devig_p_mkt_raw,
+                    devig_p_mkt_fair,
+                    devig_advertencias,
+                    edge_real,
                     prediccion_media,
                     prediccion_desviacion,
                     razones
@@ -112,10 +125,18 @@ async def guardar_apuesta(
                     %(lado)s,
                     %(linea)s,
                     %(cuota)s,
+                    %(cuota_over)s,
+                    %(cuota_under)s,
                     %(stake)s,
                     %(probabilidad_sistema)s,
                     %(confianza_sistema)s,
                     %(valor_esperado)s,
+                    %(devig_metodo)s,
+                    %(devig_overround)s,
+                    %(devig_p_mkt_raw)s,
+                    %(devig_p_mkt_fair)s,
+                    %(devig_advertencias)s,
+                    %(edge_real)s,
                     %(prediccion_media)s,
                     %(prediccion_desviacion)s,
                     %(razones)s
@@ -132,10 +153,18 @@ async def guardar_apuesta(
                     "lado": peticion.lado,
                     "linea": peticion.linea,
                     "cuota": peticion.cuota,
+                    "cuota_over": peticion.cuota_over,
+                    "cuota_under": peticion.cuota_under,
                     "stake": peticion.stake,
                     "probabilidad_sistema": peticion.probabilidad_sistema,
                     "confianza_sistema": peticion.confianza_sistema,
                     "valor_esperado": peticion.valor_esperado,
+                    "devig_metodo": peticion.devig_metodo,
+                    "devig_overround": peticion.devig_overround,
+                    "devig_p_mkt_raw": peticion.devig_p_mkt_raw,
+                    "devig_p_mkt_fair": peticion.devig_p_mkt_fair,
+                    "devig_advertencias": devig_advertencias_para_db,
+                    "edge_real": peticion.edge_real,
                     "prediccion_media": peticion.prediccion_media,
                     "prediccion_desviacion": peticion.prediccion_desviacion,
                     # Guardar razones serializadas
