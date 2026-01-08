@@ -3,7 +3,7 @@
  * bitacora.ts — Tipos para bitácora de apuestas
  */
 
-import { LadoApuesta, Mercado, NivelConfianza } from './analisis';
+import { LadoApuesta, Mercado, NivelConfianza, RazonPrediccion } from './analisis';
 
 export type ResultadoApuesta = 'PENDIENTE' | 'GANADA' | 'PERDIDA' | 'PUSH' | 'ANULADA';
 
@@ -66,7 +66,7 @@ export interface PeticionCrearApuesta {
   valor_esperado?: number | null;
   prediccion_media?: number | null;
   prediccion_desviacion?: number | null;
-  razones: Array<Record<string, unknown>>;
+  razones: RazonPrediccion[];
 }
 
 export interface PeticionActualizarResultado {
