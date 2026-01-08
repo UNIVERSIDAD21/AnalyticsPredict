@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime
 import logging
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import json
 import numpy as np
@@ -32,6 +32,7 @@ from .tipos import (
     LadoApuesta,
     ModeloRidge,
     NivelConfianza,
+    PerfilRiesgo,
     PrediccionCuarto,
     ResultadoAnalisis,
     ResultadoSizing,
@@ -421,6 +422,26 @@ def determinar_confianza(
     )
 
 
+def _resolver_configuracion_sizing(
+    config_sizing_usuario: Optional[Dict[str, Any]],
+    bankroll_override: Optional[float],
+    perfil_override: Optional[PerfilRiesgo | str],
+    bankroll_usuario: Optional[float],
+    perfil_default: Optional[PerfilRiesgo | str],
+) -> Optional[ConfiguracionSizing]:
+    bankroll = bankroll_override if bankroll_override is not None else bankroll_usuario
+    if bankroll is None:
+        return None
+
+    return ConfiguracionSizing.construir_desde_fuentes(
+        config_sizing_usuario=config_sizing_usuario,
+        bankroll_override=bankroll,
+        perfil_override=perfil_override,
+        bankroll_usuario=bankroll_usuario,
+        perfil_default=perfil_default,
+    )
+
+
 def analizar_partido(
     modelo: ModeloRidge,
     equipo: str,
@@ -433,8 +454,10 @@ def analizar_partido(
     cuota_under: Optional[float] = None,
     lado: LadoApuesta | str = LadoApuesta.OVER,
     modo_devig: str = "estricto",
+    bankroll_override: Optional[float] = None,
+    perfil_riesgo_override: Optional[str] = None,
+    usuario_config: Optional[Dict[str, Any]] = None,
     config_sizing: Optional[ConfiguracionSizing] = None,
-    modo_devig_estimado: Optional[bool] = None,
     marcador_q1: Optional[str] = None,
     marcador_q2: Optional[str] = None,
     marcador_q3: Optional[str] = None,
@@ -518,9 +541,25 @@ def analizar_partido(
 
     cuota_lado = cuota_over if lado_enum == LadoApuesta.OVER else cuota_under
     cuota_opuesta = cuota_under if lado_enum == LadoApuesta.OVER else cuota_over
+    modo_devig = str(modo_devig).lower()
     if modo_devig not in ("estimado", "estricto"):
         raise ValueError("modo_devig debe ser 'estimado' o 'estricto'.")
-    modo_estimado = modo_devig_estimado if modo_devig_estimado is not None else modo_devig == "estimado"
+    modo_estimado = modo_devig == "estimado"
+
+    usuario_config = usuario_config or {}
+    config_sizing_usuario = usuario_config.get("config_sizing")
+    bankroll_usuario = usuario_config.get("bankroll_actual")
+    perfil_default = usuario_config.get("perfil_riesgo_default")
+    if config_sizing is None:
+        config_sizing = _resolver_configuracion_sizing(
+            config_sizing_usuario=config_sizing_usuario,
+            bankroll_override=bankroll_override,
+            perfil_override=perfil_riesgo_override,
+            bankroll_usuario=bankroll_usuario,
+            perfil_default=perfil_default,
+        )
+    if config_sizing is not None and config_sizing.bankroll is None:
+        config_sizing = None
 
     if cuota_lado is not None and linea is not None:
         if mercado == "COMPLETO":
@@ -545,23 +584,43 @@ def analizar_partido(
             datos_devig,
         )
 
-    candidatos = []
-    if linea is not None and mercado in predicciones:
-        indice = INDICE_CUARTOS.get(mercado, 0)
-        candidatos = candidatos_para_cuarto(
-            mercado,
-            linea,
-            float(media_equipo[indice]),
-            float(desviacion_equipo[indice]),
-            float(media_rival[indice]),
-            float(desviacion_rival[indice]),
-            cuota_over=cuota_over,
-            cuota_under=cuota_under,
-            modo_devig=modo_devig,
-            config_sizing=config_sizing,
-        )
+    candidatos: List[CandidatoApuesta] = []
+    if linea is not None:
+        if mercado == "COMPLETO" and prediccion_juego_completo is not None:
+            media_equipo_total = float(np.sum(media_equipo))
+            desviacion_equipo_total = float(np.sqrt(np.sum(desviacion_equipo ** 2)))
+            media_rival_total = float(np.sum(media_rival))
+            desviacion_rival_total = float(np.sqrt(np.sum(desviacion_rival ** 2)))
+            candidatos = candidatos_para_cuarto(
+                mercado,
+                linea,
+                media_equipo_total,
+                desviacion_equipo_total,
+                media_rival_total,
+                desviacion_rival_total,
+                cuota_over=cuota_over,
+                cuota_under=cuota_under,
+                modo_devig=modo_devig,
+                config_sizing=config_sizing,
+            )
+        elif mercado in predicciones:
+            indice = INDICE_CUARTOS.get(mercado, 0)
+            candidatos = candidatos_para_cuarto(
+                mercado,
+                linea,
+                float(media_equipo[indice]),
+                float(desviacion_equipo[indice]),
+                float(media_rival[indice]),
+                float(desviacion_rival[indice]),
+                cuota_over=cuota_over,
+                cuota_under=cuota_under,
+                modo_devig=modo_devig,
+                config_sizing=config_sizing,
+            )
 
     mejor_apuesta = seleccionar_mejor_apuesta(candidatos)
+    if candidatos and mejor_apuesta is None:
+        metadata["mensaje_apuesta"] = "No hay apuestas aptas."
 
     if mercado == "COMPLETO" and prediccion_juego_completo is not None:
         probabilidad = None
@@ -629,6 +688,7 @@ def analizar_partido(
         analisis_mercado=analisis_mercado,
         sizing=sizing,
         mejor_apuesta=mejor_apuesta,
+        candidatos=candidatos,
         es_en_vivo=es_en_vivo,
         cuartos_reales=cuartos_reales,
         metadata=metadata,
@@ -650,6 +710,10 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
     if resultado.mejor_apuesta:
         salida["mejor_apuesta"]["mercado"] = resultado.mejor_apuesta.mercado.value
         salida["mejor_apuesta"]["lado"] = resultado.mejor_apuesta.lado.value
+    if resultado.candidatos:
+        salida["candidatos"] = [
+            candidato.como_diccionario() for candidato in resultado.candidatos
+        ]
     if resultado.prediccion_juego_completo:
         salida["prediccion_juego_completo"]["ganador_probable"] = (
             "equipo" if resultado.prediccion_juego_completo.probabilidad_ganador >= 0.5 else "rival"

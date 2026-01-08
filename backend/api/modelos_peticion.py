@@ -150,6 +150,10 @@ class PeticionCrearApuesta(BaseModel):
     devig_p_mkt_fair: Optional[float] = None
     devig_advertencias: Optional[List[str]] = None
     edge_real: Optional[float] = None
+    score_total: Optional[float] = None
+    score_componentes: Optional[Dict[str, float]] = None
+    score_explicacion: Optional[str] = None
+    score_penalizaciones: Optional[List[str]] = None
     kelly_full: Optional[float] = None
     kelly_fraccional: Optional[float] = None
     fraccion_kelly: Optional[float] = None

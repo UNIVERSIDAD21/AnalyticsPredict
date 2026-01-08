@@ -94,7 +94,7 @@ def _obtener_config_usuario(usuario_id: Optional[UUID]) -> Optional[dict]:
 def _construir_configuracion_sizing(
     peticion: PeticionAnalisis,
     datos_usuario: Optional[dict],
-) -> ConfiguracionSizing:
+) -> Optional[ConfiguracionSizing]:
     bankroll_override = (
         peticion.bankroll if "bankroll" in peticion.model_fields_set else None
     )
@@ -106,9 +106,13 @@ def _construir_configuracion_sizing(
     perfil_default = datos_usuario.get("perfil_riesgo_default") if datos_usuario else None
     config_sizing_usuario = datos_usuario.get("config_sizing") if datos_usuario else None
 
+    bankroll = bankroll_override if bankroll_override is not None else bankroll_usuario
+    if bankroll is None:
+        return None
+
     return ConfiguracionSizing.construir_desde_fuentes(
         config_sizing_usuario=config_sizing_usuario,
-        bankroll_override=bankroll_override,
+        bankroll_override=bankroll,
         perfil_override=perfil_override,
         bankroll_usuario=bankroll_usuario,
         perfil_default=perfil_default,
@@ -148,7 +152,12 @@ def ejecutar_analisis(
     validar_equipos(modelo, peticion.equipo_local, peticion.equipo_visitante)
 
     datos_usuario = _obtener_config_usuario(usuario_id)
-    config_sizing = _construir_configuracion_sizing(peticion, datos_usuario)
+    bankroll_override = (
+        peticion.bankroll if "bankroll" in peticion.model_fields_set else None
+    )
+    perfil_override = (
+        peticion.perfil_riesgo if "perfil_riesgo" in peticion.model_fields_set else None
+    )
 
     try:
         resultado = analizar_partido(
@@ -163,8 +172,9 @@ def ejecutar_analisis(
             cuota_under=peticion.cuota_under,
             lado=peticion.lado,
             modo_devig=peticion.modo_devig,
-            config_sizing=config_sizing,
-            modo_devig_estimado=peticion.modo_devig == "estimado",
+            bankroll_override=bankroll_override,
+            perfil_riesgo_override=perfil_override,
+            usuario_config=datos_usuario,
             marcador_q1=marcador_q1,
             marcador_q2=marcador_q2,
             marcador_q3=marcador_q3,

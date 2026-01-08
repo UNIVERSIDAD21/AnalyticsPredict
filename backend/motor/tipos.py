@@ -562,6 +562,7 @@ class ResultadoAnalisis:
     analisis_mercado: Optional[AnalisisMercado] = None
     sizing: Optional["ResultadoSizing"] = None
     mejor_apuesta: Optional[CandidatoApuesta] = None
+    candidatos: List[CandidatoApuesta] = field(default_factory=list)
     es_en_vivo: bool = False
     cuartos_reales: Dict[str, tuple] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
