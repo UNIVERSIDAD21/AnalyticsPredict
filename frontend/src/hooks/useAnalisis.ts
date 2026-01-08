@@ -1,3 +1,4 @@
+// hace parte del diseño de analisis
 /**
  * useAnalisis.ts — Hook para manejar análisis de partidos
  */
