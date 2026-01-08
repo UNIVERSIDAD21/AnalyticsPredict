@@ -61,3 +61,8 @@ export interface RespuestaEstadisticasEquipos {
   temporadas_disponibles: TemporadaDisponible[];
   temporada_actual: string | null;
 }
+
+export interface RespuestaTemporadasEquipos {
+  exito: boolean;
+  temporadas: TemporadaDisponible[];
+}
