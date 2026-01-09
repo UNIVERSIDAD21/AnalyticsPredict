@@ -48,8 +48,37 @@ def registrar_prediccion(
 
     Retorna el ID insertado si fue nuevo, o None si fue duplicado o falló.
     """
+    requeridos = {
+        "partido_id": partido_id,
+        "temporada_id": temporada_id,
+        "equipo_local_id": equipo_local_id,
+        "equipo_visitante_id": equipo_visitante_id,
+        "fecha_partido": fecha_partido,
+        "tipo_partido": tipo_partido,
+        "mercado": mercado,
+        "lado": lado,
+        "linea": linea,
+        "origen": origen,
+        "modelo_version_id": modelo_version_id,
+        "media_predicha": media_predicha,
+        "desviacion_predicha": desviacion_predicha,
+        "p_raw": p_raw,
+    }
+    faltantes = [clave for clave, valor in requeridos.items() if valor is None]
+    if faltantes:
+        logger.warning(
+            "Predicción no registrable por falta de datos: %s",
+            ", ".join(faltantes),
+        )
+        return None
+    if not isinstance(modelo_version_id, int):
+        logger.warning(
+            "Predicción no registrable por modelo_version_id inválido: %s",
+            modelo_version_id,
+        )
+        return None
+
     pool = pool or obtener_pool()
-    calibrador_id_coalesced = calibrador_id or UUID_CERO
     inicio = time.perf_counter()
     try:
         with pool.connection() as conexion:
@@ -82,7 +111,18 @@ def registrar_prediccion(
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
-                    ON CONFLICT ON CONSTRAINT idx_pred_llave_natural
+                    ON CONFLICT (
+                        partido_id,
+                        mercado,
+                        lado,
+                        linea,
+                        origen,
+                        modelo_version_id,
+                        COALESCE(
+                            calibrador_id,
+                            '00000000-0000-0000-0000-000000000000'::uuid
+                        )
+                    )
                     DO NOTHING
                     RETURNING id
                     """,
@@ -99,7 +139,7 @@ def registrar_prediccion(
                         linea_es_sintetica,
                         origen,
                         modelo_version_id,
-                        str(calibrador_id_coalesced),
+                        str(calibrador_id) if calibrador_id is not None else None,
                         media_predicha,
                         desviacion_predicha,
                         p_raw,
@@ -113,6 +153,18 @@ def registrar_prediccion(
                 fila = cursor.fetchone()
     except Exception:
         latencia_ms = (time.perf_counter() - inicio) * 1000
+        if latencia_ms > 50:
+            logger.warning(
+                "Latencia alta registrando predicción (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
+                latencia_ms,
+                partido_id,
+                mercado,
+                lado,
+                linea,
+                origen,
+                modelo_version_id,
+                calibrador_id or UUID_CERO,
+            )
         logger.exception(
             "Error registrando predicción (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
             latencia_ms,
@@ -122,11 +174,23 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id_coalesced,
+            calibrador_id or UUID_CERO,
         )
         return None
 
     latencia_ms = (time.perf_counter() - inicio) * 1000
+    if latencia_ms > 50:
+        logger.warning(
+            "Latencia alta registrando predicción (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
+            latencia_ms,
+            partido_id,
+            mercado,
+            lado,
+            linea,
+            origen,
+            modelo_version_id,
+            calibrador_id or UUID_CERO,
+        )
     if fila:
         prediccion_id = fila[0]
         logger.info(
@@ -139,7 +203,7 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id_coalesced,
+            calibrador_id or UUID_CERO,
         )
         return prediccion_id
 
@@ -152,6 +216,6 @@ def registrar_prediccion(
         linea,
         origen,
         modelo_version_id,
-        calibrador_id_coalesced,
+        calibrador_id or UUID_CERO,
     )
     return None
