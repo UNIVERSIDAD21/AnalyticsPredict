@@ -62,7 +62,15 @@ class FakeCursor:
             return
 
         if "INSERT INTO alertas_calibracion" in query:
-            key = (params[1], params[2], params[3], params[5], params[6])
+            modelo_id = params[4]
+            key = (
+                params[0],
+                params[1],
+                params[2],
+                params[3],
+                params[5],
+                -1 if modelo_id is None else modelo_id,
+            )
             alerta_id = self._alertas_store.get(key, {}).get("id")
             if alerta_id is None:
                 alerta_id = str(uuid4())
@@ -183,3 +191,102 @@ def test_alertas_calibracion_datos_insuficientes():
 
     assert len(alertas) == 1
     assert alertas[0]["tipo_alerta"] == "DATOS_INSUFICIENTES"
+
+
+def test_alertas_calibracion_actualiza_misma_llave():
+    metricas_rows = [
+        {
+            "periodo_inicio": date(2024, 1, 1),
+            "periodo_fin": date(2024, 1, 7),
+            "mercado": "Q3",
+            "origen": "API_USUARIO",
+            "modelo_version_id": None,
+            "n_predicciones": 120,
+            "brier_score": 0.1,
+            "log_loss": 0.2,
+            "ece": 0.11,
+        }
+    ]
+    alertas_store = {}
+    pool = FakePool(metricas_rows, alertas_store)
+
+    evaluar_alertas_calibracion(
+        mercado="Q3",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 7),
+        modelo_version_id=None,
+        pool=pool,
+    )
+
+    metricas_rows[0]["ece"] = 0.06
+    evaluar_alertas_calibracion(
+        mercado="Q3",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 7),
+        modelo_version_id=None,
+        pool=pool,
+    )
+
+    drift_key = (
+        date(2024, 1, 1),
+        date(2024, 1, 7),
+        "Q3",
+        "API_USUARIO",
+        "DRIFT_ECE_ALTO",
+        -1,
+    )
+    assert drift_key in alertas_store
+    assert alertas_store[drift_key]["params"][6] == "WARNING"
+
+
+def test_alertas_calibracion_distingue_periodo_inicio():
+    metricas_rows = [
+        {
+            "periodo_inicio": date(2024, 1, 1),
+            "periodo_fin": date(2024, 1, 7),
+            "mercado": "Q4",
+            "origen": "API_USUARIO",
+            "modelo_version_id": None,
+            "n_predicciones": 120,
+            "brier_score": 0.1,
+            "log_loss": 0.2,
+            "ece": 0.11,
+        },
+        {
+            "periodo_inicio": date(2024, 1, 2),
+            "periodo_fin": date(2024, 1, 7),
+            "mercado": "Q4",
+            "origen": "API_USUARIO",
+            "modelo_version_id": None,
+            "n_predicciones": 120,
+            "brier_score": 0.1,
+            "log_loss": 0.2,
+            "ece": 0.11,
+        },
+    ]
+    alertas_store = {}
+    pool = FakePool(metricas_rows, alertas_store)
+
+    evaluar_alertas_calibracion(
+        mercado="Q4",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 7),
+        modelo_version_id=None,
+        pool=pool,
+    )
+    evaluar_alertas_calibracion(
+        mercado="Q4",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 2),
+        fecha_fin=date(2024, 1, 7),
+        modelo_version_id=None,
+        pool=pool,
+    )
+
+    drift_keys = [
+        key for key in alertas_store if key[4] == "DRIFT_ECE_ALTO"
+    ]
+    assert len(drift_keys) == 2

@@ -28,9 +28,32 @@ GENERATED ALWAYS AS (COALESCE(modelo_version_id, -1)) STORED;
 ALTER TABLE alertas_calibracion
 DROP CONSTRAINT IF EXISTS uq_alerta_calibracion_llave_natural;
 
+-- Deduplicar alertas existentes con la llave natural efectiva
+WITH duplicados AS (
+    SELECT
+        id,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                periodo_inicio,
+                periodo_fin,
+                mercado,
+                origen,
+                tipo_alerta,
+                modelo_version_id_efectivo
+            ORDER BY
+                timestamp_deteccion DESC NULLS LAST,
+                id DESC
+        ) AS rn
+    FROM alertas_calibracion
+)
+DELETE FROM alertas_calibracion AS a
+USING duplicados AS d
+WHERE a.id = d.id
+  AND d.rn > 1;
+
 ALTER TABLE alertas_calibracion
 ADD CONSTRAINT uq_alerta_calibracion_llave_natural
-UNIQUE (periodo_fin, mercado, origen, tipo_alerta, modelo_version_id_efectivo);
+UNIQUE (periodo_inicio, periodo_fin, mercado, origen, tipo_alerta, modelo_version_id_efectivo);
 
 CREATE INDEX IF NOT EXISTS idx_alertas_calibracion_busqueda
 ON alertas_calibracion (mercado, origen, severidad, resuelta);

@@ -26,7 +26,7 @@ class FakeCursor:
                 for fila in self._pred_rows
                 if fila["mercado"] == mercado
                 and fila["origen"] == origen
-                and fila["fecha_partido"] <= cutoff
+                and fila["fecha_partido"] < cutoff
                 and (modelo_id is None or fila["modelo_version_id"] == modelo_id)
                 and fila["outcome_binario"] is not None
                 and fila["p_raw"] is not None
@@ -78,7 +78,8 @@ class FakeCursor:
             return
 
         if "INSERT INTO alertas_calibracion" in query:
-            key = (params[1], params[2], params[3], params[5], params[6])
+            modelo_id = params[4]
+            key = (params[0], params[1], params[2], params[3], params[5], -1 if modelo_id is None else modelo_id)
             self._alertas_store[key] = {"params": params}
             self._result_one = (str(uuid4()),)
             return
@@ -180,3 +181,40 @@ def test_recalibracion_bloquea_por_datos_insuficientes():
     assert resultado.creado is False
     assert len(calibradores_store) == 0
     assert len(alertas_store) == 1
+
+
+def test_recalibracion_respeta_cutoff_estricto():
+    pred_rows = [
+        {
+            "mercado": "Q1",
+            "origen": "API_USUARIO",
+            "fecha_partido": date(2024, 1, 9),
+            "modelo_version_id": None,
+            "p_raw": 0.6,
+            "outcome_binario": True,
+        },
+        {
+            "mercado": "Q1",
+            "origen": "API_USUARIO",
+            "fecha_partido": date(2024, 1, 10),
+            "modelo_version_id": None,
+            "p_raw": 0.4,
+            "outcome_binario": False,
+        },
+    ]
+    calibradores_store = {}
+    alertas_store = {}
+    pool = FakePool(pred_rows, calibradores_store, alertas_store)
+
+    resultado = recalibrar_mercado(
+        mercado="Q1",
+        origen="API_USUARIO",
+        cutoff_datos=date(2024, 1, 10),
+        modelo_version_id=None,
+        min_muestras=2,
+        pool=pool,
+    )
+
+    assert resultado.calibrador_id is None
+    assert resultado.creado is False
+    assert len(calibradores_store) == 0

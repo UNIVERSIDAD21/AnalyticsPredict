@@ -26,6 +26,28 @@ GENERATED ALWAYS AS (COALESCE(modelo_version_id, -1)) STORED;
 ALTER TABLE metricas_calibracion
 DROP CONSTRAINT IF EXISTS uq_metricas_calibracion_llave_natural;
 
+-- Paso 3: Deduplicar filas existentes usando llave natural efectiva
+WITH duplicados AS (
+    SELECT
+        id,
+        ROW_NUMBER() OVER (
+            PARTITION BY
+                periodo_inicio,
+                periodo_fin,
+                mercado,
+                origen_predicciones,
+                modelo_version_id_efectivo
+            ORDER BY
+                timestamp_calculo DESC NULLS LAST,
+                id DESC
+        ) AS rn
+    FROM metricas_calibracion
+)
+DELETE FROM metricas_calibracion AS m
+USING duplicados AS d
+WHERE m.id = d.id
+  AND d.rn > 1;
+
 -- Paso 3: Crear constraint único con nombre explícito
 ALTER TABLE metricas_calibracion
 ADD CONSTRAINT uq_metricas_calibracion_llave_natural

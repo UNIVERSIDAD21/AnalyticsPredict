@@ -51,7 +51,14 @@ class FakeCursor:
             return
 
         if "INSERT INTO metricas_calibracion" in query:
-            key = (params[0], params[1], params[2], params[3], params[4])
+            modelo_id = params[4]
+            key = (
+                params[0],
+                params[1],
+                params[2],
+                params[3],
+                -1 if modelo_id is None else modelo_id,
+            )
             if key not in self._store:
                 self._store[key] = {"id": str(uuid4()), "data": params}
             else:
