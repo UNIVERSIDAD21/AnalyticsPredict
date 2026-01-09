@@ -437,6 +437,8 @@ class CandidatoApuesta:
     score: Optional[ScoreApuesta] = None
     sizing: Optional[ResultadoSizing] = None
     cuota: Optional[float] = None
+    cuota_over: Optional[float] = None
+    cuota_under: Optional[float] = None
 
     def etiqueta(self, nombre_equipo: str, nombre_rival: str) -> str:
         """Genera una etiqueta legible para mostrar al usuario."""
@@ -458,17 +460,18 @@ class CandidatoApuesta:
     def como_diccionario(self) -> Dict[str, Any]:
         """Serializa el candidato con nombres compatibles con la BD."""
         data = {
-            "cuarto": self.cuarto,
-            "mercado": self.mercado.value,
+            "mercado": self.cuarto,
             "lado": self.lado.value,
             "linea": self.linea,
-            "probabilidad": self.probabilidad,
-            "media": self.media,
-            "desviacion": self.desviacion,
-            "distancia_z": self.distancia_z,
             "cuota": self.cuota,
+            "cuota_over": self.cuota_over,
+            "cuota_under": self.cuota_under,
+            "probabilidad_sistema": self.probabilidad,
+            "prediccion_media": self.media,
+            "prediccion_desviacion": self.desviacion,
+            "distancia_z": self.distancia_z,
             "edge_real": self.edge_real,
-            "ev": self.ev,
+            "valor_esperado": self.ev,
         }
 
         if self.datos_devig is not None:
