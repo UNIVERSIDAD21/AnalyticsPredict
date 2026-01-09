@@ -107,6 +107,9 @@ def test_resultado_a_dict_con_devig_exacto_y_cuotas_completas():
         datos_devig=datos_devig,
         edge_real=0.03,
         ev=0.06,
+        p_raw=0.52,
+        p_calibrada=0.55,
+        calibrador_usado="platt",
         score=score,
         sizing=sizing,
         cuota=1.9,
@@ -126,6 +129,9 @@ def test_resultado_a_dict_con_devig_exacto_y_cuotas_completas():
     assert isinstance(mejor["sizing_advertencias"], list)
     assert isinstance(mejor["score_componentes"], dict)
     assert isinstance(mejor["sizing_penalizaciones"], dict)
+    assert mejor["p_raw"] == 0.52
+    assert mejor["p_calibrada"] == 0.55
+    assert mejor["calibrador_usado"] == "platt"
 
 
 def test_resultado_a_dict_con_cuota_unica_y_devig_no_aplicado():
@@ -167,6 +173,9 @@ def test_resultado_a_dict_con_cuota_unica_y_devig_no_aplicado():
         datos_devig=datos_devig,
         edge_real=0.0,
         ev=0.0,
+        p_raw=0.45,
+        p_calibrada=None,
+        calibrador_usado=None,
         score=score,
         sizing=sizing,
         cuota=1.85,
@@ -181,6 +190,8 @@ def test_resultado_a_dict_con_cuota_unica_y_devig_no_aplicado():
     assert mejor["devig_advertencias"] == ["Sin devig exacto"]
     assert isinstance(mejor["sizing_penalizaciones"], dict)
     assert mejor.get("cuota_over") is None
+    assert mejor["p_raw"] == 0.45
+    assert mejor["p_calibrada"] is None
 
 
 def test_resultado_a_dict_sin_apuestas_aptas_incluye_mensaje_y_candidatos():
