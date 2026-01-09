@@ -30,7 +30,7 @@ DROP CONSTRAINT IF EXISTS uq_alerta_calibracion_llave_natural;
 
 ALTER TABLE alertas_calibracion
 ADD CONSTRAINT uq_alerta_calibracion_llave_natural
-UNIQUE (periodo_inicio, periodo_fin, mercado, origen, tipo_alerta, modelo_version_id_efectivo);
+UNIQUE (periodo_fin, mercado, origen, tipo_alerta, modelo_version_id_efectivo);
 
 CREATE INDEX IF NOT EXISTS idx_alertas_calibracion_busqueda
 ON alertas_calibracion (mercado, origen, severidad, resuelta);

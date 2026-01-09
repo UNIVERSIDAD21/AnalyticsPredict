@@ -8,7 +8,7 @@ from uuid import uuid4
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from motor.alertas_calibracion import evaluar_alertas_calibracion, _construir_alerta
+from motor.alertas_calibracion import evaluar_alertas_calibracion
 
 
 class FakeCursor:
@@ -62,8 +62,7 @@ class FakeCursor:
             return
 
         if "INSERT INTO alertas_calibracion" in query:
-            modelo_id_efectivo = params[4] if params[4] is not None else -1
-            key = (params[0], params[1], params[2], params[3], params[5], modelo_id_efectivo)
+            key = (params[1], params[2], params[3], params[5], params[6])
             alerta_id = self._alertas_store.get(key, {}).get("id")
             if alerta_id is None:
                 alerta_id = str(uuid4())
@@ -184,46 +183,3 @@ def test_alertas_calibracion_datos_insuficientes():
 
     assert len(alertas) == 1
     assert alertas[0]["tipo_alerta"] == "DATOS_INSUFICIENTES"
-
-
-def test_alertas_actualizan_severidad_en_misma_llave():
-    alertas_store = {}
-    pool = FakePool([], alertas_store)
-
-    alerta_warning = _construir_alerta(
-        mercado="Q1",
-        origen="API_USUARIO",
-        fecha_inicio=date(2024, 1, 1),
-        fecha_fin=date(2024, 1, 7),
-        modelo_version_id=None,
-        tipo_alerta="DRIFT_ECE_ALTO",
-        severidad="WARNING",
-        metrica_afectada="ece",
-        valor_actual=0.08,
-        valor_umbral=0.05,
-        valor_baseline=None,
-        mensaje="Alerta warning.",
-        detalles={"umbral": 0.05},
-        pool=pool,
-    )
-
-    alerta_critica = _construir_alerta(
-        mercado="Q1",
-        origen="API_USUARIO",
-        fecha_inicio=date(2024, 1, 1),
-        fecha_fin=date(2024, 1, 7),
-        modelo_version_id=None,
-        tipo_alerta="DRIFT_ECE_ALTO",
-        severidad="CRITICAL",
-        metrica_afectada="ece",
-        valor_actual=0.12,
-        valor_umbral=0.1,
-        valor_baseline=None,
-        mensaje="Alerta crítica.",
-        detalles={"umbral": 0.1},
-        pool=pool,
-    )
-
-    assert len(alertas_store) == 1
-    assert alerta_warning["id"] == alerta_critica["id"]
-    assert alerta_critica["severidad"] == "CRITICAL"

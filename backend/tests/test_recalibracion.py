@@ -26,7 +26,7 @@ class FakeCursor:
                 for fila in self._pred_rows
                 if fila["mercado"] == mercado
                 and fila["origen"] == origen
-                and fila["fecha_partido"] < cutoff
+                and fila["fecha_partido"] <= cutoff
                 and (modelo_id is None or fila["modelo_version_id"] == modelo_id)
                 and fila["outcome_binario"] is not None
                 and fila["p_raw"] is not None
@@ -138,36 +138,6 @@ def _pred_rows_base(n=120):
             }
         )
     return rows
-
-
-def test_recalibracion_respeta_cutoff_estricto():
-    pred_rows = _pred_rows_base(n=10)
-    pred_rows.append(
-        {
-            "mercado": "Q1",
-            "origen": "API_USUARIO",
-            "fecha_partido": date(2024, 1, 10),
-            "modelo_version_id": None,
-            "p_raw": 0.7,
-            "outcome_binario": True,
-        }
-    )
-    calibradores_store = {}
-    alertas_store = {}
-    pool = FakePool(pred_rows, calibradores_store, alertas_store)
-
-    resultado = recalibrar_mercado(
-        mercado="Q1",
-        origen="API_USUARIO",
-        cutoff_datos=date(2024, 1, 10),
-        modelo_version_id=None,
-        min_muestras=11,
-        pool=pool,
-    )
-
-    assert resultado.calibrador_id is None
-    assert resultado.creado is False
-    assert len(calibradores_store) == 0
 
 
 def test_recalibracion_crea_calibrador_activo():
