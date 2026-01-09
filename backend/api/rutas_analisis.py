@@ -10,7 +10,8 @@ CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
 
 from __future__ import annotations
 
-from typing import Optional, List
+import logging
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -25,6 +26,7 @@ from psycopg.rows import dict_row
 # 
 # AHORA:
 from motor import analizar_partido, resultado_a_dict
+from motor.registro_predicciones import registrar_prediccion
 from motor_autoentrenamiento import EntrenadorBD, ModeloEnMemoria, obtener_modelo  # ← NUEVO
 from motor.tipos import ConfiguracionSizing, Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
@@ -35,6 +37,7 @@ from .modelos_peticion import PeticionAnalisis, PeticionAnalisisEnVivo
 from .modelos_respuesta import RespuestaAnalisis
 
 router = APIRouter(prefix="/api", tags=["Análisis"])
+logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # YA NO NECESITAMOS CACHÉ MANUAL
@@ -192,6 +195,25 @@ def _colectar_advertencias_resultado(resultado) -> List[str]:
     return advertencias
 
 
+def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str, Any]]:
+    campos = {
+        "partido_id": peticion.partido_id,
+        "temporada_id": peticion.temporada_id,
+        "equipo_local_id": peticion.equipo_local_id,
+        "equipo_visitante_id": peticion.equipo_visitante_id,
+        "fecha_partido": peticion.fecha_partido,
+        "tipo_partido": peticion.tipo_partido,
+    }
+    faltantes = [clave for clave, valor in campos.items() if valor is None]
+    if faltantes:
+        logger.warning(
+            "Predicción no registrable por falta de contexto: %s",
+            ", ".join(faltantes),
+        )
+        return None
+    return campos
+
+
 def ejecutar_analisis(
     peticion: PeticionAnalisis,
     marcador_q1: Optional[str] = None,
@@ -258,6 +280,37 @@ def ejecutar_analisis(
         raise ErrorValidacion(str(exc)) from exc
     except Exception as exc:
         raise ErrorAnalisis("No se pudo completar el análisis.") from exc
+
+    contexto_registro = _extraer_contexto_registro(peticion)
+    if contexto_registro and resultado.candidatos:
+        modelo_version_id = getattr(modelo, "version", None)
+        if modelo_version_id is None:
+            logger.warning("No se encontró version del modelo para registrar predicción.")
+        else:
+            for candidato in resultado.candidatos:
+                registrar_prediccion(
+                    partido_id=contexto_registro["partido_id"],
+                    temporada_id=contexto_registro["temporada_id"],
+                    equipo_local_id=contexto_registro["equipo_local_id"],
+                    equipo_visitante_id=contexto_registro["equipo_visitante_id"],
+                    fecha_partido=contexto_registro["fecha_partido"],
+                    tipo_partido=contexto_registro["tipo_partido"],
+                    mercado=candidato.cuarto,
+                    lado=candidato.lado.value,
+                    linea=candidato.linea,
+                    linea_es_sintetica=False,
+                    origen="API_USUARIO",
+                    modelo_version_id=modelo_version_id,
+                    calibrador_id=None,
+                    media_predicha=candidato.media,
+                    desviacion_predicha=candidato.desviacion,
+                    p_raw=candidato.probabilidad,
+                    cuota=candidato.cuota,
+                    cuota_over=candidato.cuota_over,
+                    cuota_under=candidato.cuota_under,
+                    calibrador_metodo=None,
+                    p_calibrada=None,
+                )
     datos_respuesta = resultado_a_dict(resultado)
     datos_respuesta.pop("advertencias", None)
     if datos_respuesta.get("mejor_apuesta") is not None:
