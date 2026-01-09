@@ -138,3 +138,13 @@ def test_registro_falla_sin_romper_flujo():
     resultado = registrar_prediccion(pool=pool, **kwargs)
 
     assert resultado is None
+
+
+def test_registro_falla_si_faltan_campos_obligatorios():
+    store = {}
+    pool = FakePool(store)
+    kwargs = _base_kwargs()
+
+    resultado = registrar_prediccion(pool=pool, **{**kwargs, "partido_id": None})
+
+    assert resultado is None

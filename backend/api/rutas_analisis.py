@@ -291,29 +291,40 @@ def ejecutar_analisis(
             )
         else:
             for candidato in resultado.candidatos:
-                registrar_prediccion(
-                    partido_id=contexto_registro["partido_id"],
-                    temporada_id=contexto_registro["temporada_id"],
-                    equipo_local_id=contexto_registro["equipo_local_id"],
-                    equipo_visitante_id=contexto_registro["equipo_visitante_id"],
-                    fecha_partido=contexto_registro["fecha_partido"],
-                    tipo_partido=contexto_registro["tipo_partido"],
-                    mercado=candidato.cuarto,
-                    lado=candidato.lado.value,
-                    linea=candidato.linea,
-                    linea_es_sintetica=False,
-                    origen="API_USUARIO",
-                    modelo_version_id=modelo_version_id,
-                    calibrador_id=None,
-                    media_predicha=candidato.media,
-                    desviacion_predicha=candidato.desviacion,
-                    p_raw=candidato.probabilidad,
-                    cuota=candidato.cuota,
-                    cuota_over=candidato.cuota_over,
-                    cuota_under=candidato.cuota_under,
-                    calibrador_metodo=None,
-                    p_calibrada=None,
-                )
+                try:
+                    registrar_prediccion(
+                        partido_id=contexto_registro["partido_id"],
+                        temporada_id=contexto_registro["temporada_id"],
+                        equipo_local_id=contexto_registro["equipo_local_id"],
+                        equipo_visitante_id=contexto_registro["equipo_visitante_id"],
+                        fecha_partido=contexto_registro["fecha_partido"],
+                        tipo_partido=contexto_registro["tipo_partido"],
+                        mercado=candidato.cuarto,
+                        lado=candidato.lado.value,
+                        linea=candidato.linea,
+                        linea_es_sintetica=False,
+                        origen="API_USUARIO",
+                        modelo_version_id=modelo_version_id,
+                        calibrador_id=None,
+                        media_predicha=candidato.media,
+                        desviacion_predicha=candidato.desviacion,
+                        p_raw=candidato.probabilidad,
+                        cuota=candidato.cuota,
+                        cuota_over=candidato.cuota_over,
+                        cuota_under=candidato.cuota_under,
+                        calibrador_metodo=None,
+                        p_calibrada=None,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Error inesperado registrando predicción (partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s)",
+                        contexto_registro["partido_id"],
+                        candidato.cuarto,
+                        candidato.lado.value,
+                        candidato.linea,
+                        "API_USUARIO",
+                        modelo_version_id,
+                    )
     datos_respuesta = resultado_a_dict(resultado)
     datos_respuesta.pop("advertencias", None)
     if datos_respuesta.get("mejor_apuesta") is not None:
