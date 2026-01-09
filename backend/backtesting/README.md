@@ -36,7 +36,8 @@ Registro en `predicciones_registradas`:
 
 - `origen = BACKTEST_SINTETICO`.
 - `partido_id` siempre real (FK válida).
-- `linea_es_sintetica` es `true` si el modo sintético está activo o el offset ≠ 0.
+- `linea_es_sintetica` es `true` siempre que el origen sea `BACKTEST_SINTETICO`
+  (incluye el offset 0).
 
 ### Idempotencia
 
@@ -48,3 +49,19 @@ El generador retorna un resumen con:
 - Totales (intentos, insertadas, duplicadas, fallidas).
 - Breakdown por mercado y por offset.
 - Tiempo total y tiempo promedio por inserción.
+
+## Métricas (T13)
+
+### Brier Score
+
+La implementación formal vive en `backtesting/metricas/brier.py`:
+
+```python
+from backtesting.metricas.brier import calcular_brier_score
+
+resultado = calcular_brier_score([
+    (0.62, True),
+    (0.45, False),
+    (0.50, None),  # PUSH -> se excluye
+])
+```

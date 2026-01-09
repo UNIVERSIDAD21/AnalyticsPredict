@@ -73,7 +73,10 @@ def generar_predicciones_backtest(
             )
             for offset in offsets:
                 linea = float(media_total + offset)
-                linea_es_sintetica = config.usar_lineas_sinteticas or offset != 0
+                if origen == ORIGEN_BACKTEST_SINTETICO:
+                    linea_es_sintetica = True
+                else:
+                    linea_es_sintetica = config.usar_lineas_sinteticas or offset != 0
                 p_over = calcular_probabilidad_over(media_total, desviacion_total, linea)
                 p_under = 1.0 - p_over
 

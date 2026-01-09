@@ -14,9 +14,15 @@ import logging
 from datetime import date
 from typing import Optional, List
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from backtesting.configuracion import ConfiguracionBacktest
+from backtesting.ejecutor import (
+    ejecutar_backtest,
+    obtener_estado_backtest,
+    obtener_resultado_backtest,
+)
 from motor.resolucion_predicciones import (
     resolver_predicciones,
     obtener_estadisticas_predicciones,
@@ -67,6 +73,25 @@ class RespuestaEstadisticas(BaseModel):
 
     exito: bool
     estadisticas: dict
+
+
+class PeticionBacktest(BaseModel):
+    """Petición para iniciar un backtest."""
+
+    configuracion: ConfiguracionBacktest
+    ejecutar_sincrono: bool = Field(
+        default=True,
+        description="Si true, ejecuta el backtest en la misma petición.",
+    )
+
+
+class RespuestaBacktest(BaseModel):
+    """Respuesta genérica para backtest."""
+
+    exito: bool
+    backtest_id: str
+    estado: str
+    detalle: dict | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -162,4 +187,92 @@ async def estadisticas_predicciones_endpoint() -> RespuestaEstadisticas:
         return RespuestaEstadisticas(
             exito=False,
             estadisticas={"error": str(e)},
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS DE BACKTEST WALK-FORWARD
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post(
+    "/backtest",
+    response_model=RespuestaBacktest,
+    summary="Iniciar backtest walk-forward",
+    description="Crea y ejecuta un backtest walk-forward con tracking en BD.",
+)
+async def iniciar_backtest_endpoint(peticion: PeticionBacktest) -> RespuestaBacktest:
+    if not peticion.ejecutar_sincrono:
+        raise HTTPException(
+            status_code=501,
+            detail="Ejecución asíncrona no implementada en este entorno.",
+        )
+
+    try:
+        resultado = ejecutar_backtest(peticion.configuracion)
+        return RespuestaBacktest(
+            exito=True,
+            backtest_id=str(resultado.backtest_id),
+            estado=resultado.estado,
+            detalle={
+                "iteraciones_completadas": resultado.iteraciones_completadas,
+                "iteraciones_fallidas": resultado.iteraciones_fallidas,
+                "total_predicciones_generadas": resultado.total_predicciones_generadas,
+            },
+        )
+    except Exception as exc:
+        logger.exception("Error ejecutando backtest")
+        return RespuestaBacktest(
+            exito=False,
+            backtest_id="",
+            estado="FALLIDO",
+            detalle={"error": str(exc)},
+        )
+
+
+@router.get(
+    "/backtest/{backtest_id}/estado",
+    response_model=RespuestaBacktest,
+    summary="Estado de ejecución de backtest",
+)
+async def estado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
+    try:
+        estado = obtener_estado_backtest(backtest_id)
+        return RespuestaBacktest(
+            exito=True,
+            backtest_id=str(estado["id"]),
+            estado=estado["estado"],
+            detalle=estado,
+        )
+    except Exception as exc:
+        logger.exception("Error consultando estado de backtest")
+        return RespuestaBacktest(
+            exito=False,
+            backtest_id=backtest_id,
+            estado="ERROR",
+            detalle={"error": str(exc)},
+        )
+
+
+@router.get(
+    "/backtest/{backtest_id}/resultado",
+    response_model=RespuestaBacktest,
+    summary="Resultado de ejecución de backtest",
+)
+async def resultado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
+    try:
+        resultado = obtener_resultado_backtest(backtest_id)
+        return RespuestaBacktest(
+            exito=True,
+            backtest_id=str(resultado["id"]),
+            estado=resultado["estado"],
+            detalle=resultado,
+        )
+    except Exception as exc:
+        logger.exception("Error consultando resultado de backtest")
+        return RespuestaBacktest(
+            exito=False,
+            backtest_id=backtest_id,
+            estado="ERROR",
+            detalle={"error": str(exc)},
         )
