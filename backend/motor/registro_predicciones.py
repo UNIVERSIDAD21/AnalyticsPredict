@@ -15,8 +15,6 @@ from db import obtener_pool
 
 logger = logging.getLogger(__name__)
 
-UUID_CERO = UUID("00000000-0000-0000-0000-000000000000")
-
 
 def registrar_prediccion(
     *,
@@ -163,7 +161,7 @@ def registrar_prediccion(
                 linea,
                 origen,
                 modelo_version_id,
-                calibrador_id or UUID_CERO,
+                calibrador_id,
             )
         logger.exception(
             "Error registrando predicción (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
@@ -174,7 +172,7 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id or UUID_CERO,
+            calibrador_id,
         )
         return None
 
@@ -189,7 +187,7 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id or UUID_CERO,
+            calibrador_id,
         )
     if fila:
         prediccion_id = fila[0]
@@ -203,7 +201,7 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id or UUID_CERO,
+            calibrador_id,
         )
         return prediccion_id
 
@@ -216,6 +214,6 @@ def registrar_prediccion(
         linea,
         origen,
         modelo_version_id,
-        calibrador_id or UUID_CERO,
+        calibrador_id,
     )
     return None
