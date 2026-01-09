@@ -22,31 +22,16 @@ ALTER TABLE metricas_calibracion
 ADD COLUMN IF NOT EXISTS modelo_version_id_efectivo INTEGER
 GENERATED ALWAYS AS (COALESCE(modelo_version_id, -1)) STORED;
 
--- Paso 2: Deduplicar filas existentes por llave natural efectiva
-WITH duplicados AS (
-    SELECT
-        id,
-        ROW_NUMBER() OVER (
-            PARTITION BY periodo_inicio, periodo_fin, mercado, origen_predicciones, modelo_version_id_efectivo
-            ORDER BY timestamp_calculo DESC NULLS LAST, id DESC
-        ) AS rn
-    FROM metricas_calibracion
-)
-DELETE FROM metricas_calibracion
-WHERE id IN (
-    SELECT id FROM duplicados WHERE rn > 1
-);
-
--- Paso 3: Eliminar constraint previo si existe
+-- Paso 2: Eliminar constraint previo si existe
 ALTER TABLE metricas_calibracion
 DROP CONSTRAINT IF EXISTS uq_metricas_calibracion_llave_natural;
 
--- Paso 4: Crear constraint único con nombre explícito
+-- Paso 3: Crear constraint único con nombre explícito
 ALTER TABLE metricas_calibracion
 ADD CONSTRAINT uq_metricas_calibracion_llave_natural
 UNIQUE (periodo_inicio, periodo_fin, mercado, origen_predicciones, modelo_version_id_efectivo);
 
--- Paso 5: Índice auxiliar para búsquedas
+-- Paso 4: Índice auxiliar para búsquedas
 CREATE INDEX IF NOT EXISTS idx_metricas_calibracion_busqueda
 ON metricas_calibracion (mercado, origen_predicciones, periodo_inicio, periodo_fin);
 

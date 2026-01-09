@@ -284,7 +284,7 @@ def _cargar_datos_entrenamiento(
         FROM predicciones_registradas
         WHERE mercado = %s
           AND origen = %s
-          AND fecha_partido < %s
+          AND fecha_partido <= %s
           AND p_raw IS NOT NULL
           AND outcome_binario IS NOT NULL
           AND (%s IS NULL OR modelo_version_id = %s)
