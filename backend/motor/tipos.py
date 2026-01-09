@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Literal, Any
 from enum import Enum
+from uuid import UUID
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -434,6 +435,10 @@ class CandidatoApuesta:
     datos_devig: Optional[DatosDeVig] = None
     edge_real: Optional[float] = None
     ev: Optional[float] = None
+    p_raw: Optional[float] = None
+    p_calibrada: Optional[float] = None
+    calibrador_usado: Optional[str] = None
+    calibrador_id: Optional[UUID] = None
     score: Optional[ScoreApuesta] = None
     sizing: Optional[ResultadoSizing] = None
     cuota: Optional[float] = None
@@ -467,6 +472,9 @@ class CandidatoApuesta:
             "cuota_over": self.cuota_over,
             "cuota_under": self.cuota_under,
             "probabilidad_sistema": self.probabilidad,
+            "p_raw": self.p_raw,
+            "p_calibrada": self.p_calibrada,
+            "calibrador_usado": self.calibrador_usado,
             "prediccion_media": self.media,
             "prediccion_desviacion": self.desviacion,
             "distancia_z": self.distancia_z,

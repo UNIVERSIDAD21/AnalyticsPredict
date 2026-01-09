@@ -384,6 +384,8 @@ def ejecutar_analisis(
             marcador_q2=marcador_q2,
             marcador_q3=marcador_q3,
             peso_en_vivo=peso_en_vivo,
+            fecha_partido=peticion.fecha_partido,
+            origen_prediccion="API_USUARIO",
         )
     except ValueError as exc:
         raise ErrorValidacion(str(exc)) from exc
@@ -414,15 +416,15 @@ def ejecutar_analisis(
                         linea_es_sintetica=False,
                         origen="API_USUARIO",
                         modelo_version_id=modelo_version_id,
-                        calibrador_id=None,
+                        calibrador_id=getattr(candidato, "calibrador_id", None),
                         media_predicha=candidato.media,
                         desviacion_predicha=candidato.desviacion,
-                        p_raw=candidato.probabilidad,
+                        p_raw=getattr(candidato, "p_raw", None) or candidato.probabilidad,
                         cuota=candidato.cuota,
                         cuota_over=candidato.cuota_over,
                         cuota_under=candidato.cuota_under,
-                        calibrador_metodo=None,
-                        p_calibrada=None,
+                        calibrador_metodo=getattr(candidato, "calibrador_usado", None),
+                        p_calibrada=getattr(candidato, "p_calibrada", None),
                     )
                 except Exception:
                     logger.exception(
