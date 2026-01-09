@@ -119,6 +119,28 @@ def _construir_configuracion_sizing(
     )
 
 
+def _validar_entrada_devig(peticion: PeticionAnalisis) -> List[str]:
+    advertencias: List[str] = []
+    tiene_over = peticion.cuota_over is not None
+    tiene_under = peticion.cuota_under is not None
+
+    if tiene_over and tiene_under:
+        p_over = 1.0 / peticion.cuota_over
+        p_under = 1.0 / peticion.cuota_under
+        overround = p_over + p_under
+        if overround < 1.0:
+            advertencias.append("OVERROUND_BAJO_POSIBLE_ARB")
+        if overround > 1.10:
+            advertencias.append("OVERROUND_ALTO_REVISAR")
+    elif tiene_over ^ tiene_under:
+        if peticion.modo_devig == "estricto":
+            advertencias.append("DEVIG_ESTRICTO_REQUIERE_AMBAS_CUOTAS")
+        else:
+            advertencias.append("DEVIG_ESTIMADO_PENALIZA")
+
+    return advertencias
+
+
 def _validar_peticion_analisis(peticion: PeticionAnalisis) -> List[str]:
     advertencias: List[str] = []
     cuotas_presentes = any(
@@ -129,20 +151,33 @@ def _validar_peticion_analisis(peticion: PeticionAnalisis) -> List[str]:
     if cuotas_presentes and "lado" not in peticion.model_fields_set:
         raise ErrorValidacion("Debes indicar lado cuando envías cuotas.")
 
+    if peticion.lado not in {"OVER", "UNDER"}:
+        raise ErrorValidacion("lado debe ser OVER o UNDER.")
+
+    if peticion.mercado not in {"Q1", "Q2", "Q3", "Q4", "COMPLETO"}:
+        raise ErrorValidacion("mercado debe ser Q1, Q2, Q3, Q4 o COMPLETO.")
+
+    if peticion.modo_devig not in {"estricto", "estimado"}:
+        raise ErrorValidacion("modo_devig debe ser estricto o estimado.")
+
+    if peticion.perfil_riesgo is not None and peticion.perfil_riesgo not in {
+        "CONSERVADOR",
+        "MEDIO",
+        "AGRESIVO",
+    }:
+        raise ErrorValidacion("perfil_riesgo debe ser CONSERVADOR, MEDIO o AGRESIVO.")
+
+    if peticion.linea is not None and peticion.linea <= 0:
+        raise ErrorValidacion("linea debe ser mayor a 0.")
+
     if peticion.bankroll is not None and peticion.bankroll <= 0:
         raise ErrorValidacion("bankroll debe ser mayor a 0.")
 
-    if peticion.modo_devig == "estricto":
-        solo_un_lado = (
-            peticion.cuota_over is not None
-        ) ^ (
-            peticion.cuota_under is not None
-        )
-        if cuotas_presentes and solo_un_lado:
-            advertencias.append(
-                "modo_devig estricto sin cuota opuesta: no se aplicará de-vig exacto."
-            )
+    for cuota in (peticion.cuota, peticion.cuota_over, peticion.cuota_under):
+        if cuota is not None and cuota <= 1.0:
+            raise ErrorValidacion("Las cuotas deben ser mayores a 1.0.")
 
+    advertencias.extend(_validar_entrada_devig(peticion))
     return advertencias
 
 
@@ -224,6 +259,7 @@ def ejecutar_analisis(
     except Exception as exc:
         raise ErrorAnalisis("No se pudo completar el análisis.") from exc
     datos_respuesta = resultado_a_dict(resultado)
+    datos_respuesta.pop("advertencias", None)
     if datos_respuesta.get("mejor_apuesta") is not None:
         mejor = datos_respuesta["mejor_apuesta"]
         if isinstance(mejor, dict):
