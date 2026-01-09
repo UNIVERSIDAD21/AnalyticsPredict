@@ -33,6 +33,11 @@ export type LadoApuesta = 'OVER' | 'UNDER';
 
 /**
  * Datos para solicitar un análisis
+ *
+ * IMPORTANTE: Para que las predicciones se registren en la BD,
+ * es necesario enviar el contexto del partido (partido_id o al menos
+ * equipo_local + equipo_visitante + fecha_partido para que el backend
+ * pueda hacer lookup).
  */
 export interface PeticionAnalisis {
   equipo_local: string;
@@ -44,6 +49,15 @@ export interface PeticionAnalisis {
   cuota_under?: number;
   lado?: LadoApuesta;
   temporadas?: string[];
+
+  // Campos para registro de predicciones (opcionales pero recomendados)
+  // Si se envían, permiten el registro idempotente de predicciones
+  partido_id?: string;
+  temporada_id?: string;
+  equipo_local_id?: string;
+  equipo_visitante_id?: string;
+  fecha_partido?: string; // formato YYYY-MM-DD
+  tipo_partido?: 'PRE' | 'REG' | 'POST';
 }
 
 /**

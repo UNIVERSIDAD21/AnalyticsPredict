@@ -195,23 +195,138 @@ def _colectar_advertencias_resultado(resultado) -> List[str]:
     return advertencias
 
 
-def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str, Any]]:
-    campos = {
-        "partido_id": peticion.partido_id,
-        "temporada_id": peticion.temporada_id,
-        "equipo_local_id": peticion.equipo_local_id,
-        "equipo_visitante_id": peticion.equipo_visitante_id,
-        "fecha_partido": peticion.fecha_partido,
-        "tipo_partido": peticion.tipo_partido,
-    }
-    faltantes = [clave for clave, valor in campos.items() if valor is None]
-    if faltantes:
-        logger.warning(
-            "Predicción no registrable por falta de contexto: %s",
-            ", ".join(faltantes),
+def _buscar_partido_por_equipos_fecha(
+    equipo_local: str,
+    equipo_visitante: str,
+    fecha_partido: Optional["date"] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Busca un partido en la BD por nombres de equipos y opcionalmente fecha.
+
+    Si se proporciona fecha, busca coincidencia exacta.
+    Si no hay fecha, busca el partido más reciente entre esos equipos.
+
+    Retorna None si no encuentra coincidencia.
+    """
+    from datetime import date as date_type
+
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                if fecha_partido:
+                    # Búsqueda exacta por fecha
+                    cursor.execute(
+                        """
+                        SELECT
+                            p.id as partido_id,
+                            p.temporada_id,
+                            p.equipo_local_id,
+                            p.equipo_visitante_id,
+                            p.fecha_partido,
+                            p.tipo_partido
+                        FROM partidos p
+                        JOIN equipos el ON p.equipo_local_id = el.id
+                        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+                        WHERE
+                            LOWER(el.nombre) = LOWER(%s)
+                            AND LOWER(ev.nombre) = LOWER(%s)
+                            AND p.fecha_partido = %s
+                        LIMIT 1
+                        """,
+                        [equipo_local, equipo_visitante, fecha_partido],
+                    )
+                else:
+                    # Sin fecha: buscar partido más reciente entre esos equipos
+                    cursor.execute(
+                        """
+                        SELECT
+                            p.id as partido_id,
+                            p.temporada_id,
+                            p.equipo_local_id,
+                            p.equipo_visitante_id,
+                            p.fecha_partido,
+                            p.tipo_partido
+                        FROM partidos p
+                        JOIN equipos el ON p.equipo_local_id = el.id
+                        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+                        WHERE
+                            LOWER(el.nombre) = LOWER(%s)
+                            AND LOWER(ev.nombre) = LOWER(%s)
+                        ORDER BY p.fecha_partido DESC
+                        LIMIT 1
+                        """,
+                        [equipo_local, equipo_visitante],
+                    )
+
+                resultado = cursor.fetchone()
+                if resultado:
+                    logger.info(
+                        "Partido encontrado por lookup (partido_id=%s equipos=%s vs %s fecha=%s)",
+                        resultado["partido_id"],
+                        equipo_local,
+                        equipo_visitante,
+                        resultado["fecha_partido"],
+                    )
+                    return dict(resultado)
+                return None
+    except Exception:
+        logger.exception(
+            "Error buscando partido (equipo_local=%s equipo_visitante=%s fecha=%s)",
+            equipo_local,
+            equipo_visitante,
+            fecha_partido,
         )
         return None
-    return campos
+
+
+def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str, Any]]:
+    """
+    Extrae el contexto necesario para registrar la predicción.
+
+    Si el frontend envía partido_id directamente, lo usa.
+    Si no, intenta hacer lookup por equipos + fecha.
+
+    Retorna None si no se puede determinar el partido de forma confiable.
+    """
+    # Si todos los campos vienen directamente del request, usarlos
+    if all([
+        peticion.partido_id,
+        peticion.temporada_id,
+        peticion.equipo_local_id,
+        peticion.equipo_visitante_id,
+        peticion.fecha_partido,
+        peticion.tipo_partido,
+    ]):
+        return {
+            "partido_id": peticion.partido_id,
+            "temporada_id": peticion.temporada_id,
+            "equipo_local_id": peticion.equipo_local_id,
+            "equipo_visitante_id": peticion.equipo_visitante_id,
+            "fecha_partido": peticion.fecha_partido,
+            "tipo_partido": peticion.tipo_partido,
+        }
+
+    # Si no hay partido_id pero sí hay equipos, intentar lookup
+    partido_lookup = _buscar_partido_por_equipos_fecha(
+        equipo_local=peticion.equipo_local,
+        equipo_visitante=peticion.equipo_visitante,
+        fecha_partido=peticion.fecha_partido,
+    )
+
+    if partido_lookup:
+        return partido_lookup
+
+    # No se pudo determinar el partido
+    logger.warning(
+        "Predicción no registrable: no se pudo determinar partido_id "
+        "(equipo_local=%s equipo_visitante=%s fecha=%s partido_id=%s)",
+        peticion.equipo_local,
+        peticion.equipo_visitante,
+        peticion.fecha_partido,
+        peticion.partido_id,
+    )
+    return None
 
 
 def ejecutar_analisis(
