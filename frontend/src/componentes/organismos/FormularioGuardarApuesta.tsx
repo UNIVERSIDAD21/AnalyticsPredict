@@ -88,7 +88,7 @@ export function FormularioGuardarApuesta({
       valor_esperado: snapshot.valorEsperado ?? undefined,
       prediccion_media: snapshot.media ?? undefined,
       prediccion_desviacion: snapshot.desviacion ?? undefined,
-      razones: resultado.razones as Array<Record<string, unknown>>,
+      razones: resultado.razones as unknown as Array<Record<string, unknown>>,
     });
   };
 
