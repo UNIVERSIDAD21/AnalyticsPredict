@@ -82,15 +82,8 @@ def registrar_prediccion(
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
-                    ON CONFLICT (
-                        partido_id,
-                        mercado,
-                        lado,
-                        linea,
-                        origen,
-                        modelo_version_id,
-                        calibrador_id
-                    ) DO NOTHING
+                    ON CONFLICT ON CONSTRAINT idx_pred_llave_natural
+                    DO NOTHING
                     RETURNING id
                     """,
                     [
