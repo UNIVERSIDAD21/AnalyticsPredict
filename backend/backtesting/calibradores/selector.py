@@ -110,8 +110,9 @@ def seleccionar_calibrador(
 
     metricas = {
         **metricas_base,
-        "n_entrenamiento": len(train),
-        "n_validacion": len(val),
+        "n_entrenamiento_final": len(datos),
+        "n_split_train": len(train),
+        "n_split_val": len(val),
         "brier_val_platt": brier_platt,
         "brier_val_isotonic": brier_iso,
         "calibrador_elegido": elegido,
