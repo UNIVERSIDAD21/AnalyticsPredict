@@ -20,6 +20,7 @@ from configuracion import CONFIGURACION
 from api.rutas_analisis import router as router_analisis
 from api.rutas_bitacora import router as router_bitacora
 from api.rutas_equipos import router as router_equipos
+from api.rutas_metricas import router as router_metricas
 from api.rutas_partidos import router as router_partidos
 from api.rutas_internas import router as router_interno
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
@@ -229,6 +230,7 @@ app.include_router(router_equipos)
 app.include_router(router_bitacora)
 app.include_router(router_partidos)
 app.include_router(router_interno)
+app.include_router(router_metricas)
 
 
 @app.get(
