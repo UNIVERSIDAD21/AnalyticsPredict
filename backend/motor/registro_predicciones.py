@@ -15,7 +15,9 @@ from db import obtener_pool
 
 logger = logging.getLogger(__name__)
 
-UUID_CERO = UUID("00000000-0000-0000-0000-000000000000")
+_contador_insertadas = 0
+_contador_duplicadas = 0
+_contador_errores = 0
 
 
 def registrar_prediccion(
@@ -73,6 +75,7 @@ def registrar_prediccion(
         )
         return None
     inicio = time.perf_counter()
+    global _contador_insertadas, _contador_duplicadas, _contador_errores
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
@@ -142,11 +145,18 @@ def registrar_prediccion(
                 fila = cursor.fetchone()
     except Exception:
         latencia_ms = (time.perf_counter() - inicio) * 1000
+        _contador_errores += 1
         if latencia_ms > 50:
             logger.warning(
                 "Latencia alta al registrar predicción (latencia_ms=%.2f)",
                 latencia_ms,
             )
+        logger.warning(
+            "Contadores registro predicción (insertadas=%s duplicadas=%s errores=%s)",
+            _contador_insertadas,
+            _contador_duplicadas,
+            _contador_errores,
+        )
         logger.exception(
             "Error registrando predicción (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
             latencia_ms,
@@ -167,6 +177,7 @@ def registrar_prediccion(
             latencia_ms,
         )
     if fila:
+        _contador_insertadas += 1
         prediccion_id = fila[0]
         logger.info(
             "Predicción registrada (id=%s latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
@@ -180,8 +191,15 @@ def registrar_prediccion(
             modelo_version_id,
             calibrador_id,
         )
+        logger.info(
+            "Contadores registro predicción (insertadas=%s duplicadas=%s errores=%s)",
+            _contador_insertadas,
+            _contador_duplicadas,
+            _contador_errores,
+        )
         return prediccion_id
 
+    _contador_duplicadas += 1
     logger.info(
         "Predicción duplicada (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
         latencia_ms,
@@ -192,5 +210,11 @@ def registrar_prediccion(
         origen,
         modelo_version_id,
         calibrador_id,
+    )
+    logger.info(
+        "Contadores registro predicción (insertadas=%s duplicadas=%s errores=%s)",
+        _contador_insertadas,
+        _contador_duplicadas,
+        _contador_errores,
     )
     return None
