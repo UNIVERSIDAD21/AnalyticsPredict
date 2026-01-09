@@ -1,0 +1,27 @@
+modo_ventana: ULTIMAS_N_TEMPORADAS
+n_temporadas: 3
+n_partidos_por_equipo: null
+excluir_pretemporada: true
+
+modo_cutoff: SEMANAL
+tamano_bloque: null
+
+mercados:
+  - Q1
+  - Q2
+  - Q3
+  - Q4
+  - COMPLETO
+incluir_completo: true
+
+usar_lineas_sinteticas: true
+offsets_linea:
+  - 0.0
+  - 1.5
+  - -1.5
+
+fecha_inicio: 2022-10-01
+fecha_fin: null
+
+min_partidos_entrenamiento: 50
+min_temporadas_historia: 2
