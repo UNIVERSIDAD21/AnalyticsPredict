@@ -214,48 +214,6 @@ def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str,
     return campos
 
 
-def _resolver_modelo_version_id(modelo) -> Optional[int]:
-    modelo_metricas = getattr(modelo, "metricas", {}) or {}
-    hash_datos = modelo_metricas.get("hash_datos")
-    with obtener_pool().connection() as conexion:
-        with conexion.cursor(row_factory=dict_row) as cursor:
-            if hash_datos:
-                try:
-                    cursor.execute(
-                        """
-                        SELECT id
-                        FROM modelo_versiones
-                        WHERE hash_datos = %s
-                        ORDER BY id DESC
-                        LIMIT 1
-                        """,
-                        [hash_datos],
-                    )
-                    fila = cursor.fetchone()
-                    if fila:
-                        return fila["id"]
-                except Exception:
-                    logger.warning(
-                        "No se pudo resolver modelo_version_id por hash_datos; usando fallback."
-                    )
-            try:
-                cursor.execute(
-                    """
-                    SELECT id
-                    FROM modelo_versiones
-                    ORDER BY id DESC
-                    LIMIT 1
-                    """
-                )
-                fila = cursor.fetchone()
-                if fila:
-                    return fila["id"]
-            except Exception:
-                logger.exception("No se pudo resolver modelo_version_id desde modelo_versiones.")
-                return None
-    return None
-
-
 def ejecutar_analisis(
     peticion: PeticionAnalisis,
     marcador_q1: Optional[str] = None,
@@ -325,15 +283,9 @@ def ejecutar_analisis(
 
     contexto_registro = _extraer_contexto_registro(peticion)
     if contexto_registro and resultado.candidatos:
-        try:
-            modelo_version_id = _resolver_modelo_version_id(modelo)
-        except Exception:
-            modelo_version_id = None
-            logger.exception("Error resolviendo modelo_version_id para registrar predicción.")
+        modelo_version_id = getattr(modelo, "version", None)
         if modelo_version_id is None:
-            logger.warning(
-                "No se encontró modelo_version_id válido para registrar predicción."
-            )
+            logger.warning("No se encontró version del modelo para registrar predicción.")
         else:
             for candidato in resultado.candidatos:
                 registrar_prediccion(

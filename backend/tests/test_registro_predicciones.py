@@ -15,7 +15,6 @@ class FakeCursor:
     def execute(self, _query, params):
         if self._fail:
             raise RuntimeError("DB down")
-        calibrador_key = params[12] or str(UUID("00000000-0000-0000-0000-000000000000"))
         key = (
             params[0],
             params[6],
@@ -23,7 +22,7 @@ class FakeCursor:
             params[8],
             params[10],
             params[11],
-            calibrador_key,
+            params[12],
         )
         if key in self._store:
             self._row = None

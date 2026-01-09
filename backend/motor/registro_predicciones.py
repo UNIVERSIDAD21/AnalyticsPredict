@@ -15,9 +15,7 @@ from db import obtener_pool
 
 logger = logging.getLogger(__name__)
 
-_contador_insertadas = 0
-_contador_duplicadas = 0
-_contador_errores = 0
+UUID_CERO = UUID("00000000-0000-0000-0000-000000000000")
 
 
 def registrar_prediccion(
@@ -51,31 +49,8 @@ def registrar_prediccion(
     Retorna el ID insertado si fue nuevo, o None si fue duplicado o falló.
     """
     pool = pool or obtener_pool()
-    requeridos = {
-        "partido_id": partido_id,
-        "temporada_id": temporada_id,
-        "equipo_local_id": equipo_local_id,
-        "equipo_visitante_id": equipo_visitante_id,
-        "fecha_partido": fecha_partido,
-        "tipo_partido": tipo_partido,
-        "mercado": mercado,
-        "lado": lado,
-        "linea": linea,
-        "origen": origen,
-        "modelo_version_id": modelo_version_id,
-        "media_predicha": media_predicha,
-        "desviacion_predicha": desviacion_predicha,
-        "p_raw": p_raw,
-    }
-    faltantes = [campo for campo, valor in requeridos.items() if valor is None]
-    if faltantes:
-        logger.warning(
-            "Predicción no registrable por falta de contexto: %s",
-            ", ".join(faltantes),
-        )
-        return None
+    calibrador_id_coalesced = calibrador_id or UUID_CERO
     inicio = time.perf_counter()
-    global _contador_insertadas, _contador_duplicadas, _contador_errores
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
@@ -107,15 +82,8 @@ def registrar_prediccion(
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
-                    ON CONFLICT (
-                        partido_id,
-                        mercado,
-                        lado,
-                        linea,
-                        origen,
-                        modelo_version_id,
-                        COALESCE(calibrador_id, '00000000-0000-0000-0000-000000000000'::uuid)
-                    ) DO NOTHING
+                    ON CONFLICT ON CONSTRAINT idx_pred_llave_natural
+                    DO NOTHING
                     RETURNING id
                     """,
                     [
@@ -131,7 +99,7 @@ def registrar_prediccion(
                         linea_es_sintetica,
                         origen,
                         modelo_version_id,
-                        str(calibrador_id) if calibrador_id else None,
+                        str(calibrador_id_coalesced),
                         media_predicha,
                         desviacion_predicha,
                         p_raw,
@@ -145,18 +113,6 @@ def registrar_prediccion(
                 fila = cursor.fetchone()
     except Exception:
         latencia_ms = (time.perf_counter() - inicio) * 1000
-        _contador_errores += 1
-        if latencia_ms > 50:
-            logger.warning(
-                "Latencia alta al registrar predicción (latencia_ms=%.2f)",
-                latencia_ms,
-            )
-        logger.warning(
-            "Contadores registro predicción (insertadas=%s duplicadas=%s errores=%s)",
-            _contador_insertadas,
-            _contador_duplicadas,
-            _contador_errores,
-        )
         logger.exception(
             "Error registrando predicción (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
             latencia_ms,
@@ -166,18 +122,12 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id,
+            calibrador_id_coalesced,
         )
         return None
 
     latencia_ms = (time.perf_counter() - inicio) * 1000
-    if latencia_ms > 50:
-        logger.warning(
-            "Latencia alta al registrar predicción (latencia_ms=%.2f)",
-            latencia_ms,
-        )
     if fila:
-        _contador_insertadas += 1
         prediccion_id = fila[0]
         logger.info(
             "Predicción registrada (id=%s latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
@@ -189,17 +139,10 @@ def registrar_prediccion(
             linea,
             origen,
             modelo_version_id,
-            calibrador_id,
-        )
-        logger.info(
-            "Contadores registro predicción (insertadas=%s duplicadas=%s errores=%s)",
-            _contador_insertadas,
-            _contador_duplicadas,
-            _contador_errores,
+            calibrador_id_coalesced,
         )
         return prediccion_id
 
-    _contador_duplicadas += 1
     logger.info(
         "Predicción duplicada (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
         latencia_ms,
@@ -209,12 +152,6 @@ def registrar_prediccion(
         linea,
         origen,
         modelo_version_id,
-        calibrador_id,
-    )
-    logger.info(
-        "Contadores registro predicción (insertadas=%s duplicadas=%s errores=%s)",
-        _contador_insertadas,
-        _contador_duplicadas,
-        _contador_errores,
+        calibrador_id_coalesced,
     )
     return None
