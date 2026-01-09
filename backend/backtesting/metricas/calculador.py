@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from psycopg_pool import ConnectionPool
 
 logger = logging.getLogger(__name__)
+CONSTRAINT_METRICAS_CALIBRACION = "uq_metricas_calibracion_llave_natural"
 
 
 def calcular_metricas_calibracion(
@@ -266,7 +267,7 @@ def _persistir_metricas(
     sharpness: Optional[float],
     base_rate: Optional[float],
 ) -> Optional[str]:
-    consulta = """
+    consulta = f"""
         INSERT INTO metricas_calibracion (
             timestamp_calculo,
             periodo_inicio,
@@ -301,7 +302,7 @@ def _persistir_metricas(
             %s, %s, %s, %s, %s,
             %s, %s, %s
         )
-        ON CONFLICT (periodo_inicio, periodo_fin, mercado, origen_predicciones, modelo_version_id)
+        ON CONFLICT ON CONSTRAINT {CONSTRAINT_METRICAS_CALIBRACION}
         DO UPDATE SET
             timestamp_calculo = EXCLUDED.timestamp_calculo,
             n_predicciones = EXCLUDED.n_predicciones,
