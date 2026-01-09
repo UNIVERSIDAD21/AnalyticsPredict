@@ -65,3 +65,55 @@ resultado = calcular_brier_score([
     (0.50, None),  # PUSH -> se excluye
 ])
 ```
+
+## Métricas de calibración (T14–T15)
+
+### Log Loss
+
+La implementación vive en `backtesting/metricas/log_loss.py`:
+
+```python
+from backtesting.metricas.log_loss import calcular_log_loss
+
+resultado = calcular_log_loss([
+    (0.62, True),
+    (0.45, False),
+    (0.50, None),  # PUSH -> se excluye
+])
+```
+
+Notas:
+
+- Se aplica clipping `p = clip(p, eps, 1 - eps)` para evitar `log(0)`.
+- El retorno incluye `eps`, `p_min` y `p_max` (post-clip) para auditoría.
+
+### ECE + MCE (bins fijos y cuantiles)
+
+La implementación vive en `backtesting/metricas/ece.py`:
+
+```python
+from backtesting.metricas.ece import calcular_ece
+
+resultado_fijos = calcular_ece(
+    [(0.62, True), (0.45, False), (0.50, None)],
+    n_bins=10,
+    tipo_bins="fijos",
+    min_por_bin=10,
+)
+
+resultado_cuantiles = calcular_ece(
+    [(0.62, True), (0.45, False), (0.50, None)],
+    n_bins=10,
+    tipo_bins="cuantiles",
+    min_por_bin=10,
+)
+```
+
+Notas:
+
+- PUSH (`outcome=None`) se excluye en todos los cálculos.
+- Bins fijos devuelven siempre `n_bins` bins (los vacíos con `n=0`).
+- Bins cuantiles pueden devolver menos bins efectivos si hay empates masivos
+  (ver `metadatos["bins_efectivos"]`).
+- Cada bin retorna `avg_predicha`, `frecuencia_real`, `gap` y `suficiente_data`,
+  lo que permite graficar curvas y validar data insuficiente.
