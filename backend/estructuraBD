@@ -1,2175 +1,433 @@
-Esta es la estructura actual de mi base de datos:
+# 📊 Estructura de Base de Datos - Sistema de Apuestas NBA
 
-Tabla alertas_calibracion:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-timestamp_deteccion
-TIMESTAMP WITH TIME ZONE
-NOT NULL
-DEFAULTnow()
-mercado
-VARCHAR(20)
-NOT NULL
-origen
-VARCHAR(30)
-tipo_alerta
-VARCHAR(50)
-NOT NULL
-severidad
-VARCHAR(20)
-NOT NULL
-metrica_afectada
-VARCHAR(30)
-valor_actual
-NUMERIC(8, 4)
-valor_umbral
-NUMERIC(8, 4)
-valor_baseline
-NUMERIC(8, 4)
-mensaje
-TEXT
-NOT NULL
-detalles_json
-JSONB
-resuelta
-BOOLEAN
-NOT NULL
-DEFAULTfalse
-timestamp_resolucion
-TIMESTAMP WITH TIME ZONE
-resuelta_por
-VARCHAR(100)
-notas_resolucion
-TEXT
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-alertas_mercado_check
-CHECK
-(CHECK (((mercado)::text = ANY ((ARRAY['Q1'::character varying, 'Q2'::character varying, 'Q3'::character varying, 'Q4'::character varying, 'COMPLETO'::character varying, 'GLOBAL'::character varying])::text[]))))
-CONSTRAINT
-alertas_severidad_check
-CHECK
-(CHECK (((severidad)::text = ANY ((ARRAY['INFO'::character varying, 'WARNING'::character varying, 'CRITICAL'::character varying])::text[]))))
-CONSTRAINT
-alertas_tipo_check
-CHECK
-(CHECK (((tipo_alerta)::text = ANY ((ARRAY['DRIFT_ECE_ALTO'::character varying, 'DRIFT_ECE_RELATIVO'::character varying, 'DRIFT_BRIER_ALTO'::character varying, 'DRIFT_BRIER_RELATIVO'::character varying, 'DRIFT_SESGO_SISTEMATICO'::character varying, 'CALIBRADOR_EMPEORA'::character varying, 'DATOS_INSUFICIENTES'::character varying, 'RECALIBRACION_SUGERIDA'::character varying, 'MODELO_DEGRADADO'::character varying, 'ANOMALIA_DETECTADA'::character varying])::text[]))))
-CONSTRAINT
-alertas_calibracion_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-alertas_calibracion_pkey
-…
-USING
-BTREE
-(id)
-INDEX
-idx_alertas_mercado
-…
-USING
-BTREE
-(mercado)
-INDEX
-idx_alertas_no_resueltas
-…
-USING
-BTREE
-(resuelta)
-INDEX
-idx_alertas_severidad
-…
-USING
-BTREE
-(severidad)
-INDEX
-idx_alertas_timestamp
-…
-USING
-BTREE
-(timestamp_deteccion)
-INDEX
-idx_alertas_tipo
-…
-USING
-BTREE
-(tipo_alerta)
+## 📋 Índice de Tablas
 
+1. [Gestión de Usuarios](#usuarios)
+2. [Información de la Liga](#equipos-temporadas-partidos)
+3. [Sistema de Predicciones](#predicciones-y-modelos)
+4. [Calibración y Métricas](#calibración)
+5. [Apuestas](#apuestas)
+6. [Configuración](#configuración)
 
-Tabla apuestas:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-usuario_id
-UUID
-NOT NULL
-partido_id
-UUID
-equipo_local
-VARCHAR(100)
-NOT NULL
-equipo_visitante
-VARCHAR(100)
-NOT NULL
-fecha_partido
-DATE
-mercado
-VARCHAR(20)
-NOT NULL
-lado
-VARCHAR(10)
-NOT NULL
-linea
-NUMERIC(5, 1)
-NOT NULL
-cuota
-NUMERIC(5, 2)
-NOT NULL
-stake
-NUMERIC(10, 2)
-NOT NULL
-probabilidad_sistema
-NUMERIC(5, 4)
-confianza_sistema
-VARCHAR(10)
-valor_esperado
-NUMERIC(10, 2)
-prediccion_media
-NUMERIC(5, 1)
-prediccion_desviacion
-NUMERIC(5, 2)
-razones
-JSONB
-resultado
-VARCHAR(10)
-DEFAULT'PENDIENTE'
-puntos_reales
-INTEGER
-ganancia
-NUMERIC(10, 2)
-DEFAULT'0'
-notas
-TEXT
-etiquetas
-TEXT[]
-fecha_resolucion
-TIMESTAMP WITH TIME ZONE
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-cuota_over
-NUMERIC(5, 2)
-cuota_under
-NUMERIC(5, 2)
-devig_metodo
-VARCHAR(30)
-devig_overround
-NUMERIC(5, 4)
-devig_p_mkt_raw
-NUMERIC(5, 4)
-devig_p_mkt_fair
-NUMERIC(5, 4)
-devig_advertencias
-TEXT[]
-edge_real
-NUMERIC(6, 4)
-score_total
-NUMERIC(7, 2)
-score_componentes
-JSONB
-score_explicacion
-TEXT
-score_penalizaciones
-TEXT[]
-kelly_full
-NUMERIC(6, 4)
-kelly_fraccional
-NUMERIC(6, 4)
-fraccion_kelly
-NUMERIC(4, 3)
-stake_porcentaje
-NUMERIC(5, 2)
-bankroll_momento
-NUMERIC(10, 2)
-perfil_riesgo_usado
-VARCHAR(20)
-sizing_advertencias
-TEXT[]
-sizing_penalizaciones
-JSONB
-modo_devig
-VARCHAR(20)
-DEFAULT'estricto'
-Constraints
-Add constraint
-CONSTRAINT
-apuestas_confianza_sistema_check
-CHECK
-(CHECK (((confianza_sistema)::text = ANY ((ARRAY['ALTA'::character varying, 'MEDIA'::character varying, 'BAJA'::character varying])::text[]))))
-CONSTRAINT
-apuestas_cuota_check
-CHECK
-(CHECK ((cuota >= 1.01)))
-CONSTRAINT
-apuestas_cuota_over_check
-CHECK
-(CHECK (((cuota_over IS NULL) OR (cuota_over > 1.0))))
-CONSTRAINT
-apuestas_cuota_under_check
-CHECK
-(CHECK (((cuota_under IS NULL) OR (cuota_under > 1.0))))
-CONSTRAINT
-apuestas_devig_exacto_check
-CHECK
-(CHECK ((((devig_metodo)::text <> 'exacto'::text) OR ((cuota_over IS NOT NULL) AND (cuota_under IS NOT NULL)))))
-CONSTRAINT
-apuestas_devig_metodo_check
-CHECK
-(CHECK (((devig_metodo IS NULL) OR ((devig_metodo)::text = ANY ((ARRAY['exacto'::character varying, 'estimado'::character varying, 'no_aplicado'::character varying])::text[])))))
-CONSTRAINT
-apuestas_lado_check
-CHECK
-(CHECK (((lado)::text = ANY ((ARRAY['OVER'::character varying, 'UNDER'::character varying])::text[]))))
-CONSTRAINT
-apuestas_linea_check
-CHECK
-(CHECK ((linea > (0)::numeric)))
-CONSTRAINT
-apuestas_mercado_check
-CHECK
-(CHECK (((mercado)::text = ANY ((ARRAY['Q1'::character varying, 'Q2'::character varying, 'Q3'::character varying, 'Q4'::character varying, 'COMPLETO'::character varying])::text[]))))
-CONSTRAINT
-apuestas_modo_devig_check
-CHECK
-(CHECK (((modo_devig)::text = ANY ((ARRAY['estricto'::character varying, 'estimado'::character varying])::text[]))))
-CONSTRAINT
-apuestas_perfil_riesgo_check
-CHECK
-(CHECK (((perfil_riesgo_usado IS NULL) OR ((perfil_riesgo_usado)::text = ANY ((ARRAY['CONSERVADOR'::character varying, 'MEDIO'::character varying, 'AGRESIVO'::character varying])::text[])))))
-CONSTRAINT
-apuestas_probabilidad_sistema_check
-CHECK
-(CHECK (((probabilidad_sistema >= (0)::numeric) AND (probabilidad_sistema <= (1)::numeric))))
-CONSTRAINT
-apuestas_puntos_reales_check
-CHECK
-(CHECK ((puntos_reales >= 0)))
-CONSTRAINT
-apuestas_resultado_check
-CHECK
-(CHECK (((resultado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'GANADA'::character varying, 'PERDIDA'::character varying, 'PUSH'::character varying, 'ANULADA'::character varying])::text[]))))
-CONSTRAINT
-apuestas_stake_check
-CHECK
-(CHECK ((stake > (0)::numeric)))
-CONSTRAINT
-apuestas_partido_id_fkey
-FOREIGN KEY
-(partido_id)
-REFERENCES
-public.partidos
-(id)
-ON DELETESET NULL
-CONSTRAINT
-apuestas_usuario_id_fkey
-FOREIGN KEY
-(usuario_id)
-REFERENCES
-public.usuarios
-(id)
-ON DELETECASCADE
-CONSTRAINT
-apuestas_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-apuestas_pkey
-…
-USING
-BTREE
-(id)
-INDEX
-idx_apuestas_confianza
-…
-USING
-BTREE
-(confianza_sistema)
-INDEX
-idx_apuestas_devig_metodo
-…
-USING
-BTREE
-(devig_metodo)
-INDEX
-idx_apuestas_edge_real
-…
-USING
-BTREE
-(edge_real)
-INDEX
-idx_apuestas_fecha
-…
-USING
-BTREE
-(creado_en)
-INDEX
-idx_apuestas_fecha_score
-…
-USING
-BTREE
-(creado_en, score_total)
-INDEX
-idx_apuestas_mercado
-…
-USING
-BTREE
-(mercado)
-INDEX
-idx_apuestas_partido
-…
-USING
-BTREE
-(partido_id)
-INDEX
-idx_apuestas_perfil_riesgo
-…
-USING
-BTREE
-(perfil_riesgo_usado)
-INDEX
-idx_apuestas_resultado
-…
-USING
-BTREE
-(resultado)
-INDEX
-idx_apuestas_score
-…
-USING
-BTREE
-(score_total)
-INDEX
-idx_apuestas_usuario
-…
-USING
-BTREE
-(usuario_id)
-INDEX
-idx_apuestas_usuario_fecha
-…
-USING
-BTREE
-(usuario_id, creado_en)
-INDEX
-idx_apuestas_usuario_resultado
-…
-USING
-BTREE
-(usuario_id, resultado)
-INDEX
-idx_apuestas_usuario_score_resultado
-…
-USING
-BTREE
-(usuario_id, score_total, resultado)
+---
 
-Tabla calibradores:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-mercado
-VARCHAR(20)
-NOT NULL
-metodo
-VARCHAR(20)
-NOT NULL
-fecha_entrenamiento
-TIMESTAMP WITH TIME ZONE
-NOT NULL
-DEFAULTnow()
-cutoff_datos
-DATE
-NOT NULL
-n_muestras_entrenamiento
-INTEGER
-NOT NULL
-origen_datos
-VARCHAR(30)
-NOT NULL
-parametros_json
-JSONB
-NOT NULL
-activo
-BOOLEAN
-NOT NULL
-DEFAULTfalse
-brier_antes
-NUMERIC(6, 4)
-brier_despues
-NUMERIC(6, 4)
-mejora_validacion
-NUMERIC(6, 4)
-log_loss_antes
-NUMERIC(8, 4)
-log_loss_despues
-NUMERIC(8, 4)
-notas
-TEXT
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-calibradores_mercado_check
-CHECK
-(CHECK (((mercado)::text = ANY ((ARRAY['Q1'::character varying, 'Q2'::character varying, 'Q3'::character varying, 'Q4'::character varying, 'COMPLETO'::character varying])::text[]))))
-CONSTRAINT
-calibradores_metodo_check
-CHECK
-(CHECK (((metodo)::text = ANY ((ARRAY['isotonic'::character varying, 'platt'::character varying, 'beta'::character varying, 'ninguno'::character varying])::text[]))))
-CONSTRAINT
-calibradores_muestras_check
-CHECK
-(CHECK ((n_muestras_entrenamiento > 0)))
-CONSTRAINT
-calibradores_origen_check
-CHECK
-(CHECK (((origen_datos)::text = ANY ((ARRAY['API_USUARIO'::character varying, 'BACKTEST_SINTETICO'::character varying, 'BACKTEST_BATCH'::character varying, 'MIXTO'::character varying])::text[]))))
-CONSTRAINT
-calibradores_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-calibradores_pkey
-…
-USING
-BTREE
-(id)
-UNIQUE
-INDEX
-idx_calibrador_activo_unico
-…
-USING
-BTREE
-(mercado)
-INDEX
-idx_calibradores_activo
-…
-USING
-BTREE
-(activo)
-INDEX
-idx_calibradores_fecha
-…
-USING
-BTREE
-(fecha_entrenamiento)
-INDEX
-idx_calibradores_mercado
-…
-USING
-BTREE
-(mercado)
+## 👥 USUARIOS
 
-Tabla ejecuciones_backtest:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-estado
-VARCHAR(20)
-NOT NULL
-DEFAULT'EN_PROGRESO'
-configuracion_json
-JSONB
-NOT NULL
-fecha_inicio_eval
-DATE
-NOT NULL
-fecha_fin_eval
-DATE
-NOT NULL
-mercados
-TEXT[]
-NOT NULL
-total_iteraciones
-INTEGER
-iteraciones_completadas
-INTEGER
-DEFAULT0
-iteraciones_fallidas
-INTEGER
-DEFAULT0
-total_predicciones_generadas
-INTEGER
-DEFAULT0
-iniciado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-completado_en
-TIMESTAMP WITH TIME ZONE
-ultimo_error
-TEXT
-errores_json
-JSONB
-Constraints
-Add constraint
-CONSTRAINT
-backtest_estado_check
-CHECK
-(CHECK (((estado)::text = ANY ((ARRAY['EN_PROGRESO'::character varying, 'COMPLETADO'::character varying, 'FALLIDO'::character varying, 'CANCELADO'::character varying])::text[]))))
-CONSTRAINT
-ejecuciones_backtest_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-ejecuciones_backtest_pkey
-…
-USING
-BTREE
-(id)
-INDEX
-idx_backtest_estado
-…
-USING
-BTREE
-(estado)
-INDEX
-idx_backtest_fecha
-…
-USING
-BTREE
-(iniciado_en)
+### `usuarios`
+Gestión de cuentas de usuario y configuración de apuestas.
 
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **email** | VARCHAR(255) | Email único del usuario |
+| **nombre** | VARCHAR(100) | Nombre del usuario |
+| **password_hash** | VARCHAR(255) | Contraseña encriptada |
+| **rol** | VARCHAR(20) | 'usuario' o 'admin' |
+| **activo** | BOOLEAN | Estado de la cuenta |
+| **bankroll_inicial** | NUMERIC(10,2) | Bankroll inicial |
+| **bankroll_actual** | NUMERIC(10,2) | Bankroll actual |
+| **perfil_riesgo_default** | VARCHAR(20) | 'CONSERVADOR', 'MEDIO', 'AGRESIVO' |
+| **config_sizing** | JSONB | Configuración de Kelly y límites |
+| **preferencias** | JSONB | Preferencias adicionales |
+| **fecha_creacion** | TIMESTAMPTZ | Fecha de registro |
+| **fecha_ultima_sesion** | TIMESTAMPTZ | Última sesión |
 
-Tabla equipos:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-nombre
-VARCHAR(100)
-UNIQUE
-NOT NULL
-nombre_corto
-VARCHAR(50)
-NOT NULL
-abreviatura
-VARCHAR(3)
-UNIQUE
-NOT NULL
-conferencia
-VARCHAR(10)
-NOT NULL
-division
-VARCHAR(20)
-NOT NULL
-ciudad
-VARCHAR(100)
-activo
-BOOLEAN
-DEFAULTtrue
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-equipos_conferencia_check
-CHECK
-(CHECK (((conferencia)::text = ANY ((ARRAY['Este'::character varying, 'Oeste'::character varying])::text[]))))
-CONSTRAINT
-equipos_abreviatura_key
-UNIQUE
-(abreviatura)
-CONSTRAINT
-equipos_nombre_key
-UNIQUE
-(nombre)
-CONSTRAINT
-equipos_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-equipos_abreviatura_key
-…
-USING
-BTREE
-(abreviatura)
-UNIQUE
-INDEX
-equipos_nombre_key
-…
-USING
-BTREE
-(nombre)
-UNIQUE
-INDEX
-equipos_pkey
-…
-USING
-BTREE
-(id)
-INDEX
-idx_equipos_abreviatura
-…
-USING
-BTREE
-(abreviatura)
-INDEX
-idx_equipos_conferencia
-…
-USING
-BTREE
-(conferencia)
-INDEX
-idx_equipos_nombre
-…
-USING
-GIN
-(nombre)
+**Índices:** email, activo
 
-Tabla estadisticas_equipos:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-equipo_id
-UUID
-NOT NULL
-temporada_id
-UUID
-NOT NULL
-victorias
-INTEGER
-DEFAULT0
-derrotas
-INTEGER
-DEFAULT0
-victorias_local
-INTEGER
-DEFAULT0
-derrotas_local
-INTEGER
-DEFAULT0
-victorias_visitante
-INTEGER
-DEFAULT0
-derrotas_visitante
-INTEGER
-DEFAULT0
-ppg_q1
-NUMERIC(5, 2)
-ppg_q2
-NUMERIC(5, 2)
-ppg_q3
-NUMERIC(5, 2)
-ppg_q4
-NUMERIC(5, 2)
-ppg_total
-NUMERIC(5, 2)
-opp_q1
-NUMERIC(5, 2)
-opp_q2
-NUMERIC(5, 2)
-opp_q3
-NUMERIC(5, 2)
-opp_q4
-NUMERIC(5, 2)
-opp_total
-NUMERIC(5, 2)
-over_pct_q1
-NUMERIC(5, 4)
-over_pct_q2
-NUMERIC(5, 4)
-over_pct_q3
-NUMERIC(5, 4)
-over_pct_q4
-NUMERIC(5, 4)
-over_pct_total
-NUMERIC(5, 4)
-partidos_jugados
-INTEGER
-DEFAULT0
-ultima_actualizacion
-TIMESTAMP WITH TIME ZONE
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-estadisticas_equipos_equipo_id_fkey
-FOREIGN KEY
-(equipo_id)
-REFERENCES
-public.equipos
-(id)
-ON DELETECASCADE
-CONSTRAINT
-estadisticas_equipos_temporada_id_fkey
-FOREIGN KEY
-(temporada_id)
-REFERENCES
-public.temporadas
-(id)
-ON DELETECASCADE
-CONSTRAINT
-estadisticas_equipos_equipo_id_temporada_id_key
-UNIQUE
-(equipo_id, temporada_id)
-CONSTRAINT
-estadisticas_equipos_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-estadisticas_equipos_equipo_id_temporada_id_key
-…
-USING
-BTREE
-(equipo_id, temporada_id)
-UNIQUE
-INDEX
-estadisticas_equipos_pkey
-…
-USING
-BTREE
-(id)
-INDEX
-idx_estadisticas_equipo
-…
-USING
-BTREE
-(equipo_id)
-INDEX
-idx_estadisticas_temporada
-…
-USING
-BTREE
-(temporada_id)
+---
 
-Tabla ingestion_state:
-Columns
-Add column
-clave
-TEXT
-PRIMARY KEY
-ultima_sincronizacion
-TIMESTAMP WITH TIME ZONE
-ultima_exito
-TIMESTAMP WITH TIME ZONE
-ultima_error
-TIMESTAMP WITH TIME ZONE
-ultimo_error
-TEXT
-ultimo_event_ids
-JSONB
-ultimo_insertados
-INTEGER
-DEFAULT0
-ultimo_actualizados
-INTEGER
-DEFAULT0
-ventana_dias
-INTEGER
-cursor_inicio
-DATE
-cursor_fin
-DATE
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-ingestion_state_pkey
-PRIMARY KEY
-(clave)
-Indexes
-Add index
-UNIQUE
-INDEX
-ingestion_state_pkey
-…
-USING
-BTREE
-(clave)
+## 🏀 EQUIPOS, TEMPORADAS Y PARTIDOS
 
-Tabla metricas_calibracion:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-timestamp_calculo
-TIMESTAMP WITH TIME ZONE
-NOT NULL
-DEFAULTnow()
-periodo_inicio
-DATE
-NOT NULL
-periodo_fin
-DATE
-NOT NULL
-mercado
-VARCHAR(20)
-NOT NULL
-origen_predicciones
-VARCHAR(30)
-NOT NULL
-modelo_version_id
-INTEGER
-n_predicciones
-INTEGER
-NOT NULL
-brier_score
-NUMERIC(6, 4)
-brier_score_raw
-NUMERIC(6, 4)
-brier_score_calibrado
-NUMERIC(6, 4)
-log_loss
-NUMERIC(8, 4)
-log_loss_raw
-NUMERIC(8, 4)
-log_loss_calibrado
-NUMERIC(8, 4)
-ece
-NUMERIC(6, 4)
-mce
-NUMERIC(6, 4)
-sharpness
-NUMERIC(6, 4)
-base_rate
-NUMERIC(5, 4)
-mae_media
-NUMERIC(6, 2)
-rmse_media
-NUMERIC(6, 2)
-sesgo_media
-NUMERIC(6, 2)
-cobertura_intervalo
-NUMERIC(5, 4)
-nivel_intervalo_declarado
-INTEGER
-mejora_brier
-NUMERIC(6, 4)
-mejora_log_loss
-NUMERIC(8, 4)
-calibrador_usado
-VARCHAR(20)
-bins_json
-JSONB
-configuracion_json
-JSONB
-alertas
-TEXT[]
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-metricas_mercado_check
-CHECK
-(CHECK (((mercado)::text = ANY ((ARRAY['Q1'::character varying, 'Q2'::character varying, 'Q3'::character varying, 'Q4'::character varying, 'COMPLETO'::character varying, 'GLOBAL'::character varying])::text[]))))
-CONSTRAINT
-metricas_n_check
-CHECK
-(CHECK ((n_predicciones > 0)))
-CONSTRAINT
-metricas_origen_check
-CHECK
-(CHECK (((origen_predicciones)::text = ANY ((ARRAY['API_USUARIO'::character varying, 'BACKTEST_BATCH'::character varying, 'BACKTEST_SINTETICO'::character varying, 'MIXTO'::character varying])::text[]))))
-CONSTRAINT
-metricas_periodo_check
-CHECK
-(CHECK ((periodo_fin >= periodo_inicio)))
-CONSTRAINT
-metricas_modelo_version_fkey
-FOREIGN KEY
-(modelo_version_id)
-REFERENCES
-public.modelo_versiones
-(id)
-ON DELETESET NULL
-CONSTRAINT
-metricas_calibracion_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-INDEX
-idx_metricas_mercado
-…
-USING
-BTREE
-(mercado)
-INDEX
-idx_metricas_origen
-…
-USING
-BTREE
-(origen_predicciones)
-INDEX
-idx_metricas_periodo
-…
-USING
-BTREE
-(periodo_inicio, periodo_fin)
-INDEX
-idx_metricas_timestamp
-…
-USING
-BTREE
-(timestamp_calculo)
-UNIQUE
-INDEX
-idx_metricas_unicas
-…
-USING
-BTREE
-(periodo_inicio, periodo_fin, mercado, origen_predicciones, COALESCE(modelo_version_id, '-1'::integer))
-UNIQUE
-INDEX
-metricas_calibracion_pkey
-…
-USING
-BTREE
-(id)
+### `equipos`
+Información de equipos NBA.
 
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **nombre** | VARCHAR(100) | Nombre completo (único) |
+| **nombre_corto** | VARCHAR(50) | Nombre corto |
+| **abreviatura** | VARCHAR(3) | Código de 3 letras (único) |
+| **conferencia** | VARCHAR(10) | 'Este' u 'Oeste' |
+| **division** | VARCHAR(20) | División del equipo |
+| **ciudad** | VARCHAR(100) | Ciudad sede |
+| **activo** | BOOLEAN | Si está activo |
 
-Tabla modelo_versiones:
-Columns
-Add column
-id
-SERIAL
-PRIMARY KEY
-version
-INTEGER
-NOT NULL
-fecha_entrenamiento
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-partidos_entrenamiento
-INTEGER
-equipos
-INTEGER
-mae_q1
-NUMERIC(5, 3)
-mae_q2
-NUMERIC(5, 3)
-mae_q3
-NUMERIC(5, 3)
-mae_q4
-NUMERIC(5, 3)
-duracion_segundos
-NUMERIC(6, 2)
-hash_datos
-VARCHAR(32)
-metadata
-JSONB
-cutoff_entrenamiento
-DATE
-fecha_min_entrenamiento
-DATE
-temporadas_incluidas
-TEXT[]
-config_entrenamiento
-JSONB
-Constraints
-Add constraint
-CONSTRAINT
-modelo_versiones_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-INDEX
-idx_modelo_versiones_fecha
-…
-USING
-BTREE
-(fecha_entrenamiento)
-UNIQUE
-INDEX
-modelo_versiones_pkey
-…
-USING
-BTREE
-(id)
+**Índices:** nombre, abreviatura, conferencia
 
+---
 
-Tabla partidos:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-temporada_id
-UUID
-fecha_partido
-DATE
-NOT NULL
-tipo_partido
-VARCHAR(10)
-NOT NULL
-DEFAULT'REG'
-equipo_local_id
-UUID
-NOT NULL
-equipo_visitante_id
-UUID
-NOT NULL
-local_q1
-INTEGER
-NOT NULL
-local_q2
-INTEGER
-NOT NULL
-local_q3
-INTEGER
-NOT NULL
-local_q4
-INTEGER
-NOT NULL
-local_ot
-INTEGER
-DEFAULT0
-local_total
-INTEGER
-NOT NULL
-visitante_q1
-INTEGER
-NOT NULL
-visitante_q2
-INTEGER
-NOT NULL
-visitante_q3
-INTEGER
-NOT NULL
-visitante_q4
-INTEGER
-NOT NULL
-visitante_ot
-INTEGER
-DEFAULT0
-visitante_total
-INTEGER
-NOT NULL
-ganador_id
-UUID
-diferencia_puntos
-INTEGER
-hubo_overtime
-BOOLEAN
-DEFAULTfalse
-fuente_datos
-VARCHAR(50)
-DEFAULT'ESPN'
-url_referencia
-TEXT
-valido
-BOOLEAN
-DEFAULTtrue
-notas
-TEXT
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-espn_game_id
-TEXT
-division
-VARCHAR(20)
-source
-TEXT
-source_game_id
-TEXT
-Constraints
-Add constraint
-CONSTRAINT
-check_diferentes_equipos
-CHECK
-(CHECK ((equipo_local_id <> equipo_visitante_id)))
-CONSTRAINT
-check_suma_local
-CHECK
-(CHECK ((((((local_q1 + local_q2) + local_q3) + local_q4) + local_ot) = local_total)))
-CONSTRAINT
-check_suma_visitante
-CHECK
-(CHECK ((((((visitante_q1 + visitante_q2) + visitante_q3) + visitante_q4) + visitante_ot) = visitante_total)))
-CONSTRAINT
-partidos_local_ot_check
-CHECK
-(CHECK ((local_ot >= 0)))
-CONSTRAINT
-partidos_local_q1_check
-CHECK
-(CHECK ((local_q1 >= 0)))
-CONSTRAINT
-partidos_local_q2_check
-CHECK
-(CHECK ((local_q2 >= 0)))
-CONSTRAINT
-partidos_local_q3_check
-CHECK
-(CHECK ((local_q3 >= 0)))
-CONSTRAINT
-partidos_local_q4_check
-CHECK
-(CHECK ((local_q4 >= 0)))
-CONSTRAINT
-partidos_local_total_check
-CHECK
-(CHECK ((local_total >= 0)))
-CONSTRAINT
-partidos_tipo_partido_check
-CHECK
-(CHECK (((tipo_partido)::text = ANY ((ARRAY['PRE'::character varying, 'REG'::character varying, 'POST'::character varying])::text[]))))
-CONSTRAINT
-partidos_visitante_ot_check
-CHECK
-(CHECK ((visitante_ot >= 0)))
-CONSTRAINT
-partidos_visitante_q1_check
-CHECK
-(CHECK ((visitante_q1 >= 0)))
-CONSTRAINT
-partidos_visitante_q2_check
-CHECK
-(CHECK ((visitante_q2 >= 0)))
-CONSTRAINT
-partidos_visitante_q3_check
-CHECK
-(CHECK ((visitante_q3 >= 0)))
-CONSTRAINT
-partidos_visitante_q4_check
-CHECK
-(CHECK ((visitante_q4 >= 0)))
-CONSTRAINT
-partidos_visitante_total_check
-CHECK
-(CHECK ((visitante_total >= 0)))
-CONSTRAINT
-partidos_equipo_local_id_fkey
-FOREIGN KEY
-(equipo_local_id)
-REFERENCES
-public.equipos
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-partidos_equipo_visitante_id_fkey
-FOREIGN KEY
-(equipo_visitante_id)
-REFERENCES
-public.equipos
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-partidos_ganador_id_fkey
-FOREIGN KEY
-(ganador_id)
-REFERENCES
-public.equipos
-(id)
-CONSTRAINT
-partidos_temporada_id_fkey
-FOREIGN KEY
-(temporada_id)
-REFERENCES
-public.temporadas
-(id)
-ON DELETECASCADE
-CONSTRAINT
-partidos_partido_exacto_key
-UNIQUE
-(temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
-CONSTRAINT
-partidos_source_source_game_id_key
-UNIQUE
-(source, source_game_id)
-CONSTRAINT
-partidos_unq_partido_exacto
-UNIQUE
-(temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
-CONSTRAINT
-partidos_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-INDEX
-idx_partidos_equipos
-…
-USING
-BTREE
-(equipo_local_id, equipo_visitante_id)
-INDEX
-idx_partidos_fecha
-…
-USING
-BTREE
-(fecha_partido)
-INDEX
-idx_partidos_fecha_equipos
-…
-USING
-BTREE
-(fecha_partido, equipo_local_id, equipo_visitante_id)
-INDEX
-idx_partidos_local
-…
-USING
-BTREE
-(equipo_local_id)
-INDEX
-idx_partidos_temporada
-…
-USING
-BTREE
-(temporada_id)
-INDEX
-idx_partidos_tipo
-…
-USING
-BTREE
-(tipo_partido)
-INDEX
-idx_partidos_visitante
-…
-USING
-BTREE
-(equipo_visitante_id)
-UNIQUE
-INDEX
-partidos_partido_exacto_key
-…
-USING
-BTREE
-(temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
-UNIQUE
-INDEX
-partidos_pkey
-…
-USING
-BTREE
-(id)
-UNIQUE
-INDEX
-partidos_source_source_game_id_key
-…
-USING
-BTREE
-(source, source_game_id)
+### `temporadas`
+Temporadas NBA.
 
-UNIQUE
-INDEX
-partidos_unq_partido_exacto
-…
-USING
-BTREE
-(temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **nombre** | VARCHAR(20) | Ej: "2024-25" (único) |
+| **anio_inicio** | INTEGER | Año de inicio |
+| **anio_fin** | INTEGER | Año de fin (inicio + 1) |
+| **fecha_inicio** | DATE | Fecha de inicio |
+| **fecha_fin** | DATE | Fecha de fin |
+| **activa** | BOOLEAN | Temporada actual |
 
-Tabla predicciones_registradas:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-timestamp_generacion
-TIMESTAMP WITH TIME ZONE
-NOT NULL
-DEFAULTnow()
-origen
-VARCHAR(30)
-NOT NULL
-modelo_version_id
-INTEGER
-NOT NULL
-calibrador_id
-UUID
-partido_id
-UUID
-NOT NULL
-temporada_id
-UUID
-NOT NULL
-equipo_local_id
-UUID
-NOT NULL
-equipo_visitante_id
-UUID
-NOT NULL
-fecha_partido
-DATE
-NOT NULL
-tipo_partido
-VARCHAR(10)
-NOT NULL
-DEFAULT'REG'
-equipo_local_nombre
-VARCHAR(100)
-equipo_visitante_nombre
-VARCHAR(100)
-mercado
-VARCHAR(20)
-NOT NULL
-lado
-VARCHAR(10)
-NOT NULL
-linea
-NUMERIC(5, 1)
-NOT NULL
-linea_es_sintetica
-BOOLEAN
-NOT NULL
-DEFAULTfalse
-cuota
-NUMERIC(5, 2)
-cuota_over
-NUMERIC(5, 2)
-cuota_under
-NUMERIC(5, 2)
-media_predicha
-NUMERIC(5, 1)
-NOT NULL
-desviacion_predicha
-NUMERIC(5, 2)
-NOT NULL
-p_raw
-NUMERIC(5, 4)
-NOT NULL
-intervalo_inferior
-NUMERIC(5, 1)
-intervalo_superior
-NUMERIC(5, 1)
-nivel_intervalo
-INTEGER
-p_calibrada
-NUMERIC(5, 4)
-calibrador_metodo
-VARCHAR(20)
-valor_real
-INTEGER
-outcome_binario
-BOOLEAN
-timestamp_resolucion
-TIMESTAMP WITH TIME ZONE
-resuelto
-BOOLEAN
-NOT NULL
-DEFAULTfalse
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-pred_cuota_check
-CHECK
-(CHECK (((cuota IS NULL) OR (cuota > 1.0))))
-CONSTRAINT
-pred_cuota_over_check
-CHECK
-(CHECK (((cuota_over IS NULL) OR (cuota_over > 1.0))))
-CONSTRAINT
-pred_cuota_under_check
-CHECK
-(CHECK (((cuota_under IS NULL) OR (cuota_under > 1.0))))
-CONSTRAINT
-pred_lado_check
-CHECK
-(CHECK (((lado)::text = ANY ((ARRAY['OVER'::character varying, 'UNDER'::character varying])::text[]))))
-CONSTRAINT
-pred_linea_check
-CHECK
-(CHECK ((linea > (0)::numeric)))
-CONSTRAINT
-pred_mercado_check
-CHECK
-(CHECK (((mercado)::text = ANY ((ARRAY['Q1'::character varying, 'Q2'::character varying, 'Q3'::character varying, 'Q4'::character varying, 'COMPLETO'::character varying])::text[]))))
-CONSTRAINT
-pred_nivel_intervalo_check
-CHECK
-(CHECK (((nivel_intervalo IS NULL) OR (nivel_intervalo = ANY (ARRAY[80, 90, 95])))))
-CONSTRAINT
-pred_origen_check
-CHECK
-(CHECK (((origen)::text = ANY ((ARRAY['API_USUARIO'::character varying, 'BACKTEST_BATCH'::character varying, 'BACKTEST_SINTETICO'::character varying])::text[]))))
-CONSTRAINT
-pred_p_calibrada_check
-CHECK
-(CHECK (((p_calibrada IS NULL) OR ((p_calibrada >= (0)::numeric) AND (p_calibrada <= (1)::numeric)))))
-CONSTRAINT
-pred_p_raw_check
-CHECK
-(CHECK (((p_raw >= (0)::numeric) AND (p_raw <= (1)::numeric))))
-CONSTRAINT
-pred_tipo_partido_check
-CHECK
-(CHECK (((tipo_partido)::text = ANY ((ARRAY['PRE'::character varying, 'REG'::character varying, 'POST'::character varying])::text[]))))
-CONSTRAINT
-pred_valor_real_check
-CHECK
-(CHECK (((valor_real IS NULL) OR (valor_real >= 0))))
-CONSTRAINT
-pred_calibrador_fkey
-FOREIGN KEY
-(calibrador_id)
-REFERENCES
-public.calibradores
-(id)
-ON DELETESET NULL
-CONSTRAINT
-pred_equipo_local_fkey
-FOREIGN KEY
-(equipo_local_id)
-REFERENCES
-public.equipos
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-pred_equipo_visitante_fkey
-FOREIGN KEY
-(equipo_visitante_id)
-REFERENCES
-public.equipos
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-pred_modelo_version_fkey
-FOREIGN KEY
-(modelo_version_id)
-REFERENCES
-public.modelo_versiones
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-pred_partido_fkey
-FOREIGN KEY
-(partido_id)
-REFERENCES
-public.partidos
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-pred_temporada_fkey
-FOREIGN KEY
-(temporada_id)
-REFERENCES
-public.temporadas
-(id)
-ON DELETERESTRICT
-CONSTRAINT
-predicciones_registradas_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-INDEX
-idx_pred_calibracion
-…
-USING
-BTREE
-(mercado, origen, resuelto, outcome_binario)
-INDEX
-idx_pred_fecha_partido
-…
-USING
-BTREE
-(fecha_partido)
-UNIQUE
-INDEX
-idx_pred_llave_natural
-…
-USING
-BTREE
-(partido_id, mercado, lado, linea, origen, modelo_version_id, COALESCE(calibrador_id, '00000000-0000-0000-0000-000000000000'::uuid))
-INDEX
-idx_pred_mercado_origen_resuelto
-…
-USING
-BTREE
-(mercado, origen, resuelto)
-INDEX
-idx_pred_modelo_version
-…
-USING
-BTREE
-(modelo_version_id)
-INDEX
-idx_pred_partido
-…
-USING
-BTREE
-(partido_id)
-INDEX
-idx_pred_pendientes
-…
-USING
-BTREE
-(resuelto)
-INDEX
-idx_pred_temporada
-…
-USING
-BTREE
-(temporada_id)
-UNIQUE
-INDEX
-predicciones_registradas_pkey
-…
-USING
-BTREE
-(id)
+**Índices:** nombre único, anio_inicio/fin, activa
 
+---
 
-Tabla temporadas:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-nombre
-VARCHAR(20)
-UNIQUE
-NOT NULL
-anio_inicio
-INTEGER
-NOT NULL
-anio_fin
-INTEGER
-NOT NULL
-fecha_inicio
-DATE
-fecha_fin
-DATE
-activa
-BOOLEAN
-DEFAULTfalse
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-check_anios
-CHECK
-(CHECK ((anio_fin = (anio_inicio + 1))))
-CONSTRAINT
-temporadas_nombre_key
-UNIQUE
-(nombre)
-CONSTRAINT
-temporadas_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-INDEX
-idx_temporadas_activa
-…
-USING
-BTREE
-(activa)
-INDEX
-idx_temporadas_anio
-…
-USING
-BTREE
-(anio_inicio, anio_fin)
-UNIQUE
-INDEX
-temporadas_nombre_key
-…
-USING
-BTREE
-(nombre)
-UNIQUE
-INDEX
-temporadas_pkey
-…
-USING
-BTREE
-(id)
+### `partidos`
+Registro de partidos y resultados.
 
-Tabla usuarios:
-Columns
-Add column
-id
-UUID
-PRIMARY KEY
-DEFAULTuuid_generate_v4()
-email
-VARCHAR(255)
-UNIQUE
-NOT NULL
-nombre
-VARCHAR(100)
-NOT NULL
-password_hash
-VARCHAR(255)
-NOT NULL
-fecha_creacion
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-fecha_ultima_sesion
-TIMESTAMP WITH TIME ZONE
-activo
-BOOLEAN
-DEFAULTtrue
-rol
-VARCHAR(20)
-DEFAULT'usuario'
-preferencias
-JSONB
-DEFAULT'{}'
-bankroll_inicial
-NUMERIC(10, 2)
-DEFAULT'0'
-creado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-actualizado_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-perfil_riesgo_default
-VARCHAR(20)
-DEFAULT'CONSERVADOR'
-config_sizing
-JSONB
-DEFAULT'{"cap_diario": 0.10, "stake_minimo": 5.0, "cap_por_apuesta": 0.02, "fraccion_kelly_medio": 0.25, "fraccion_kelly_agresivo": 0.5, "fraccion_kelly_conservador": 0.125}'
-bankroll_actual
-NUMERIC(10, 2)
-Constraints
-Add constraint
-CONSTRAINT
-usuarios_perfil_riesgo_check
-CHECK
-(CHECK (((perfil_riesgo_default)::text = ANY ((ARRAY['CONSERVADOR'::character varying, 'MEDIO'::character varying, 'AGRESIVO'::character varying])::text[]))))
-CONSTRAINT
-usuarios_rol_check
-CHECK
-(CHECK (((rol)::text = ANY ((ARRAY['usuario'::character varying, 'admin'::character varying])::text[]))))
-CONSTRAINT
-usuarios_email_key
-UNIQUE
-(email)
-CONSTRAINT
-usuarios_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-INDEX
-idx_usuarios_activo
-…
-USING
-BTREE
-(activo)
-INDEX
-idx_usuarios_email
-…
-USING
-BTREE
-(email)
-UNIQUE
-INDEX
-usuarios_email_key
-…
-USING
-BTREE
-(email)
-UNIQUE
-INDEX
-usuarios_pkey
-…
-USING
-BTREE
-(id)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **temporada_id** | UUID | FK a temporadas |
+| **fecha_partido** | DATE | Fecha del partido |
+| **tipo_partido** | VARCHAR(10) | 'PRE', 'REG', 'POST' |
+| **equipo_local_id** | UUID | FK a equipos (local) |
+| **equipo_visitante_id** | UUID | FK a equipos (visitante) |
+| **local_q1/q2/q3/q4** | INTEGER | Puntos por cuarto (local) |
+| **local_ot** | INTEGER | Puntos en overtime (local) |
+| **local_total** | INTEGER | Total local |
+| **visitante_q1/q2/q3/q4** | INTEGER | Puntos por cuarto (visitante) |
+| **visitante_ot** | INTEGER | Puntos en overtime (visitante) |
+| **visitante_total** | INTEGER | Total visitante |
+| **ganador_id** | UUID | FK al equipo ganador |
+| **diferencia_puntos** | INTEGER | Diferencia final |
+| **hubo_overtime** | BOOLEAN | Si hubo overtime |
+| **espn_game_id** | TEXT | ID de ESPN |
+| **source** | TEXT | Fuente de datos |
+| **source_game_id** | TEXT | ID en fuente original |
+| **valido** | BOOLEAN | Si es válido |
 
-Tabla versiones_esquema:
-Columns
-Add column
-id
-SERIAL
-PRIMARY KEY
-version
-VARCHAR(20)
-UNIQUE
-NOT NULL
-descripcion
-TEXT
-aplicada_en
-TIMESTAMP WITH TIME ZONE
-DEFAULTnow()
-Constraints
-Add constraint
-CONSTRAINT
-versiones_esquema_version_key
-UNIQUE
-(version)
-CONSTRAINT
-versiones_esquema_pkey
-PRIMARY KEY
-(id)
-Indexes
-Add index
-UNIQUE
-INDEX
-versiones_esquema_pkey
-…
-USING
-BTREE
-(id)
-UNIQUE
-INDEX
-versiones_esquema_version_key
-…
-USING
-BTREE
-(version)
+**Constraints únicos:** (temporada, fecha, tipo, local, visitante), (source, source_game_id)  
+**Checks:** Equipos diferentes, sumas correctas, valores no negativos  
+**Índices:** fecha, equipos, temporada, tipo
 
-Esta es la estructura de las vistas en mi base de datos:
+---
 
-vista_alertas_activas:
-SELECT
-  id,
-  timestamp_deteccion,
-  mercado,
-  tipo_alerta,
-  severidad,
-  metrica_afectada,
-  valor_actual,
-  valor_umbral,
-  mensaje,
-  EXTRACT(
-    day
-    FROM
-      now() - timestamp_deteccion
-  ) AS dias_sin_resolver
-FROM
-  alertas_calibracion
-WHERE
-  resuelta = false
-ORDER BY
-  (
-    CASE severidad
-      WHEN 'CRITICAL'::text THEN 1
-      WHEN 'WARNING'::text THEN 2
-      ELSE 3
-    END
-  ),
-  timestamp_deteccion DESC
+### `estadisticas_equipos`
+Estadísticas agregadas por equipo y temporada.
 
-vista_analisis_apuestas:
-SELECT
-  a.id,
-  a.usuario_id,
-  u.nombre AS usuario_nombre,
-  a.equipo_local,
-  a.equipo_visitante,
-  a.fecha_partido,
-  a.mercado,
-  a.lado,
-  a.linea,
-  a.cuota,
-  a.cuota_over,
-  a.cuota_under,
-  a.stake,
-  a.devig_metodo,
-  a.devig_overround,
-  CASE
-    WHEN a.devig_overround IS NOT NULL THEN round((a.devig_overround - 1.0) * 100::numeric, 2)
-    ELSE NULL::numeric
-  END AS vig_porcentaje,
-  a.devig_p_mkt_raw,
-  a.devig_p_mkt_fair,
-  a.probabilidad_sistema,
-  a.edge_real,
-  round(
-    (
-      a.probabilidad_sistema - COALESCE(a.devig_p_mkt_raw, 1.0 / a.cuota)
-    ) * 100::numeric,
-    2
-  ) AS edge_raw_porcentaje,
-  round(
-    COALESCE(a.edge_real, 0::numeric) * 100::numeric,
-    2
-  ) AS edge_real_porcentaje,
-  a.valor_esperado,
-  a.score_total,
-  a.score_componentes,
-  a.kelly_full,
-  a.kelly_fraccional,
-  a.fraccion_kelly,
-  a.stake_porcentaje,
-  a.bankroll_momento,
-  CASE
-    WHEN a.bankroll_momento IS NOT NULL
-    AND a.bankroll_momento > 0::numeric THEN round(a.stake / a.bankroll_momento * 100::numeric, 2)
-    ELSE NULL::numeric
-  END AS stake_porcentaje_real,
-  a.perfil_riesgo_usado,
-  a.resultado,
-  a.puntos_reales,
-  a.ganancia,
-  CASE
-    WHEN a.stake > 0::numeric THEN round(
-      COALESCE(a.ganancia, 0::numeric) / a.stake * 100::numeric,
-      2
-    )
-    ELSE NULL::numeric
-  END AS roi_porcentaje,
-  CASE
-    WHEN a.score_total IS NULL THEN 'SIN_SCORE'::text
-    WHEN a.score_total >= 5.0 THEN 'EXCELENTE'::text
-    WHEN a.score_total >= 3.0 THEN 'BUENA'::text
-    WHEN a.score_total >= 1.0 THEN 'ACEPTABLE'::text
-    WHEN a.score_total > 0::numeric THEN 'MARGINAL'::text
-    ELSE 'NO_APTA'::text
-  END AS clasificacion_calidad,
-  CASE
-    WHEN a.devig_metodo::text = 'no_aplicado'::text THEN true
-    ELSE false
-  END AS sin_devig,
-  CASE
-    WHEN a.devig_metodo::text = 'estimado'::text THEN true
-    ELSE false
-  END AS devig_estimado,
-  CASE
-    WHEN a.edge_real IS NOT NULL
-    AND a.edge_real <= 0::numeric THEN true
-    ELSE false
-  END AS edge_negativo,
-  CASE
-    WHEN a.kelly_fraccional IS NOT NULL
-    AND a.fraccion_kelly IS NOT NULL
-    AND a.kelly_fraccional < (a.kelly_full * a.fraccion_kelly * 0.9) THEN true
-    ELSE false
-  END AS kelly_penalizado,
-  a.creado_en,
-  a.fecha_resolucion
-FROM
-  apuestas a
-  JOIN usuarios u ON a.usuario_id = u.id
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **equipo_id** | UUID | FK a equipos |
+| **temporada_id** | UUID | FK a temporadas |
+| **victorias/derrotas** | INTEGER | Récord general |
+| **victorias_local/derrotas_local** | INTEGER | Récord en casa |
+| **victorias_visitante/derrotas_visitante** | INTEGER | Récord de visita |
+| **ppg_q1/q2/q3/q4/total** | NUMERIC(5,2) | Puntos promedio por cuarto |
+| **opp_q1/q2/q3/q4/total** | NUMERIC(5,2) | Puntos rivales promedio |
+| **over_pct_q1/q2/q3/q4/total** | NUMERIC(5,4) | % de overs por mercado |
+| **partidos_jugados** | INTEGER | Total de partidos |
 
-vista_predicciones_para_calibracion:
-SELECT
-  pr.id,
-  pr.timestamp_generacion,
-  pr.origen,
-  pr.modelo_version_id,
-  pr.calibrador_id,
-  pr.partido_id,
-  pr.temporada_id,
-  pr.equipo_local_id,
-  pr.equipo_visitante_id,
-  pr.fecha_partido,
-  pr.tipo_partido,
-  pr.equipo_local_nombre,
-  pr.equipo_visitante_nombre,
-  pr.mercado,
-  pr.lado,
-  pr.linea,
-  pr.linea_es_sintetica,
-  pr.cuota,
-  pr.cuota_over,
-  pr.cuota_under,
-  pr.media_predicha,
-  pr.desviacion_predicha,
-  pr.p_raw,
-  pr.intervalo_inferior,
-  pr.intervalo_superior,
-  pr.nivel_intervalo,
-  pr.p_calibrada,
-  pr.calibrador_metodo,
-  pr.valor_real,
-  pr.outcome_binario,
-  pr.timestamp_resolucion,
-  pr.resuelto,
-  pr.creado_en,
-  pr.actualizado_en,
-  floor(pr.p_raw * 10::numeric) / 10::numeric AS bin_p_raw,
-  floor(COALESCE(pr.p_calibrada, pr.p_raw) * 10::numeric) / 10::numeric AS bin_p_efectiva,
-  COALESCE(pr.p_calibrada, pr.p_raw) AS p_efectiva,
-  el.nombre AS local_nombre,
-  el.abreviatura AS local_abr,
-  ev.nombre AS visitante_nombre,
-  ev.abreviatura AS visitante_abr,
-  t.nombre AS temporada_nombre
-FROM
-  predicciones_registradas pr
-  JOIN equipos el ON pr.equipo_local_id = el.id
-  JOIN equipos ev ON pr.equipo_visitante_id = ev.id
-  LEFT JOIN temporadas t ON pr.temporada_id = t.id
-WHERE
-  pr.resuelto = true
-  AND pr.outcome_binario IS NOT NULL
+**Constraint único:** (equipo_id, temporada_id)  
+**Índices:** equipo, temporada
 
+---
 
-vista_predicciones_pendientes:
-SELECT
-  pr.id,
-  pr.partido_id,
-  pr.mercado,
-  pr.lado,
-  pr.linea,
-  pr.p_raw,
-  pr.fecha_partido,
-  pr.origen,
-  el.nombre AS equipo_local,
-  ev.nombre AS equipo_visitante,
-  p.local_q1,
-  p.local_q2,
-  p.local_q3,
-  p.local_q4,
-  p.local_total,
-  p.visitante_q1,
-  p.visitante_q2,
-  p.visitante_q3,
-  p.visitante_q4,
-  p.visitante_total,
-  CASE
-    WHEN p.local_q1 IS NOT NULL
-    AND p.visitante_q1 IS NOT NULL THEN true
-    ELSE false
-  END AS partido_tiene_resultado
-FROM
-  predicciones_registradas pr
-  JOIN partidos p ON pr.partido_id = p.id
-  JOIN equipos el ON pr.equipo_local_id = el.id
-  JOIN equipos ev ON pr.equipo_visitante_id = ev.id
-WHERE
-  pr.resuelto = false
-ORDER BY
-  pr.fecha_partido
+## 🤖 PREDICCIONES Y MODELOS
 
-vista_resumen_apuestas:
-SELECT
-  u.id AS usuario_id,
-  u.nombre AS usuario,
-  count(*) AS total_apuestas,
-  sum(
-    CASE
-      WHEN a.resultado::text = 'PENDIENTE'::text THEN 1
-      ELSE 0
-    END
-  ) AS pendientes,
-  sum(
-    CASE
-      WHEN a.resultado::text = 'GANADA'::text THEN 1
-      ELSE 0
-    END
-  ) AS ganadas,
-  sum(
-    CASE
-      WHEN a.resultado::text = 'PERDIDA'::text THEN 1
-      ELSE 0
-    END
-  ) AS perdidas,
-  sum(
-    CASE
-      WHEN a.resultado::text = 'PUSH'::text THEN 1
-      ELSE 0
-    END
-  ) AS push,
-  round(
-    sum(
-      CASE
-        WHEN a.resultado::text = 'GANADA'::text THEN 1
-        ELSE 0
-      END
-    )::numeric / NULLIF(
-      sum(
-        CASE
-          WHEN a.resultado::text = ANY (
-            ARRAY[
-              'GANADA'::character varying,
-              'PERDIDA'::character varying
-            ]::text[]
-          ) THEN 1
-          ELSE 0
-        END
-      ),
-      0
-    )::numeric * 100::numeric,
-    2
-  ) AS winrate,
-  sum(a.ganancia) AS ganancia_total,
-  sum(
-    CASE
-      WHEN a.resultado::text <> 'PENDIENTE'::text THEN a.stake
-      ELSE 0::numeric
-    END
-  ) AS total_apostado,
-  round(
-    sum(a.ganancia) / NULLIF(
-      sum(
-        CASE
-          WHEN a.resultado::text <> 'PENDIENTE'::text THEN a.stake
-          ELSE 0::numeric
-        END
-      ),
-      0::numeric
-    ) * 100::numeric,
-    2
-  ) AS roi
-FROM
-  usuarios u
-  LEFT JOIN apuestas a ON u.id = a.usuario_id
-GROUP BY
-  u.id,
-  u.nombre
+### `modelo_versiones`
+Versiones del modelo predictivo.
 
-vista_resumen_calibracion:
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | SERIAL | Identificador único (PK) |
+| **version** | INTEGER | Número de versión |
+| **fecha_entrenamiento** | TIMESTAMPTZ | Cuándo se entrenó |
+| **partidos_entrenamiento** | INTEGER | Nº de partidos usados |
+| **equipos** | INTEGER | Nº de equipos |
+| **mae_q1/q2/q3/q4** | NUMERIC(5,3) | MAE por cuarto |
+| **duracion_segundos** | NUMERIC(6,2) | Tiempo de entrenamiento |
+| **hash_datos** | VARCHAR(32) | Hash de los datos |
+| **cutoff_entrenamiento** | DATE | Fecha límite de datos |
+| **fecha_min_entrenamiento** | DATE | Fecha mínima de datos |
+| **temporadas_incluidas** | TEXT[] | Temporadas usadas |
+| **config_entrenamiento** | JSONB | Configuración completa |
+| **metadata** | JSONB | Metadata adicional |
 
-SELECT
-  mercado,
-  origen,
-  count(*) AS n_predicciones,
-  round(avg(p_raw), 4) AS promedio_p_raw,
-  round(avg(COALESCE(p_calibrada, p_raw)), 4) AS promedio_p_efectiva,
-  round(
-    avg(
-      CASE
-        WHEN outcome_binario THEN 1.0
-        ELSE 0.0
-      END
-    ),
-    4
-  ) AS frecuencia_real,
-  round(
-    avg(p_raw) - avg(
-      CASE
-        WHEN outcome_binario THEN 1.0
-        ELSE 0.0
-      END
-    ),
-    4
-  ) AS sesgo_bruto,
-  round(
-    avg(
-      power(
-        p_raw - CASE
-          WHEN outcome_binario THEN 1.0
-          ELSE 0.0
-        END,
-        2::numeric
-      )
-    ),
-    4
-  ) AS brier_score_raw,
-  round(
-    avg(
-      power(
-        COALESCE(p_calibrada, p_raw) - CASE
-          WHEN outcome_binario THEN 1.0
-          ELSE 0.0
-        END,
-        2::numeric
-      )
-    ),
-    4
-  ) AS brier_score_efectivo,
-  round(stddev(p_raw), 4) AS sharpness,
-  min(fecha_partido) AS fecha_min,
-  max(fecha_partido) AS fecha_max
-FROM
-  vista_predicciones_para_calibracion
-GROUP BY
-  mercado,
-  origen
-ORDER BY
-  mercado,
-  origen
-vista_ultimos_partidos:
+**Índices:** fecha_entrenamiento
 
-SELECT
-  p.id,
-  p.fecha_partido,
-  el.nombre AS equipo_local,
-  ev.nombre AS equipo_visitante,
-  p.local_total,
-  p.visitante_total,
-  eg.nombre AS ganador,
-  p.diferencia_puntos,
-  p.tipo_partido,
-  t.nombre AS temporada
-FROM
-  partidos p
-  JOIN equipos el ON p.equipo_local_id = el.id
-  JOIN equipos ev ON p.equipo_visitante_id = ev.id
-  LEFT JOIN equipos eg ON p.ganador_id = eg.id
-  LEFT JOIN temporadas t ON p.temporada_id = t.id
-ORDER BY
-  p.fecha_partido DESC
+---
+
+### `predicciones_registradas`
+Predicciones generadas por el sistema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **timestamp_generacion** | TIMESTAMPTZ | Cuándo se generó |
+| **origen** | VARCHAR(30) | 'API_USUARIO', 'BACKTEST_BATCH', 'BACKTEST_SINTETICO' |
+| **modelo_version_id** | INTEGER | FK a modelo_versiones |
+| **calibrador_id** | UUID | FK a calibradores (opcional) |
+| **partido_id** | UUID | FK a partidos |
+| **temporada_id** | UUID | FK a temporadas |
+| **equipo_local_id** | UUID | FK a equipos |
+| **equipo_visitante_id** | UUID | FK a equipos |
+| **fecha_partido** | DATE | Fecha del partido |
+| **tipo_partido** | VARCHAR(10) | 'PRE', 'REG', 'POST' |
+| **mercado** | VARCHAR(20) | 'Q1', 'Q2', 'Q3', 'Q4', 'COMPLETO' |
+| **lado** | VARCHAR(10) | 'OVER' o 'UNDER' |
+| **linea** | NUMERIC(5,1) | Línea de puntos |
+| **linea_es_sintetica** | BOOLEAN | Si es línea generada |
+| **cuota** | NUMERIC(5,2) | Cuota única |
+| **cuota_over/under** | NUMERIC(5,2) | Cuotas específicas |
+| **media_predicha** | NUMERIC(5,1) | Predicción puntual |
+| **desviacion_predicha** | NUMERIC(5,2) | Incertidumbre |
+| **p_raw** | NUMERIC(5,4) | Probabilidad sin calibrar |
+| **p_calibrada** | NUMERIC(5,4) | Probabilidad calibrada |
+| **calibrador_metodo** | VARCHAR(20) | Método usado |
+| **intervalo_inferior/superior** | NUMERIC(5,1) | Intervalo de confianza |
+| **nivel_intervalo** | INTEGER | 80, 90 o 95 |
+| **valor_real** | INTEGER | Resultado real |
+| **outcome_binario** | BOOLEAN | Si ganó over/under |
+| **resuelto** | BOOLEAN | Si ya tiene resultado |
+| **timestamp_resolucion** | TIMESTAMPTZ | Cuándo se resolvió |
+
+**Constraint único:** (partido, mercado, lado, línea, origen, modelo_version, calibrador)  
+**Checks:** Probabilidades [0,1], valores no negativos, línea > 0  
+**Índices:** partido, fecha, mercado, origen, modelo, pendientes
+
+---
+
+### `ejecuciones_backtest`
+Registro de ejecuciones de backtesting.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **estado** | VARCHAR(20) | 'EN_PROGRESO', 'COMPLETADO', 'FALLIDO', 'CANCELADO' |
+| **configuracion_json** | JSONB | Configuración completa |
+| **fecha_inicio_eval** | DATE | Inicio del período |
+| **fecha_fin_eval** | DATE | Fin del período |
+| **mercados** | TEXT[] | Mercados evaluados |
+| **total_iteraciones** | INTEGER | Total esperado |
+| **iteraciones_completadas** | INTEGER | Completadas |
+| **iteraciones_fallidas** | INTEGER | Fallidas |
+| **total_predicciones_generadas** | INTEGER | Predicciones creadas |
+| **iniciado_en** | TIMESTAMPTZ | Inicio de ejecución |
+| **completado_en** | TIMESTAMPTZ | Fin de ejecución |
+| **ultimo_error** | TEXT | Último error |
+| **errores_json** | JSONB | Todos los errores |
+
+**Índices:** estado, fecha
+
+---
+
+## 📈 CALIBRACIÓN
+
+### `calibradores`
+Calibradores de probabilidades.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **mercado** | VARCHAR(20) | Mercado específico |
+| **metodo** | VARCHAR(20) | 'isotonic', 'platt', 'beta', 'ninguno' |
+| **fecha_entrenamiento** | TIMESTAMPTZ | Cuándo se entrenó |
+| **cutoff_datos** | DATE | Fecha límite de datos |
+| **n_muestras_entrenamiento** | INTEGER | Nº de muestras |
+| **origen_datos** | VARCHAR(30) | Fuente de datos |
+| **parametros_json** | JSONB | Parámetros del calibrador |
+| **activo** | BOOLEAN | Si está activo |
+| **brier_antes/despues** | NUMERIC(6,4) | Brier score |
+| **mejora_validacion** | NUMERIC(6,4) | Mejora en validación |
+| **log_loss_antes/despues** | NUMERIC(8,4) | Log loss |
+| **notas** | TEXT | Notas adicionales |
+
+**Constraint único:** Solo un calibrador activo por mercado  
+**Índices:** mercado, activo, fecha
+
+---
+
+### `metricas_calibracion`
+Métricas de calibración calculadas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **timestamp_calculo** | TIMESTAMPTZ | Cuándo se calculó |
+| **periodo_inicio/fin** | DATE | Período evaluado |
+| **mercado** | VARCHAR(20) | Mercado |
+| **origen_predicciones** | VARCHAR(30) | Fuente |
+| **modelo_version_id** | INTEGER | FK opcional |
+| **n_predicciones** | INTEGER | Nº de predicciones |
+| **brier_score** | NUMERIC(6,4) | Brier score general |
+| **brier_score_raw/calibrado** | NUMERIC(6,4) | Antes/después calibración |
+| **log_loss** | NUMERIC(8,4) | Log loss general |
+| **log_loss_raw/calibrado** | NUMERIC(8,4) | Antes/después calibración |
+| **ece** | NUMERIC(6,4) | Expected Calibration Error |
+| **mce** | NUMERIC(6,4) | Maximum Calibration Error |
+| **sharpness** | NUMERIC(6,4) | Agudeza de predicciones |
+| **base_rate** | NUMERIC(5,4) | Tasa base de eventos |
+| **mae_media** | NUMERIC(6,2) | Error absoluto medio |
+| **rmse_media** | NUMERIC(6,2) | RMSE |
+| **sesgo_media** | NUMERIC(6,2) | Sesgo sistemático |
+| **cobertura_intervalo** | NUMERIC(5,4) | Cobertura de intervalos |
+| **nivel_intervalo_declarado** | INTEGER | Nivel del intervalo |
+| **mejora_brier/log_loss** | NUMERIC | Mejora vs baseline |
+| **calibrador_usado** | VARCHAR(20) | Calibrador aplicado |
+| **bins_json** | JSONB | Datos de bins |
+| **configuracion_json** | JSONB | Configuración |
+| **alertas** | TEXT[] | Alertas generadas |
+
+**Constraint único:** (periodo_inicio, periodo_fin, mercado, origen, modelo_version)  
+**Índices:** timestamp, mercado, origen, periodo
+
+---
+
+### `alertas_calibracion`
+Alertas del sistema de monitoreo.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **timestamp_deteccion** | TIMESTAMPTZ | Cuándo se detectó |
+| **mercado** | VARCHAR(20) | Mercado afectado |
+| **origen** | VARCHAR(30) | Origen de datos |
+| **tipo_alerta** | VARCHAR(50) | Tipo específico |
+| **severidad** | VARCHAR(20) | 'INFO', 'WARNING', 'CRITICAL' |
+| **metrica_afectada** | VARCHAR(30) | Métrica problema |
+| **valor_actual** | NUMERIC(8,4) | Valor actual |
+| **valor_umbral** | NUMERIC(8,4) | Umbral superado |
+| **valor_baseline** | NUMERIC(8,4) | Valor de referencia |
+| **mensaje** | TEXT | Descripción |
+| **detalles_json** | JSONB | Detalles adicionales |
+| **resuelta** | BOOLEAN | Si está resuelta |
+| **timestamp_resolucion** | TIMESTAMPTZ | Cuándo se resolvió |
+| **resuelta_por** | VARCHAR(100) | Quién la resolvió |
+| **notas_resolucion** | TEXT | Notas de resolución |
+
+**Tipos de alerta:** DRIFT_ECE_ALTO, DRIFT_BRIER_ALTO, CALIBRADOR_EMPEORA, DATOS_INSUFICIENTES, RECALIBRACION_SUGERIDA, etc.  
+**Índices:** timestamp, mercado, tipo, severidad, no_resueltas
+
+---
+
+## 💰 APUESTAS
+
+### `apuestas`
+Registro de apuestas realizadas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | UUID | Identificador único (PK) |
+| **usuario_id** | UUID | FK a usuarios |
+| **partido_id** | UUID | FK a partidos |
+| **equipo_local/visitante** | VARCHAR(100) | Nombres de equipos |
+| **fecha_partido** | DATE | Fecha del partido |
+| **mercado** | VARCHAR(20) | Q1-Q4, COMPLETO |
+| **lado** | VARCHAR(10) | OVER/UNDER |
+| **linea** | NUMERIC(5,1) | Línea apostada |
+| **cuota** | NUMERIC(5,2) | Cuota cerrada |
+| **cuota_over/under** | NUMERIC(5,2) | Cuotas del mercado |
+| **stake** | NUMERIC(10,2) | Monto apostado |
+| **probabilidad_sistema** | NUMERIC(5,4) | Prob. del sistema |
+| **confianza_sistema** | VARCHAR(10) | ALTA, MEDIA, BAJA |
+| **valor_esperado** | NUMERIC(10,2) | EV calculado |
+| **prediccion_media** | NUMERIC(5,1) | Predicción puntual |
+| **prediccion_desviacion** | NUMERIC(5,2) | Incertidumbre |
+| **razones** | JSONB | Razones de la apuesta |
+| **devig_metodo** | VARCHAR(30) | 'exacto', 'estimado', 'no_aplicado' |
+| **devig_overround** | NUMERIC(5,4) | Overround total |
+| **devig_p_mkt_raw/fair** | NUMERIC(5,4) | Prob. mercado raw/fair |
+| **devig_advertencias** | TEXT[] | Advertencias devig |
+| **edge_real** | NUMERIC(6,4) | Edge después de devig |
+| **score_total** | NUMERIC(7,2) | Score de calidad |
+| **score_componentes** | JSONB | Desglose del score |
+| **score_explicacion** | TEXT | Explicación |
+| **score_penalizaciones** | TEXT[] | Penalizaciones |
+| **kelly_full** | NUMERIC(6,4) | Kelly completo |
+| **kelly_fraccional** | NUMERIC(6,4) | Kelly fraccionado |
+| **fraccion_kelly** | NUMERIC(4,3) | Fracción aplicada |
+| **stake_porcentaje** | NUMERIC(5,2) | % del bankroll |
+| **bankroll_momento** | NUMERIC(10,2) | Bankroll al apostar |
+| **perfil_riesgo_usado** | VARCHAR(20) | Perfil usado |
+| **sizing_advertencias** | TEXT[] | Advertencias sizing |
+| **sizing_penalizaciones** | JSONB | Penalizaciones sizing |
+| **modo_devig** | VARCHAR(20) | 'estricto', 'estimado' |
+| **resultado** | VARCHAR(10) | PENDIENTE, GANADA, PERDIDA, PUSH, ANULADA |
+| **puntos_reales** | INTEGER | Puntos reales |
+| **ganancia** | NUMERIC(10,2) | Ganancia/pérdida |
+| **notas** | TEXT | Notas del usuario |
+| **etiquetas** | TEXT[] | Etiquetas |
+| **fecha_resolucion** | TIMESTAMPTZ | Cuándo se resolvió |
+
+**Checks:** cuota ≥ 1.01, stake > 0, línea > 0, probabilidades [0,1]  
+**Índices:** usuario, partido, fecha, resultado, mercado, score, edge, devig
+
+---
+
+## ⚙️ CONFIGURACIÓN
+
+### `ingestion_state`
+Estado de sincronización de datos.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **clave** | TEXT | Clave del proceso (PK) |
+| **ultima_sincronizacion** | TIMESTAMPTZ | Última sincronización |
+| **ultima_exito** | TIMESTAMPTZ | Último éxito |
+| **ultima_error** | TIMESTAMPTZ | Último error |
+| **ultimo_error** | TEXT | Mensaje de error |
+| **ultimo_event_ids** | JSONB | IDs procesados |
+| **ultimo_insertados** | INTEGER | Registros insertados |
+| **ultimo_actualizados** | INTEGER | Registros actualizados |
+| **ventana_dias** | INTEGER | Ventana de datos |
+| **cursor_inicio/fin** | DATE | Cursores de fecha |
+
+---
+
+### `versiones_esquema`
+Control de versiones del esquema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| **id** | SERIAL | Identificador (PK) |
+| **version** | VARCHAR(20) | Versión única |
+| **descripcion** | TEXT | Descripción de cambios |
+| **aplicada_en** | TIMESTAMPTZ | Cuándo se aplicó |
+
+---
+
+## 👁️ VISTAS
+
+### `vista_alertas_activas`
+Alertas sin resolver ordenadas por severidad.
+
+### `vista_analisis_apuestas`
+Análisis completo de apuestas con cálculos derivados (edge %, ROI, clasificación de calidad).
+
+### `vista_predicciones_para_calibracion`
+Predicciones resueltas con bins y datos necesarios para calibración.
+
+### `vista_predicciones_pendientes`
+Predicciones aún sin resolver con información del partido.
+
+### `vista_resumen_apuestas`
+Resumen por usuario: total, pendientes, ganadas, perdidas, winrate, ROI.
+
+### `vista_resumen_calibracion`
+Métricas agregadas de calibración por mercado y origen.
+
+### `vista_ultimos_partidos`
+Últimos partidos con resultados completos.
+
+---
+
+## 🔗 Relaciones Principales
+
+```
+usuarios (1) ─────< (N) apuestas
+equipos (1) ─────< (N) estadisticas_equipos
+equipos (1) ─────< (N) partidos [local/visitante/ganador]
+temporadas (1) ───< (N) partidos
+temporadas (1) ───< (N) estadisticas_equipos
+partidos (1) ─────< (N) predicciones_registradas
+modelo_versiones (1) ─< (N) predicciones_registradas
+calibradores (1) ─────< (N) predicciones_registradas
+modelo_versiones (1) ─< (N) metricas_calibracion
+```
+
+---
+
+**📌 Nota:** Todos los timestamps usan `TIMESTAMP WITH TIME ZONE` para manejo correcto de zonas horarias.
