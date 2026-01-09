@@ -255,6 +255,15 @@ def candidatos_para_cuarto(
     calibrador_activo: Optional[object] = None,
 ) -> List[CandidatoApuesta]:
     """Genera candidatos de apuesta para un cuarto específico."""
+    if calibrador_activo is not None:
+        mercado_calibrador = getattr(calibrador_activo, "mercado", None)
+        if mercado_calibrador is not None and mercado_calibrador != cuarto:
+            logger.warning(
+                "Calibrador de mercado incorrecto ignorado (cuarto=%s calibrador.mercado=%s).",
+                cuarto,
+                mercado_calibrador,
+            )
+            calibrador_activo = None
     candidatos: List[CandidatoApuesta] = []
     media_total = media_equipo + media_rival
     desviacion_total = float(np.sqrt(desviacion_equipo ** 2 + desviacion_rival ** 2))

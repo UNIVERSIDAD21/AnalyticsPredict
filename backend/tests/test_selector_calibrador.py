@@ -61,20 +61,21 @@ def test_selector_elige_mejor_y_reentrena(monkeypatch):
     llamadas = {"platt": [], "isotonic": []}
 
     class DummyCalibrador:
-        def __init__(self, metodo, valor):
+        def __init__(self, metodo, valor, n_datos):
             self.metodo = metodo
             self._valor = valor
+            self.n_datos = n_datos
 
         def calibrar(self, _p):
             return self._valor
 
     def fake_platt(datos):
         llamadas["platt"].append(len(datos))
-        return DummyCalibrador("platt", 0.9)
+        return DummyCalibrador("platt", 0.9, len(datos))
 
     def fake_isotonic(datos):
         llamadas["isotonic"].append(len(datos))
-        return DummyCalibrador("isotonic", 0.1)
+        return DummyCalibrador("isotonic", 0.1, len(datos))
 
     monkeypatch.setattr(selector, "_entrenar_platt", fake_platt)
     monkeypatch.setattr(selector, "_entrenar_isotonic", fake_isotonic)
@@ -83,9 +84,23 @@ def test_selector_elige_mejor_y_reentrena(monkeypatch):
 
     assert calibrador is not None
     assert calibrador.metodo == "isotonic"
-    assert metricas["n_entrenamiento"] == 480
+    assert calibrador.n_datos == 600
+    assert metricas["n_entrenamiento_final"] == 600
+    assert metricas["n_split_train"] == 480
+    assert metricas["n_split_val"] == 120
     assert llamadas["isotonic"] == [480, 600]
     assert "ELEGIDO_ISOTONIC" in razon
+
+
+def test_selector_excluye_datos_en_fecha_cutoff():
+    cutoff = date(2024, 2, 1)
+    predicciones = [_pred(0.6, True, cutoff) for _ in range(200)]
+
+    calibrador, metricas, razon = selector.seleccionar_calibrador("Q1", predicciones, cutoff)
+
+    assert calibrador is None
+    assert metricas["n_total"] == 0
+    assert "SIN_DATOS" in razon
 
 
 def test_selector_rechaza_origen_mixto():

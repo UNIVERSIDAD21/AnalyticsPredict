@@ -67,10 +67,15 @@ def obtener_calibrador_activo(
         return None
 
     if len(filas) > 1:
-        logger.warning(
-            "Se detectaron múltiples calibradores activos para mercado=%s (origen=%s).",
+        ids = [str(fila[0]) for fila in filas]
+        logger.error(
+            "VIOLACIÓN DE INTEGRIDAD: múltiples calibradores activos para mercado=%s (origen=%s). IDs=%s",
             mercado,
             origen,
+            ids,
+        )
+        raise RuntimeError(
+            f"Múltiples calibradores activos para mercado={mercado} (origen={origen})."
         )
 
     fila = filas[0]
@@ -79,7 +84,7 @@ def obtener_calibrador_activo(
     origen_datos = fila[4]
     parametros = _parsear_parametros(fila[5])
 
-    if fecha_partido and cutoff_datos and fecha_partido <= cutoff_datos:
+    if fecha_partido and cutoff_datos and fecha_partido < cutoff_datos:
         logger.warning(
             "Calibrador activo omitido por cutoff incompatible (mercado=%s fecha_partido=%s cutoff=%s).",
             mercado,

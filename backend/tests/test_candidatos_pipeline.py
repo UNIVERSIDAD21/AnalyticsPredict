@@ -127,3 +127,34 @@ def test_candidatos_sin_calibrador_usan_probabilidad_raw():
     candidato = candidatos[0]
     assert candidato.p_calibrada is None
     assert candidato.p_raw == pytest.approx(candidato.probabilidad)
+
+
+def test_candidatos_ignoran_calibrador_de_otro_mercado():
+    class DummyCalibrador:
+        def __init__(self):
+            self.metodo = "platt"
+            self.mercado = "Q2"
+            self.id = UUID("22222222-2222-2222-2222-222222222222")
+
+        def calibrar(self, _p):
+            return 0.9
+
+    calibrador = DummyCalibrador()
+    candidatos = candidatos_para_cuarto(
+        cuarto="Q1",
+        linea=50.0,
+        media_equipo=28.0,
+        desviacion_equipo=3.0,
+        media_rival=25.0,
+        desviacion_rival=3.0,
+        cuota_over=2.0,
+        cuota_under=None,
+        modo_devig="estricto",
+        config_sizing=None,
+        calibrador_activo=calibrador,
+    )
+
+    candidato = candidatos[0]
+    assert candidato.p_calibrada is None
+    assert candidato.calibrador_usado is None
+    assert candidato.calibrador_id is None
