@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -15,6 +16,24 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 class PeticionAnalisis(BaseModel):
     """Solicitud para analizar un partido."""
 
+    partido_id: Optional[UUID] = Field(
+        None, description="ID del partido (requerido para registrar predicción)"
+    )
+    temporada_id: Optional[UUID] = Field(
+        None, description="ID de la temporada del partido"
+    )
+    equipo_local_id: Optional[UUID] = Field(
+        None, description="ID del equipo local"
+    )
+    equipo_visitante_id: Optional[UUID] = Field(
+        None, description="ID del equipo visitante"
+    )
+    fecha_partido: Optional[date] = Field(
+        None, description="Fecha del partido (YYYY-MM-DD)"
+    )
+    tipo_partido: Optional[str] = Field(
+        None, description="Tipo de partido (REG, PO, PRE, etc.)"
+    )
     equipo_local: str = Field(..., description="Equipo que juega de local")
     equipo_visitante: str = Field(..., description="Equipo que juega de visitante")
     mercado: Literal["Q1", "Q2", "Q3", "Q4", "COMPLETO"]
