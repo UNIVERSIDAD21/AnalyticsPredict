@@ -419,7 +419,11 @@ def ejecutar_analisis(
                         calibrador_id=getattr(candidato, "calibrador_id", None),
                         media_predicha=candidato.media,
                         desviacion_predicha=candidato.desviacion,
-                        p_raw=getattr(candidato, "p_raw", None) or candidato.probabilidad,
+                        p_raw=(
+                            candidato.p_raw
+                            if getattr(candidato, "p_raw", None) is not None
+                            else candidato.probabilidad
+                        ),
                         cuota=candidato.cuota,
                         cuota_over=candidato.cuota_over,
                         cuota_under=candidato.cuota_under,

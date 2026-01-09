@@ -388,14 +388,18 @@ async def obtener_curva_calibracion(
         desde=periodo.inicio,
         hasta=periodo.fin,
     )
-
-    n_total_antes = len(predicciones)
     predicciones_filtradas = [
-        (p["p_raw"], p["outcome_binario"])
+        (p["p_efectiva"], p["outcome_binario"])
         for p in predicciones
         if p["outcome_binario"] is not None
     ]
-    n_excluidos = n_total_antes - len(predicciones_filtradas)
+    n_excluidos = _contar_excluidos_push(
+        mercado,
+        origen,
+        periodo.inicio,
+        periodo.fin,
+        modelo_version_id=None,
+    )
 
     resultado = _calcular_curva(tipo_bins, predicciones_filtradas, n_bins=n_bins)
 
@@ -610,6 +614,7 @@ def _contar_excluidos_push(
         "origen = %s",
         "fecha_partido >= %s",
         "fecha_partido <= %s",
+        "resuelto = true",
     ]
     params: list[object] = [mercado, origen, fecha_inicio, fecha_fin]
     if modelo_version_id is not None:
@@ -619,7 +624,7 @@ def _contar_excluidos_push(
     where_sql = " AND ".join(filtros)
     consulta = f"""
         SELECT COUNT(*)
-        FROM vista_predicciones_para_calibracion
+        FROM predicciones_registradas
         WHERE {where_sql}
           AND outcome_binario IS NULL
     """
@@ -641,13 +646,13 @@ def _obtener_predicciones_para_curva(
 ) -> List[Dict[str, object]]:
     pool = obtener_pool()
     consulta = """
-        SELECT p_raw, outcome_binario
+        SELECT p_efectiva, outcome_binario
         FROM vista_predicciones_para_calibracion
         WHERE mercado = %s
           AND origen = %s
           AND fecha_partido >= %s
           AND fecha_partido <= %s
-          AND p_raw IS NOT NULL
+          AND p_efectiva IS NOT NULL
         ORDER BY fecha_partido
     """
     params = [mercado, origen, desde, hasta]
@@ -658,7 +663,7 @@ def _obtener_predicciones_para_curva(
             filas = cursor.fetchall()
 
     return [
-        {"p_raw": float(fila[0]), "outcome_binario": fila[1]}
+        {"p_efectiva": float(fila[0]), "outcome_binario": fila[1]}
         for fila in filas
     ]
 

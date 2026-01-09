@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -72,17 +73,16 @@ def test_metricas_respuesta_basica():
     assert metrica["n_excluidos_push"] == 5
     assert metrica["suficiente_data"] is False
     assert metrica["calibrador_activo"] == "platt"
-    assert metrica["mejora_vs_raw"] == 0.02
+    assert metrica["mejora_vs_raw"] == pytest.approx(0.02)
 
 
 def test_curva_bins_y_excluidos():
     client = _crear_cliente()
     periodo = date(2024, 2, 1), date(2024, 2, 28)
     predicciones = [
-        {"p_raw": 0.1, "outcome_binario": True},
-        {"p_raw": 0.2, "outcome_binario": False},
-        {"p_raw": 0.8, "outcome_binario": True},
-        {"p_raw": 0.5, "outcome_binario": None},
+        {"p_efectiva": 0.1, "outcome_binario": True},
+        {"p_efectiva": 0.2, "outcome_binario": False},
+        {"p_efectiva": 0.8, "outcome_binario": True},
     ]
     with patch("api.rutas_metricas._resolver_periodo") as resolver:
         resolver.return_value = SimpleNamespace(
@@ -92,7 +92,8 @@ def test_curva_bins_y_excluidos():
             texto_fin=periodo[1].isoformat(),
         )
         with patch("api.rutas_metricas._obtener_predicciones_para_curva", return_value=predicciones):
-            response = client.get("/api/metricas/calibracion/Q1/curva?origen=API_USUARIO")
+            with patch("api.rutas_metricas._contar_excluidos_push", return_value=1):
+                response = client.get("/api/metricas/calibracion/Q1/curva?origen=API_USUARIO")
 
     assert response.status_code == 200
     data = response.json()
