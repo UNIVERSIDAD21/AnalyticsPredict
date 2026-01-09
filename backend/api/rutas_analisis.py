@@ -284,8 +284,11 @@ def ejecutar_analisis(
     contexto_registro = _extraer_contexto_registro(peticion)
     if contexto_registro and resultado.candidatos:
         modelo_version_id = getattr(modelo, "version", None)
-        if modelo_version_id is None:
-            logger.warning("No se encontró version del modelo para registrar predicción.")
+        if modelo_version_id is None or not isinstance(modelo_version_id, int):
+            logger.warning(
+                "No se encontró modelo_version_id válido para registrar predicción: %s",
+                modelo_version_id,
+            )
         else:
             for candidato in resultado.candidatos:
                 registrar_prediccion(
