@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 registro_predicciones.py — Persistencia idempotente de predicciones.
+
+IMPORTANTE: La idempotencia se garantiza mediante el constraint único
+`uq_prediccion_llave_natural` que incluye:
+(partido_id, mercado, lado, linea, origen, modelo_version_id, calibrador_id_efectivo)
+
+Donde calibrador_id_efectivo es una columna GENERATED que resuelve NULL a UUID vacío.
+Esto evita problemas con ON CONFLICT y expresiones COALESCE.
+
+REQUISITO: Ejecutar la migración scripts/migracion_idempotencia_predicciones.sql
 """
 
 from __future__ import annotations
@@ -14,6 +23,29 @@ from uuid import UUID
 from db import obtener_pool
 
 logger = logging.getLogger(__name__)
+
+# Nombre del constraint único para idempotencia
+CONSTRAINT_LLAVE_NATURAL = "uq_prediccion_llave_natural"
+
+
+def verificar_modelo_version_existe(modelo_version_id: int, pool=None) -> bool:
+    """
+    Verifica que el modelo_version_id existe en modelo_versiones.
+
+    Esto garantiza que la FK será válida antes de intentar insertar.
+    """
+    pool = pool or obtener_pool()
+    try:
+        with pool.connection() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute(
+                    "SELECT 1 FROM modelo_versiones WHERE id = %s LIMIT 1",
+                    [modelo_version_id],
+                )
+                return cursor.fetchone() is not None
+    except Exception:
+        logger.exception("Error verificando modelo_version_id=%s", modelo_version_id)
+        return False
 
 
 def registrar_prediccion(
@@ -44,6 +76,10 @@ def registrar_prediccion(
     """
     Registra una predicción en predicciones_registradas de forma idempotente.
 
+    La idempotencia se garantiza mediante ON CONFLICT ON CONSTRAINT que
+    referencia el constraint único por nombre, funcionando correctamente
+    con la columna GENERATED para calibrador_id.
+
     Retorna el ID insertado si fue nuevo, o None si fue duplicado o falló.
     """
     requeridos = {
@@ -71,18 +107,30 @@ def registrar_prediccion(
         return None
     if not isinstance(modelo_version_id, int):
         logger.warning(
-            "Predicción no registrable por modelo_version_id inválido: %s",
+            "Predicción no registrable por modelo_version_id inválido (tipo=%s valor=%s)",
+            type(modelo_version_id).__name__,
             modelo_version_id,
         )
         return None
 
     pool = pool or obtener_pool()
+
+    # Verificar que modelo_version_id existe en BD (FK válida)
+    if not verificar_modelo_version_existe(modelo_version_id, pool):
+        logger.error(
+            "Predicción no registrable: modelo_version_id=%s no existe en modelo_versiones",
+            modelo_version_id,
+        )
+        return None
+
     inicio = time.perf_counter()
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
+                # Usar ON CONFLICT ON CONSTRAINT con nombre explícito
+                # Esto funciona correctamente con la columna GENERATED
                 cursor.execute(
-                    """
+                    f"""
                     INSERT INTO predicciones_registradas (
                         partido_id,
                         temporada_id,
@@ -109,18 +157,7 @@ def registrar_prediccion(
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
-                    ON CONFLICT (
-                        partido_id,
-                        mercado,
-                        lado,
-                        linea,
-                        origen,
-                        modelo_version_id,
-                        COALESCE(
-                            calibrador_id,
-                            '00000000-0000-0000-0000-000000000000'::uuid
-                        )
-                    )
+                    ON CONFLICT ON CONSTRAINT {CONSTRAINT_LLAVE_NATURAL}
                     DO NOTHING
                     RETURNING id
                     """,

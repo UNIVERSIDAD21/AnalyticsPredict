@@ -113,7 +113,8 @@ export function FormularioAnalisis({
       const cuotaOver = cuotaValor && ladoSeleccionado === 'OVER' ? cuotaValor : undefined;
       const cuotaUnder = cuotaValor && ladoSeleccionado === 'UNDER' ? cuotaValor : undefined;
 
-      // Construir petición
+      // Construir petición incluyendo IDs para registro de predicciones
+      // El backend usará estos para lookup y garantizar partido_id válido
       const peticion: Partial<PeticionAnalisis> = {
         equipo_local: formulario.equipoLocal,
         equipo_visitante: formulario.equipoVisitante,
@@ -124,6 +125,11 @@ export function FormularioAnalisis({
         cuota_under: cuotaUnder,
         lado: ladoSeleccionado,
         temporadas: temporadasSeleccionadas,
+        // Incluir IDs de equipos para registro de predicciones
+        equipo_local_id: equipoLocalSeleccionado?.id,
+        equipo_visitante_id: equipoVisitanteSeleccionado?.id,
+        // Incluir primera temporada seleccionada si existe
+        temporada_id: temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined,
       };
 
       // Validar
@@ -136,7 +142,7 @@ export function FormularioAnalisis({
       // Enviar con lado seleccionado
       onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, onAnalizar]
+    [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas]
   );
 
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';

@@ -52,10 +52,10 @@ logger = logging.getLogger(__name__)
 class ModeloEnMemoria:
     """
     Wrapper del modelo Ridge que vive en memoria.
-    
+
     Proporciona la misma interfaz que ModeloRidge pero sin necesidad
     de cargar desde archivo .npz.
-    
+
     Attributes:
         alfa: Parámetro de regularización usado
         entidad_a_indice: Mapeo nombre_equipo -> índice
@@ -63,10 +63,14 @@ class ModeloEnMemoria:
         pesos_rival: Matriz de pesos para predicción del rival
         desviacion_equipo: Desviación estándar por cuarto del equipo
         desviacion_rival: Desviación estándar por cuarto del rival
-        version: Número de versión del modelo (incrementa en cada reentrenamiento)
+        version: ID real de modelo_versiones en BD (FK válida)
         fecha_entrenamiento: Fecha del último entrenamiento
+
+    IMPORTANTE: `version` es el ID real de modelo_versiones (modelo_version_id),
+    NO un contador interno. Esto garantiza que sea una FK válida para
+    predicciones_registradas.modelo_version_id.
     """
-    
+
     def __init__(self, datos: Dict[str, Any], version: int = 1):
         self.alfa: float = datos["alpha"]
         self.entidad_a_indice: Dict[str, int] = datos["entidad_a_indice"]
@@ -74,7 +78,8 @@ class ModeloEnMemoria:
         self.pesos_rival = datos["pesos_rival"]
         self.desviacion_equipo = datos["desviacion_equipo"]
         self.desviacion_rival = datos["desviacion_rival"]
-        self.version: int = version
+        # CAMBIO: Usar modelo_version_id real de BD si está disponible
+        self.version: int = datos.get("modelo_version_id", version)
         self.fecha_entrenamiento: datetime = datetime.now()
         self.metricas: Dict[str, Any] = datos.get("metricas", {})
     

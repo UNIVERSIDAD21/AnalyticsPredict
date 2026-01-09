@@ -10,11 +10,15 @@ IMPORTANTE: El modelo se reentrena automáticamente cuando:
 2. Se detectan nuevos partidos en la BD
 3. Se llama explícitamente a reentrenar()
 
+CAMBIO CLAVE: Cada entrenamiento ahora registra una versión en `modelo_versiones`,
+garantizando que modelo_version_id sea una FK válida.
+
 Uso:
     from entrenador_bd import EntrenadorBD
-    
+
     entrenador = EntrenadorBD()
     modelo = entrenador.entrenar()
+    # modelo["modelo_version_id"] es el ID real de modelo_versiones
 """
 
 from __future__ import annotations
@@ -22,7 +26,7 @@ from __future__ import annotations
 import json
 import hashlib
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
@@ -88,21 +92,99 @@ def construir_matriz_diseno(
 def ajustar_ridge(X: np.ndarray, Y: np.ndarray, alpha: float) -> Tuple[np.ndarray, np.ndarray]:
     """
     Ajusta regresión Ridge y retorna pesos y desviación estándar.
-    
+
     La regularización Ridge penaliza coeficientes grandes para evitar overfitting.
     """
     p = X.shape[1]
     I = np.eye(p, dtype=float)
     I[0, 0] = 0.0  # No regularizar el intercepto
-    
+
     A = X.T @ X + alpha * I
     B = X.T @ Y
     W = np.linalg.solve(A, B)
-    
+
     residuos = Y - X @ W
     std = np.sqrt(np.mean(residuos**2, axis=0) + 1e-9)
-    
+
     return W, std
+
+
+def registrar_version_modelo(
+    pool,
+    *,
+    partidos_entrenamiento: int,
+    equipos: int,
+    mae_q1: float,
+    mae_q2: float,
+    mae_q3: float,
+    mae_q4: float,
+    duracion_segundos: float,
+    hash_datos: str,
+    cutoff_entrenamiento: Optional[date] = None,
+    fecha_min_entrenamiento: Optional[date] = None,
+    temporadas_incluidas: Optional[List[str]] = None,
+    config_entrenamiento: Optional[Dict[str, Any]] = None,
+) -> int:
+    """
+    Registra una nueva versión del modelo en modelo_versiones.
+
+    Retorna el ID (modelo_versiones.id) generado, que es la FK válida
+    para usar en predicciones_registradas.modelo_version_id.
+    """
+    # Obtener siguiente número de versión
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COALESCE(MAX(version), 0) + 1 FROM modelo_versiones")
+            nueva_version = cursor.fetchone()[0]
+
+            cursor.execute(
+                """
+                INSERT INTO modelo_versiones (
+                    version,
+                    fecha_entrenamiento,
+                    partidos_entrenamiento,
+                    equipos,
+                    mae_q1,
+                    mae_q2,
+                    mae_q3,
+                    mae_q4,
+                    duracion_segundos,
+                    hash_datos,
+                    cutoff_entrenamiento,
+                    fecha_min_entrenamiento,
+                    temporadas_incluidas,
+                    config_entrenamiento
+                ) VALUES (
+                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
+                RETURNING id
+                """,
+                [
+                    nueva_version,
+                    partidos_entrenamiento,
+                    equipos,
+                    mae_q1,
+                    mae_q2,
+                    mae_q3,
+                    mae_q4,
+                    duracion_segundos,
+                    hash_datos,
+                    cutoff_entrenamiento,
+                    fecha_min_entrenamiento,
+                    temporadas_incluidas,
+                    json.dumps(config_entrenamiento) if config_entrenamiento else None,
+                ],
+            )
+            modelo_version_id = cursor.fetchone()[0]
+
+    logger.info(
+        "Registrada versión de modelo (id=%s version=%s partidos=%s equipos=%s)",
+        modelo_version_id,
+        nueva_version,
+        partidos_entrenamiento,
+        equipos,
+    )
+    return modelo_version_id
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -350,9 +432,31 @@ class EntrenadorBD:
         # 7. Actualizar estado interno
         self._ultimo_hash_datos = self._calcular_hash_datos(partidos)
         self._ultima_fecha_entrenamiento = datetime.now()
-        
+
         duracion = (datetime.now() - inicio).total_seconds()
-        
+
+        # Extraer fechas de partidos para metadata
+        fechas_partidos = [p['fecha_partido'] for p in partidos if p.get('fecha_partido')]
+        fecha_min = min(fechas_partidos) if fechas_partidos else None
+        fecha_max = max(fechas_partidos) if fechas_partidos else None
+
+        # 8. Registrar versión en modelo_versiones (FK válida)
+        modelo_version_id = registrar_version_modelo(
+            self._pool,
+            partidos_entrenamiento=len(partidos),
+            equipos=len(equipos_ordenados),
+            mae_q1=float(mae_equipo[0]),
+            mae_q2=float(mae_equipo[1]),
+            mae_q3=float(mae_equipo[2]),
+            mae_q4=float(mae_equipo[3]),
+            duracion_segundos=duracion,
+            hash_datos=self._ultimo_hash_datos,
+            cutoff_entrenamiento=fecha_max,
+            fecha_min_entrenamiento=fecha_min,
+            temporadas_incluidas=temporadas,
+            config_entrenamiento={"alpha": alpha},
+        )
+
         self._metricas = {
             "partidos_entrenamiento": len(partidos),
             "filas_entrenamiento": len(filas_equipo),
@@ -362,12 +466,13 @@ class EntrenadorBD:
             "duracion_segundos": duracion,
             "fecha_entrenamiento": self._ultima_fecha_entrenamiento.isoformat(),
             "hash_datos": self._ultimo_hash_datos,
+            "modelo_version_id": modelo_version_id,
         }
-        
-        logger.info(f"✅ Modelo entrenado en {duracion:.2f}s")
+
+        logger.info(f"Modelo entrenado en {duracion:.2f}s (modelo_version_id={modelo_version_id})")
         logger.info(f"   MAE equipo: {', '.join(f'{q}: {m:.2f}' for q, m in zip(CUARTOS, mae_equipo))}")
-        
-        # 8. Retornar modelo en formato compatible
+
+        # 9. Retornar modelo en formato compatible con modelo_version_id real
         return {
             "alpha": alpha,
             "entidad_a_indice": entidad_a_indice,
@@ -376,6 +481,7 @@ class EntrenadorBD:
             "desviacion_equipo": std_equipo,
             "desviacion_rival": std_rival,
             "metricas": self._metricas,
+            "modelo_version_id": modelo_version_id,
         }
     
     def guardar_modelo(self, modelo: Dict[str, Any], ruta: str) -> None:
