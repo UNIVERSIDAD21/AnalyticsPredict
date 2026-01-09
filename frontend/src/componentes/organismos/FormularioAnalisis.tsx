@@ -125,7 +125,21 @@ export function FormularioAnalisis({
     []
   );
 
-  // Manejar envío
+  const esJuegoCompleto = formulario.mercado === 'COMPLETO';
+  const buscarEstadisticas = (nombre: string) =>
+    estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
+
+  // CORRECCIÓN: Mover estas declaraciones ANTES de manejarEnvio
+  const equipoLocalSeleccionado = useMemo(
+    () => buscarEquipo(equipos, formulario.equipoLocal),
+    [equipos, formulario.equipoLocal]
+  );
+  const equipoVisitanteSeleccionado = useMemo(
+    () => buscarEquipo(equipos, formulario.equipoVisitante),
+    [equipos, formulario.equipoVisitante]
+  );
+
+  // Manejar envío - AHORA puede usar las variables declaradas arriba
   const manejarEnvio = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -136,8 +150,6 @@ export function FormularioAnalisis({
       const cuotaOver = cuotaValor && ladoSeleccionado === 'OVER' ? cuotaValor : undefined;
       const cuotaUnder = cuotaValor && ladoSeleccionado === 'UNDER' ? cuotaValor : undefined;
 
-      // Construir petición incluyendo IDs para registro de predicciones
-      // CRÍTICO: Si hay partido seleccionado, usamos su contexto para registro
       const peticion: Partial<PeticionAnalisis> = {
         equipo_local: formulario.equipoLocal,
         equipo_visitante: formulario.equipoVisitante,
@@ -148,10 +160,6 @@ export function FormularioAnalisis({
         cuota_under: cuotaUnder,
         lado: ladoSeleccionado,
         temporadas: temporadasSeleccionadas,
-
-        // IMPORTANTE: Contexto del partido para registro de predicciones
-        // Si hay partido seleccionado, usamos todos sus campos
-        // Esto garantiza que la predicción se registre correctamente
         partido_id: partidoSeleccionado?.id,
         temporada_id: partidoSeleccionado?.temporada_id
           ?? (temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined),
@@ -161,30 +169,15 @@ export function FormularioAnalisis({
         tipo_partido: partidoSeleccionado?.tipo_partido as 'PRE' | 'REG' | 'POST' | undefined,
       };
 
-      // Validar
       const erroresValidacion = validarPeticionAnalisis(peticion);
       if (erroresValidacion.length > 0) {
         setErrores(erroresValidacion);
         return;
       }
 
-      // Enviar con lado seleccionado
       onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
     [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas, partidoSeleccionado]
-  );
-
-  const esJuegoCompleto = formulario.mercado === 'COMPLETO';
-  const buscarEstadisticas = (nombre: string) =>
-    estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
-
-  const equipoLocalSeleccionado = useMemo(
-    () => buscarEquipo(equipos, formulario.equipoLocal),
-    [equipos, formulario.equipoLocal]
-  );
-  const equipoVisitanteSeleccionado = useMemo(
-    () => buscarEquipo(equipos, formulario.equipoVisitante),
-    [equipos, formulario.equipoVisitante]
   );
 
   useEffect(() => {
@@ -377,11 +370,10 @@ export function FormularioAnalisis({
                         key={temporada.id}
                         type="button"
                         onClick={() => toggleTemporada(temporada.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
-                          seleccionada
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${seleccionada
                             ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
                             : 'border-neon-cyan/20 text-texto-terciario hover:text-texto-secundario'
-                        }`}
+                          }`}
                       >
                         {temporada.nombre}
                       </button>
@@ -423,9 +415,8 @@ export function FormularioAnalisis({
             <p className="text-xs text-texto-secundario uppercase tracking-wider mb-1">
               Tu predicción
             </p>
-            <p className={`text-sm font-semibold ${
-              formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
-            }`}>
+            <p className={`text-sm font-semibold ${formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
+              }`}>
               {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} puntos
               {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? 'Juego Completo' : formulario.mercado}`}
             </p>
