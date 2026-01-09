@@ -9,6 +9,7 @@ import { Boton, Tarjeta } from '../atomos';
 import {
   SelectorEquipo,
   SelectorMercado,
+  SelectorPartido,
   InputLinea,
   InputCuota,
   MensajeError,
@@ -21,6 +22,7 @@ import {
   LadoApuesta,
   EstadisticasEquipo,
   TemporadaDisponible,
+  PartidoResumen,
 } from '../../tipos';
 import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
 
@@ -81,6 +83,9 @@ export function FormularioAnalisis({
   const [cargandoTemporadas, setCargandoTemporadas] = useState(false);
   const [errorTemporadas, setErrorTemporadas] = useState<string | null>(null);
 
+  // Estado del partido seleccionado (CRÍTICO para registro de predicciones)
+  const [partidoSeleccionado, setPartidoSeleccionado] = useState<PartidoResumen | null>(null);
+
   // Actualizar campo del formulario
   const actualizarCampo = useCallback(
     <K extends keyof EstadoFormulario>(campo: K, valor: EstadoFormulario[K]) => {
@@ -100,7 +105,25 @@ export function FormularioAnalisis({
     setTemporadasSeleccionadas([]);
     setTemporadasDisponibles([]);
     setErrorTemporadas(null);
+    setPartidoSeleccionado(null);
   }, []);
+
+  // Manejar selección de partido (autocompleta equipos)
+  const manejarSeleccionPartido = useCallback(
+    (partido: PartidoResumen | null) => {
+      setPartidoSeleccionado(partido);
+
+      if (partido) {
+        // Autocompletar equipos desde el partido seleccionado
+        setFormulario((prev) => ({
+          ...prev,
+          equipoLocal: partido.equipo_local_nombre.toLowerCase(),
+          equipoVisitante: partido.equipo_visitante_nombre.toLowerCase(),
+        }));
+      }
+    },
+    []
+  );
 
   // Manejar envío
   const manejarEnvio = useCallback(
@@ -114,7 +137,7 @@ export function FormularioAnalisis({
       const cuotaUnder = cuotaValor && ladoSeleccionado === 'UNDER' ? cuotaValor : undefined;
 
       // Construir petición incluyendo IDs para registro de predicciones
-      // El backend usará estos para lookup y garantizar partido_id válido
+      // CRÍTICO: Si hay partido seleccionado, usamos su contexto para registro
       const peticion: Partial<PeticionAnalisis> = {
         equipo_local: formulario.equipoLocal,
         equipo_visitante: formulario.equipoVisitante,
@@ -125,11 +148,17 @@ export function FormularioAnalisis({
         cuota_under: cuotaUnder,
         lado: ladoSeleccionado,
         temporadas: temporadasSeleccionadas,
-        // Incluir IDs de equipos para registro de predicciones
-        equipo_local_id: equipoLocalSeleccionado?.id,
-        equipo_visitante_id: equipoVisitanteSeleccionado?.id,
-        // Incluir primera temporada seleccionada si existe
-        temporada_id: temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined,
+
+        // IMPORTANTE: Contexto del partido para registro de predicciones
+        // Si hay partido seleccionado, usamos todos sus campos
+        // Esto garantiza que la predicción se registre correctamente
+        partido_id: partidoSeleccionado?.id,
+        temporada_id: partidoSeleccionado?.temporada_id
+          ?? (temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined),
+        equipo_local_id: partidoSeleccionado?.equipo_local_id ?? equipoLocalSeleccionado?.id,
+        equipo_visitante_id: partidoSeleccionado?.equipo_visitante_id ?? equipoVisitanteSeleccionado?.id,
+        fecha_partido: partidoSeleccionado?.fecha_partido,
+        tipo_partido: partidoSeleccionado?.tipo_partido as 'PRE' | 'REG' | 'POST' | undefined,
       };
 
       // Validar
@@ -142,7 +171,7 @@ export function FormularioAnalisis({
       // Enviar con lado seleccionado
       onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas]
+    [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas, partidoSeleccionado]
   );
 
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
@@ -253,26 +282,45 @@ export function FormularioAnalisis({
 
         {/* Campos */}
         <div className="space-y-4">
-          {/* Equipo Local */}
+          {/* Selector de Partido - CRÍTICO para registro de predicciones */}
+          <SelectorPartido
+            partidoSeleccionado={partidoSeleccionado}
+            onSeleccionar={manejarSeleccionPartido}
+            deshabilitado={cargando}
+          />
+
+          {/* Equipo Local - deshabilitado si hay partido seleccionado */}
           <SelectorEquipo
             etiqueta="Equipo Local"
             equipos={equipos}
             valor={formulario.equipoLocal}
             onChange={(valor) => actualizarCampo('equipoLocal', valor)}
             equipoExcluido={formulario.equipoVisitante}
-            deshabilitado={cargando || cargandoEquipos}
-            placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona local'}
+            deshabilitado={cargando || cargandoEquipos || partidoSeleccionado !== null}
+            placeholder={
+              partidoSeleccionado
+                ? partidoSeleccionado.equipo_local_nombre
+                : cargandoEquipos
+                  ? 'Cargando...'
+                  : 'Selecciona local'
+            }
           />
 
-          {/* Equipo Visitante */}
+          {/* Equipo Visitante - deshabilitado si hay partido seleccionado */}
           <SelectorEquipo
             etiqueta="Equipo Visitante"
             equipos={equipos}
             valor={formulario.equipoVisitante}
             onChange={(valor) => actualizarCampo('equipoVisitante', valor)}
             equipoExcluido={formulario.equipoLocal}
-            deshabilitado={cargando || cargandoEquipos}
-            placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona visitante'}
+            deshabilitado={cargando || cargandoEquipos || partidoSeleccionado !== null}
+            placeholder={
+              partidoSeleccionado
+                ? partidoSeleccionado.equipo_visitante_nombre
+                : cargandoEquipos
+                  ? 'Cargando...'
+                  : 'Selecciona visitante'
+            }
           />
 
           <PanelEstadisticasEquipo
