@@ -708,8 +708,7 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
     if resultado.analisis_mercado:
         salida["analisis_mercado"]["recomendacion"] = resultado.analisis_mercado.recomendacion.value
     if resultado.mejor_apuesta:
-        salida["mejor_apuesta"]["mercado"] = resultado.mejor_apuesta.mercado.value
-        salida["mejor_apuesta"]["lado"] = resultado.mejor_apuesta.lado.value
+        salida["mejor_apuesta"] = resultado.mejor_apuesta.como_diccionario()
     if resultado.candidatos:
         salida["candidatos"] = [
             candidato.como_diccionario() for candidato in resultado.candidatos
@@ -732,4 +731,6 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
         salida["probabilidad_over"] = prediccion.probabilidad_over
         salida["probabilidad_under"] = prediccion.probabilidad_under
         salida["linea_analizada"] = prediccion.linea_analizada
+    if resultado.metadata and resultado.metadata.get("mensaje_apuesta"):
+        salida["mensaje_apuesta"] = resultado.metadata["mensaje_apuesta"]
     return salida

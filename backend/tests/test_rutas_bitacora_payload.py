@@ -83,7 +83,13 @@ def test_construir_payload_apuesta_incluye_campos_profesionales():
     assert payload["stake_porcentaje"] == 2.5
     if rutas_bitacora.Jsonb is not None:
         assert isinstance(payload["score_componentes"], rutas_bitacora.Jsonb)
-        assert isinstance(payload["score_penalizaciones"], rutas_bitacora.Jsonb)
+        assert isinstance(payload["sizing_penalizaciones"], rutas_bitacora.Jsonb)
+        assert isinstance(payload["razones"], rutas_bitacora.Jsonb)
     else:
         assert isinstance(payload["score_componentes"], str)
-        assert isinstance(payload["score_penalizaciones"], str)
+        assert isinstance(payload["sizing_penalizaciones"], str)
+        assert isinstance(payload["razones"], str)
+
+    assert payload["devig_advertencias"] == ["ok"]
+    assert payload["score_penalizaciones"] == ["RIESGO_ALTO"]
+    assert payload["sizing_advertencias"] == ["cap"]

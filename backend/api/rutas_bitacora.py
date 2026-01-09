@@ -27,7 +27,7 @@ from .modelos_respuesta import RespuestaApuesta, RespuestaListaApuestas, Respues
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 
 
-def _serializar_json(valor: object | None) -> object | None:
+def _serializar_jsonb(valor: object | None) -> object | None:
     if valor is None:
         return None
     if Jsonb is not None:
@@ -86,23 +86,23 @@ def _construir_payload_apuesta(peticion: PeticionCrearApuesta, usuario_id: UUID)
         "devig_overround": devig_overround,
         "devig_p_mkt_raw": peticion.devig_p_mkt_raw,
         "devig_p_mkt_fair": peticion.devig_p_mkt_fair,
-        "devig_advertencias": _serializar_json(peticion.devig_advertencias),
+        "devig_advertencias": peticion.devig_advertencias,
         "edge_real": peticion.edge_real,
         "score_total": peticion.score_total,
-        "score_componentes": _serializar_json(peticion.score_componentes),
+        "score_componentes": _serializar_jsonb(peticion.score_componentes),
         "score_explicacion": peticion.score_explicacion,
-        "score_penalizaciones": _serializar_json(peticion.score_penalizaciones),
+        "score_penalizaciones": peticion.score_penalizaciones,
         "kelly_full": peticion.kelly_full,
         "kelly_fraccional": peticion.kelly_fraccional,
         "fraccion_kelly": peticion.fraccion_kelly,
         "stake_porcentaje": peticion.stake_porcentaje,
         "bankroll_momento": peticion.bankroll_momento,
         "perfil_riesgo_usado": peticion.perfil_riesgo_usado,
-        "sizing_advertencias": _serializar_json(peticion.sizing_advertencias),
-        "sizing_penalizaciones": _serializar_json(peticion.sizing_penalizaciones),
+        "sizing_advertencias": peticion.sizing_advertencias,
+        "sizing_penalizaciones": _serializar_jsonb(peticion.sizing_penalizaciones),
         "prediccion_media": peticion.prediccion_media,
         "prediccion_desviacion": peticion.prediccion_desviacion,
-        "razones": _serializar_json(peticion.razones),
+        "razones": _serializar_jsonb(peticion.razones),
     }
 
 
