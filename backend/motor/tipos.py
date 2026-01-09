@@ -437,6 +437,8 @@ class CandidatoApuesta:
     score: Optional[ScoreApuesta] = None
     sizing: Optional[ResultadoSizing] = None
     cuota: Optional[float] = None
+    cuota_over: Optional[float] = None
+    cuota_under: Optional[float] = None
 
     def etiqueta(self, nombre_equipo: str, nombre_rival: str) -> str:
         """Genera una etiqueta legible para mostrar al usuario."""
@@ -462,13 +464,19 @@ class CandidatoApuesta:
             "mercado": self.mercado.value,
             "lado": self.lado.value,
             "linea": self.linea,
+            "cuota": self.cuota,
+            "cuota_over": self.cuota_over,
+            "cuota_under": self.cuota_under,
             "probabilidad": self.probabilidad,
             "media": self.media,
             "desviacion": self.desviacion,
             "distancia_z": self.distancia_z,
-            "cuota": self.cuota,
             "edge_real": self.edge_real,
             "ev": self.ev,
+            "probabilidad_sistema": self.probabilidad,
+            "prediccion_media": self.media,
+            "prediccion_desviacion": self.desviacion,
+            "valor_esperado": self.ev,
         }
 
         if self.datos_devig is not None:
@@ -532,7 +540,7 @@ class FactoresConfianza:
         """Determina el nivel de confianza basado en el puntaje."""
         if self.puntaje_total >= 3:
             return NivelConfianza.ALTA
-        if self.puntaje_total >= 3:
+        if self.puntaje_total >= 2:
             return NivelConfianza.MEDIA
         return NivelConfianza.BAJA
 

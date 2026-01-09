@@ -34,6 +34,7 @@ from .tipos import (
     NivelConfianza,
     PerfilRiesgo,
     PrediccionCuarto,
+    RazonPrediccion,
     ResultadoAnalisis,
     ResultadoSizing,
     TipoMercado,
@@ -323,6 +324,8 @@ def candidatos_para_cuarto(
             score=score,
             sizing=sizing,
             cuota=cuota_lado,
+            cuota_over=cuota_over,
+            cuota_under=cuota_under,
         )
 
     if cuota_over is not None:
@@ -696,30 +699,92 @@ def analizar_partido(
 
 
 def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
-    """Convierte ResultadoAnalisis a diccionario serializable."""
-    def convertir(objeto):
-        if hasattr(objeto, "__dict__"):
-            return asdict(objeto)
-        return objeto
+    """Convierte ResultadoAnalisis a diccionario serializable estable."""
+    def serializar_prediccion(prediccion: PrediccionCuarto) -> Dict[str, object]:
+        return {
+            "cuarto": prediccion.cuarto,
+            "media_equipo": prediccion.media_equipo,
+            "desviacion_equipo": prediccion.desviacion_equipo,
+            "rango_equipo": list(prediccion.rango_equipo),
+            "media_rival": prediccion.media_rival,
+            "desviacion_rival": prediccion.desviacion_rival,
+            "rango_rival": list(prediccion.rango_rival),
+            "media_total": prediccion.media_total,
+            "desviacion_total": prediccion.desviacion_total,
+            "rango_total": list(prediccion.rango_total),
+            "linea_analizada": prediccion.linea_analizada,
+            "probabilidad_over": prediccion.probabilidad_over,
+            "probabilidad_under": prediccion.probabilidad_under,
+            "ganador_probable": prediccion.ganador_probable,
+            "probabilidad_ganador": prediccion.probabilidad_ganador,
+        }
+
+    def serializar_candidato(
+        candidato: CandidatoApuesta,
+        resumen: bool = False,
+    ) -> Dict[str, object]:
+        data = candidato.como_diccionario()
+        if candidato.datos_devig is None:
+            data.setdefault("devig_metodo", None)
+            data.setdefault("devig_overround", None)
+            data.setdefault("devig_p_mkt_raw", None)
+            data.setdefault("devig_p_mkt_fair", None)
+            data.setdefault("devig_advertencias", [])
+        if candidato.probabilidad is not None and candidato.datos_devig is not None:
+            data.setdefault(
+                "edge_raw",
+                candidato.probabilidad - candidato.datos_devig.p_mkt_raw,
+            )
+        if resumen:
+            data = {
+                "cuarto": data.get("cuarto"),
+                "mercado": data.get("mercado"),
+                "lado": data.get("lado"),
+                "linea": data.get("linea"),
+                "cuota": data.get("cuota"),
+                "cuota_over": data.get("cuota_over"),
+                "cuota_under": data.get("cuota_under"),
+                "probabilidad_sistema": data.get("probabilidad_sistema"),
+                "edge_real": data.get("edge_real"),
+                "valor_esperado": data.get("valor_esperado"),
+                "devig_metodo": data.get("devig_metodo"),
+                "devig_overround": data.get("devig_overround"),
+                "devig_p_mkt_raw": data.get("devig_p_mkt_raw"),
+                "devig_p_mkt_fair": data.get("devig_p_mkt_fair"),
+                "devig_advertencias": data.get("devig_advertencias", []),
+                "score_total": data.get("score_total"),
+                "score_penalizaciones": data.get("score_penalizaciones", []),
+            }
+        return data
+
+    def serializar_razones(razones: List[RazonPrediccion]) -> List[Dict[str, object]]:
+        return [asdict(razon) for razon in razones]
 
     salida = asdict(resultado)
     salida["nivel_confianza"] = resultado.nivel_confianza.value
     salida["ubicacion"] = resultado.ubicacion.value
     if resultado.analisis_mercado:
-        salida["analisis_mercado"]["recomendacion"] = resultado.analisis_mercado.recomendacion.value
-    if resultado.mejor_apuesta:
-        salida["mejor_apuesta"] = resultado.mejor_apuesta.como_diccionario()
-    if resultado.candidatos:
-        salida["candidatos"] = [
-            candidato.como_diccionario() for candidato in resultado.candidatos
-        ]
-    if resultado.prediccion_juego_completo:
-        salida["prediccion_juego_completo"]["ganador_probable"] = (
-            "equipo" if resultado.prediccion_juego_completo.probabilidad_ganador >= 0.5 else "rival"
+        salida["analisis_mercado"]["recomendacion"] = (
+            resultado.analisis_mercado.recomendacion.value
         )
+    if resultado.mejor_apuesta:
+        salida["mejor_apuesta"] = serializar_candidato(resultado.mejor_apuesta)
+    else:
+        salida["mejor_apuesta"] = None
+    salida["candidatos"] = [
+        serializar_candidato(candidato, resumen=True)
+        for candidato in resultado.candidatos
+    ]
+    if resultado.prediccion_juego_completo:
+        salida["prediccion_juego_completo"] = serializar_prediccion(
+            resultado.prediccion_juego_completo
+        )
+
     salida["predicciones"] = {
-        cuarto: convertir(prediccion) for cuarto, prediccion in resultado.predicciones.items()
+        cuarto: serializar_prediccion(prediccion)
+        for cuarto, prediccion in resultado.predicciones.items()
     }
+
     mercado = resultado.metadata.get("mercado") if resultado.metadata else None
     if mercado == "COMPLETO" and resultado.prediccion_juego_completo:
         prediccion = resultado.prediccion_juego_completo
@@ -733,4 +798,8 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
         salida["linea_analizada"] = prediccion.linea_analizada
     if resultado.metadata and resultado.metadata.get("mensaje_apuesta"):
         salida["mensaje_apuesta"] = resultado.metadata["mensaje_apuesta"]
+
+    salida["confianza_sistema"] = salida["nivel_confianza"]
+
+    salida["razones"] = serializar_razones(resultado.razones)
     return salida
