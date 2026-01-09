@@ -38,3 +38,13 @@ uvicorn app:app --reload --port 8000
 - `GET /api/equipos` Listado de equipos
 - `POST /api/analizar` Análisis de partido
 - `POST /api/analizar-en-vivo` Análisis con cuartos reales
+
+## Documentación Profesional
+
+Para documentación completa del contrato de API, incluyendo:
+- Campos de request/response
+- Reglas de precedencia
+- Ejemplos narrativos por escenario
+- Códigos de advertencia
+
+Ver: [docs/CONTRATO_API_PROFESIONAL.md](docs/CONTRATO_API_PROFESIONAL.md)

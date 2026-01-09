@@ -36,4 +36,4 @@ def test_validar_peticion_advierte_devig_estricto_con_una_cuota():
 
     advertencias = _validar_peticion_analisis(peticion)
 
-    assert any("no se aplicará de-vig exacto" in mensaje for mensaje in advertencias)
+    assert "DEVIG_ESTRICTO_REQUIERE_AMBAS_CUOTAS" in advertencias

@@ -353,15 +353,26 @@ def candidatos_para_cuarto(
 def seleccionar_mejor_apuesta(candidatos: List[CandidatoApuesta]) -> Optional[CandidatoApuesta]:
     """Selecciona el candidato con mejor score profesional."""
     if not candidatos:
+        logger.info("No hay candidatos.")
         return None
 
     aptos = [candidato for candidato in candidatos if candidato.score and candidato.score.gates_pasados]
     if not aptos:
+        logger.info("Ningún candidato pasó gates.")
         for candidato in candidatos:
             if candidato.score:
-                logger.info("Candidato no apto: %s", candidato.score.explicacion)
+                logger.debug(
+                    "Candidato descartado: lado=%s cuota=%s explicacion=%s",
+                    candidato.lado.value,
+                    candidato.cuota,
+                    candidato.score.explicacion,
+                )
             else:
-                logger.info("Candidato sin score disponible para evaluar.")
+                logger.debug(
+                    "Candidato descartado: lado=%s cuota=%s explicacion=sin_score",
+                    candidato.lado.value,
+                    candidato.cuota,
+                )
         return None
 
     def clave_orden(candidato: CandidatoApuesta) -> tuple:
@@ -622,8 +633,10 @@ def analizar_partido(
             )
 
     mejor_apuesta = seleccionar_mejor_apuesta(candidatos)
-    if candidatos and mejor_apuesta is None:
-        metadata["mensaje_apuesta"] = "No hay apuestas aptas."
+    if not candidatos:
+        metadata["mensaje_apuesta"] = "NO_APTO: SIN_CANDIDATOS"
+    elif mejor_apuesta is None:
+        metadata["mensaje_apuesta"] = "NO_APTO: EV<=0 o edge_real<=0 en todos los candidatos"
 
     if mercado == "COMPLETO" and prediccion_juego_completo is not None:
         probabilidad = None
@@ -857,7 +870,6 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
         "factores_confianza": resultado.factores_confianza.como_diccionario()
         if resultado.factores_confianza
         else None,
-        "advertencias": advertencias,
         "razones": serializar_razones(resultado.razones),
         "es_en_vivo": resultado.es_en_vivo,
         "cuartos_reales": resultado.cuartos_reales,
