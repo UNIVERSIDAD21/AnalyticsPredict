@@ -198,71 +198,46 @@ def _colectar_advertencias_resultado(resultado) -> List[str]:
 def _buscar_partido_por_equipos_fecha(
     equipo_local: str,
     equipo_visitante: str,
-    fecha_partido: Optional["date"] = None,
+    fecha_partido: "date",
 ) -> Optional[Dict[str, Any]]:
     """
-    Busca un partido en la BD por nombres de equipos y opcionalmente fecha.
+    Busca un partido en la BD por nombres de equipos Y fecha EXACTA.
 
-    Si se proporciona fecha, busca coincidencia exacta.
-    Si no hay fecha, busca el partido más reciente entre esos equipos.
+    IMPORTANTE: fecha_partido es OBLIGATORIA para garantizar partido determinístico.
+    Sin fecha no se puede buscar porque registrar contra "el partido más reciente"
+    contamina calibración, auditoría y trazabilidad.
 
-    Retorna None si no encuentra coincidencia.
+    Retorna None si no encuentra coincidencia exacta.
     """
-    from datetime import date as date_type
-
     pool = obtener_pool()
     try:
         with pool.connection() as conexion:
             with conexion.cursor(row_factory=dict_row) as cursor:
-                if fecha_partido:
-                    # Búsqueda exacta por fecha
-                    cursor.execute(
-                        """
-                        SELECT
-                            p.id as partido_id,
-                            p.temporada_id,
-                            p.equipo_local_id,
-                            p.equipo_visitante_id,
-                            p.fecha_partido,
-                            p.tipo_partido
-                        FROM partidos p
-                        JOIN equipos el ON p.equipo_local_id = el.id
-                        JOIN equipos ev ON p.equipo_visitante_id = ev.id
-                        WHERE
-                            LOWER(el.nombre) = LOWER(%s)
-                            AND LOWER(ev.nombre) = LOWER(%s)
-                            AND p.fecha_partido = %s
-                        LIMIT 1
-                        """,
-                        [equipo_local, equipo_visitante, fecha_partido],
-                    )
-                else:
-                    # Sin fecha: buscar partido más reciente entre esos equipos
-                    cursor.execute(
-                        """
-                        SELECT
-                            p.id as partido_id,
-                            p.temporada_id,
-                            p.equipo_local_id,
-                            p.equipo_visitante_id,
-                            p.fecha_partido,
-                            p.tipo_partido
-                        FROM partidos p
-                        JOIN equipos el ON p.equipo_local_id = el.id
-                        JOIN equipos ev ON p.equipo_visitante_id = ev.id
-                        WHERE
-                            LOWER(el.nombre) = LOWER(%s)
-                            AND LOWER(ev.nombre) = LOWER(%s)
-                        ORDER BY p.fecha_partido DESC
-                        LIMIT 1
-                        """,
-                        [equipo_local, equipo_visitante],
-                    )
+                cursor.execute(
+                    """
+                    SELECT
+                        p.id as partido_id,
+                        p.temporada_id,
+                        p.equipo_local_id,
+                        p.equipo_visitante_id,
+                        p.fecha_partido,
+                        p.tipo_partido
+                    FROM partidos p
+                    JOIN equipos el ON p.equipo_local_id = el.id
+                    JOIN equipos ev ON p.equipo_visitante_id = ev.id
+                    WHERE
+                        LOWER(el.nombre) = LOWER(%s)
+                        AND LOWER(ev.nombre) = LOWER(%s)
+                        AND p.fecha_partido = %s
+                    LIMIT 1
+                    """,
+                    [equipo_local, equipo_visitante, fecha_partido],
+                )
 
                 resultado = cursor.fetchone()
                 if resultado:
                     logger.info(
-                        "Partido encontrado por lookup (partido_id=%s equipos=%s vs %s fecha=%s)",
+                        "Partido encontrado por lookup exacto (partido_id=%s equipos=%s vs %s fecha=%s)",
                         resultado["partido_id"],
                         equipo_local,
                         equipo_visitante,
@@ -284,12 +259,15 @@ def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str,
     """
     Extrae el contexto necesario para registrar la predicción.
 
-    Si el frontend envía partido_id directamente, lo usa.
-    Si no, intenta hacer lookup por equipos + fecha.
+    REGLA DE ORO: Solo registrar si hay partido DETERMINÍSTICO.
+    - Si viene partido_id + todos los campos → usar directo
+    - Si viene fecha_partido (sin partido_id) → lookup exacto por equipos+fecha
+    - Si NO hay partido_id NI fecha_partido → NO REGISTRAR (data basura)
 
-    Retorna None si no se puede determinar el partido de forma confiable.
+    Registrar contra "el partido más reciente" contamina calibración, auditoría
+    y trazabilidad. Es mejor NO registrar que registrar contra partido incorrecto.
     """
-    # Si todos los campos vienen directamente del request, usarlos
+    # CAMINO 1: Todos los campos vienen directamente del request
     if all([
         peticion.partido_id,
         peticion.temporada_id,
@@ -298,6 +276,10 @@ def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str,
         peticion.fecha_partido,
         peticion.tipo_partido,
     ]):
+        logger.debug(
+            "Contexto registro completo (partido_id=%s)",
+            peticion.partido_id,
+        )
         return {
             "partido_id": peticion.partido_id,
             "temporada_id": peticion.temporada_id,
@@ -307,24 +289,36 @@ def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str,
             "tipo_partido": peticion.tipo_partido,
         }
 
-    # Si no hay partido_id pero sí hay equipos, intentar lookup
-    partido_lookup = _buscar_partido_por_equipos_fecha(
-        equipo_local=peticion.equipo_local,
-        equipo_visitante=peticion.equipo_visitante,
-        fecha_partido=peticion.fecha_partido,
-    )
+    # CAMINO 2: Hay fecha_partido → lookup exacto por equipos+fecha
+    if peticion.fecha_partido:
+        partido_lookup = _buscar_partido_por_equipos_fecha(
+            equipo_local=peticion.equipo_local,
+            equipo_visitante=peticion.equipo_visitante,
+            fecha_partido=peticion.fecha_partido,
+        )
+        if partido_lookup:
+            return partido_lookup
+        # Lookup falló pero había fecha → partido no existe en BD
+        logger.warning(
+            "Predicción no registrable: partido no encontrado en BD "
+            "(equipo_local=%s equipo_visitante=%s fecha=%s)",
+            peticion.equipo_local,
+            peticion.equipo_visitante,
+            peticion.fecha_partido,
+        )
+        return None
 
-    if partido_lookup:
-        return partido_lookup
-
-    # No se pudo determinar el partido
-    logger.warning(
-        "Predicción no registrable: no se pudo determinar partido_id "
-        "(equipo_local=%s equipo_visitante=%s fecha=%s partido_id=%s)",
+    # CAMINO 3: NO hay partido_id NI fecha_partido → NO REGISTRAR
+    # IMPORTANTE: No hacer fallback a "partido más reciente" porque:
+    # - El usuario quiere analizar un partido FUTURO (que va a apostar)
+    # - Registrar contra un partido PASADO rompe trazabilidad y calibración
+    # - Mejor NO registrar que registrar DATA BASURA
+    logger.info(
+        "Predicción no registrable: falta partido_id y fecha_partido. "
+        "Sin contexto determinístico NO se registra (equipo_local=%s equipo_visitante=%s). "
+        "Para registrar predicciones, enviar partido_id o fecha_partido.",
         peticion.equipo_local,
         peticion.equipo_visitante,
-        peticion.fecha_partido,
-        peticion.partido_id,
     )
     return None
 
