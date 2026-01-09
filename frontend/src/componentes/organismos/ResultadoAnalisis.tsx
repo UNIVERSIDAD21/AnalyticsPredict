@@ -38,6 +38,8 @@ function obtenerConfigConfianza(nivel: NivelConfianza) {
       return { texto: 'Media', color: 'bg-advertencia-500', textColor: 'text-advertencia-500' };
     case 'BAJA':
       return { texto: 'Baja', color: 'bg-neon-rojo', textColor: 'text-neon-rojo' };
+    default:
+      return { texto: 'Media', color: 'bg-advertencia-500', textColor: 'text-advertencia-500' };
   }
 }
 
