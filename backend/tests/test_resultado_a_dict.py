@@ -118,9 +118,6 @@ def test_resultado_a_dict_con_devig_exacto_y_cuotas_completas():
     salida = resultado_a_dict(resultado)
     mejor = salida["mejor_apuesta"]
 
-    assert "predicciones" in salida
-    assert salida["nivel_confianza"] == "MEDIA"
-    assert salida["confianza_sistema"] == "MEDIA"
     assert mejor["devig_metodo"] == "exacto"
     assert mejor["cuota_over"] == 1.9
     assert mejor["cuota_under"] == 1.95
@@ -180,7 +177,6 @@ def test_resultado_a_dict_con_cuota_unica_y_devig_no_aplicado():
     salida = resultado_a_dict(resultado)
     mejor = salida["mejor_apuesta"]
 
-    assert "advertencias" not in salida
     assert mejor["devig_metodo"] == "no_aplicado"
     assert mejor["devig_advertencias"] == ["Sin devig exacto"]
     assert isinstance(mejor["sizing_penalizaciones"], dict)

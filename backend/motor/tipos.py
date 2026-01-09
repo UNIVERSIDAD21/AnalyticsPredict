@@ -460,22 +460,17 @@ class CandidatoApuesta:
     def como_diccionario(self) -> Dict[str, Any]:
         """Serializa el candidato con nombres compatibles con la BD."""
         data = {
-            "cuarto": self.cuarto,
-            "mercado": self.mercado.value,
+            "mercado": self.cuarto,
             "lado": self.lado.value,
             "linea": self.linea,
             "cuota": self.cuota,
             "cuota_over": self.cuota_over,
             "cuota_under": self.cuota_under,
-            "probabilidad": self.probabilidad,
-            "media": self.media,
-            "desviacion": self.desviacion,
-            "distancia_z": self.distancia_z,
-            "edge_real": self.edge_real,
-            "ev": self.ev,
             "probabilidad_sistema": self.probabilidad,
             "prediccion_media": self.media,
             "prediccion_desviacion": self.desviacion,
+            "distancia_z": self.distancia_z,
+            "edge_real": self.edge_real,
             "valor_esperado": self.ev,
         }
 
