@@ -66,8 +66,9 @@ export async function obtenerPartidosProximos(
   dias: number = 7
 ): Promise<PartidoResumen[]> {
   try {
+    const diasNormalizados = Number.isFinite(dias) ? Math.min(Math.max(dias, 1), 30) : 7;
     const respuesta = await clienteAPI.get<RespuestaPartidos>('/api/partidos/proximos', {
-      params: { dias },
+      params: { dias: diasNormalizados },
     });
 
     if (!respuesta.data.exito) {
