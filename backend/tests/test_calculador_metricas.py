@@ -280,3 +280,69 @@ def test_calculador_idempotente_en_persistencia():
     )
 
     assert len(store) == 1
+
+
+def test_calculador_idempotencia_con_modelo_version_id_null():
+    rows = _rows_base()
+    store = {}
+    pool = FakePool(rows, store)
+
+    calcular_metricas_calibracion(
+        mercado="Q1",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 5),
+        modelo_version_id=None,
+        pool=pool,
+    )
+    calcular_metricas_calibracion(
+        mercado="Q1",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 5),
+        modelo_version_id=None,
+        pool=pool,
+    )
+
+    assert len(store) == 1
+
+
+def test_calculador_distingue_modelo_version_id_null_vs_valor():
+    rows = _rows_base()
+    rows.append(
+        {
+            "mercado": "Q1",
+            "origen": "API_USUARIO",
+            "fecha_partido": date(2024, 1, 2),
+            "modelo_version_id": 5,
+            "p_raw": 0.4,
+            "p_calibrada": 0.35,
+            "outcome_binario": True,
+            "media_predicha": 101.0,
+            "valor_real": 103.0,
+            "intervalo_inferior": 98.0,
+            "intervalo_superior": 105.0,
+            "nivel_intervalo": 90,
+        }
+    )
+    store = {}
+    pool = FakePool(rows, store)
+
+    calcular_metricas_calibracion(
+        mercado="Q1",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 5),
+        modelo_version_id=None,
+        pool=pool,
+    )
+    calcular_metricas_calibracion(
+        mercado="Q1",
+        origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 5),
+        modelo_version_id=5,
+        pool=pool,
+    )
+
+    assert len(store) == 2

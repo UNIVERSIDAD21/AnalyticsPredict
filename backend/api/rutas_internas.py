@@ -23,6 +23,12 @@ from backtesting.ejecutor import (
     obtener_estado_backtest,
     obtener_resultado_backtest,
 )
+from motor.alertas_calibracion import evaluar_alertas_calibracion, listar_alertas_calibracion
+from motor.recalibracion import (
+    recalibrar_mercado,
+    sugerir_recalibracion,
+    listar_calibradores,
+)
 from motor.resolucion_predicciones import (
     resolver_predicciones,
     obtener_estadisticas_predicciones,
@@ -92,6 +98,77 @@ class RespuestaBacktest(BaseModel):
     backtest_id: str
     estado: str
     detalle: dict | None = None
+
+
+class PeticionEvaluarAlertasCalibracion(BaseModel):
+    """Parámetros para evaluar alertas de calibración."""
+
+    mercado: str = Field(pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$")
+    origen: str
+    fecha_inicio: date
+    fecha_fin: date
+    modelo_version_id: Optional[int] = None
+
+
+class RespuestaAlertasCalibracion(BaseModel):
+    """Respuesta del evaluador de alertas."""
+
+    exito: bool
+    alertas: List[dict]
+    mensaje: str
+
+
+class PeticionSugerirRecalibracion(BaseModel):
+    """Parámetros para sugerir recalibración."""
+
+    mercado: str = Field(pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$")
+    origen: str
+    periodo_fin: date
+    modelo_version_id: Optional[int] = None
+
+
+class PeticionRecalibracion(BaseModel):
+    """Parámetros para ejecutar recalibración."""
+
+    mercado: str = Field(pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$")
+    origen: str
+    cutoff_datos: date
+    modelo_version_id: Optional[int] = None
+    metodo: str = Field(default="platt")
+    min_muestras: int = Field(default=100, ge=10)
+
+
+class RespuestaRecalibracion(BaseModel):
+    """Respuesta de recalibración."""
+
+    exito: bool
+    calibrador_id: Optional[str]
+    creado: bool
+    mensaje: str
+    detalle: dict
+
+
+class RespuestaSugerenciaRecalibracion(BaseModel):
+    """Respuesta para sugerencias de recalibración."""
+
+    exito: bool
+    sugerida: bool
+    motivo: str
+    alertas: List[str]
+
+
+class RespuestaListadoAlertas(BaseModel):
+    """Listado de alertas."""
+
+    exito: bool
+    alertas: List[dict]
+
+
+class RespuestaListadoCalibradores(BaseModel):
+    """Listado de calibradores."""
+
+    exito: bool
+    calibradores: List[dict]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -276,3 +353,143 @@ async def resultado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
             estado="ERROR",
             detalle={"error": str(exc)},
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS DE ALERTAS Y RECALIBRACIÓN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post(
+    "/evaluar-alertas-calibracion",
+    response_model=RespuestaAlertasCalibracion,
+    summary="Evaluar alertas de calibración",
+)
+async def evaluar_alertas_calibracion_endpoint(
+    peticion: PeticionEvaluarAlertasCalibracion,
+) -> RespuestaAlertasCalibracion:
+    try:
+        alertas = evaluar_alertas_calibracion(
+            mercado=peticion.mercado,
+            origen=peticion.origen,
+            fecha_inicio=peticion.fecha_inicio,
+            fecha_fin=peticion.fecha_fin,
+            modelo_version_id=peticion.modelo_version_id,
+        )
+        return RespuestaAlertasCalibracion(
+            exito=True,
+            alertas=alertas,
+            mensaje=f"Se generaron {len(alertas)} alertas.",
+        )
+    except Exception as exc:
+        logger.exception("Error evaluando alertas de calibración")
+        return RespuestaAlertasCalibracion(
+            exito=False,
+            alertas=[],
+            mensaje=f"Error: {str(exc)}",
+        )
+
+
+@router.get(
+    "/alertas-calibracion",
+    response_model=RespuestaListadoAlertas,
+    summary="Listar alertas de calibración",
+)
+async def listar_alertas_calibracion_endpoint(
+    mercado: Optional[str] = Query(default=None),
+    origen: Optional[str] = Query(default=None),
+    severidad: Optional[str] = Query(default=None),
+    resuelta: Optional[bool] = Query(default=None),
+) -> RespuestaListadoAlertas:
+    try:
+        alertas = listar_alertas_calibracion(
+            mercado=mercado,
+            origen=origen,
+            severidad=severidad,
+            resuelta=resuelta,
+        )
+        return RespuestaListadoAlertas(exito=True, alertas=alertas)
+    except Exception as exc:
+        logger.exception("Error listando alertas de calibración")
+        return RespuestaListadoAlertas(exito=False, alertas=[])
+
+
+@router.post(
+    "/sugerir-recalibracion",
+    response_model=RespuestaSugerenciaRecalibracion,
+    summary="Sugerir recalibración por alertas",
+)
+async def sugerir_recalibracion_endpoint(
+    peticion: PeticionSugerirRecalibracion,
+) -> RespuestaSugerenciaRecalibracion:
+    try:
+        resultado = sugerir_recalibracion(
+            mercado=peticion.mercado,
+            origen=peticion.origen,
+            periodo_fin=peticion.periodo_fin,
+            modelo_version_id=peticion.modelo_version_id,
+        )
+        return RespuestaSugerenciaRecalibracion(
+            exito=True,
+            sugerida=resultado["sugerida"],
+            motivo=resultado["motivo"],
+            alertas=resultado["alertas"],
+        )
+    except Exception as exc:
+        logger.exception("Error sugiriendo recalibración")
+        return RespuestaSugerenciaRecalibracion(
+            exito=False,
+            sugerida=False,
+            motivo=f"Error: {str(exc)}",
+            alertas=[],
+        )
+
+
+@router.post(
+    "/recalibrar",
+    response_model=RespuestaRecalibracion,
+    summary="Ejecutar recalibración",
+)
+async def recalibrar_endpoint(peticion: PeticionRecalibracion) -> RespuestaRecalibracion:
+    try:
+        resultado = recalibrar_mercado(
+            mercado=peticion.mercado,
+            origen=peticion.origen,
+            cutoff_datos=peticion.cutoff_datos,
+            modelo_version_id=peticion.modelo_version_id,
+            metodo=peticion.metodo,
+            min_muestras=peticion.min_muestras,
+        )
+        return RespuestaRecalibracion(
+            exito=True,
+            calibrador_id=str(resultado.calibrador_id) if resultado.calibrador_id else None,
+            creado=resultado.creado,
+            mensaje=resultado.mensaje,
+            detalle=resultado.detalle,
+        )
+    except Exception as exc:
+        logger.exception("Error ejecutando recalibración")
+        return RespuestaRecalibracion(
+            exito=False,
+            calibrador_id=None,
+            creado=False,
+            mensaje=f"Error: {str(exc)}",
+            detalle={},
+        )
+
+
+@router.get(
+    "/calibradores",
+    response_model=RespuestaListadoCalibradores,
+    summary="Listar calibradores",
+)
+async def listar_calibradores_endpoint(
+    mercado: Optional[str] = Query(default=None),
+    activo: Optional[bool] = Query(default=None),
+) -> RespuestaListadoCalibradores:
+    try:
+        calibradores = listar_calibradores(mercado=mercado, activo=activo)
+        return RespuestaListadoCalibradores(exito=True, calibradores=calibradores)
+    except Exception as exc:
+        logger.exception("Error listando calibradores")
+        return RespuestaListadoCalibradores(exito=False, calibradores=[])
