@@ -117,3 +117,39 @@ Notas:
   (ver `metadatos["bins_efectivos"]`).
 - Cada bin retorna `avg_predicha`, `frecuencia_real`, `gap` y `suficiente_data`,
   lo que permite graficar curvas y validar data insuficiente.
+
+## Métricas de distribución (T16)
+
+Se mide la calidad de la distribución predicha (media, sesgo y cobertura):
+
+```python
+from backtesting.metricas.distribucion import calcular_metricas_distribucion
+
+resultado = calcular_metricas_distribucion([
+    (110.0, 112.0, 108.0, 114.0),
+    (105.0, 100.0, 98.0, 108.0),
+])
+```
+
+Retorna `mae_media`, `rmse_media`, `sesgo_media` y `cobertura_intervalo` junto
+con `n_con_intervalo`/`n_sin_intervalo` para auditoría.
+
+## Calculador unificado (T17)
+
+El motor unificado calcula métricas probabilísticas + distribución y persiste
+una fila en `metricas_calibracion`:
+
+```python
+from backtesting.metricas.calculador import calcular_metricas_calibracion
+
+resultado = calcular_metricas_calibracion(
+    mercado="Q1",
+    origen="API_USUARIO",
+    fecha_inicio=date(2024, 1, 1),
+    fecha_fin=date(2024, 1, 31),
+    usar_p_calibrada=True,
+)
+```
+
+Incluye `bins_json` y `configuracion_json` para trazabilidad. Si no hay datos
+útiles, retorna `alertas=["DATOS_INSUFICIENTES"]` y no persiste métricas.

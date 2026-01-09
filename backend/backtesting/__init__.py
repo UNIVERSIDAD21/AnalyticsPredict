@@ -1,16 +1,10 @@
-from .configuracion import ConfiguracionBacktest, ModoCutoff, ModoVentana
-from .generador_predicciones import generar_predicciones_backtest
-from .ejecutor import ejecutar_backtest, obtener_estado_backtest, obtener_resultado_backtest
-from .walk_forward import IteracionWalkForward, iterar_walk_forward
+"""API pública liviana para backtesting."""
+
+from .configuracion import ConfiguracionBacktest, Mercado, ModoCutoff, ModoVentana
 
 __all__ = [
     "ConfiguracionBacktest",
+    "Mercado",
     "ModoCutoff",
     "ModoVentana",
-    "IteracionWalkForward",
-    "iterar_walk_forward",
-    "generar_predicciones_backtest",
-    "ejecutar_backtest",
-    "obtener_estado_backtest",
-    "obtener_resultado_backtest",
 ]
