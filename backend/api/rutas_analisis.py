@@ -10,7 +10,7 @@ CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -119,6 +119,44 @@ def _construir_configuracion_sizing(
     )
 
 
+def _validar_peticion_analisis(peticion: PeticionAnalisis) -> List[str]:
+    advertencias: List[str] = []
+    cuotas_presentes = any(
+        cuota is not None
+        for cuota in (peticion.cuota, peticion.cuota_over, peticion.cuota_under)
+    )
+
+    if cuotas_presentes and "lado" not in peticion.model_fields_set:
+        raise ErrorValidacion("Debes indicar lado cuando envías cuotas.")
+
+    if peticion.bankroll is not None and peticion.bankroll <= 0:
+        raise ErrorValidacion("bankroll debe ser mayor a 0.")
+
+    if peticion.modo_devig == "estricto":
+        solo_un_lado = (
+            peticion.cuota_over is not None
+        ) ^ (
+            peticion.cuota_under is not None
+        )
+        if cuotas_presentes and solo_un_lado:
+            advertencias.append(
+                "modo_devig estricto sin cuota opuesta: no se aplicará de-vig exacto."
+            )
+
+    return advertencias
+
+
+def _colectar_advertencias_resultado(resultado) -> List[str]:
+    advertencias: List[str] = []
+    if resultado.analisis_mercado and resultado.analisis_mercado.datos_devig:
+        advertencias.extend(resultado.analisis_mercado.datos_devig.advertencias)
+    if resultado.mejor_apuesta and resultado.mejor_apuesta.datos_devig:
+        advertencias.extend(resultado.mejor_apuesta.datos_devig.advertencias)
+    if resultado.mejor_apuesta and resultado.mejor_apuesta.sizing:
+        advertencias.extend(resultado.mejor_apuesta.sizing.advertencias)
+    return advertencias
+
+
 def ejecutar_analisis(
     peticion: PeticionAnalisis,
     marcador_q1: Optional[str] = None,
@@ -128,6 +166,7 @@ def ejecutar_analisis(
     usuario_id: Optional[UUID] = None,
 ) -> RespuestaAnalisis:
     """Ejecuta el análisis y retorna la respuesta de API."""
+    advertencias_entrada = _validar_peticion_analisis(peticion)
     
     # ═══════════════════════════════════════════════════════════════════════════
     # CAMBIO: obtener_modelo() ahora viene de motor_autoentrenamiento
@@ -184,10 +223,20 @@ def ejecutar_analisis(
         raise ErrorValidacion(str(exc)) from exc
     except Exception as exc:
         raise ErrorAnalisis("No se pudo completar el análisis.") from exc
+    datos_respuesta = resultado_a_dict(resultado)
+    if datos_respuesta.get("mejor_apuesta") is not None:
+        mejor = datos_respuesta["mejor_apuesta"]
+        if isinstance(mejor, dict):
+            mejor["cuota"] = peticion.cuota_analisis
+            mejor["cuota_over"] = peticion.cuota_over
+            mejor["cuota_under"] = peticion.cuota_under
 
+    advertencias_motor = _colectar_advertencias_resultado(resultado)
+    advertencias = list(dict.fromkeys(advertencias_entrada + advertencias_motor))
     return RespuestaAnalisis(
         exito=True,
-        datos=resultado_a_dict(resultado),
+        datos=datos_respuesta,
+        advertencias=advertencias or None,
     )
 
 
