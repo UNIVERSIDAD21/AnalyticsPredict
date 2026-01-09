@@ -94,6 +94,37 @@ def test_generador_inserta_offsets_e_idempotencia():
     assert resumen_repetido["total_duplicadas"] == 4
 
 
+def test_linea_es_sintetica_en_offset_cero():
+    capturados = []
+
+    def fake_registrar_prediccion(*, return_status=False, **kwargs):
+        capturados.append(kwargs)
+        return (uuid4(), "insertada") if return_status else uuid4()
+
+    config = ConfiguracionBacktest(
+        fecha_inicio=date(2024, 1, 1),
+        fecha_fin=date(2024, 1, 2),
+        mercados=[Mercado.Q1],
+        incluir_completo=False,
+        usar_lineas_sinteticas=True,
+        offsets_linea=[0.0],
+        min_partidos_entrenamiento=1,
+        min_temporadas_historia=1,
+    )
+
+    partido = _partido_prueba(uuid4())
+    generar_predicciones_backtest(
+        _modelo_prueba(),
+        [partido],
+        config,
+        modelo_version_id=1,
+        registrar_prediccion_func=fake_registrar_prediccion,
+    )
+
+    assert capturados
+    assert all(item["linea_es_sintetica"] for item in capturados)
+
+
 def test_generador_falla_sin_partido_id():
     def fake_registrar_prediccion(*, return_status=False, **kwargs):
         raise AssertionError("No debería intentar registrar predicciones sin partido_id")
