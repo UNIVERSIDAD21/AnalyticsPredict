@@ -28,6 +28,18 @@ export type TipoRecomendacion = 'VALOR' | 'JUSTO' | 'EVITAR';
 export type LadoApuesta = 'OVER' | 'UNDER';
 
 // ══════════════════════════════════════════════════════════════
+// TIPOS DE DE-VIG
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Modo de de-vig para el cálculo de probabilidades justas.
+ *
+ * - 'estricto': Requiere ambas cuotas (over y under) para calcular overround exacto
+ * - 'estimado': Solo una cuota disponible, aplica penalización por vig estimado
+ */
+export type ModoDevig = 'estricto' | 'estimado';
+
+// ══════════════════════════════════════════════════════════════
 // PETICIONES
 // ══════════════════════════════════════════════════════════════
 
@@ -38,25 +50,83 @@ export type LadoApuesta = 'OVER' | 'UNDER';
  * es necesario enviar el contexto del partido (partido_id o al menos
  * equipo_local + equipo_visitante + fecha_partido para que el backend
  * pueda hacer lookup).
+ *
+ * CONTRATO DE CUOTAS:
+ * - Sin cuotas: análisis solo probabilidades (sin EV)
+ * - Una cuota (del lado seleccionado): de-vig estimado (modo_devig='estimado')
+ * - Ambas cuotas: de-vig exacto con overround real (modo_devig='estricto')
  */
 export interface PeticionAnalisis {
+  /** Nombre del equipo local (requerido) */
   equipo_local: string;
+
+  /** Nombre del equipo visitante (requerido) */
   equipo_visitante: string;
+
+  /** Mercado a analizar: Q1, Q2, Q3, Q4 o COMPLETO (requerido) */
   mercado: Mercado;
+
+  /** Línea de puntos a analizar (requerido) */
   linea: number;
+
+  /**
+   * @deprecated Usar cuota_over y cuota_under en su lugar.
+   * Campo legacy mantenido por compatibilidad con versiones anteriores.
+   * Si se envía, representa la cuota del lado seleccionado.
+   */
   cuota?: number;
+
+  /**
+   * Cuota decimal para el OVER (ej: 1.85).
+   * Con ambas cuotas se activa de-vig exacto.
+   */
   cuota_over?: number;
+
+  /**
+   * Cuota decimal para el UNDER (ej: 1.95).
+   * Con ambas cuotas se activa de-vig exacto.
+   */
   cuota_under?: number;
+
+  /**
+   * Lado de la apuesta: 'OVER' o 'UNDER'.
+   * IMPORTANTE: Debe enviarse siempre que se incluyan cuotas.
+   * El backend valida coherencia entre lado y cuotas.
+   */
   lado?: LadoApuesta;
+
+  /**
+   * Modo de de-vig calculado por el frontend:
+   * - 'estricto': ambas cuotas presentes
+   * - 'estimado': solo una cuota presente
+   * Si no se envía, el backend lo determina automáticamente.
+   */
+  modo_devig?: ModoDevig;
+
+  /** IDs de temporadas a incluir en el análisis */
   temporadas?: string[];
 
+  // ══════════════════════════════════════════════════════════════
   // Campos para registro de predicciones (opcionales pero recomendados)
   // Si se envían, permiten el registro idempotente de predicciones
+  // ══════════════════════════════════════════════════════════════
+
+  /** ID único del partido (si se seleccionó desde el selector) */
   partido_id?: string;
+
+  /** ID de la temporada actual */
   temporada_id?: string;
+
+  /** ID del equipo local */
   equipo_local_id?: string;
+
+  /** ID del equipo visitante */
   equipo_visitante_id?: string;
-  fecha_partido?: string; // formato YYYY-MM-DD
+
+  /** Fecha del partido en formato YYYY-MM-DD */
+  fecha_partido?: string;
+
+  /** Tipo de partido: PRE (pretemporada), REG (regular), POST (playoffs) */
   tipo_partido?: 'PRE' | 'REG' | 'POST';
 }
 

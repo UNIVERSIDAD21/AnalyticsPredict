@@ -60,10 +60,17 @@ export async function analizarPartidoEnVivo(
 }
 
 /**
- * Valida los datos antes de enviar
+ * Valida los datos antes de enviar.
+ *
+ * Soporta cuotas duales (over/under) y modo_devig.
+ * Valida coherencia entre lado seleccionado y cuotas ingresadas.
  */
 export function validarPeticionAnalisis(peticion: Partial<PeticionAnalisis>): string[] {
   const errores: string[] = [];
+
+  // ═══════════════════════════════════════════════════════════
+  // Validaciones de equipos
+  // ═══════════════════════════════════════════════════════════
 
   if (!peticion.equipo_local?.trim()) {
     errores.push('Debes seleccionar el equipo local');
@@ -77,6 +84,10 @@ export function validarPeticionAnalisis(peticion: Partial<PeticionAnalisis>): st
     errores.push('El equipo local y visitante no pueden ser el mismo');
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // Validaciones de mercado y línea
+  // ═══════════════════════════════════════════════════════════
+
   if (!peticion.mercado) {
     errores.push('Debes seleccionar un mercado');
   }
@@ -89,6 +100,11 @@ export function validarPeticionAnalisis(peticion: Partial<PeticionAnalisis>): st
     errores.push('La línea parece demasiado alta');
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // Validaciones de cuotas (legacy y duales)
+  // ═══════════════════════════════════════════════════════════
+
+  // Cuota legacy (deprecada pero aún soportada)
   if (peticion.cuota !== undefined && peticion.cuota !== null) {
     if (peticion.cuota <= 1) {
       errores.push('La cuota debe ser mayor a 1.00');
@@ -97,20 +113,46 @@ export function validarPeticionAnalisis(peticion: Partial<PeticionAnalisis>): st
     }
   }
 
-  const cuotasNuevas = [
-    { valor: peticion.cuota_over, etiqueta: 'cuota OVER' },
-    { valor: peticion.cuota_under, etiqueta: 'cuota UNDER' },
-  ];
+  // Cuotas duales
+  const tieneOver = peticion.cuota_over !== undefined && peticion.cuota_over !== null;
+  const tieneUnder = peticion.cuota_under !== undefined && peticion.cuota_under !== null;
 
-  cuotasNuevas.forEach(({ valor, etiqueta }) => {
-    if (valor !== undefined && valor !== null) {
-      if (valor <= 1) {
-        errores.push(`La ${etiqueta} debe ser mayor a 1.00`);
-      } else if (valor > 100) {
-        errores.push(`La ${etiqueta} parece demasiado alta`);
-      }
+  if (tieneOver) {
+    if (peticion.cuota_over! <= 1) {
+      errores.push('La cuota OVER debe ser mayor a 1.00');
+    } else if (peticion.cuota_over! > 100) {
+      errores.push('La cuota OVER parece demasiado alta');
     }
-  });
+  }
+
+  if (tieneUnder) {
+    if (peticion.cuota_under! <= 1) {
+      errores.push('La cuota UNDER debe ser mayor a 1.00');
+    } else if (peticion.cuota_under! > 100) {
+      errores.push('La cuota UNDER parece demasiado alta');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Validación de coherencia lado/cuotas
+  // Si hay cuotas, debe haber al menos la cuota del lado seleccionado
+  // ═══════════════════════════════════════════════════════════
+
+  if ((tieneOver || tieneUnder) && peticion.lado) {
+    const soloLadoOpuesto =
+      (peticion.lado === 'OVER' && tieneUnder && !tieneOver) ||
+      (peticion.lado === 'UNDER' && tieneOver && !tieneUnder);
+
+    if (soloLadoOpuesto) {
+      errores.push(
+        `Ingresaste cuota del lado contrario. Completa la cuota ${peticion.lado} o cambia el lado de apuesta.`
+      );
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Validaciones de temporadas
+  // ═══════════════════════════════════════════════════════════
 
   if (peticion.temporadas && peticion.temporadas.length === 0) {
     errores.push('Debes seleccionar al menos una temporada para el análisis');
