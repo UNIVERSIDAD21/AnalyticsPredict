@@ -944,7 +944,7 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
         "rival": resultado.rival,
         "rival_nombre_completo": resultado.rival_nombre_completo,
         "ubicacion": resultado.ubicacion.value if hasattr(resultado.ubicacion, 'value') else resultado.ubicacion,
-        "fecha_analisis": resultado.fecha_analisis.isoformat() if resultado.fecha_analisis else None,
+        "fecha_analisis": resultado.fecha_analisis if resultado.fecha_analisis else None,
         "predicciones": predicciones,  # El frontend usa plural
         "prediccion_juego_completo": prediccion_juego_completo_dict,
         "nivel_confianza": resultado.nivel_confianza.value,  # El frontend usa este nombre
