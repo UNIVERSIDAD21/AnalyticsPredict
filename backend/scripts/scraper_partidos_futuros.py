@@ -123,11 +123,8 @@ def upsert_partido_futuro(
         """
         INSERT INTO partidos (
             temporada_id, fecha_partido, tipo_partido, espn_game_id,
-            equipo_local_id, equipo_visitante_id,
-            local_q1, local_q2, local_q3, local_q4, local_ot,
-            visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot,
-            local_total, visitante_total, ganador_id, hubo_overtime
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            equipo_local_id, equipo_visitante_id
+        ) VALUES (%s, %s, %s, %s, %s, %s)
         ON CONFLICT (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
         DO UPDATE SET
             espn_game_id = COALESCE(partidos.espn_game_id, EXCLUDED.espn_game_id)
@@ -140,20 +137,6 @@ def upsert_partido_futuro(
             espn_game_id,
             equipo_local_id,
             equipo_visitante_id,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            None,
-            None,
-            None,
-            False,
         ],
     )
     row = cursor.fetchone()
@@ -227,7 +210,6 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
 
                 except Exception as exc:
                     stats["errores"] += 1
-                    conn.rollback()
                     print(f"    ❌ Error en {fecha}: {exc}")
 
     return stats
