@@ -18,12 +18,17 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backtesting.configuracion import ConfiguracionBacktest
+from db import obtener_pool
 from backtesting.ejecutor import (
     ejecutar_backtest,
     obtener_estado_backtest,
     obtener_resultado_backtest,
 )
-from motor.alertas_calibracion import evaluar_alertas_calibracion, listar_alertas_calibracion
+from motor.alertas_calibracion import (
+    evaluar_alertas_calibracion,
+    listar_alertas_calibracion,
+    resolver_alerta_calibracion,
+)
 from motor.recalibracion import (
     recalibrar_mercado,
     sugerir_recalibracion,
@@ -162,6 +167,22 @@ class RespuestaListadoAlertas(BaseModel):
 
     exito: bool
     alertas: List[dict]
+
+
+class PeticionResolverAlerta(BaseModel):
+    """Parámetros para resolver una alerta de calibración."""
+
+    alerta_id: str
+    nota: Optional[str] = None
+
+
+class RespuestaResolverAlerta(BaseModel):
+    """Respuesta de resolver alerta."""
+
+    exito: bool
+    alerta_id: Optional[str]
+    resuelta: bool
+    mensaje: str
 
 
 class RespuestaListadoCalibradores(BaseModel):
@@ -412,6 +433,36 @@ async def listar_alertas_calibracion_endpoint(
     except Exception as exc:
         logger.exception("Error listando alertas de calibración")
         return RespuestaListadoAlertas(exito=False, alertas=[])
+
+
+@router.post(
+    "/alertas-calibracion/resolver",
+    response_model=RespuestaResolverAlerta,
+    summary="Resolver alerta de calibración",
+)
+async def resolver_alerta_calibracion_endpoint(
+    peticion: PeticionResolverAlerta,
+) -> RespuestaResolverAlerta:
+    try:
+        resultado = resolver_alerta_calibracion(
+            obtener_pool(),
+            alerta_id=peticion.alerta_id,
+            nota=peticion.nota,
+        )
+        return RespuestaResolverAlerta(
+            exito=True,
+            alerta_id=str(resultado["alerta_id"]),
+            resuelta=bool(resultado["resuelta"]),
+            mensaje="Alerta resuelta.",
+        )
+    except Exception as exc:
+        logger.exception("Error resolviendo alerta de calibración")
+        return RespuestaResolverAlerta(
+            exito=False,
+            alerta_id=None,
+            resuelta=False,
+            mensaje=f"Error: {str(exc)}",
+        )
 
 
 @router.post(

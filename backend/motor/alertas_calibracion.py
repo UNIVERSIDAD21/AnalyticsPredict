@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from db import obtener_pool
@@ -302,6 +302,44 @@ def listar_alertas_calibracion(
         }
         for fila in filas
     ]
+
+
+def resolver_alerta_calibracion(
+    pool,
+    *,
+    alerta_id: str,
+    nota: Optional[str] = None,
+) -> dict[str, object]:
+    """Marca una alerta como resuelta y opcionalmente registra una nota."""
+    payload = None
+    if nota:
+        payload = json.dumps(
+            {
+                "nota_resolucion": nota,
+                "resuelta_en": datetime.utcnow().isoformat(),
+            }
+        )
+
+    consulta = """
+        UPDATE alertas_calibracion
+        SET resuelta = true,
+            detalles_json = CASE
+                WHEN %s IS NULL THEN detalles_json
+                ELSE COALESCE(detalles_json, '{}'::jsonb) || %s::jsonb
+            END
+        WHERE id = %s
+        RETURNING id, resuelta
+    """
+
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(consulta, [payload, payload, alerta_id])
+            fila = cursor.fetchone()
+
+    if not fila:
+        raise ValueError("No se encontró la alerta solicitada.")
+
+    return {"alerta_id": fila[0], "resuelta": fila[1]}
 
 
 def _obtener_metricas(

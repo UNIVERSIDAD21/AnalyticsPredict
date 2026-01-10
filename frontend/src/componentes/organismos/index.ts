@@ -13,3 +13,4 @@ export { TablaEstadisticasEquipos } from './TablaEstadisticasEquipos';
 export { FormularioGuardarApuesta } from './FormularioGuardarApuesta';
 export { FiltrosApuestas } from './FiltrosApuestas';
 export { ListaApuestas } from './ListaApuestas';
+export { GraficoCurvaCalibracion } from './GraficoCurvaCalibracion';
