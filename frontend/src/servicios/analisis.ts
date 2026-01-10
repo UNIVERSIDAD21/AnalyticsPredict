@@ -12,15 +12,29 @@ import {
 } from '../tipos';
 
 // ══════════════════════════════════════════════════════════════
+// TIPOS DE RESPUESTA EXTENDIDA
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Respuesta extendida que incluye datos y advertencias del backend.
+ * Las advertencias NO deben perderse en el flujo de UI.
+ */
+export interface RespuestaAnalisisExtendida {
+  datos: ResultadoAnalisis;
+  advertencias: string[];
+}
+
+// ══════════════════════════════════════════════════════════════
 // FUNCIONES
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Analiza un partido (pre-partido)
+ * Analiza un partido (pre-partido).
+ * Retorna tanto los datos como las advertencias del backend.
  */
 export async function analizarPartido(
   peticion: PeticionAnalisis
-): Promise<ResultadoAnalisis> {
+): Promise<RespuestaAnalisisExtendida> {
   try {
     const respuesta = await clienteAPI.post<RespuestaAnalisis>(
       '/api/analizar',
@@ -31,18 +45,22 @@ export async function analizarPartido(
       throw new Error('Error al analizar partido');
     }
 
-    return respuesta.data.datos;
+    return {
+      datos: respuesta.data.datos,
+      advertencias: respuesta.data.advertencias ?? [],
+    };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
 }
 
 /**
- * Analiza un partido en vivo (con marcadores reales)
+ * Analiza un partido en vivo (con marcadores reales).
+ * Retorna tanto los datos como las advertencias del backend.
  */
 export async function analizarPartidoEnVivo(
   peticion: PeticionAnalisisEnVivo
-): Promise<ResultadoAnalisis> {
+): Promise<RespuestaAnalisisExtendida> {
   try {
     const respuesta = await clienteAPI.post<RespuestaAnalisis>(
       '/api/analizar-en-vivo',
@@ -53,7 +71,10 @@ export async function analizarPartidoEnVivo(
       throw new Error('Error al analizar partido en vivo');
     }
 
-    return respuesta.data.datos;
+    return {
+      datos: respuesta.data.datos,
+      advertencias: respuesta.data.advertencias ?? [],
+    };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
