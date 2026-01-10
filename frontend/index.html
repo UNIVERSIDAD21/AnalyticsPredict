@@ -13,6 +13,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <title>NBA Analyzer Pro</title>
+
+    <!-- Suprimir mensaje de React DevTools en desarrollo -->
+    <script>
+      if (typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'undefined') {
+        window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+          supportsFiber: true,
+          inject: function() {},
+          onCommitFiberRoot: function() {},
+          onCommitFiberUnmount: function() {}
+        };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

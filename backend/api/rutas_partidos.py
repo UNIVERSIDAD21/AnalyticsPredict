@@ -62,42 +62,24 @@ class RespuestaPartidos(BaseModel):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINTS
+# LÓGICA DE NEGOCIO (separada de endpoints para evitar problemas con Query)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-@router.get(
-    "",
-    response_model=RespuestaPartidos,
-    summary="Listar partidos",
-    description="""
-    Obtiene partidos con filtros opcionales.
-
-    Útil para:
-    - Mostrar partidos del día para selección en formulario
-    - Mostrar partidos próximos para apostar
-    - Buscar partidos históricos
-    """,
-)
-async def listar_partidos(
-    fecha_desde: Optional[date] = Query(
-        None, description="Fecha inicio (YYYY-MM-DD). Default: hoy"
-    ),
-    fecha_hasta: Optional[date] = Query(
-        None, description="Fecha fin (YYYY-MM-DD). Default: hoy + 7 días"
-    ),
-    equipo_id: Optional[str] = Query(
-        None, description="Filtrar por ID de equipo (local o visitante)"
-    ),
-    solo_futuros: bool = Query(
-        False, description="Solo partidos sin resultado (futuros)"
-    ),
-    solo_finalizados: bool = Query(
-        False, description="Solo partidos con resultado"
-    ),
-    limite: int = Query(50, ge=1, le=200, description="Máximo de resultados"),
+async def _obtener_partidos(
+    fecha_desde: Optional[date] = None,
+    fecha_hasta: Optional[date] = None,
+    equipo_id: Optional[str] = None,
+    solo_futuros: bool = False,
+    solo_finalizados: bool = False,
+    limite: int = 50,
 ) -> RespuestaPartidos:
-    """Lista partidos con filtros."""
+    """
+    Lógica interna para obtener partidos.
+
+    Esta función es independiente de FastAPI para poder ser llamada
+    desde otros endpoints sin problemas con objetos Query.
+    """
     pool = obtener_pool()
 
     # Defaults
@@ -184,6 +166,53 @@ async def listar_partidos(
         )
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get(
+    "",
+    response_model=RespuestaPartidos,
+    summary="Listar partidos",
+    description="""
+    Obtiene partidos con filtros opcionales.
+
+    Útil para:
+    - Mostrar partidos del día para selección en formulario
+    - Mostrar partidos próximos para apostar
+    - Buscar partidos históricos
+    """,
+)
+async def listar_partidos(
+    fecha_desde: Optional[date] = Query(
+        None, description="Fecha inicio (YYYY-MM-DD). Default: hoy"
+    ),
+    fecha_hasta: Optional[date] = Query(
+        None, description="Fecha fin (YYYY-MM-DD). Default: hoy + 7 días"
+    ),
+    equipo_id: Optional[str] = Query(
+        None, description="Filtrar por ID de equipo (local o visitante)"
+    ),
+    solo_futuros: bool = Query(
+        False, description="Solo partidos sin resultado (futuros)"
+    ),
+    solo_finalizados: bool = Query(
+        False, description="Solo partidos con resultado"
+    ),
+    limite: int = Query(50, ge=1, le=200, description="Máximo de resultados"),
+) -> RespuestaPartidos:
+    """Lista partidos con filtros."""
+    return await _obtener_partidos(
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        equipo_id=equipo_id,
+        solo_futuros=solo_futuros,
+        solo_finalizados=solo_finalizados,
+        limite=limite,
+    )
+
+
 @router.get(
     "/hoy",
     response_model=RespuestaPartidos,
@@ -193,7 +222,7 @@ async def listar_partidos(
 async def partidos_hoy() -> RespuestaPartidos:
     """Obtiene partidos de hoy."""
     hoy = date.today()
-    return await listar_partidos(fecha_desde=hoy, fecha_hasta=hoy)
+    return await _obtener_partidos(fecha_desde=hoy, fecha_hasta=hoy)
 
 
 @router.get(
@@ -208,7 +237,7 @@ async def partidos_proximos(
 ) -> RespuestaPartidos:
     """Obtiene partidos próximos."""
     hoy = date.today()
-    return await listar_partidos(
+    return await _obtener_partidos(
         fecha_desde=hoy,
         fecha_hasta=hoy + timedelta(days=dias),
         solo_futuros=True,
