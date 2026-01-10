@@ -8,6 +8,7 @@ import {
   PaginaHistorialEquipo,
   PaginaPrincipal,
   PaginaConfiguracion,
+  PaginaMetricas,
 } from './componentes/paginas';
 
 /**
@@ -27,6 +28,9 @@ function App() {
   }
   if (ruta === '/configuracion') {
     return <PaginaConfiguracion />;
+  }
+  if (ruta === '/metricas') {
+    return <PaginaMetricas />;
   }
   const coincidenciaHistorial = ruta.match(/^\/equipo\/([^/]+)\/historial$/);
   if (coincidenciaHistorial) {

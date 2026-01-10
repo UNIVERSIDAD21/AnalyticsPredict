@@ -797,6 +797,7 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
                 "perfil_riesgo_usado": None,
                 "sizing_advertencias": [],
                 "sizing_penalizaciones": {},
+                "aplicaron_caps": False,
             }
         return sizing.asdict_persistencia()
 

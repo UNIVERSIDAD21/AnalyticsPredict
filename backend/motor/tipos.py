@@ -325,6 +325,7 @@ class ResultadoSizing:
             "perfil_riesgo_usado": self.perfil_riesgo_usado.value,
             "sizing_advertencias": list(self.advertencias),
             "sizing_penalizaciones": dict(self.penalizaciones),
+            "aplicaron_caps": self.aplicaron_caps,
         }
 
     def como_diccionario(self) -> Dict[str, Any]:

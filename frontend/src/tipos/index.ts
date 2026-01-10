@@ -11,3 +11,4 @@ export * from './bitacora';
 export * from './historial';
 export * from './partido';
 export * from './configuracion';
+export * from './metricas';

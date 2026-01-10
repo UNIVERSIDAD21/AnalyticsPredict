@@ -323,6 +323,7 @@ export function ResultadoAnalisis({
                   perfilRiesgo={detalle.perfil_riesgo_usado}
                   advertencias={detalle.sizing_advertencias}
                   penalizaciones={detalle.sizing_penalizaciones}
+                  aplicaronCaps={detalle.aplicaron_caps}
                   onConfigurarBankroll={onConfigurarBankroll}
                 />
               </div>
