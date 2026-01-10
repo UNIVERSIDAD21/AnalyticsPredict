@@ -12,6 +12,7 @@ interface PropsFormularioGuardarApuesta {
   resultado: ResultadoAnalisis;
   ladoSeleccionado: LadoApuesta;
   lineaSeleccionada: number;
+  fechaPartido?: string;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -21,24 +22,54 @@ export function FormularioGuardarApuesta({
   resultado,
   ladoSeleccionado,
   lineaSeleccionada,
+  fechaPartido,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
   const [stake, setStake] = useState('');
-  const [cuota, setCuota] = useState('');
-  const [fecha, setFecha] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const mercado = (resultado.metadata?.mercado || 'COMPLETO') as Mercado;
 
+  const cuotaAutoLlenada = useMemo(() => {
+    const analisisMercado = resultado.analisis_mercado;
+
+    if (analisisMercado) {
+      if (ladoSeleccionado === 'OVER' && analisisMercado.cuota_over) {
+        return analisisMercado.cuota_over;
+      }
+      if (ladoSeleccionado === 'UNDER' && analisisMercado.cuota_under) {
+        return analisisMercado.cuota_under;
+      }
+    }
+
+    return null;
+  }, [resultado, ladoSeleccionado]);
+
+  const fechaAutoLlenada = useMemo(() => {
+    if (fechaPartido) {
+      return fechaPartido;
+    }
+
+    const metadataFecha = resultado.metadata?.fecha_partido;
+    if (typeof metadataFecha === 'string') {
+      return metadataFecha;
+    }
+
+    return '';
+  }, [fechaPartido, resultado]);
+
+  const [cuotaManual, setCuotaManual] = useState('');
+  const [fechaManual, setFechaManual] = useState('');
+
   useEffect(() => {
     if (abierto) {
       setStake('');
-      setCuota('');
-      setFecha('');
+      setCuotaManual(cuotaAutoLlenada ? cuotaAutoLlenada.toFixed(2) : '');
+      setFechaManual(fechaAutoLlenada);
       setError(null);
     }
-  }, [abierto]);
+  }, [abierto, cuotaAutoLlenada, fechaAutoLlenada]);
 
   const snapshot = useMemo(() => {
     const probabilidadSistema = ladoSeleccionado === 'OVER'
@@ -61,14 +92,15 @@ export function FormularioGuardarApuesta({
 
   const manejarGuardar = () => {
     const stakeNumero = Number(stake);
-    const cuotaNumero = Number(cuota);
+    const cuotaFinal = cuotaManual ? Number(cuotaManual) : cuotaAutoLlenada;
+    const fechaFinal = fechaManual || fechaAutoLlenada;
 
     if (!stake || stakeNumero <= 0) {
       setError('Ingresa un stake válido.');
       return;
     }
-    if (!cuota || cuotaNumero < 1.01) {
-      setError('Ingresa una cuota válida (>= 1.01).');
+    if (!cuotaFinal || cuotaFinal < 1.01) {
+      setError('Cuota inválida. Ingresa una cuota >= 1.01');
       return;
     }
 
@@ -77,11 +109,13 @@ export function FormularioGuardarApuesta({
     onGuardar({
       equipo_local: resultado.equipo_nombre_completo,
       equipo_visitante: resultado.rival_nombre_completo,
-      fecha_partido: fecha || undefined,
+      fecha_partido: fechaFinal || undefined,
       mercado,
       lado: ladoSeleccionado,
       linea: lineaSeleccionada,
-      cuota: cuotaNumero,
+      cuota: cuotaFinal,
+      cuota_over: resultado.analisis_mercado?.cuota_over || undefined,
+      cuota_under: resultado.analisis_mercado?.cuota_under || undefined,
       stake: stakeNumero,
       probabilidad_sistema: snapshot.probabilidad,
       confianza_sistema: resultado.nivel_confianza,
@@ -91,6 +125,9 @@ export function FormularioGuardarApuesta({
       razones: resultado.razones as unknown as Array<Record<string, unknown>>,
     });
   };
+
+  const cuotaEsAutoLlenada = cuotaAutoLlenada !== null;
+  const fechaEsAutoLlenada = fechaAutoLlenada !== '';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -104,27 +141,47 @@ export function FormularioGuardarApuesta({
           <Input etiqueta="Mercado" value={mercado} disabled />
           <Input etiqueta="Lado" value={ladoSeleccionado} disabled />
           <Input etiqueta="Línea" value={lineaSeleccionada.toString()} disabled />
-          <Input
-            etiqueta="Stake"
-            type="number"
-            min="0"
-            value={stake}
-            onChange={(event) => setStake(event.target.value)}
-          />
-          <Input
-            etiqueta="Cuota"
-            type="number"
-            min="1.01"
-            step="0.01"
-            value={cuota}
-            onChange={(event) => setCuota(event.target.value)}
-          />
-          <Input
-            etiqueta="Fecha del partido (opcional)"
-            type="date"
-            value={fecha}
-            onChange={(event) => setFecha(event.target.value)}
-          />
+          <div className="p-3 rounded-lg border-2 border-neon-cyan/50 bg-neon-cyan/5">
+            <Input
+              etiqueta="💰 Stake (obligatorio)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={stake}
+              onChange={(event) => setStake(event.target.value)}
+              placeholder="Monto a apostar"
+              autoFocus
+            />
+          </div>
+          <div className="relative">
+            <Input
+              etiqueta={`Cuota ${cuotaEsAutoLlenada ? '(auto-llenada)' : ''}`}
+              type="number"
+              min="1.01"
+              step="0.01"
+              value={cuotaManual}
+              onChange={(event) => setCuotaManual(event.target.value)}
+              placeholder={cuotaEsAutoLlenada ? cuotaAutoLlenada.toFixed(2) : 'Ingresa cuota'}
+            />
+            {cuotaEsAutoLlenada && (
+              <span className="absolute right-2 top-1 text-xs text-neon-verde">
+                ✓ Del análisis
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <Input
+              etiqueta={`Fecha del partido ${fechaEsAutoLlenada ? '(auto-llenada)' : ''}`}
+              type="date"
+              value={fechaManual}
+              onChange={(event) => setFechaManual(event.target.value)}
+            />
+            {fechaEsAutoLlenada && (
+              <span className="absolute right-2 top-1 text-xs text-neon-verde">
+                ✓ Del partido
+              </span>
+            )}
+          </div>
           {error && <p className="texto-error">{error}</p>}
         </div>
         <div className="mt-6 flex justify-end gap-3">

@@ -15,6 +15,7 @@ import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 import psycopg
 import requests
@@ -27,6 +28,7 @@ if str(BACKEND_DIR) not in sys.path:
 load_dotenv(BACKEND_DIR / ".env")
 
 ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
+ZONA_HORARIA_NBA = ZoneInfo("America/New_York")
 
 
 def obtener_database_url() -> str:
@@ -70,8 +72,10 @@ def parse_evento_espn(evento: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     fecha_str = comp.get("date", "")
     try:
-        fecha_partido = datetime.fromisoformat(fecha_str.replace("Z", "+00:00")).date()
-    except ValueError:
+        fecha_utc = datetime.fromisoformat(fecha_str.replace("Z", "+00:00"))
+        fecha_partido = fecha_utc.astimezone(ZONA_HORARIA_NBA).date()
+    except (ValueError, TypeError) as exc:
+        print(f"    ⚠️ Error parseando fecha: {fecha_str} - {exc}")
         return None
 
     return {

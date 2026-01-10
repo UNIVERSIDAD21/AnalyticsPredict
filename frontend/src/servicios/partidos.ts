@@ -111,6 +111,38 @@ export async function buscarPartido(
 }
 
 /**
+ * Obtiene la fecha actual según el calendario NBA (Eastern Time).
+ */
+export function obtenerFechaNBAHoy(): Date {
+  const ahora = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const partes = formatter.formatToParts(ahora);
+  const year = parseInt(partes.find((p) => p.type === 'year')?.value || '1970', 10);
+  const month = parseInt(partes.find((p) => p.type === 'month')?.value || '01', 10) - 1;
+  const day = parseInt(partes.find((p) => p.type === 'day')?.value || '01', 10);
+
+  const fechaHoy = new Date(year, month, day);
+  fechaHoy.setHours(0, 0, 0, 0);
+  return fechaHoy;
+}
+
+/**
+ * Parsea una fecha YYYY-MM-DD evitando el desfase de timezone.
+ */
+export function parsearFechaPartido(fechaStr: string): Date {
+  const [year, month, day] = fechaStr.split('-').map(Number);
+  const fecha = new Date(year, month - 1, day);
+  fecha.setHours(0, 0, 0, 0);
+  return fecha;
+}
+
+/**
  * Agrupa partidos por fecha para mostrar en calendario
  */
 export function agruparPartidosPorFecha(
@@ -133,12 +165,13 @@ export function agruparPartidosPorFecha(
  * Formatea fecha para mostrar en UI
  */
 export function formatearFechaPartido(fecha: string): string {
-  const date = new Date(fecha + 'T00:00:00');
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const date = parsearFechaPartido(fecha);
+  const hoy = obtenerFechaNBAHoy();
 
   const manana = new Date(hoy);
   manana.setDate(manana.getDate() + 1);
+  const ayer = new Date(hoy);
+  ayer.setDate(ayer.getDate() - 1);
 
   if (date.getTime() === hoy.getTime()) {
     return 'Hoy';
@@ -146,8 +179,11 @@ export function formatearFechaPartido(fecha: string): string {
   if (date.getTime() === manana.getTime()) {
     return 'Mañana';
   }
+  if (date.getTime() === ayer.getTime()) {
+    return 'Ayer';
+  }
 
-  return date.toLocaleDateString('es-ES', {
+  return date.toLocaleDateString('es-CO', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
