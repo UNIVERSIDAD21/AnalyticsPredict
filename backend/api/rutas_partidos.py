@@ -15,9 +15,10 @@ partido_id y así el sistema registre predicciones correctamente.
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional, List
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query as QueryParam
 from pydantic import BaseModel, Field
@@ -27,6 +28,7 @@ from db import obtener_pool
 
 router = APIRouter(prefix="/api/partidos", tags=["Partidos"])
 logger = logging.getLogger(__name__)
+ZONA_HORARIA_NBA = ZoneInfo("America/New_York")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -66,6 +68,11 @@ class RespuestaPartidos(BaseModel):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def obtener_fecha_nba_hoy() -> date:
+    """Obtiene la fecha actual según Eastern Time (calendario NBA)."""
+    return datetime.now(ZONA_HORARIA_NBA).date()
+
+
 def _consultar_partidos(
     fecha_desde: Optional[date] = None,
     fecha_hasta: Optional[date] = None,
@@ -83,7 +90,7 @@ def _consultar_partidos(
 
     # Defaults
     if fecha_desde is None:
-        fecha_desde = date.today()
+        fecha_desde = obtener_fecha_nba_hoy()
     if fecha_hasta is None:
         fecha_hasta = fecha_desde + timedelta(days=7)
 
@@ -270,7 +277,7 @@ async def listar_partidos(
 )
 async def partidos_hoy() -> RespuestaPartidos:
     """Obtiene partidos de hoy."""
-    hoy = date.today()
+    hoy = obtener_fecha_nba_hoy()
     return _consultar_partidos(fecha_desde=hoy, fecha_hasta=hoy)
 
 
@@ -285,7 +292,7 @@ async def partidos_proximos(
     limite: int = QueryParam(50, ge=1, le=200, description="Máximo de resultados"),
 ) -> RespuestaPartidos:
     """Obtiene partidos próximos."""
-    hoy = date.today()
+    hoy = obtener_fecha_nba_hoy()
     return _consultar_partidos(
         fecha_desde=hoy,
         fecha_hasta=hoy + timedelta(days=dias),
@@ -324,7 +331,7 @@ async def buscar_partido(
         fecha_hasta = fecha
     else:
         # Buscar en rango de días desde hoy
-        fecha_desde = date.today()
+        fecha_desde = obtener_fecha_nba_hoy()
         fecha_hasta = fecha_desde + timedelta(days=dias_rango)
 
     query = """

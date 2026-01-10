@@ -363,6 +363,11 @@ export function PaginaPrincipal() {
           resultado={resultado}
           ladoSeleccionado={seleccionUsuario.lado}
           lineaSeleccionada={seleccionUsuario.linea}
+          fechaPartido={
+            typeof resultado.metadata?.fecha_partido === 'string'
+              ? (resultado.metadata?.fecha_partido as string)
+              : undefined
+          }
           onCerrar={() => setMostrarGuardar(false)}
           onGuardar={async (apuesta) => {
             try {
