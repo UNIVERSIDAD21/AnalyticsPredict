@@ -13,3 +13,13 @@ export { MensajeError } from './MensajeError';
 export { PanelEstadisticasEquipo } from './PanelEstadisticasEquipo';
 export { TarjetaApuesta } from './TarjetaApuesta';
 export { ModalResultado } from './ModalResultado';
+
+// ══════════════════════════════════════════════════════════════
+// Fase 2: Componentes avanzados de análisis profesional
+// ══════════════════════════════════════════════════════════════
+
+export { TarjetaDeVig } from './TarjetaDeVig';
+export { TarjetaScore } from './TarjetaScore';
+export { TarjetaSizing } from './TarjetaSizing';
+export { SeccionCalibracion } from './SeccionCalibracion';
+export { PanelAdvertencias } from './PanelAdvertencias';
