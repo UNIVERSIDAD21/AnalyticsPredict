@@ -136,7 +136,17 @@ def _consultar_partidos(
             p.temporada_id,
             t.nombre AS temporada_nombre,
             p.local_total,
-            p.visitante_total
+            p.visitante_total,
+            p.local_q1,
+            p.local_q2,
+            p.local_q3,
+            p.local_q4,
+            p.local_ot,
+            p.visitante_q1,
+            p.visitante_q2,
+            p.visitante_q3,
+            p.visitante_q4,
+            p.visitante_ot
         FROM partidos p
         JOIN equipos el ON p.equipo_local_id = el.id
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
