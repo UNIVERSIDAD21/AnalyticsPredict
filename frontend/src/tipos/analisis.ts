@@ -128,6 +128,12 @@ export interface PeticionAnalisis {
 
   /** Tipo de partido: PRE (pretemporada), REG (regular), POST (playoffs) */
   tipo_partido?: 'PRE' | 'REG' | 'POST';
+
+  /** Override de bankroll para sizing */
+  bankroll?: number;
+
+  /** Override del perfil de riesgo para sizing */
+  perfil_riesgo?: PerfilRiesgo;
 }
 
 /**

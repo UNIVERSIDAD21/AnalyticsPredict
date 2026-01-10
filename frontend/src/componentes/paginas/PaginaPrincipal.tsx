@@ -122,6 +122,11 @@ export function PaginaPrincipal() {
   const ultimoResultadoRef = useRef<string | null>(null);
   const ultimoErrorRef = useRef<string | null>(null);
   const ultimaAdvertenciaRef = useRef<string | null>(null);
+  const navegar = (ruta: string) => {
+    if (window.location.pathname === ruta) return;
+    window.history.pushState({}, '', ruta);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   const obtenerAdvertenciasCriticas = (lista: string[]) => {
     const mapeo: Record<string, string> = {
@@ -299,6 +304,7 @@ export function PaginaPrincipal() {
                     setMostrarGuardar(true);
                     setErrorGuardar(null);
                   }}
+                  onConfigurarBankroll={() => navegar('/configuracion')}
                 />
               )}
 
