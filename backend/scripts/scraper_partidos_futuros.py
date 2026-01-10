@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scraper_partidos_futuros.py — Sincroniza partidos próximos (sin resultado) desde ESPN.
+scraper_partidos_futuros.py – Sincroniza partidos próximos (sin resultado) desde ESPN.
 
 Uso:
     python scripts/scraper_partidos_futuros.py --days 14
@@ -119,12 +119,24 @@ def upsert_partido_futuro(
     equipo_local_id: str,
     equipo_visitante_id: str,
 ) -> bool:
+    """
+    Inserta o actualiza un partido futuro (sin resultados).
+    Los campos de puntos se establecen en 0 por defecto para cumplir con NOT NULL.
+    """
     cursor.execute(
         """
         INSERT INTO partidos (
             temporada_id, fecha_partido, tipo_partido, espn_game_id,
-            equipo_local_id, equipo_visitante_id
-        ) VALUES (%s, %s, %s, %s, %s, %s)
+            equipo_local_id, equipo_visitante_id,
+            local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
+            visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
+            diferencia_puntos, hubo_overtime
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, false
+        )
         ON CONFLICT (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
         DO UPDATE SET
             espn_game_id = COALESCE(partidos.espn_game_id, EXCLUDED.espn_game_id)
@@ -209,6 +221,7 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
                     conn.commit()
 
                 except Exception as exc:
+                    conn.rollback()  # Rollback en caso de error
                     stats["errores"] += 1
                     print(f"    ❌ Error en {fecha}: {exc}")
 
