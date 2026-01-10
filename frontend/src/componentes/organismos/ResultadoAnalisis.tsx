@@ -23,6 +23,7 @@ import {
   TarjetaScore,
   TarjetaSizing,
   SeccionCalibracion,
+  TarjetaNoApta,
 } from '../moleculas';
 
 // ══════════════════════════════════════════════════════════════
@@ -96,6 +97,15 @@ function extraerMejorApuestaDetalle(resultado: TipoResultado): MejorApuestaDetal
   return null;
 }
 
+function esEstadoNoApto(resultado: TipoResultado, detalle: MejorApuestaDetalle | null): boolean {
+  const mensaje = resultado.mensaje_apuesta?.toUpperCase();
+  const mensajeNoApto = Boolean(mensaje?.includes('NO_APTO') || mensaje?.includes('NO APTO'));
+  const scoreNoApto = detalle?.score_total === -1000;
+  const sinRecomendacion = !resultado.mejor_apuesta && !detalle;
+
+  return mensajeNoApto || scoreNoApto || (sinRecomendacion && Boolean(resultado.mensaje_apuesta));
+}
+
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
 // ══════════════════════════════════════════════════════════════
@@ -139,6 +149,7 @@ export function ResultadoAnalisis({
   // Fase 2: Extraer datos avanzados
   const detalle = extraerMejorApuestaDetalle(resultado);
   const tieneDetalleAvanzado = detalle !== null;
+  const noApto = esEstadoNoApto(resultado, detalle);
 
   return (
     <div className="space-y-6 animate-entrada">
@@ -194,146 +205,157 @@ export function ResultadoAnalisis({
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════
-          3. INDICADOR DE APUESTA DEL USUARIO
-          ═══════════════════════════════════════════════════════════ */}
-      {seleccionUsuario && linea > 0 && (
-        <div className={`tarjeta p-4 ${coincideConSistema ? 'border-neon-verde/30' : 'border-advertencia-500/30'}`}>
-          <div className="flex items-center gap-3">
-            {coincideConSistema ? (
-              <CheckCircle className="w-6 h-6 text-neon-verde flex-shrink-0" />
-            ) : (
-              <AlertTriangle className="w-6 h-6 text-advertencia-500 flex-shrink-0" />
-            )}
-            <div>
-              <p className="text-sm text-texto-secundario">
-                Tu apuesta: <span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
-                  {seleccionUsuario.lado === 'OVER' ? 'Over' : 'Under'} {seleccionUsuario.linea}
-                </span>
-              </p>
-              <p className={`text-xs ${coincideConSistema ? 'text-neon-verde' : 'text-advertencia-500'}`}>
-                {coincideConSistema
-                  ? 'Tu predicción coincide con la recomendación del sistema'
-                  : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`
-                }
-              </p>
+      {noApto ? (
+        <>
+          <TarjetaNoApta mensaje={resultado.mensaje_apuesta} candidatos={resultado.candidatos} />
+          {resultado.razones && resultado.razones.length > 0 && (
+            <ListaRazones razones={resultado.razones} />
+          )}
+        </>
+      ) : (
+        <>
+          {/* ═══════════════════════════════════════════════════════════
+              3. INDICADOR DE APUESTA DEL USUARIO
+              ═══════════════════════════════════════════════════════════ */}  
+          {seleccionUsuario && linea > 0 && (
+            <div className={`tarjeta p-4 ${coincideConSistema ? 'border-neon-verde/30' : 'border-advertencia-500/30'}`}>
+              <div className="flex items-center gap-3">
+                {coincideConSistema ? (
+                  <CheckCircle className="w-6 h-6 text-neon-verde flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-6 h-6 text-advertencia-500 flex-shrink-0" />
+                )}
+                <div>
+                  <p className="text-sm text-texto-secundario">
+                    Tu apuesta: <span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
+                      {seleccionUsuario.lado === 'OVER' ? 'Over' : 'Under'} {seleccionUsuario.linea}
+                    </span>
+                  </p>
+                  <p className={`text-xs ${coincideConSistema ? 'text-neon-verde' : 'text-advertencia-500'}`}>
+                    {coincideConSistema
+                      ? 'Tu predicción coincide con la recomendación del sistema'
+                      : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`
+                    }
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* ═══════════════════════════════════════════════════════════
-          4. PROBABILIDADES
-          ═══════════════════════════════════════════════════════════ */}
-      {linea > 0 && (
-        <TarjetaProbabilidad
-          linea={linea}
-          probabilidadOver={probabilidadOver}
-          probabilidadUnder={probabilidadUnder}
-          mediaTotal={mediaTotal}
-          desviacion={desviacion}
-          seleccionUsuario={seleccionUsuario?.lado}
-        />
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          5. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
-          Solo mostrar si hay detalle avanzado
-          ═══════════════════════════════════════════════════════════ */}
-      {tieneDetalleAvanzado && detalle && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
-            <span className="w-8 h-[2px] bg-gradient-to-r from-neon-cyan to-transparent" />
-            Análisis de Valor
-          </h3>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* TarjetaDeVig */}
-            <TarjetaDeVig
-              metodo={detalle.devig_metodo}
-              overround={detalle.devig_overround}
-              pMktRaw={detalle.devig_p_mkt_raw}
-              pMktFair={detalle.devig_p_mkt_fair}
-              edgeRaw={detalle.edge_raw}
-              edgeReal={detalle.edge_real}
-              advertencias={detalle.devig_advertencias}
+          {/* ═══════════════════════════════════════════════════════════
+              4. PROBABILIDADES
+              ═══════════════════════════════════════════════════════════ */}  
+          {linea > 0 && (
+            <TarjetaProbabilidad
+              linea={linea}
+              probabilidadOver={probabilidadOver}
+              probabilidadUnder={probabilidadUnder}
+              mediaTotal={mediaTotal}
+              desviacion={desviacion}
+              seleccionUsuario={seleccionUsuario?.lado}
             />
+          )}
 
-            {/* SeccionCalibracion */}
-            <div className="flex flex-col justify-center">
-              <SeccionCalibracion
-                pRaw={detalle.p_raw}
-                pCalibrada={detalle.p_calibrada}
-                calibradorUsado={detalle.calibrador_usado}
-              />
+          {/* ═══════════════════════════════════════════════════════════
+              5. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
+              Solo mostrar si hay detalle avanzado
+              ═══════════════════════════════════════════════════════════ */}  
+          {tieneDetalleAvanzado && detalle && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
+                <span className="w-8 h-[2px] bg-gradient-to-r from-neon-cyan to-transparent" />
+                Análisis de Valor
+              </h3>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* TarjetaDeVig */}
+                <TarjetaDeVig
+                  metodo={detalle.devig_metodo}
+                  overround={detalle.devig_overround}
+                  pMktRaw={detalle.devig_p_mkt_raw}
+                  pMktFair={detalle.devig_p_mkt_fair}
+                  edgeRaw={detalle.edge_raw}
+                  edgeReal={detalle.edge_real}
+                  advertencias={detalle.devig_advertencias}
+                />
+
+                {/* SeccionCalibracion */}
+                <div className="flex flex-col justify-center">
+                  <SeccionCalibracion
+                    pRaw={detalle.p_raw}
+                    pCalibrada={detalle.p_calibrada}
+                    calibradorUsado={detalle.calibrador_usado}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* ═══════════════════════════════════════════════════════════
-          6. BLOQUE SCORE + SIZING (Fase 2)
-          Solo mostrar si hay detalle avanzado
-          ═══════════════════════════════════════════════════════════ */}
-      {tieneDetalleAvanzado && detalle && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-magenta flex items-center gap-2">
-            <span className="w-8 h-[2px] bg-gradient-to-r from-neon-magenta to-transparent" />
-            Decisión y Riesgo
-          </h3>
+          {/* ═══════════════════════════════════════════════════════════
+              6. BLOQUE SCORE + SIZING (Fase 2)
+              Solo mostrar si hay detalle avanzado
+              ═══════════════════════════════════════════════════════════ */}  
+          {tieneDetalleAvanzado && detalle && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-magenta flex items-center gap-2">
+                <span className="w-8 h-[2px] bg-gradient-to-r from-neon-magenta to-transparent" />
+                Decisión y Riesgo
+              </h3>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* TarjetaScore */}
-            <TarjetaScore
-              scoreTotal={detalle.score_total}
-              componentes={detalle.score_componentes}
-              explicacion={detalle.score_explicacion}
-              penalizaciones={detalle.score_penalizaciones}
-              valorEsperado={detalle.valor_esperado}
-            />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* TarjetaScore */}
+                <TarjetaScore
+                  scoreTotal={detalle.score_total}
+                  componentes={detalle.score_componentes}
+                  explicacion={detalle.score_explicacion}
+                  penalizaciones={detalle.score_penalizaciones}
+                  valorEsperado={detalle.valor_esperado}
+                />
 
-            {/* TarjetaSizing */}
-            <TarjetaSizing
-              kellyFull={detalle.kelly_full}
-              kellyFraccional={detalle.kelly_fraccional}
-              fraccionKelly={detalle.fraccion_kelly}
-              stake={detalle.stake}
-              stakePorcentaje={detalle.stake_porcentaje}
-              bankroll={detalle.bankroll_momento}
-              perfilRiesgo={detalle.perfil_riesgo_usado}
-              advertencias={detalle.sizing_advertencias}
-              penalizaciones={detalle.sizing_penalizaciones}
-              onConfigurarBankroll={onConfigurarBankroll}
-            />
-          </div>
-        </div>
-      )}
+                {/* TarjetaSizing */}
+                <TarjetaSizing
+                  kellyFull={detalle.kelly_full}
+                  kellyFraccional={detalle.kelly_fraccional}
+                  fraccionKelly={detalle.fraccion_kelly}
+                  stake={detalle.stake}
+                  stakePorcentaje={detalle.stake_porcentaje}
+                  bankroll={detalle.bankroll_momento}
+                  perfilRiesgo={detalle.perfil_riesgo_usado}
+                  advertencias={detalle.sizing_advertencias}
+                  penalizaciones={detalle.sizing_penalizaciones}
+                  onConfigurarBankroll={onConfigurarBankroll}
+                />
+              </div>
+            </div>
+          )}
 
-      {/* ═══════════════════════════════════════════════════════════
-          7. ANÁLISIS DE MERCADO (legacy, si hay cuota pero no detalle avanzado)
-          ═══════════════════════════════════════════════════════════ */}
-      {!tieneDetalleAvanzado && resultado.analisis_mercado && (
-        <AnalisisMercadoCard analisis={resultado.analisis_mercado} />
-      )}
+          {/* ═══════════════════════════════════════════════════════════
+              7. ANÁLISIS DE MERCADO (legacy, si hay cuota pero no detalle avanzado)
+              ═══════════════════════════════════════════════════════════ */}  
+          {!tieneDetalleAvanzado && resultado.analisis_mercado && (
+            <AnalisisMercadoCard analisis={resultado.analisis_mercado} />
+          )}
 
-      {/* ═══════════════════════════════════════════════════════════
-          8. RAZONES
-          ═══════════════════════════════════════════════════════════ */}
-      <ListaRazones razones={resultado.razones} />
+          {/* ═══════════════════════════════════════════════════════════
+              8. RAZONES
+              ═══════════════════════════════════════════════════════════ */}  
+          <ListaRazones razones={resultado.razones} />
 
-      {/* ═══════════════════════════════════════════════════════════
-          9. GUARDAR EN BITÁCORA
-          ═══════════════════════════════════════════════════════════ */}
-      {puedeGuardar && (
-        <div className="tarjeta p-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu bitácora</p>
-            <p className="text-xs text-texto-terciario">Se guardará el snapshot del análisis</p>
-          </div>
-          <Boton variante="primario" iconoInicio={<BookOpen size={16} />} onClick={onGuardar}>
-            Guardar en Bitácora
-          </Boton>
-        </div>
+          {/* ═══════════════════════════════════════════════════════════
+              9. GUARDAR EN BITÁCORA
+              ═══════════════════════════════════════════════════════════ */}  
+          {puedeGuardar && (
+            <div className="tarjeta p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu bitácora</p>
+                <p className="text-xs text-texto-terciario">Se guardará el snapshot del análisis</p>
+              </div>
+              <Boton variante="primario" iconoInicio={<BookOpen size={16} />} onClick={onGuardar}>
+                Guardar en Bitácora
+              </Boton>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
