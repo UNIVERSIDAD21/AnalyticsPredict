@@ -4,15 +4,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, BarChart3, Calendar, RotateCw } from 'lucide-react';
-import { Encabezado } from '../organismos';
+import { Encabezado, GraficoCurvaCalibracion } from '../organismos';
 import { Boton, Spinner } from '../atomos';
-import { MensajeError } from '../moleculas';
-import { obtenerMetricasCalibracion } from '../../servicios/metricas';
-import type { MetricaMercado, OrigenMetricas, RespuestaMetricasCalibracion } from '../../tipos';
+import { AlertasCalibracion, MensajeError } from '../moleculas';
+import { obtenerCurvaCalibracion, obtenerMetricasCalibracion } from '../../servicios/metricas';
+import type {
+  MercadoMetricas,
+  MetricaMercado,
+  OrigenMetricas,
+  RespuestaCurvaCalibracion,
+  RespuestaMetricasCalibracion,
+} from '../../tipos';
 
 type PeriodoSeleccion = '7' | '30' | '90' | 'rango';
+type TipoBins = 'fijos' | 'cuantiles';
 
 const MERCADOS_TABLA: Array<MetricaMercado['mercado']> = ['Q1', 'Q2', 'Q3', 'Q4'];
+const MERCADOS_CURVA: MercadoMetricas[] = ['Q1', 'Q2', 'Q3', 'Q4', 'COMPLETO'];
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta) return;
@@ -55,6 +63,12 @@ export function PaginaMetricas() {
   const [estado, setEstado] = useState<'idle' | 'cargando' | 'exito' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [metricas, setMetricas] = useState<RespuestaMetricasCalibracion | null>(null);
+  const [mercadoCurva, setMercadoCurva] = useState<MercadoMetricas>('Q1');
+  const [tipoBins, setTipoBins] = useState<TipoBins>('fijos');
+  const [nBins, setNBins] = useState(10);
+  const [estadoCurva, setEstadoCurva] = useState<'idle' | 'cargando' | 'exito' | 'error'>('idle');
+  const [errorCurva, setErrorCurva] = useState<string | null>(null);
+  const [curva, setCurva] = useState<RespuestaCurvaCalibracion | null>(null);
 
   const rangoValido = periodo !== 'rango' || (Boolean(desde) && Boolean(hasta));
 
@@ -97,9 +111,36 @@ export function PaginaMetricas() {
     }
   }, [origen, parametrosPeriodo, rangoValido]);
 
+  const cargarCurva = useCallback(async () => {
+    if (!rangoValido) {
+      return;
+    }
+    setEstadoCurva('cargando');
+    setErrorCurva(null);
+    try {
+      const data = await obtenerCurvaCalibracion({
+        mercado: mercadoCurva,
+        origen,
+        tipo_bins: tipoBins,
+        n_bins: nBins,
+        desde: parametrosPeriodo.desde,
+        hasta: parametrosPeriodo.hasta,
+      });
+      setCurva(data);
+      setEstadoCurva('exito');
+    } catch (err) {
+      setErrorCurva(err instanceof Error ? err.message : 'No se pudo cargar la curva.');
+      setEstadoCurva('error');
+    }
+  }, [mercadoCurva, nBins, origen, parametrosPeriodo, rangoValido, tipoBins]);
+
   useEffect(() => {
     void cargarMetricas();
   }, [cargarMetricas]);
+
+  useEffect(() => {
+    void cargarCurva();
+  }, [cargarCurva]);
 
   const metricasPorMercado = metricas?.metricas_por_mercado ?? [];
   const resumenGlobal = metricasPorMercado.find((item) => item.mercado === 'COMPLETO');
@@ -300,6 +341,101 @@ export function PaginaMetricas() {
               </div>
             </div>
 
+            <div className="tarjeta p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan">
+                    Curva de calibración
+                  </h3>
+                  <p className="text-xs text-texto-terciario">
+                    Visualiza la confiabilidad del sistema por bins.
+                  </p>
+                </div>
+                <div className="text-xs text-texto-terciario">
+                  Periodo: {metricas.periodo.inicio} → {metricas.periodo.fin}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-widest text-texto-terciario">
+                    Mercado
+                  </label>
+                  <select
+                    value={mercadoCurva}
+                    onChange={(event) => setMercadoCurva(event.target.value as MercadoMetricas)}
+                    className="w-36 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20 text-texto-principal text-sm"
+                  >
+                    {MERCADOS_CURVA.map((mercado) => (
+                      <option key={mercado} value={mercado}>
+                        {mercado}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-widest text-texto-terciario">
+                    Tipo de bins
+                  </label>
+                  <select
+                    value={tipoBins}
+                    onChange={(event) => setTipoBins(event.target.value as TipoBins)}
+                    className="w-36 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20 text-texto-principal text-sm"
+                  >
+                    <option value="fijos">Fijos</option>
+                    <option value="cuantiles">Cuantiles</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-widest text-texto-terciario">
+                    N bins
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={20}
+                    value={nBins}
+                    onChange={(event) => {
+                      const valor = Number(event.target.value);
+                      if (Number.isNaN(valor)) {
+                        setNBins(10);
+                        return;
+                      }
+                      setNBins(Math.min(20, Math.max(5, valor)));
+                    }}
+                    className="w-24 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20 text-texto-principal text-sm"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <Boton variante="secundario" tamano="sm" onClick={cargarCurva}>
+                    Recalcular curva
+                  </Boton>
+                </div>
+              </div>
+
+              {estadoCurva === 'cargando' && (
+                <div className="flex items-center justify-center min-h-[220px]">
+                  <Spinner tamano="lg" texto="Cargando curva..." centrado />
+                </div>
+              )}
+
+              {estadoCurva === 'error' && errorCurva && (
+                <div className="space-y-3">
+                  <MensajeError titulo="Error al cargar curva" mensaje={errorCurva} />
+                  <Boton variante="secundario" tamano="sm" onClick={cargarCurva}>
+                    Reintentar
+                  </Boton>
+                </div>
+              )}
+
+              {estadoCurva === 'exito' && curva && (
+                <GraficoCurvaCalibracion datos={curva} />
+              )}
+            </div>
+
             {metricas.alertas_activas.length > 0 && (
               <div className="tarjeta p-4 space-y-3">
                 <div className="flex items-center gap-2 text-neon-rojo">
@@ -308,13 +444,7 @@ export function PaginaMetricas() {
                     Alertas activas
                   </h3>
                 </div>
-                <ul className="text-sm text-texto-secundario space-y-1">
-                  {metricas.alertas_activas.map((alerta, index) => (
-                    <li key={index} className="border-b border-neon-cyan/10 pb-2">
-                      {JSON.stringify(alerta)}
-                    </li>
-                  ))}
-                </ul>
+                <AlertasCalibracion alertas={metricas.alertas_activas} onAccionCompletada={cargarMetricas} />
               </div>
             )}
           </div>

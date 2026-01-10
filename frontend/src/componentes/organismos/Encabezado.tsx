@@ -104,6 +104,17 @@ export function Encabezado() {
               >
                 Métricas
               </button>
+              <button
+                type="button"
+                className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
+                  rutaActual === '/historial'
+                    ? 'border-neon-cyan text-neon-cyan'
+                    : 'border-neon-cyan/20 text-texto-secundario'
+                }`}
+                onClick={() => navegar('/historial')}
+              >
+                Historial
+              </button>
             </div>
 
             <div

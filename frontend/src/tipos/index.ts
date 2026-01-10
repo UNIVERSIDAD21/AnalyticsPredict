@@ -12,3 +12,5 @@ export * from './historial';
 export * from './partido';
 export * from './configuracion';
 export * from './metricas';
+export * from './alertas';
+export * from './predicciones';

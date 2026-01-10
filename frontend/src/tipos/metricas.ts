@@ -2,6 +2,8 @@
  * metricas.ts — Tipos para métricas de calibración
  */
 
+import type { AlertaCalibracion } from './alertas';
+
 export type OrigenMetricas = 'API_USUARIO' | 'BACKTEST_SINTETICO' | 'BACKTEST_BATCH';
 
 export type MercadoMetricas = 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'COMPLETO';
@@ -37,7 +39,7 @@ export interface RespuestaMetricasCalibracion {
   };
   modelo_version_id: number | null;
   metricas_por_mercado: MetricaMercado[];
-  alertas_activas: Record<string, unknown>[];
+  alertas_activas: AlertaCalibracion[];
   timestamp_calculo: string;
 }
 
@@ -88,4 +90,19 @@ export interface ParametrosCurvaCalibracion {
   n_bins?: number;
   desde?: string;
   hasta?: string;
+}
+
+export interface RespuestaRecalibracion {
+  exito: boolean;
+  calibrador_id: string | null;
+  creado: boolean;
+  mensaje: string;
+  detalle: Record<string, unknown>;
+}
+
+export interface RespuestaResolverAlerta {
+  exito: boolean;
+  alerta_id: string | null;
+  resuelta: boolean;
+  mensaje: string;
 }
