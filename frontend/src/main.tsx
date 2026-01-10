@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { ToastsProvider } from './contextos/Toasts';
+import { ProveedorConfiguracionUsuario } from './contextos/ConfiguracionUsuario';
 
 // Obtener elemento raíz
 const contenedorRaiz = document.getElementById('root');
@@ -19,7 +20,9 @@ if (!contenedorRaiz) {
 createRoot(contenedorRaiz).render(
   <StrictMode>
     <ToastsProvider>
-      <App />
+      <ProveedorConfiguracionUsuario>
+        <App />
+      </ProveedorConfiguracionUsuario>
     </ToastsProvider>
   </StrictMode>
 );

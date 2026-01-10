@@ -3,7 +3,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Activity, Zap } from 'lucide-react';
+import { Activity, Zap, Settings } from 'lucide-react';
+import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
@@ -14,6 +15,7 @@ import { Activity, Zap } from 'lucide-react';
  */
 export function Encabezado() {
   const [rutaActual, setRutaActual] = useState(window.location.pathname);
+  const { configuracion } = useConfiguracionUsuario();
 
   useEffect(() => {
     const manejarRuta = () => setRutaActual(window.location.pathname);
@@ -26,6 +28,8 @@ export function Encabezado() {
     window.history.pushState({}, '', ruta);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
+
+  const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
 
   return (
     <header className="relative overflow-hidden border-b border-neon-cyan/20">
@@ -90,6 +94,41 @@ export function Encabezado() {
                 Bitácora
               </button>
             </div>
+
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                bankrollConfigurado
+                  ? 'border-neon-verde/40 text-neon-verde'
+                  : 'border-advertencia-500/40 text-advertencia-500'
+              }`}
+              title={
+                bankrollConfigurado
+                  ? 'Bankroll configurado'
+                  : 'Modo demo: configura tu bankroll'
+              }
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  bankrollConfigurado ? 'bg-neon-verde' : 'bg-advertencia-500'
+                }`}
+              />
+              <span className="text-xs uppercase tracking-widest font-mono">
+                {bankrollConfigurado ? 'Bankroll ✓' : 'Demo'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
+                rutaActual === '/configuracion'
+                  ? 'border-neon-cyan text-neon-cyan'
+                  : 'border-neon-cyan/20 text-texto-secundario'
+              }`}
+              onClick={() => navegar('/configuracion')}
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden md:inline">Config</span>
+            </button>
 
             {/* Indicador de estado */}
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-futurista-oscuro/50 border border-neon-verde/30">

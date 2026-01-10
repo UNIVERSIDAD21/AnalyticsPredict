@@ -9,6 +9,7 @@ import {
   PeticionAnalisisEnVivo,
   RespuestaAnalisis,
   ResultadoAnalisis,
+  ConfiguracionUsuario,
 } from '../tipos';
 
 // ══════════════════════════════════════════════════════════════
@@ -33,12 +34,13 @@ export interface RespuestaAnalisisExtendida {
  * Retorna tanto los datos como las advertencias del backend.
  */
 export async function analizarPartido(
-  peticion: PeticionAnalisis
+  peticion: PeticionAnalisis,
+  configuracion?: ConfiguracionUsuario
 ): Promise<RespuestaAnalisisExtendida> {
   try {
     const respuesta = await clienteAPI.post<RespuestaAnalisis>(
       '/api/analizar',
-      peticion
+      construirPeticionConConfiguracion(peticion, configuracion)
     );
 
     if (!respuesta.data.exito) {
@@ -78,6 +80,36 @@ export async function analizarPartidoEnVivo(
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
+}
+
+function construirPeticionConConfiguracion(
+  peticion: PeticionAnalisis,
+  configuracion?: ConfiguracionUsuario
+): PeticionAnalisis {
+  if (!configuracion) {
+    return peticion;
+  }
+
+  const payload: PeticionAnalisis = { ...peticion };
+
+  if (configuracion.bankroll !== null && configuracion.bankroll > 0) {
+    payload.bankroll = configuracion.bankroll;
+  }
+
+  if (configuracion.perfilRiesgo) {
+    payload.perfil_riesgo = configuracion.perfilRiesgo;
+  }
+
+  const tieneCuotas =
+    payload.cuota_over !== undefined ||
+    payload.cuota_under !== undefined ||
+    payload.cuota !== undefined;
+
+  if (!payload.modo_devig && configuracion.modoDevig && tieneCuotas) {
+    payload.modo_devig = configuracion.modoDevig;
+  }
+
+  return payload;
 }
 
 /**
