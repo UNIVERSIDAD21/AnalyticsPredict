@@ -910,20 +910,58 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
     if resultado.prediccion_juego_completo is not None:
         predicciones["COMPLETO"] = serializar_prediccion(resultado.prediccion_juego_completo)
 
+    # Serializar analisis_mercado si existe
+    analisis_mercado_dict = None
+    if resultado.analisis_mercado is not None:
+        am = resultado.analisis_mercado
+        analisis_mercado_dict = {
+            "cuota": am.cuota,
+            "probabilidad_implicita": am.probabilidad_implicita if am.probabilidad_implicita is not None else am.probabilidad_implicita_fair,
+            "edge": am.edge if am.edge is not None else am.edge_real,
+            "valor_esperado": am.valor_esperado,
+            "recomendacion": am.recomendacion.value if hasattr(am.recomendacion, 'value') else am.recomendacion,
+        }
+
+    # Extraer probabilidades del mercado si existe
+    probabilidad_over = prediccion_mercado.probabilidad_over if prediccion_mercado else None
+    probabilidad_under = prediccion_mercado.probabilidad_under if prediccion_mercado else None
+    linea_analizada = prediccion_mercado.linea_analizada if prediccion_mercado else None
+
+    # Serializar prediccion_juego_completo por separado para el frontend
+    prediccion_juego_completo_dict = None
+    if resultado.prediccion_juego_completo is not None:
+        prediccion_juego_completo_dict = serializar_prediccion(resultado.prediccion_juego_completo)
+
     salida: Dict[str, object] = {
+        # Campos legacy (mantener compatibilidad)
         "equipo_local": resultado.equipo_nombre_completo,
         "equipo_visitante": resultado.rival_nombre_completo,
+        "prediccion": predicciones,
+        "confianza_sistema": resultado.nivel_confianza.value,
+        # Campos nuevos que espera el frontend
+        "equipo": resultado.equipo,
+        "equipo_nombre_completo": resultado.equipo_nombre_completo,
+        "rival": resultado.rival,
+        "rival_nombre_completo": resultado.rival_nombre_completo,
+        "ubicacion": resultado.ubicacion.value if hasattr(resultado.ubicacion, 'value') else resultado.ubicacion,
+        "fecha_analisis": resultado.fecha_analisis.isoformat() if resultado.fecha_analisis else None,
+        "predicciones": predicciones,  # El frontend usa plural
+        "prediccion_juego_completo": prediccion_juego_completo_dict,
+        "nivel_confianza": resultado.nivel_confianza.value,  # El frontend usa este nombre
         "mercado": mercado,
         "linea": linea,
         "lado": lado,
-        "prediccion": predicciones,
-        "confianza_sistema": resultado.nivel_confianza.value,
         "factores_confianza": resultado.factores_confianza.como_diccionario()
         if resultado.factores_confianza
         else None,
         "razones": serializar_razones(resultado.razones),
         "es_en_vivo": resultado.es_en_vivo,
         "cuartos_reales": resultado.cuartos_reales,
+        "analisis_mercado": analisis_mercado_dict,
+        "metadata": resultado.metadata or {},
+        "probabilidad_over": probabilidad_over,
+        "probabilidad_under": probabilidad_under,
+        "linea_analizada": linea_analizada,
     }
 
     if resultado.mejor_apuesta is not None:
