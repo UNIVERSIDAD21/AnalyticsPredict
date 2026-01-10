@@ -1,6 +1,9 @@
 // hace parte del diseño de analisis
 /**
  * FormularioAnalisis.tsx — Formulario principal con diseño futurista
+ *
+ * Soporta cuotas duales (over/under) para de-vig exacto,
+ * indicador de overround en tiempo real, y selector de partido mejorado.
  */
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
@@ -11,7 +14,8 @@ import {
   SelectorMercado,
   SelectorPartido,
   InputLinea,
-  InputCuota,
+  InputCuotasDuales,
+  IndicadorOverround,
   MensajeError,
   PanelEstadisticasEquipo,
 } from '../moleculas';
@@ -20,11 +24,13 @@ import {
   Mercado,
   PeticionAnalisis,
   LadoApuesta,
+  ModoDevig,
   EstadisticasEquipo,
   TemporadaDisponible,
   PartidoResumen,
 } from '../../tipos';
 import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
+import { esCuotaValida } from '../../utilidades/validadores';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -49,7 +55,8 @@ interface EstadoFormulario {
   mercado: Mercado | '';
   linea: string;
   ladoApuesta: LadoApuesta;
-  cuota: string;
+  cuotaOver: string;
+  cuotaUnder: string;
 }
 
 const ESTADO_INICIAL: EstadoFormulario = {
@@ -58,7 +65,8 @@ const ESTADO_INICIAL: EstadoFormulario = {
   mercado: '',
   linea: '',
   ladoApuesta: 'OVER',
-  cuota: '',
+  cuotaOver: '',
+  cuotaUnder: '',
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -129,7 +137,7 @@ export function FormularioAnalisis({
   const buscarEstadisticas = (nombre: string) =>
     estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
 
-  // CORRECCIÓN: Mover estas declaraciones ANTES de manejarEnvio
+  // Equipos seleccionados
   const equipoLocalSeleccionado = useMemo(
     () => buscarEquipo(equipos, formulario.equipoLocal),
     [equipos, formulario.equipoLocal]
@@ -139,26 +147,67 @@ export function FormularioAnalisis({
     [equipos, formulario.equipoVisitante]
   );
 
-  // Manejar envío - AHORA puede usar las variables declaradas arriba
+  // Manejar envío
   const manejarEnvio = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
 
-      const cuotaValor = formulario.cuota ? parseFloat(formulario.cuota) : undefined;
       const ladoSeleccionado = formulario.ladoApuesta;
 
-      const cuotaOver = cuotaValor && ladoSeleccionado === 'OVER' ? cuotaValor : undefined;
-      const cuotaUnder = cuotaValor && ladoSeleccionado === 'UNDER' ? cuotaValor : undefined;
+      // Parsear cuotas
+      const cuotaOverValor = formulario.cuotaOver.trim()
+        ? parseFloat(formulario.cuotaOver)
+        : undefined;
+      const cuotaUnderValor = formulario.cuotaUnder.trim()
+        ? parseFloat(formulario.cuotaUnder)
+        : undefined;
+
+      // Validar cuotas
+      const tieneOver = cuotaOverValor !== undefined && esCuotaValida(cuotaOverValor);
+      const tieneUnder = cuotaUnderValor !== undefined && esCuotaValida(cuotaUnderValor);
+
+      // Validación UX: no permitir solo cuota del lado opuesto
+      const soloLadoOpuesto =
+        (ladoSeleccionado === 'OVER' && tieneUnder && !tieneOver) ||
+        (ladoSeleccionado === 'UNDER' && tieneOver && !tieneUnder);
+
+      if (soloLadoOpuesto) {
+        setErrores([
+          `Ingresaste cuota del lado contrario. Completa la cuota ${ladoSeleccionado} o cambia el lado de apuesta.`,
+        ]);
+        return;
+      }
+
+      // Determinar modo_devig
+      let modoDevig: ModoDevig | undefined;
+      if (tieneOver && tieneUnder) {
+        modoDevig = 'estricto';
+      } else if (tieneOver || tieneUnder) {
+        modoDevig = 'estimado';
+      }
+
+      // Cuota legacy para compatibilidad (solo si hay una cuota del lado seleccionado)
+      let cuotaLegacy: number | undefined;
+      if (ladoSeleccionado === 'OVER' && tieneOver) {
+        cuotaLegacy = cuotaOverValor;
+      } else if (ladoSeleccionado === 'UNDER' && tieneUnder) {
+        cuotaLegacy = cuotaUnderValor;
+      }
 
       const peticion: Partial<PeticionAnalisis> = {
         equipo_local: formulario.equipoLocal,
         equipo_visitante: formulario.equipoVisitante,
         mercado: formulario.mercado as Mercado,
         linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
-        cuota: cuotaValor,
-        cuota_over: cuotaOver,
-        cuota_under: cuotaUnder,
+        // Cuotas duales
+        cuota_over: tieneOver ? cuotaOverValor : undefined,
+        cuota_under: tieneUnder ? cuotaUnderValor : undefined,
+        // Legacy (para compatibilidad)
+        cuota: cuotaLegacy,
+        // Lado y modo
         lado: ladoSeleccionado,
+        modo_devig: modoDevig,
+        // Contexto
         temporadas: temporadasSeleccionadas,
         partido_id: partidoSeleccionado?.id,
         temporada_id: partidoSeleccionado?.temporada_id
@@ -401,11 +450,20 @@ export function FormularioAnalisis({
             )}
           </div>
 
-          {/* Cuota */}
-          <InputCuota
-            valor={formulario.cuota}
-            onChange={(valor) => actualizarCampo('cuota', valor)}
+          {/* Cuotas duales (Over/Under) */}
+          <InputCuotasDuales
+            cuotaOver={formulario.cuotaOver}
+            cuotaUnder={formulario.cuotaUnder}
+            onCuotaOverChange={(valor) => actualizarCampo('cuotaOver', valor)}
+            onCuotaUnderChange={(valor) => actualizarCampo('cuotaUnder', valor)}
+            ladoSeleccionado={formulario.ladoApuesta}
             deshabilitado={cargando}
+          />
+
+          {/* Indicador de Overround (solo si hay ambas cuotas) */}
+          <IndicadorOverround
+            cuotaOver={formulario.cuotaOver}
+            cuotaUnder={formulario.cuotaUnder}
           />
         </div>
 
