@@ -44,6 +44,16 @@ export type ModoDevig = 'estricto' | 'estimado';
 // ══════════════════════════════════════════════════════════════
 
 /**
+ * Overrides de sizing enviados al backend.
+ * caps en formato decimal (0.02 = 2%).
+ */
+export interface ConfiguracionSizingPeticion {
+  cap_por_apuesta?: number;
+  cap_diario?: number;
+  stake_minimo?: number;
+}
+
+/**
  * Datos para solicitar un análisis
  *
  * IMPORTANTE: Para que las predicciones se registren en la BD,
@@ -134,6 +144,9 @@ export interface PeticionAnalisis {
 
   /** Override del perfil de riesgo para sizing */
   perfil_riesgo?: PerfilRiesgo;
+
+  /** Overrides de caps/stake mínimo para sizing */
+  config_sizing?: ConfiguracionSizingPeticion;
 }
 
 /**
@@ -405,6 +418,9 @@ export interface ResultadoSizing {
 
   /** Multiplicadores/penalizaciones aplicados */
   sizing_penalizaciones: PenalizacionesSizing;
+
+  /** Indica si se aplicó algún cap */
+  aplicaron_caps: boolean;
 }
 
 /**
@@ -552,6 +568,9 @@ export interface MejorApuestaDetalle {
 
   /** Penalizaciones de sizing */
   sizing_penalizaciones: PenalizacionesSizing;
+
+  /** Indica si se aplicó algún cap */
+  aplicaron_caps: boolean;
 }
 
 /**

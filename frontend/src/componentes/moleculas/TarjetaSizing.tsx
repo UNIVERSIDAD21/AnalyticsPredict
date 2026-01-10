@@ -51,6 +51,9 @@ interface PropsTarjetaSizing {
   /** Penalizaciones aplicadas */
   penalizaciones: PenalizacionesSizing;
 
+  /** Indica si se aplicaron caps */
+  aplicaronCaps?: boolean;
+
   /** Callback para configurar bankroll (opcional) */
   onConfigurarBankroll?: () => void;
 }
@@ -130,6 +133,7 @@ export function TarjetaSizing({
   perfilRiesgo,
   advertencias,
   penalizaciones,
+  aplicaronCaps = false,
   onConfigurarBankroll,
 }: PropsTarjetaSizing) {
   const configPerfil = obtenerConfigPerfil(perfilRiesgo);
@@ -227,6 +231,11 @@ export function TarjetaSizing({
               </p>
             </div>
           </div>
+          {aplicaronCaps && (
+            <span className="px-2 py-1 rounded-full text-[10px] uppercase font-bold bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30">
+              Cap aplicado ✓
+            </span>
+          )}
           <div className="group relative">
             <HelpCircle size={16} className="text-texto-terciario cursor-help" />
             <div className="absolute bottom-full right-0 mb-2 w-64 p-3 rounded-lg bg-futurista-oscuro border border-neon-cyan/20 text-xs text-texto-secundario opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">

@@ -108,6 +108,13 @@ def _construir_configuracion_sizing(
     bankroll_usuario = datos_usuario.get("bankroll_actual") if datos_usuario else None
     perfil_default = datos_usuario.get("perfil_riesgo_default") if datos_usuario else None
     config_sizing_usuario = datos_usuario.get("config_sizing") if datos_usuario else None
+    config_sizing_override = None
+    if peticion.config_sizing is not None:
+        config_sizing_override = peticion.config_sizing.model_dump(exclude_none=True)
+        if config_sizing_usuario and isinstance(config_sizing_usuario, dict):
+            config_sizing_usuario = {**config_sizing_usuario, **config_sizing_override}
+        else:
+            config_sizing_usuario = config_sizing_override
 
     bankroll = bankroll_override if bankroll_override is not None else bankroll_usuario
     if bankroll is None:
@@ -175,6 +182,14 @@ def _validar_peticion_analisis(peticion: PeticionAnalisis) -> List[str]:
 
     if peticion.bankroll is not None and peticion.bankroll <= 0:
         raise ErrorValidacion("bankroll debe ser mayor a 0.")
+
+    if (
+        peticion.config_sizing is not None
+        and peticion.bankroll is not None
+        and peticion.config_sizing.stake_minimo is not None
+        and peticion.config_sizing.stake_minimo > peticion.bankroll
+    ):
+        raise ErrorValidacion("stake_minimo no puede superar el bankroll.")
 
     for cuota in (peticion.cuota, peticion.cuota_over, peticion.cuota_under):
         if cuota is not None and cuota <= 1.0:

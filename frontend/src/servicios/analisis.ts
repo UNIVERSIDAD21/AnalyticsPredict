@@ -100,6 +100,12 @@ function construirPeticionConConfiguracion(
     payload.perfil_riesgo = configuracion.perfilRiesgo;
   }
 
+  payload.config_sizing = {
+    cap_por_apuesta: configuracion.capPorApuesta / 100,
+    cap_diario: configuracion.capDiario / 100,
+    stake_minimo: configuracion.stakeMinimo,
+  };
+
   const tieneCuotas =
     payload.cuota_over !== undefined ||
     payload.cuota_under !== undefined ||

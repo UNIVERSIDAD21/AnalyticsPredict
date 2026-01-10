@@ -135,6 +135,7 @@ export function PaginaConfiguracion() {
       mensaje: 'Tus preferencias se aplicarán en los próximos análisis.',
       tipo: 'success',
     });
+    navegar('/');
   };
 
   return (
