@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { ToastsProvider } from './contextos/Toasts';
 
 // Obtener elemento raíz
 const contenedorRaiz = document.getElementById('root');
@@ -17,6 +18,8 @@ if (!contenedorRaiz) {
 // Renderizar aplicación
 createRoot(contenedorRaiz).render(
   <StrictMode>
-    <App />
+    <ToastsProvider>
+      <App />
+    </ToastsProvider>
   </StrictMode>
 );

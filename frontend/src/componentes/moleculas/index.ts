@@ -13,6 +13,8 @@ export { MensajeError } from './MensajeError';
 export { PanelEstadisticasEquipo } from './PanelEstadisticasEquipo';
 export { TarjetaApuesta } from './TarjetaApuesta';
 export { ModalResultado } from './ModalResultado';
+export { ProgresoAnalisis } from './ProgresoAnalisis';
+export { TarjetaNoApta } from './TarjetaNoApta';
 
 // ══════════════════════════════════════════════════════════════
 // Fase 2: Componentes avanzados de análisis profesional
