@@ -19,7 +19,7 @@ from datetime import date, timedelta
 from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query as QueryParam
 from pydantic import BaseModel, Field
 from psycopg.rows import dict_row
 
@@ -62,42 +62,23 @@ class RespuestaPartidos(BaseModel):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINTS
+# FUNCIONES INTERNAS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-@router.get(
-    "",
-    response_model=RespuestaPartidos,
-    summary="Listar partidos",
-    description="""
-    Obtiene partidos con filtros opcionales.
-
-    Útil para:
-    - Mostrar partidos del día para selección en formulario
-    - Mostrar partidos próximos para apostar
-    - Buscar partidos históricos
-    """,
-)
-async def listar_partidos(
-    fecha_desde: Optional[date] = Query(
-        None, description="Fecha inicio (YYYY-MM-DD). Default: hoy"
-    ),
-    fecha_hasta: Optional[date] = Query(
-        None, description="Fecha fin (YYYY-MM-DD). Default: hoy + 7 días"
-    ),
-    equipo_id: Optional[str] = Query(
-        None, description="Filtrar por ID de equipo (local o visitante)"
-    ),
-    solo_futuros: bool = Query(
-        False, description="Solo partidos sin resultado (futuros)"
-    ),
-    solo_finalizados: bool = Query(
-        False, description="Solo partidos con resultado"
-    ),
-    limite: int = Query(50, ge=1, le=200, description="Máximo de resultados"),
+def _consultar_partidos(
+    fecha_desde: Optional[date] = None,
+    fecha_hasta: Optional[date] = None,
+    equipo_id: Optional[str] = None,
+    solo_futuros: bool = False,
+    solo_finalizados: bool = False,
+    limite: int = 50,
 ) -> RespuestaPartidos:
-    """Lista partidos con filtros."""
+    """
+    Función interna para consultar partidos.
+    Esta función puede ser llamada desde otros endpoints sin problemas
+    con los tipos Query de FastAPI.
+    """
     pool = obtener_pool()
 
     # Defaults
@@ -184,6 +165,53 @@ async def listar_partidos(
         )
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get(
+    "",
+    response_model=RespuestaPartidos,
+    summary="Listar partidos",
+    description="""
+    Obtiene partidos con filtros opcionales.
+
+    Útil para:
+    - Mostrar partidos del día para selección en formulario
+    - Mostrar partidos próximos para apostar
+    - Buscar partidos históricos
+    """,
+)
+async def listar_partidos(
+    fecha_desde: Optional[date] = QueryParam(
+        None, description="Fecha inicio (YYYY-MM-DD). Default: hoy"
+    ),
+    fecha_hasta: Optional[date] = QueryParam(
+        None, description="Fecha fin (YYYY-MM-DD). Default: hoy + 7 días"
+    ),
+    equipo_id: Optional[str] = QueryParam(
+        None, description="Filtrar por ID de equipo (local o visitante)"
+    ),
+    solo_futuros: bool = QueryParam(
+        False, description="Solo partidos sin resultado (futuros)"
+    ),
+    solo_finalizados: bool = QueryParam(
+        False, description="Solo partidos con resultado"
+    ),
+    limite: int = QueryParam(50, ge=1, le=200, description="Máximo de resultados"),
+) -> RespuestaPartidos:
+    """Lista partidos con filtros."""
+    return _consultar_partidos(
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        equipo_id=equipo_id,
+        solo_futuros=solo_futuros,
+        solo_finalizados=solo_finalizados,
+        limite=limite,
+    )
+
+
 @router.get(
     "/hoy",
     response_model=RespuestaPartidos,
@@ -193,7 +221,7 @@ async def listar_partidos(
 async def partidos_hoy() -> RespuestaPartidos:
     """Obtiene partidos de hoy."""
     hoy = date.today()
-    return await listar_partidos(fecha_desde=hoy, fecha_hasta=hoy)
+    return _consultar_partidos(fecha_desde=hoy, fecha_hasta=hoy)
 
 
 @router.get(
@@ -203,12 +231,12 @@ async def partidos_hoy() -> RespuestaPartidos:
     description="Obtiene partidos futuros sin resultado (para apostar).",
 )
 async def partidos_proximos(
-    dias: int = Query(7, ge=1, le=30, description="Días hacia adelante"),
-    limite: int = Query(50, ge=1, le=200, description="Máximo de resultados"),
+    dias: int = QueryParam(7, ge=1, le=30, description="Días hacia adelante"),
+    limite: int = QueryParam(50, ge=1, le=200, description="Máximo de resultados"),
 ) -> RespuestaPartidos:
     """Obtiene partidos próximos."""
     hoy = date.today()
-    return await listar_partidos(
+    return _consultar_partidos(
         fecha_desde=hoy,
         fecha_hasta=hoy + timedelta(days=dias),
         solo_futuros=True,
@@ -228,12 +256,12 @@ async def partidos_proximos(
     """,
 )
 async def buscar_partido(
-    equipo_local: str = Query(..., min_length=2, description="Nombre del equipo local"),
-    equipo_visitante: str = Query(
+    equipo_local: str = QueryParam(..., min_length=2, description="Nombre del equipo local"),
+    equipo_visitante: str = QueryParam(
         ..., min_length=2, description="Nombre del equipo visitante"
     ),
-    fecha: Optional[date] = Query(None, description="Fecha exacta (YYYY-MM-DD)"),
-    dias_rango: int = Query(
+    fecha: Optional[date] = QueryParam(None, description="Fecha exacta (YYYY-MM-DD)"),
+    dias_rango: int = QueryParam(
         7, ge=1, le=30, description="Si no hay fecha, buscar en este rango de días"
     ),
 ) -> RespuestaPartidos:
