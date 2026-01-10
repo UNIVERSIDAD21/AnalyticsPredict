@@ -95,10 +95,31 @@ def _consultar_partidos(
         condiciones.append("(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)")
         parametros.extend([equipo_id, equipo_id])
 
+    condicion_pendiente = """
+        (
+            p.local_total IS NULL
+            OR p.visitante_total IS NULL
+            OR (
+                p.local_total = 0
+                AND p.visitante_total = 0
+                AND p.local_q1 = 0
+                AND p.local_q2 = 0
+                AND p.local_q3 = 0
+                AND p.local_q4 = 0
+                AND p.local_ot = 0
+                AND p.visitante_q1 = 0
+                AND p.visitante_q2 = 0
+                AND p.visitante_q3 = 0
+                AND p.visitante_q4 = 0
+                AND p.visitante_ot = 0
+            )
+        )
+    """
+
     if solo_futuros:
-        condiciones.append("p.local_total IS NULL")
+        condiciones.append(condicion_pendiente)
     elif solo_finalizados:
-        condiciones.append("p.local_total IS NOT NULL")
+        condiciones.append(f"NOT {condicion_pendiente}")
 
     parametros.append(limite)
     where_clause = " AND ".join(condiciones)
@@ -131,6 +152,25 @@ def _consultar_partidos(
                 cursor.execute(query, parametros)
                 filas = cursor.fetchall()
 
+                def _es_pendiente(fila: dict) -> bool:
+                    if fila["local_total"] is None or fila["visitante_total"] is None:
+                        return True
+                    columnas_ceros = [
+                        "local_q1",
+                        "local_q2",
+                        "local_q3",
+                        "local_q4",
+                        "local_ot",
+                        "visitante_q1",
+                        "visitante_q2",
+                        "visitante_q3",
+                        "visitante_q4",
+                        "visitante_ot",
+                    ]
+                    return fila["local_total"] == 0 and fila["visitante_total"] == 0 and all(
+                        fila[columna] == 0 for columna in columnas_ceros
+                    )
+
                 partidos = [
                     PartidoResumen(
                         id=str(fila["id"]),
@@ -144,7 +184,7 @@ def _consultar_partidos(
                         temporada_nombre=fila["temporada_nombre"],
                         local_total=fila["local_total"],
                         visitante_total=fila["visitante_total"],
-                        finalizado=fila["local_total"] is not None,
+                        finalizado=not _es_pendiente(fila),
                     )
                     for fila in filas
                 ]
