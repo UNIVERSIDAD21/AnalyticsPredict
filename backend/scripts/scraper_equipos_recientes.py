@@ -34,6 +34,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
@@ -58,6 +59,10 @@ try:
     )
 except Exception as e:
     raise SystemExit("❌ No pude importar motor.nba_scraper_espn. Ejecuta desde carpeta backend.") from e
+
+
+# Zona horaria NBA (Eastern Time) - Usada para conversión de fechas de ESPN
+ZONA_HORARIA_NBA = ZoneInfo("America/New_York")
 
 
 @dataclass
@@ -97,13 +102,31 @@ def _safe_int(v: Any, default: int = 0) -> int:
 
 def parse_fecha_calendario_espn_iso(iso_str: str) -> date:
     """
-    Obtiene la fecha YYYY-MM-DD sin conversiones de zona horaria.
-    (Consistente con scripts previos del proyecto).
+    Convierte fecha ISO de ESPN a fecha en Eastern Time (calendario NBA).
+
+    ESPN envía fechas en UTC. Por ejemplo, un partido a las 8:30 PM ET del 10 de enero
+    se reporta como "2026-01-11T01:30:00Z" (UTC). Debemos convertir a Eastern Time
+    para obtener la fecha correcta del calendario NBA (10 de enero, no 11).
     """
     try:
-        base = str(iso_str).split("T")[0]
-        return datetime.strptime(base, "%Y-%m-%d").date()
-    except Exception:
+        # Normalizar el string ISO
+        fecha_str = str(iso_str).strip()
+
+        # Si tiene 'Z', reemplazar por +00:00 para UTC
+        if fecha_str.endswith('Z'):
+            fecha_str = fecha_str[:-1] + '+00:00'
+
+        # Si no tiene timezone info, asumir UTC
+        if 'T' in fecha_str and '+' not in fecha_str and '-' not in fecha_str.split('T')[1]:
+            fecha_str = fecha_str + '+00:00'
+
+        # Parsear y convertir a Eastern Time
+        fecha_utc = datetime.fromisoformat(fecha_str)
+        fecha_et = fecha_utc.astimezone(ZONA_HORARIA_NBA)
+
+        return fecha_et.date()
+    except Exception as e:
+        print(f"⚠️ Error parseando fecha '{iso_str}': {e}")
         return date.today()
 
 

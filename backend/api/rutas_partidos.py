@@ -132,7 +132,7 @@ def _consultar_partidos(
     where_clause = " AND ".join(condiciones)
 
     query = f"""
-        SELECT
+        SELECT DISTINCT ON (p.id)
             p.id,
             p.fecha_partido,
             p.tipo_partido,
@@ -159,7 +159,7 @@ def _consultar_partidos(
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
         JOIN temporadas t ON p.temporada_id = t.id
         WHERE {where_clause}
-        ORDER BY p.fecha_partido ASC, el.nombre ASC
+        ORDER BY p.id, p.fecha_partido ASC, el.nombre ASC
         LIMIT %s
     """
 
