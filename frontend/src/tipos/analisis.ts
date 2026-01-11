@@ -209,6 +209,8 @@ export interface FactoresConfianza {
  */
 export interface AnalisisMercado {
   cuota: number;
+  cuota_over?: number;
+  cuota_under?: number;
   probabilidad_implicita: number;
   edge: number;
   valor_esperado: number;

@@ -1,6 +1,11 @@
 // hace parte del diseño de analisis
 /**
  * FormularioGuardarApuesta.tsx — Modal para guardar una apuesta
+ *
+ * MEJORAS IMPLEMENTADAS:
+ * - Extrae TODOS los campos de P1 (devig, score, sizing) del análisis
+ * - UI simplificada: muestra resumen readonly y solo pide STAKE
+ * - Incluye partido_id para resolución automática
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -13,6 +18,7 @@ interface PropsFormularioGuardarApuesta {
   ladoSeleccionado: LadoApuesta;
   lineaSeleccionada: number;
   fechaPartido?: string;
+  partidoId?: string;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -23,17 +29,27 @@ export function FormularioGuardarApuesta({
   ladoSeleccionado,
   lineaSeleccionada,
   fechaPartido,
+  partidoId,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
   const [stake, setStake] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [mostrarOpcionales, setMostrarOpcionales] = useState(false);
 
   const mercado = (resultado.metadata?.mercado || 'COMPLETO') as Mercado;
 
+  // Extraer cuota del análisis
   const cuotaAutoLlenada = useMemo(() => {
     const analisisMercado = resultado.analisis_mercado;
+    const detalle = resultado.mejor_apuesta_detalle;
 
+    // Primero intentar desde mejor_apuesta_detalle
+    if (detalle?.cuota) {
+      return detalle.cuota;
+    }
+
+    // Fallback a analisis_mercado
     if (analisisMercado) {
       if (ladoSeleccionado === 'OVER' && analisisMercado.cuota_over) {
         return analisisMercado.cuota_over;
@@ -46,19 +62,19 @@ export function FormularioGuardarApuesta({
     return null;
   }, [resultado, ladoSeleccionado]);
 
+  // Extraer fecha del partido
   const fechaAutoLlenada = useMemo(() => {
     if (fechaPartido) {
       return fechaPartido;
     }
-
     const metadataFecha = resultado.metadata?.fecha_partido;
     if (typeof metadataFecha === 'string') {
       return metadataFecha;
     }
-
     return '';
   }, [fechaPartido, resultado]);
 
+  // Estados para overrides opcionales
   const [cuotaManual, setCuotaManual] = useState('');
   const [fechaManual, setFechaManual] = useState('');
 
@@ -68,9 +84,11 @@ export function FormularioGuardarApuesta({
       setCuotaManual(cuotaAutoLlenada ? cuotaAutoLlenada.toFixed(2) : '');
       setFechaManual(fechaAutoLlenada);
       setError(null);
+      setMostrarOpcionales(false);
     }
   }, [abierto, cuotaAutoLlenada, fechaAutoLlenada]);
 
+  // Extraer snapshot completo del análisis incluyendo campos P1
   const snapshot = useMemo(() => {
     const probabilidadSistema = ladoSeleccionado === 'OVER'
       ? resultado.probabilidad_over ?? 0
@@ -80,13 +98,52 @@ export function FormularioGuardarApuesta({
       ? resultado.prediccion_juego_completo
       : resultado.predicciones[mercado];
 
+    const detalle = resultado.mejor_apuesta_detalle;
+
     return {
+      // Probabilidades básicas
       probabilidad: probabilidadSistema,
       media: prediccion?.media_total ?? null,
       desviacion: prediccion?.desviacion_total ?? null,
-      valorEsperado: resultado.analisis_mercado?.valor_esperado ?? null,
+      valorEsperado: resultado.analisis_mercado?.valor_esperado ?? detalle?.valor_esperado ?? null,
+
+      // Cuotas
+      cuota_over: detalle?.cuota_over ?? resultado.analisis_mercado?.cuota_over ?? null,
+      cuota_under: detalle?.cuota_under ?? resultado.analisis_mercado?.cuota_under ?? null,
+
+      // Campos de De-Vig (P1)
+      devig_metodo: detalle?.devig_metodo ?? null,
+      devig_overround: detalle?.devig_overround ?? null,
+      devig_p_mkt_raw: detalle?.devig_p_mkt_raw ?? null,
+      devig_p_mkt_fair: detalle?.devig_p_mkt_fair ?? null,
+      devig_advertencias: detalle?.devig_advertencias ?? null,
+      edge_real: detalle?.edge_real ?? null,
+
+      // Campos de Score (P1)
+      score_total: detalle?.score_total ?? null,
+      score_componentes: detalle?.score_componentes ?? null,
+      score_explicacion: detalle?.score_explicacion ?? null,
+      score_penalizaciones: detalle?.score_penalizaciones ?? null,
+
+      // Campos de Sizing/Kelly (P1)
+      kelly_full: detalle?.kelly_full ?? null,
+      kelly_fraccional: detalle?.kelly_fraccional ?? null,
+      fraccion_kelly: detalle?.fraccion_kelly ?? null,
+      stake_porcentaje: detalle?.stake_porcentaje ?? null,
+      bankroll_momento: detalle?.bankroll_momento ?? null,
+      perfil_riesgo_usado: detalle?.perfil_riesgo_usado ?? null,
+      sizing_advertencias: detalle?.sizing_advertencias ?? null,
+      sizing_penalizaciones: detalle?.sizing_penalizaciones ?? null,
     };
   }, [ladoSeleccionado, mercado, resultado]);
+
+  // Obtener partido_id desde props o metadata
+  const partidoIdFinal = useMemo(() => {
+    if (partidoId) return partidoId;
+    const metadataPartidoId = resultado.metadata?.partido_id;
+    if (typeof metadataPartidoId === 'string') return metadataPartidoId;
+    return null;
+  }, [partidoId, resultado.metadata]);
 
   if (!abierto) return null;
 
@@ -106,7 +163,10 @@ export function FormularioGuardarApuesta({
 
     setError(null);
 
-    onGuardar({
+    // Construir payload con TODOS los campos de P1
+    const payload: PeticionCrearApuesta = {
+      // Datos básicos
+      partido_id: partidoIdFinal,
       equipo_local: resultado.equipo_nombre_completo,
       equipo_visitante: resultado.rival_nombre_completo,
       fecha_partido: fechaFinal || undefined,
@@ -114,8 +174,8 @@ export function FormularioGuardarApuesta({
       lado: ladoSeleccionado,
       linea: lineaSeleccionada,
       cuota: cuotaFinal,
-      cuota_over: resultado.analisis_mercado?.cuota_over || undefined,
-      cuota_under: resultado.analisis_mercado?.cuota_under || undefined,
+      cuota_over: snapshot.cuota_over ?? undefined,
+      cuota_under: snapshot.cuota_under ?? undefined,
       stake: stakeNumero,
       probabilidad_sistema: snapshot.probabilidad,
       confianza_sistema: resultado.nivel_confianza,
@@ -123,67 +183,192 @@ export function FormularioGuardarApuesta({
       prediccion_media: snapshot.media ?? undefined,
       prediccion_desviacion: snapshot.desviacion ?? undefined,
       razones: resultado.razones as unknown as Array<Record<string, unknown>>,
-    });
+
+      // Campos de De-Vig (P1)
+      devig_metodo: snapshot.devig_metodo ?? undefined,
+      devig_overround: snapshot.devig_overround ?? undefined,
+      devig_p_mkt_raw: snapshot.devig_p_mkt_raw ?? undefined,
+      devig_p_mkt_fair: snapshot.devig_p_mkt_fair ?? undefined,
+      devig_advertencias: snapshot.devig_advertencias ?? undefined,
+      edge_real: snapshot.edge_real ?? undefined,
+
+      // Campos de Score (P1)
+      score_total: snapshot.score_total ?? undefined,
+      score_componentes: snapshot.score_componentes as Record<string, number> | undefined,
+      score_explicacion: snapshot.score_explicacion ?? undefined,
+      score_penalizaciones: snapshot.score_penalizaciones ?? undefined,
+
+      // Campos de Sizing/Kelly (P1)
+      kelly_full: snapshot.kelly_full ?? undefined,
+      kelly_fraccional: snapshot.kelly_fraccional ?? undefined,
+      fraccion_kelly: snapshot.fraccion_kelly ?? undefined,
+      stake_porcentaje: snapshot.stake_porcentaje ?? undefined,
+      bankroll_momento: snapshot.bankroll_momento ?? undefined,
+      perfil_riesgo_usado: snapshot.perfil_riesgo_usado ?? undefined,
+      sizing_advertencias: snapshot.sizing_advertencias ?? undefined,
+      sizing_penalizaciones: snapshot.sizing_penalizaciones as Record<string, number> | undefined,
+    };
+
+    onGuardar(payload);
   };
 
-  const cuotaEsAutoLlenada = cuotaAutoLlenada !== null;
-  const fechaEsAutoLlenada = fechaAutoLlenada !== '';
+  // Formatear probabilidad para mostrar
+  const formatearProbabilidad = (p: number) => `${(p * 100).toFixed(1)}%`;
+  const formatearEdge = (e: number | null) => e != null ? `${(e * 100).toFixed(2)}%` : 'N/A';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-xl border border-neon-cyan/30 bg-futurista-oscuro p-6">
+      <div className="w-full max-w-lg rounded-xl border border-neon-cyan/30 bg-futurista-oscuro p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-futurista text-texto-principal mb-4">
-          Guardar en Bitácora
+          Guardar en Bitacora
         </h3>
+
+        {/* Resumen de la apuesta (readonly) */}
+        <div className="mb-4 p-4 rounded-lg bg-futurista-medio/50 border border-neon-cyan/20">
+          <h4 className="text-sm font-semibold text-neon-cyan mb-3">Resumen de la apuesta</h4>
+
+          <div className="space-y-2 text-sm text-texto-secundario">
+            <div className="flex justify-between">
+              <span>Partido:</span>
+              <span className="text-texto-principal font-medium">
+                {resultado.equipo_nombre_completo} vs {resultado.rival_nombre_completo}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Mercado:</span>
+              <span className="text-texto-principal">
+                {mercado} {ladoSeleccionado} {lineaSeleccionada}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Cuota:</span>
+              <span className="text-texto-principal">
+                @ {cuotaAutoLlenada?.toFixed(2) || 'N/A'}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Probabilidad:</span>
+              <span className="text-texto-principal">
+                {formatearProbabilidad(snapshot.probabilidad)}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Confianza:</span>
+              <span className={`font-medium ${
+                resultado.nivel_confianza === 'ALTA' ? 'text-neon-verde' :
+                resultado.nivel_confianza === 'MEDIA' ? 'text-neon-amarillo' :
+                'text-neon-rojo'
+              }`}>
+                {resultado.nivel_confianza}
+              </span>
+            </div>
+
+            {snapshot.edge_real != null && (
+              <div className="flex justify-between">
+                <span>Edge Real:</span>
+                <span className={`font-medium ${snapshot.edge_real > 0 ? 'text-neon-verde' : 'text-neon-rojo'}`}>
+                  {formatearEdge(snapshot.edge_real)}
+                </span>
+              </div>
+            )}
+
+            {snapshot.score_total != null && (
+              <div className="flex justify-between">
+                <span>Score:</span>
+                <span className="text-texto-principal">{snapshot.score_total.toFixed(1)}</span>
+              </div>
+            )}
+
+            {snapshot.kelly_fraccional != null && (
+              <div className="flex justify-between">
+                <span>Kelly sugerido:</span>
+                <span className="text-neon-cyan">
+                  {(snapshot.kelly_fraccional * 100).toFixed(2)}% del bankroll
+                </span>
+              </div>
+            )}
+
+            {fechaAutoLlenada && (
+              <div className="flex justify-between">
+                <span>Fecha:</span>
+                <span className="text-texto-principal">{fechaAutoLlenada}</span>
+              </div>
+            )}
+
+            {!partidoIdFinal && (
+              <div className="mt-2 p-2 rounded bg-neon-amarillo/10 border border-neon-amarillo/30">
+                <span className="text-xs text-neon-amarillo">
+                  Sin partido_id: la resolucion automatica no funcionara
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Campo principal: STAKE */}
         <div className="space-y-4">
-          <Input etiqueta="Equipo local" value={resultado.equipo_nombre_completo} disabled />
-          <Input etiqueta="Equipo visitante" value={resultado.rival_nombre_completo} disabled />
-          <Input etiqueta="Mercado" value={mercado} disabled />
-          <Input etiqueta="Lado" value={ladoSeleccionado} disabled />
-          <Input etiqueta="Línea" value={lineaSeleccionada.toString()} disabled />
-          <div className="p-3 rounded-lg border-2 border-neon-cyan/50 bg-neon-cyan/5">
+          <div className="p-4 rounded-lg border-2 border-neon-cyan/50 bg-neon-cyan/5">
             <Input
-              etiqueta="💰 Stake (obligatorio)"
+              etiqueta="Cuanto vas a apostar? (obligatorio)"
               type="number"
               min="0"
               step="0.01"
               value={stake}
               onChange={(event) => setStake(event.target.value)}
-              placeholder="Monto a apostar"
+              placeholder={snapshot.bankroll_momento
+                ? `Sugerido: $${((snapshot.kelly_fraccional ?? 0) * snapshot.bankroll_momento).toFixed(2)}`
+                : 'Monto a apostar'}
               autoFocus
             />
-          </div>
-          <div className="relative">
-            <Input
-              etiqueta={`Cuota ${cuotaEsAutoLlenada ? '(auto-llenada)' : ''}`}
-              type="number"
-              min="1.01"
-              step="0.01"
-              value={cuotaManual}
-              onChange={(event) => setCuotaManual(event.target.value)}
-              placeholder={cuotaEsAutoLlenada ? cuotaAutoLlenada.toFixed(2) : 'Ingresa cuota'}
-            />
-            {cuotaEsAutoLlenada && (
-              <span className="absolute right-2 top-1 text-xs text-neon-verde">
-                ✓ Del análisis
-              </span>
+            {snapshot.stake_porcentaje != null && snapshot.bankroll_momento != null && (
+              <p className="mt-2 text-xs text-texto-secundario">
+                Kelly sugiere {(snapshot.stake_porcentaje * 100).toFixed(2)}% =
+                ${((snapshot.stake_porcentaje) * snapshot.bankroll_momento).toFixed(2)}
+              </p>
             )}
           </div>
-          <div className="relative">
-            <Input
-              etiqueta={`Fecha del partido ${fechaEsAutoLlenada ? '(auto-llenada)' : ''}`}
-              type="date"
-              value={fechaManual}
-              onChange={(event) => setFechaManual(event.target.value)}
-            />
-            {fechaEsAutoLlenada && (
-              <span className="absolute right-2 top-1 text-xs text-neon-verde">
-                ✓ Del partido
-              </span>
-            )}
-          </div>
-          {error && <p className="texto-error">{error}</p>}
+
+          {/* Opciones avanzadas (colapsables) */}
+          <button
+            type="button"
+            onClick={() => setMostrarOpcionales(!mostrarOpcionales)}
+            className="text-sm text-neon-cyan hover:text-neon-cyan/80 flex items-center gap-1"
+          >
+            <span>{mostrarOpcionales ? '▼' : '▶'}</span>
+            {mostrarOpcionales ? 'Ocultar opciones' : 'Modificar cuota/fecha'}
+          </button>
+
+          {mostrarOpcionales && (
+            <div className="space-y-3 pl-4 border-l-2 border-neon-cyan/20">
+              <div className="relative">
+                <Input
+                  etiqueta="Cuota (override)"
+                  type="number"
+                  min="1.01"
+                  step="0.01"
+                  value={cuotaManual}
+                  onChange={(event) => setCuotaManual(event.target.value)}
+                  placeholder={cuotaAutoLlenada?.toFixed(2) || 'Ingresa cuota'}
+                />
+              </div>
+              <div className="relative">
+                <Input
+                  etiqueta="Fecha del partido (override)"
+                  type="date"
+                  value={fechaManual}
+                  onChange={(event) => setFechaManual(event.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-neon-rojo text-sm">{error}</p>}
         </div>
+
         <div className="mt-6 flex justify-end gap-3">
           <Boton variante="fantasma" onClick={onCerrar}>
             Cancelar
