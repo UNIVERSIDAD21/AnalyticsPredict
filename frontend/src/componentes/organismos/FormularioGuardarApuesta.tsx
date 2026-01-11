@@ -6,11 +6,13 @@
  * - Extrae TODOS los campos de P1 (devig, score, sizing) del análisis
  * - UI simplificada: muestra resumen readonly y solo pide STAKE
  * - Incluye partido_id para resolución automática
+ * - Fecha se guarda automáticamente (del partido o fecha actual en ET)
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { Boton, Input } from '../atomos';
 import { LadoApuesta, Mercado, PeticionCrearApuesta, ResultadoAnalisis } from '../../tipos';
+import { obtenerFechaNBAHoyString } from '../../servicios/partidos';
 
 interface PropsFormularioGuardarApuesta {
   abierto: boolean;
@@ -69,16 +71,20 @@ export function FormularioGuardarApuesta({
     return null;
   }, [resultado, ladoSeleccionado, cuotaIngresada]);
 
-  // Extraer fecha del partido
+  // Extraer fecha del partido - SIEMPRE debe haber una fecha
   const fechaAutoLlenada = useMemo(() => {
+    // Prioridad 1: Fecha pasada como prop (del partido seleccionado)
     if (fechaPartido) {
-      return fechaPartido;
+      // Normalizar formato (quitar parte de tiempo si existe)
+      return fechaPartido.includes('T') ? fechaPartido.split('T')[0] : fechaPartido;
     }
+    // Prioridad 2: Fecha del metadata del resultado
     const metadataFecha = resultado.metadata?.fecha_partido;
-    if (typeof metadataFecha === 'string') {
-      return metadataFecha;
+    if (typeof metadataFecha === 'string' && metadataFecha.trim()) {
+      return metadataFecha.includes('T') ? metadataFecha.split('T')[0] : metadataFecha;
     }
-    return '';
+    // Prioridad 3: Fecha actual en Eastern Time (nunca "sin fecha")
+    return obtenerFechaNBAHoyString();
   }, [fechaPartido, resultado]);
 
   // Estados para overrides opcionales
@@ -171,12 +177,15 @@ export function FormularioGuardarApuesta({
     setError(null);
 
     // Construir payload con TODOS los campos de P1
+    // La fecha SIEMPRE debe existir (usamos fallback a fecha actual en ET)
+    const fechaParaGuardar = fechaFinal || fechaAutoLlenada || obtenerFechaNBAHoyString();
+
     const payload: PeticionCrearApuesta = {
       // Datos básicos
       partido_id: partidoIdFinal,
       equipo_local: resultado.equipo_nombre_completo,
       equipo_visitante: resultado.rival_nombre_completo,
-      fecha_partido: fechaFinal || undefined,
+      fecha_partido: fechaParaGuardar,
       mercado,
       lado: ladoSeleccionado,
       linea: lineaSeleccionada,

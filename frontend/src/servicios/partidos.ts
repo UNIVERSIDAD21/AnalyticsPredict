@@ -111,9 +111,10 @@ export async function buscarPartido(
 }
 
 /**
- * Obtiene la fecha actual según el calendario NBA (Eastern Time).
+ * Obtiene la fecha actual según el calendario NBA (Eastern Time) como string YYYY-MM-DD.
+ * Esta función es la fuente de verdad para "qué día es hoy" en el contexto NBA.
  */
-export function obtenerFechaNBAHoy(): Date {
+export function obtenerFechaNBAHoyString(): string {
   const ahora = new Date();
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
@@ -123,13 +124,20 @@ export function obtenerFechaNBAHoy(): Date {
   });
 
   const partes = formatter.formatToParts(ahora);
-  const year = parseInt(partes.find((p) => p.type === 'year')?.value || '1970', 10);
-  const month = parseInt(partes.find((p) => p.type === 'month')?.value || '01', 10) - 1;
-  const day = parseInt(partes.find((p) => p.type === 'day')?.value || '01', 10);
+  const year = partes.find((p) => p.type === 'year')?.value || '1970';
+  const month = partes.find((p) => p.type === 'month')?.value || '01';
+  const day = partes.find((p) => p.type === 'day')?.value || '01';
 
-  const fechaHoy = new Date(year, month, day);
-  fechaHoy.setHours(0, 0, 0, 0);
-  return fechaHoy;
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Obtiene la fecha actual según el calendario NBA (Eastern Time).
+ * @deprecated Usar obtenerFechaNBAHoyString() para evitar problemas de timezone.
+ */
+export function obtenerFechaNBAHoy(): Date {
+  const fechaStr = obtenerFechaNBAHoyString();
+  return parsearFechaPartido(fechaStr);
 }
 
 /**
@@ -162,27 +170,45 @@ export function agruparPartidosPorFecha(
 }
 
 /**
- * Formatea fecha para mostrar en UI
+ * Calcula una fecha relativa a partir de una fecha base (como string YYYY-MM-DD).
+ */
+function calcularFechaRelativa(fechaBase: string, dias: number): string {
+  const [year, month, day] = fechaBase.split('-').map(Number);
+  const fecha = new Date(year, month - 1, day);
+  fecha.setDate(fecha.getDate() + dias);
+
+  const y = fecha.getFullYear();
+  const m = String(fecha.getMonth() + 1).padStart(2, '0');
+  const d = String(fecha.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Formatea fecha para mostrar en UI.
+ * Compara fechas como strings para evitar problemas de timezone.
  */
 export function formatearFechaPartido(fecha: string): string {
-  const date = parsearFechaPartido(fecha);
-  const hoy = obtenerFechaNBAHoy();
+  // Normalizar la fecha de entrada a formato YYYY-MM-DD
+  const fechaNormalizada = fecha.includes('T') ? fecha.split('T')[0] : fecha;
 
-  const manana = new Date(hoy);
-  manana.setDate(manana.getDate() + 1);
-  const ayer = new Date(hoy);
-  ayer.setDate(ayer.getDate() - 1);
+  // Obtener la fecha de hoy en ET como string
+  const hoyStr = obtenerFechaNBAHoyString();
+  const mananaStr = calcularFechaRelativa(hoyStr, 1);
+  const ayerStr = calcularFechaRelativa(hoyStr, -1);
 
-  if (date.getTime() === hoy.getTime()) {
+  // Comparar directamente como strings (formato YYYY-MM-DD es ordenable)
+  if (fechaNormalizada === hoyStr) {
     return 'Hoy';
   }
-  if (date.getTime() === manana.getTime()) {
+  if (fechaNormalizada === mananaStr) {
     return 'Mañana';
   }
-  if (date.getTime() === ayer.getTime()) {
+  if (fechaNormalizada === ayerStr) {
     return 'Ayer';
   }
 
+  // Para otras fechas, parsear y formatear
+  const date = parsearFechaPartido(fechaNormalizada);
   return date.toLocaleDateString('es-CO', {
     weekday: 'short',
     day: 'numeric',

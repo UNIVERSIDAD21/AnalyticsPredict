@@ -67,7 +67,12 @@ export function SelectorPartido({
     setError(null);
     try {
       const lista = await obtenerPartidosProximos(diasAdelante);
-      setPartidos(lista);
+      // Deduplicar partidos por ID para evitar duplicados
+      const partidosUnicos = lista.filter(
+        (partido, index, self) =>
+          index === self.findIndex((p) => p.id === partido.id)
+      );
+      setPartidos(partidosUnicos);
     } catch (err) {
       setError('No se pudieron cargar los partidos');
       console.error(err);
@@ -77,7 +82,36 @@ export function SelectorPartido({
   };
 
   useEffect(() => {
-    cargarPartidos();
+    let montado = true;
+
+    const cargar = async () => {
+      setCargando(true);
+      setError(null);
+      try {
+        const lista = await obtenerPartidosProximos(diasAdelante);
+        if (!montado) return;
+        // Deduplicar partidos por ID para evitar duplicados
+        const partidosUnicos = lista.filter(
+          (partido, index, self) =>
+            index === self.findIndex((p) => p.id === partido.id)
+        );
+        setPartidos(partidosUnicos);
+      } catch (err) {
+        if (!montado) return;
+        setError('No se pudieron cargar los partidos');
+        console.error(err);
+      } finally {
+        if (montado) {
+          setCargando(false);
+        }
+      }
+    };
+
+    cargar();
+
+    return () => {
+      montado = false;
+    };
   }, [diasAdelante]);
 
   // Agrupar partidos por fecha
