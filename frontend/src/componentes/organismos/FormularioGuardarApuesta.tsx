@@ -19,6 +19,7 @@ interface PropsFormularioGuardarApuesta {
   lineaSeleccionada: number;
   fechaPartido?: string;
   partidoId?: string;
+  cuotaIngresada?: number;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -30,6 +31,7 @@ export function FormularioGuardarApuesta({
   lineaSeleccionada,
   fechaPartido,
   partidoId,
+  cuotaIngresada,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
@@ -39,17 +41,22 @@ export function FormularioGuardarApuesta({
 
   const mercado = (resultado.metadata?.mercado || 'COMPLETO') as Mercado;
 
-  // Extraer cuota del análisis
+  // Extraer cuota del análisis - PRIORIDAD: cuotaIngresada > detalle > analisis_mercado
   const cuotaAutoLlenada = useMemo(() => {
+    // PRIORIDAD 1: Cuota pasada como prop (del formulario de análisis)
+    if (cuotaIngresada && cuotaIngresada > 1) {
+      return cuotaIngresada;
+    }
+
     const analisisMercado = resultado.analisis_mercado;
     const detalle = resultado.mejor_apuesta_detalle;
 
-    // Primero intentar desde mejor_apuesta_detalle
+    // PRIORIDAD 2: Desde mejor_apuesta_detalle
     if (detalle?.cuota) {
       return detalle.cuota;
     }
 
-    // Fallback a analisis_mercado
+    // PRIORIDAD 3: Fallback a analisis_mercado
     if (analisisMercado) {
       if (ladoSeleccionado === 'OVER' && analisisMercado.cuota_over) {
         return analisisMercado.cuota_over;
@@ -60,7 +67,7 @@ export function FormularioGuardarApuesta({
     }
 
     return null;
-  }, [resultado, ladoSeleccionado]);
+  }, [resultado, ladoSeleccionado, cuotaIngresada]);
 
   // Extraer fecha del partido
   const fechaAutoLlenada = useMemo(() => {
