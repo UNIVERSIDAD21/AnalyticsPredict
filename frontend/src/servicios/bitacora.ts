@@ -4,10 +4,12 @@
 
 import { clienteAPI } from './api';
 import {
+  ParametrosMetricasBitacora,
   PeticionActualizarResultado,
   PeticionCrearApuesta,
   RespuestaApuesta,
   RespuestaListaApuestas,
+  RespuestaMetricasBitacora,
   RespuestaResumenApuestas,
 } from '../tipos';
 
@@ -51,4 +53,16 @@ export async function eliminarApuesta(apuestaId: string): Promise<void> {
   if (!respuesta.data.exito) {
     throw new Error('No se pudo eliminar la apuesta');
   }
+}
+
+export async function obtenerMetricasBitacora(
+  params: ParametrosMetricasBitacora = {}
+): Promise<RespuestaMetricasBitacora> {
+  const respuesta = await clienteAPI.get<RespuestaMetricasBitacora>('/api/bitacora/metricas', {
+    params,
+  });
+  if (!respuesta.data.exito) {
+    throw new Error('No se pudieron obtener las métricas');
+  }
+  return respuesta.data;
 }

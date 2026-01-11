@@ -106,3 +106,74 @@ export interface PeticionActualizarResultado {
   resultado: Exclude<ResultadoApuesta, 'PENDIENTE'>;
   puntos_reales?: number | null;
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// Tipos para métricas de bitácora
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface MetricaMercadoBitacora {
+  mercado: string;
+  total: number;
+  ganadas: number;
+  perdidas: number;
+  push: number;
+  win_rate: number | null;
+  stake_total: number;
+  ganancia_total: number;
+  roi: number | null;
+  edge_promedio: number | null;
+  probabilidad_promedio: number | null;
+}
+
+export interface MetricaConfianzaBitacora {
+  confianza: string;
+  total: number;
+  ganadas: number;
+  perdidas: number;
+  win_rate: number | null;
+  stake_total: number;
+  ganancia_total: number;
+  roi: number | null;
+}
+
+export interface MetricaTemporalBitacora {
+  periodo: string;
+  total: number;
+  ganadas: number;
+  perdidas: number;
+  win_rate: number | null;
+  ganancia: number;
+  roi: number | null;
+}
+
+export interface ResumenGlobalBitacora {
+  total: number;
+  ganadas: number;
+  perdidas: number;
+  push: number;
+  win_rate: number | null;
+  stake_total: number;
+  ganancia_total: number;
+  roi: number | null;
+  edge_promedio: number | null;
+  probabilidad_promedio: number | null;
+}
+
+export interface RespuestaMetricasBitacora {
+  exito: boolean;
+  periodo: {
+    desde: string;
+    hasta: string;
+  };
+  resumen_global: ResumenGlobalBitacora;
+  por_mercado: MetricaMercadoBitacora[];
+  por_confianza: MetricaConfianzaBitacora[];
+  por_mes: MetricaTemporalBitacora[];
+  advertencias: string[];
+}
+
+export interface ParametrosMetricasBitacora {
+  desde?: string;
+  hasta?: string;
+  mercado?: string;
+}

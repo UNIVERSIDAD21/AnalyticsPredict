@@ -113,6 +113,10 @@ export function PaginaPrincipal() {
     linea: number;
   } | null>(null);
 
+  // Estado para partido_id y cuota (CRÍTICO para el modal de guardar)
+  const [partidoIdAnalisis, setPartidoIdAnalisis] = useState<string | null>(null);
+  const [cuotaAnalisis, setCuotaAnalisis] = useState<number | null>(null);
+
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
@@ -270,6 +274,11 @@ export function PaginaPrincipal() {
                     if (lado && peticion.linea) {
                       setSeleccionUsuario({ lado, linea: peticion.linea });
                     }
+                    // Guardar partido_id y cuota del formulario para el modal de guardar
+                    setPartidoIdAnalisis(peticion.partido_id ?? null);
+                    // Priorizar cuota del lado seleccionado
+                    const cuotaDelLado = lado === 'OVER' ? peticion.cuota_over : peticion.cuota_under;
+                    setCuotaAnalisis(cuotaDelLado ?? peticion.cuota ?? null);
                     analizar(peticion);
                   }}
                   cargando={estadoAnalisis === 'cargando'}
@@ -368,6 +377,8 @@ export function PaginaPrincipal() {
               ? (resultado.metadata?.fecha_partido as string)
               : undefined
           }
+          partidoId={partidoIdAnalisis ?? undefined}
+          cuotaIngresada={cuotaAnalisis ?? undefined}
           onCerrar={() => setMostrarGuardar(false)}
           onGuardar={async (apuesta) => {
             try {
