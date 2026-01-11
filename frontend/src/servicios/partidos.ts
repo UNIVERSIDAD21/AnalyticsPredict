@@ -162,7 +162,19 @@ export function agruparPartidosPorFecha(
 }
 
 /**
+ * Compara dos fechas por año, mes y día (ignora hora/minutos/segundos)
+ */
+function sonMismaFecha(fecha1: Date, fecha2: Date): boolean {
+  return (
+    fecha1.getFullYear() === fecha2.getFullYear() &&
+    fecha1.getMonth() === fecha2.getMonth() &&
+    fecha1.getDate() === fecha2.getDate()
+  );
+}
+
+/**
  * Formatea fecha para mostrar en UI
+ * Usa comparación por año/mes/día para evitar problemas de timezone
  */
 export function formatearFechaPartido(fecha: string): string {
   const date = parsearFechaPartido(fecha);
@@ -173,13 +185,14 @@ export function formatearFechaPartido(fecha: string): string {
   const ayer = new Date(hoy);
   ayer.setDate(ayer.getDate() - 1);
 
-  if (date.getTime() === hoy.getTime()) {
+  // Comparar por año/mes/día en lugar de getTime() para evitar problemas de timezone
+  if (sonMismaFecha(date, hoy)) {
     return 'Hoy';
   }
-  if (date.getTime() === manana.getTime()) {
+  if (sonMismaFecha(date, manana)) {
     return 'Mañana';
   }
-  if (date.getTime() === ayer.getTime()) {
+  if (sonMismaFecha(date, ayer)) {
     return 'Ayer';
   }
 
@@ -188,4 +201,15 @@ export function formatearFechaPartido(fecha: string): string {
     day: 'numeric',
     month: 'short',
   });
+}
+
+/**
+ * Obtiene la fecha actual como string YYYY-MM-DD (Eastern Time)
+ */
+export function obtenerFechaNBAHoyString(): string {
+  const fecha = obtenerFechaNBAHoy();
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, '0');
+  const day = String(fecha.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

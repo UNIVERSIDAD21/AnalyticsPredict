@@ -80,10 +80,19 @@ export function SelectorPartido({
     cargarPartidos();
   }, [diasAdelante]);
 
-  // Agrupar partidos por fecha
+  // Eliminar duplicados por ID y agrupar partidos por fecha
   const partidosPorFecha = useMemo(() => {
-    const grupos = new Map<string, PartidoResumen[]>();
+    // Primero eliminar duplicados usando un Map por ID
+    const partidosUnicos = new Map<string, PartidoResumen>();
     for (const partido of partidos) {
+      if (!partidosUnicos.has(partido.id)) {
+        partidosUnicos.set(partido.id, partido);
+      }
+    }
+
+    // Agrupar por fecha
+    const grupos = new Map<string, PartidoResumen[]>();
+    for (const partido of partidosUnicos.values()) {
       const fecha = partido.fecha_partido;
       if (!grupos.has(fecha)) {
         grupos.set(fecha, []);

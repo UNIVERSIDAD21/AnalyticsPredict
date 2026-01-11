@@ -19,6 +19,8 @@ interface PropsFormularioGuardarApuesta {
   lineaSeleccionada: number;
   fechaPartido?: string;
   partidoId?: string;
+  /** Cuota ingresada en el formulario de análisis - tiene prioridad sobre las demás */
+  cuotaIngresada?: number;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -30,6 +32,7 @@ export function FormularioGuardarApuesta({
   lineaSeleccionada,
   fechaPartido,
   partidoId,
+  cuotaIngresada,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
@@ -39,17 +42,22 @@ export function FormularioGuardarApuesta({
 
   const mercado = (resultado.metadata?.mercado || 'COMPLETO') as Mercado;
 
-  // Extraer cuota del análisis
+  // Extraer cuota del análisis - priorizar cuotaIngresada del formulario
   const cuotaAutoLlenada = useMemo(() => {
+    // 1. PRIORIDAD: Cuota ingresada directamente en el formulario de análisis
+    if (cuotaIngresada && cuotaIngresada >= 1.01) {
+      return cuotaIngresada;
+    }
+
     const analisisMercado = resultado.analisis_mercado;
     const detalle = resultado.mejor_apuesta_detalle;
 
-    // Primero intentar desde mejor_apuesta_detalle
+    // 2. Intentar desde mejor_apuesta_detalle
     if (detalle?.cuota) {
       return detalle.cuota;
     }
 
-    // Fallback a analisis_mercado
+    // 3. Fallback a analisis_mercado según el lado
     if (analisisMercado) {
       if (ladoSeleccionado === 'OVER' && analisisMercado.cuota_over) {
         return analisisMercado.cuota_over;
@@ -60,18 +68,33 @@ export function FormularioGuardarApuesta({
     }
 
     return null;
-  }, [resultado, ladoSeleccionado]);
+  }, [cuotaIngresada, resultado, ladoSeleccionado]);
 
-  // Extraer fecha del partido
+  // Obtener la fecha actual en formato YYYY-MM-DD (Eastern Time para NBA)
+  const obtenerFechaHoyNBA = (): string => {
+    const ahora = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return formatter.format(ahora); // Formato YYYY-MM-DD
+  };
+
+  // Extraer fecha del partido - SIEMPRE debe tener una fecha válida
   const fechaAutoLlenada = useMemo(() => {
+    // 1. Prioridad: fecha pasada como prop
     if (fechaPartido) {
       return fechaPartido;
     }
+    // 2. Intentar desde metadata del resultado
     const metadataFecha = resultado.metadata?.fecha_partido;
-    if (typeof metadataFecha === 'string') {
+    if (typeof metadataFecha === 'string' && metadataFecha) {
       return metadataFecha;
     }
-    return '';
+    // 3. Fallback: usar la fecha actual (Eastern Time para NBA)
+    return obtenerFechaHoyNBA();
   }, [fechaPartido, resultado]);
 
   // Estados para overrides opcionales

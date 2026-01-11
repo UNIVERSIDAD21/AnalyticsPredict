@@ -111,6 +111,9 @@ export function PaginaPrincipal() {
   const [seleccionUsuario, setSeleccionUsuario] = useState<{
     lado: LadoApuesta;
     linea: number;
+    cuota?: number;
+    partidoId?: string;
+    fechaPartido?: string;
   } | null>(null);
 
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
@@ -268,7 +271,20 @@ export function PaginaPrincipal() {
                   estadisticas={estadisticasEquipos}
                   onAnalizar={(peticion, lado) => {
                     if (lado && peticion.linea) {
-                      setSeleccionUsuario({ lado, linea: peticion.linea });
+                      // Determinar la cuota del lado seleccionado
+                      const cuotaDelLado = lado === 'OVER'
+                        ? peticion.cuota_over
+                        : peticion.cuota_under;
+
+                      setSeleccionUsuario({
+                        lado,
+                        linea: peticion.linea,
+                        cuota: cuotaDelLado ?? peticion.cuota,
+                        partidoId: peticion.partido_id,
+                        fechaPartido: typeof peticion.fecha_partido === 'string'
+                          ? peticion.fecha_partido
+                          : peticion.fecha_partido?.toString(),
+                      });
                     }
                     analizar(peticion);
                   }}
@@ -363,10 +379,13 @@ export function PaginaPrincipal() {
           resultado={resultado}
           ladoSeleccionado={seleccionUsuario.lado}
           lineaSeleccionada={seleccionUsuario.linea}
+          cuotaIngresada={seleccionUsuario.cuota}
+          partidoId={seleccionUsuario.partidoId}
           fechaPartido={
-            typeof resultado.metadata?.fecha_partido === 'string'
+            seleccionUsuario.fechaPartido ??
+            (typeof resultado.metadata?.fecha_partido === 'string'
               ? (resultado.metadata?.fecha_partido as string)
-              : undefined
+              : undefined)
           }
           onCerrar={() => setMostrarGuardar(false)}
           onGuardar={async (apuesta) => {

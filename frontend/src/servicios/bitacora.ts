@@ -9,6 +9,7 @@ import {
   RespuestaApuesta,
   RespuestaListaApuestas,
   RespuestaResumenApuestas,
+  RespuestaMetricasBitacora,
 } from '../tipos';
 
 export async function crearApuesta(payload: PeticionCrearApuesta): Promise<RespuestaApuesta> {
@@ -51,4 +52,22 @@ export async function eliminarApuesta(apuestaId: string): Promise<void> {
   if (!respuesta.data.exito) {
     throw new Error('No se pudo eliminar la apuesta');
   }
+}
+
+export interface ParametrosMetricasBitacora {
+  desde?: string;
+  hasta?: string;
+  mercado?: string;
+}
+
+export async function obtenerMetricasBitacora(
+  params?: ParametrosMetricasBitacora
+): Promise<RespuestaMetricasBitacora> {
+  const respuesta = await clienteAPI.get<RespuestaMetricasBitacora>('/api/bitacora/metricas', {
+    params,
+  });
+  if (!respuesta.data.exito) {
+    throw new Error('No se pudieron obtener las métricas de la bitácora');
+  }
+  return respuesta.data;
 }
