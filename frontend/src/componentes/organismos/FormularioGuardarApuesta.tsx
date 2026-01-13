@@ -138,6 +138,15 @@ export function FormularioGuardarApuesta({
     };
   }, [ladoSeleccionado, mercado, resultado]);
 
+  const cuotaOverFinal = useMemo(
+    () => snapshot.cuota_over ?? cuotaOver ?? undefined,
+    [snapshot.cuota_over, cuotaOver]
+  );
+  const cuotaUnderFinal = useMemo(
+    () => snapshot.cuota_under ?? cuotaUnder ?? undefined,
+    [snapshot.cuota_under, cuotaUnder]
+  );
+
   // Obtener partido_id desde props o metadata
   const partidoIdFinal = useMemo(() => {
     if (partidoId) return partidoId;
