@@ -19,6 +19,9 @@ interface PropsFormularioGuardarApuesta {
   lineaSeleccionada: number;
   fechaPartido?: string;
   partidoId?: string;
+  cuotaSeleccionada?: number;
+  cuotaOver?: number;
+  cuotaUnder?: number;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -30,6 +33,9 @@ export function FormularioGuardarApuesta({
   lineaSeleccionada,
   fechaPartido,
   partidoId,
+  cuotaSeleccionada,
+  cuotaOver,
+  cuotaUnder,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
@@ -56,10 +62,13 @@ export function FormularioGuardarApuesta({
       if (ladoSeleccionado === 'UNDER' && analisisMercado.cuota_under) {
         return analisisMercado.cuota_under;
       }
+      if (analisisMercado.cuota) {
+        return analisisMercado.cuota;
+      }
     }
 
-    return null;
-  }, [resultado, ladoSeleccionado]);
+    return cuotaSeleccionada ?? null;
+  }, [cuotaSeleccionada, resultado, ladoSeleccionado]);
 
   // Extraer fecha del partido
   const fechaAutoLlenada = useMemo(() => {
@@ -166,8 +175,8 @@ export function FormularioGuardarApuesta({
       lado: ladoSeleccionado,
       linea: lineaSeleccionada,
       cuota: cuotaFinal,
-      cuota_over: snapshot.cuota_over ?? undefined,
-      cuota_under: snapshot.cuota_under ?? undefined,
+      cuota_over: cuotaOverFinal,
+      cuota_under: cuotaUnderFinal,
       stake: stakeNumero,
       probabilidad_sistema: snapshot.probabilidad,
       confianza_sistema: resultado.nivel_confianza,
