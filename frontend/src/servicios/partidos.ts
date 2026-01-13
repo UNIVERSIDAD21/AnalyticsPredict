@@ -9,11 +9,9 @@
  */
 
 import { clienteAPI, extraerMensajeError } from './api';
-import {
-  PartidoResumen,
-  RespuestaPartidos,
-  ParametrosBusquedaPartidos,
-} from '../tipos';
+import { PartidoResumen, RespuestaPartidos, ParametrosBusquedaPartidos } from '../tipos';
+
+const ZONA_HORARIA_NBA = 'America/New_York';
 
 // ══════════════════════════════════════════════════════════════
 // FUNCIONES DE CONSULTA
@@ -111,35 +109,30 @@ export async function buscarPartido(
 }
 
 /**
- * Obtiene la fecha actual según el calendario NBA (Eastern Time).
+ * Obtiene la fecha actual según el calendario NBA (Eastern Time) en formato YYYY-MM-DD.
  */
-export function obtenerFechaNBAHoy(): Date {
-  const ahora = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
+export function obtenerFechaNBAHoy(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_HORARIA_NBA,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
-
-  const partes = formatter.formatToParts(ahora);
-  const year = parseInt(partes.find((p) => p.type === 'year')?.value || '1970', 10);
-  const month = parseInt(partes.find((p) => p.type === 'month')?.value || '01', 10) - 1;
-  const day = parseInt(partes.find((p) => p.type === 'day')?.value || '01', 10);
-
-  const fechaHoy = new Date(year, month, day);
-  fechaHoy.setHours(0, 0, 0, 0);
-  return fechaHoy;
+  }).format(new Date());
 }
+
+const sumarDiasISO = (fechaISO: string, dias: number): string => {
+  const [year, month, day] = fechaISO.split('-').map(Number);
+  const fecha = new Date(Date.UTC(year, month - 1, day));
+  fecha.setUTCDate(fecha.getUTCDate() + dias);
+  return fecha.toISOString().slice(0, 10);
+};
 
 /**
  * Parsea una fecha YYYY-MM-DD evitando el desfase de timezone.
  */
 export function parsearFechaPartido(fechaStr: string): Date {
   const [year, month, day] = fechaStr.split('-').map(Number);
-  const fecha = new Date(year, month - 1, day);
-  fecha.setHours(0, 0, 0, 0);
-  return fecha;
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 }
 
 /**
@@ -167,19 +160,16 @@ export function agruparPartidosPorFecha(
 export function formatearFechaPartido(fecha: string): string {
   const date = parsearFechaPartido(fecha);
   const hoy = obtenerFechaNBAHoy();
+  const manana = sumarDiasISO(hoy, 1);
+  const ayer = sumarDiasISO(hoy, -1);
 
-  const manana = new Date(hoy);
-  manana.setDate(manana.getDate() + 1);
-  const ayer = new Date(hoy);
-  ayer.setDate(ayer.getDate() - 1);
-
-  if (date.getTime() === hoy.getTime()) {
+  if (fecha === hoy) {
     return 'Hoy';
   }
-  if (date.getTime() === manana.getTime()) {
+  if (fecha === manana) {
     return 'Mañana';
   }
-  if (date.getTime() === ayer.getTime()) {
+  if (fecha === ayer) {
     return 'Ayer';
   }
 
@@ -187,5 +177,6 @@ export function formatearFechaPartido(fecha: string): string {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
+    timeZone: ZONA_HORARIA_NBA,
   });
 }
