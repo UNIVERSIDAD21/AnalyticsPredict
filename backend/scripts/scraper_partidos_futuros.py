@@ -170,7 +170,7 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
         "equipos_no_encontrados": 0,
     }
 
-    hoy = date.today()
+    hoy = datetime.now(ZONA_HORARIA_NBA).date()
 
     with psycopg.connect(db_url, row_factory=psycopg.rows.dict_row) as conn:
         with conn.cursor() as cursor:
