@@ -131,8 +131,16 @@ def _consultar_partidos(
     parametros.append(limite)
     where_clause = " AND ".join(condiciones)
 
+    # Usar DISTINCT ON con la llave natural para eliminar duplicados correctamente.
+    # Ordenamos por: fecha, equipos, tipo (para el DISTINCT ON), luego priorizamos
+    # partidos con espn_game_id (más confiables) y partidos más recientes (id DESC).
     query = f"""
-        SELECT DISTINCT ON (p.id)
+        SELECT DISTINCT ON (
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido
+        )
             p.id,
             p.fecha_partido,
             p.tipo_partido,
@@ -159,7 +167,13 @@ def _consultar_partidos(
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
         JOIN temporadas t ON p.temporada_id = t.id
         WHERE {where_clause}
-        ORDER BY p.id, p.fecha_partido ASC, el.nombre ASC
+        ORDER BY
+            p.fecha_partido ASC,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido,
+            CASE WHEN p.espn_game_id IS NOT NULL THEN 0 ELSE 1 END,
+            p.id DESC
         LIMIT %s
     """
 
