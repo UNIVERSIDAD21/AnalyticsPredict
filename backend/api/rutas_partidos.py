@@ -107,18 +107,18 @@ def _consultar_partidos(
             p.local_total IS NULL
             OR p.visitante_total IS NULL
             OR (
-                p.local_total = 0
-                AND p.visitante_total = 0
-                AND p.local_q1 = 0
-                AND p.local_q2 = 0
-                AND p.local_q3 = 0
-                AND p.local_q4 = 0
-                AND p.local_ot = 0
-                AND p.visitante_q1 = 0
-                AND p.visitante_q2 = 0
-                AND p.visitante_q3 = 0
-                AND p.visitante_q4 = 0
-                AND p.visitante_ot = 0
+                COALESCE(p.local_total, 0) = 0
+                AND COALESCE(p.visitante_total, 0) = 0
+                AND COALESCE(p.local_q1, 0) = 0
+                AND COALESCE(p.local_q2, 0) = 0
+                AND COALESCE(p.local_q3, 0) = 0
+                AND COALESCE(p.local_q4, 0) = 0
+                AND COALESCE(p.local_ot, 0) = 0
+                AND COALESCE(p.visitante_q1, 0) = 0
+                AND COALESCE(p.visitante_q2, 0) = 0
+                AND COALESCE(p.visitante_q3, 0) = 0
+                AND COALESCE(p.visitante_q4, 0) = 0
+                AND COALESCE(p.visitante_ot, 0) = 0
             )
         )
     """
@@ -185,7 +185,7 @@ def _consultar_partidos(
                         "visitante_ot",
                     ]
                     return fila["local_total"] == 0 and fila["visitante_total"] == 0 and all(
-                        fila[columna] == 0 for columna in columnas_ceros
+                        (fila[columna] or 0) == 0 for columna in columnas_ceros
                     )
 
                 partidos = [
