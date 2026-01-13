@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scraper_partidos_futuros.py – Sincroniza partidos próximos (sin resultado) desde ESPN.
+scraper_partidos_futuros.py — Sincroniza partidos próximos (sin resultado) desde ESPN.
 
 Uso:
     python scripts/scraper_partidos_futuros.py --days 14
@@ -73,7 +73,9 @@ def parse_evento_espn(evento: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     fecha_str = comp.get("date", "")
     try:
         fecha_utc = datetime.fromisoformat(fecha_str.replace("Z", "+00:00"))
-        fecha_partido = fecha_utc.astimezone(ZONA_HORARIA_NBA).date()
+        # Convertir a zona horaria NBA para obtener la fecha correcta del partido
+        fecha_nba = fecha_utc.astimezone(ZONA_HORARIA_NBA)
+        fecha_partido = fecha_nba.date()
     except (ValueError, TypeError) as exc:
         print(f"    ⚠️ Error parseando fecha: {fecha_str} - {exc}")
         return None
@@ -125,38 +127,45 @@ def upsert_partido_futuro(
 ) -> bool:
     """
     Inserta o actualiza un partido futuro (sin resultados).
-    Los campos de puntos se establecen en 0 por defecto para cumplir con NOT NULL.
+    Usa INSERT ... ON CONFLICT para manejar duplicados de forma atómica.
     """
-    cursor.execute(
-        """
-        INSERT INTO partidos (
-            temporada_id, fecha_partido, tipo_partido, espn_game_id,
-            equipo_local_id, equipo_visitante_id,
-            local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
-            visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
-            diferencia_puntos, hubo_overtime
-        ) VALUES (
-            %s, %s, %s, %s, %s, %s,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, false
+    try:
+        cursor.execute(
+            """
+            INSERT INTO partidos (
+                temporada_id, fecha_partido, tipo_partido, espn_game_id,
+                equipo_local_id, equipo_visitante_id,
+                local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
+                visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
+                diferencia_puntos, hubo_overtime
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, false
+            )
+            ON CONFLICT (espn_game_id) 
+            WHERE espn_game_id IS NOT NULL
+            DO UPDATE SET
+                fecha_partido = EXCLUDED.fecha_partido,
+                temporada_id = EXCLUDED.temporada_id,
+                actualizado_en = now()
+            RETURNING (xmax = 0) AS es_nuevo
+            """,
+            [
+                temporada_id,
+                fecha_partido,
+                "REG",
+                espn_game_id,
+                equipo_local_id,
+                equipo_visitante_id,
+            ],
         )
-        ON CONFLICT (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
-        DO UPDATE SET
-            espn_game_id = COALESCE(partidos.espn_game_id, EXCLUDED.espn_game_id)
-        RETURNING (xmax = 0) AS es_nuevo
-        """,
-        [
-            temporada_id,
-            fecha_partido,
-            "REG",
-            espn_game_id,
-            equipo_local_id,
-            equipo_visitante_id,
-        ],
-    )
-    row = cursor.fetchone()
-    return bool(row and row["es_nuevo"])
+        row = cursor.fetchone()
+        return bool(row and row["es_nuevo"])
+    except Exception as e:
+        print(f"    ⚠️ Error al insertar partido {espn_game_id}: {e}")
+        return False
 
 
 def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
@@ -170,9 +179,15 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
         "equipos_no_encontrados": 0,
     }
 
+    # Obtener la fecha actual en zona horaria NBA
     hoy = datetime.now(ZONA_HORARIA_NBA).date()
+    print(f"📅 Fecha actual NBA: {hoy}")
 
     with psycopg.connect(db_url, row_factory=psycopg.rows.dict_row) as conn:
+        # Configurar la zona horaria de la sesión para consistencia
+        with conn.cursor() as cursor:
+            cursor.execute("SET TIMEZONE = 'America/New_York'")
+        conn.commit()
         with conn.cursor() as cursor:
             temporada = obtener_temporada_activa(cursor)
             if not temporada:
@@ -187,7 +202,7 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
 
                 try:
                     eventos = fetch_scoreboard(fecha)
-                    print(f"  {fecha}: {len(eventos)} eventos")
+                    print(f"  📅 {fecha} ({i} días desde hoy): {len(eventos)} eventos")
 
                     for evento in eventos:
                         stats["eventos_encontrados"] += 1
@@ -218,14 +233,14 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
 
                         if insertado:
                             stats["insertados"] += 1
-                            print(f"    ✅ {parsed['away_abbr']} @ {parsed['home_abbr']}")
+                            print(f"    ✅ {parsed['away_abbr']} @ {parsed['home_abbr']} (ESPN ID: {parsed['espn_game_id']}, Fecha BD: {parsed['fecha_partido']})")
                         else:
                             stats["ya_existian"] += 1
 
                     conn.commit()
 
                 except Exception as exc:
-                    conn.rollback()  # Rollback en caso de error
+                    conn.rollback()
                     stats["errores"] += 1
                     print(f"    ❌ Error en {fecha}: {exc}")
 
