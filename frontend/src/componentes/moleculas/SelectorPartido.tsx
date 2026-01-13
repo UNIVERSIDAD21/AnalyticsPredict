@@ -61,13 +61,45 @@ export function SelectorPartido({
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
+  const ordenarYDedupe = (lista: PartidoResumen[]) => {
+    const vistos = new Set<string>();
+    const unicos: PartidoResumen[] = [];
+
+    for (const partido of lista) {
+      const llave = [
+        partido.fecha_partido,
+        partido.equipo_local_id,
+        partido.equipo_visitante_id,
+        partido.tipo_partido,
+      ].join('|');
+
+      if (vistos.has(llave)) {
+        continue;
+      }
+
+      vistos.add(llave);
+      unicos.push(partido);
+    }
+
+    return unicos.sort((a, b) => {
+      if (a.fecha_partido !== b.fecha_partido) {
+        return a.fecha_partido.localeCompare(b.fecha_partido);
+      }
+      const local = a.equipo_local_nombre.localeCompare(b.equipo_local_nombre);
+      if (local !== 0) {
+        return local;
+      }
+      return a.equipo_visitante_nombre.localeCompare(b.equipo_visitante_nombre);
+    });
+  };
+
   // Cargar partidos próximos
   const cargarPartidos = async () => {
     setCargando(true);
     setError(null);
     try {
       const lista = await obtenerPartidosProximos(diasAdelante);
-      setPartidos(lista);
+      setPartidos(ordenarYDedupe(lista));
     } catch (err) {
       setError('No se pudieron cargar los partidos');
       console.error(err);
