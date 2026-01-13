@@ -7,3 +7,4 @@ export { useAnalisis } from './useAnalisis';
 export { useEstadisticasEquipos } from './useEstadisticasEquipos';
 export { useBitacora } from './useBitacora';
 export { useHistorialEquipo } from './useHistorialEquipo';
+export { useMetricasBitacora } from './useMetricasBitacora';
