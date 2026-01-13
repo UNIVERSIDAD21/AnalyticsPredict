@@ -7,6 +7,7 @@ import { AlertTriangle, BarChart3, Calendar, RotateCw } from 'lucide-react';
 import { Encabezado, GraficoCurvaCalibracion } from '../organismos';
 import { Boton, Spinner } from '../atomos';
 import { AlertasCalibracion, MensajeError } from '../moleculas';
+import { useMetricasBitacora } from '../../hooks';
 import { obtenerCurvaCalibracion, obtenerMetricasCalibracion } from '../../servicios/metricas';
 import type {
   MercadoMetricas,
@@ -40,6 +41,16 @@ function formatearNumero(valor: number | null, decimales = 3): string {
 function formatearEntero(valor: number | null): string {
   if (valor === null || !isFinite(valor)) return '—';
   return Math.round(valor).toLocaleString('es-ES');
+}
+
+function formatearPorcentaje(valor: number | null, decimales = 1): string {
+  if (valor === null || !isFinite(valor)) return '—';
+  return `${(valor * 100).toFixed(decimales)}%`;
+}
+
+function formatearMoneda(valor: number | null, decimales = 2): string {
+  if (valor === null || !isFinite(valor)) return '—';
+  return `$${valor.toFixed(decimales)}`;
 }
 
 function obtenerEstadoCalibracion(metrica?: MetricaMercado) {
@@ -142,9 +153,29 @@ export function PaginaMetricas() {
     void cargarCurva();
   }, [cargarCurva]);
 
+  const {
+    datos: metricasBitacora,
+    estado: estadoBitacora,
+    error: errorBitacora,
+    recargar: recargarBitacora,
+  } = useMetricasBitacora(
+    {
+      desde: parametrosPeriodo.desde,
+      hasta: parametrosPeriodo.hasta,
+    },
+    { habilitado: rangoValido }
+  );
+
   const metricasPorMercado = metricas?.metricas_por_mercado ?? [];
   const resumenGlobal = metricasPorMercado.find((item) => item.mercado === 'COMPLETO');
   const resumenDisponible = Boolean(resumenGlobal?.suficiente_data);
+
+  const resumenBitacora = metricasBitacora?.resumen_global ?? null;
+  const manejarActualizar = () => {
+    void cargarMetricas();
+    void cargarCurva();
+    void recargarBitacora();
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -162,7 +193,7 @@ export function PaginaMetricas() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Boton variante="secundario" iconoInicio={<RotateCw size={16} />} onClick={cargarMetricas}>
+            <Boton variante="secundario" iconoInicio={<RotateCw size={16} />} onClick={manejarActualizar}>
               Actualizar
             </Boton>
             <Boton variante="primario" onClick={() => navegar('/')}>
@@ -232,6 +263,89 @@ export function PaginaMetricas() {
             <div className="flex items-center gap-2 text-xs text-advertencia-500">
               <AlertTriangle className="w-4 h-4" />
               Selecciona ambas fechas para cargar métricas.
+            </div>
+          )}
+        </div>
+
+        {estadoBitacora === 'error' && errorBitacora && (
+          <MensajeError titulo="Error al cargar métricas de bitácora" mensaje={errorBitacora} />
+        )}
+
+        <div className="tarjeta p-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan">
+                Métricas de bitácora
+              </h3>
+              <p className="text-xs text-texto-terciario">
+                Rendimiento real de apuestas resueltas en la bitácora.
+              </p>
+            </div>
+            {metricasBitacora?.periodo && (
+              <div className="text-xs text-texto-terciario">
+                Periodo: {metricasBitacora.periodo.desde ?? '—'} → {metricasBitacora.periodo.hasta ?? '—'}
+              </div>
+            )}
+          </div>
+
+          {estadoBitacora === 'cargando' && (
+            <div className="flex items-center justify-center min-h-[140px]">
+              <Spinner tamano="md" texto="Cargando métricas de bitácora..." centrado />
+            </div>
+          )}
+
+          {estadoBitacora === 'exito' && resumenBitacora && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="tarjeta p-4 space-y-2">
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">Apuestas resueltas</p>
+                <p className="text-2xl font-mono text-neon-cyan">
+                  {formatearEntero(resumenBitacora.total)}
+                </p>
+                <p className="text-[11px] text-texto-terciario">
+                  {resumenBitacora.ganadas} ganadas · {resumenBitacora.perdidas} perdidas
+                </p>
+              </div>
+              <div className="tarjeta p-4 space-y-2">
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">Win rate</p>
+                <p className="text-2xl font-mono text-neon-magenta">
+                  {formatearPorcentaje(resumenBitacora.win_rate)}
+                </p>
+                <p className="text-[11px] text-texto-terciario">
+                  ROI estimado sobre apuestas resueltas.
+                </p>
+              </div>
+              <div className="tarjeta p-4 space-y-2">
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">Ganancia</p>
+                <p
+                  className={`text-2xl font-mono ${
+                    resumenBitacora.ganancia_total >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
+                  }`}
+                >
+                  {formatearMoneda(resumenBitacora.ganancia_total)}
+                </p>
+                <p className="text-[11px] text-texto-terciario">
+                  Stake total: {formatearMoneda(resumenBitacora.stake_total)}
+                </p>
+              </div>
+              <div className="tarjeta p-4 space-y-2">
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI</p>
+                <p
+                  className={`text-2xl font-mono ${
+                    (resumenBitacora.roi ?? 0) >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
+                  }`}
+                >
+                  {formatearPorcentaje(resumenBitacora.roi)}
+                </p>
+                <p className="text-[11px] text-texto-terciario">
+                  Edge prom.: {formatearPorcentaje(resumenBitacora.edge_promedio, 2)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {estadoBitacora === 'exito' && !resumenBitacora && (
+            <div className="text-sm text-texto-secundario">
+              No hay métricas de bitácora disponibles para el periodo seleccionado.
             </div>
           )}
         </div>
