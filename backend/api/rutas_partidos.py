@@ -40,7 +40,7 @@ class PartidoResumen(BaseModel):
     """Resumen de un partido para selección en UI."""
 
     id: str
-    fecha_partido: date
+    fecha_partido: str
     tipo_partido: str
     equipo_local_id: str
     equipo_local_nombre: str
@@ -191,7 +191,7 @@ def _consultar_partidos(
                 partidos = [
                     PartidoResumen(
                         id=str(fila["id"]),
-                        fecha_partido=fila["fecha_partido"],
+                        fecha_partido=fila["fecha_partido"].isoformat(),
                         tipo_partido=fila["tipo_partido"],
                         equipo_local_id=str(fila["equipo_local_id"]),
                         equipo_local_nombre=fila["equipo_local_nombre"],
@@ -391,7 +391,7 @@ async def buscar_partido(
                 partidos = [
                     PartidoResumen(
                         id=str(fila["id"]),
-                        fecha_partido=fila["fecha_partido"],
+                        fecha_partido=fila["fecha_partido"].isoformat(),
                         tipo_partido=fila["tipo_partido"],
                         equipo_local_id=str(fila["equipo_local_id"]),
                         equipo_local_nombre=fila["equipo_local_nombre"],

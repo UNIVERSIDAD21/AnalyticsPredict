@@ -44,6 +44,7 @@ def obtener_pool() -> ConnectionPool:
             conninfo=obtener_database_url(),
             min_size=1,
             max_size=5,
+            kwargs={"options": "-c timezone=America/New_York"},
             open=True  # Abrir inmediatamente al crear
         )
     return _pool
