@@ -132,56 +132,34 @@ def _consultar_partidos(
     where_clause = " AND ".join(condiciones)
 
     query = f"""
-        WITH partidos_dedup AS (
-            SELECT DISTINCT ON (
-                p.fecha_partido,
-                p.equipo_local_id,
-                p.equipo_visitante_id,
-                p.tipo_partido
-            )
-                p.id,
-                p.fecha_partido,
-                p.tipo_partido,
-                p.equipo_local_id,
-                el.nombre AS equipo_local_nombre,
-                p.equipo_visitante_id,
-                ev.nombre AS equipo_visitante_nombre,
-                p.temporada_id,
-                t.nombre AS temporada_nombre,
-                p.local_total,
-                p.visitante_total,
-                p.local_q1,
-                p.local_q2,
-                p.local_q3,
-                p.local_q4,
-                p.local_ot,
-                p.visitante_q1,
-                p.visitante_q2,
-                p.visitante_q3,
-                p.visitante_q4,
-                p.visitante_ot
-            FROM partidos p
-            JOIN equipos el ON p.equipo_local_id = el.id
-            JOIN equipos ev ON p.equipo_visitante_id = ev.id
-            JOIN temporadas t ON p.temporada_id = t.id
-            WHERE {where_clause}
-            ORDER BY
-                p.fecha_partido,
-                p.equipo_local_id,
-                p.equipo_visitante_id,
-                p.tipo_partido,
-                CASE
-                    WHEN p.local_total IS NOT NULL AND p.visitante_total IS NOT NULL THEN 0
-                    ELSE 1
-                END,
-                p.id DESC
-        )
-        SELECT *
-        FROM partidos_dedup
-        ORDER BY
-            fecha_partido ASC,
-            equipo_local_nombre ASC,
-            equipo_visitante_nombre ASC
+        SELECT DISTINCT ON (p.id)
+            p.id,
+            p.fecha_partido,
+            p.tipo_partido,
+            p.equipo_local_id,
+            el.nombre AS equipo_local_nombre,
+            p.equipo_visitante_id,
+            ev.nombre AS equipo_visitante_nombre,
+            p.temporada_id,
+            t.nombre AS temporada_nombre,
+            p.local_total,
+            p.visitante_total,
+            p.local_q1,
+            p.local_q2,
+            p.local_q3,
+            p.local_q4,
+            p.local_ot,
+            p.visitante_q1,
+            p.visitante_q2,
+            p.visitante_q3,
+            p.visitante_q4,
+            p.visitante_ot
+        FROM partidos p
+        JOIN equipos el ON p.equipo_local_id = el.id
+        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+        JOIN temporadas t ON p.temporada_id = t.id
+        WHERE {where_clause}
+        ORDER BY p.id, p.fecha_partido ASC, el.nombre ASC
         LIMIT %s
     """
 
@@ -357,50 +335,42 @@ async def buscar_partido(
         fecha_hasta = fecha_desde + timedelta(days=dias_rango)
 
     query = """
-        WITH partidos_dedup AS (
-            SELECT DISTINCT ON (
-                p.fecha_partido,
-                p.equipo_local_id,
-                p.equipo_visitante_id,
-                p.tipo_partido
-            )
-                p.id,
-                p.fecha_partido,
-                p.tipo_partido,
-                p.equipo_local_id,
-                el.nombre AS equipo_local_nombre,
-                p.equipo_visitante_id,
-                ev.nombre AS equipo_visitante_nombre,
-                p.temporada_id,
-                t.nombre AS temporada_nombre,
-                p.local_total,
-                p.visitante_total
-            FROM partidos p
-            JOIN equipos el ON p.equipo_local_id = el.id
-            JOIN equipos ev ON p.equipo_visitante_id = ev.id
-            JOIN temporadas t ON p.temporada_id = t.id
-            WHERE
-                LOWER(el.nombre) LIKE LOWER(%s)
-                AND LOWER(ev.nombre) LIKE LOWER(%s)
-                AND p.fecha_partido >= %s
-                AND p.fecha_partido <= %s
-            ORDER BY
-                p.fecha_partido,
-                p.equipo_local_id,
-                p.equipo_visitante_id,
-                p.tipo_partido,
-                CASE
-                    WHEN p.local_total IS NOT NULL AND p.visitante_total IS NOT NULL THEN 0
-                    ELSE 1
-                END,
-                p.id DESC
+        SELECT DISTINCT ON (
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido
         )
-        SELECT *
-        FROM partidos_dedup
+            p.id,
+            p.fecha_partido,
+            p.tipo_partido,
+            p.equipo_local_id,
+            el.nombre AS equipo_local_nombre,
+            p.equipo_visitante_id,
+            ev.nombre AS equipo_visitante_nombre,
+            p.temporada_id,
+            t.nombre AS temporada_nombre,
+            p.local_total,
+            p.visitante_total
+        FROM partidos p
+        JOIN equipos el ON p.equipo_local_id = el.id
+        JOIN equipos ev ON p.equipo_visitante_id = ev.id
+        JOIN temporadas t ON p.temporada_id = t.id
+        WHERE
+            LOWER(el.nombre) LIKE LOWER(%s)
+            AND LOWER(ev.nombre) LIKE LOWER(%s)
+            AND p.fecha_partido >= %s
+            AND p.fecha_partido <= %s
         ORDER BY
-            fecha_partido ASC,
-            equipo_local_nombre ASC,
-            equipo_visitante_nombre ASC
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido,
+            CASE
+                WHEN p.local_total IS NOT NULL AND p.visitante_total IS NOT NULL THEN 0
+                ELSE 1
+            END,
+            p.id DESC
         LIMIT 10
     """
 
