@@ -16,7 +16,7 @@ import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { Activity, TrendingUp, Target, BarChart3 } from 'lucide-react';
-import { LadoApuesta } from '../../tipos';
+import { LadoApuesta, PeticionAnalisis } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
 
@@ -112,6 +112,7 @@ export function PaginaPrincipal() {
     lado: LadoApuesta;
     linea: number;
   } | null>(null);
+  const [ultimaPeticion, setUltimaPeticion] = useState<PeticionAnalisis | null>(null);
 
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
@@ -270,6 +271,7 @@ export function PaginaPrincipal() {
                     if (lado && peticion.linea) {
                       setSeleccionUsuario({ lado, linea: peticion.linea });
                     }
+                    setUltimaPeticion(peticion);
                     analizar(peticion);
                   }}
                   cargando={estadoAnalisis === 'cargando'}
@@ -363,11 +365,15 @@ export function PaginaPrincipal() {
           resultado={resultado}
           ladoSeleccionado={seleccionUsuario.lado}
           lineaSeleccionada={seleccionUsuario.linea}
-          fechaPartido={
-            typeof resultado.metadata?.fecha_partido === 'string'
-              ? (resultado.metadata?.fecha_partido as string)
-              : undefined
-          }
+          fechaPartido={ultimaPeticion?.fecha_partido}
+          partidoId={ultimaPeticion?.partido_id}
+          cuotaSeleccionada={ultimaPeticion
+            ? (ultimaPeticion.lado === 'OVER'
+              ? (ultimaPeticion.cuota_over ?? ultimaPeticion.cuota)
+              : (ultimaPeticion.cuota_under ?? ultimaPeticion.cuota))
+            : undefined}
+          cuotaOver={ultimaPeticion?.cuota_over}
+          cuotaUnder={ultimaPeticion?.cuota_under}
           onCerrar={() => setMostrarGuardar(false)}
           onGuardar={async (apuesta) => {
             try {

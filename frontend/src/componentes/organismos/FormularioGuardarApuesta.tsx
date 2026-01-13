@@ -19,6 +19,9 @@ interface PropsFormularioGuardarApuesta {
   lineaSeleccionada: number;
   fechaPartido?: string;
   partidoId?: string;
+  cuotaSeleccionada?: number;
+  cuotaOver?: number;
+  cuotaUnder?: number;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -30,12 +33,14 @@ export function FormularioGuardarApuesta({
   lineaSeleccionada,
   fechaPartido,
   partidoId,
+  cuotaSeleccionada,
+  cuotaOver,
+  cuotaUnder,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
   const [stake, setStake] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [mostrarOpcionales, setMostrarOpcionales] = useState(false);
 
   const mercado = (resultado.metadata?.mercado || 'COMPLETO') as Mercado;
 
@@ -57,10 +62,13 @@ export function FormularioGuardarApuesta({
       if (ladoSeleccionado === 'UNDER' && analisisMercado.cuota_under) {
         return analisisMercado.cuota_under;
       }
+      if (analisisMercado.cuota) {
+        return analisisMercado.cuota;
+      }
     }
 
-    return null;
-  }, [resultado, ladoSeleccionado]);
+    return cuotaSeleccionada ?? null;
+  }, [cuotaSeleccionada, resultado, ladoSeleccionado]);
 
   // Extraer fecha del partido
   const fechaAutoLlenada = useMemo(() => {
@@ -74,19 +82,12 @@ export function FormularioGuardarApuesta({
     return '';
   }, [fechaPartido, resultado]);
 
-  // Estados para overrides opcionales
-  const [cuotaManual, setCuotaManual] = useState('');
-  const [fechaManual, setFechaManual] = useState('');
-
   useEffect(() => {
     if (abierto) {
       setStake('');
-      setCuotaManual(cuotaAutoLlenada ? cuotaAutoLlenada.toFixed(2) : '');
-      setFechaManual(fechaAutoLlenada);
       setError(null);
-      setMostrarOpcionales(false);
     }
-  }, [abierto, cuotaAutoLlenada, fechaAutoLlenada]);
+  }, [abierto]);
 
   // Extraer snapshot completo del análisis incluyendo campos P1
   const snapshot = useMemo(() => {
@@ -137,6 +138,15 @@ export function FormularioGuardarApuesta({
     };
   }, [ladoSeleccionado, mercado, resultado]);
 
+  const cuotaOverFinal = useMemo(
+    () => snapshot.cuota_over ?? cuotaOver ?? undefined,
+    [snapshot.cuota_over, cuotaOver]
+  );
+  const cuotaUnderFinal = useMemo(
+    () => snapshot.cuota_under ?? cuotaUnder ?? undefined,
+    [snapshot.cuota_under, cuotaUnder]
+  );
+
   // Obtener partido_id desde props o metadata
   const partidoIdFinal = useMemo(() => {
     if (partidoId) return partidoId;
@@ -149,8 +159,8 @@ export function FormularioGuardarApuesta({
 
   const manejarGuardar = () => {
     const stakeNumero = Number(stake);
-    const cuotaFinal = cuotaManual ? Number(cuotaManual) : cuotaAutoLlenada;
-    const fechaFinal = fechaManual || fechaAutoLlenada;
+    const cuotaFinal = cuotaAutoLlenada;
+    const fechaFinal = fechaAutoLlenada;
 
     if (!stake || stakeNumero <= 0) {
       setError('Ingresa un stake válido.');
@@ -174,8 +184,8 @@ export function FormularioGuardarApuesta({
       lado: ladoSeleccionado,
       linea: lineaSeleccionada,
       cuota: cuotaFinal,
-      cuota_over: snapshot.cuota_over ?? undefined,
-      cuota_under: snapshot.cuota_under ?? undefined,
+      cuota_over: cuotaOverFinal,
+      cuota_under: cuotaUnderFinal,
       stake: stakeNumero,
       probabilidad_sistema: snapshot.probabilidad,
       confianza_sistema: resultado.nivel_confianza,
@@ -331,40 +341,6 @@ export function FormularioGuardarApuesta({
               </p>
             )}
           </div>
-
-          {/* Opciones avanzadas (colapsables) */}
-          <button
-            type="button"
-            onClick={() => setMostrarOpcionales(!mostrarOpcionales)}
-            className="text-sm text-neon-cyan hover:text-neon-cyan/80 flex items-center gap-1"
-          >
-            <span>{mostrarOpcionales ? '▼' : '▶'}</span>
-            {mostrarOpcionales ? 'Ocultar opciones' : 'Modificar cuota/fecha'}
-          </button>
-
-          {mostrarOpcionales && (
-            <div className="space-y-3 pl-4 border-l-2 border-neon-cyan/20">
-              <div className="relative">
-                <Input
-                  etiqueta="Cuota (override)"
-                  type="number"
-                  min="1.01"
-                  step="0.01"
-                  value={cuotaManual}
-                  onChange={(event) => setCuotaManual(event.target.value)}
-                  placeholder={cuotaAutoLlenada?.toFixed(2) || 'Ingresa cuota'}
-                />
-              </div>
-              <div className="relative">
-                <Input
-                  etiqueta="Fecha del partido (override)"
-                  type="date"
-                  value={fechaManual}
-                  onChange={(event) => setFechaManual(event.target.value)}
-                />
-              </div>
-            </div>
-          )}
 
           {error && <p className="text-neon-rojo text-sm">{error}</p>}
         </div>
