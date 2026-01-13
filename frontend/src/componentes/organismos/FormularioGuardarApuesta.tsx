@@ -150,8 +150,6 @@ export function FormularioGuardarApuesta({
 
   const manejarGuardar = () => {
     const stakeNumero = Number(stake);
-    const cuotaOverFinal = snapshot.cuota_over ?? cuotaOver ?? undefined;
-    const cuotaUnderFinal = snapshot.cuota_under ?? cuotaUnder ?? undefined;
     const cuotaFinal = cuotaAutoLlenada;
     const fechaFinal = fechaAutoLlenada;
 
