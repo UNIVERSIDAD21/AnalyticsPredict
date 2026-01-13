@@ -132,7 +132,12 @@ def _consultar_partidos(
     where_clause = " AND ".join(condiciones)
 
     query = f"""
-        SELECT
+        SELECT DISTINCT ON (
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido
+        )
             p.id,
             p.fecha_partido,
             p.tipo_partido,
@@ -159,7 +164,16 @@ def _consultar_partidos(
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
         JOIN temporadas t ON p.temporada_id = t.id
         WHERE {where_clause}
-        ORDER BY p.fecha_partido ASC, el.nombre ASC
+        ORDER BY
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido,
+            CASE
+                WHEN p.local_total IS NOT NULL AND p.visitante_total IS NOT NULL THEN 0
+                ELSE 1
+            END,
+            p.id DESC
         LIMIT %s
     """
 
@@ -335,7 +349,12 @@ async def buscar_partido(
         fecha_hasta = fecha_desde + timedelta(days=dias_rango)
 
     query = """
-        SELECT
+        SELECT DISTINCT ON (
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido
+        )
             p.id,
             p.fecha_partido,
             p.tipo_partido,
@@ -356,7 +375,16 @@ async def buscar_partido(
             AND LOWER(ev.nombre) LIKE LOWER(%s)
             AND p.fecha_partido >= %s
             AND p.fecha_partido <= %s
-        ORDER BY p.fecha_partido ASC
+        ORDER BY
+            p.fecha_partido,
+            p.equipo_local_id,
+            p.equipo_visitante_id,
+            p.tipo_partido,
+            CASE
+                WHEN p.local_total IS NOT NULL AND p.visitante_total IS NOT NULL THEN 0
+                ELSE 1
+            END,
+            p.id DESC
         LIMIT 10
     """
 

@@ -32,6 +32,7 @@ import os
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -58,6 +59,8 @@ try:
     )
 except Exception as e:
     raise SystemExit("❌ No pude importar motor.nba_scraper_espn. Ejecuta desde carpeta backend.") from e
+
+ZONA_HORARIA_NBA = ZoneInfo("America/New_York")
 
 
 @dataclass
@@ -97,14 +100,18 @@ def _safe_int(v: Any, default: int = 0) -> int:
 
 def parse_fecha_calendario_espn_iso(iso_str: str) -> date:
     """
-    Obtiene la fecha YYYY-MM-DD sin conversiones de zona horaria.
-    (Consistente con scripts previos del proyecto).
+    Convierte una fecha ISO a fecha NBA (America/New_York).
     """
     try:
-        base = str(iso_str).split("T")[0]
-        return datetime.strptime(base, "%Y-%m-%d").date()
+        texto = str(iso_str)
+        if "T" not in texto:
+            return datetime.strptime(texto, "%Y-%m-%d").date()
+        fecha_dt = datetime.fromisoformat(texto.replace("Z", "+00:00"))
+        if fecha_dt.tzinfo is None:
+            return fecha_dt.date()
+        return fecha_dt.astimezone(ZONA_HORARIA_NBA).date()
     except Exception:
-        return date.today()
+        return datetime.now(ZONA_HORARIA_NBA).date()
 
 
 def seasontype_to_tipo(seasontype: int) -> str:
