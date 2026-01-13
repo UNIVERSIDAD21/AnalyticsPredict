@@ -61,13 +61,23 @@ export function SelectorPartido({
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
+  const normalizarFecha = (fechaISO: string) => {
+    if (!fechaISO) {
+      return '';
+    }
+    return fechaISO.split('T')[0];
+  };
+
+  const compararFechas = (fechaA: string, fechaB: string) =>
+    normalizarFecha(fechaA).localeCompare(normalizarFecha(fechaB));
+
   const ordenarYDedupe = (lista: PartidoResumen[]) => {
     const vistos = new Set<string>();
     const unicos: PartidoResumen[] = [];
 
     for (const partido of lista) {
       const llave = [
-        partido.fecha_partido,
+        normalizarFecha(partido.fecha_partido),
         partido.equipo_local_id,
         partido.equipo_visitante_id,
         partido.tipo_partido,
@@ -82,8 +92,8 @@ export function SelectorPartido({
     }
 
     return unicos.sort((a, b) => {
-      if (a.fecha_partido !== b.fecha_partido) {
-        return a.fecha_partido.localeCompare(b.fecha_partido);
+      if (normalizarFecha(a.fecha_partido) !== normalizarFecha(b.fecha_partido)) {
+        return compararFechas(a.fecha_partido, b.fecha_partido);
       }
       const local = a.equipo_local_nombre.localeCompare(b.equipo_local_nombre);
       if (local !== 0) {
@@ -99,6 +109,7 @@ export function SelectorPartido({
     setError(null);
     try {
       const lista = await obtenerPartidosProximos(diasAdelante);
+      console.debug('SelectorPartido: fechas recibidas', lista.map((p) => p.fecha_partido));
       setPartidos(ordenarYDedupe(lista));
     } catch (err) {
       setError('No se pudieron cargar los partidos');
@@ -116,12 +127,13 @@ export function SelectorPartido({
   const partidosPorFecha = useMemo(() => {
     const grupos = new Map<string, PartidoResumen[]>();
     for (const partido of partidos) {
-      const fecha = partido.fecha_partido;
+      const fecha = normalizarFecha(partido.fecha_partido);
       if (!grupos.has(fecha)) {
         grupos.set(fecha, []);
       }
       grupos.get(fecha)!.push(partido);
     }
+    console.debug('SelectorPartido: agrupación por fecha', Array.from(grupos.keys()));
     return grupos;
   }, [partidos]);
 

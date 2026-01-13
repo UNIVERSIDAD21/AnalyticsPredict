@@ -133,10 +133,33 @@ export function obtenerFechaNBAHoy(): Date {
 }
 
 /**
+ * Obtiene la fecha actual del calendario NBA en formato ISO (YYYY-MM-DD).
+ */
+export function obtenerFechaHoyISO(): string {
+  const fecha = obtenerFechaNBAHoy();
+  const year = fecha.getFullYear();
+  const month = `${fecha.getMonth() + 1}`.padStart(2, '0');
+  const day = `${fecha.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Normaliza una fecha ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss) a YYYY-MM-DD.
+ */
+export function normalizarFechaISO(fechaStr: string): string {
+  if (!fechaStr) {
+    return '';
+  }
+  const [soloFecha] = fechaStr.split('T');
+  return soloFecha;
+}
+
+/**
  * Parsea una fecha YYYY-MM-DD evitando el desfase de timezone.
  */
 export function parsearFechaPartido(fechaStr: string): Date {
-  const [year, month, day] = fechaStr.split('-').map(Number);
+  const normalizada = normalizarFechaISO(fechaStr);
+  const [year, month, day] = normalizada.split('-').map(Number);
   const fecha = new Date(year, month - 1, day);
   fecha.setHours(0, 0, 0, 0);
   return fecha;
