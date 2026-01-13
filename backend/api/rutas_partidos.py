@@ -40,7 +40,7 @@ class PartidoResumen(BaseModel):
     """Resumen de un partido para selección en UI."""
 
     id: str
-    fecha_partido: date
+    fecha_partido: str
     tipo_partido: str
     equipo_local_id: str
     equipo_local_nombre: str
@@ -165,6 +165,8 @@ def _consultar_partidos(
 
     try:
         with pool.connection() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("SET TIME ZONE 'America/New_York'")
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(query, parametros)
                 filas = cursor.fetchall()
@@ -191,7 +193,7 @@ def _consultar_partidos(
                 partidos = [
                     PartidoResumen(
                         id=str(fila["id"]),
-                        fecha_partido=fila["fecha_partido"],
+                        fecha_partido=fila["fecha_partido"].isoformat(),
                         tipo_partido=fila["tipo_partido"],
                         equipo_local_id=str(fila["equipo_local_id"]),
                         equipo_local_nombre=fila["equipo_local_nombre"],
@@ -376,6 +378,8 @@ async def buscar_partido(
 
     try:
         with pool.connection() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("SET TIME ZONE 'America/New_York'")
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     query,
@@ -391,7 +395,7 @@ async def buscar_partido(
                 partidos = [
                     PartidoResumen(
                         id=str(fila["id"]),
-                        fecha_partido=fila["fecha_partido"],
+                        fecha_partido=fila["fecha_partido"].isoformat(),
                         tipo_partido=fila["tipo_partido"],
                         equipo_local_id=str(fila["equipo_local_id"]),
                         equipo_local_nombre=fila["equipo_local_nombre"],
@@ -472,6 +476,8 @@ async def obtener_partido(partido_id: str):
 
     try:
         with pool.connection() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute("SET TIME ZONE 'America/New_York'")
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(query, [partido_id])
                 fila = cursor.fetchone()
