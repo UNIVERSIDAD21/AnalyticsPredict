@@ -166,7 +166,7 @@ def _consultar_partidos(
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute("SET TIME ZONE 'America/New_York'")
+                cursor.execute("SET TIME ZONE %s", ("America/New_York",))
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(query, parametros)
                 filas = cursor.fetchall()
@@ -379,7 +379,7 @@ async def buscar_partido(
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute("SET TIME ZONE 'America/New_York'")
+                cursor.execute("SET TIME ZONE %s", ("America/New_York",))
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     query,
@@ -477,7 +477,7 @@ async def obtener_partido(partido_id: str):
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
-                cursor.execute("SET TIME ZONE 'America/New_York'")
+                cursor.execute("SET TIME ZONE %s", ("America/New_York",))
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(query, [partido_id])
                 fila = cursor.fetchone()
