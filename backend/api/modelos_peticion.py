@@ -13,6 +13,38 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+class ConfiguracionSizingPeticion(BaseModel):
+    """Overrides de sizing enviados desde el cliente."""
+
+    cap_por_apuesta: Optional[float] = Field(
+        None,
+        ge=0,
+        le=1.0,
+        description="Cap por apuesta (0-1, ej: 0.02 = 2%)",
+    )
+    cap_diario: Optional[float] = Field(
+        None,
+        ge=0,
+        le=1.0,
+        description="Cap diario (0-1, ej: 0.10 = 10%)",
+    )
+    stake_minimo: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Stake mínimo en moneda",
+    )
+
+    @model_validator(mode="after")
+    def validar_caps(self) -> "ConfiguracionSizingPeticion":
+        if (
+            self.cap_por_apuesta is not None
+            and self.cap_diario is not None
+            and self.cap_diario < self.cap_por_apuesta
+        ):
+            raise ValueError("cap_diario debe ser mayor o igual a cap_por_apuesta.")
+        return self
+
+
 class PeticionAnalisis(BaseModel):
     """Solicitud para analizar un partido."""
 
@@ -69,6 +101,10 @@ class PeticionAnalisis(BaseModel):
     temporadas: Optional[List[str]] = Field(
         None,
         description="Lista opcional de temporadas (IDs) para filtrar el análisis",
+    )
+    config_sizing: Optional[ConfiguracionSizingPeticion] = Field(
+        None,
+        description="Overrides de caps/stake mínimo para sizing",
     )
 
     @field_validator("equipo_local", "equipo_visitante")

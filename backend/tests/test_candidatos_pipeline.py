@@ -1,5 +1,8 @@
 import sys
 from pathlib import Path
+from uuid import UUID
+
+import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -73,3 +76,85 @@ def test_candidatos_con_una_cuota_estimado_penaliza_devig():
     assert candidato.datos_devig.metodo == "estimado"
     assert candidato.score is not None
     assert ScoreApuesta.CODIGO_DEVIG_ESTIMADO in candidato.score.penalizaciones_aplicadas
+
+
+def test_candidatos_aplican_calibrador_activo_en_ev_y_edge():
+    class DummyCalibrador:
+        def __init__(self):
+            self.metodo = "platt"
+            self.id = UUID("11111111-1111-1111-1111-111111111111")
+
+        def calibrar(self, _p):
+            return 0.9
+
+    calibrador = DummyCalibrador()
+    candidatos = candidatos_para_cuarto(
+        cuarto="Q1",
+        linea=50.0,
+        media_equipo=28.0,
+        desviacion_equipo=3.0,
+        media_rival=25.0,
+        desviacion_rival=3.0,
+        cuota_over=2.0,
+        cuota_under=None,
+        modo_devig="estricto",
+        config_sizing=None,
+        calibrador_activo=calibrador,
+    )
+
+    candidato = candidatos[0]
+    assert candidato.p_raw is not None
+    assert candidato.p_calibrada == 0.9
+    assert candidato.calibrador_usado == "platt"
+    assert candidato.calibrador_id == calibrador.id
+    assert candidato.edge_real == pytest.approx(0.9 - candidato.datos_devig.p_mkt_fair)
+
+
+def test_candidatos_sin_calibrador_usan_probabilidad_raw():
+    candidatos = candidatos_para_cuarto(
+        cuarto="Q1",
+        linea=50.0,
+        media_equipo=28.0,
+        desviacion_equipo=3.0,
+        media_rival=25.0,
+        desviacion_rival=3.0,
+        cuota_over=2.0,
+        cuota_under=None,
+        modo_devig="estricto",
+        config_sizing=None,
+    )
+
+    candidato = candidatos[0]
+    assert candidato.p_calibrada is None
+    assert candidato.p_raw == pytest.approx(candidato.probabilidad)
+
+
+def test_candidatos_ignoran_calibrador_de_otro_mercado():
+    class DummyCalibrador:
+        def __init__(self):
+            self.metodo = "platt"
+            self.mercado = "Q2"
+            self.id = UUID("22222222-2222-2222-2222-222222222222")
+
+        def calibrar(self, _p):
+            return 0.9
+
+    calibrador = DummyCalibrador()
+    candidatos = candidatos_para_cuarto(
+        cuarto="Q1",
+        linea=50.0,
+        media_equipo=28.0,
+        desviacion_equipo=3.0,
+        media_rival=25.0,
+        desviacion_rival=3.0,
+        cuota_over=2.0,
+        cuota_under=None,
+        modo_devig="estricto",
+        config_sizing=None,
+        calibrador_activo=calibrador,
+    )
+
+    candidato = candidatos[0]
+    assert candidato.p_calibrada is None
+    assert candidato.calibrador_usado is None
+    assert candidato.calibrador_id is None

@@ -9,3 +9,8 @@ export * from './api';
 export * from './estadisticas';
 export * from './bitacora';
 export * from './historial';
+export * from './partido';
+export * from './configuracion';
+export * from './metricas';
+export * from './alertas';
+export * from './predicciones';

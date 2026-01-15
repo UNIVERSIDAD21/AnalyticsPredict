@@ -98,12 +98,16 @@ export function extraerMensajeError(error: unknown): string {
       return respuesta.error.mensaje;
     }
 
+    if (error.response?.status === 400) {
+      return 'Solicitud inválida. Revisa equipos, línea y cuotas antes de reintentar.';
+    }
+
     if (error.response?.status === 404) {
-      return 'El recurso solicitado no existe.';
+      return 'No se encontró el recurso solicitado. Verifica equipos, temporada o mercado.';
     }
 
     if (error.response?.status === 422) {
-      return 'Los datos enviados no son válidos.';
+      return 'Los datos enviados no son válidos. Revisa cuotas, línea y mercado.';
     }
 
     if (error.response?.status === 500) {
@@ -111,11 +115,15 @@ export function extraerMensajeError(error: unknown): string {
     }
 
     if (error.code === 'ECONNABORTED') {
-      return 'La petición tardó demasiado. Verifica tu conexión.';
+      return 'La petición tardó demasiado. Verifica tu conexión o reintenta.';
     }
 
     if (error.code === 'ERR_NETWORK') {
-      return 'No se pudo conectar con el servidor. ¿Está corriendo el backend?';
+      return 'No se pudo conectar con el servidor. Revisa tu conexión o el estado del backend.';
+    }
+
+    if (!error.response) {
+      return 'No se recibió respuesta del servidor. Verifica tu conexión e intenta nuevamente.';
     }
 
     return error.message || 'Error desconocido en la petición.';
