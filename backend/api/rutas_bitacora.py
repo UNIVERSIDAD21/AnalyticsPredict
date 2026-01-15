@@ -5,13 +5,20 @@ from __future__ import annotations
 
 from datetime import date
 import json
+import logging
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+from motor.resolucion_apuestas import (
+    resolver_apuestas,
+    obtener_estadisticas_apuestas,
+    obtener_apuestas_pendientes_por_mercado,
+)
 
 # Importar Jsonb para serializar correctamente campos JSON en la base de datos.
 try:
@@ -23,6 +30,8 @@ except ImportError:
 from .dependencias import obtener_usuario_id
 from .modelos_peticion import PeticionActualizarResultado, PeticionCrearApuesta
 from .modelos_respuesta import RespuestaApuesta, RespuestaListaApuestas, RespuestaResumenApuestas
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 
@@ -421,3 +430,414 @@ async def eliminar_apuesta(
             )
 
     return {"exito": True, "mensaje": "Apuesta eliminada."}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS DE RESOLUCIÓN AUTOMÁTICA DE APUESTAS
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class RespuestaResolucion(BaseModel):
+    """Respuesta del endpoint de resolución."""
+
+    exito: bool
+    resumen: dict = Field(..., description="Resumen de la resolución")
+
+
+class RespuestaEstadisticas(BaseModel):
+    """Respuesta del endpoint de estadísticas."""
+
+    exito: bool
+    estadisticas: dict = Field(..., description="Estadísticas de apuestas")
+    pendientes_por_mercado: dict = Field(..., description="Pendientes por mercado")
+
+
+@router.post(
+    "/resolver",
+    summary="Resolver apuestas pendientes",
+    response_model=RespuestaResolucion,
+    description="""
+    Resuelve automáticamente apuestas PENDIENTE usando datos de partidos.
+
+    ## Requisitos:
+    - La apuesta debe tener `partido_id` válido
+    - El partido debe tener puntos registrados para el mercado
+
+    ## Proceso:
+    1. Busca apuestas PENDIENTE con partido_id
+    2. Obtiene puntos reales del partido
+    3. Compara valor real vs línea según mercado y lado
+    4. Actualiza resultado (GANADA/PERDIDA/PUSH) y ganancia
+
+    ## Parámetros opcionales:
+    - `mercado`: Solo resolver apuestas de un mercado específico
+    - `limite`: Máximo de apuestas a procesar (default 1000)
+    """,
+)
+async def resolver_apuestas_pendientes(
+    usuario_id: UUID = Depends(obtener_usuario_id),
+    mercado: Optional[str] = Query(
+        None,
+        pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$",
+        description="Filtrar por mercado específico",
+    ),
+    limite: int = Query(1000, ge=1, le=5000, description="Máximo de apuestas a procesar"),
+    hasta: Optional[date] = Query(None, description="Solo resolver hasta esta fecha"),
+) -> RespuestaResolucion:
+    """Resuelve apuestas pendientes automáticamente."""
+    try:
+        resumen = resolver_apuestas(
+            usuario_id=str(usuario_id),
+            mercado=mercado,
+            limite=limite,
+            solo_hasta_fecha=hasta,
+        )
+
+        logger.info(
+            "Resolución completada para usuario=%s: %d resueltas, %d pendientes, %d errores",
+            usuario_id,
+            resumen.resueltas,
+            resumen.pendientes,
+            resumen.errores,
+        )
+
+        return RespuestaResolucion(exito=True, resumen=resumen.to_dict())
+
+    except Exception as e:
+        logger.exception("Error resolviendo apuestas para usuario=%s", usuario_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error resolviendo apuestas: {str(e)}",
+        )
+
+
+@router.get(
+    "/estadisticas",
+    summary="Estadísticas de apuestas",
+    response_model=RespuestaEstadisticas,
+    description="""
+    Obtiene estadísticas completas de las apuestas del usuario.
+
+    Incluye:
+    - Total de apuestas
+    - Desglose por resultado (pendientes, ganadas, perdidas, push)
+    - Win rate y ROI
+    - Apuestas sin partido_id (no resolubles automáticamente)
+    - Pendientes por mercado
+    """,
+)
+async def obtener_estadisticas(
+    usuario_id: UUID = Depends(obtener_usuario_id),
+) -> RespuestaEstadisticas:
+    """Obtiene estadísticas de apuestas del usuario."""
+    try:
+        estadisticas = obtener_estadisticas_apuestas(usuario_id=str(usuario_id))
+        pendientes_por_mercado = obtener_apuestas_pendientes_por_mercado(
+            usuario_id=str(usuario_id)
+        )
+
+        return RespuestaEstadisticas(
+            exito=True,
+            estadisticas=estadisticas,
+            pendientes_por_mercado=pendientes_por_mercado,
+        )
+
+    except Exception as e:
+        logger.exception("Error obteniendo estadísticas para usuario=%s", usuario_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error obteniendo estadísticas: {str(e)}",
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT DE MÉTRICAS DESDE BITÁCORA
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class MetricaMercadoBitacora(BaseModel):
+    """Métricas de un mercado específico desde bitácora."""
+
+    mercado: str
+    total: int
+    ganadas: int
+    perdidas: int
+    push: int
+    win_rate: Optional[float] = None
+    stake_total: float
+    ganancia_total: float
+    roi: Optional[float] = None
+    edge_promedio: Optional[float] = None
+    probabilidad_promedio: Optional[float] = None
+
+
+class MetricaConfianzaBitacora(BaseModel):
+    """Métricas por nivel de confianza."""
+
+    confianza: str
+    total: int
+    ganadas: int
+    perdidas: int
+    win_rate: Optional[float] = None
+    stake_total: float
+    ganancia_total: float
+    roi: Optional[float] = None
+
+
+class MetricaTemporalBitacora(BaseModel):
+    """Métricas temporales (por mes)."""
+
+    periodo: str
+    total: int
+    ganadas: int
+    perdidas: int
+    win_rate: Optional[float] = None
+    ganancia: float
+    roi: Optional[float] = None
+
+
+class RespuestaMetricasBitacora(BaseModel):
+    """Respuesta completa de métricas desde bitácora."""
+
+    exito: bool
+    periodo: dict
+    resumen_global: dict
+    por_mercado: List[MetricaMercadoBitacora]
+    por_confianza: List[MetricaConfianzaBitacora]
+    por_mes: List[MetricaTemporalBitacora]
+    advertencias: List[str] = Field(default_factory=list)
+
+
+@router.get(
+    "/metricas",
+    summary="Métricas calculadas desde bitácora",
+    response_model=RespuestaMetricasBitacora,
+    description="""
+    Calcula métricas de rendimiento directamente desde la bitácora de apuestas.
+
+    A diferencia de `/api/metricas/calibracion` que usa predicciones_registradas,
+    este endpoint trabaja con apuestas reales guardadas por el usuario.
+
+    ## Métricas incluidas:
+    - **Resumen global**: total, win rate, ROI, ganancia/pérdida
+    - **Por mercado**: Q1, Q2, Q3, Q4, COMPLETO
+    - **Por confianza**: ALTA, MEDIA, BAJA
+    - **Por mes**: tendencia temporal
+
+    ## Filtros:
+    - `desde`: Fecha inicio (YYYY-MM-DD)
+    - `hasta`: Fecha fin (YYYY-MM-DD)
+    - `mercado`: Filtrar por mercado específico
+    """,
+)
+async def obtener_metricas_bitacora(
+    usuario_id: UUID = Depends(obtener_usuario_id),
+    desde: Optional[date] = Query(None, description="Fecha inicio"),
+    hasta: Optional[date] = Query(None, description="Fecha fin"),
+    mercado: Optional[str] = Query(
+        None,
+        pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$",
+        description="Filtrar por mercado",
+    ),
+) -> RespuestaMetricasBitacora:
+    """Calcula métricas desde la bitácora de apuestas."""
+    advertencias: List[str] = []
+
+    # Construir filtros base
+    condiciones = ["usuario_id = %s", "resultado IN ('GANADA', 'PERDIDA', 'PUSH')"]
+    parametros: List[object] = [str(usuario_id)]
+
+    if desde:
+        condiciones.append("fecha_partido >= %s")
+        parametros.append(desde)
+    if hasta:
+        condiciones.append("fecha_partido <= %s")
+        parametros.append(hasta)
+    if mercado:
+        condiciones.append("mercado = %s")
+        parametros.append(mercado)
+
+    where_sql = " AND ".join(condiciones)
+
+    try:
+        with obtener_pool().connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                # 1. Resumen global
+                cursor.execute(
+                    f"""
+                    SELECT
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        AVG(edge_real) FILTER (WHERE edge_real IS NOT NULL) AS edge_promedio,
+                        AVG(probabilidad_sistema) FILTER (WHERE probabilidad_sistema IS NOT NULL) AS prob_promedio
+                    FROM apuestas
+                    WHERE {where_sql}
+                    """,
+                    parametros,
+                )
+                resumen_row = cursor.fetchone() or {}
+
+                total = resumen_row.get("total", 0)
+                ganadas = resumen_row.get("ganadas", 0)
+                perdidas = resumen_row.get("perdidas", 0)
+                stake_total = float(resumen_row.get("stake_total", 0))
+                ganancia_total = float(resumen_row.get("ganancia_total", 0))
+
+                resumen_global = {
+                    "total": total,
+                    "ganadas": ganadas,
+                    "perdidas": perdidas,
+                    "push": resumen_row.get("push", 0),
+                    "win_rate": round(ganadas / (ganadas + perdidas), 4) if (ganadas + perdidas) > 0 else None,
+                    "stake_total": stake_total,
+                    "ganancia_total": ganancia_total,
+                    "roi": round(ganancia_total / stake_total, 4) if stake_total > 0 else None,
+                    "edge_promedio": round(float(resumen_row.get("edge_promedio") or 0), 4) or None,
+                    "probabilidad_promedio": round(float(resumen_row.get("prob_promedio") or 0), 4) or None,
+                }
+
+                if total < 30:
+                    advertencias.append(f"Solo {total} apuestas resueltas. Mínimo recomendado: 30.")
+
+                # 2. Por mercado
+                cursor.execute(
+                    f"""
+                    SELECT
+                        mercado,
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        AVG(edge_real) FILTER (WHERE edge_real IS NOT NULL) AS edge_promedio,
+                        AVG(probabilidad_sistema) FILTER (WHERE probabilidad_sistema IS NOT NULL) AS prob_promedio
+                    FROM apuestas
+                    WHERE {where_sql}
+                    GROUP BY mercado
+                    ORDER BY mercado
+                    """,
+                    parametros,
+                )
+                por_mercado = []
+                for row in cursor.fetchall():
+                    m_ganadas = row["ganadas"]
+                    m_perdidas = row["perdidas"]
+                    m_stake = float(row["stake_total"])
+                    m_ganancia = float(row["ganancia_total"])
+                    por_mercado.append(
+                        MetricaMercadoBitacora(
+                            mercado=row["mercado"],
+                            total=row["total"],
+                            ganadas=m_ganadas,
+                            perdidas=m_perdidas,
+                            push=row["push"],
+                            win_rate=round(m_ganadas / (m_ganadas + m_perdidas), 4) if (m_ganadas + m_perdidas) > 0 else None,
+                            stake_total=m_stake,
+                            ganancia_total=m_ganancia,
+                            roi=round(m_ganancia / m_stake, 4) if m_stake > 0 else None,
+                            edge_promedio=round(float(row["edge_promedio"] or 0), 4) or None,
+                            probabilidad_promedio=round(float(row["prob_promedio"] or 0), 4) or None,
+                        )
+                    )
+
+                # 3. Por confianza
+                cursor.execute(
+                    f"""
+                    SELECT
+                        confianza_sistema AS confianza,
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total
+                    FROM apuestas
+                    WHERE {where_sql} AND confianza_sistema IS NOT NULL
+                    GROUP BY confianza_sistema
+                    ORDER BY
+                        CASE confianza_sistema
+                            WHEN 'ALTA' THEN 1
+                            WHEN 'MEDIA' THEN 2
+                            WHEN 'BAJA' THEN 3
+                        END
+                    """,
+                    parametros,
+                )
+                por_confianza = []
+                for row in cursor.fetchall():
+                    c_ganadas = row["ganadas"]
+                    c_perdidas = row["perdidas"]
+                    c_stake = float(row["stake_total"])
+                    c_ganancia = float(row["ganancia_total"])
+                    por_confianza.append(
+                        MetricaConfianzaBitacora(
+                            confianza=row["confianza"],
+                            total=row["total"],
+                            ganadas=c_ganadas,
+                            perdidas=c_perdidas,
+                            win_rate=round(c_ganadas / (c_ganadas + c_perdidas), 4) if (c_ganadas + c_perdidas) > 0 else None,
+                            stake_total=c_stake,
+                            ganancia_total=c_ganancia,
+                            roi=round(c_ganancia / c_stake, 4) if c_stake > 0 else None,
+                        )
+                    )
+
+                # 4. Por mes
+                cursor.execute(
+                    f"""
+                    SELECT
+                        TO_CHAR(fecha_partido, 'YYYY-MM') AS periodo,
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COALESCE(SUM(ganancia), 0) AS ganancia,
+                        COALESCE(SUM(stake), 0) AS stake_total
+                    FROM apuestas
+                    WHERE {where_sql} AND fecha_partido IS NOT NULL
+                    GROUP BY TO_CHAR(fecha_partido, 'YYYY-MM')
+                    ORDER BY periodo DESC
+                    LIMIT 12
+                    """,
+                    parametros,
+                )
+                por_mes = []
+                for row in cursor.fetchall():
+                    t_ganadas = row["ganadas"]
+                    t_perdidas = row["perdidas"]
+                    t_ganancia = float(row["ganancia"])
+                    t_stake = float(row["stake_total"])
+                    por_mes.append(
+                        MetricaTemporalBitacora(
+                            periodo=row["periodo"],
+                            total=row["total"],
+                            ganadas=t_ganadas,
+                            perdidas=t_perdidas,
+                            win_rate=round(t_ganadas / (t_ganadas + t_perdidas), 4) if (t_ganadas + t_perdidas) > 0 else None,
+                            ganancia=t_ganancia,
+                            roi=round(t_ganancia / t_stake, 4) if t_stake > 0 else None,
+                        )
+                    )
+
+        return RespuestaMetricasBitacora(
+            exito=True,
+            periodo={
+                "desde": desde.isoformat() if desde else "sin_limite",
+                "hasta": hasta.isoformat() if hasta else "sin_limite",
+            },
+            resumen_global=resumen_global,
+            por_mercado=por_mercado,
+            por_confianza=por_confianza,
+            por_mes=por_mes,
+            advertencias=advertencias,
+        )
+
+    except Exception as e:
+        logger.exception("Error calculando métricas de bitácora para usuario=%s", usuario_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculando métricas: {str(e)}",
+        )

@@ -71,8 +71,9 @@ def registrar_prediccion(
     cuota_under: Optional[float] = None,
     calibrador_metodo: Optional[str] = None,
     p_calibrada: Optional[float] = None,
+    return_status: bool = False,
     pool=None,
-) -> Optional[UUID]:
+) -> Optional[UUID] | tuple[Optional[UUID], str]:
     """
     Registra una predicción en predicciones_registradas de forma idempotente.
 
@@ -81,6 +82,7 @@ def registrar_prediccion(
     con la columna GENERATED para calibrador_id.
 
     Retorna el ID insertado si fue nuevo, o None si fue duplicado o falló.
+    Si return_status=True, retorna una tupla (id, estado).
     """
     requeridos = {
         "partido_id": partido_id,
@@ -104,14 +106,14 @@ def registrar_prediccion(
             "Predicción no registrable por falta de datos: %s",
             ", ".join(faltantes),
         )
-        return None
+        return (None, "fallida") if return_status else None
     if not isinstance(modelo_version_id, int):
         logger.warning(
             "Predicción no registrable por modelo_version_id inválido (tipo=%s valor=%s)",
             type(modelo_version_id).__name__,
             modelo_version_id,
         )
-        return None
+        return (None, "fallida") if return_status else None
 
     pool = pool or obtener_pool()
 
@@ -121,7 +123,7 @@ def registrar_prediccion(
             "Predicción no registrable: modelo_version_id=%s no existe en modelo_versiones",
             modelo_version_id,
         )
-        return None
+        return (None, "fallida") if return_status else None
 
     inicio = time.perf_counter()
     try:
@@ -211,7 +213,7 @@ def registrar_prediccion(
             modelo_version_id,
             calibrador_id,
         )
-        return None
+        return (None, "fallida") if return_status else None
 
     latencia_ms = (time.perf_counter() - inicio) * 1000
     if latencia_ms > 50:
@@ -240,7 +242,7 @@ def registrar_prediccion(
             modelo_version_id,
             calibrador_id,
         )
-        return prediccion_id
+        return (prediccion_id, "insertada") if return_status else prediccion_id
 
     logger.info(
         "Predicción duplicada (latencia_ms=%.2f partido_id=%s mercado=%s lado=%s linea=%s origen=%s modelo_version_id=%s calibrador_id=%s)",
@@ -253,4 +255,4 @@ def registrar_prediccion(
         modelo_version_id,
         calibrador_id,
     )
-    return None
+    return (None, "duplicada") if return_status else None

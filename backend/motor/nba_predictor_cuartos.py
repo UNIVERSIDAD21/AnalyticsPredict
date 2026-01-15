@@ -9,7 +9,7 @@ por cuarto o juego completo, incluyendo probabilidades y recomendaciones.
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import date, datetime
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -24,6 +24,7 @@ from .calculadora_probabilidad import (
     calcular_probabilidad_victoria,
 )
 from .generador_razones import generar_razones_basicas
+from .calibradores import obtener_calibrador_activo
 from .tipos import (
     AnalisisMercado,
     CandidatoApuesta,
@@ -251,8 +252,18 @@ def candidatos_para_cuarto(
     cuota_under: Optional[float] = None,
     modo_devig: str = "estricto",
     config_sizing: Optional[ConfiguracionSizing] = None,
+    calibrador_activo: Optional[object] = None,
 ) -> List[CandidatoApuesta]:
     """Genera candidatos de apuesta para un cuarto específico."""
+    if calibrador_activo is not None:
+        mercado_calibrador = getattr(calibrador_activo, "mercado", None)
+        if mercado_calibrador is not None and mercado_calibrador != cuarto:
+            logger.warning(
+                "Calibrador de mercado incorrecto ignorado (cuarto=%s calibrador.mercado=%s).",
+                cuarto,
+                mercado_calibrador,
+            )
+            calibrador_activo = None
     candidatos: List[CandidatoApuesta] = []
     media_total = media_equipo + media_rival
     desviacion_total = float(np.sqrt(desviacion_equipo ** 2 + desviacion_rival ** 2))
@@ -278,19 +289,24 @@ def candidatos_para_cuarto(
         cuota_lado: float,
         cuota_opuesta: Optional[float],
     ) -> CandidatoApuesta:
+        p_raw = float(probabilidad)
+        p_calibrada = (
+            calibrador_activo.calibrar(p_raw) if calibrador_activo is not None else None
+        )
+        p_efectiva = p_calibrada if p_calibrada is not None else p_raw
         datos_devig = calcular_devig(
             cuota_lado,
             cuota_opuesta,
             modo_estimado=modo_estimado,
         )
-        edge_real = probabilidad - datos_devig.p_mkt_fair
-        ev = (probabilidad * cuota_lado) - 1.0
+        edge_real = p_efectiva - datos_devig.p_mkt_fair
+        ev = (p_efectiva * cuota_lado) - 1.0
 
         sizing = None
         kelly_full: Optional[float] = None
         if config_sizing is not None:
             sizing = calcular_kelly(
-                probabilidad=probabilidad,
+                probabilidad=p_efectiva,
                 cuota=cuota_lado,
                 config=config_sizing,
                 datos_devig=datos_devig,
@@ -298,7 +314,7 @@ def candidatos_para_cuarto(
             )
             kelly_full = sizing.kelly_full
         else:
-            kelly_full = calcular_kelly_base(probabilidad, cuota_lado)
+            kelly_full = calcular_kelly_base(p_efectiva, cuota_lado)
 
         score = ScoreApuesta.calcular(
             ev=ev,
@@ -314,7 +330,7 @@ def candidatos_para_cuarto(
             mercado=TipoMercado.TOTAL,
             lado=lado,
             linea=linea,
-            probabilidad=probabilidad,
+            probabilidad=p_efectiva,
             media=media_total,
             desviacion=desviacion_total,
             distancia_z=distancia_z_total,
@@ -326,6 +342,12 @@ def candidatos_para_cuarto(
             cuota=cuota_lado,
             cuota_over=cuota_over,
             cuota_under=cuota_under,
+            p_raw=p_raw,
+            p_calibrada=p_calibrada,
+            calibrador_usado=calibrador_activo.metodo if p_calibrada is not None else None,
+            calibrador_id=getattr(calibrador_activo, "id", None)
+            if p_calibrada is not None
+            else None,
         )
 
     if cuota_over is not None:
@@ -476,6 +498,9 @@ def analizar_partido(
     marcador_q2: Optional[str] = None,
     marcador_q3: Optional[str] = None,
     peso_en_vivo: float = 0.5,
+    fecha_partido: Optional[date] = None,
+    origen_prediccion: str = "API_USUARIO",
+    calibrador_activo: Optional[object] = None,
 ) -> ResultadoAnalisis:
     """Ejecuta el análisis completo para un partido."""
     media_equipo, desviacion_equipo, media_rival, desviacion_rival = predecir_cuartos(
@@ -539,6 +564,12 @@ def analizar_partido(
     )
 
     analisis_mercado = None
+    if calibrador_activo is None:
+        calibrador_activo = obtener_calibrador_activo(
+            mercado=mercado,
+            origen=origen_prediccion,
+            fecha_partido=fecha_partido,
+        )
     sizing: Optional[ResultadoSizing] = None
     datos_devig = None
     probabilidad_lado = None
@@ -587,13 +618,23 @@ def analizar_partido(
         probabilidad_lado = (
             probabilidad_over if lado_enum == LadoApuesta.OVER else probabilidad_under
         )
+        probabilidad_calibrada = (
+            calibrador_activo.calibrar(probabilidad_lado)
+            if calibrador_activo is not None
+            else None
+        )
+        probabilidad_efectiva = (
+            probabilidad_calibrada
+            if probabilidad_calibrada is not None
+            else probabilidad_lado
+        )
         datos_devig = calcular_devig(
             cuota_lado,
             cuota_opuesta,
             modo_estimado=modo_estimado,
         )
         analisis_mercado = AnalisisMercado.calcular(
-            probabilidad_lado,
+            probabilidad_efectiva,
             cuota_lado,
             datos_devig,
         )
@@ -616,6 +657,7 @@ def analizar_partido(
                 cuota_under=cuota_under,
                 modo_devig=modo_devig,
                 config_sizing=config_sizing,
+                calibrador_activo=calibrador_activo,
             )
         elif mercado in predicciones:
             indice = INDICE_CUARTOS.get(mercado, 0)
@@ -630,6 +672,7 @@ def analizar_partido(
                 cuota_under=cuota_under,
                 modo_devig=modo_devig,
                 config_sizing=config_sizing,
+                calibrador_activo=calibrador_activo,
             )
 
     mejor_apuesta = seleccionar_mejor_apuesta(candidatos)
@@ -682,7 +725,7 @@ def analizar_partido(
         and cuota_lado is not None
     ):
         sizing = calcular_kelly(
-            probabilidad=probabilidad_lado,
+            probabilidad=probabilidad_efectiva,
             cuota=cuota_lado,
             config=config_sizing,
             datos_devig=datos_devig,
@@ -754,6 +797,7 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
                 "perfil_riesgo_usado": None,
                 "sizing_advertencias": [],
                 "sizing_penalizaciones": {},
+                "aplicaron_caps": False,
             }
         return sizing.asdict_persistencia()
 
@@ -770,9 +814,14 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
                 "devig_advertencias": [],
                 "edge_raw": None,
             }
+        probabilidad_raw = (
+            candidato.p_raw
+            if candidato.p_raw is not None
+            else candidato.probabilidad
+        )
         edge_raw = (
-            candidato.probabilidad - datos.p_mkt_raw
-            if candidato.probabilidad is not None
+            probabilidad_raw - datos.p_mkt_raw
+            if probabilidad_raw is not None
             else None
         )
         return {
@@ -794,6 +843,9 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
             "linea": candidato.linea,
             "cuota": candidato.cuota,
             "probabilidad_sistema": candidato.probabilidad,
+            "p_raw": candidato.p_raw,
+            "p_calibrada": candidato.p_calibrada,
+            "calibrador_usado": candidato.calibrador_usado,
             "edge_real": candidato.edge_real,
             "valor_esperado": candidato.ev,
         }
@@ -859,20 +911,58 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
     if resultado.prediccion_juego_completo is not None:
         predicciones["COMPLETO"] = serializar_prediccion(resultado.prediccion_juego_completo)
 
+    # Serializar analisis_mercado si existe
+    analisis_mercado_dict = None
+    if resultado.analisis_mercado is not None:
+        am = resultado.analisis_mercado
+        analisis_mercado_dict = {
+            "cuota": am.cuota,
+            "probabilidad_implicita": am.probabilidad_implicita if am.probabilidad_implicita is not None else am.probabilidad_implicita_fair,
+            "edge": am.edge if am.edge is not None else am.edge_real,
+            "valor_esperado": am.valor_esperado,
+            "recomendacion": am.recomendacion.value if hasattr(am.recomendacion, 'value') else am.recomendacion,
+        }
+
+    # Extraer probabilidades del mercado si existe
+    probabilidad_over = prediccion_mercado.probabilidad_over if prediccion_mercado else None
+    probabilidad_under = prediccion_mercado.probabilidad_under if prediccion_mercado else None
+    linea_analizada = prediccion_mercado.linea_analizada if prediccion_mercado else None
+
+    # Serializar prediccion_juego_completo por separado para el frontend
+    prediccion_juego_completo_dict = None
+    if resultado.prediccion_juego_completo is not None:
+        prediccion_juego_completo_dict = serializar_prediccion(resultado.prediccion_juego_completo)
+
     salida: Dict[str, object] = {
+        # Campos legacy (mantener compatibilidad)
         "equipo_local": resultado.equipo_nombre_completo,
         "equipo_visitante": resultado.rival_nombre_completo,
+        "prediccion": predicciones,
+        "confianza_sistema": resultado.nivel_confianza.value,
+        # Campos nuevos que espera el frontend
+        "equipo": resultado.equipo,
+        "equipo_nombre_completo": resultado.equipo_nombre_completo,
+        "rival": resultado.rival,
+        "rival_nombre_completo": resultado.rival_nombre_completo,
+        "ubicacion": resultado.ubicacion.value if hasattr(resultado.ubicacion, 'value') else resultado.ubicacion,
+        "fecha_analisis": resultado.fecha_analisis if resultado.fecha_analisis else None,
+        "predicciones": predicciones,  # El frontend usa plural
+        "prediccion_juego_completo": prediccion_juego_completo_dict,
+        "nivel_confianza": resultado.nivel_confianza.value,  # El frontend usa este nombre
         "mercado": mercado,
         "linea": linea,
         "lado": lado,
-        "prediccion": predicciones,
-        "confianza_sistema": resultado.nivel_confianza.value,
         "factores_confianza": resultado.factores_confianza.como_diccionario()
         if resultado.factores_confianza
         else None,
         "razones": serializar_razones(resultado.razones),
         "es_en_vivo": resultado.es_en_vivo,
         "cuartos_reales": resultado.cuartos_reales,
+        "analisis_mercado": analisis_mercado_dict,
+        "metadata": resultado.metadata or {},
+        "probabilidad_over": probabilidad_over,
+        "probabilidad_under": probabilidad_under,
+        "linea_analizada": linea_analizada,
     }
 
     if resultado.mejor_apuesta is not None:

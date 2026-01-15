@@ -5,9 +5,11 @@ modelos_respuesta.py — Modelos de salida para la API.
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RespuestaBase(BaseModel):
@@ -303,6 +305,28 @@ class Apuesta(BaseModel):
     fecha_resolucion: Optional[str] = None
     creado_en: Optional[str] = None
     actualizado_en: Optional[str] = None
+
+    @field_validator("id", "usuario_id", "partido_id", mode="before")
+    @classmethod
+    def convertir_uuid(cls, v: Any) -> Optional[str]:
+        """Convierte UUID a string."""
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
+    @field_validator("creado_en", "actualizado_en", "fecha_resolucion", "fecha_partido", mode="before")
+    @classmethod
+    def convertir_datetime(cls, v: Any) -> Optional[str]:
+        """Convierte datetime/date a string ISO."""
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
+        if isinstance(v, date):
+            return v.isoformat()
+        return v
 
 
 class RespuestaApuesta(RespuestaBase):

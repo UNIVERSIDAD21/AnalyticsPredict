@@ -1,14 +1,30 @@
 // hace parte del diseño de analisis
 /**
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
+ *
+ * Fase 2: Integra componentes profesionales de de-vig, score, sizing y calibración.
+ * Muestra advertencias del backend y toda la información necesaria para decisiones informadas.
  */
 
 import { Clock, MapPin, Activity, CheckCircle, AlertTriangle, BookOpen } from 'lucide-react';
-import { ResultadoAnalisis as TipoResultado, NivelConfianza, LadoApuesta } from '../../tipos';
+import {
+  ResultadoAnalisis as TipoResultado,
+  NivelConfianza,
+  LadoApuesta,
+  MejorApuestaDetalle,
+} from '../../tipos';
 import { TarjetaProbabilidad } from './TarjetaProbabilidad';
 import { ListaRazones } from './ListaRazones';
 import { AnalisisMercadoCard } from './AnalisisMercadoCard';
 import { Boton } from '../atomos';
+import {
+  PanelAdvertencias,
+  TarjetaDeVig,
+  TarjetaScore,
+  TarjetaSizing,
+  SeccionCalibracion,
+  TarjetaNoApta,
+} from '../moleculas';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -17,13 +33,21 @@ import { Boton } from '../atomos';
 interface PropsResultadoAnalisis {
   /** Datos del resultado */
   resultado: TipoResultado;
+
+  /** Advertencias del backend (Fase 2) */
+  advertencias?: string[];
+
   /** Selección del usuario (Over/Under) */
   seleccionUsuario?: {
     lado: LadoApuesta;
     linea: number;
   } | null;
+
   /** Acción para guardar en bitácora */
   onGuardar?: () => void;
+
+  /** Acción para configurar bankroll (Fase 4 placeholder) */
+  onConfigurarBankroll?: () => void;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -38,6 +62,8 @@ function obtenerConfigConfianza(nivel: NivelConfianza) {
       return { texto: 'Media', color: 'bg-advertencia-500', textColor: 'text-advertencia-500' };
     case 'BAJA':
       return { texto: 'Baja', color: 'bg-neon-rojo', textColor: 'text-neon-rojo' };
+    default:
+      return { texto: 'Media', color: 'bg-advertencia-500', textColor: 'text-advertencia-500' };
   }
 }
 
@@ -52,14 +78,49 @@ function formatearFecha(fechaISO: string): string {
   });
 }
 
+/**
+ * Extrae mejor_apuesta_detalle del resultado.
+ * El backend puede enviar los datos en diferentes lugares según la versión.
+ */
+function extraerMejorApuestaDetalle(resultado: TipoResultado): MejorApuestaDetalle | null {
+  // Primero intentar desde el campo dedicado
+  if (resultado.mejor_apuesta_detalle) {
+    return resultado.mejor_apuesta_detalle;
+  }
+
+  // Si no existe, intentar construirlo desde mejor_apuesta si tiene los campos avanzados
+  const ma = resultado.mejor_apuesta as MejorApuestaDetalle | null;
+  if (ma && 'devig_metodo' in ma && 'score_total' in ma) {
+    return ma;
+  }
+
+  return null;
+}
+
+function esEstadoNoApto(resultado: TipoResultado, detalle: MejorApuestaDetalle | null): boolean {
+  const mensaje = resultado.mensaje_apuesta?.toUpperCase();
+  const mensajeNoApto = Boolean(mensaje?.includes('NO_APTO') || mensaje?.includes('NO APTO'));
+  const scoreNoApto = detalle?.score_total === -1000;
+  const sinRecomendacion = !resultado.mejor_apuesta && !detalle;
+
+  return mensajeNoApto || scoreNoApto || (sinRecomendacion && Boolean(resultado.mensaje_apuesta));
+}
+
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
 // ══════════════════════════════════════════════════════════════
 
 /**
- * Muestra todos los resultados del análisis con estilo futurista
+ * Muestra todos los resultados del análisis con estilo futurista.
+ * Fase 2: Incluye de-vig, score, sizing, calibración y advertencias.
  */
-export function ResultadoAnalisis({ resultado, seleccionUsuario, onGuardar }: PropsResultadoAnalisis) {
+export function ResultadoAnalisis({
+  resultado,
+  advertencias = [],
+  seleccionUsuario,
+  onGuardar,
+  onConfigurarBankroll,
+}: PropsResultadoAnalisis) {
   const mercado = resultado.metadata?.mercado as string;
   const configConfianza = obtenerConfigConfianza(resultado.nivel_confianza);
 
@@ -85,9 +146,23 @@ export function ResultadoAnalisis({ resultado, seleccionUsuario, onGuardar }: Pr
   const coincideConSistema = seleccionUsuario?.lado === sistemaRecomienda;
   const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
 
+  // Fase 2: Extraer datos avanzados
+  const detalle = extraerMejorApuestaDetalle(resultado);
+  const tieneDetalleAvanzado = detalle !== null;
+  const noApto = esEstadoNoApto(resultado, detalle);
+
   return (
     <div className="space-y-6 animate-entrada">
-      {/* Encabezado del resultado */}
+      {/* ═══════════════════════════════════════════════════════════
+          1. ADVERTENCIAS DEL BACKEND (si hay)
+          ═══════════════════════════════════════════════════════════ */}
+      {advertencias.length > 0 && (
+        <PanelAdvertencias advertencias={advertencias} />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          2. ENCABEZADO DEL PARTIDO
+          ═══════════════════════════════════════════════════════════ */}
       <div className="tarjeta relative overflow-hidden">
         {/* Línea decorativa superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan" />
@@ -130,62 +205,158 @@ export function ResultadoAnalisis({ resultado, seleccionUsuario, onGuardar }: Pr
         </div>
       </div>
 
-      {/* Indicador de apuesta del usuario */}
-      {seleccionUsuario && linea > 0 && (
-        <div className={`tarjeta p-4 ${coincideConSistema ? 'border-neon-verde/30' : 'border-advertencia-500/30'}`}>
-          <div className="flex items-center gap-3">
-            {coincideConSistema ? (
-              <CheckCircle className="w-6 h-6 text-neon-verde flex-shrink-0" />
-            ) : (
-              <AlertTriangle className="w-6 h-6 text-advertencia-500 flex-shrink-0" />
-            )}
-            <div>
-              <p className="text-sm text-texto-secundario">
-                Tu apuesta: <span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
-                  {seleccionUsuario.lado === 'OVER' ? 'Over' : 'Under'} {seleccionUsuario.linea}
-                </span>
-              </p>
-              <p className={`text-xs ${coincideConSistema ? 'text-neon-verde' : 'text-advertencia-500'}`}>
-                {coincideConSistema
-                  ? 'Tu predicción coincide con la recomendación del sistema'
-                  : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`
-                }
-              </p>
+      {noApto ? (
+        <>
+          <TarjetaNoApta mensaje={resultado.mensaje_apuesta} candidatos={resultado.candidatos} />
+          {resultado.razones && resultado.razones.length > 0 && (
+            <ListaRazones razones={resultado.razones} />
+          )}
+        </>
+      ) : (
+        <>
+          {/* ═══════════════════════════════════════════════════════════
+              3. INDICADOR DE APUESTA DEL USUARIO
+              ═══════════════════════════════════════════════════════════ */}  
+          {seleccionUsuario && linea > 0 && (
+            <div className={`tarjeta p-4 ${coincideConSistema ? 'border-neon-verde/30' : 'border-advertencia-500/30'}`}>
+              <div className="flex items-center gap-3">
+                {coincideConSistema ? (
+                  <CheckCircle className="w-6 h-6 text-neon-verde flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-6 h-6 text-advertencia-500 flex-shrink-0" />
+                )}
+                <div>
+                  <p className="text-sm text-texto-secundario">
+                    Tu apuesta: <span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
+                      {seleccionUsuario.lado === 'OVER' ? 'Over' : 'Under'} {seleccionUsuario.linea}
+                    </span>
+                  </p>
+                  <p className={`text-xs ${coincideConSistema ? 'text-neon-verde' : 'text-advertencia-500'}`}>
+                    {coincideConSistema
+                      ? 'Tu predicción coincide con la recomendación del sistema'
+                      : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`
+                    }
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Probabilidades */}
-      {linea > 0 && (
-        <TarjetaProbabilidad
-          linea={linea}
-          probabilidadOver={probabilidadOver}
-          probabilidadUnder={probabilidadUnder}
-          mediaTotal={mediaTotal}
-          desviacion={desviacion}
-          seleccionUsuario={seleccionUsuario?.lado}
-        />
-      )}
+          {/* ═══════════════════════════════════════════════════════════
+              4. PROBABILIDADES
+              ═══════════════════════════════════════════════════════════ */}  
+          {linea > 0 && (
+            <TarjetaProbabilidad
+              linea={linea}
+              probabilidadOver={probabilidadOver}
+              probabilidadUnder={probabilidadUnder}
+              mediaTotal={mediaTotal}
+              desviacion={desviacion}
+              seleccionUsuario={seleccionUsuario?.lado}
+            />
+          )}
 
-      {/* Análisis de mercado (si hay cuota) */}
-      {resultado.analisis_mercado && (
-        <AnalisisMercadoCard analisis={resultado.analisis_mercado} />
-      )}
+          {/* ═══════════════════════════════════════════════════════════
+              5. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
+              Solo mostrar si hay detalle avanzado
+              ═══════════════════════════════════════════════════════════ */}  
+          {tieneDetalleAvanzado && detalle && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
+                <span className="w-8 h-[2px] bg-gradient-to-r from-neon-cyan to-transparent" />
+                Análisis de Valor
+              </h3>
 
-      {/* Razones */}
-      <ListaRazones razones={resultado.razones} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* TarjetaDeVig */}
+                <TarjetaDeVig
+                  metodo={detalle.devig_metodo}
+                  overround={detalle.devig_overround}
+                  pMktRaw={detalle.devig_p_mkt_raw}
+                  pMktFair={detalle.devig_p_mkt_fair}
+                  edgeRaw={detalle.edge_raw}
+                  edgeReal={detalle.edge_real}
+                  advertencias={detalle.devig_advertencias}
+                />
 
-      {puedeGuardar && (
-        <div className="tarjeta p-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu bitácora</p>
-            <p className="text-xs text-texto-terciario">Se guardará el snapshot del análisis</p>
-          </div>
-          <Boton variante="primario" iconoInicio={<BookOpen size={16} />} onClick={onGuardar}>
-            Guardar en Bitácora
-          </Boton>
-        </div>
+                {/* SeccionCalibracion */}
+                <div className="flex flex-col justify-center">
+                  <SeccionCalibracion
+                    pRaw={detalle.p_raw}
+                    pCalibrada={detalle.p_calibrada}
+                    calibradorUsado={detalle.calibrador_usado}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              6. BLOQUE SCORE + SIZING (Fase 2)
+              Solo mostrar si hay detalle avanzado
+              ═══════════════════════════════════════════════════════════ */}  
+          {tieneDetalleAvanzado && detalle && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-magenta flex items-center gap-2">
+                <span className="w-8 h-[2px] bg-gradient-to-r from-neon-magenta to-transparent" />
+                Decisión y Riesgo
+              </h3>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* TarjetaScore */}
+                <TarjetaScore
+                  scoreTotal={detalle.score_total}
+                  componentes={detalle.score_componentes}
+                  explicacion={detalle.score_explicacion}
+                  penalizaciones={detalle.score_penalizaciones}
+                  valorEsperado={detalle.valor_esperado}
+                />
+
+                {/* TarjetaSizing */}
+                <TarjetaSizing
+                  kellyFull={detalle.kelly_full}
+                  kellyFraccional={detalle.kelly_fraccional}
+                  fraccionKelly={detalle.fraccion_kelly}
+                  stake={detalle.stake}
+                  stakePorcentaje={detalle.stake_porcentaje}
+                  bankroll={detalle.bankroll_momento}
+                  perfilRiesgo={detalle.perfil_riesgo_usado}
+                  advertencias={detalle.sizing_advertencias}
+                  penalizaciones={detalle.sizing_penalizaciones}
+                  aplicaronCaps={detalle.aplicaron_caps}
+                  onConfigurarBankroll={onConfigurarBankroll}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              7. ANÁLISIS DE MERCADO (legacy, si hay cuota pero no detalle avanzado)
+              ═══════════════════════════════════════════════════════════ */}  
+          {!tieneDetalleAvanzado && resultado.analisis_mercado && (
+            <AnalisisMercadoCard analisis={resultado.analisis_mercado} />
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              8. RAZONES
+              ═══════════════════════════════════════════════════════════ */}  
+          <ListaRazones razones={resultado.razones} />
+
+          {/* ═══════════════════════════════════════════════════════════
+              9. GUARDAR EN BITÁCORA
+              ═══════════════════════════════════════════════════════════ */}  
+          {puedeGuardar && (
+            <div className="tarjeta p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu bitácora</p>
+                <p className="text-xs text-texto-terciario">Se guardará el snapshot del análisis</p>
+              </div>
+              <Boton variante="primario" iconoInicio={<BookOpen size={16} />} onClick={onGuardar}>
+                Guardar en Bitácora
+              </Boton>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

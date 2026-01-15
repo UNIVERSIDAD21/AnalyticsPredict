@@ -12,12 +12,13 @@ import {
   ResultadoAnalisis,
   TablaEstadisticasEquipos,
 } from '../organismos';
-import { MensajeError } from '../moleculas';
+import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { Activity, TrendingUp, Target, BarChart3 } from 'lucide-react';
-import { LadoApuesta } from '../../tipos';
+import { LadoApuesta, PeticionAnalisis } from '../../tipos';
 import { crearApuesta } from '../../servicios';
+import { useToasts } from '../../contextos/Toasts';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE ESTADO VACÍO
@@ -88,6 +89,7 @@ export function PaginaPrincipal() {
 
   const {
     resultado,
+    advertencias,
     estado: estadoAnalisis,
     error: errorAnalisis,
     analizar,
@@ -110,12 +112,36 @@ export function PaginaPrincipal() {
     lado: LadoApuesta;
     linea: number;
   } | null>(null);
+  const [ultimaPeticion, setUltimaPeticion] = useState<PeticionAnalisis | null>(null);
 
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
   const historialRef = useRef<HTMLDivElement>(null);
+  const { agregarToast } = useToasts();
+  const ultimoResultadoRef = useRef<string | null>(null);
+  const ultimoErrorRef = useRef<string | null>(null);
+  const ultimaAdvertenciaRef = useRef<string | null>(null);
+  const navegar = (ruta: string) => {
+    if (window.location.pathname === ruta) return;
+    window.history.pushState({}, '', ruta);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const obtenerAdvertenciasCriticas = (lista: string[]) => {
+    const mapeo: Record<string, string> = {
+      DEVIG_ESTIMADO_PENALIZA: 'De-vig estimado: los resultados están penalizados.',
+      OVERROUND_ALTO_REVISAR: 'Overround alto: revisa las cuotas antes de apostar.',
+      OVERROUND_BAJO_POSIBLE_ARB: 'Overround bajo: posible arbitraje o cuota anómala.',
+    };
+
+    return lista
+      .map((item) => mapeo[item] || item)
+      .filter((item) =>
+        /devig|overround|penaliza|riesgo/i.test(item)
+      );
+  };
 
   // Scroll al resultado cuando se completa el análisis (solo en móvil)
   useEffect(() => {
@@ -132,6 +158,41 @@ export function PaginaPrincipal() {
       setEquipoHistorialId(null);
     }
   }, [tabActivo]);
+
+  useEffect(() => {
+    if (estadoAnalisis === 'exito' && resultado) {
+      const claveResultado = `${resultado.fecha_analisis}-${resultado.equipo}-${resultado.rival}`;
+      if (ultimoResultadoRef.current !== claveResultado) {
+        agregarToast({
+          titulo: 'Análisis completado',
+          mensaje: 'El motor terminó y los resultados están listos.',
+          tipo: 'success',
+        });
+        ultimoResultadoRef.current = claveResultado;
+      }
+
+      const criticas = obtenerAdvertenciasCriticas(advertencias);
+      if (criticas.length > 0 && ultimaAdvertenciaRef.current !== criticas[0]) {
+        agregarToast({
+          titulo: 'Advertencia del motor',
+          mensaje: criticas[0],
+          tipo: 'warning',
+        });
+        ultimaAdvertenciaRef.current = criticas[0];
+      }
+    }
+  }, [estadoAnalisis, resultado, advertencias, agregarToast]);
+
+  useEffect(() => {
+    if (estadoAnalisis === 'error' && errorAnalisis && ultimoErrorRef.current !== errorAnalisis) {
+      agregarToast({
+        titulo: 'No se pudo completar el análisis',
+        mensaje: errorAnalisis,
+        tipo: 'error',
+      });
+      ultimoErrorRef.current = errorAnalisis;
+    }
+  }, [estadoAnalisis, errorAnalisis, agregarToast]);
 
   // Scroll al historial cuando se selecciona un equipo
   useEffect(() => {
@@ -210,6 +271,7 @@ export function PaginaPrincipal() {
                     if (lado && peticion.linea) {
                       setSeleccionUsuario({ lado, linea: peticion.linea });
                     }
+                    setUltimaPeticion(peticion);
                     analizar(peticion);
                   }}
                   cargando={estadoAnalisis === 'cargando'}
@@ -231,31 +293,20 @@ export function PaginaPrincipal() {
 
               {/* Spinner de análisis */}
               {estadoAnalisis === 'cargando' && (
-                <div className="tarjeta h-full min-h-[400px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="relative inline-block mb-6">
-                      <div className="absolute inset-0 bg-neon-cyan/20 blur-xl rounded-full animate-pulse" />
-                      <Spinner tamano="lg" centrado />
-                    </div>
-                    <p className="text-texto-principal font-futurista tracking-wider">
-                      PROCESANDO ANÁLISIS
-                    </p>
-                    <p className="text-texto-terciario text-sm mt-2 font-mono">
-                      Calculando probabilidades...
-                    </p>
-                  </div>
-                </div>
+                <ProgresoAnalisis />
               )}
 
               {/* Resultados */}
               {resultado && estadoAnalisis !== 'cargando' && (
                 <ResultadoAnalisis
                   resultado={resultado}
+                  advertencias={advertencias}
                   seleccionUsuario={seleccionUsuario}
                   onGuardar={() => {
                     setMostrarGuardar(true);
                     setErrorGuardar(null);
                   }}
+                  onConfigurarBankroll={() => navegar('/configuracion')}
                 />
               )}
 
@@ -314,14 +365,33 @@ export function PaginaPrincipal() {
           resultado={resultado}
           ladoSeleccionado={seleccionUsuario.lado}
           lineaSeleccionada={seleccionUsuario.linea}
+          fechaPartido={ultimaPeticion?.fecha_partido}
+          partidoId={ultimaPeticion?.partido_id}
+          cuotaSeleccionada={ultimaPeticion
+            ? (ultimaPeticion.lado === 'OVER'
+              ? (ultimaPeticion.cuota_over ?? ultimaPeticion.cuota)
+              : (ultimaPeticion.cuota_under ?? ultimaPeticion.cuota))
+            : undefined}
+          cuotaOver={ultimaPeticion?.cuota_over}
+          cuotaUnder={ultimaPeticion?.cuota_under}
           onCerrar={() => setMostrarGuardar(false)}
           onGuardar={async (apuesta) => {
             try {
               await crearApuesta(apuesta);
               setMostrarGuardar(false);
+              agregarToast({
+                titulo: 'Guardado en bitácora',
+                mensaje: 'La apuesta se registró correctamente.',
+                tipo: 'success',
+              });
             } catch (error) {
               const mensaje = error instanceof Error ? error.message : 'No se pudo guardar la apuesta';
               setErrorGuardar(mensaje);
+              agregarToast({
+                titulo: 'No se pudo guardar',
+                mensaje,
+                tipo: 'error',
+              });
             }
           }}
         />
