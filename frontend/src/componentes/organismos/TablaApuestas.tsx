@@ -87,15 +87,8 @@ function formatearPorcentaje(valor: number | null): string {
   return `${signo}${(valor * 100).toFixed(1)}%`;
 }
 
-function abreviarEquipo(nombre: string): string {
-  if (nombre.length > 12) {
-    const palabras = nombre.split(' ');
-    if (palabras.length > 1) {
-      return palabras.map((p) => p[0]).join('').toUpperCase();
-    }
-    return nombre.slice(0, 10) + '...';
-  }
-  return nombre;
+function formatearEquipo(nombre: string): string {
+  return nombre.toUpperCase();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -264,14 +257,14 @@ export function TablaApuestas({
                         className="text-sm font-medium text-texto-principal"
                         title={apuesta.equipo_local}
                       >
-                        {abreviarEquipo(apuesta.equipo_local)}
+                        {formatearEquipo(apuesta.equipo_local)}
                       </span>
                       <span className="text-xs text-texto-terciario">vs</span>
                       <span
                         className="text-sm font-medium text-texto-principal"
                         title={apuesta.equipo_visitante}
                       >
-                        {abreviarEquipo(apuesta.equipo_visitante)}
+                        {formatearEquipo(apuesta.equipo_visitante)}
                       </span>
                     </div>
                   </td>

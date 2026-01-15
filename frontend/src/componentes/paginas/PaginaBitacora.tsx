@@ -10,7 +10,7 @@ import { useBitacora } from '../../hooks';
 import { actualizarResultadoApuesta, eliminarApuesta } from '../../servicios';
 import { Apuesta, ResultadoApuesta } from '../../tipos';
 
-const TAMANO_PAGINA = 10;
+const TAMANO_PAGINA = 20;
 
 export function PaginaBitacora() {
   const [pagina, setPagina] = useState(1);
@@ -19,7 +19,7 @@ export function PaginaBitacora() {
     resultado: '',
     mercado: '',
     confianza: '',
-    orden: '',
+    orden: 'reciente',
     busqueda: '',
     desde: '',
     hasta: '',
@@ -80,7 +80,7 @@ export function PaginaBitacora() {
       resultado: '',
       mercado: '',
       confianza: '',
-      orden: '',
+      orden: 'reciente',
       busqueda: '',
       desde: '',
       hasta: '',
