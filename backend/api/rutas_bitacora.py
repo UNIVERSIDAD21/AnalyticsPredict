@@ -265,8 +265,6 @@ async def listar_apuestas(
 
     if orden == "antiguo":
         orden_sql = "creado_en ASC"
-    elif orden == "ganancia":
-        orden_sql = "ganancia DESC, creado_en DESC"
     else:
         orden_sql = "creado_en DESC"
 

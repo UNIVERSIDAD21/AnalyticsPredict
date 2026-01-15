@@ -42,7 +42,6 @@ const opcionesConfianza = [
 const opcionesOrden = [
   { valor: 'reciente', etiqueta: 'Más recientes' },
   { valor: 'antiguo', etiqueta: 'Más antiguas' },
-  { valor: 'ganancia', etiqueta: 'Mayor ganancia' },
 ];
 
 export function FiltrosApuestas({
