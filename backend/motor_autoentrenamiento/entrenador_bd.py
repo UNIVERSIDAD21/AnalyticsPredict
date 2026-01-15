@@ -31,6 +31,8 @@ from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
 
+from backtesting.configuracion import ConfiguracionBacktest, ModoVentana
+
 logger = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -122,8 +124,10 @@ def registrar_version_modelo(
     hash_datos: str,
     cutoff_entrenamiento: Optional[date] = None,
     fecha_min_entrenamiento: Optional[date] = None,
+    fecha_max_entrenamiento: Optional[date] = None,
     temporadas_incluidas: Optional[List[str]] = None,
     config_entrenamiento: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> int:
     """
     Registra una nueva versión del modelo en modelo_versiones.
@@ -153,9 +157,10 @@ def registrar_version_modelo(
                     cutoff_entrenamiento,
                     fecha_min_entrenamiento,
                     temporadas_incluidas,
-                    config_entrenamiento
+                    config_entrenamiento,
+                    metadata
                 ) VALUES (
-                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 RETURNING id
                 """,
@@ -173,6 +178,18 @@ def registrar_version_modelo(
                     fecha_min_entrenamiento,
                     temporadas_incluidas,
                     json.dumps(config_entrenamiento) if config_entrenamiento else None,
+                    json.dumps(
+                        {
+                            **(metadata or {}),
+                            "fecha_max_entrenamiento": (
+                                fecha_max_entrenamiento.isoformat()
+                                if fecha_max_entrenamiento
+                                else None
+                            ),
+                        }
+                    )
+                    if metadata or fecha_max_entrenamiento
+                    else None,
                 ],
             )
             modelo_version_id = cursor.fetchone()[0]
@@ -226,6 +243,7 @@ class EntrenadorBD:
         self,
         incluir_pretemporada: bool = False,
         temporadas: Optional[List[str]] = None,
+        cutoff_fecha: Optional[date] = None,
     ) -> List[Dict]:
         """
         Obtiene todos los partidos válidos de la base de datos.
@@ -242,6 +260,9 @@ class EntrenadorBD:
                 p.id,
                 p.fecha_partido,
                 p.tipo_partido,
+                p.temporada_id,
+                p.equipo_local_id,
+                p.equipo_visitante_id,
                 el.nombre as equipo_local,
                 ev.nombre as equipo_visitante,
                 p.local_q1, p.local_q2, p.local_q3, p.local_q4,
@@ -264,11 +285,14 @@ class EntrenadorBD:
             query += " AND COALESCE(p.tipo_partido, 'REG') != 'PRE'"
 
         parametros: List[object] = []
+        if cutoff_fecha:
+            query += " AND p.fecha_partido < %s"
+            parametros.append(cutoff_fecha)
         if temporadas:
             query += " AND p.temporada_id = ANY(%s)"
             parametros.append(temporadas)
         
-        query += " ORDER BY p.fecha_partido"
+        query += " ORDER BY p.fecha_partido, p.id"
         
         partidos = []
         with self._pool.connection() as conn:
@@ -287,13 +311,272 @@ class EntrenadorBD:
         Esto permite saber si necesitamos reentrenar sin comparar
         todos los registros uno por uno.
         """
-        datos_str = json.dumps([
-            (str(p['id']), p['local_q1'], p['local_q2'], p['local_q3'], p['local_q4'],
-             p['visitante_q1'], p['visitante_q2'], p['visitante_q3'], p['visitante_q4'])
-            for p in partidos
-        ], sort_keys=True)
+        datos_ordenados = sorted(
+            partidos,
+            key=lambda p: (
+                p.get("fecha_partido"),
+                str(p.get("id")),
+            ),
+        )
+        datos_str = json.dumps(
+            [
+                (
+                    str(p["id"]),
+                    p["fecha_partido"].isoformat() if p.get("fecha_partido") else None,
+                    p["local_q1"],
+                    p["local_q2"],
+                    p["local_q3"],
+                    p["local_q4"],
+                    p["visitante_q1"],
+                    p["visitante_q2"],
+                    p["visitante_q3"],
+                    p["visitante_q4"],
+                )
+                for p in datos_ordenados
+            ],
+            sort_keys=True,
+        )
 
         return hashlib.sha256(datos_str.encode()).hexdigest()[:16]
+
+    def _obtener_temporadas_hasta_cutoff(
+        self,
+        cutoff_fecha: date,
+        incluir_pretemporada: bool,
+    ) -> List[str]:
+        query = """
+            SELECT DISTINCT p.temporada_id
+            FROM partidos p
+            WHERE p.fecha_partido < %s
+        """
+        parametros: List[object] = [cutoff_fecha]
+        if not incluir_pretemporada:
+            query += " AND COALESCE(p.tipo_partido, 'REG') != 'PRE'"
+        query += " ORDER BY p.temporada_id"
+
+        with self._pool.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, parametros)
+                return [fila[0] for fila in cursor.fetchall()]
+
+    def _filtrar_ultimos_partidos(
+        self,
+        partidos_entrenamiento: List[Dict],
+        n_partidos_por_equipo: int,
+    ) -> List[Dict]:
+        partidos_ordenados = sorted(
+            partidos_entrenamiento,
+            key=lambda p: p["fecha_partido"],
+            reverse=True,
+        )
+        contador: Dict[Any, int] = {}
+        seleccionados: List[Dict] = []
+
+        for partido in partidos_ordenados:
+            equipo_local = partido.get("equipo_local_id")
+            equipo_visitante = partido.get("equipo_visitante_id")
+            if equipo_local is None or equipo_visitante is None:
+                raise ValueError("equipo_local_id y equipo_visitante_id son requeridos")
+
+            if contador.get(equipo_local, 0) >= n_partidos_por_equipo:
+                continue
+            if contador.get(equipo_visitante, 0) >= n_partidos_por_equipo:
+                continue
+
+            seleccionados.append(partido)
+            contador[equipo_local] = contador.get(equipo_local, 0) + 1
+            contador[equipo_visitante] = contador.get(equipo_visitante, 0) + 1
+
+        return list(reversed(seleccionados))
+
+    def entrenar_para_backtest(
+        self,
+        cutoff_fecha: date,
+        config: ConfiguracionBacktest,
+        alpha: float = ALPHA_RIDGE,
+    ) -> Dict[str, Any]:
+        """
+        Entrena el modelo para backtesting usando solo partidos < cutoff_fecha.
+
+        Retorna un dict con estado, modelo, metadata y modelo_version_id.
+        """
+        if not isinstance(cutoff_fecha, date):
+            raise ValueError("cutoff_fecha debe ser un date válido")
+
+        inicio = datetime.now()
+        incluir_pretemporada = not config.excluir_pretemporada
+
+        temporadas = None
+        if config.modo_ventana == ModoVentana.ULTIMAS_N_TEMPORADAS:
+            temporadas_disponibles = self._obtener_temporadas_hasta_cutoff(
+                cutoff_fecha,
+                incluir_pretemporada,
+            )
+            cantidad = config.n_temporadas or 0
+            temporadas = temporadas_disponibles[-cantidad:] if cantidad else []
+
+        partidos = self._obtener_partidos(
+            incluir_pretemporada=incluir_pretemporada,
+            temporadas=temporadas if temporadas else None,
+            cutoff_fecha=cutoff_fecha,
+        )
+
+        if config.modo_ventana == ModoVentana.ULTIMOS_N_PARTIDOS:
+            partidos = self._filtrar_ultimos_partidos(
+                partidos,
+                config.n_partidos_por_equipo or 0,
+            )
+
+        fechas_partidos = [p["fecha_partido"] for p in partidos if p.get("fecha_partido")]
+        fecha_min = min(fechas_partidos) if fechas_partidos else None
+        fecha_max = max(fechas_partidos) if fechas_partidos else None
+
+        if len(partidos) < config.min_partidos_entrenamiento:
+            logger.warning(
+                "Skip entrenamiento cutoff=%s: %s partidos (< mínimo %s).",
+                cutoff_fecha,
+                len(partidos),
+                config.min_partidos_entrenamiento,
+            )
+            return {
+                "estado": "skip",
+                "razon": "entrenamiento insuficiente",
+                "metadata": {
+                    "cutoff_entrenamiento": cutoff_fecha,
+                    "partidos_entrenamiento": len(partidos),
+                    "fecha_min_entrenamiento": fecha_min,
+                    "fecha_max_entrenamiento": fecha_max,
+                    "modo_ventana": config.modo_ventana,
+                    "temporadas_incluidas": temporadas or [],
+                },
+            }
+
+        logger.info(
+            "🏀 Entrenamiento backtest cutoff=%s partidos=%s rango=[%s,%s) modo_ventana=%s temporadas=%s",
+            cutoff_fecha,
+            len(partidos),
+            fecha_min,
+            fecha_max,
+            config.modo_ventana,
+            temporadas,
+        )
+
+        equipos_set = set()
+
+        filas_equipo = []
+        filas_rival = []
+        filas_es_local = []
+        filas_y_equipo = []
+        filas_y_rival = []
+
+        for p in partidos:
+            local = p["equipo_local"]
+            visitante = p["equipo_visitante"]
+
+            equipos_set.add(normalizar_nombre(local))
+            equipos_set.add(normalizar_nombre(visitante))
+
+            filas_equipo.append(local)
+            filas_rival.append(visitante)
+            filas_es_local.append(1)
+            filas_y_equipo.append([p["local_q1"], p["local_q2"], p["local_q3"], p["local_q4"]])
+            filas_y_rival.append([p["visitante_q1"], p["visitante_q2"], p["visitante_q3"], p["visitante_q4"]])
+
+            filas_equipo.append(visitante)
+            filas_rival.append(local)
+            filas_es_local.append(0)
+            filas_y_equipo.append([p["visitante_q1"], p["visitante_q2"], p["visitante_q3"], p["visitante_q4"]])
+            filas_y_rival.append([p["local_q1"], p["local_q2"], p["local_q3"], p["local_q4"]])
+
+        equipos_ordenados = sorted(equipos_set)
+        entidad_a_indice = {nombre: i for i, nombre in enumerate(equipos_ordenados)}
+
+        X = construir_matriz_diseno(filas_equipo, filas_rival, filas_es_local, entidad_a_indice)
+        Y_equipo = np.array(filas_y_equipo, dtype=float)
+        Y_rival = np.array(filas_y_rival, dtype=float)
+
+        pesos_equipo, std_equipo = ajustar_ridge(X, Y_equipo, alpha)
+        pesos_rival, std_rival = ajustar_ridge(X, Y_rival, alpha)
+
+        pred_equipo = X @ pesos_equipo
+        pred_rival = X @ pesos_rival
+
+        mae_equipo = np.mean(np.abs(Y_equipo - pred_equipo), axis=0)
+        mae_rival = np.mean(np.abs(Y_rival - pred_rival), axis=0)
+
+        self._ultimo_hash_datos = self._calcular_hash_datos(partidos)
+        self._ultima_fecha_entrenamiento = datetime.now()
+        duracion = (datetime.now() - inicio).total_seconds()
+
+        temporadas_incluidas = sorted(
+            {p.get("temporada_id") for p in partidos if p.get("temporada_id") is not None}
+        )
+
+        config_entrenamiento = {
+            **config.to_json_dict(),
+            "alpha": alpha,
+        }
+        metadata = {
+            "cutoff_entrenamiento": cutoff_fecha.isoformat(),
+            "fecha_min_entrenamiento": fecha_min.isoformat() if fecha_min else None,
+            "fecha_max_entrenamiento": fecha_max.isoformat() if fecha_max else None,
+            "partidos_entrenamiento": len(partidos),
+            "temporadas_incluidas": temporadas_incluidas,
+            "hash_datos": self._ultimo_hash_datos,
+        }
+
+        modelo_version_id = registrar_version_modelo(
+            self._pool,
+            partidos_entrenamiento=len(partidos),
+            equipos=len(equipos_ordenados),
+            mae_q1=float(mae_equipo[0]),
+            mae_q2=float(mae_equipo[1]),
+            mae_q3=float(mae_equipo[2]),
+            mae_q4=float(mae_equipo[3]),
+            duracion_segundos=duracion,
+            hash_datos=self._ultimo_hash_datos,
+            cutoff_entrenamiento=cutoff_fecha,
+            fecha_min_entrenamiento=fecha_min,
+            fecha_max_entrenamiento=fecha_max,
+            temporadas_incluidas=temporadas_incluidas,
+            config_entrenamiento=config_entrenamiento,
+            metadata=metadata,
+        )
+
+        self._metricas = {
+            "partidos_entrenamiento": len(partidos),
+            "filas_entrenamiento": len(filas_equipo),
+            "equipos": len(equipos_ordenados),
+            "mae_equipo_por_cuarto": {q: float(m) for q, m in zip(CUARTOS, mae_equipo)},
+            "mae_rival_por_cuarto": {q: float(m) for q, m in zip(CUARTOS, mae_rival)},
+            "duracion_segundos": duracion,
+            "fecha_entrenamiento": self._ultima_fecha_entrenamiento.isoformat(),
+            "hash_datos": self._ultimo_hash_datos,
+            "modelo_version_id": modelo_version_id,
+        }
+
+        logger.info(
+            "Modelo backtest entrenado en %.2fs (modelo_version_id=%s cutoff=%s)",
+            duracion,
+            modelo_version_id,
+            cutoff_fecha,
+        )
+
+        return {
+            "estado": "ok",
+            "modelo": {
+                "alpha": alpha,
+                "entidad_a_indice": entidad_a_indice,
+                "pesos_equipo": pesos_equipo,
+                "pesos_rival": pesos_rival,
+                "desviacion_equipo": std_equipo,
+                "desviacion_rival": std_rival,
+                "metricas": self._metricas,
+                "modelo_version_id": modelo_version_id,
+            },
+            "metadata": metadata,
+            "modelo_version_id": modelo_version_id,
+        }
     
     def _obtener_conteo_partidos(self) -> int:
         """Obtiene el conteo actual de partidos válidos en la BD."""
@@ -453,6 +736,7 @@ class EntrenadorBD:
             hash_datos=self._ultimo_hash_datos,
             cutoff_entrenamiento=fecha_max,
             fecha_min_entrenamiento=fecha_min,
+            fecha_max_entrenamiento=fecha_max,
             temporadas_incluidas=temporadas,
             config_entrenamiento={"alpha": alpha},
         )

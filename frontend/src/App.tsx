@@ -3,7 +3,14 @@
  */
 
 import { useEffect, useState } from 'react';
-import { PaginaBitacora, PaginaHistorialEquipo, PaginaPrincipal } from './componentes/paginas';
+import {
+  PaginaBitacora,
+  PaginaHistorialEquipo,
+  PaginaPrincipal,
+  PaginaConfiguracion,
+  PaginaMetricas,
+  PaginaHistorialPredicciones,
+} from './componentes/paginas';
 
 /**
  * Componente principal de la aplicación
@@ -19,6 +26,15 @@ function App() {
 
   if (ruta === '/bitacora') {
     return <PaginaBitacora />;
+  }
+  if (ruta === '/configuracion') {
+    return <PaginaConfiguracion />;
+  }
+  if (ruta === '/metricas') {
+    return <PaginaMetricas />;
+  }
+  if (ruta === '/historial') {
+    return <PaginaHistorialPredicciones />;
   }
   const coincidenciaHistorial = ruta.match(/^\/equipo\/([^/]+)\/historial$/);
   if (coincidenciaHistorial) {

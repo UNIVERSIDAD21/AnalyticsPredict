@@ -1,6 +1,9 @@
 // hace parte del diseño de analisis
 /**
  * FormularioAnalisis.tsx — Formulario principal con diseño futurista
+ *
+ * Soporta cuotas duales (over/under) para de-vig exacto,
+ * indicador de overround en tiempo real, y selector de partido mejorado.
  */
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
@@ -9,8 +12,10 @@ import { Boton, Tarjeta } from '../atomos';
 import {
   SelectorEquipo,
   SelectorMercado,
+  SelectorPartido,
   InputLinea,
-  InputCuota,
+  InputCuotasDuales,
+  IndicadorOverround,
   MensajeError,
   PanelEstadisticasEquipo,
 } from '../moleculas';
@@ -19,10 +24,13 @@ import {
   Mercado,
   PeticionAnalisis,
   LadoApuesta,
+  ModoDevig,
   EstadisticasEquipo,
   TemporadaDisponible,
+  PartidoResumen,
 } from '../../tipos';
 import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
+import { esCuotaValida } from '../../utilidades/validadores';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -47,7 +55,8 @@ interface EstadoFormulario {
   mercado: Mercado | '';
   linea: string;
   ladoApuesta: LadoApuesta;
-  cuota: string;
+  cuotaOver: string;
+  cuotaUnder: string;
 }
 
 const ESTADO_INICIAL: EstadoFormulario = {
@@ -56,7 +65,8 @@ const ESTADO_INICIAL: EstadoFormulario = {
   mercado: '',
   linea: '',
   ladoApuesta: 'OVER',
-  cuota: '',
+  cuotaOver: '',
+  cuotaUnder: '',
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -81,6 +91,9 @@ export function FormularioAnalisis({
   const [cargandoTemporadas, setCargandoTemporadas] = useState(false);
   const [errorTemporadas, setErrorTemporadas] = useState<string | null>(null);
 
+  // Estado del partido seleccionado (CRÍTICO para registro de predicciones)
+  const [partidoSeleccionado, setPartidoSeleccionado] = useState<PartidoResumen | null>(null);
+
   // Actualizar campo del formulario
   const actualizarCampo = useCallback(
     <K extends keyof EstadoFormulario>(campo: K, valor: EstadoFormulario[K]) => {
@@ -100,56 +113,31 @@ export function FormularioAnalisis({
     setTemporadasSeleccionadas([]);
     setTemporadasDisponibles([]);
     setErrorTemporadas(null);
+    setPartidoSeleccionado(null);
   }, []);
 
-  // Manejar envío
-  const manejarEnvio = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
+  // Manejar selección de partido (autocompleta equipos)
+  const manejarSeleccionPartido = useCallback(
+    (partido: PartidoResumen | null) => {
+      setPartidoSeleccionado(partido);
 
-      const cuotaValor = formulario.cuota ? parseFloat(formulario.cuota) : undefined;
-      const ladoSeleccionado = formulario.ladoApuesta;
-
-      const cuotaOver = cuotaValor && ladoSeleccionado === 'OVER' ? cuotaValor : undefined;
-      const cuotaUnder = cuotaValor && ladoSeleccionado === 'UNDER' ? cuotaValor : undefined;
-
-      // Construir petición incluyendo IDs para registro de predicciones
-      // El backend usará estos para lookup y garantizar partido_id válido
-      // Usar nombres completos con formato correcto del catálogo de equipos
-      const peticion: Partial<PeticionAnalisis> = {
-        equipo_local: equipoLocalSeleccionado?.nombre || formulario.equipoLocal,
-        equipo_visitante: equipoVisitanteSeleccionado?.nombre || formulario.equipoVisitante,
-        mercado: formulario.mercado as Mercado,
-        linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
-        cuota: cuotaValor,
-        cuota_over: cuotaOver,
-        cuota_under: cuotaUnder,
-        lado: ladoSeleccionado,
-        temporadas: temporadasSeleccionadas,
-        // Incluir IDs de equipos para registro de predicciones
-        equipo_local_id: equipoLocalSeleccionado?.id,
-        equipo_visitante_id: equipoVisitanteSeleccionado?.id,
-        // Incluir primera temporada seleccionada si existe
-        temporada_id: temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined,
-      };
-
-      // Validar
-      const erroresValidacion = validarPeticionAnalisis(peticion);
-      if (erroresValidacion.length > 0) {
-        setErrores(erroresValidacion);
-        return;
+      if (partido) {
+        // Autocompletar equipos desde el partido seleccionado
+        setFormulario((prev) => ({
+          ...prev,
+          equipoLocal: partido.equipo_local_nombre.toLowerCase(),
+          equipoVisitante: partido.equipo_visitante_nombre.toLowerCase(),
+        }));
       }
-
-      // Enviar con lado seleccionado
-      onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas]
+    []
   );
 
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
   const buscarEstadisticas = (nombre: string) =>
     estadisticas.find((equipo) => equipo.nombre.toLowerCase() === nombre.toLowerCase());
 
+  // Equipos seleccionados
   const equipoLocalSeleccionado = useMemo(
     () => buscarEquipo(equipos, formulario.equipoLocal),
     [equipos, formulario.equipoLocal]
@@ -157,6 +145,88 @@ export function FormularioAnalisis({
   const equipoVisitanteSeleccionado = useMemo(
     () => buscarEquipo(equipos, formulario.equipoVisitante),
     [equipos, formulario.equipoVisitante]
+  );
+
+  // Manejar envío
+  const manejarEnvio = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+
+      const ladoSeleccionado = formulario.ladoApuesta;
+
+      // Parsear cuotas
+      const cuotaOverValor = formulario.cuotaOver.trim()
+        ? parseFloat(formulario.cuotaOver)
+        : undefined;
+      const cuotaUnderValor = formulario.cuotaUnder.trim()
+        ? parseFloat(formulario.cuotaUnder)
+        : undefined;
+
+      // Validar cuotas
+      const tieneOver = cuotaOverValor !== undefined && esCuotaValida(cuotaOverValor);
+      const tieneUnder = cuotaUnderValor !== undefined && esCuotaValida(cuotaUnderValor);
+
+      // Validación UX: no permitir solo cuota del lado opuesto
+      const soloLadoOpuesto =
+        (ladoSeleccionado === 'OVER' && tieneUnder && !tieneOver) ||
+        (ladoSeleccionado === 'UNDER' && tieneOver && !tieneUnder);
+
+      if (soloLadoOpuesto) {
+        setErrores([
+          `Ingresaste cuota del lado contrario. Completa la cuota ${ladoSeleccionado} o cambia el lado de apuesta.`,
+        ]);
+        return;
+      }
+
+      // Determinar modo_devig
+      let modoDevig: ModoDevig | undefined;
+      if (tieneOver && tieneUnder) {
+        modoDevig = 'estricto';
+      } else if (tieneOver || tieneUnder) {
+        modoDevig = 'estimado';
+      }
+
+      // Cuota legacy para compatibilidad (solo si hay una cuota del lado seleccionado)
+      let cuotaLegacy: number | undefined;
+      if (ladoSeleccionado === 'OVER' && tieneOver) {
+        cuotaLegacy = cuotaOverValor;
+      } else if (ladoSeleccionado === 'UNDER' && tieneUnder) {
+        cuotaLegacy = cuotaUnderValor;
+      }
+
+      const peticion: Partial<PeticionAnalisis> = {
+        equipo_local: equipoLocalSeleccionado?.nombre || formulario.equipoLocal,
+        equipo_visitante: equipoVisitanteSeleccionado?.nombre || formulario.equipoVisitante,
+        mercado: formulario.mercado as Mercado,
+        linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
+        // Cuotas duales
+        cuota_over: tieneOver ? cuotaOverValor : undefined,
+        cuota_under: tieneUnder ? cuotaUnderValor : undefined,
+        // Legacy (para compatibilidad)
+        cuota: cuotaLegacy,
+        // Lado y modo
+        lado: ladoSeleccionado,
+        modo_devig: modoDevig,
+        // Contexto
+        temporadas: temporadasSeleccionadas,
+        partido_id: partidoSeleccionado?.id,
+        temporada_id: partidoSeleccionado?.temporada_id
+          ?? (temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined),
+        equipo_local_id: partidoSeleccionado?.equipo_local_id ?? equipoLocalSeleccionado?.id,
+        equipo_visitante_id: partidoSeleccionado?.equipo_visitante_id ?? equipoVisitanteSeleccionado?.id,
+        fecha_partido: partidoSeleccionado?.fecha_partido,
+        tipo_partido: partidoSeleccionado?.tipo_partido as 'PRE' | 'REG' | 'POST' | undefined,
+      };
+
+      const erroresValidacion = validarPeticionAnalisis(peticion);
+      if (erroresValidacion.length > 0) {
+        setErrores(erroresValidacion);
+        return;
+      }
+
+      onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
+    },
+    [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas, partidoSeleccionado]
   );
 
   useEffect(() => {
@@ -254,26 +324,45 @@ export function FormularioAnalisis({
 
         {/* Campos */}
         <div className="space-y-4">
-          {/* Equipo Local */}
+          {/* Selector de Partido - CRÍTICO para registro de predicciones */}
+          <SelectorPartido
+            partidoSeleccionado={partidoSeleccionado}
+            onSeleccionar={manejarSeleccionPartido}
+            deshabilitado={cargando}
+          />
+
+          {/* Equipo Local - deshabilitado si hay partido seleccionado */}
           <SelectorEquipo
             etiqueta="Equipo Local"
             equipos={equipos}
             valor={formulario.equipoLocal}
             onChange={(valor) => actualizarCampo('equipoLocal', valor)}
             equipoExcluido={formulario.equipoVisitante}
-            deshabilitado={cargando || cargandoEquipos}
-            placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona local'}
+            deshabilitado={cargando || cargandoEquipos || partidoSeleccionado !== null}
+            placeholder={
+              partidoSeleccionado
+                ? partidoSeleccionado.equipo_local_nombre
+                : cargandoEquipos
+                  ? 'Cargando...'
+                  : 'Selecciona local'
+            }
           />
 
-          {/* Equipo Visitante */}
+          {/* Equipo Visitante - deshabilitado si hay partido seleccionado */}
           <SelectorEquipo
             etiqueta="Equipo Visitante"
             equipos={equipos}
             valor={formulario.equipoVisitante}
             onChange={(valor) => actualizarCampo('equipoVisitante', valor)}
             equipoExcluido={formulario.equipoLocal}
-            deshabilitado={cargando || cargandoEquipos}
-            placeholder={cargandoEquipos ? 'Cargando...' : 'Selecciona visitante'}
+            deshabilitado={cargando || cargandoEquipos || partidoSeleccionado !== null}
+            placeholder={
+              partidoSeleccionado
+                ? partidoSeleccionado.equipo_visitante_nombre
+                : cargandoEquipos
+                  ? 'Cargando...'
+                  : 'Selecciona visitante'
+            }
           />
 
           <PanelEstadisticasEquipo
@@ -330,11 +419,10 @@ export function FormularioAnalisis({
                         key={temporada.id}
                         type="button"
                         onClick={() => toggleTemporada(temporada.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
-                          seleccionada
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${seleccionada
                             ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan'
                             : 'border-neon-cyan/20 text-texto-terciario hover:text-texto-secundario'
-                        }`}
+                          }`}
                       >
                         {temporada.nombre}
                       </button>
@@ -362,11 +450,20 @@ export function FormularioAnalisis({
             )}
           </div>
 
-          {/* Cuota */}
-          <InputCuota
-            valor={formulario.cuota}
-            onChange={(valor) => actualizarCampo('cuota', valor)}
+          {/* Cuotas duales (Over/Under) */}
+          <InputCuotasDuales
+            cuotaOver={formulario.cuotaOver}
+            cuotaUnder={formulario.cuotaUnder}
+            onCuotaOverChange={(valor) => actualizarCampo('cuotaOver', valor)}
+            onCuotaUnderChange={(valor) => actualizarCampo('cuotaUnder', valor)}
+            ladoSeleccionado={formulario.ladoApuesta}
             deshabilitado={cargando}
+          />
+
+          {/* Indicador de Overround (solo si hay ambas cuotas) */}
+          <IndicadorOverround
+            cuotaOver={formulario.cuotaOver}
+            cuotaUnder={formulario.cuotaUnder}
           />
         </div>
 
@@ -376,9 +473,8 @@ export function FormularioAnalisis({
             <p className="text-xs text-texto-secundario uppercase tracking-wider mb-1">
               Tu predicción
             </p>
-            <p className={`text-sm font-semibold ${
-              formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
-            }`}>
+            <p className={`text-sm font-semibold ${formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
+              }`}>
               {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} puntos
               {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? 'Juego Completo' : formulario.mercado}`}
             </p>

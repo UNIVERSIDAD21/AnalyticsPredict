@@ -1,0 +1,475 @@
+# Estructura de Base de Datos - Sistema de Apuestas NBA
+
+## 📊 Tablas Principales
+
+### 1. **usuarios**
+Gestión de usuarios del sistema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `email` | VARCHAR(255) | Email único del usuario |
+| `nombre` | VARCHAR(100) | Nombre del usuario |
+| `password_hash` | VARCHAR(255) | Hash de contraseña |
+| `rol` | VARCHAR(20) | 'usuario' o 'admin' |
+| `activo` | BOOLEAN | Estado del usuario |
+| `bankroll_inicial` | NUMERIC(10,2) | Bankroll de inicio |
+| `bankroll_actual` | NUMERIC(10,2) | Bankroll actual |
+| `perfil_riesgo_default` | VARCHAR(20) | CONSERVADOR/MEDIO/AGRESIVO |
+| `config_sizing` | JSONB | Configuración de sizing |
+| `preferencias` | JSONB | Preferencias del usuario |
+
+**Índices:** email, activo
+
+---
+
+### 2. **temporadas**
+Información de temporadas NBA.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `nombre` | VARCHAR(20) | Ej: "2024-25" |
+| `anio_inicio` | INTEGER | Año de inicio |
+| `anio_fin` | INTEGER | Año de fin (inicio + 1) |
+| `fecha_inicio` | DATE | Fecha de inicio |
+| `fecha_fin` | DATE | Fecha de fin |
+| `activa` | BOOLEAN | Temporada activa |
+
+**Constraints:** `anio_fin = anio_inicio + 1`
+
+---
+
+### 3. **equipos**
+Catálogo de equipos NBA.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `nombre` | VARCHAR(100) | Nombre completo (único) |
+| `nombre_corto` | VARCHAR(50) | Nombre corto |
+| `abreviatura` | VARCHAR(3) | Abreviatura única |
+| `conferencia` | VARCHAR(10) | Este/Oeste |
+| `division` | VARCHAR(20) | División del equipo |
+| `ciudad` | VARCHAR(100) | Ciudad |
+| `activo` | BOOLEAN | Equipo activo |
+
+**Índices:** nombre, abreviatura, conferencia
+
+---
+
+### 4. **partidos**
+Registro de partidos jugados.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `temporada_id` | UUID | FK a temporadas |
+| `fecha_partido` | DATE | Fecha del partido |
+| `tipo_partido` | VARCHAR(10) | PRE/REG/POST |
+| `equipo_local_id` | UUID | FK a equipos |
+| `equipo_visitante_id` | UUID | FK a equipos |
+| `local_q1/q2/q3/q4` | INTEGER | Puntos por cuarto local |
+| `visitante_q1/q2/q3/q4` | INTEGER | Puntos por cuarto visitante |
+| `local_ot` | INTEGER | Puntos overtime local |
+| `visitante_ot` | INTEGER | Puntos overtime visitante |
+| `local_total` | INTEGER | Total puntos local |
+| `visitante_total` | INTEGER | Total puntos visitante |
+| `ganador_id` | UUID | FK al equipo ganador |
+| `diferencia_puntos` | INTEGER | Diferencia final |
+| `hubo_overtime` | BOOLEAN | Si hubo overtime |
+| `espn_game_id` | TEXT | ID de ESPN |
+| `source` | TEXT | Fuente de datos |
+| `source_game_id` | TEXT | ID de la fuente |
+
+**Constraints únicos:** 
+- `(temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)`
+- `(source, source_game_id)`
+
+**Checks importantes:**
+- Equipos diferentes
+- Suma de cuartos = total
+- Todos los valores ≥ 0
+
+**Índices:** fecha, equipos, temporada, tipo
+
+---
+
+### 5. **estadisticas_equipos**
+Estadísticas agregadas por equipo y temporada.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `equipo_id` | UUID | FK a equipos |
+| `temporada_id` | UUID | FK a temporadas |
+| `victorias/derrotas` | INTEGER | Record general |
+| `victorias_local/visitante` | INTEGER | Record por localía |
+| `ppg_q1/q2/q3/q4/total` | NUMERIC(5,2) | Puntos por juego |
+| `opp_q1/q2/q3/q4/total` | NUMERIC(5,2) | Puntos oponente |
+| `over_pct_q1/q2/q3/q4/total` | NUMERIC(5,4) | % de overs |
+| `partidos_jugados` | INTEGER | Total de partidos |
+
+**Constraint único:** `(equipo_id, temporada_id)`
+
+---
+
+## 🤖 Sistema de Predicción
+
+### 6. **modelo_versiones**
+Versiones del modelo de predicción.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | SERIAL | PK - Identificador secuencial |
+| `version` | INTEGER | Número de versión |
+| `fecha_entrenamiento` | TIMESTAMPTZ | Cuándo se entrenó |
+| `partidos_entrenamiento` | INTEGER | Partidos usados |
+| `equipos` | INTEGER | Equipos incluidos |
+| `mae_q1/q2/q3/q4` | NUMERIC(5,3) | Error medio por cuarto |
+| `duracion_segundos` | NUMERIC(6,2) | Tiempo de entrenamiento |
+| `hash_datos` | VARCHAR(32) | Hash de los datos |
+| `cutoff_entrenamiento` | DATE | Fecha de corte |
+| `fecha_min_entrenamiento` | DATE | Fecha mínima de datos |
+| `temporadas_incluidas` | TEXT[] | Temporadas usadas |
+| `config_entrenamiento` | JSONB | Configuración |
+
+---
+
+### 7. **calibradores**
+Calibradores de probabilidades.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `mercado` | VARCHAR(20) | Q1/Q2/Q3/Q4/COMPLETO |
+| `metodo` | VARCHAR(20) | isotonic/platt/beta/ninguno |
+| `fecha_entrenamiento` | TIMESTAMPTZ | Fecha de entrenamiento |
+| `cutoff_datos` | DATE | Fecha de corte de datos |
+| `n_muestras_entrenamiento` | INTEGER | Muestras usadas |
+| `origen_datos` | VARCHAR(30) | API_USUARIO/BACKTEST_* |
+| `parametros_json` | JSONB | Parámetros del calibrador |
+| `activo` | BOOLEAN | Si está activo |
+| `brier_antes/despues` | NUMERIC(6,4) | Brier score |
+| `mejora_validacion` | NUMERIC(6,4) | Mejora obtenida |
+| `log_loss_antes/despues` | NUMERIC(8,4) | Log loss |
+
+**Constraint único:** Solo un calibrador activo por mercado
+
+---
+
+### 8. **predicciones_registradas**
+Todas las predicciones generadas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `timestamp_generacion` | TIMESTAMPTZ | Cuándo se generó |
+| `origen` | VARCHAR(30) | API_USUARIO/BACKTEST_* |
+| `modelo_version_id` | INTEGER | FK a modelo_versiones |
+| `calibrador_id` | UUID | FK a calibradores |
+| `partido_id` | UUID | FK a partidos |
+| `mercado` | VARCHAR(20) | Q1/Q2/Q3/Q4/COMPLETO |
+| `lado` | VARCHAR(10) | OVER/UNDER |
+| `linea` | NUMERIC(5,1) | Línea de apuesta |
+| `linea_es_sintetica` | BOOLEAN | Si es línea sintética |
+| `cuota` | NUMERIC(5,2) | Cuota apostada |
+| `cuota_over/under` | NUMERIC(5,2) | Cuotas del mercado |
+| `media_predicha` | NUMERIC(5,1) | Media de la predicción |
+| `desviacion_predicha` | NUMERIC(5,2) | Desviación estándar |
+| `p_raw` | NUMERIC(5,4) | Probabilidad sin calibrar |
+| `p_calibrada` | NUMERIC(5,4) | Probabilidad calibrada |
+| `intervalo_inferior/superior` | NUMERIC(5,1) | Intervalo de confianza |
+| `nivel_intervalo` | INTEGER | 80/90/95 |
+| `valor_real` | INTEGER | Resultado real |
+| `outcome_binario` | BOOLEAN | Si acertó |
+| `resuelto` | BOOLEAN | Si está resuelto |
+
+**Constraint único:** `(partido_id, mercado, lado, linea, origen, modelo_version_id, calibrador_id_efectivo)`
+
+**Índices importantes:** partido, mercado, origen, resuelto, fecha
+
+---
+
+## 📈 Calibración y Métricas
+
+### 9. **metricas_calibracion**
+Métricas agregadas de calibración.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `timestamp_calculo` | TIMESTAMPTZ | Cuándo se calculó |
+| `periodo_inicio/fin` | DATE | Período evaluado |
+| `mercado` | VARCHAR(20) | Q1/Q2/Q3/Q4/COMPLETO/GLOBAL |
+| `origen_predicciones` | VARCHAR(30) | Origen de datos |
+| `modelo_version_id` | INTEGER | FK a modelo_versiones |
+| `n_predicciones` | INTEGER | Total de predicciones |
+| `brier_score*` | NUMERIC(6,4) | Brier score (raw/calibrado) |
+| `log_loss*` | NUMERIC(8,4) | Log loss (raw/calibrado) |
+| `ece` | NUMERIC(6,4) | Expected Calibration Error |
+| `mce` | NUMERIC(6,4) | Maximum Calibration Error |
+| `sharpness` | NUMERIC(6,4) | Sharpness de predicciones |
+| `base_rate` | NUMERIC(5,4) | Tasa base de eventos |
+| `mae_media` | NUMERIC(6,2) | Error absoluto medio |
+| `rmse_media` | NUMERIC(6,2) | Error cuadrático medio |
+| `sesgo_media` | NUMERIC(6,2) | Sesgo en la media |
+| `cobertura_intervalo` | NUMERIC(5,4) | Cobertura de intervalos |
+| `mejora_brier/log_loss` | NUMERIC | Mejora obtenida |
+| `bins_json` | JSONB | Bins de calibración |
+| `alertas` | TEXT[] | Alertas generadas |
+
+**Constraint único:** `(periodo_inicio, periodo_fin, mercado, origen_predicciones, modelo_version_id_efectivo)`
+
+---
+
+### 10. **alertas_calibracion**
+Alertas del sistema de calibración.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `timestamp_deteccion` | TIMESTAMPTZ | Cuándo se detectó |
+| `mercado` | VARCHAR(20) | Q1/Q2/Q3/Q4/COMPLETO/GLOBAL |
+| `origen` | VARCHAR(30) | Origen de datos |
+| `tipo_alerta` | VARCHAR(50) | DRIFT_*/CALIBRADOR_*/DATOS_* |
+| `severidad` | VARCHAR(20) | INFO/WARNING/CRITICAL |
+| `metrica_afectada` | VARCHAR(30) | Métrica afectada |
+| `valor_actual/umbral/baseline` | NUMERIC(8,4) | Valores de la métrica |
+| `mensaje` | TEXT | Mensaje descriptivo |
+| `detalles_json` | JSONB | Detalles adicionales |
+| `resuelta` | BOOLEAN | Si fue resuelta |
+| `timestamp_resolucion` | TIMESTAMPTZ | Cuándo se resolvió |
+| `resuelta_por` | VARCHAR(100) | Quién la resolvió |
+| `notas_resolucion` | TEXT | Notas de resolución |
+| `periodo_inicio/fin` | DATE | Período afectado |
+| `modelo_version_id` | INTEGER | FK a modelo_versiones |
+
+**Tipos de alerta:**
+- DRIFT_ECE_ALTO/RELATIVO
+- DRIFT_BRIER_ALTO/RELATIVO
+- DRIFT_SESGO_SISTEMATICO
+- CALIBRADOR_EMPEORA
+- DATOS_INSUFICIENTES
+- RECALIBRACION_SUGERIDA
+- MODELO_DEGRADADO
+- ANOMALIA_DETECTADA
+
+**Constraint único:** `(periodo_inicio, periodo_fin, mercado, origen, tipo_alerta, modelo_version_id_efectivo)`
+
+---
+
+## 💰 Sistema de Apuestas
+
+### 11. **apuestas**
+Registro de apuestas realizadas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `usuario_id` | UUID | FK a usuarios |
+| `partido_id` | UUID | FK a partidos |
+| `equipo_local/visitante` | VARCHAR(100) | Nombres de equipos |
+| `fecha_partido` | DATE | Fecha del partido |
+| `mercado` | VARCHAR(20) | Q1/Q2/Q3/Q4/COMPLETO |
+| `lado` | VARCHAR(10) | OVER/UNDER |
+| `linea` | NUMERIC(5,1) | Línea apostada |
+| `cuota` | NUMERIC(5,2) | Cuota principal |
+| `cuota_over/under` | NUMERIC(5,2) | Cuotas del mercado |
+| `stake` | NUMERIC(10,2) | Monto apostado |
+| `probabilidad_sistema` | NUMERIC(5,4) | Probabilidad del sistema |
+| `confianza_sistema` | VARCHAR(10) | ALTA/MEDIA/BAJA |
+| `valor_esperado` | NUMERIC(10,2) | EV calculado |
+| `prediccion_media` | NUMERIC(5,1) | Media predicha |
+| `prediccion_desviacion` | NUMERIC(5,2) | Desviación predicha |
+| `razones` | JSONB | Razones de la apuesta |
+
+**Devig (Desvigorish):**
+| `devig_metodo` | VARCHAR(30) | exacto/estimado/no_aplicado |
+| `devig_overround` | NUMERIC(5,4) | Overround del mercado |
+| `devig_p_mkt_raw` | NUMERIC(5,4) | P mercado raw |
+| `devig_p_mkt_fair` | NUMERIC(5,4) | P mercado fair |
+| `devig_advertencias` | TEXT[] | Advertencias del devig |
+| `edge_real` | NUMERIC(6,4) | Edge real calculado |
+| `modo_devig` | VARCHAR(20) | estricto/estimado |
+
+**Scoring:**
+| `score_total` | NUMERIC(7,2) | Score total |
+| `score_componentes` | JSONB | Componentes del score |
+| `score_explicacion` | TEXT | Explicación del score |
+| `score_penalizaciones` | TEXT[] | Penalizaciones aplicadas |
+
+**Kelly Sizing:**
+| `kelly_full` | NUMERIC(6,4) | Kelly completo |
+| `kelly_fraccional` | NUMERIC(6,4) | Kelly fraccional |
+| `fraccion_kelly` | NUMERIC(4,3) | Fracción usada |
+| `stake_porcentaje` | NUMERIC(5,2) | % del bankroll |
+| `bankroll_momento` | NUMERIC(10,2) | Bankroll al momento |
+| `perfil_riesgo_usado` | VARCHAR(20) | Perfil usado |
+| `sizing_advertencias` | TEXT[] | Advertencias sizing |
+| `sizing_penalizaciones` | JSONB | Penalizaciones sizing |
+
+**Resultado:**
+| `resultado` | VARCHAR(10) | PENDIENTE/GANADA/PERDIDA/PUSH/ANULADA |
+| `puntos_reales` | INTEGER | Puntos reales |
+| `ganancia` | NUMERIC(10,2) | Ganancia/pérdida |
+| `fecha_resolucion` | TIMESTAMPTZ | Cuándo se resolvió |
+| `notas` | TEXT | Notas adicionales |
+| `etiquetas` | TEXT[] | Etiquetas |
+
+**Índices importantes:** usuario, partido, resultado, score, fecha, edge
+
+---
+
+## 🔄 Sistema de Backtest
+
+### 12. **ejecuciones_backtest**
+Control de ejecuciones de backtest.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK - Identificador único |
+| `estado` | VARCHAR(20) | EN_PROGRESO/COMPLETADO/FALLIDO/CANCELADO |
+| `configuracion_json` | JSONB | Configuración del backtest |
+| `fecha_inicio_eval` | DATE | Inicio del período |
+| `fecha_fin_eval` | DATE | Fin del período |
+| `mercados` | TEXT[] | Mercados evaluados |
+| `total_iteraciones` | INTEGER | Total de iteraciones |
+| `iteraciones_completadas` | INTEGER | Completadas |
+| `iteraciones_fallidas` | INTEGER | Fallidas |
+| `total_predicciones_generadas` | INTEGER | Predicciones generadas |
+| `iniciado_en` | TIMESTAMPTZ | Inicio de ejecución |
+| `completado_en` | TIMESTAMPTZ | Fin de ejecución |
+| `ultimo_error` | TEXT | Último error |
+| `errores_json` | JSONB | Historial de errores |
+
+---
+
+## 🗄️ Tablas de Control
+
+### 13. **ingestion_state**
+Estado de la ingesta de datos.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `clave` | TEXT | PK - Clave del estado |
+| `ultima_sincronizacion` | TIMESTAMPTZ | Última sincronización |
+| `ultima_exito` | TIMESTAMPTZ | Último éxito |
+| `ultima_error` | TIMESTAMPTZ | Último error |
+| `ultimo_error` | TEXT | Mensaje de error |
+| `ultimo_event_ids` | JSONB | IDs procesados |
+| `ultimo_insertados` | INTEGER | Registros insertados |
+| `ultimo_actualizados` | INTEGER | Registros actualizados |
+| `ventana_dias` | INTEGER | Ventana de días |
+| `cursor_inicio/fin` | DATE | Cursores de fecha |
+
+---
+
+### 14. **versiones_esquema**
+Control de versiones del esquema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | SERIAL | PK - Identificador |
+| `version` | VARCHAR(20) | Versión del esquema |
+| `descripcion` | TEXT | Descripción de cambios |
+| `aplicada_en` | TIMESTAMPTZ | Cuándo se aplicó |
+
+---
+
+## 📊 Vistas Principales
+
+### **vista_analisis_apuestas**
+Análisis completo de apuestas con métricas calculadas.
+
+**Incluye:**
+- Información básica de apuesta
+- Métricas de devig (vig %, edge)
+- Scoring y clasificación
+- Kelly y sizing
+- ROI y resultados
+- Flags de advertencia
+
+### **vista_predicciones_para_calibracion**
+Predicciones resueltas listas para calibración.
+
+**Incluye:**
+- Datos completos de predicción
+- Bins de probabilidad
+- Nombres de equipos y temporada
+- Probabilidad efectiva (calibrada o raw)
+
+### **vista_predicciones_pendientes**
+Predicciones sin resolver con estado del partido.
+
+### **vista_resumen_calibracion**
+Métricas agregadas de calibración por mercado y origen.
+
+**Incluye:**
+- Promedios de probabilidad
+- Frecuencia real
+- Brier scores
+- Sesgo y sharpness
+- Rango de fechas
+
+### **vista_resumen_apuestas**
+Resumen estadístico por usuario.
+
+**Incluye:**
+- Total de apuestas
+- Win rate
+- ROI
+- Ganancia total
+- Desglose por resultado
+
+### **vista_alertas_activas**
+Alertas no resueltas ordenadas por severidad.
+
+### **vista_ultimos_partidos**
+Últimos partidos jugados con resultados.
+
+---
+
+## 🔗 Relaciones Principales
+
+```
+usuarios (1) ──→ (N) apuestas
+temporadas (1) ──→ (N) partidos
+temporadas (1) ──→ (N) estadisticas_equipos
+equipos (1) ──→ (N) partidos (local/visitante/ganador)
+equipos (1) ──→ (N) estadisticas_equipos
+partidos (1) ──→ (N) apuestas
+partidos (1) ──→ (N) predicciones_registradas
+modelo_versiones (1) ──→ (N) predicciones_registradas
+modelo_versiones (1) ──→ (N) metricas_calibracion
+modelo_versiones (1) ──→ (N) alertas_calibracion
+calibradores (1) ──→ (N) predicciones_registradas
+```
+
+---
+
+## 📝 Notas Importantes
+
+### Timestamps
+Todas las tablas principales tienen:
+- `creado_en`: TIMESTAMP WITH TIME ZONE DEFAULT now()
+- `actualizado_en`: TIMESTAMP WITH TIME ZONE DEFAULT now()
+
+### UUIDs
+La mayoría de PKs son UUID generados con `uuid_generate_v4()`
+
+### Checks Importantes
+- Cuotas > 1.0
+- Probabilidades entre 0 y 1
+- Stakes > 0
+- Valores no negativos en puntos y estadísticas
+- Enums para estados y tipos
+
+### Mercados Disponibles
+Q1, Q2, Q3, Q4, COMPLETO, GLOBAL
+
+### Orígenes de Datos
+- API_USUARIO: Predicciones de API
+- BACKTEST_BATCH: Backtest en lote
+- BACKTEST_SINTETICO: Backtest sintético
+- MIXTO: Combinación de orígenes

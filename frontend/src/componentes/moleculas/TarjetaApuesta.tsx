@@ -2,9 +2,24 @@
  * TarjetaApuesta.tsx — Tarjeta visual para una apuesta de bitácora
  */
 
+import { useState } from 'react';
 import { Calendar, Trophy, Target, Trash2, Percent } from 'lucide-react';
 import { Apuesta } from '../../tipos';
 import { Boton, Tarjeta } from '../atomos';
+
+/**
+ * Formatea una fecha ISO (YYYY-MM-DD) sin problemas de timezone.
+ * Evita que new Date() interprete la fecha como UTC y muestre día anterior.
+ */
+function formatearFechaLocal(fechaISO: string): string {
+  const [anio, mes, dia] = fechaISO.split('-').map(Number);
+  const fecha = new Date(anio, mes - 1, dia);
+  return fecha.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
 
 interface PropsTarjetaApuesta {
   apuesta: Apuesta;
@@ -34,12 +49,34 @@ function formatearFecha(fechaISO: string | null | undefined): string {
 }
 
 export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjetaApuesta) {
-  const fecha = formatearFecha(apuesta.fecha_partido);
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+
+  const fecha = apuesta.fecha_partido
+    ? formatearFechaLocal(apuesta.fecha_partido)
+    : 'Sin fecha';
   const resultadoColor = coloresResultado[apuesta.resultado] || 'text-texto-secundario';
   const esPendiente = apuesta.resultado === 'PENDIENTE';
   const probabilidadFormateada = apuesta.probabilidad_sistema != null
     ? `${(apuesta.probabilidad_sistema * 100).toFixed(1)}%`
     : null;
+
+  // Formatear probabilidad del sistema como porcentaje
+  const probSistema = apuesta.probabilidad_sistema != null
+    ? `${(apuesta.probabilidad_sistema * 100).toFixed(1)}%`
+    : null;
+
+  const manejarEliminar = () => {
+    if (!confirmandoEliminar) {
+      setConfirmandoEliminar(true);
+      return;
+    }
+    onEliminar(apuesta);
+    setConfirmandoEliminar(false);
+  };
+
+  const cancelarEliminar = () => {
+    setConfirmandoEliminar(false);
+  };
 
   return (
     <Tarjeta className="space-y-4">
@@ -63,11 +100,11 @@ export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjeta
             <Calendar size={14} className="text-neon-magenta" />
             <span>{fecha}</span>
           </div>
-          {probabilidadFormateada && (
+          {probSistema && (
             <div className="flex items-center gap-2">
-              <Percent size={14} className="text-advertencia-500" />
+              <Percent size={14} className="text-neon-amarillo" />
               <span>
-                Prob: <span className="text-advertencia-500 font-semibold">{probabilidadFormateada}</span>
+                Prob: <span className="text-texto-principal font-semibold">{probSistema}</span>
               </span>
             </div>
           )}
@@ -97,15 +134,34 @@ export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjeta
               Marcar resultado
             </Boton>
           )}
-          {esPendiente && (
+          {esPendiente && !confirmandoEliminar && (
             <Boton
               variante="peligro"
               tamano="sm"
               iconoInicio={<Trash2 size={14} />}
-              onClick={() => onEliminar(apuesta)}
+              onClick={manejarEliminar}
             >
               Eliminar
             </Boton>
+          )}
+          {esPendiente && confirmandoEliminar && (
+            <>
+              <Boton
+                variante="fantasma"
+                tamano="sm"
+                onClick={cancelarEliminar}
+              >
+                Cancelar
+              </Boton>
+              <Boton
+                variante="peligro"
+                tamano="sm"
+                iconoInicio={<Trash2 size={14} />}
+                onClick={manejarEliminar}
+              >
+                Confirmar eliminar
+              </Boton>
+            </>
           )}
         </div>
       </div>

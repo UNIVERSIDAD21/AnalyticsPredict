@@ -182,10 +182,12 @@ def calcular_kelly(
     kelly_pre_cap = kelly_full * fraccion_base * multiplicador
     aplicaron_caps = False
 
-    if config.cap_diario and kelly_pre_cap > config.cap_diario:
-        advertencias.append("Cap diario excedido: revisar exposición total.")
-
     kelly_fraccional = kelly_pre_cap
+    if config.cap_diario and kelly_fraccional > config.cap_diario:
+        kelly_fraccional = config.cap_diario
+        aplicaron_caps = True
+        advertencias.append("Cap diario aplicado.")
+
     if config.cap_por_apuesta and kelly_fraccional > config.cap_por_apuesta:
         kelly_fraccional = config.cap_por_apuesta
         aplicaron_caps = True
