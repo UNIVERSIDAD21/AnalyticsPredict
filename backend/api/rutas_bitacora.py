@@ -267,8 +267,11 @@ async def listar_apuestas(
         orden_sql = "creado_en ASC"
     elif orden == "ganancia":
         orden_sql = "ganancia DESC, creado_en DESC"
-    else:
+    elif orden == "reciente":
         orden_sql = "creado_en DESC"
+    else:
+        # Sin orden específico: ordenar por ID (orden de inserción)
+        orden_sql = "id DESC"
 
     offset = (pagina - 1) * tamano
 
