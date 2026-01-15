@@ -195,8 +195,8 @@ export function FormularioAnalisis({
       }
 
       const peticion: Partial<PeticionAnalisis> = {
-        equipo_local: formulario.equipoLocal,
-        equipo_visitante: formulario.equipoVisitante,
+        equipo_local: equipoLocalSeleccionado?.nombre || formulario.equipoLocal,
+        equipo_visitante: equipoVisitanteSeleccionado?.nombre || formulario.equipoVisitante,
         mercado: formulario.mercado as Mercado,
         linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
         // Cuotas duales

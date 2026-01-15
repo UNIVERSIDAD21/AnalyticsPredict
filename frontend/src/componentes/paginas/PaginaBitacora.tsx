@@ -28,6 +28,8 @@ export function PaginaBitacora() {
   const [apuestaSeleccionada, setApuestaSeleccionada] = useState<Apuesta | null>(null);
   const [mostrandoResultado, setMostrandoResultado] = useState(false);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
+  const [apuestaAEliminar, setApuestaAEliminar] = useState<Apuesta | null>(null);
+  const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -92,13 +94,26 @@ export function PaginaBitacora() {
     setMostrandoResultado(true);
   };
 
-  const manejarEliminar = async (apuesta: Apuesta) => {
+  const manejarEliminar = (apuesta: Apuesta) => {
+    setApuestaAEliminar(apuesta);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!apuestaAEliminar) return;
+    setEliminando(true);
     try {
-      await eliminarApuesta(apuesta.id);
+      await eliminarApuesta(apuestaAEliminar.id);
+      setApuestaAEliminar(null);
       await recargar();
     } catch (errorEliminar) {
       setMensajeError(errorEliminar instanceof Error ? errorEliminar.message : 'No se pudo eliminar');
+    } finally {
+      setEliminando(false);
     }
+  };
+
+  const cancelarEliminar = () => {
+    setApuestaAEliminar(null);
   };
 
   const manejarGuardarResultado = async (resultado: ResultadoApuesta, puntosReales?: number) => {
@@ -216,6 +231,47 @@ export function PaginaBitacora() {
         onCerrar={() => setMostrandoResultado(false)}
         onGuardar={manejarGuardarResultado}
       />
+
+      {/* Modal de confirmación para eliminar */}
+      {apuestaAEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-xl border border-neon-rojo/30 bg-futurista-oscuro p-6">
+            <h3 className="text-lg font-futurista text-texto-principal mb-4">
+              Confirmar eliminación
+            </h3>
+            <p className="text-texto-secundario mb-2">
+              ¿Estás seguro de que deseas eliminar esta apuesta?
+            </p>
+            <div className="bg-futurista-medio/50 rounded-lg p-3 mb-4">
+              <p className="text-texto-principal font-semibold">
+                {apuestaAEliminar.equipo_local} vs {apuestaAEliminar.equipo_visitante}
+              </p>
+              <p className="text-sm text-texto-secundario">
+                {apuestaAEliminar.lado} {apuestaAEliminar.linea} · {apuestaAEliminar.mercado}
+              </p>
+            </div>
+            <p className="text-xs text-neon-rojo mb-4">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Boton
+                variante="fantasma"
+                onClick={cancelarEliminar}
+                disabled={eliminando}
+              >
+                Cancelar
+              </Boton>
+              <Boton
+                variante="peligro"
+                onClick={confirmarEliminar}
+                disabled={eliminando}
+              >
+                {eliminando ? 'Eliminando...' : 'Eliminar'}
+              </Boton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

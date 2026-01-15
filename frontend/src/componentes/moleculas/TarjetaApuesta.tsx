@@ -35,6 +35,19 @@ const coloresResultado: Record<string, string> = {
   PENDIENTE: 'text-neon-cyan',
 };
 
+/**
+ * Formatea una fecha ISO (YYYY-MM-DD) sin problemas de timezone.
+ * Parsea directamente el string para evitar conversión UTC -> local.
+ */
+function formatearFecha(fechaISO: string | null | undefined): string {
+  if (!fechaISO) return 'Sin fecha';
+  // Extraer partes de la fecha directamente del string para evitar problemas de timezone
+  const partes = fechaISO.split('T')[0].split('-');
+  if (partes.length !== 3) return 'Sin fecha';
+  const [anio, mes, dia] = partes;
+  return `${dia}/${mes}/${anio}`;
+}
+
 export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjetaApuesta) {
   const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
 
@@ -43,6 +56,9 @@ export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjeta
     : 'Sin fecha';
   const resultadoColor = coloresResultado[apuesta.resultado] || 'text-texto-secundario';
   const esPendiente = apuesta.resultado === 'PENDIENTE';
+  const probabilidadFormateada = apuesta.probabilidad_sistema != null
+    ? `${(apuesta.probabilidad_sistema * 100).toFixed(1)}%`
+    : null;
 
   // Formatear probabilidad del sistema como porcentaje
   const probSistema = apuesta.probabilidad_sistema != null
