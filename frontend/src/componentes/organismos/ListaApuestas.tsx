@@ -1,9 +1,9 @@
 /**
- * ListaApuestas.tsx — Lista de tarjetas de apuestas
+ * ListaApuestas.tsx — Wrapper que usa TablaApuestas
  */
 
 import { Apuesta } from '../../tipos';
-import { TarjetaApuesta } from '../moleculas';
+import { TablaApuestas } from './TablaApuestas';
 
 interface PropsListaApuestas {
   apuestas: Apuesta[];
@@ -11,49 +11,9 @@ interface PropsListaApuestas {
   mensajeVacio: string;
   onResolver: (apuesta: Apuesta) => void;
   onEliminar: (apuesta: Apuesta) => void;
+  onVerDetalle?: (apuesta: Apuesta) => void;
 }
 
-export function ListaApuestas({
-  apuestas,
-  estado,
-  mensajeVacio,
-  onResolver,
-  onEliminar,
-}: PropsListaApuestas) {
-  if (estado === 'cargando') {
-    return (
-      <div className="tarjeta p-6 text-center text-texto-secundario">
-        Cargando apuestas...
-      </div>
-    );
-  }
-
-  if (estado === 'error') {
-    return (
-      <div className="tarjeta p-6 text-center text-texto-secundario">
-        No se pudieron cargar las apuestas.
-      </div>
-    );
-  }
-
-  if (apuestas.length === 0) {
-    return (
-      <div className="tarjeta p-6 text-center text-texto-secundario">
-        {mensajeVacio}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {apuestas.map((apuesta) => (
-        <TarjetaApuesta
-          key={apuesta.id}
-          apuesta={apuesta}
-          onResolver={onResolver}
-          onEliminar={onEliminar}
-        />
-      ))}
-    </div>
-  );
+export function ListaApuestas(props: PropsListaApuestas) {
+  return <TablaApuestas {...props} />;
 }
