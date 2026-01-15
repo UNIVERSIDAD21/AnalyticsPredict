@@ -2,7 +2,7 @@
  * TarjetaApuesta.tsx — Tarjeta visual para una apuesta de bitácora
  */
 
-import { Calendar, Trophy, Target, Trash2 } from 'lucide-react';
+import { Calendar, Trophy, Target, Trash2, Percent } from 'lucide-react';
 import { Apuesta } from '../../tipos';
 import { Boton, Tarjeta } from '../atomos';
 
@@ -20,12 +20,26 @@ const coloresResultado: Record<string, string> = {
   PENDIENTE: 'text-neon-cyan',
 };
 
+/**
+ * Formatea una fecha ISO (YYYY-MM-DD) sin problemas de timezone.
+ * Parsea directamente el string para evitar conversión UTC -> local.
+ */
+function formatearFecha(fechaISO: string | null | undefined): string {
+  if (!fechaISO) return 'Sin fecha';
+  // Extraer partes de la fecha directamente del string para evitar problemas de timezone
+  const partes = fechaISO.split('T')[0].split('-');
+  if (partes.length !== 3) return 'Sin fecha';
+  const [anio, mes, dia] = partes;
+  return `${dia}/${mes}/${anio}`;
+}
+
 export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjetaApuesta) {
-  const fecha = apuesta.fecha_partido
-    ? new Date(apuesta.fecha_partido).toLocaleDateString('es-ES')
-    : 'Sin fecha';
+  const fecha = formatearFecha(apuesta.fecha_partido);
   const resultadoColor = coloresResultado[apuesta.resultado] || 'text-texto-secundario';
   const esPendiente = apuesta.resultado === 'PENDIENTE';
+  const probabilidadFormateada = apuesta.probabilidad_sistema != null
+    ? `${(apuesta.probabilidad_sistema * 100).toFixed(1)}%`
+    : null;
 
   return (
     <Tarjeta className="space-y-4">
@@ -49,6 +63,14 @@ export function TarjetaApuesta({ apuesta, onResolver, onEliminar }: PropsTarjeta
             <Calendar size={14} className="text-neon-magenta" />
             <span>{fecha}</span>
           </div>
+          {probabilidadFormateada && (
+            <div className="flex items-center gap-2">
+              <Percent size={14} className="text-advertencia-500" />
+              <span>
+                Prob: <span className="text-advertencia-500 font-semibold">{probabilidadFormateada}</span>
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Trophy size={14} className="text-neon-verde" />
             <span>

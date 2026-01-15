@@ -115,9 +115,10 @@ export function FormularioAnalisis({
 
       // Construir petición incluyendo IDs para registro de predicciones
       // El backend usará estos para lookup y garantizar partido_id válido
+      // Usar nombres completos con formato correcto del catálogo de equipos
       const peticion: Partial<PeticionAnalisis> = {
-        equipo_local: formulario.equipoLocal,
-        equipo_visitante: formulario.equipoVisitante,
+        equipo_local: equipoLocalSeleccionado?.nombre || formulario.equipoLocal,
+        equipo_visitante: equipoVisitanteSeleccionado?.nombre || formulario.equipoVisitante,
         mercado: formulario.mercado as Mercado,
         linea: formulario.linea ? parseFloat(formulario.linea) : undefined,
         cuota: cuotaValor,

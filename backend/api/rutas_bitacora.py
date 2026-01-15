@@ -248,7 +248,7 @@ async def listar_apuestas(
     desde: Optional[date] = Query(None),
     hasta: Optional[date] = Query(None),
     busqueda: Optional[str] = Query(None),
-    orden: Optional[str] = Query("reciente"),
+    orden: Optional[str] = Query(None),
     pagina: int = Query(1, ge=1),
     tamano: int = Query(10, ge=1, le=50),
 ) -> RespuestaListaApuestas:
@@ -263,12 +263,15 @@ async def listar_apuestas(
         busqueda=busqueda,
     )
 
-    if orden == "antiguo":
+    if orden == "reciente":
+        orden_sql = "creado_en DESC"
+    elif orden == "antiguo":
         orden_sql = "creado_en ASC"
     elif orden == "ganancia":
         orden_sql = "ganancia DESC, creado_en DESC"
     else:
-        orden_sql = "creado_en DESC"
+        # Sin orden específico: usar orden de inserción (ID)
+        orden_sql = "id"
 
     offset = (pagina - 1) * tamano
 
