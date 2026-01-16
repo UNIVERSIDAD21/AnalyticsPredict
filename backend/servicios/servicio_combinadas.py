@@ -124,7 +124,7 @@ def crear_combinada_db(peticion: PeticionCrearCombinada, usuario_id: UUID) -> Co
     edge = (peticion.cuota_total / cuota_justa - 1) if cuota_justa else None
     valor_esperado = _calcular_valor_esperado(prob_ajustada, peticion.cuota_total, peticion.stake)
 
-    advertencias = correlacion.advertencias
+    advertencias = correlacion.advertencias or []
     correlaciones = [detalle.__dict__ for detalle in correlacion.detalles]
     confianza = _calcular_confianza(selecciones_dict)
 
@@ -178,7 +178,7 @@ def crear_combinada_db(peticion: PeticionCrearCombinada, usuario_id: UUID) -> Co
                         confianza,
                         correlacion.tiene_mismo_partido,
                         correlacion.n_partidos_unicos,
-                        _serializar_jsonb(advertencias),
+                        advertencias,
                         _serializar_jsonb(correlaciones),
                         "PENDIENTE",
                         0,
