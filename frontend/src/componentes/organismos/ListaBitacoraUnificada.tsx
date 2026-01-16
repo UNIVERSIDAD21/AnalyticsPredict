@@ -72,18 +72,6 @@ function formatearEquipo(nombre?: string | null): string {
   return nombre ? nombre.toUpperCase() : '—';
 }
 
-function formatearLinea(valor?: number | string | null): string {
-  if (valor === null || valor === undefined) return '—';
-  const numero = typeof valor === 'string' ? parseFloat(valor) : valor;
-  return Number.isNaN(numero) ? '—' : numero.toFixed(1);
-}
-
-function formatearCuota(valor?: number | string | null): string {
-  if (valor === null || valor === undefined) return '—';
-  const numero = typeof valor === 'string' ? parseFloat(valor) : valor;
-  return Number.isNaN(numero) ? '—' : numero.toFixed(2);
-}
-
 function obtenerFechaRegistro(apuesta: RegistroBitacoraUnificada): string | null | undefined {
   return apuesta.fecha_partido ?? apuesta.creado_en ?? null;
 }
@@ -316,7 +304,9 @@ export function ListaBitacoraUnificada({
                     </td>
                     <td className="px-2 py-2.5 text-right">
                       <span className="text-sm font-mono text-texto-principal">
-                        {formatearLinea(apuesta.linea)}
+                        {apuesta.linea !== null && apuesta.linea !== undefined
+                          ? apuesta.linea.toFixed(1)
+                          : '—'}
                       </span>
                     </td>
                     <td className="px-2 py-2.5 text-right">
@@ -429,13 +419,13 @@ export function ListaBitacoraUnificada({
                                     {formatearEquipo(seleccion.equipo_local)} vs {formatearEquipo(seleccion.equipo_visitante)}
                                   </p>
                                   <p className="text-sm font-medium text-texto-principal">
-                                    {seleccion.mercado === 'COMPLETO' ? 'FG' : seleccion.mercado} · {seleccion.lado === 'OVER' ? 'OVER' : 'UNDER'} {formatearLinea(seleccion.linea)}
+                                    {seleccion.mercado === 'COMPLETO' ? 'FG' : seleccion.mercado} · {seleccion.lado === 'OVER' ? 'OVER' : 'UNDER'} {seleccion.linea.toFixed(1)}
                                   </p>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-xs text-texto-terciario">Cuota</p>
                                   <p className="text-sm font-mono text-texto-secundario">
-                                    {formatearCuota(seleccion.cuota)}
+                                    {seleccion.cuota.toFixed(2)}
                                   </p>
                                 </div>
                               </div>
