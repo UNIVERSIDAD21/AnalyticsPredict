@@ -72,6 +72,20 @@ function formatearEquipo(nombre?: string | null): string {
   return nombre ? nombre.toUpperCase() : '—';
 }
 
+function formatearLinea(linea: number | string | null | undefined): string {
+  if (linea === null || linea === undefined) return '—';
+  const numero = typeof linea === 'string' ? parseFloat(linea) : linea;
+  if (isNaN(numero)) return '—';
+  return numero.toFixed(1);
+}
+
+function formatearCuota(cuota: number | string | null | undefined): string {
+  if (cuota === null || cuota === undefined) return '—';
+  const numero = typeof cuota === 'string' ? parseFloat(cuota) : cuota;
+  if (isNaN(numero)) return '—';
+  return numero.toFixed(2);
+}
+
 function obtenerFechaRegistro(apuesta: RegistroBitacoraUnificada): string | null | undefined {
   return apuesta.fecha_partido ?? apuesta.creado_en ?? null;
 }
@@ -304,16 +318,12 @@ export function ListaBitacoraUnificada({
                     </td>
                     <td className="px-2 py-2.5 text-right">
                       <span className="text-sm font-mono text-texto-principal">
-                        {apuesta.linea !== null && apuesta.linea !== undefined
-                          ? apuesta.linea.toFixed(1)
-                          : '—'}
+                        {formatearLinea(apuesta.linea)}
                       </span>
                     </td>
                     <td className="px-2 py-2.5 text-right">
                       <span className="text-sm font-mono text-texto-secundario">
-                        {cuotaMostrar !== null && cuotaMostrar !== undefined
-                          ? cuotaMostrar.toFixed(2)
-                          : '—'}
+                        {formatearCuota(cuotaMostrar)}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-right">
@@ -404,7 +414,7 @@ export function ListaBitacoraUnificada({
                         <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3">
                           <div className="flex flex-wrap items-center gap-2 text-xs text-texto-terciario">
                             <span className="uppercase tracking-widest text-neon-cyan">Detalle combinada</span>
-                            <span>Cuota total {cuotaMostrar?.toFixed(2) ?? '—'}</span>
+                            <span>Cuota total {formatearCuota(cuotaMostrar)}</span>
                             <span>Stake {formatearDinero(apuesta.stake)}</span>
                             <span>Selecciones {apuesta.n_selecciones ?? apuesta.selecciones.length}</span>
                           </div>
@@ -419,13 +429,13 @@ export function ListaBitacoraUnificada({
                                     {formatearEquipo(seleccion.equipo_local)} vs {formatearEquipo(seleccion.equipo_visitante)}
                                   </p>
                                   <p className="text-sm font-medium text-texto-principal">
-                                    {seleccion.mercado === 'COMPLETO' ? 'FG' : seleccion.mercado} · {seleccion.lado === 'OVER' ? 'OVER' : 'UNDER'} {seleccion.linea.toFixed(1)}
+                                    {seleccion.mercado === 'COMPLETO' ? 'FG' : seleccion.mercado} · {seleccion.lado === 'OVER' ? 'OVER' : 'UNDER'} {formatearLinea(seleccion.linea)}
                                   </p>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-xs text-texto-terciario">Cuota</p>
                                   <p className="text-sm font-mono text-texto-secundario">
-                                    {seleccion.cuota.toFixed(2)}
+                                    {formatearCuota(seleccion.cuota)}
                                   </p>
                                 </div>
                               </div>
