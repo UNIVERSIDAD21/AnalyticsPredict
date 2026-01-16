@@ -87,11 +87,6 @@ function formatearPorcentaje(valor: number | null): string {
   return `${signo}${(valor * 100).toFixed(1)}%`;
 }
 
-function formatearProbabilidad(valor: number | null | undefined): string {
-  if (valor === null || valor === undefined) return '—';
-  return `${(valor * 100).toFixed(1)}%`;
-}
-
 function formatearEquipo(nombre: string): string {
   return nombre.toUpperCase();
 }
