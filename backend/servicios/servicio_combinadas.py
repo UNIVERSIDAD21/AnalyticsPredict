@@ -76,14 +76,13 @@ def _mapear_combinada(fila: dict, selecciones: Optional[List[dict]] = None) -> C
         selecciones_perdidas=int(fila.get("selecciones_perdidas") or 0),
         selecciones_push=int(fila.get("selecciones_push") or 0),
         selecciones_pendientes=int(fila.get("selecciones_pendientes") or 0),
-        fecha_resolucion=fila.get("fecha_resolucion"),
+        fecha_resolucion=fila.get("fecha_resolucion").isoformat() if fila.get("fecha_resolucion") else None,
         notas=fila.get("notas"),
         etiquetas=fila.get("etiquetas"),
-        creado_en=fila.get("creado_en"),
-        actualizado_en=fila.get("actualizado_en"),
+        creado_en=fila.get("creado_en").isoformat() if fila.get("creado_en") else None,  # ← AÑADIR .isoformat()
+        actualizado_en=fila.get("actualizado_en").isoformat() if fila.get("actualizado_en") else None,  # ← AÑADIR .isoformat()
         selecciones=selecciones,
     )
-
 
 def _mapear_seleccion(fila: dict) -> SeleccionCombinada:
     return SeleccionCombinada(
