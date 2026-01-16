@@ -72,13 +72,6 @@ function formatearEquipo(nombre?: string | null): string {
   return nombre ? nombre.toUpperCase() : '—';
 }
 
-function formatearLinea(valor?: number | string | null): string {
-  if (valor === null || valor === undefined) return '—';
-  const numero = typeof valor === 'number' ? valor : Number(valor);
-  if (Number.isNaN(numero)) return '—';
-  return numero.toFixed(1);
-}
-
 function obtenerFechaRegistro(apuesta: RegistroBitacoraUnificada): string | null | undefined {
   return apuesta.fecha_partido ?? apuesta.creado_en ?? null;
 }
@@ -426,7 +419,7 @@ export function ListaBitacoraUnificada({
                                     {formatearEquipo(seleccion.equipo_local)} vs {formatearEquipo(seleccion.equipo_visitante)}
                                   </p>
                                   <p className="text-sm font-medium text-texto-principal">
-                                    {seleccion.mercado === 'COMPLETO' ? 'FG' : seleccion.mercado} · {seleccion.lado === 'OVER' ? 'OVER' : 'UNDER'} {formatearLinea(seleccion.linea)}
+                                    {seleccion.mercado === 'COMPLETO' ? 'FG' : seleccion.mercado} · {seleccion.lado === 'OVER' ? 'OVER' : 'UNDER'} {seleccion.linea.toFixed(1)}
                                   </p>
                                 </div>
                                 <div className="text-right">
