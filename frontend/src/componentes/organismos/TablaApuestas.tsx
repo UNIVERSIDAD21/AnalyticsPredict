@@ -87,15 +87,13 @@ function formatearPorcentaje(valor: number | null): string {
   return `${signo}${(valor * 100).toFixed(1)}%`;
 }
 
-function abreviarEquipo(nombre: string): string {
-  if (nombre.length > 12) {
-    const palabras = nombre.split(' ');
-    if (palabras.length > 1) {
-      return palabras.map((p) => p[0]).join('').toUpperCase();
-    }
-    return nombre.slice(0, 10) + '...';
-  }
-  return nombre;
+function formatearProbabilidad(valor: number | null | undefined): string {
+  if (valor === null || valor === undefined) return '—';
+  return `${(valor * 100).toFixed(1)}%`;
+}
+
+function formatearEquipo(nombre: string): string {
+  return nombre.toUpperCase();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -195,10 +193,10 @@ export function TablaApuestas({
               >
                 Fecha <IconoOrden columna="fecha" />
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+              <th className="px-3 py-3 pr-1 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">
                 Partido
               </th>
-              <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+              <th className="px-2 py-3 pl-1 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
                 Mdo
               </th>
               <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
@@ -218,6 +216,9 @@ export function TablaApuestas({
                 onClick={() => cambiarOrden('stake')}
               >
                 Stake <IconoOrden columna="stake" />
+              </th>
+              <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+                Prob
               </th>
               <th
                 className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario cursor-pointer hover:text-neon-cyan transition-colors"
@@ -258,25 +259,25 @@ export function TablaApuestas({
                     {formatearFechaCorta(apuesta.fecha_partido)}
                   </td>
 
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5 pr-1">
                     <div className="flex items-center gap-1">
                       <span
                         className="text-sm font-medium text-texto-principal"
                         title={apuesta.equipo_local}
                       >
-                        {abreviarEquipo(apuesta.equipo_local)}
+                        {formatearEquipo(apuesta.equipo_local)}
                       </span>
                       <span className="text-xs text-texto-terciario">vs</span>
                       <span
                         className="text-sm font-medium text-texto-principal"
                         title={apuesta.equipo_visitante}
                       >
-                        {abreviarEquipo(apuesta.equipo_visitante)}
+                        {formatearEquipo(apuesta.equipo_visitante)}
                       </span>
                     </div>
                   </td>
 
-                  <td className="px-2 py-2.5 text-center">
+                  <td className="px-2 py-2.5 pl-1 text-center">
                     <span className="text-xs font-mono text-neon-cyan">
                       {apuesta.mercado === 'COMPLETO' ? 'FG' : apuesta.mercado}
                     </span>
@@ -309,6 +310,12 @@ export function TablaApuestas({
                   <td className="px-3 py-2.5 text-right">
                     <span className="text-sm font-mono text-texto-principal">
                       {formatearDinero(apuesta.stake)}
+                    </span>
+                  </td>
+
+                  <td className="px-2 py-2.5 text-right">
+                    <span className="text-sm font-mono text-texto-secundario">
+                      {formatearProbabilidad(apuesta.probabilidad_sistema)}
                     </span>
                   </td>
 
