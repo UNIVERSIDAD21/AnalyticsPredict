@@ -31,6 +31,47 @@ from .dependencias import obtener_usuario_id
 from .modelos_peticion import PeticionActualizarResultado, PeticionCrearApuesta
 from .modelos_respuesta import RespuestaApuesta, RespuestaListaApuestas, RespuestaResumenApuestas
 
+
+class RegistroBitacoraUnificada(BaseModel):
+    """Registro unificado de bitácora (singles + combinadas)."""
+
+    id: UUID
+    tipo_apuesta: str
+    resultado: str
+    stake: float
+    ganancia: float
+    cuota: Optional[float] = None
+    cuota_total: Optional[float] = None
+    n_selecciones: Optional[int] = None
+    selecciones_ganadas: Optional[int] = None
+    selecciones_perdidas: Optional[int] = None
+    selecciones_push: Optional[int] = None
+    selecciones_pendientes: Optional[int] = None
+    tiene_mismo_partido: Optional[bool] = None
+    advertencias: Optional[List[str]] = None
+    equipo_local: Optional[str] = None
+    equipo_visitante: Optional[str] = None
+    fecha_partido: Optional[date] = None
+    mercado: Optional[str] = None
+    lado: Optional[str] = None
+    linea: Optional[float] = None
+    probabilidad_sistema: Optional[float] = None
+    confianza_sistema: Optional[str] = None
+    valor_esperado: Optional[float] = None
+    creado_en: Optional[str] = None
+    actualizado_en: Optional[str] = None
+    selecciones: Optional[List[dict]] = None
+
+
+class RespuestaBitacoraUnificada(BaseModel):
+    """Respuesta para la bitácora unificada."""
+
+    exito: bool
+    total: int
+    pagina: int
+    total_paginas: int
+    registros: List[RegistroBitacoraUnificada]
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
@@ -333,6 +374,99 @@ async def resumen_apuestas(
             resumen = cursor.fetchone() or {}
 
     return RespuestaResumenApuestas(exito=True, resumen=resumen)
+
+
+@router.get("/unificada", summary="Bitácora unificada", response_model=RespuestaBitacoraUnificada)
+async def listar_bitacora_unificada(
+    usuario_id: UUID = Depends(obtener_usuario_id),
+    resultado: Optional[str] = Query(None),
+    tipo_apuesta: Optional[str] = Query(None),
+    desde: Optional[date] = Query(None),
+    hasta: Optional[date] = Query(None),
+    busqueda: Optional[str] = Query(None),
+    orden: Optional[str] = Query(None),
+    pagina: int = Query(1, ge=1),
+    tamano: int = Query(20, ge=1, le=50),
+) -> RespuestaBitacoraUnificada:
+    """Lista la bitácora unificada de apuestas simples y combinadas."""
+    condiciones = ["usuario_id = %s"]
+    parametros: List[object] = [str(usuario_id)]
+
+    if resultado:
+        condiciones.append("resultado = %s")
+        parametros.append(resultado)
+    if tipo_apuesta:
+        condiciones.append("tipo_apuesta = %s")
+        parametros.append(tipo_apuesta)
+    if desde:
+        condiciones.append("fecha_partido >= %s")
+        parametros.append(desde)
+    if hasta:
+        condiciones.append("fecha_partido <= %s")
+        parametros.append(hasta)
+    if busqueda:
+        condiciones.append("(equipo_local ILIKE %s OR equipo_visitante ILIKE %s)")
+        termino = f"%{busqueda}%"
+        parametros.extend([termino, termino])
+
+    where_sql = " AND ".join(condiciones)
+
+    if orden == "antiguo":
+        orden_sql = "creado_en ASC"
+    else:
+        orden_sql = "creado_en DESC"
+
+    offset = (pagina - 1) * tamano
+
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                f"SELECT COUNT(*) AS total FROM vista_bitacora_unificada WHERE {where_sql}",
+                parametros,
+            )
+            total = cursor.fetchone()["total"]
+
+            cursor.execute(
+                f"""
+                SELECT *
+                FROM vista_bitacora_unificada
+                WHERE {where_sql}
+                ORDER BY {orden_sql}
+                LIMIT %s OFFSET %s
+                """,
+                [*parametros, tamano, offset],
+            )
+            registros = cursor.fetchall()
+
+            combinada_ids = [registro["id"] for registro in registros if registro["tipo_apuesta"] == "COMBINADA"]
+            selecciones_por_combinada: dict = {}
+            if combinada_ids:
+                cursor.execute(
+                    """
+                    SELECT * FROM selecciones_combinada
+                    WHERE combinada_id = ANY(%s)
+                    ORDER BY combinada_id, orden ASC
+                    """,
+                    (combinada_ids,),
+                )
+                for fila in cursor.fetchall():
+                    selecciones_por_combinada.setdefault(fila["combinada_id"], []).append(fila)
+
+    total_paginas = max(1, (total + tamano - 1) // tamano) if total else 0
+
+    registros_final = []
+    for registro in registros:
+        if registro["tipo_apuesta"] == "COMBINADA":
+            registro["selecciones"] = selecciones_por_combinada.get(registro["id"], [])
+        registros_final.append(registro)
+
+    return RespuestaBitacoraUnificada(
+        exito=True,
+        total=total,
+        pagina=pagina,
+        total_paginas=total_paginas,
+        registros=registros_final,
+    )
 
 
 @router.get("/{apuesta_id}", summary="Detalle de apuesta", response_model=RespuestaApuesta)
