@@ -106,6 +106,11 @@ export function TablaApuestas({
   const [ordenColumna, setOrdenColumna] = useState<OrdenColumna>('fecha');
   const [direccionOrden, setDireccionOrden] = useState<DireccionOrden>('desc');
 
+  const formatearProbabilidad = (valor?: number | null): string => {
+    if (valor === null || valor === undefined) return '—';
+    return `${(valor * 100).toFixed(1)}%`;
+  };
+
   const apuestasOrdenadas = [...apuestas].sort((a, b) => {
     let comparacion = 0;
 
