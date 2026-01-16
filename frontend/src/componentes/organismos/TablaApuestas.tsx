@@ -188,10 +188,10 @@ export function TablaApuestas({
               >
                 Fecha <IconoOrden columna="fecha" />
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+              <th className="px-3 py-3 pr-1 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">
                 Partido
               </th>
-              <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+              <th className="px-2 py-3 pl-1 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
                 Mdo
               </th>
               <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
@@ -211,6 +211,9 @@ export function TablaApuestas({
                 onClick={() => cambiarOrden('stake')}
               >
                 Stake <IconoOrden columna="stake" />
+              </th>
+              <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+                Prob
               </th>
               <th
                 className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario cursor-pointer hover:text-neon-cyan transition-colors"
@@ -251,7 +254,7 @@ export function TablaApuestas({
                     {formatearFechaCorta(apuesta.fecha_partido)}
                   </td>
 
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5 pr-1">
                     <div className="flex items-center gap-1">
                       <span
                         className="text-sm font-medium text-texto-principal"
@@ -269,7 +272,7 @@ export function TablaApuestas({
                     </div>
                   </td>
 
-                  <td className="px-2 py-2.5 text-center">
+                  <td className="px-2 py-2.5 pl-1 text-center">
                     <span className="text-xs font-mono text-neon-cyan">
                       {apuesta.mercado === 'COMPLETO' ? 'FG' : apuesta.mercado}
                     </span>
@@ -302,6 +305,12 @@ export function TablaApuestas({
                   <td className="px-3 py-2.5 text-right">
                     <span className="text-sm font-mono text-texto-principal">
                       {formatearDinero(apuesta.stake)}
+                    </span>
+                  </td>
+
+                  <td className="px-2 py-2.5 text-right">
+                    <span className="text-sm font-mono text-texto-secundario">
+                      {formatearProbabilidad(apuesta.probabilidad_sistema)}
                     </span>
                   </td>
 
