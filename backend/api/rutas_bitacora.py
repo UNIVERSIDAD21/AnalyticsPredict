@@ -3,14 +3,14 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 import json
 import logging
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from psycopg.rows import dict_row
 
 from db import obtener_pool
@@ -61,6 +61,18 @@ class RegistroBitacoraUnificada(BaseModel):
     creado_en: Optional[str] = None
     actualizado_en: Optional[str] = None
     selecciones: Optional[List[dict]] = None
+
+    @field_validator("creado_en", "actualizado_en", mode="before")
+    @classmethod
+    def convertir_datetime(cls, valor: object | None) -> Optional[str]:
+        """Convierte datetime/date a string ISO."""
+        if valor is None:
+            return None
+        if isinstance(valor, datetime):
+            return valor.isoformat()
+        if isinstance(valor, date):
+            return valor.isoformat()
+        return valor
 
 
 class RespuestaBitacoraUnificada(BaseModel):
