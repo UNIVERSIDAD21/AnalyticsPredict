@@ -356,7 +356,6 @@ export function PaginaPrincipal() {
                     }}
                     onConfigurarBankroll={() => navegar('/configuracion')}
                   />
-                  <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
                 </div>
               )}
 
@@ -366,6 +365,10 @@ export function PaginaPrincipal() {
                   <EstadoVacio />
                 </div>
               )}
+
+              <div className="mt-4">
+                <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
+              </div>
             </div>
           </div>
         )}
