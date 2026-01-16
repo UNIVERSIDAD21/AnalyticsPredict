@@ -3,8 +3,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listarApuestas, obtenerResumenApuestas } from '../servicios';
-import { Apuesta } from '../tipos';
+import { listarBitacoraUnificada, obtenerResumenApuestas } from '../servicios';
+import { RegistroBitacoraUnificada } from '../tipos';
 
 export interface FiltrosBitacora {
   resultado?: string;
@@ -14,10 +14,11 @@ export interface FiltrosBitacora {
   hasta?: string;
   busqueda?: string;
   orden?: string;
+  tipo_apuesta?: string;
 }
 
 interface EstadoBitacora {
-  apuestas: Apuesta[];
+  apuestas: RegistroBitacoraUnificada[];
   total: number;
   pagina: number;
   totalPaginas: number;
@@ -46,11 +47,11 @@ export function useBitacora(filtros: FiltrosBitacora, pagina: number, tamano: nu
     setEstado((prev) => ({ ...prev, estado: 'cargando', error: undefined }));
     try {
       const [lista, resumen] = await Promise.all([
-        listarApuestas(parametros),
+        listarBitacoraUnificada(parametros),
         obtenerResumenApuestas(),
       ]);
       setEstado({
-        apuestas: lista.apuestas,
+        apuestas: lista.registros,
         total: lista.total,
         pagina: lista.pagina,
         totalPaginas: lista.total_paginas,

@@ -13,6 +13,7 @@ interface PropsFiltrosApuestas {
   busqueda: string;
   desde: string;
   hasta: string;
+  tipoApuesta: string;
   onChange: (campo: string, valor: string) => void;
   onLimpiar: () => void;
 }
@@ -44,6 +45,11 @@ const opcionesOrden = [
   { valor: 'antiguo', etiqueta: 'Más antiguas' },
 ];
 
+const opcionesTipo = [
+  { valor: 'SIMPLE', etiqueta: 'Simple' },
+  { valor: 'COMBINADA', etiqueta: 'Combinada' },
+];
+
 export function FiltrosApuestas({
   resultado,
   mercado,
@@ -52,6 +58,7 @@ export function FiltrosApuestas({
   busqueda,
   desde,
   hasta,
+  tipoApuesta,
   onChange,
   onLimpiar,
 }: PropsFiltrosApuestas) {
@@ -84,6 +91,13 @@ export function FiltrosApuestas({
           placeholder="Todas"
           value={confianza}
           onChange={(event) => onChange('confianza', event.target.value)}
+        />
+        <Select
+          etiqueta="Tipo"
+          opciones={opcionesTipo}
+          placeholder="Todos"
+          value={tipoApuesta}
+          onChange={(event) => onChange('tipo_apuesta', event.target.value)}
         />
       </div>
       <div className="flex flex-col lg:flex-row gap-4">

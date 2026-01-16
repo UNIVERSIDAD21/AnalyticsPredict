@@ -14,3 +14,4 @@ export * from './configuracion';
 export * from './metricas';
 export * from './alertas';
 export * from './predicciones';
+export * from './combinadas';

@@ -15,6 +15,9 @@ export { TarjetaApuesta } from './TarjetaApuesta';
 export { ModalResultado } from './ModalResultado';
 export { ProgresoAnalisis } from './ProgresoAnalisis';
 export { TarjetaNoApta } from './TarjetaNoApta';
+export { IndicadorCorrelacion } from './IndicadorCorrelacion';
+export { SelectorSeleccion } from './SelectorSeleccion';
+export { ResumenCombinada } from './ResumenCombinada';
 
 // ══════════════════════════════════════════════════════════════
 // Fase 2: Componentes avanzados de análisis profesional

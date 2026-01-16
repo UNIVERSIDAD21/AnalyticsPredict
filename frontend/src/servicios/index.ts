@@ -10,3 +10,4 @@ export * from './estadisticas';
 export * from './bitacora';
 export * from './partidos';
 export * from './predicciones';
+export * from './combinadas';
