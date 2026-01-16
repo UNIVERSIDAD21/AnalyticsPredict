@@ -3,9 +3,10 @@
  * PaginaPrincipal.tsx — Página principal con layout futurista full-screen
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Encabezado,
+  CreadorCombinada,
   FormularioAnalisis,
   FormularioGuardarApuesta,
   HistorialEquipo,
@@ -16,7 +17,7 @@ import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { Activity, TrendingUp, Target, BarChart3 } from 'lucide-react';
-import { LadoApuesta, PeticionAnalisis } from '../../tipos';
+import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
 
@@ -118,6 +119,52 @@ export function PaginaPrincipal() {
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
+
+  const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
+    if (!resultado || !seleccionUsuario) return null;
+    const mercado = (resultado.metadata?.mercado || 'COMPLETO') as SeleccionCombinadaInput['mercado'];
+    const detalle = resultado.mejor_apuesta_detalle;
+    const analisisMercado = resultado.analisis_mercado;
+    const cuota = detalle?.cuota
+      ?? (seleccionUsuario.lado === 'OVER' ? analisisMercado?.cuota_over : analisisMercado?.cuota_under)
+      ?? analisisMercado?.cuota
+      ?? (seleccionUsuario.lado === 'OVER' ? ultimaPeticion?.cuota_over : ultimaPeticion?.cuota_under)
+      ?? ultimaPeticion?.cuota;
+
+    if (!cuota) return null;
+
+    const prediccion = mercado === 'COMPLETO'
+      ? resultado.prediccion_juego_completo
+      : resultado.predicciones[mercado];
+
+    const fechaPartido = (ultimaPeticion?.fecha_partido
+      ?? resultado.metadata?.fecha_partido) as string | undefined;
+
+    const partidoId = (ultimaPeticion?.partido_id ?? resultado.metadata?.partido_id) as string | undefined;
+
+    const probabilidad = seleccionUsuario.lado === 'OVER'
+      ? resultado.probabilidad_over
+      : resultado.probabilidad_under;
+
+    return {
+      partido_id: partidoId ?? null,
+      equipo_local: resultado.equipo_nombre_completo,
+      equipo_visitante: resultado.rival_nombre_completo,
+      fecha_partido: fechaPartido,
+      mercado,
+      lado: seleccionUsuario.lado,
+      linea: seleccionUsuario.linea,
+      cuota,
+      cuota_over: analisisMercado?.cuota_over ?? ultimaPeticion?.cuota_over ?? null,
+      cuota_under: analisisMercado?.cuota_under ?? ultimaPeticion?.cuota_under ?? null,
+      probabilidad_sistema: probabilidad ?? 0,
+      prediccion_media: prediccion?.media_total ?? null,
+      prediccion_desviacion: prediccion?.desviacion_total ?? null,
+      confianza_sistema: resultado.nivel_confianza,
+      valor_esperado_individual: analisisMercado?.valor_esperado ?? null,
+      razones: resultado.razones as Array<Record<string, unknown>>,
+    };
+  }, [resultado, seleccionUsuario, ultimaPeticion]);
   const historialRef = useRef<HTMLDivElement>(null);
   const { agregarToast } = useToasts();
   const ultimoResultadoRef = useRef<string | null>(null);
@@ -298,16 +345,19 @@ export function PaginaPrincipal() {
 
               {/* Resultados */}
               {resultado && estadoAnalisis !== 'cargando' && (
-                <ResultadoAnalisis
-                  resultado={resultado}
-                  advertencias={advertencias}
-                  seleccionUsuario={seleccionUsuario}
-                  onGuardar={() => {
-                    setMostrarGuardar(true);
-                    setErrorGuardar(null);
-                  }}
-                  onConfigurarBankroll={() => navegar('/configuracion')}
-                />
+                <div className="space-y-4">
+                  <ResultadoAnalisis
+                    resultado={resultado}
+                    advertencias={advertencias}
+                    seleccionUsuario={seleccionUsuario}
+                    onGuardar={() => {
+                      setMostrarGuardar(true);
+                      setErrorGuardar(null);
+                    }}
+                    onConfigurarBankroll={() => navegar('/configuracion')}
+                  />
+                  <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
+                </div>
               )}
 
               {/* Estado vacío */}

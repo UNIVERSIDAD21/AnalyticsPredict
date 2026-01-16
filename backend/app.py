@@ -25,6 +25,7 @@ from api.rutas_partidos import router as router_partidos
 from api.rutas_predicciones import router as router_predicciones
 from api.rutas_backtest import router as router_backtest
 from api.rutas_internas import router as router_interno
+from api.rutas_combinadas import router as router_combinadas
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from db import obtener_pool, cerrar_pool
 
@@ -235,6 +236,7 @@ app.include_router(router_interno)
 app.include_router(router_metricas)
 app.include_router(router_backtest)
 app.include_router(router_predicciones)
+app.include_router(router_combinadas)
 
 
 @app.get(

@@ -3,12 +3,12 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Encabezado, FiltrosApuestas, ListaApuestas } from '../organismos';
+import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organismos';
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
 import { useBitacora } from '../../hooks';
-import { actualizarResultadoApuesta, eliminarApuesta } from '../../servicios';
-import { Apuesta, ResultadoApuesta } from '../../tipos';
+import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada } from '../../servicios';
+import { RegistroBitacoraUnificada, ResultadoApuesta } from '../../tipos';
 
 const TAMANO_PAGINA = 20;
 
@@ -23,12 +23,13 @@ export function PaginaBitacora() {
     busqueda: '',
     desde: '',
     hasta: '',
+    tipo_apuesta: '',
   });
 
-  const [apuestaSeleccionada, setApuestaSeleccionada] = useState<Apuesta | null>(null);
+  const [apuestaSeleccionada, setApuestaSeleccionada] = useState<RegistroBitacoraUnificada | null>(null);
   const [mostrandoResultado, setMostrandoResultado] = useState(false);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
-  const [apuestaAEliminar, setApuestaAEliminar] = useState<Apuesta | null>(null);
+  const [apuestaAEliminar, setApuestaAEliminar] = useState<RegistroBitacoraUnificada | null>(null);
   const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export function PaginaBitacora() {
     desde: filtros.desde || undefined,
     hasta: filtros.hasta || undefined,
     orden: filtros.orden || undefined,
+    tipo_apuesta: filtros.tipo_apuesta || undefined,
   }), [filtros]);
 
   const {
@@ -84,17 +86,21 @@ export function PaginaBitacora() {
       busqueda: '',
       desde: '',
       hasta: '',
+      tipo_apuesta: '',
     });
     setBusquedaInput('');
     setPagina(1);
   };
 
-  const manejarResolver = (apuesta: Apuesta) => {
+  const manejarResolver = (apuesta: RegistroBitacoraUnificada) => {
+    if (apuesta.tipo_apuesta === 'COMBINADA') {
+      return;
+    }
     setApuestaSeleccionada(apuesta);
     setMostrandoResultado(true);
   };
 
-  const manejarEliminar = (apuesta: Apuesta) => {
+  const manejarEliminar = (apuesta: RegistroBitacoraUnificada) => {
     setApuestaAEliminar(apuesta);
   };
 
@@ -102,7 +108,11 @@ export function PaginaBitacora() {
     if (!apuestaAEliminar) return;
     setEliminando(true);
     try {
-      await eliminarApuesta(apuestaAEliminar.id);
+      if (apuestaAEliminar.tipo_apuesta === 'COMBINADA') {
+        await eliminarCombinada(apuestaAEliminar.id);
+      } else {
+        await eliminarApuesta(apuestaAEliminar.id);
+      }
       setApuestaAEliminar(null);
       await recargar();
     } catch (errorEliminar) {
@@ -117,7 +127,7 @@ export function PaginaBitacora() {
   };
 
   const manejarGuardarResultado = async (resultado: ResultadoApuesta, puntosReales?: number) => {
-    if (!apuestaSeleccionada) return;
+    if (!apuestaSeleccionada || apuestaSeleccionada.tipo_apuesta === 'COMBINADA') return;
     try {
       await actualizarResultadoApuesta(apuestaSeleccionada.id, {
         resultado: resultado as Exclude<ResultadoApuesta, 'PENDIENTE'>,
@@ -189,11 +199,12 @@ export function PaginaBitacora() {
           busqueda={busquedaInput}
           desde={filtros.desde}
           hasta={filtros.hasta}
+          tipoApuesta={filtros.tipo_apuesta}
           onChange={manejarFiltro}
           onLimpiar={limpiarFiltros}
         />
 
-        <ListaApuestas
+        <ListaBitacoraUnificada
           apuestas={apuestas}
           estado={estado}
           mensajeVacio={total === 0 ? 'Aún no tienes apuestas guardadas.' : 'No hay apuestas con estos filtros.'}
@@ -244,10 +255,14 @@ export function PaginaBitacora() {
             </p>
             <div className="bg-futurista-medio/50 rounded-lg p-3 mb-4">
               <p className="text-texto-principal font-semibold">
-                {apuestaAEliminar.equipo_local} vs {apuestaAEliminar.equipo_visitante}
+                {apuestaAEliminar.tipo_apuesta === 'COMBINADA'
+                  ? `Parlay de ${apuestaAEliminar.n_selecciones ?? 0} selecciones`
+                  : `${apuestaAEliminar.equipo_local} vs ${apuestaAEliminar.equipo_visitante}`}
               </p>
               <p className="text-sm text-texto-secundario">
-                {apuestaAEliminar.lado} {apuestaAEliminar.linea} · {apuestaAEliminar.mercado}
+                {apuestaAEliminar.tipo_apuesta === 'COMBINADA'
+                  ? `Cuota @${apuestaAEliminar.cuota_total ?? 0}`
+                  : `${apuestaAEliminar.lado} ${apuestaAEliminar.linea} · ${apuestaAEliminar.mercado}`}
               </p>
             </div>
             <p className="text-xs text-neon-rojo mb-4">
