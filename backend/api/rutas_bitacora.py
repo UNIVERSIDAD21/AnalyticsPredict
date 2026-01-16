@@ -427,37 +427,31 @@ async def listar_bitacora_unificada(
             total = cursor.fetchone()["total"]
 
             cursor.execute(
-                f"""
+                f\"\"\"
                 SELECT *
                 FROM vista_bitacora_unificada
                 WHERE {where_sql}
                 ORDER BY {orden_sql}
                 LIMIT %s OFFSET %s
-                """,
+                \"\"\",
                 [*parametros, tamano, offset],
             )
             registros = cursor.fetchall()
 
-            combinada_ids = [registro["id"] for registro in registros if registro["tipo_apuesta"] == "COMBINADA"]
+            combinada_ids = [registro[\"id\"] for registro in registros if registro[\"tipo_apuesta\"] == \"COMBINADA\"]
             selecciones_por_combinada: dict = {}
             if combinada_ids:
                 cursor.execute(
-                    """
-                    SELECT * FROM selecciones_combinada
-                    WHERE combinada_id = ANY(%s)
-                    ORDER BY combinada_id, orden ASC
-                    """,
-                    (combinada_ids,),
-                )
+                    \"\"\"\n                    SELECT * FROM selecciones_combinada\n                    WHERE combinada_id = ANY(%s)\n                    ORDER BY combinada_id, orden ASC\n                    \"\"\",\n                    (combinada_ids,),\n                )
                 for fila in cursor.fetchall():
-                    selecciones_por_combinada.setdefault(fila["combinada_id"], []).append(fila)
+                    selecciones_por_combinada.setdefault(fila[\"combinada_id\"], []).append(fila)
 
     total_paginas = max(1, (total + tamano - 1) // tamano) if total else 0
 
     registros_final = []
     for registro in registros:
-        if registro["tipo_apuesta"] == "COMBINADA":
-            registro["selecciones"] = selecciones_por_combinada.get(registro["id"], [])
+        if registro[\"tipo_apuesta\"] == \"COMBINADA\":
+            registro[\"selecciones\"] = selecciones_por_combinada.get(registro[\"id\"], [])
         registros_final.append(registro)
 
     return RespuestaBitacoraUnificada(
