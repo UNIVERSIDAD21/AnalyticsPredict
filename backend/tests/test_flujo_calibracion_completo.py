@@ -79,6 +79,7 @@ def test_flujo_sin_calibrador_activo_usa_p_raw_para_ev(monkeypatch):
         modo_devig="estricto",
         fecha_partido=date(2024, 1, 15),
         origen_prediccion="API_USUARIO",
+        incluir_contexto=False,
     )
 
     candidato = resultado.candidatos[0]
@@ -108,6 +109,7 @@ def test_flujo_con_calibrador_activo_usa_p_calibrada_para_ev(monkeypatch):
         modo_devig="estricto",
         fecha_partido=date(2024, 1, 15),
         origen_prediccion="API_USUARIO",
+        incluir_contexto=False,
     )
 
     candidato = resultado.candidatos[0]

@@ -106,6 +106,10 @@ class PeticionAnalisis(BaseModel):
         None,
         description="Overrides de caps/stake mínimo para sizing",
     )
+    incluir_contexto: bool = Field(
+        True,
+        description="Indica si se incluye el motor de ajustes contextuales",
+    )
 
     @field_validator("equipo_local", "equipo_visitante")
     @classmethod

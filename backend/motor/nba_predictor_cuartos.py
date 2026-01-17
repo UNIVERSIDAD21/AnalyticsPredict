@@ -23,8 +23,10 @@ from .calculadora_probabilidad import (
     calcular_probabilidad_over,
     calcular_probabilidad_victoria,
 )
-from .generador_razones import generar_razones_basicas
+from .generador_razones import generar_razones_basicas, generar_razones_ajustes
 from .calibradores import obtener_calibrador_activo
+from .ajustes import aplicar_ajustes_contextuales
+from .contexto import recolectar_contexto
 from .tipos import (
     AnalisisMercado,
     CandidatoApuesta,
@@ -501,6 +503,7 @@ def analizar_partido(
     fecha_partido: Optional[date] = None,
     origen_prediccion: str = "API_USUARIO",
     calibrador_activo: Optional[object] = None,
+    incluir_contexto: bool = True,
 ) -> ResultadoAnalisis:
     """Ejecuta el análisis completo para un partido."""
     media_equipo, desviacion_equipo, media_rival, desviacion_rival = predecir_cuartos(
@@ -561,6 +564,7 @@ def analizar_partido(
         if mercado in predicciones else float(np.mean(media_rival)),
         media_total=predicciones[mercado].media_total
         if mercado in predicciones else float(np.mean(media_equipo + media_rival)),
+        mercado=mercado,
     )
 
     analisis_mercado = None
@@ -732,6 +736,45 @@ def analizar_partido(
             riesgo_alto=riesgo_alto,
         )
 
+    contexto = None
+    prediccion_ajustada = None
+    advertencias_contexto: List[str] = []
+    if incluir_contexto:
+        try:
+            contexto = recolectar_contexto(
+                equipo=equipo,
+                rival=rival,
+                fecha_partido=fecha_partido,
+            )
+            if mercado == "COMPLETO" and prediccion_juego_completo is not None:
+                prediccion_base = prediccion_juego_completo
+            else:
+                prediccion_base = predicciones.get(mercado)
+
+            if prediccion_base is not None:
+                prediccion_ajustada = aplicar_ajustes_contextuales(
+                    contexto=contexto,
+                    media_base=prediccion_base.media_total,
+                    desviacion_base=prediccion_base.desviacion_total,
+                    probabilidad_over_base=prediccion_base.probabilidad_over or 0.0,
+                    probabilidad_under_base=prediccion_base.probabilidad_under or 0.0,
+                    linea=prediccion_base.linea_analizada,
+                    mercado=mercado,
+                    confianza_base=nivel_confianza,
+                )
+                advertencias_contexto = prediccion_ajustada.ajustes_aplicados.advertencias
+                razones = generar_razones_ajustes(
+                    nombre_equipo=equipo,
+                    nombre_rival=rival,
+                    mercado=mercado,
+                    media_base=prediccion_base.media_total,
+                    media_ajustada=prediccion_ajustada.media_ajustada,
+                    linea=prediccion_base.linea_analizada,
+                    ajustes=prediccion_ajustada.ajustes_aplicados,
+                )
+        except Exception:
+            logger.exception("Error aplicando contexto; se devuelve predicción base.")
+
     return ResultadoAnalisis(
         equipo=normalizar_nombre(equipo),
         equipo_nombre_completo=equipo,
@@ -751,6 +794,10 @@ def analizar_partido(
         es_en_vivo=es_en_vivo,
         cuartos_reales=cuartos_reales,
         metadata=metadata,
+        contexto=contexto,
+        ajustes=prediccion_ajustada.ajustes_aplicados if prediccion_ajustada else None,
+        prediccion_ajustada=prediccion_ajustada,
+        advertencias_contexto=advertencias_contexto,
     )
 
 
@@ -884,6 +931,23 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
     def serializar_razones(razones: List[RazonPrediccion]) -> List[Dict[str, object]]:
         return [asdict(razon) for razon in razones]
 
+    def serializar_contexto(contexto: object) -> Dict[str, object]:
+        return asdict(contexto) if contexto is not None else {}
+
+    def serializar_ajustes(ajustes: object) -> Dict[str, object]:
+        if ajustes is None:
+            return {}
+        data = asdict(ajustes)
+        data["ajustes"] = [asdict(ajuste) for ajuste in ajustes.ajustes]
+        return data
+
+    def serializar_prediccion_ajustada(prediccion: object) -> Dict[str, object]:
+        if prediccion is None:
+            return {}
+        data = asdict(prediccion)
+        data["ajustes_aplicados"] = serializar_ajustes(prediccion.ajustes_aplicados)
+        return data
+
     mercado = resultado.metadata.get("mercado") if resultado.metadata else None
     if mercado == "COMPLETO" and resultado.prediccion_juego_completo:
         prediccion_mercado = resultado.prediccion_juego_completo
@@ -964,6 +1028,32 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
         "probabilidad_under": probabilidad_under,
         "linea_analizada": linea_analizada,
     }
+
+    if resultado.contexto is not None:
+        salida["contexto"] = serializar_contexto(resultado.contexto)
+    if resultado.ajustes is not None:
+        salida["ajustes"] = serializar_ajustes(resultado.ajustes)
+    if resultado.prediccion_ajustada is not None:
+        salida["prediccion_ajustada"] = serializar_prediccion_ajustada(
+            resultado.prediccion_ajustada
+        )
+        if prediccion_mercado is not None:
+            salida["prediccion_base"] = {
+                "media": prediccion_mercado.media_total,
+                "desviacion": prediccion_mercado.desviacion_total,
+                "probabilidad_over": prediccion_mercado.probabilidad_over,
+                "probabilidad_under": prediccion_mercado.probabilidad_under,
+            }
+            salida["comparacion"] = {
+                "cambio_media": resultado.prediccion_ajustada.media_ajustada
+                - prediccion_mercado.media_total,
+                "cambio_prob_over": resultado.prediccion_ajustada.probabilidad_over_ajustada
+                - (prediccion_mercado.probabilidad_over or 0.0),
+                "cambio_prob_under": resultado.prediccion_ajustada.probabilidad_under_ajustada
+                - (prediccion_mercado.probabilidad_under or 0.0),
+            }
+    if resultado.advertencias_contexto:
+        salida["advertencias_contexto"] = list(resultado.advertencias_contexto)
 
     if resultado.mejor_apuesta is not None:
         salida["mejor_apuesta"] = serializar_candidato(resultado.mejor_apuesta)
