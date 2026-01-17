@@ -130,13 +130,6 @@ export function Encabezado() {
               <span className="hidden md:inline">Config</span>
             </button>
 
-            {/* Indicador de estado */}
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-futurista-oscuro/50 border border-neon-verde/30">
-              <div className="w-2 h-2 rounded-full bg-neon-verde animate-pulse" />
-              <span className="text-xs text-neon-verde uppercase tracking-wider font-mono">
-                Sistema Activo
-              </span>
-            </div>
           </div>
         </div>
       </div>

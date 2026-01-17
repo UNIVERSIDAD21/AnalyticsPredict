@@ -366,9 +366,11 @@ export function PaginaPrincipal() {
                 </div>
               )}
 
-              <div className="mt-4">
-                <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
-              </div>
+              {seleccionCombinadaActual && (
+                <div className="mt-4">
+                  <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
+                </div>
+              )}
             </div>
           </div>
         )}
