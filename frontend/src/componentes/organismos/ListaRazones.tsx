@@ -16,12 +16,44 @@ interface PropsListaRazones {
 }
 
 // ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+
+function obtenerExplicacionRazon(razon: RazonPrediccion): string | null {
+  switch (razon.factor) {
+    case 'total_estimado':
+      return 'Es la suma de puntos que el modelo espera entre ambos equipos.';
+    case 'ataque_equipo':
+      return 'Indica cuántos puntos se estima que anotará el equipo según sus datos recientes.';
+    case 'ataque_rival':
+      return 'Indica cuántos puntos se estima que anotará el rival según sus datos recientes.';
+    case 'prediccion_sistema':
+      return 'Es el total de puntos que calcula el sistema con los datos disponibles; se compara con la línea si existe.';
+    case 'resumen_neto':
+      return 'Resume cuánto se ajustó la predicción por el contexto (descanso, rachas, etc.).';
+    case 'back_to_back':
+      return 'Cuando hay partidos en días seguidos, el cansancio suele bajar el ritmo y los puntos.';
+    case 'descanso_asimetrico':
+      return 'Un equipo tuvo más descanso que el otro; eso puede darle ventaja y cambiar la proyección.';
+    case 'h2h_tendencia':
+      return 'Se considera lo que pasó en enfrentamientos directos recientes para ajustar el total.';
+    case 'forma_ofensiva_equipo':
+      return 'Compara los puntos recientes del equipo con su promedio de temporada para ajustar la predicción.';
+    case 'forma_ofensiva_rival':
+      return 'Compara los puntos recientes del rival con su promedio de temporada para ajustar la predicción.';
+    default:
+      return 'Este factor ajusta la predicción según información contextual del partido.';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 // COMPONENTE INTERNO
 // ══════════════════════════════════════════════════════════════
 
 function ItemRazon({ razon }: { razon: RazonPrediccion }) {
   const esSube = razon.direccion === 'sube';
   const Icono = esSube ? ArrowUp : ArrowDown;
+  const explicacion = obtenerExplicacionRazon(razon);
 
   return (
     <li className="flex items-start gap-3 py-3 border-b border-neon-cyan/10 last:border-0">
@@ -41,6 +73,11 @@ function ItemRazon({ razon }: { razon: RazonPrediccion }) {
         <p className="text-sm text-texto-principal">
           {razon.descripcion}
         </p>
+        {explicacion && (
+          <p className="text-xs text-texto-secundario mt-1">
+            En simple: {explicacion}
+          </p>
+        )}
         <div className="flex items-center gap-3 mt-1">
           <span className="text-xs text-texto-terciario font-mono">
             {razon.factor}
