@@ -99,6 +99,19 @@ export function ListaBitacoraUnificada({
 }: PropsListaBitacoraUnificada) {
   const [ordenColumna, setOrdenColumna] = useState<OrdenColumna>('fecha');
   const [direccionOrden, setDireccionOrden] = useState<DireccionOrden>('desc');
+  const [combinadasExpandidas, setCombinadasExpandidas] = useState<Set<string>>(new Set());
+
+  const toggleExpandirCombinada = (id: string) => {
+    setCombinadasExpandidas((prev) => {
+      const nuevo = new Set(prev);
+      if (nuevo.has(id)) {
+        nuevo.delete(id);
+      } else {
+        nuevo.add(id);
+      }
+      return nuevo;
+    });
+  };
 
   const formatearProbabilidad = (valor?: number | null): string => {
     if (valor === null || valor === undefined) return '—';
@@ -385,11 +398,23 @@ export function ListaBitacoraUnificada({
                     <td className="px-2 py-2.5">
                       <div className="flex items-center justify-center gap-1">
                         {esCombinada && apuesta.selecciones?.length ? (
-                          <span className="p-1.5 text-texto-terciario">
-                            <Eye className="w-4 h-4" />
-                          </span>
+                          <button
+                            onClick={() => toggleExpandirCombinada(apuesta.id)}
+                            className={`p-1.5 rounded transition-colors ${
+                              combinadasExpandidas.has(apuesta.id)
+                                ? 'bg-neon-cyan/20 text-neon-cyan'
+                                : 'text-texto-terciario hover:bg-neon-cyan/10 hover:text-neon-cyan'
+                            }`}
+                            title={combinadasExpandidas.has(apuesta.id) ? 'Minimizar' : 'Expandir'}
+                          >
+                            {combinadasExpandidas.has(apuesta.id) ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
                         ) : null}
-                        {!esCombinada && esPendiente && (
+                        {esPendiente && (
                           <button
                             onClick={() => onResolver(apuesta)}
                             className="p-1.5 rounded hover:bg-neon-verde/10 text-texto-terciario hover:text-neon-verde transition-colors"
@@ -408,7 +433,7 @@ export function ListaBitacoraUnificada({
                       </div>
                     </td>
                   </tr>
-                  {esCombinada && apuesta.selecciones?.length ? (
+                  {esCombinada && apuesta.selecciones?.length && combinadasExpandidas.has(apuesta.id) ? (
                     <tr className="bg-neon-cyan/5">
                       <td colSpan={13} className="px-4 py-3">
                         <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3">

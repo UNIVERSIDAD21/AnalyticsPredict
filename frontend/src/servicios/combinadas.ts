@@ -41,6 +41,24 @@ export async function eliminarCombinada(combinadaId: string): Promise<void> {
   }
 }
 
+export interface PeticionActualizarResultadoCombinada {
+  resultado: 'GANADA' | 'PERDIDA' | 'PUSH' | 'ANULADA';
+}
+
+export async function actualizarResultadoCombinada(
+  combinadaId: string,
+  payload: PeticionActualizarResultadoCombinada
+): Promise<RespuestaCombinada> {
+  const respuesta = await clienteAPI.patch<RespuestaCombinada>(
+    `/api/combinadas/${combinadaId}/resultado`,
+    payload
+  );
+  if (!respuesta.data.exito) {
+    throw new Error('No se pudo actualizar el resultado de la combinada');
+  }
+  return respuesta.data;
+}
+
 export async function listarBitacoraUnificada(
   params: Record<string, string | number | undefined>
 ): Promise<RespuestaBitacoraUnificada> {
