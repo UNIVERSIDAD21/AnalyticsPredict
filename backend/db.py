@@ -44,6 +44,8 @@ def obtener_pool() -> ConnectionPool:
             conninfo=obtener_database_url(),
             min_size=1,
             max_size=5,
+            max_idle=300,
+            max_lifetime=1800,
             open=True  # Abrir inmediatamente al crear
         )
     return _pool
