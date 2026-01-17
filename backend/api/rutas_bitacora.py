@@ -372,16 +372,60 @@ async def listar_apuestas(
 async def resumen_apuestas(
     usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaResumenApuestas:
-    """Retorna el resumen agregado de apuestas para el usuario."""
+    """Retorna el resumen agregado de apuestas para el usuario (incluye simples y combinadas)."""
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
+            # Consulta unificada que combina apuestas simples y combinadas
             cursor.execute(
                 """
-                SELECT *
-                FROM vista_resumen_apuestas
-                WHERE usuario_id = %s
+                WITH apuestas_unificadas AS (
+                    SELECT
+                        usuario_id,
+                        stake,
+                        ganancia,
+                        resultado
+                    FROM apuestas
+                    WHERE usuario_id = %s
+                    UNION ALL
+                    SELECT
+                        usuario_id,
+                        stake,
+                        ganancia,
+                        resultado
+                    FROM apuestas_combinadas
+                    WHERE usuario_id = %s
+                )
+                SELECT
+                    %s::uuid AS usuario_id,
+                    COUNT(*) AS total_apuestas,
+                    COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
+                    COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                    COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                    COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
+                    COUNT(*) FILTER (WHERE resultado = 'ANULADA') AS anuladas,
+                    COALESCE(SUM(stake), 0) AS stake_total,
+                    COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                    CASE
+                        WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
+                        THEN ROUND(
+                            100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
+                            COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
+                            2
+                        )
+                        ELSE 0
+                    END AS winrate,
+                    CASE
+                        WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
+                        THEN ROUND(
+                            100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
+                            COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
+                            2
+                        )
+                        ELSE 0
+                    END AS roi
+                FROM apuestas_unificadas
                 """,
-                [str(usuario_id)],
+                [str(usuario_id), str(usuario_id), str(usuario_id)],
             )
             resumen = cursor.fetchone() or {}
 

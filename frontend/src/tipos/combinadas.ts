@@ -5,7 +5,7 @@
 import { NivelConfianza } from './analisis';
 import { ResultadoApuesta } from './bitacora';
 
-export type ResultadoCombinada = 'PENDIENTE' | 'GANADA' | 'PERDIDA' | 'PUSH';
+export type ResultadoCombinada = 'PENDIENTE' | 'GANADA' | 'PERDIDA' | 'PUSH' | 'ANULADA';
 
 export interface SeleccionCombinadaInput {
   partido_id?: string | null;

@@ -51,7 +51,7 @@ class SeleccionCombinada(SeleccionCombinadaBase):
     combinada_id: UUID
     grupo_correlacion: Optional[int] = None
     factor_ajuste_correlacion: Optional[float] = None
-    resultado: Optional[Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH"]] = None
+    resultado: Optional[Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH", "ANULADA"]] = None
     puntos_reales: Optional[float] = None
     fecha_resolucion: Optional[str] = None
     orden: int
@@ -86,7 +86,7 @@ class Combinada(BaseModel):
     n_partidos_unicos: int
     advertencias: Optional[List[str]] = None
     correlaciones_detectadas: Optional[List[dict]] = None
-    resultado: Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH"]
+    resultado: Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH", "ANULADA"]
     ganancia: float
     selecciones_ganadas: int
     selecciones_perdidas: int
@@ -115,3 +115,11 @@ class RespuestaListaCombinadas(BaseModel):
     pagina: int
     total_paginas: int
     combinadas: List[Combinada]
+
+
+class PeticionActualizarResultadoCombinada(BaseModel):
+    """Solicitud para actualizar el resultado de una combinada."""
+
+    resultado: Literal["GANADA", "PERDIDA", "PUSH", "ANULADA"] = Field(
+        ..., description="Resultado de la combinada"
+    )

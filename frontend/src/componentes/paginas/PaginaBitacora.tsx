@@ -7,7 +7,7 @@ import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organism
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
 import { useBitacora } from '../../hooks';
-import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada } from '../../servicios';
+import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada, actualizarResultadoCombinada } from '../../servicios';
 import { RegistroBitacoraUnificada, ResultadoApuesta } from '../../tipos';
 
 const TAMANO_PAGINA = 20;
@@ -93,9 +93,6 @@ export function PaginaBitacora() {
   };
 
   const manejarResolver = (apuesta: RegistroBitacoraUnificada) => {
-    if (apuesta.tipo_apuesta === 'COMBINADA') {
-      return;
-    }
     setApuestaSeleccionada(apuesta);
     setMostrandoResultado(true);
   };
@@ -127,12 +124,18 @@ export function PaginaBitacora() {
   };
 
   const manejarGuardarResultado = async (resultado: ResultadoApuesta, puntosReales?: number) => {
-    if (!apuestaSeleccionada || apuestaSeleccionada.tipo_apuesta === 'COMBINADA') return;
+    if (!apuestaSeleccionada) return;
     try {
-      await actualizarResultadoApuesta(apuestaSeleccionada.id, {
-        resultado: resultado as Exclude<ResultadoApuesta, 'PENDIENTE'>,
-        puntos_reales: puntosReales,
-      });
+      if (apuestaSeleccionada.tipo_apuesta === 'COMBINADA') {
+        await actualizarResultadoCombinada(apuestaSeleccionada.id, {
+          resultado: resultado as 'GANADA' | 'PERDIDA' | 'PUSH' | 'ANULADA',
+        });
+      } else {
+        await actualizarResultadoApuesta(apuestaSeleccionada.id, {
+          resultado: resultado as Exclude<ResultadoApuesta, 'PENDIENTE'>,
+          puntos_reales: puntosReales,
+        });
+      }
       setMostrandoResultado(false);
       setApuestaSeleccionada(null);
       await recargar();

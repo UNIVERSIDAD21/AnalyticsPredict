@@ -354,6 +354,81 @@ def obtener_combinada_db(combinada_id: UUID, usuario_id: UUID) -> Combinada:
     return _mapear_combinada(combinada, selecciones)
 
 
+def actualizar_resultado_combinada_db(
+    combinada_id: UUID,
+    usuario_id: UUID,
+    resultado: str,
+) -> Combinada:
+    """
+    Actualiza el resultado de una combinada y calcula la ganancia.
+
+    Args:
+        combinada_id: ID de la combinada
+        usuario_id: ID del usuario propietario
+        resultado: Nuevo resultado (GANADA, PERDIDA, PUSH, ANULADA)
+
+    Returns:
+        Combinada actualizada
+    """
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            # Verificar que existe y pertenece al usuario
+            cursor.execute(
+                """
+                SELECT * FROM apuestas_combinadas
+                WHERE id = %s AND usuario_id = %s
+                """,
+                (str(combinada_id), str(usuario_id)),
+            )
+            combinada = cursor.fetchone()
+            if not combinada:
+                raise ValueError("Combinada no encontrada")
+
+            if combinada["resultado"] != "PENDIENTE":
+                raise ValueError("Solo se pueden resolver combinadas pendientes.")
+
+            # Calcular ganancia según el resultado
+            stake = float(combinada["stake"])
+            cuota_total = float(combinada["cuota_total"])
+
+            if resultado == "GANADA":
+                ganancia = stake * (cuota_total - 1)
+            elif resultado == "PERDIDA":
+                ganancia = -stake
+            elif resultado == "PUSH" or resultado == "ANULADA":
+                ganancia = 0.0
+            else:
+                raise ValueError(f"Resultado inválido: {resultado}")
+
+            # Actualizar la combinada
+            cursor.execute(
+                """
+                UPDATE apuestas_combinadas
+                SET resultado = %s,
+                    ganancia = %s,
+                    fecha_resolucion = NOW(),
+                    actualizado_en = NOW()
+                WHERE id = %s AND usuario_id = %s
+                RETURNING *
+                """,
+                (resultado, ganancia, str(combinada_id), str(usuario_id)),
+            )
+            combinada_actualizada = cursor.fetchone()
+
+            # Obtener selecciones
+            cursor.execute(
+                """
+                SELECT * FROM selecciones_combinada
+                WHERE combinada_id = %s
+                ORDER BY orden ASC
+                """,
+                (str(combinada_id),),
+            )
+            selecciones = [_mapear_seleccion(fila) for fila in cursor.fetchall()]
+
+    return _mapear_combinada(combinada_actualizada, selecciones)
+
+
 def eliminar_combinada_db(combinada_id: UUID, usuario_id: UUID) -> None:
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
