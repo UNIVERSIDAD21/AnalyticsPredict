@@ -5,11 +5,8 @@
 import { useEffect, useState } from 'react';
 import {
   PaginaBitacora,
-  PaginaHistorialEquipo,
   PaginaPrincipal,
   PaginaConfiguracion,
-  PaginaMetricas,
-  PaginaHistorialPredicciones,
 } from './componentes/paginas';
 
 /**
@@ -29,16 +26,6 @@ function App() {
   }
   if (ruta === '/configuracion') {
     return <PaginaConfiguracion />;
-  }
-  if (ruta === '/metricas') {
-    return <PaginaMetricas />;
-  }
-  if (ruta === '/historial') {
-    return <PaginaHistorialPredicciones />;
-  }
-  const coincidenciaHistorial = ruta.match(/^\/equipo\/([^/]+)\/historial$/);
-  if (coincidenciaHistorial) {
-    return <PaginaHistorialEquipo equipoId={coincidenciaHistorial[1]} />;
   }
   return <PaginaPrincipal />;
 }
