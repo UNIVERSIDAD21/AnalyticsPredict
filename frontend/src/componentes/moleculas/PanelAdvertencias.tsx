@@ -36,47 +36,119 @@ interface AdvertenciaProcesada {
 const MAPEO_ADVERTENCIAS: Record<string, { mensaje: string; categoria: CategoriaAdvertencia }> = {
   // De-Vig
   'OVERROUND_BAJO_POSIBLE_ARB': {
-    mensaje: 'Overround menor a 100%: posible arbitraje o error en cuotas',
+    mensaje:
+      'Las cuotas suman menos de 100%. Esto suele indicar un error en los datos o una posible oportunidad de arbitraje; conviene revisar antes de apostar.',
     categoria: 'error',
   },
   'OVERROUND_ALTO_REVISAR': {
-    mensaje: 'Overround superior al 10%: margen de la casa alto, revisar cuotas',
+    mensaje:
+      'Las cuotas suman más de 110%, lo que significa un margen muy alto para la casa. La apuesta puede estar inflada o poco conveniente.',
     categoria: 'warning',
   },
   'DEVIG_ESTRICTO_REQUIERE_AMBAS_CUOTAS': {
-    mensaje: 'El modo estricto requiere ambas cuotas para de-vig exacto',
+    mensaje:
+      'Para calcular la probabilidad justa con precisión necesitamos la cuota del over y del under. Si falta una, el cálculo no es exacto.',
     categoria: 'warning',
   },
   'DEVIG_ESTIMADO_PENALIZA': {
-    mensaje: 'De-vig estimado: se aplica penalización por vig desconocido',
+    mensaje:
+      'No se pudo quitar el margen de la casa con datos exactos, así que se usa una estimación. Por seguridad se reduce la confianza y el tamaño de la apuesta.',
     categoria: 'info',
+  },
+  'De-vig estimado: stake penalizado': {
+    mensaje:
+      'Se estimó el margen de la casa porque faltan datos exactos. Por eso el monto sugerido se reduce para ser más conservador.',
+    categoria: 'info',
+  },
+  'Sin devig: stake penalizado': {
+    mensaje:
+      'No se pudo calcular la probabilidad justa (sin de-vig). Por seguridad, el monto sugerido se reduce mucho.',
+    categoria: 'warning',
   },
 
   // Sizing
   'Kelly <= 0: no apostar': {
-    mensaje: 'Kelly negativo o cero: no se recomienda apostar',
+    mensaje:
+      'Con la cuota y la probabilidad actuales, la fórmula indica que no hay valor. Lo más prudente es no apostar.',
     categoria: 'error',
   },
+  'Cap diario aplicado': {
+    mensaje:
+      'Se aplicó un tope diario. Aunque el cálculo sugería más, el sistema limita el porcentaje máximo que se puede arriesgar en el día.',
+    categoria: 'info',
+  },
   'Cap por apuesta aplicado': {
-    mensaje: 'Se aplicó límite máximo por apuesta',
+    mensaje:
+      'Se aplicó un tope por apuesta. El monto sugerido se bajó al máximo permitido para una sola jugada.',
     categoria: 'info',
   },
   'Stake por debajo del mínimo': {
-    mensaje: 'El stake calculado está por debajo del mínimo permitido',
+    mensaje:
+      'El monto calculado es menor que el mínimo permitido. Puede que no se pueda apostar con ese valor.',
     categoria: 'warning',
   },
   'Sin bankroll disponible para sizing': {
-    mensaje: 'No hay bankroll configurado: no se puede calcular stake',
+    mensaje:
+      'No se ingresó un bankroll (fondo disponible), por eso no se puede calcular el monto exacto a apostar.',
     categoria: 'warning',
   },
 
   // Score/Riesgo
   'RIESGO_ALTO': {
-    mensaje: 'Alta volatilidad detectada en este mercado',
+    mensaje:
+      'El modelo detecta mucha variación en los resultados (desviación alta). Eso hace que la predicción sea menos estable y más riesgosa.',
+    categoria: 'warning',
+  },
+  'Riesgo alto: desviación alta': {
+    mensaje:
+      'La desviación es alta, lo que significa que los resultados pueden variar mucho. Por eso se considera una apuesta más riesgosa.',
     categoria: 'warning',
   },
   'SIN_DEVIG': {
-    mensaje: 'No se pudo aplicar de-vig: probabilidad justa no disponible',
+    mensaje:
+      'No se pudo quitar el margen de la casa (de-vig), así que no contamos con la probabilidad justa exacta.',
+    categoria: 'warning',
+  },
+
+  // Contexto/ajustes
+  'Ambos equipos en BACK-TO-BACK': {
+    mensaje:
+      'Ambos equipos juegan en días seguidos. Esto suele generar cansancio y puede bajar el ritmo y los puntos.',
+    categoria: 'warning',
+  },
+  'Back-to-back confirmado en uno de los equipos': {
+    mensaje:
+      'Uno de los equipos juega en días seguidos, lo que puede afectar su energía y rendimiento.',
+    categoria: 'warning',
+  },
+  'Ventaja significativa de descanso': {
+    mensaje:
+      'Un equipo tuvo más días de descanso que el otro. Esa ventaja puede influir en el resultado.',
+    categoria: 'info',
+  },
+  'Diferencia H2H vs base mayor a 10 pts': {
+    mensaje:
+      'En los enfrentamientos directos recientes, el promedio de puntos se aleja más de 10 puntos del promedio base. Es una señal de historial atípico.',
+    categoria: 'warning',
+  },
+  'Ajuste individual capped por límite máximo': {
+    mensaje:
+      'Un ajuste era demasiado grande y se recortó al límite permitido para evitar exageraciones.',
+    categoria: 'info',
+  },
+  'Ajuste total capped por límite global': {
+    mensaje:
+      'La suma de ajustes superaba el máximo permitido, así que se recortó al límite global.',
+    categoria: 'info',
+  },
+  'Múltiples ajustes significativos (>6 pts)': {
+    mensaje:
+      'Se aplicaron varios ajustes grandes (más de 6 puntos en total), lo que indica cambios importantes en el contexto.',
+    categoria: 'warning',
+  },
+  'Predicción alejada del histórico H2H': {
+    mensaje:
+      'La predicción actual está lejos de lo que suele pasar en los enfrentamientos directos entre estos equipos. Conviene revisar.',
     categoria: 'warning',
   },
 };
@@ -85,8 +157,13 @@ const MAPEO_ADVERTENCIAS: Record<string, { mensaje: string; categoria: Categoria
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 
+function normalizarCodigo(codigo: string) {
+  return codigo.replace(/^⚠️\s*/u, '').trim().replace(/\.+$/u, '').trim();
+}
+
 function procesarAdvertencia(codigo: string): AdvertenciaProcesada {
-  const mapeo = MAPEO_ADVERTENCIAS[codigo];
+  const codigoNormalizado = normalizarCodigo(codigo);
+  const mapeo = MAPEO_ADVERTENCIAS[codigoNormalizado];
 
   if (mapeo) {
     return {
@@ -96,10 +173,19 @@ function procesarAdvertencia(codigo: string): AdvertenciaProcesada {
     };
   }
 
+  if (codigoNormalizado.startsWith('config_sizing')) {
+    return {
+      codigo,
+      mensaje:
+        'La configuración de límites de apuesta tiene un dato faltante o inválido, así que se usaron valores por defecto.',
+      categoria: 'warning',
+    };
+  }
+
   // Código desconocido: mostrar como info con el código
   return {
     codigo,
-    mensaje: codigo.replace(/_/g, ' ').toLowerCase(),
+    mensaje: codigoNormalizado.replace(/_/g, ' ').toLowerCase(),
     categoria: 'info',
   };
 }
