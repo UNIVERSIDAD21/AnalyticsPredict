@@ -207,6 +207,8 @@ def _colectar_advertencias_resultado(resultado) -> List[str]:
         advertencias.extend(resultado.mejor_apuesta.datos_devig.advertencias)
     if resultado.mejor_apuesta and resultado.mejor_apuesta.sizing:
         advertencias.extend(resultado.mejor_apuesta.sizing.advertencias)
+    if getattr(resultado, "advertencias_contexto", None):
+        advertencias.extend(resultado.advertencias_contexto)
     return advertencias
 
 
@@ -401,6 +403,7 @@ def ejecutar_analisis(
             peso_en_vivo=peso_en_vivo,
             fecha_partido=peticion.fecha_partido,
             origen_prediccion="API_USUARIO",
+            incluir_contexto=peticion.incluir_contexto,
         )
     except ValueError as exc:
         raise ErrorValidacion(str(exc)) from exc

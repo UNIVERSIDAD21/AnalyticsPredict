@@ -578,6 +578,10 @@ class ResultadoAnalisis:
     es_en_vivo: bool = False
     cuartos_reales: Dict[str, tuple] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    contexto: Any = None
+    ajustes: Any = None
+    prediccion_ajustada: Any = None
+    advertencias_contexto: List[str] = field(default_factory=list)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
