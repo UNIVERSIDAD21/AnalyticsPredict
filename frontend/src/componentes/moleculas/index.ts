@@ -29,3 +29,10 @@ export { TarjetaSizing } from './TarjetaSizing';
 export { SeccionCalibracion } from './SeccionCalibracion';
 export { PanelAdvertencias } from './PanelAdvertencias';
 export { AlertasCalibracion } from './AlertasCalibracion';
+
+// ══════════════════════════════════════════════════════════════
+// Fase 3: Componentes de ajustes contextuales
+// ══════════════════════════════════════════════════════════════
+
+export { PanelComparacionPrediccion } from './PanelComparacionPrediccion';
+export { SeccionAjustesAplicados } from './SeccionAjustesAplicados';
