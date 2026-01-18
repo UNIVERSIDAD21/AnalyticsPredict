@@ -616,3 +616,139 @@ export interface CandidatoApuestaExtendido extends CandidatoApuesta {
   /** Penalizaciones del score */
   score_penalizaciones?: string[];
 }
+
+// ══════════════════════════════════════════════════════════════
+// TIPOS DE CONTEXTO Y AJUSTES (Fase 3)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Información del último partido jugado para contexto de descanso.
+ */
+export interface UltimoPartidoDescanso {
+  fecha: string;
+  puntos_equipo: number;
+  puntos_rival: number;
+  ubicacion: 'LOCAL' | 'VISITANTE';
+}
+
+/**
+ * Contexto de descanso de un equipo.
+ */
+export interface ContextoDescanso {
+  dias_descanso: number;
+  es_back_to_back: boolean;
+  ultimo_partido: UltimoPartidoDescanso | null;
+  distancia_viaje_km: number | null;
+}
+
+/**
+ * Tendencia de forma de un equipo.
+ */
+export type TendenciaForma = 'MEJORANDO' | 'ESTABLE' | 'EMPEORANDO';
+
+/**
+ * Contexto de forma reciente de un equipo.
+ */
+export interface ContextoForma {
+  ultimos_n: number;
+  victorias: number;
+  derrotas: number;
+  racha: string;
+  ppg: number;
+  opp_ppg: number;
+  net_rating: number;
+  ppg_temporada: number;
+  diferencia_vs_temporada: number;
+  tendencia: TendenciaForma;
+}
+
+/**
+ * Partido individual del historial H2H.
+ */
+export interface PartidoH2H {
+  fecha: string;
+  puntos_equipo: number;
+  puntos_rival: number;
+  total: number;
+  ganador_id: string;
+  diferencia_puntos: number;
+}
+
+/**
+ * Último enfrentamiento directo.
+ */
+export interface UltimoEnfrentamientoH2H {
+  fecha: string;
+  puntos_equipo: number;
+  puntos_rival: number;
+  total: number;
+  ganador_id: string;
+}
+
+/**
+ * Contexto de enfrentamientos directos (Head-to-Head).
+ */
+export interface ContextoH2H {
+  total_partidos: number;
+  victorias_equipo: number;
+  victorias_rival: number;
+  promedio_total: number;
+  promedio_equipo: number;
+  promedio_rival: number;
+  tendencia_over: number;
+  ultimo_enfrentamiento: UltimoEnfrentamientoH2H | null;
+  partidos: PartidoH2H[];
+}
+
+/**
+ * Contexto completo del partido.
+ */
+export interface ContextoCompleto {
+  h2h: ContextoH2H | null;
+  forma_equipo: ContextoForma;
+  forma_rival: ContextoForma;
+  descanso_equipo: ContextoDescanso;
+  descanso_rival: ContextoDescanso;
+  stats_temporada_equipo: Record<string, unknown>;
+  stats_temporada_rival: Record<string, unknown>;
+}
+
+/**
+ * Ajuste individual aplicado a la predicción.
+ */
+export interface AjusteIndividual {
+  factor: string;
+  valor: number;
+  direccion: 'sube' | 'baja';
+  confianza_ajuste: number;
+  descripcion: string;
+  datos_soporte: Record<string, unknown>;
+}
+
+/**
+ * Resultado del proceso de ajustes.
+ */
+export interface ResultadoAjustes {
+  ajustes: AjusteIndividual[];
+  ajuste_total: number;
+  ajuste_total_capped: number;
+  fue_capped: boolean;
+  advertencias: string[];
+  confianza_delta: number;
+}
+
+/**
+ * Predicción ajustada con contexto.
+ */
+export interface PrediccionAjustada {
+  media_base: number;
+  desviacion_base: number;
+  probabilidad_over_base: number;
+  probabilidad_under_base: number;
+  media_ajustada: number;
+  probabilidad_over_ajustada: number;
+  probabilidad_under_ajustada: number;
+  ajustes_aplicados: ResultadoAjustes;
+  confianza_base: NivelConfianza;
+  confianza_ajustada: NivelConfianza;
+}

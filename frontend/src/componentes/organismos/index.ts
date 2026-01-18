@@ -19,3 +19,10 @@ export { ListaSelecciones } from './ListaSelecciones';
 export { TarjetaApuestaSimple } from './TarjetaApuestaSimple';
 export { GraficoCurvaCalibracion } from './GraficoCurvaCalibracion';
 export { CreadorCombinada } from './CreadorCombinada';
+
+// ══════════════════════════════════════════════════════════════
+// Fase 3: Componentes de contexto y forma
+// ══════════════════════════════════════════════════════════════
+
+export { SeccionH2H } from './SeccionH2H';
+export { SeccionFormaReciente } from './SeccionFormaReciente';
