@@ -150,9 +150,10 @@ export function FormularioGuardarApuesta({
       devig_advertencias: detalle?.devig_advertencias ?? candidato?.devig_advertencias ?? null,
       edge_real: detalle?.edge_real ?? candidato?.edge_real ?? null,
 
-      // Campos de Score (P1) - usar candidato como fallback
-      score_total: detalle?.score_total ?? candidato?.score_total ?? null,
-      score_componentes: detalle?.score_componentes ?? null, // candidato no tiene componentes detallados
+      // Campos de Score (P1) - score_total requiere score_componentes para trazabilidad
+      // Solo usar score_total si también tenemos score_componentes disponible
+      score_componentes: detalle?.score_componentes ?? null,
+      score_total: detalle?.score_componentes ? (detalle?.score_total ?? null) : null,
       score_explicacion: detalle?.score_explicacion ?? null,
       score_penalizaciones: detalle?.score_penalizaciones ?? candidato?.score_penalizaciones ?? null,
 
