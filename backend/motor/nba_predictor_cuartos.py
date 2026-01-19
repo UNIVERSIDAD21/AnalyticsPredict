@@ -504,6 +504,7 @@ def analizar_partido(
     origen_prediccion: str = "API_USUARIO",
     calibrador_activo: Optional[object] = None,
     incluir_contexto: bool = True,
+    h2h_limite: int = 10,
 ) -> ResultadoAnalisis:
     """Ejecuta el análisis completo para un partido."""
     media_equipo, desviacion_equipo, media_rival, desviacion_rival = predecir_cuartos(
@@ -745,6 +746,7 @@ def analizar_partido(
                 equipo=equipo,
                 rival=rival,
                 fecha_partido=fecha_partido,
+                limite_h2h=h2h_limite,
             )
             if mercado == "COMPLETO" and prediccion_juego_completo is not None:
                 prediccion_base = prediccion_juego_completo
