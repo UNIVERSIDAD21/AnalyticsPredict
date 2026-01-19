@@ -24,7 +24,10 @@ import {
   TarjetaSizing,
   SeccionCalibracion,
   TarjetaNoApta,
+  PanelComparacionPrediccion,
+  SeccionAjustesAplicados,
 } from '../moleculas';
+import { SeccionH2H, SeccionFormaReciente } from './index';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -257,9 +260,42 @@ export function ResultadoAnalisis({
           )}
 
           {/* ═══════════════════════════════════════════════════════════
-              5. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
+              5. SECCIÓN: AJUSTES CONTEXTUALES (Fase 3)
+              ═══════════════════════════════════════════════════════════ */}
+
+          {/* Panel de Comparación Base vs Ajustada */}
+          {resultado.prediccion_ajustada && resultado.prediccion_base && (
+            <PanelComparacionPrediccion
+              prediccionBase={{
+                media: resultado.prediccion_base.media,
+                probabilidadOver: resultado.prediccion_base.probabilidad_over ?? 0,
+                probabilidadUnder: resultado.prediccion_base.probabilidad_under ?? 0,
+              }}
+              prediccionAjustada={{
+                media: resultado.prediccion_ajustada.media_ajustada,
+                probabilidadOver: resultado.prediccion_ajustada.probabilidad_over_ajustada,
+                probabilidadUnder: resultado.prediccion_ajustada.probabilidad_under_ajustada,
+              }}
+              linea={linea}
+              confianzaBase={resultado.prediccion_ajustada.confianza_base}
+              confianzaAjustada={resultado.prediccion_ajustada.confianza_ajustada}
+            />
+          )}
+
+          {/* Lista de Ajustes Aplicados */}
+          {resultado.ajustes && resultado.ajustes.ajustes && resultado.ajustes.ajustes.length > 0 && (
+            <SeccionAjustesAplicados
+              ajustes={resultado.ajustes.ajustes}
+              ajusteTotal={resultado.ajustes.ajuste_total_capped}
+              fueCapped={resultado.ajustes.fue_capped}
+              inicialmenteExpandido={true}
+            />
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              6. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
               Solo mostrar si hay detalle avanzado
-              ═══════════════════════════════════════════════════════════ */}  
+              ═══════════════════════════════════════════════════════════ */}
           {tieneDetalleAvanzado && detalle && (
             <div className="space-y-4">
               <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
@@ -338,8 +374,36 @@ export function ResultadoAnalisis({
           )}
 
           {/* ═══════════════════════════════════════════════════════════
-              8. RAZONES
-              ═══════════════════════════════════════════════════════════ */}  
+              8. SECCIÓN: CONTEXTO DEL PARTIDO (Fase 3)
+              ═══════════════════════════════════════════════════════════ */}
+
+          {/* Head-to-Head */}
+          {resultado.contexto?.h2h && (
+            <SeccionH2H
+              h2h={resultado.contexto.h2h}
+              equipoNombre={resultado.equipo_nombre_completo}
+              rivalNombre={resultado.rival_nombre_completo}
+              lineaActual={linea}
+              inicialmenteExpandido={false}
+            />
+          )}
+
+          {/* Forma Reciente */}
+          {resultado.contexto && resultado.contexto.forma_equipo && resultado.contexto.forma_rival && (
+            <SeccionFormaReciente
+              formaEquipo={resultado.contexto.forma_equipo}
+              formaRival={resultado.contexto.forma_rival}
+              descansoEquipo={resultado.contexto.descanso_equipo}
+              descansoRival={resultado.contexto.descanso_rival}
+              equipoNombre={resultado.equipo_nombre_completo}
+              rivalNombre={resultado.rival_nombre_completo}
+              inicialmenteExpandido={true}
+            />
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              9. RAZONES
+              ═══════════════════════════════════════════════════════════ */}
           <ListaRazones razones={resultado.razones} />
 
           {/* ═══════════════════════════════════════════════════════════
