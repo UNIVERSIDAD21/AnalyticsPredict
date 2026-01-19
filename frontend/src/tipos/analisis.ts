@@ -272,6 +272,36 @@ export interface ResultadoAnalisis {
 
   /** Lista de candidatos evaluados con información extendida */
   candidatos?: CandidatoApuestaExtendido[];
+
+  // ════════════════════════════════════════════════════════════
+  // Campos de contexto (Fase 3)
+  // ════════════════════════════════════════════════════════════
+
+  /** Contexto completo del partido (H2H, forma, descanso) */
+  contexto?: ContextoCompleto | null;
+
+  /** Resultado del proceso de ajustes contextuales */
+  ajustes?: ResultadoAjustes | null;
+
+  /** Predicción ajustada con contexto */
+  prediccion_ajustada?: PrediccionAjustada | null;
+
+  /** Predicción base (sin ajustes) */
+  prediccion_base?: {
+    media: number;
+    probabilidad_over: number;
+    probabilidad_under: number;
+  } | null;
+
+  /** Comparación entre predicción base y ajustada */
+  comparacion?: {
+    cambio_media: number;
+    cambio_prob_over: number;
+    cambio_prob_under: number;
+  } | null;
+
+  /** Advertencias específicas del contexto */
+  advertencias_contexto?: string[];
 }
 
 /**
