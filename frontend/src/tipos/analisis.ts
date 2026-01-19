@@ -147,6 +147,9 @@ export interface PeticionAnalisis {
 
   /** Overrides de caps/stake mínimo para sizing */
   config_sizing?: ConfiguracionSizingPeticion;
+
+  /** Cantidad de partidos H2H a considerar (5-20). */
+  h2h_limite?: number;
 }
 
 /**

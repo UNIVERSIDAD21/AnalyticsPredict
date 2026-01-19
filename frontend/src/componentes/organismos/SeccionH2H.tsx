@@ -15,9 +15,6 @@ import type { ContextoH2H } from '../../tipos/analisis';
 // CONSTANTES
 // ══════════════════════════════════════════════════════════════
 
-/** Número máximo de partidos a mostrar en la tabla */
-const MAX_PARTIDOS_MOSTRAR = 5;
-
 /** Línea típica de referencia para determinar OVER/UNDER en H2H */
 const LINEA_TIPICA = 220;
 
@@ -89,18 +86,20 @@ export function SeccionH2H({
   // Calcular estadísticas derivadas
   const stats = useMemo(() => {
     const linea = lineaActual || LINEA_TIPICA;
-    const porcentajeOver = (h2h.tendencia_over * 100).toFixed(0);
     const empates =
       h2h.total_partidos - h2h.victorias_equipo - h2h.victorias_rival;
-
-    // Tomar solo los últimos N partidos
-    const partidosMostrar = h2h.partidos.slice(0, MAX_PARTIDOS_MOSTRAR);
+    const totalPartidos = h2h.partidos.length;
+    const overCount = h2h.partidos.filter((partido) => partido.total > linea).length;
+    const porcentajeOver =
+      totalPartidos > 0 ? ((overCount / totalPartidos) * 100).toFixed(0) : '0';
 
     return {
       linea,
       porcentajeOver,
       empates,
-      partidosMostrar,
+      partidosMostrar: h2h.partidos,
+      overCount,
+      totalPartidos,
     };
   }, [h2h, lineaActual]);
 
@@ -183,9 +182,9 @@ export function SeccionH2H({
           <span
             className={clsx(
               'font-mono font-semibold',
-              h2h.tendencia_over >= 0.6
+              stats.totalPartidos > 0 && stats.overCount / stats.totalPartidos >= 0.6
                 ? 'text-over-medio'
-                : h2h.tendencia_over <= 0.4
+                : stats.totalPartidos > 0 && stats.overCount / stats.totalPartidos <= 0.4
                 ? 'text-under-medio'
                 : 'text-texto-principal'
             )}
@@ -290,8 +289,7 @@ export function SeccionH2H({
             <TrendingUp className="w-4 h-4 text-neon-cyan flex-shrink-0 mt-0.5" />
             <p className="text-sm text-texto-secundario">
               <span className="text-neon-cyan font-medium">Tendencia:</span>{' '}
-              {Math.round(h2h.tendencia_over * h2h.total_partidos)}/
-              {h2h.total_partidos} partidos fueron{' '}
+              {stats.overCount}/{stats.totalPartidos} partidos fueron{' '}
               <span className="text-over-medio font-medium">OVER</span>
               {lineaActual && (
                 <span className="text-texto-terciario">

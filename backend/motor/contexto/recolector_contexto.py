@@ -127,7 +127,7 @@ def recolectar_contexto(
     equipo: str,
     rival: str,
     fecha_partido: Optional[date] = None,
-    limite_h2h: int = 5,
+    limite_h2h: int = 10,
     ultimos_n_forma: int = 10,
 ) -> ContextoCompleto:
     """Recolecta contexto del partido con cache simple."""

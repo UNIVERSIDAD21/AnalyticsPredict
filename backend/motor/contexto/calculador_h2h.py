@@ -14,7 +14,7 @@ def calcular_h2h(
     pool,
     equipo_id: str,
     rival_id: str,
-    limite: int = 5,
+    limite: int = 10,
     min_partidos: int = 3,
 ) -> Optional[ContextoH2H]:
     """Calcula métricas head-to-head para los últimos enfrentamientos."""
@@ -32,6 +32,9 @@ def calcular_h2h(
                     p.diferencia_puntos
                 FROM partidos p
                 WHERE p.tipo_partido = 'REG'
+                  AND p.local_total IS NOT NULL
+                  AND p.visitante_total IS NOT NULL
+                  AND NOT (p.local_total = 0 AND p.visitante_total = 0)
                   AND (
                         (p.equipo_local_id = %s AND p.equipo_visitante_id = %s)
                         OR (p.equipo_local_id = %s AND p.equipo_visitante_id = %s)

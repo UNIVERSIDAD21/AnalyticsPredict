@@ -110,6 +110,12 @@ class PeticionAnalisis(BaseModel):
         True,
         description="Indica si se incluye el motor de ajustes contextuales",
     )
+    h2h_limite: int = Field(
+        10,
+        ge=5,
+        le=20,
+        description="Cantidad de partidos H2H a considerar (5-20).",
+    )
 
     @field_validator("equipo_local", "equipo_visitante")
     @classmethod

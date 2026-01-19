@@ -404,6 +404,7 @@ def ejecutar_analisis(
             fecha_partido=peticion.fecha_partido,
             origen_prediccion="API_USUARIO",
             incluir_contexto=peticion.incluir_contexto,
+            h2h_limite=peticion.h2h_limite,
         )
     except ValueError as exc:
         raise ErrorValidacion(str(exc)) from exc
