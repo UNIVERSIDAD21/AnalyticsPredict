@@ -54,6 +54,16 @@ export function FormularioGuardarApuesta({
       return detalle.cuota;
     }
 
+    // Segundo intento: buscar en candidatos el que coincida con la selección del usuario
+    if (resultado.candidatos && resultado.candidatos.length > 0) {
+      const candidato = resultado.candidatos.find(
+        (c) => c.lado === ladoSeleccionado && c.linea === lineaSeleccionada
+      ) ?? resultado.candidatos.find((c) => c.lado === ladoSeleccionado);
+      if (candidato?.cuota) {
+        return candidato.cuota;
+      }
+    }
+
     // Fallback a analisis_mercado
     if (analisisMercado) {
       if (ladoSeleccionado === 'OVER' && analisisMercado.cuota_over) {
@@ -68,7 +78,7 @@ export function FormularioGuardarApuesta({
     }
 
     return cuotaSeleccionada ?? null;
-  }, [cuotaSeleccionada, resultado, ladoSeleccionado]);
+  }, [cuotaSeleccionada, resultado, ladoSeleccionado, lineaSeleccionada]);
 
   // Extraer fecha del partido
   const fechaAutoLlenada = useMemo(() => {
@@ -89,6 +99,24 @@ export function FormularioGuardarApuesta({
     }
   }, [abierto]);
 
+  // Buscar candidato correspondiente al lado seleccionado (para casos NO_APTO)
+  const candidatoSeleccionado = useMemo(() => {
+    // Primero intentar desde mejor_apuesta_detalle
+    if (resultado.mejor_apuesta_detalle) {
+      return null; // Usaremos mejor_apuesta_detalle directamente
+    }
+
+    // Si no hay detalle, buscar en candidatos el que coincida con la selección del usuario
+    if (resultado.candidatos && resultado.candidatos.length > 0) {
+      const candidato = resultado.candidatos.find(
+        (c) => c.lado === ladoSeleccionado && c.linea === lineaSeleccionada
+      );
+      return candidato ?? resultado.candidatos.find((c) => c.lado === ladoSeleccionado) ?? null;
+    }
+
+    return null;
+  }, [resultado, ladoSeleccionado, lineaSeleccionada]);
+
   // Extraer snapshot completo del análisis incluyendo campos P1
   const snapshot = useMemo(() => {
     const probabilidadSistema = ladoSeleccionado === 'OVER'
@@ -99,34 +127,36 @@ export function FormularioGuardarApuesta({
       ? resultado.prediccion_juego_completo
       : resultado.predicciones[mercado];
 
+    // Usar mejor_apuesta_detalle si existe, sino el candidato seleccionado
     const detalle = resultado.mejor_apuesta_detalle;
+    const candidato = candidatoSeleccionado;
 
     return {
       // Probabilidades básicas
       probabilidad: probabilidadSistema,
       media: prediccion?.media_total ?? null,
       desviacion: prediccion?.desviacion_total ?? null,
-      valorEsperado: resultado.analisis_mercado?.valor_esperado ?? detalle?.valor_esperado ?? null,
+      valorEsperado: resultado.analisis_mercado?.valor_esperado ?? detalle?.valor_esperado ?? candidato?.valor_esperado ?? null,
 
-      // Cuotas
-      cuota_over: detalle?.cuota_over ?? resultado.analisis_mercado?.cuota_over ?? null,
-      cuota_under: detalle?.cuota_under ?? resultado.analisis_mercado?.cuota_under ?? null,
+      // Cuotas (detalle > candidato > analisis_mercado)
+      cuota_over: detalle?.cuota_over ?? candidato?.cuota_over ?? resultado.analisis_mercado?.cuota_over ?? null,
+      cuota_under: detalle?.cuota_under ?? candidato?.cuota_under ?? resultado.analisis_mercado?.cuota_under ?? null,
 
-      // Campos de De-Vig (P1)
-      devig_metodo: detalle?.devig_metodo ?? null,
-      devig_overround: detalle?.devig_overround ?? null,
-      devig_p_mkt_raw: detalle?.devig_p_mkt_raw ?? null,
-      devig_p_mkt_fair: detalle?.devig_p_mkt_fair ?? null,
-      devig_advertencias: detalle?.devig_advertencias ?? null,
-      edge_real: detalle?.edge_real ?? null,
+      // Campos de De-Vig (P1) - usar candidato como fallback
+      devig_metodo: detalle?.devig_metodo ?? candidato?.devig_metodo ?? null,
+      devig_overround: detalle?.devig_overround ?? candidato?.devig_overround ?? null,
+      devig_p_mkt_raw: detalle?.devig_p_mkt_raw ?? candidato?.devig_p_mkt_raw ?? null,
+      devig_p_mkt_fair: detalle?.devig_p_mkt_fair ?? candidato?.devig_p_mkt_fair ?? null,
+      devig_advertencias: detalle?.devig_advertencias ?? candidato?.devig_advertencias ?? null,
+      edge_real: detalle?.edge_real ?? candidato?.edge_real ?? null,
 
-      // Campos de Score (P1)
-      score_total: detalle?.score_total ?? null,
-      score_componentes: detalle?.score_componentes ?? null,
+      // Campos de Score (P1) - usar candidato como fallback
+      score_total: detalle?.score_total ?? candidato?.score_total ?? null,
+      score_componentes: detalle?.score_componentes ?? null, // candidato no tiene componentes detallados
       score_explicacion: detalle?.score_explicacion ?? null,
-      score_penalizaciones: detalle?.score_penalizaciones ?? null,
+      score_penalizaciones: detalle?.score_penalizaciones ?? candidato?.score_penalizaciones ?? null,
 
-      // Campos de Sizing/Kelly (P1)
+      // Campos de Sizing/Kelly (P1) - solo disponibles en detalle
       kelly_full: detalle?.kelly_full ?? null,
       kelly_fraccional: detalle?.kelly_fraccional ?? null,
       fraccion_kelly: detalle?.fraccion_kelly ?? null,
@@ -136,7 +166,7 @@ export function FormularioGuardarApuesta({
       sizing_advertencias: detalle?.sizing_advertencias ?? null,
       sizing_penalizaciones: detalle?.sizing_penalizaciones ?? null,
     };
-  }, [ladoSeleccionado, mercado, resultado]);
+  }, [ladoSeleccionado, mercado, resultado, candidatoSeleccionado]);
 
   const cuotaOverFinal = useMemo(
     () => snapshot.cuota_over ?? cuotaOver ?? undefined,
