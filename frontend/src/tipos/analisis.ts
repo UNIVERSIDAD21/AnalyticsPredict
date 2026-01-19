@@ -613,6 +613,12 @@ export interface CandidatoApuestaExtendido extends CandidatoApuesta {
   /** Cuota del lado */
   cuota?: number;
 
+  /** Cuota over (si disponible) */
+  cuota_over?: number | null;
+
+  /** Cuota under (si disponible) */
+  cuota_under?: number | null;
+
   /** Probabilidad calculada */
   probabilidad_sistema?: number;
 
