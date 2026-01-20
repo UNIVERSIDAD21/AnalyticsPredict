@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Calendar,
   Clock,
+  ChevronRight,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Tarjeta } from '../atomos';
@@ -38,6 +39,10 @@ interface PropsSeccionForma {
   equipoNombre: string;
   /** Nombre del rival */
   rivalNombre: string;
+  /** ID del equipo principal (opcional, para navegación) */
+  equipoId?: string;
+  /** ID del rival (opcional, para navegación) */
+  rivalId?: string;
   /** Iniciar expandido o colapsado */
   inicialmenteExpandido?: boolean;
   /** Clase CSS adicional */
@@ -48,6 +53,8 @@ interface PropsTarjetaFormaEquipo {
   nombre: string;
   forma: ContextoForma;
   descanso: ContextoDescanso;
+  /** ID del equipo (opcional, para navegación a estadísticas) */
+  equipoId?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -134,7 +141,7 @@ function formatearFechaCorta(fechaISO: string): string {
 // COMPONENTE TARJETA DE FORMA
 // ══════════════════════════════════════════════════════════════
 
-function TarjetaFormaEquipo({ nombre, forma, descanso }: PropsTarjetaFormaEquipo) {
+function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId }: PropsTarjetaFormaEquipo) {
   const porcentajeVictorias = calcularPorcentajeVictorias(
     forma.victorias,
     forma.ultimos_n
@@ -267,6 +274,21 @@ function TarjetaFormaEquipo({ nombre, forma, descanso }: PropsTarjetaFormaEquipo
           </span>
         </div>
       )}
+
+      {/* Botón para ver estadísticas completas */}
+      {equipoId && (
+        <button
+          onClick={() => (window.location.href = `/?tab=estadisticas&equipo=${equipoId}`)}
+          className="mt-2 w-full py-2 px-4 rounded-lg bg-neon-cyan/10
+                     border border-neon-cyan/30 text-neon-cyan
+                     hover:bg-neon-cyan/20 hover:border-neon-cyan/50
+                     transition-all duration-200 flex items-center
+                     justify-center gap-2 text-sm font-medium"
+        >
+          <span>Ver estadísticas completas</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -282,6 +304,8 @@ export function SeccionFormaReciente({
   descansoRival,
   equipoNombre,
   rivalNombre,
+  equipoId,
+  rivalId,
   inicialmenteExpandido = true,
   className,
 }: PropsSeccionForma) {
@@ -333,11 +357,13 @@ export function SeccionFormaReciente({
               nombre={equipoNombre}
               forma={formaEquipo}
               descanso={descansoEquipo}
+              equipoId={equipoId}
             />
             <TarjetaFormaEquipo
               nombre={rivalNombre}
               forma={formaRival}
               descanso={descansoRival}
+              equipoId={rivalId}
             />
           </div>
 

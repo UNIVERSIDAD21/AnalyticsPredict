@@ -46,6 +46,12 @@ interface PropsResultadoAnalisis {
     linea: number;
   } | null;
 
+  /** ID del equipo local (para navegación a estadísticas) */
+  equipoLocalId?: string;
+
+  /** ID del equipo visitante (para navegación a estadísticas) */
+  equipoVisitanteId?: string;
+
   /** Acción para guardar en bitácora */
   onGuardar?: () => void;
 
@@ -121,6 +127,8 @@ export function ResultadoAnalisis({
   resultado,
   advertencias = [],
   seleccionUsuario,
+  equipoLocalId,
+  equipoVisitanteId,
   onGuardar,
   onConfigurarBankroll,
 }: PropsResultadoAnalisis) {
@@ -396,6 +404,8 @@ export function ResultadoAnalisis({
           descansoRival={resultado.contexto.descanso_rival}
           equipoNombre={resultado.equipo_nombre_completo}
           rivalNombre={resultado.rival_nombre_completo}
+          equipoId={resultado.ubicacion === 'LOCAL' ? equipoLocalId : equipoVisitanteId}
+          rivalId={resultado.ubicacion === 'LOCAL' ? equipoVisitanteId : equipoLocalId}
           inicialmenteExpandido={true}
         />
       )}

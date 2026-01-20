@@ -250,6 +250,22 @@ export function PaginaPrincipal() {
     }
   }, [equipoHistorialId]);
 
+  // Leer parámetros de URL para navegación directa a estadísticas de equipo
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const equipo = params.get('equipo');
+
+    if (tab === 'estadisticas') {
+      setTabActivo('estadisticas');
+      if (equipo) {
+        setEquipoHistorialId(equipo);
+      }
+      // Limpiar los parámetros de la URL sin recargar
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Encabezado */}
@@ -350,6 +366,8 @@ export function PaginaPrincipal() {
                     resultado={resultado}
                     advertencias={advertencias}
                     seleccionUsuario={seleccionUsuario}
+                    equipoLocalId={ultimaPeticion?.equipo_local_id}
+                    equipoVisitanteId={ultimaPeticion?.equipo_visitante_id}
                     onGuardar={() => {
                       setMostrarGuardar(true);
                       setErrorGuardar(null);
