@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organismos';
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
@@ -156,6 +157,21 @@ export function PaginaBitacora() {
     <div className="min-h-screen flex flex-col">
       <Encabezado />
       <main className="flex-1 contenedor py-6 lg:py-8 space-y-6">
+        {/* Botón de regresar al inicio */}
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = '/';
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                     border border-neon-cyan/30 bg-futurista-oscuro/50
+                     text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50
+                     transition-all duration-200 text-sm font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Volver al Inicio</span>
+        </button>
+
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-2xl font-futurista text-texto-principal">Bitácora</h2>
           <Boton variante="secundario" onClick={recargar}>

@@ -16,7 +16,7 @@ import {
 import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
-import { Activity, TrendingUp, Target, BarChart3 } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, ArrowLeft } from 'lucide-react';
 import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
@@ -241,14 +241,43 @@ export function PaginaPrincipal() {
     }
   }, [estadoAnalisis, errorAnalisis, agregarToast]);
 
-  // Scroll al historial cuando se selecciona un equipo
+  // Scroll a la fila del equipo cuando los datos estén listos
   useEffect(() => {
-    if (equipoHistorialId && historialRef.current) {
-      setTimeout(() => {
-        historialRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+    // Solo ejecutar si:
+    // 1. Estamos en la pestaña de estadísticas
+    // 2. Hay un equipo seleccionado
+    // 3. Los datos ya cargaron
+    if (
+      tabActivo === 'estadisticas' &&
+      equipoHistorialId &&
+      estadoEstadisticas === 'exito'
+    ) {
+      // Delay mayor para asegurar que el DOM esté listo
+      const timeoutId = setTimeout(() => {
+        // Primero intentar scroll a la fila de la tabla
+        const filaEquipo = document.querySelector(
+          `tr[data-equipo-id="${equipoHistorialId}"]`
+        );
+        if (filaEquipo) {
+          filaEquipo.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+        // Luego scroll al historial si existe
+        if (historialRef.current) {
+          setTimeout(() => {
+            historialRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            });
+          }, 500);
+        }
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [equipoHistorialId]);
+  }, [tabActivo, equipoHistorialId, estadoEstadisticas]);
 
   // Leer parámetros de URL para navegación directa a estadísticas de equipo
   useEffect(() => {
@@ -393,6 +422,18 @@ export function PaginaPrincipal() {
 
         {tabActivo === 'estadisticas' && (
           <div className="space-y-4">
+            {/* Botón de regresar */}
+            <button
+              type="button"
+              onClick={() => setTabActivo('analisis')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                         border border-neon-cyan/30 bg-futurista-oscuro/50
+                         text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50
+                         transition-all duration-200 text-sm font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Volver a Análisis</span>
+            </button>
             {estadoEstadisticas === 'error' && (
               <MensajeError
                 titulo="Error al cargar estadísticas"
