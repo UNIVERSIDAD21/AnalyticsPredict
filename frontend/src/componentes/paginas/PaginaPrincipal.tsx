@@ -3,7 +3,7 @@
  * PaginaPrincipal.tsx — Página principal con layout futurista full-screen
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Encabezado,
   CreadorCombinada,
@@ -167,6 +167,12 @@ export function PaginaPrincipal() {
   }, [resultado, seleccionUsuario, ultimaPeticion]);
   const historialRef = useRef<HTMLDivElement>(null);
   const { agregarToast } = useToasts();
+
+  // Función para navegar a estadísticas de un equipo sin recargar la página
+  const navegarAEstadisticasEquipo = useCallback((equipoId: string) => {
+    setTabActivo('estadisticas');
+    setEquipoHistorialId(equipoId);
+  }, []);
   const ultimoResultadoRef = useRef<string | null>(null);
   const ultimoErrorRef = useRef<string | null>(null);
   const ultimaAdvertenciaRef = useRef<string | null>(null);
@@ -241,39 +247,31 @@ export function PaginaPrincipal() {
     }
   }, [estadoAnalisis, errorAnalisis, agregarToast]);
 
-  // Scroll a la fila del equipo cuando los datos estén listos
+  // Scroll a la fila del equipo SOLO cuando los datos estén listos
   useEffect(() => {
-    // Solo ejecutar si:
+    // Condiciones necesarias:
     // 1. Estamos en la pestaña de estadísticas
     // 2. Hay un equipo seleccionado
-    // 3. Los datos ya cargaron
+    // 3. Los datos ya cargaron exitosamente
     if (
       tabActivo === 'estadisticas' &&
       equipoHistorialId &&
       estadoEstadisticas === 'exito'
     ) {
-      // Delay mayor para asegurar que el DOM esté listo
+      // Usar requestAnimationFrame + setTimeout para máxima confiabilidad
       const timeoutId = setTimeout(() => {
-        // Primero intentar scroll a la fila de la tabla
-        const filaEquipo = document.querySelector(
-          `tr[data-equipo-id="${equipoHistorialId}"]`
-        );
-        if (filaEquipo) {
-          filaEquipo.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
-        // Luego scroll al historial si existe
-        if (historialRef.current) {
-          setTimeout(() => {
-            historialRef.current?.scrollIntoView({
+        requestAnimationFrame(() => {
+          const filaEquipo = document.querySelector(
+            `tr[data-equipo-id="${equipoHistorialId}"]`
+          );
+          if (filaEquipo) {
+            filaEquipo.scrollIntoView({
               behavior: 'smooth',
-              block: 'start',
+              block: 'center',
             });
-          }, 500);
-        }
-      }, 300);
+          }
+        });
+      }, 100);
 
       return () => clearTimeout(timeoutId);
     }
@@ -402,6 +400,7 @@ export function PaginaPrincipal() {
                       setErrorGuardar(null);
                     }}
                     onConfigurarBankroll={() => navegar('/configuracion')}
+                    onNavegarlEquipo={navegarAEstadisticasEquipo}
                   />
                 </div>
               )}
