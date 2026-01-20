@@ -415,6 +415,7 @@ export function PaginaPrincipal() {
                   temporadaActual={temporadaActual}
                   onCambiarTemporada={cambiarTemporada}
                   onSeleccionarEquipo={(equipoId) => setEquipoHistorialId(equipoId)}
+                  equipoResaltadoId={equipoHistorialId ?? undefined}
                 />
                 {equipoHistorialId && (
                   <div ref={historialRef}>

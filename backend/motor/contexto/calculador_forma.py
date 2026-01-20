@@ -69,12 +69,16 @@ def calcular_forma_reciente(
     resultados: List[bool] = []
 
     for fila in filas:
-        es_local = fila["equipo_local_id"] == equipo_id
+        # FIX: Convertir UUIDs a string para comparación correcta
+        es_local = str(fila["equipo_local_id"]) == str(equipo_id)
         puntos_equipo = float(fila["local_total"] if es_local else fila["visitante_total"])
         puntos_rival = float(fila["visitante_total"] if es_local else fila["local_total"])
         puntos_a_favor += puntos_equipo
         puntos_en_contra += puntos_rival
-        gano = fila.get("ganador_id") == equipo_id
+
+        # FIX: Comparar ganador_id con null-check
+        ganador_id = fila.get("ganador_id")
+        gano = str(ganador_id) == str(equipo_id) if ganador_id is not None else False
         resultados.append(gano)
         if gano:
             victorias += 1
