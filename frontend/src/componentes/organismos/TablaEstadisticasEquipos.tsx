@@ -2,7 +2,7 @@
  * TablaEstadisticasEquipos.tsx – Tabla interactiva de estadísticas de equipos
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { ArrowUpDown, Search, Calendar, TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { EstadisticasEquipo, Equipo, TemporadaDisponible } from '../../tipos';
 import { buscarEquipo } from '../../servicios';
@@ -15,6 +15,8 @@ interface PropsTablaEstadisticasEquipos {
   temporadaActual: string | null;
   onCambiarTemporada: (temporadaId: string | null) => void;
   onSeleccionarEquipo: (equipoId: string) => void;
+  /** ID del equipo a resaltar y hacer scroll */
+  equipoResaltadoId?: string;
 }
 
 type Orden = 'asc' | 'desc';
@@ -53,6 +55,7 @@ export function TablaEstadisticasEquipos({
   temporadaActual,
   onCambiarTemporada,
   onSeleccionarEquipo,
+  equipoResaltadoId,
 }: PropsTablaEstadisticasEquipos) {
   const [busqueda, setBusqueda] = useState('');
   const [conferencia, setConferencia] = useState('Todas');
@@ -61,6 +64,27 @@ export function TablaEstadisticasEquipos({
     columna: 'equipo',
     direccion: 'asc',
   });
+
+  // Ref para scroll a equipo resaltado
+  const tablaRef = useRef<HTMLTableElement>(null);
+
+  // Scroll automático al equipo resaltado
+  useEffect(() => {
+    if (equipoResaltadoId && tablaRef.current) {
+      // Pequeño delay para asegurar que la tabla esté renderizada
+      setTimeout(() => {
+        const filaEquipo = tablaRef.current?.querySelector(
+          `tr[data-equipo-id="${equipoResaltadoId}"]`
+        );
+        if (filaEquipo) {
+          filaEquipo.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      }, 150);
+    }
+  }, [equipoResaltadoId]);
 
   const columnas: Columna[] = [
     {
@@ -324,7 +348,7 @@ export function TablaEstadisticasEquipos({
 
           {/* Tabla */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+            <table ref={tablaRef} className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-cyan-500/10 border-b-2 border-cyan-400/30">
                   {columnas.map((columna) => (
@@ -400,27 +424,40 @@ export function TablaEstadisticasEquipos({
 
               <tbody className="divide-y divide-cyan-400/10">
                 {equiposOrdenados.length > 0 ? (
-                  equiposOrdenados.map((equipo, index) => (
-                    <tr
-                      key={`${equipo.nombre}-${index}`}
-                      className="group bg-slate-900/40 hover:bg-gradient-to-r hover:from-cyan-500/10 hover:to-purple-500/10 cursor-pointer transition-all duration-300 border-l-2 border-transparent hover:border-cyan-400"
-                      onClick={() => abrirDetalleEquipo(equipo)}
-                    >
-                      {columnas.map((columna, colIndex) => {
-                        const claseColor = obtenerClaseColor(columna, equipo);
-                        return (
-                          <td 
-                            key={`${columna.id}-${index}`}
-                            className={`p-4 whitespace-nowrap transition-all duration-300 ${
-                              colIndex === 0 ? 'font-semibold text-white text-base' : ''
-                            } ${claseColor || 'text-slate-400'}`}
-                          >
-                            {obtenerValorFormateado(columna, equipo)}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
+                  equiposOrdenados.map((equipo, index) => {
+                    const equipoCatalogo =
+                      buscarEquipo(equiposCatalogo, equipo.nombre) ||
+                      buscarEquipo(equiposCatalogo, equipo.abreviatura);
+                    const equipoId = equipoCatalogo?.id;
+                    const estaResaltado = equipoId && equipoId === equipoResaltadoId;
+
+                    return (
+                      <tr
+                        key={`${equipo.nombre}-${index}`}
+                        data-equipo-id={equipoId}
+                        className={`group bg-slate-900/40 hover:bg-gradient-to-r hover:from-cyan-500/10 hover:to-purple-500/10 cursor-pointer transition-all duration-300 border-l-2 border-transparent hover:border-cyan-400 ${
+                          estaResaltado
+                            ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900 bg-cyan-500/20 animate-pulse'
+                            : ''
+                        }`}
+                        onClick={() => abrirDetalleEquipo(equipo)}
+                      >
+                        {columnas.map((columna, colIndex) => {
+                          const claseColor = obtenerClaseColor(columna, equipo);
+                          return (
+                            <td
+                              key={`${columna.id}-${index}`}
+                              className={`p-4 whitespace-nowrap transition-all duration-300 ${
+                                colIndex === 0 ? 'font-semibold text-white text-base' : ''
+                              } ${claseColor || 'text-slate-400'}`}
+                            >
+                              {obtenerValorFormateado(columna, equipo)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={columnas.length} className="p-12 text-center">
