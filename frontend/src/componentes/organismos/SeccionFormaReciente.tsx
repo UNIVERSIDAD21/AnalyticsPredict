@@ -47,6 +47,8 @@ interface PropsSeccionForma {
   inicialmenteExpandido?: boolean;
   /** Clase CSS adicional */
   className?: string;
+  /** Callback cuando el usuario quiere ver estadísticas de un equipo */
+  onVerEstadisticas?: (equipoId: string) => void;
 }
 
 interface PropsTarjetaFormaEquipo {
@@ -55,6 +57,8 @@ interface PropsTarjetaFormaEquipo {
   descanso: ContextoDescanso;
   /** ID del equipo (opcional, para navegación a estadísticas) */
   equipoId?: string;
+  /** Callback cuando el usuario quiere ver estadísticas */
+  onVerEstadisticas?: (equipoId: string) => void;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -141,7 +145,7 @@ function formatearFechaCorta(fechaISO: string): string {
 // COMPONENTE TARJETA DE FORMA
 // ══════════════════════════════════════════════════════════════
 
-function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId }: PropsTarjetaFormaEquipo) {
+function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadisticas }: PropsTarjetaFormaEquipo) {
   const porcentajeVictorias = calcularPorcentajeVictorias(
     forma.victorias,
     forma.ultimos_n
@@ -276,9 +280,9 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId }: PropsTarjetaF
       )}
 
       {/* Botón para ver estadísticas completas */}
-      {equipoId && (
+      {equipoId && onVerEstadisticas && (
         <button
-          onClick={() => (window.location.href = `/?tab=estadisticas&equipo=${equipoId}`)}
+          onClick={() => onVerEstadisticas(equipoId)}
           className="mt-2 w-full py-2 px-4 rounded-lg bg-neon-cyan/10
                      border border-neon-cyan/30 text-neon-cyan
                      hover:bg-neon-cyan/20 hover:border-neon-cyan/50
@@ -308,6 +312,7 @@ export function SeccionFormaReciente({
   rivalId,
   inicialmenteExpandido = true,
   className,
+  onVerEstadisticas,
 }: PropsSeccionForma) {
   const [expandido, setExpandido] = useState(inicialmenteExpandido);
 
@@ -358,12 +363,14 @@ export function SeccionFormaReciente({
               forma={formaEquipo}
               descanso={descansoEquipo}
               equipoId={equipoId}
+              onVerEstadisticas={onVerEstadisticas}
             />
             <TarjetaFormaEquipo
               nombre={rivalNombre}
               forma={formaRival}
               descanso={descansoRival}
               equipoId={rivalId}
+              onVerEstadisticas={onVerEstadisticas}
             />
           </div>
 

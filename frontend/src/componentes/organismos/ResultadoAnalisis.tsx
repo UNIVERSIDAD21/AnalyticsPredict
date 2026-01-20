@@ -57,6 +57,9 @@ interface PropsResultadoAnalisis {
 
   /** Acción para configurar bankroll (Fase 4 placeholder) */
   onConfigurarBankroll?: () => void;
+
+  /** Callback cuando el usuario quiere ver estadísticas de un equipo */
+  onNavegarlEquipo?: (equipoId: string) => void;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -131,6 +134,7 @@ export function ResultadoAnalisis({
   equipoVisitanteId,
   onGuardar,
   onConfigurarBankroll,
+  onNavegarlEquipo,
 }: PropsResultadoAnalisis) {
   const mercado = resultado.metadata?.mercado as string;
   const configConfianza = obtenerConfigConfianza(resultado.nivel_confianza);
@@ -407,6 +411,7 @@ export function ResultadoAnalisis({
           equipoId={resultado.ubicacion === 'LOCAL' ? equipoLocalId : equipoVisitanteId}
           rivalId={resultado.ubicacion === 'LOCAL' ? equipoVisitanteId : equipoLocalId}
           inicialmenteExpandido={true}
+          onVerEstadisticas={onNavegarlEquipo}
         />
       )}
 

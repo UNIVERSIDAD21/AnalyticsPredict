@@ -2,7 +2,7 @@
  * TablaEstadisticasEquipos.tsx – Tabla interactiva de estadísticas de equipos
  */
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { ArrowUpDown, Search, Calendar, TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { EstadisticasEquipo, Equipo, TemporadaDisponible } from '../../tipos';
 import { buscarEquipo } from '../../servicios';
@@ -65,26 +65,8 @@ export function TablaEstadisticasEquipos({
     direccion: 'asc',
   });
 
-  // Ref para scroll a equipo resaltado
+  // Ref para la tabla (usado por PaginaPrincipal para scroll)
   const tablaRef = useRef<HTMLTableElement>(null);
-
-  // Scroll automático al equipo resaltado
-  useEffect(() => {
-    if (equipoResaltadoId && tablaRef.current) {
-      // Pequeño delay para asegurar que la tabla esté renderizada
-      setTimeout(() => {
-        const filaEquipo = tablaRef.current?.querySelector(
-          `tr[data-equipo-id="${equipoResaltadoId}"]`
-        );
-        if (filaEquipo) {
-          filaEquipo.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
-      }, 150);
-    }
-  }, [equipoResaltadoId]);
 
   const columnas: Columna[] = [
     {
