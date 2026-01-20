@@ -51,6 +51,10 @@ def calcular_forma_reciente(
                 FROM partidos p
                 WHERE p.tipo_partido = 'REG'
                   AND (p.equipo_local_id = %s OR p.equipo_visitante_id = %s)
+                  AND p.local_total IS NOT NULL
+                  AND p.visitante_total IS NOT NULL
+                  AND p.local_total > 0
+                  AND p.visitante_total > 0
                 ORDER BY p.fecha_partido DESC
                 LIMIT %s
                 """,
