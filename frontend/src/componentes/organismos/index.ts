@@ -26,3 +26,10 @@ export { CreadorCombinada } from './CreadorCombinada';
 
 export { SeccionH2H } from './SeccionH2H';
 export { SeccionFormaReciente } from './SeccionFormaReciente';
+
+// ══════════════════════════════════════════════════════════════
+// Historial Detallado: Paneles de historial por equipo
+// ══════════════════════════════════════════════════════════════
+
+export { PanelHistorialEquipo } from './PanelHistorialEquipo';
+export { SeccionHistorialDetallado } from './SeccionHistorialDetallado';
