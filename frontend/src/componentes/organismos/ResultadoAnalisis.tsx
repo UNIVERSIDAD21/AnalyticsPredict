@@ -27,7 +27,8 @@ import {
   PanelComparacionPrediccion,
   SeccionAjustesAplicados,
 } from '../moleculas';
-import { SeccionH2H, SeccionFormaReciente } from './index';
+import { SeccionH2H, SeccionFormaReciente, SeccionHistorialDetallado } from './index';
+import type { Mercado } from '../../tipos/analisis';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -416,12 +417,29 @@ export function ResultadoAnalisis({
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-          11. RAZONES
+          11. HISTORIAL DETALLADO
+          ═══════════════════════════════════════════════════════════ */}
+      {equipoLocalId && equipoVisitanteId && linea > 0 && mercado && (
+        <SeccionHistorialDetallado
+          equipoLocalId={equipoLocalId}
+          equipoLocalNombre={resultado.equipo_nombre_completo}
+          equipoLocalAbr={resultado.equipo?.toUpperCase() || 'LOC'}
+          equipoVisitanteId={equipoVisitanteId}
+          equipoVisitanteNombre={resultado.rival_nombre_completo}
+          equipoVisitanteAbr={resultado.rival?.toUpperCase() || 'VIS'}
+          mercado={mercado as Mercado}
+          linea={linea}
+          inicialmenteExpandido={false}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          12. RAZONES
           ═══════════════════════════════════════════════════════════ */}
       <ListaRazones razones={resultado.razones} />
 
       {/* ═══════════════════════════════════════════════════════════
-          12. GUARDAR EN BITÁCORA
+          13. GUARDAR EN BITÁCORA
           Siempre disponible si hay selección válida (incluso en NO_APTO)
           ═══════════════════════════════════════════════════════════ */}
       {puedeGuardar && (

@@ -37,6 +37,7 @@ interface ParametrosHistorialEquipo {
   temporadaId?: string;
   comoLocal?: boolean;
   orden?: 'asc' | 'desc';
+  limite?: number;
 }
 
 /**
@@ -54,6 +55,7 @@ export async function obtenerHistorialEquipo(
           temporada_id: parametros.temporadaId,
           como_local: parametros.comoLocal,
           orden: parametros.orden,
+          limite: parametros.limite,
         },
       }
     );

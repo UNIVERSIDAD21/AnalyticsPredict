@@ -36,3 +36,11 @@ export { AlertasCalibracion } from './AlertasCalibracion';
 
 export { PanelComparacionPrediccion } from './PanelComparacionPrediccion';
 export { SeccionAjustesAplicados } from './SeccionAjustesAplicados';
+
+// ══════════════════════════════════════════════════════════════
+// Historial Detallado: Componentes de filtros y estadísticas
+// ══════════════════════════════════════════════════════════════
+
+export { FiltrosHistorial } from './FiltrosHistorial';
+export { TablaPartidosHistorial } from './TablaPartidosHistorial';
+export { EstadisticasOverUnder } from './EstadisticasOverUnder';

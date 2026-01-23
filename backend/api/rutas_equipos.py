@@ -594,6 +594,12 @@ async def listar_historial_equipo(
         None, description="True para local, False para visitante"
     ),
     orden: str = Query("desc", description="Orden por fecha: asc o desc"),
+    limite: Optional[int] = Query(
+        None,
+        ge=5,
+        le=50,
+        description="Límite de partidos a retornar (5-50). Sin límite si no se especifica.",
+    ),
 ) -> RespuestaHistorialEquipo:
     """Retorna el historial completo de partidos de un equipo."""
     with obtener_pool().connection() as conexion:
@@ -631,6 +637,7 @@ async def listar_historial_equipo(
 
             where_sql = " AND ".join(condiciones)
             orden_sql = "ASC" if orden.lower() == "asc" else "DESC"
+            limite_sql = f"LIMIT {limite}" if limite else ""
 
             cursor.execute(
                 f"""
@@ -657,6 +664,7 @@ async def listar_historial_equipo(
                 LEFT JOIN temporadas t ON p.temporada_id = t.id
                 WHERE {where_sql}
                 ORDER BY p.fecha_partido {orden_sql}
+                {limite_sql}
                 """,
                 [equipo_id] + parametros,
             )
