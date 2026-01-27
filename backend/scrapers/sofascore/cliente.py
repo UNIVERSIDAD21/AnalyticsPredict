@@ -76,29 +76,14 @@ class SofascoreClient:
 
     BASE_URL = "https://api.sofascore.com/api/v1"
 
-    # Headers que simulan un navegador Chrome actualizado
-    DEFAULT_HEADERS = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/120.0.0.0 Safari/537.36"
-        ),
-        "Accept": "application/json",
-        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Origin": "https://www.sofascore.com",
-        "Referer": "https://www.sofascore.com/",
-        "Connection": "keep-alive",
-        "DNT": "1",
-        "Sec-CH-UA": '"Not.A/Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        "Sec-CH-UA-Mobile": "?0",
-        "Sec-CH-UA-Platform": '"Windows"',
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-    }
+    DEFAULT_USER_AGENT = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+    DEFAULT_SEC_CH_UA = (
+        '"Not.A/Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'
+    )
 
     def __init__(
         self,
@@ -139,15 +124,24 @@ class SofascoreClient:
             )
         """
         self.timeout = timeout
-        self.min_intervalo = min_intervalo or float(
+        intervalo_configurado = min_intervalo or float(
             os.getenv("SOFASCORE_MIN_REQUEST_INTERVAL", "1.0")
         )
+        self.min_intervalo = max(intervalo_configurado, 1.0)
+        if self.min_intervalo != intervalo_configurado:
+            logger.info(
+                "Intervalo mínimo ajustado a %.1fs para respetar 1 req/seg.",
+                self.min_intervalo,
+            )
         self.max_reintentos = max_reintentos or int(
             os.getenv("SOFASCORE_MAX_RETRIES", "5")
         )
         self.backoff_base = backoff_base or float(
             os.getenv("SOFASCORE_BACKOFF_BASE", "1.0")
         )
+        self.user_agent = os.getenv("SOFASCORE_USER_AGENT", self.DEFAULT_USER_AGENT)
+        self.sec_ch_ua = os.getenv("SOFASCORE_SEC_CH_UA", self.DEFAULT_SEC_CH_UA)
+        self._verbose_http = os.getenv("SOFASCORE_VERBOSE_HTTP", "0") == "1"
 
         # Timestamp de la última petición para rate limiting
         self._ultima_peticion: float = 0.0
@@ -160,6 +154,7 @@ class SofascoreClient:
         # Crear sesión HTTP persistente
         self.session = self._crear_sesion()
         self._cookies_inicializadas = False
+        self._configurar_proxy()
         self._inicializar_sesion()
 
         logger.debug(
@@ -169,6 +164,55 @@ class SofascoreClient:
             f"max_reintentos={self.max_reintentos}, "
             f"backoff_base={self.backoff_base}s"
         )
+
+    def _construir_headers_base(self) -> Dict[str, str]:
+        """Construye headers base compartidos entre navegación y API."""
+        return {
+            "User-Agent": self.user_agent,
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "DNT": "1",
+            "Sec-CH-UA": self.sec_ch_ua,
+            "Sec-CH-UA-Mobile": "?0",
+            "Sec-CH-UA-Platform": '"Windows"',
+        }
+
+    def _construir_headers_api(self) -> Dict[str, str]:
+        """Headers que simulan llamadas XHR desde sofascore.com."""
+        headers = self._construir_headers_base()
+        headers.update(
+            {
+                "Accept": "application/json, text/plain, */*",
+                "Origin": "https://www.sofascore.com",
+                "Referer": "https://www.sofascore.com/",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-site",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+            }
+        )
+        return headers
+
+    def _construir_headers_navegacion(self) -> Dict[str, str]:
+        """Headers de navegación real para obtener cookies iniciales."""
+        headers = self._construir_headers_base()
+        headers.update(
+            {
+                "Accept": (
+                    "text/html,application/xhtml+xml,application/xml;"
+                    "q=0.9,image/avif,image/webp,*/*;q=0.8"
+                ),
+                "Referer": "https://www.sofascore.com/",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+            }
+        )
+        return headers
 
     def _crear_sesion(self) -> requests.Session:
         """
@@ -181,7 +225,7 @@ class SofascoreClient:
             Sesión requests configurada con headers y adaptadores.
         """
         session = requests.Session()
-        session.headers.update(self.DEFAULT_HEADERS)
+        session.headers.update(self._construir_headers_api())
 
         # Configurar adaptador con retry básico para conexiones
         adapter = HTTPAdapter(
@@ -199,6 +243,25 @@ class SofascoreClient:
 
         return session
 
+    def _configurar_proxy(self) -> None:
+        """Configura proxies desde variables de entorno si existen."""
+        proxy_unico = os.getenv("SOFASCORE_PROXY")
+        proxy_http = os.getenv("SOFASCORE_PROXY_HTTP")
+        proxy_https = os.getenv("SOFASCORE_PROXY_HTTPS")
+
+        proxies = {}
+        if proxy_unico:
+            proxies = {"http": proxy_unico, "https": proxy_unico}
+        else:
+            if proxy_http:
+                proxies["http"] = proxy_http
+            if proxy_https:
+                proxies["https"] = proxy_https
+
+        if proxies:
+            self.session.proxies.update(proxies)
+            logger.info("Proxy configurado para Sofascore: %s", list(proxies.keys()))
+
     def _inicializar_sesion(self) -> None:
         """
         Inicializa la sesión obteniendo cookies desde la web pública.
@@ -213,21 +276,20 @@ class SofascoreClient:
         try:
             response = self.session.get(
                 "https://www.sofascore.com/",
-                headers={
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Referer": "https://www.sofascore.com/",
-                    "Sec-Fetch-Dest": "document",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "none",
-                },
+                headers=self._construir_headers_navegacion(),
                 timeout=self.timeout,
             )
-            self._cookies_inicializadas = response.status_code == 200
+            self._cookies_inicializadas = bool(self.session.cookies)
             logger.debug(
                 f"Inicialización de sesión Sofascore: "
                 f"status={response.status_code}, "
                 f"cookies={bool(self.session.cookies)}"
             )
+            if self._cookies_inicializadas:
+                logger.debug(
+                    "Cookies iniciales recibidas: %s",
+                    list(self.session.cookies.get_dict().keys()),
+                )
         except requests.exceptions.RequestException as e:
             logger.warning(
                 f"No se pudo inicializar sesión Sofascore: {e}. "
@@ -236,8 +298,24 @@ class SofascoreClient:
 
     def _refrescar_sesion(self) -> None:
         """Fuerza la reinicialización de cookies y sesión."""
+        self.session.cookies.clear()
         self._cookies_inicializadas = False
         self._inicializar_sesion()
+
+    def _log_request_context(self, endpoint: str) -> None:
+        """Loguea headers y cookies cuando el modo verbose está activo."""
+        if not (self._verbose_http or logger.isEnabledFor(logging.DEBUG)):
+            return
+
+        headers = dict(self.session.headers)
+        cookies = self.session.cookies.get_dict()
+        headers_sin_cookie = {k: v for k, v in headers.items() if k.lower() != "cookie"}
+        logger.debug(
+            "Solicitud Sofascore %s | headers=%s | cookies=%s",
+            endpoint,
+            headers_sin_cookie,
+            list(cookies.keys()),
+        )
 
     def _aplicar_rate_limiting(self) -> None:
         """
@@ -334,6 +412,8 @@ class SofascoreClient:
 
         for intento in range(self.max_reintentos + 1):
             try:
+                if not self._cookies_inicializadas:
+                    self._inicializar_sesion()
                 # Aplicar rate limiting antes de la petición
                 self._aplicar_rate_limiting()
 
@@ -346,6 +426,7 @@ class SofascoreClient:
                     f"GET {endpoint} "
                     f"(intento {intento + 1}/{self.max_reintentos + 1})"
                 )
+                self._log_request_context(endpoint)
 
                 response = self.session.get(
                     url,
