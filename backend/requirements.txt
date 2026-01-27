@@ -25,6 +25,8 @@ psycopg-pool>=3.2.2
 
 # HTTP
 requests>=2.31.0
+curl_cffi>=0.7.0
+playwright>=1.40.0
 
 # Desarrollo
 pytest>=7.4.0

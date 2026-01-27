@@ -27,7 +27,7 @@ from __future__ import annotations
 import logging
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Optional
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -142,6 +142,8 @@ class SofascoreClient:
         self.user_agent = os.getenv("SOFASCORE_USER_AGENT", self.DEFAULT_USER_AGENT)
         self.sec_ch_ua = os.getenv("SOFASCORE_SEC_CH_UA", self.DEFAULT_SEC_CH_UA)
         self._verbose_http = os.getenv("SOFASCORE_VERBOSE_HTTP", "0") == "1"
+        self._cookie_strategy = os.getenv("SOFASCORE_COOKIE_STRATEGY", "auto").lower()
+        self._browser_headless = os.getenv("SOFASCORE_BROWSER_HEADLESS", "1") != "0"
 
         # Timestamp de la última petición para rate limiting
         self._ultima_peticion: float = 0.0
@@ -214,6 +216,88 @@ class SofascoreClient:
         )
         return headers
 
+    def _actualizar_user_agent(self, user_agent: Optional[str]) -> None:
+        """Sincroniza el User-Agent con la sesión si se obtiene desde navegador."""
+        if not user_agent or user_agent == self.user_agent:
+            return
+        self.user_agent = user_agent
+        self.session.headers["User-Agent"] = user_agent
+
+    def _actualizar_cookies(self, cookies: Iterable[Dict[str, Any]]) -> None:
+        """Carga cookies obtenidas externamente en la sesión requests."""
+        for cookie in cookies:
+            nombre = cookie.get("name")
+            valor = cookie.get("value")
+            if not nombre:
+                continue
+            self.session.cookies.set(
+                nombre,
+                valor,
+                domain=cookie.get("domain"),
+                path=cookie.get("path", "/"),
+            )
+
+    def _obtener_cookies_con_playwright(self) -> bool:
+        """Obtiene cookies válidas usando Playwright."""
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            logger.debug("Playwright no está instalado; se omite estrategia.")
+            return False
+
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(headless=self._browser_headless)
+                context = browser.new_context(user_agent=self.user_agent)
+                page = context.new_page()
+                page.goto(
+                    "https://www.sofascore.com/",
+                    wait_until="domcontentloaded",
+                    timeout=int(self.timeout * 1000),
+                )
+                page.wait_for_timeout(1500)
+                user_agent = page.evaluate("() => navigator.userAgent")
+                cookies = context.cookies()
+                browser.close()
+
+            self._actualizar_user_agent(user_agent)
+            self._actualizar_cookies(cookies)
+            return bool(self.session.cookies)
+        except Exception as exc:
+            logger.warning(
+                "Falló la obtención de cookies con Playwright: %s", exc
+            )
+            return False
+
+    def _obtener_cookies_con_curl_cffi(self) -> bool:
+        """Obtiene cookies válidas usando curl_cffi con TLS impersonation."""
+        try:
+            from curl_cffi import requests as curl_requests
+        except ImportError:
+            logger.debug("curl_cffi no está instalado; se omite estrategia.")
+            return False
+
+        try:
+            response = curl_requests.get(
+                "https://www.sofascore.com/",
+                headers=self._construir_headers_navegacion(),
+                timeout=self.timeout,
+                impersonate="chrome120",
+            )
+            for cookie in response.cookies:
+                self.session.cookies.set(
+                    cookie.name,
+                    cookie.value,
+                    domain=cookie.domain,
+                    path=cookie.path,
+                )
+            return bool(self.session.cookies)
+        except Exception as exc:
+            logger.warning(
+                "Falló la obtención de cookies con curl_cffi: %s", exc
+            )
+            return False
+
     def _crear_sesion(self) -> requests.Session:
         """
         Crea y configura una sesión HTTP persistente.
@@ -274,16 +358,31 @@ class SofascoreClient:
             return
 
         try:
-            response = self.session.get(
-                "https://www.sofascore.com/",
-                headers=self._construir_headers_navegacion(),
-                timeout=self.timeout,
-            )
-            self._cookies_inicializadas = bool(self.session.cookies)
+            cookies_obtenidas = False
+            estrategia = self._cookie_strategy
+            estrategia_usada = "none"
+            response = None
+            if estrategia in ("auto", "playwright"):
+                cookies_obtenidas = self._obtener_cookies_con_playwright()
+                estrategia_usada = "playwright"
+            if not cookies_obtenidas and estrategia in ("auto", "curl_cffi"):
+                cookies_obtenidas = self._obtener_cookies_con_curl_cffi()
+                estrategia_usada = "curl_cffi"
+            if not cookies_obtenidas and estrategia in ("auto", "requests"):
+                response = self.session.get(
+                    "https://www.sofascore.com/",
+                    headers=self._construir_headers_navegacion(),
+                    timeout=self.timeout,
+                )
+                cookies_obtenidas = bool(self.session.cookies)
+                estrategia_usada = "requests"
+            self._cookies_inicializadas = cookies_obtenidas
+            status_code = response.status_code if response is not None else "n/a"
             logger.debug(
-                f"Inicialización de sesión Sofascore: "
-                f"status={response.status_code}, "
-                f"cookies={bool(self.session.cookies)}"
+                "Inicialización de sesión Sofascore: status=%s, cookies=%s, estrategia=%s",
+                status_code,
+                bool(self.session.cookies),
+                estrategia_usada,
             )
             if self._cookies_inicializadas:
                 logger.debug(
