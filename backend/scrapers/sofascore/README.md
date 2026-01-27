@@ -42,9 +42,15 @@ pip install requests psycopg psycopg-pool python-dotenv
 DATABASE_URL=postgresql://usuario:password@host:5432/database
 
 # Opcionales - configuración de Sofascore
-SOFASCORE_MIN_REQUEST_INTERVAL=0.5  # segundos entre peticiones
+SOFASCORE_MIN_REQUEST_INTERVAL=1.0  # segundos entre peticiones
 SOFASCORE_MAX_RETRIES=5             # reintentos máximos
 SOFASCORE_BACKOFF_BASE=1.0          # base para backoff exponencial
+SOFASCORE_USER_AGENT=...            # user-agent personalizado (opcional)
+SOFASCORE_SEC_CH_UA=...             # sec-ch-ua coherente con el user-agent
+SOFASCORE_VERBOSE_HTTP=1            # log detallado de headers/cookies
+SOFASCORE_PROXY=...                 # proxy único (http/https)
+SOFASCORE_PROXY_HTTP=...            # proxy http (si se usa split)
+SOFASCORE_PROXY_HTTPS=...           # proxy https (si se usa split)
 ```
 
 3. Inicializa las competiciones en la BD:
@@ -219,6 +225,13 @@ python backend/scripts/actualizar_ids_sofascore.py --crear-faltantes
 python backend/scripts/actualizar_ids_sofascore.py --dry-run
 ```
 
+### Probar acceso a la API
+
+```bash
+# Verificar endpoints críticos (8, 17, 35)
+python backend/scripts/test_sofascore_api.py --verbose
+```
+
 ### Auditoría de Datos
 
 ```bash
@@ -327,6 +340,24 @@ cliente = SofascoreClient(min_intervalo=2.0)
 # O vía variable de entorno
 SOFASCORE_MIN_REQUEST_INTERVAL=2.0
 ```
+
+### Error 403 (Forbidden)
+
+Si el API devuelve 403 de forma persistente:
+
+1. Activa el logging detallado para verificar cookies y headers:
+   ```bash
+   SOFASCORE_VERBOSE_HTTP=1 python backend/scripts/test_sofascore_api.py --verbose
+   ```
+2. Revisa que el user-agent y `sec-ch-ua` estén alineados:
+   ```bash
+   SOFASCORE_USER_AGENT="Mozilla/5.0 ..."
+   SOFASCORE_SEC_CH_UA="\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"120\""
+   ```
+3. Si sigues bloqueado, prueba con proxy:
+   ```bash
+   SOFASCORE_PROXY="http://usuario:pass@host:puerto"
+   ```
 
 ### Partidos sin Estadísticas
 
