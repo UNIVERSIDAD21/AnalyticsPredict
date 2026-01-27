@@ -89,6 +89,10 @@ class SofascoreClient:
         "Origin": "https://www.sofascore.com",
         "Referer": "https://www.sofascore.com/",
         "Connection": "keep-alive",
+        "DNT": "1",
+        "Sec-CH-UA": '"Not.A/Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-CH-UA-Mobile": "?0",
+        "Sec-CH-UA-Platform": '"Windows"',
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-site",
@@ -136,7 +140,7 @@ class SofascoreClient:
         """
         self.timeout = timeout
         self.min_intervalo = min_intervalo or float(
-            os.getenv("SOFASCORE_MIN_REQUEST_INTERVAL", "0.5")
+            os.getenv("SOFASCORE_MIN_REQUEST_INTERVAL", "1.0")
         )
         self.max_reintentos = max_reintentos or int(
             os.getenv("SOFASCORE_MAX_RETRIES", "5")
@@ -155,6 +159,8 @@ class SofascoreClient:
 
         # Crear sesión HTTP persistente
         self.session = self._crear_sesion()
+        self._cookies_inicializadas = False
+        self._inicializar_sesion()
 
         logger.debug(
             f"Cliente Sofascore inicializado: "
@@ -192,6 +198,46 @@ class SofascoreClient:
         session.mount("http://", adapter)
 
         return session
+
+    def _inicializar_sesion(self) -> None:
+        """
+        Inicializa la sesión obteniendo cookies desde la web pública.
+
+        Sofascore aplica protección anti-bot que puede bloquear peticiones
+        directas al API. Esta llamada busca establecer cookies válidas y
+        reducir respuestas 403.
+        """
+        if self._cookies_inicializadas:
+            return
+
+        try:
+            response = self.session.get(
+                "https://www.sofascore.com/",
+                headers={
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Referer": "https://www.sofascore.com/",
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "none",
+                },
+                timeout=self.timeout,
+            )
+            self._cookies_inicializadas = response.status_code == 200
+            logger.debug(
+                f"Inicialización de sesión Sofascore: "
+                f"status={response.status_code}, "
+                f"cookies={bool(self.session.cookies)}"
+            )
+        except requests.exceptions.RequestException as e:
+            logger.warning(
+                f"No se pudo inicializar sesión Sofascore: {e}. "
+                "Se continuará sin cookies iniciales."
+            )
+
+    def _refrescar_sesion(self) -> None:
+        """Fuerza la reinicialización de cookies y sesión."""
+        self._cookies_inicializadas = False
+        self._inicializar_sesion()
 
     def _aplicar_rate_limiting(self) -> None:
         """
@@ -372,6 +418,36 @@ class SofascoreClient:
                         )
 
                 else:
+                    if response.status_code == 403:
+                        self._contador_errores += 1
+                        tiempo_espera = self._calcular_tiempo_espera(intento)
+                        logger.warning(
+                            "Acceso denegado (403) en %s. "
+                            "Posible bloqueo anti-bot; refrescando cookies "
+                            "y reintentando en %.1fs.",
+                            endpoint,
+                            tiempo_espera,
+                        )
+
+                        if intento < self.max_reintentos:
+                            self._refrescar_sesion()
+                            time.sleep(tiempo_espera)
+                            self._contador_reintentos += 1
+                            continue
+                        else:
+                            raise SofascoreError(
+                                mensaje=(
+                                    "Sofascore respondió 403 Forbidden. "
+                                    "Puede requerir cookies o headers adicionales. "
+                                    "Prueba ajustar el rate limiting o usar un proxy/residencial."
+                                ),
+                                codigo=403,
+                                detalles={
+                                    'endpoint': endpoint,
+                                    'body': response.text[:500],
+                                }
+                            )
+
                     # Otros errores HTTP
                     self._contador_errores += 1
                     raise SofascoreError(
