@@ -41,6 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from db import obtener_pool, cerrar_pool
 from scrapers.sofascore.cliente import SofascoreClient
+from scrapers.sofascore.excepciones import SofascoreError
 from scrapers.sofascore.monitoreo import configurar_logging
 
 # Mapeo completo de códigos internos a IDs de Sofascore
@@ -136,6 +137,13 @@ def verificar_id_sofascore(
 
         return True, nombre
 
+    except SofascoreError as e:
+        if e.codigo == 403:
+            logger.error(
+                "Sofascore bloqueó la petición (403). "
+                "Revisar headers/cookies o usar una fuente alternativa."
+            )
+        return False, str(e)
     except Exception as e:
         return False, str(e)
 
