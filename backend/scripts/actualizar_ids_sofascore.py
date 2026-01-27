@@ -3,29 +3,16 @@
 """
 Script para actualizar los IDs de Sofascore en la tabla competiciones_futbol.
 
-Este script mapea los códigos internos de competiciones a los IDs de Sofascore,
-verificando que cada ID sea válido haciendo una petición de prueba a la API.
+VERSIÓN CORREGIDA - Arregla inconsistencias con el esquema de BD:
+- activa → activo
+- pais → pais_id (con lookup)
+- tipo como string → tipo como ENUM
 
 Uso:
     python actualizar_ids_sofascore.py
     python actualizar_ids_sofascore.py --verificar
     python actualizar_ids_sofascore.py --dry-run
     python actualizar_ids_sofascore.py --verbose
-
-Mapeos incluidos:
-    - La Liga (España): ESP_LALIGA → 8
-    - Premier League (Inglaterra): ENG_PREMIER → 17
-    - Bundesliga (Alemania): GER_BUNDESLIGA → 35
-    - Serie A (Italia): ITA_SERIEA → 23
-    - Ligue 1 (Francia): FRA_LIGUE1 → 34
-    - Champions League: EUR_CHAMPIONS → 7
-    - Europa League: EUR_EUROPA → 679
-    - Conference League: EUR_CONFERENCE → 17015
-    - Copa del Rey: ESP_COPA → 329
-    - FA Cup: ENG_FACUP → 29
-    - DFB-Pokal: GER_DFBPOKAL → 44
-    - Coppa Italia: ITA_COPPA → 327
-    - Coupe de France: FRA_COUPE → 335
 """
 
 from __future__ import annotations
@@ -34,7 +21,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Añadir el directorio backend al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -70,6 +57,16 @@ MAPEO_COMPETICIONES = {
     'GER_2BUNDESLIGA': 36,
     'ITA_SERIEB': 53,
     'FRA_LIGUE2': 182,
+}
+
+# Mapeo de códigos a país ISO (para lookup de pais_id)
+CODIGO_A_PAIS_ISO = {
+    'ESP_': 'ESP',
+    'ENG_': 'ENG',
+    'GER_': 'GER',
+    'ITA_': 'ITA',
+    'FRA_': 'FRA',
+    'EUR_': 'EUR',
 }
 
 logger = logging.getLogger(__name__)
@@ -124,13 +121,11 @@ def verificar_id_sofascore(
         Tupla (es_valido, nombre_torneo).
     """
     try:
-        # Intentar obtener información del torneo
         datos = cliente.get(f'/unique-tournament/{sofascore_id}')
 
         if datos is None:
             return False, "No encontrado"
 
-        # Extraer nombre del torneo
         torneo = datos.get('uniqueTournament', {})
         nombre = torneo.get('name', 'Desconocido')
 
@@ -144,6 +139,8 @@ def obtener_competiciones_bd(conexion) -> Dict[str, Dict]:
     """
     Obtiene las competiciones existentes en la BD.
 
+    CORREGIDO: Usa 'activo' en lugar de 'activa'
+
     Returns:
         Diccionario {codigo: {id, nombre, sofascore_id}}.
     """
@@ -154,7 +151,7 @@ def obtener_competiciones_bd(conexion) -> Dict[str, Dict]:
             """
             SELECT id, codigo, nombre, sofascore_id
             FROM competiciones_futbol
-            WHERE activa = TRUE
+            WHERE activo = TRUE
             """
         )
 
@@ -166,6 +163,51 @@ def obtener_competiciones_bd(conexion) -> Dict[str, Dict]:
             }
 
     return competiciones
+
+
+def obtener_pais_id(conexion, codigo_iso: str) -> Optional[str]:
+    """
+    Obtiene el UUID del país por su código ISO.
+
+    Args:
+        conexion: Conexión a la BD.
+        codigo_iso: Código ISO del país (ESP, ENG, etc.)
+
+    Returns:
+        UUID del país o None si no existe.
+    """
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT id FROM paises_futbol
+            WHERE codigo_iso = %s
+            """,
+            (codigo_iso,)
+        )
+        resultado = cursor.fetchone()
+        return resultado[0] if resultado else None
+
+
+def determinar_pais_iso(codigo: str) -> str:
+    """Determina el código ISO del país basándose en el código de competición."""
+    for prefijo, iso in CODIGO_A_PAIS_ISO.items():
+        if codigo.startswith(prefijo):
+            return iso
+    return 'EUR'  # Default para competiciones sin país claro
+
+
+def determinar_tipo_competicion(codigo: str) -> str:
+    """
+    Determina el tipo de competición basándose en el código.
+    
+    CORREGIDO: Retorna valores del ENUM tipo_competicion_futbol
+    """
+    if 'COPA' in codigo or 'CUP' in codigo or 'POKAL' in codigo or 'COUPE' in codigo:
+        return 'COPA_NACIONAL'
+    elif 'CHAMPIONS' in codigo or 'EUROPA' in codigo or 'CONFERENCE' in codigo:
+        return 'CONTINENTAL'
+    else:
+        return 'LIGA'
 
 
 def actualizar_sofascore_id(
@@ -219,6 +261,11 @@ def crear_competicion(
     """
     Crea una nueva competición en la BD.
 
+    CORREGIDO: 
+    - Usa pais_id (UUID) en lugar de pais (VARCHAR)
+    - Usa activo en lugar de activa
+    - Usa valores correctos del ENUM tipo_competicion_futbol
+
     Returns:
         True si se creó, False si no.
     """
@@ -227,33 +274,25 @@ def crear_competicion(
         return True
 
     try:
+        # Obtener pais_id
+        pais_iso = determinar_pais_iso(codigo)
+        pais_id = obtener_pais_id(conexion, pais_iso)
+        
+        if not pais_id:
+            logger.warning(f"País {pais_iso} no encontrado, competición {codigo} sin país")
+
+        # Determinar tipo (valor del ENUM)
+        tipo = determinar_tipo_competicion(codigo)
+
         with conexion.cursor() as cursor:
-            # Determinar tipo y país
-            tipo = 'copa' if 'COPA' in codigo or 'CUP' in codigo or 'POKAL' in codigo else 'liga'
-
-            if codigo.startswith('ESP_'):
-                pais = 'España'
-            elif codigo.startswith('ENG_'):
-                pais = 'Inglaterra'
-            elif codigo.startswith('GER_'):
-                pais = 'Alemania'
-            elif codigo.startswith('ITA_'):
-                pais = 'Italia'
-            elif codigo.startswith('FRA_'):
-                pais = 'Francia'
-            elif codigo.startswith('EUR_'):
-                pais = 'Europa'
-            else:
-                pais = 'Desconocido'
-
             cursor.execute(
                 """
                 INSERT INTO competiciones_futbol (
-                    codigo, nombre, pais, tipo, sofascore_id, activa
-                ) VALUES (%s, %s, %s, %s, %s, TRUE)
+                    codigo, nombre, pais_id, tipo, sofascore_id, activo
+                ) VALUES (%s, %s, %s, %s::tipo_competicion_futbol, %s, TRUE)
                 RETURNING id
                 """,
-                (codigo, nombre, pais, tipo, sofascore_id)
+                (codigo, nombre, pais_id, tipo, sofascore_id)
             )
             nuevo_id = cursor.fetchone()[0]
             conexion.commit()
@@ -264,6 +303,8 @@ def crear_competicion(
     except Exception as e:
         conexion.rollback()
         logger.error(f"Error creando competición {codigo}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -295,8 +336,16 @@ def main():
         logger.info("Cliente Sofascore inicializado")
 
     # Obtener competiciones existentes
-    competiciones_bd = obtener_competiciones_bd(conexion)
-    logger.info(f"Competiciones en BD: {len(competiciones_bd)}")
+    try:
+        competiciones_bd = obtener_competiciones_bd(conexion)
+        logger.info(f"Competiciones en BD: {len(competiciones_bd)}")
+    except Exception as e:
+        logger.error(f"Error obteniendo competiciones: {e}")
+        import traceback
+        traceback.print_exc()
+        pool.putconn(conexion)
+        cerrar_pool()
+        sys.exit(1)
 
     # Estadísticas
     actualizados = 0
