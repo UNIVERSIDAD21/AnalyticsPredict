@@ -11,7 +11,6 @@ VERSIÓN CORREGIDA - Arregla inconsistencias con el esquema de BD:
 Uso:
     python actualizar_ids_sofascore.py
     python actualizar_ids_sofascore.py --verificar
-    python actualizar_ids_sofascore.py --verificar --sin-verificar
     python actualizar_ids_sofascore.py --dry-run
     python actualizar_ids_sofascore.py --verbose
 """
@@ -84,11 +83,6 @@ def parsear_argumentos() -> argparse.Namespace:
         '--verificar',
         action='store_true',
         help='Verificar cada ID haciendo petición a Sofascore'
-    )
-    parser.add_argument(
-        '--sin-verificar',
-        action='store_true',
-        help='Omitir la verificación remota incluso si se usa --verificar'
     )
 
     parser.add_argument(
@@ -337,8 +331,7 @@ def main():
 
     # Crear cliente Sofascore (solo si vamos a verificar)
     cliente = None
-    realizar_verificacion = args.verificar and not args.sin_verificar
-    if realizar_verificacion:
+    if args.verificar:
         cliente = SofascoreClient()
         logger.info("Cliente Sofascore inicializado")
 
@@ -366,7 +359,7 @@ def main():
             logger.debug(f"Procesando: {codigo} → {sofascore_id}")
 
             # Verificar ID si se solicitó
-            if realizar_verificacion and cliente:
+            if args.verificar and cliente:
                 valido, nombre_torneo = verificar_id_sofascore(cliente, sofascore_id)
 
                 if not valido:
@@ -375,7 +368,7 @@ def main():
                     errores += 1
                     continue
                 else:
-                    logger.info(f"ID válido: {codigo} → {sofascore_id} ({nombre_torneo})")
+                    logger.debug(f"ID válido: {codigo} → {sofascore_id} ({nombre_torneo})")
 
             # Verificar si existe en BD
             if codigo in competiciones_bd:
@@ -398,7 +391,7 @@ def main():
                 if args.crear_faltantes:
                     # Obtener nombre del torneo si verificamos
                     nombre = codigo.replace('_', ' ').title()
-                    if realizar_verificacion and cliente:
+                    if args.verificar and cliente:
                         _, nombre_torneo = verificar_id_sofascore(cliente, sofascore_id)
                         if nombre_torneo and nombre_torneo != "No encontrado":
                             nombre = nombre_torneo

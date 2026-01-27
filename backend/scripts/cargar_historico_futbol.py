@@ -3,69 +3,51 @@
 """
 Script de carga histórica de datos de fútbol desde Sofascore.
 
-Este script permite cargar datos históricos de partidos de fútbol
-para las principales ligas europeas, incluyendo estadísticas detalladas
-como corners, disparos, posesión y xG.
+VERSIÓN 3 - CORREGIDA:
+- Verifica y agrega columnas faltantes automáticamente
+- Funciona con el esquema real de la BD
+- 100% independiente, no depende de otros módulos
 
 Uso:
-    python cargar_historico_futbol.py --liga laliga --temporadas 2024-25,2023-24
-    python cargar_historico_futbol.py --liga todas --temporadas 2024-25 --verbose
-    python cargar_historico_futbol.py --liga premier --solo-finalizados --sin-estadisticas
+    python cargar_historico_futbol_v3.py --liga laliga --temporadas 2024-25 --verbose
+    python cargar_historico_futbol_v3.py --liga premier --temporadas 2024-25,2023-24
+    python cargar_historico_futbol_v3.py --liga todas --temporadas 2024-25
 
-Argumentos:
-    --liga: Código de liga (laliga, premier, bundesliga, seriea, ligue1) o "todas"
-    --temporadas: Lista de temporadas separadas por coma (ej: "2023-24,2024-25")
-    --desde-fecha: Fecha mínima en formato YYYY-MM-DD
-    --hasta-fecha: Fecha máxima en formato YYYY-MM-DD
-    --solo-finalizados: Solo procesar partidos terminados
-    --con-estadisticas: Obtener estadísticas detalladas (default: True)
-    --sin-estadisticas: Omitir estadísticas detalladas
-    --dry-run: Simular sin guardar en BD
-    --verbose: Mostrar información detallada
-    --checkpoint-file: Archivo para guardar progreso
+Requisitos:
+    pip install psycopg[binary] python-dotenv curl_cffi
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-# Añadir el directorio backend al path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Cargar .env
+from dotenv import load_dotenv
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv()
 
-from db import obtener_pool, cerrar_pool
-from scrapers.sofascore.cliente import SofascoreClient
-from scrapers.sofascore.temporadas import (
-    obtener_temporadas_liga,
-    sincronizar_temporadas,
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
 )
-from scrapers.sofascore.equipos import sincronizar_equipos
-from scrapers.sofascore.partidos import (
-    obtener_partidos_pasados,
-    obtener_partidos_futuros,
-    filtrar_partidos_finalizados,
-)
-from scrapers.sofascore.sincronizador import (
-    sincronizar_lote_partidos,
-    resolver_competicion_id,
-    resolver_temporada_id_por_sofascore,
-    limpiar_cache,
-)
-from scrapers.sofascore.calculador_estadisticas import (
-    actualizar_estadisticas_todos_equipos,
-)
-from scrapers.sofascore.monitoreo import (
-    configurar_logging,
-    RegistradorIngesta,
-)
+logger = logging.getLogger(__name__)
 
-# Mapeo de códigos de liga a IDs de Sofascore
+# ============================================================================
+# CONFIGURACIÓN
+# ============================================================================
+
 LIGAS_SOFASCORE = {
     'laliga': 8,
     'premier': 17,
@@ -82,558 +64,867 @@ LIGAS_SOFASCORE = {
     'coupe_france': 335,
 }
 
-# Mapeo de códigos de liga a códigos internos
-CODIGOS_COMPETICION = {
-    'laliga': 'ESP_LALIGA',
-    'premier': 'ENG_PREMIER',
-    'bundesliga': 'GER_BUNDESLIGA',
-    'seriea': 'ITA_SERIEA',
-    'ligue1': 'FRA_LIGUE1',
-    'champions': 'EUR_CHAMPIONS',
-    'europa': 'EUR_EUROPA',
-    'conference': 'EUR_CONFERENCE',
-    'copa_rey': 'ESP_COPA',
-    'fa_cup': 'ENG_FACUP',
-    'dfb_pokal': 'GER_DFBPOKAL',
-    'coppa_italia': 'ITA_COPPA',
-    'coupe_france': 'FRA_COUPE',
+MAPEO_ESTADOS = {
+    'finished': 'FINALIZADO',
+    'notstarted': 'PROGRAMADO',
+    'inprogress': 'EN_VIVO',
+    'canceled': 'CANCELADO',
+    'postponed': 'POSPUESTO',
+    'suspended': 'SUSPENDIDO',
 }
 
-logger = logging.getLogger(__name__)
+SOFASCORE_API_BASE = "https://api.sofascore.com/api/v1"
 
+# ============================================================================
+# CLIENTE HTTP
+# ============================================================================
 
-class GestorCheckpoint:
-    """Gestiona el guardado y carga de checkpoints para reanudar cargas."""
-
-    def __init__(self, archivo: Optional[str] = None):
-        self.archivo = archivo
-        self.datos: Dict[str, Any] = {
-            'liga_actual': None,
-            'temporada_actual': None,
-            'ultimo_partido_procesado': None,
-            'partidos_procesados': set(),
-            'fecha_inicio': None,
-        }
-
-    def cargar(self) -> bool:
-        """Carga checkpoint desde archivo. Retorna True si se cargó."""
-        if not self.archivo or not os.path.exists(self.archivo):
-            return False
-
+class SofascoreClientSimple:
+    """Cliente HTTP para Sofascore con soporte para curl_cffi."""
+    
+    def __init__(self, min_intervalo: float = 1.0):
+        self.min_intervalo = min_intervalo
+        self.ultima_peticion = 0
+        self.session = None
+        self.usar_curl_cffi = False
+        
         try:
-            with open(self.archivo, 'r') as f:
-                datos = json.load(f)
-                self.datos = datos
-                self.datos['partidos_procesados'] = set(
-                    datos.get('partidos_procesados', [])
-                )
-                logger.info(f"Checkpoint cargado desde {self.archivo}")
-                return True
-        except Exception as e:
-            logger.warning(f"Error cargando checkpoint: {e}")
-            return False
-
-    def guardar(self) -> None:
-        """Guarda checkpoint a archivo."""
-        if not self.archivo:
-            return
-
-        try:
-            datos_guardar = self.datos.copy()
-            datos_guardar['partidos_procesados'] = list(
-                self.datos['partidos_procesados']
-            )
-            with open(self.archivo, 'w') as f:
-                json.dump(datos_guardar, f, indent=2, default=str)
-        except Exception as e:
-            logger.warning(f"Error guardando checkpoint: {e}")
-
-    def registrar_partido(self, partido_id: int) -> None:
-        """Registra un partido como procesado."""
-        self.datos['partidos_procesados'].add(partido_id)
-        self.datos['ultimo_partido_procesado'] = partido_id
-
-    def partido_procesado(self, partido_id: int) -> bool:
-        """Verifica si un partido ya fue procesado."""
-        return partido_id in self.datos['partidos_procesados']
-
-    def actualizar_posicion(
-        self,
-        liga: Optional[str] = None,
-        temporada: Optional[str] = None
-    ) -> None:
-        """Actualiza la posición actual de procesamiento."""
-        if liga:
-            self.datos['liga_actual'] = liga
-        if temporada:
-            self.datos['temporada_actual'] = temporada
-        self.guardar()
-
-    def limpiar(self) -> None:
-        """Limpia el checkpoint al finalizar exitosamente."""
-        if self.archivo and os.path.exists(self.archivo):
-            os.remove(self.archivo)
-            logger.info("Checkpoint eliminado")
-
-
-def parsear_argumentos() -> argparse.Namespace:
-    """Parsea los argumentos de línea de comandos."""
-    parser = argparse.ArgumentParser(
-        description='Carga histórica de datos de fútbol desde Sofascore',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Ejemplos:
-  %(prog)s --liga laliga --temporadas 2024-25
-  %(prog)s --liga todas --temporadas 2024-25,2023-24 --verbose
-  %(prog)s --liga premier --desde-fecha 2024-01-01 --solo-finalizados
-  %(prog)s --liga laliga --dry-run --verbose
-        """
-    )
-
-    parser.add_argument(
-        '--liga',
-        type=str,
-        required=True,
-        help='Código de liga (laliga, premier, bundesliga, seriea, ligue1) o "todas"'
-    )
-
-    parser.add_argument(
-        '--temporadas',
-        type=str,
-        default=None,
-        help='Temporadas separadas por coma (ej: "2024-25,2023-24"). '
-             'Si no se especifica, se cargan todas las disponibles.'
-    )
-
-    parser.add_argument(
-        '--desde-fecha',
-        type=str,
-        default=None,
-        help='Fecha mínima en formato YYYY-MM-DD'
-    )
-
-    parser.add_argument(
-        '--hasta-fecha',
-        type=str,
-        default=None,
-        help='Fecha máxima en formato YYYY-MM-DD'
-    )
-
-    parser.add_argument(
-        '--solo-finalizados',
-        action='store_true',
-        help='Solo procesar partidos terminados'
-    )
-
-    parser.add_argument(
-        '--con-estadisticas',
-        action='store_true',
-        default=True,
-        help='Obtener estadísticas detalladas (default)'
-    )
-
-    parser.add_argument(
-        '--sin-estadisticas',
-        action='store_true',
-        help='No obtener estadísticas detalladas'
-    )
-
-    parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Simular sin guardar en BD'
-    )
-
-    parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help='Mostrar información detallada'
-    )
-
-    parser.add_argument(
-        '--checkpoint-file',
-        type=str,
-        default=None,
-        help='Archivo para guardar/cargar progreso'
-    )
-
-    parser.add_argument(
-        '--calcular-agregados',
-        action='store_true',
-        default=True,
-        help='Calcular estadísticas agregadas de equipos al finalizar'
-    )
-
-    parser.add_argument(
-        '--limite-paginas',
-        type=int,
-        default=50,
-        help='Límite de páginas a consultar por temporada (default: 50)'
-    )
-
-    return parser.parse_args()
+            from curl_cffi import requests as curl_requests
+            self.session = curl_requests.Session(impersonate="chrome")
+            self.usar_curl_cffi = True
+            logger.info("✅ Usando curl_cffi (bypass anti-bot)")
+        except ImportError:
+            import requests
+            self.session = requests.Session()
+            self.session.headers.update({
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json',
+                'Referer': 'https://www.sofascore.com/',
+            })
+            logger.warning("⚠️ curl_cffi no instalado. Puede haber bloqueos 403.")
+    
+    def _rate_limit(self):
+        ahora = time.time()
+        transcurrido = ahora - self.ultima_peticion
+        if transcurrido < self.min_intervalo:
+            time.sleep(self.min_intervalo - transcurrido)
+        self.ultima_peticion = time.time()
+    
+    def get(self, endpoint: str, reintentos: int = 3) -> Optional[Dict]:
+        url = f"{SOFASCORE_API_BASE}{endpoint}"
+        
+        for intento in range(reintentos):
+            self._rate_limit()
+            
+            try:
+                if self.usar_curl_cffi:
+                    response = self.session.get(url)
+                else:
+                    response = self.session.get(url, timeout=30)
+                
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 403:
+                    logger.warning(f"  403 en {endpoint} (intento {intento + 1}/{reintentos})")
+                    time.sleep(2 ** intento)
+                elif response.status_code == 404:
+                    return None
+                else:
+                    logger.warning(f"  HTTP {response.status_code} en {endpoint}")
+                    
+            except Exception as e:
+                logger.error(f"  Error en {endpoint}: {e}")
+                time.sleep(1)
+        
+        return None
+    
+    def cerrar(self):
+        if hasattr(self.session, 'close'):
+            self.session.close()
 
 
-def obtener_ligas_a_procesar(codigo_liga: str) -> List[str]:
-    """Obtiene lista de códigos de liga a procesar."""
-    if codigo_liga.lower() == 'todas':
-        # Solo las principales para carga masiva
-        return ['laliga', 'premier', 'bundesliga', 'seriea', 'ligue1']
-    elif codigo_liga.lower() in LIGAS_SOFASCORE:
-        return [codigo_liga.lower()]
-    else:
-        raise ValueError(
-            f"Liga '{codigo_liga}' no reconocida. "
-            f"Opciones: {', '.join(LIGAS_SOFASCORE.keys())}, todas"
-        )
+# ============================================================================
+# CONEXIÓN A BD
+# ============================================================================
 
-
-def procesar_liga(
-    conexion,
-    cliente: SofascoreClient,
-    codigo_liga: str,
-    temporadas_solicitadas: Optional[List[str]],
-    args: argparse.Namespace,
-    checkpoint: GestorCheckpoint,
-    registrador: RegistradorIngesta
-) -> Dict[str, Any]:
-    """
-    Procesa una liga completa.
-
-    Returns:
-        Diccionario con resumen del procesamiento.
-    """
-    liga_id = LIGAS_SOFASCORE[codigo_liga]
-    codigo_competicion = CODIGOS_COMPETICION.get(codigo_liga)
-
-    logger.info(f"\n{'='*60}")
-    logger.info(f"Procesando: {codigo_liga.upper()} (Sofascore ID: {liga_id})")
-    logger.info(f"{'='*60}")
-
-    resultado = {
-        'liga': codigo_liga,
-        'temporadas_procesadas': 0,
-        'partidos_insertados': 0,
-        'partidos_actualizados': 0,
-        'con_estadisticas': 0,
-        'errores': 0,
-    }
-
-    # Obtener competicion_id de la BD
-    competicion_id = resolver_competicion_id(conexion, liga_id)
-
-    if competicion_id is None:
-        logger.error(
-            f"Competición {codigo_liga} no encontrada en BD. "
-            f"Ejecuta primero actualizar_ids_sofascore.py"
-        )
-        resultado['errores'] += 1
-        return resultado
-
-    # Sincronizar temporadas
-    logger.info("Sincronizando temporadas...")
-    sync_temps = sincronizar_temporadas(
-        conexion, cliente, liga_id, competicion_id,
-        temporadas_solicitadas
-    )
-    logger.info(
-        f"Temporadas: {sync_temps['insertadas']} nuevas, "
-        f"{sync_temps['actualizadas']} actualizadas"
-    )
-
-    # Obtener temporadas de Sofascore para iterar
-    temporadas = obtener_temporadas_liga(cliente, liga_id)
-
-    # Filtrar por temporadas solicitadas
-    if temporadas_solicitadas:
-        temporadas = [
-            t for t in temporadas
-            if t['nombre_normalizado'] in temporadas_solicitadas
-        ]
-
-    if not temporadas:
-        logger.warning(f"No hay temporadas para procesar en {codigo_liga}")
-        return resultado
-
-    # Parsear fechas
-    desde_fecha = None
-    hasta_fecha = None
-    if args.desde_fecha:
-        desde_fecha = datetime.strptime(args.desde_fecha, '%Y-%m-%d')
-    if args.hasta_fecha:
-        hasta_fecha = datetime.strptime(args.hasta_fecha, '%Y-%m-%d')
-
-    # Procesar cada temporada
-    for temporada in temporadas:
-        temp_nombre = temporada['nombre_normalizado']
-        temp_sofascore_id = temporada['id']
-
-        # Verificar checkpoint
-        if (checkpoint.datos.get('liga_actual') == codigo_liga and
-            checkpoint.datos.get('temporada_actual') and
-            temp_nombre < checkpoint.datos['temporada_actual']):
-            logger.info(f"Saltando temporada {temp_nombre} (checkpoint)")
-            continue
-
-        logger.info(f"\n--- Temporada {temp_nombre} ---")
-        checkpoint.actualizar_posicion(liga=codigo_liga, temporada=temp_nombre)
-
-        # Obtener temporada_id de la BD
-        temporada_id = resolver_temporada_id_por_sofascore(
-            conexion, competicion_id, temp_sofascore_id
-        )
-
-        if temporada_id is None:
-            logger.warning(
-                f"Temporada {temp_nombre} no encontrada en BD. Saltando."
-            )
-            continue
-
-        # Sincronizar equipos
-        logger.info("Sincronizando equipos...")
-        sync_equipos = sincronizar_equipos(
-            conexion, cliente, liga_id, temp_sofascore_id, competicion_id
-        )
-        logger.info(
-            f"Equipos: {sync_equipos['insertados']} nuevos, "
-            f"{sync_equipos['actualizados']} actualizados "
-            f"(fuente: {sync_equipos['fuente']})"
-        )
-
-        # Obtener partidos pasados
-        logger.info("Obteniendo partidos...")
-        partidos = obtener_partidos_pasados(
-            cliente, liga_id, temp_sofascore_id,
-            desde_fecha=desde_fecha,
-            hasta_fecha=hasta_fecha,
-            limite_paginas=args.limite_paginas
-        )
-
-        logger.info(f"Encontrados {len(partidos)} partidos")
-
-        # Filtrar solo finalizados si se especificó
-        if args.solo_finalizados:
-            partidos = filtrar_partidos_finalizados(partidos)
-            logger.info(f"Después de filtrar finalizados: {len(partidos)}")
-
-        # Filtrar partidos ya procesados (checkpoint)
-        partidos_nuevos = [
-            p for p in partidos
-            if not checkpoint.partido_procesado(p.sofascore_id)
-        ]
-
-        if len(partidos_nuevos) < len(partidos):
-            logger.info(
-                f"Saltando {len(partidos) - len(partidos_nuevos)} "
-                f"partidos ya procesados (checkpoint)"
-            )
-            partidos = partidos_nuevos
-
-        if not partidos:
-            logger.info("No hay partidos nuevos para procesar")
-            resultado['temporadas_procesadas'] += 1
-            continue
-
-        # Sincronizar partidos
-        if args.dry_run:
-            logger.info(f"[DRY-RUN] Se procesarían {len(partidos)} partidos")
-            resultado['temporadas_procesadas'] += 1
-            continue
-
-        obtener_stats = args.con_estadisticas and not args.sin_estadisticas
-
-        def callback_progreso(actual, total, partido):
-            if args.verbose or actual % 10 == 0:
-                print(
-                    f"\r  Procesando: {actual}/{total} "
-                    f"({partido.equipo_local_nombre[:15]} vs "
-                    f"{partido.equipo_visitante_nombre[:15]})",
-                    end='', flush=True
-                )
-            checkpoint.registrar_partido(partido.sofascore_id)
-            registrador.registrar_partido(
-                partido.sofascore_id,
-                fue_insercion=True,
-                tiene_estadisticas=obtener_stats
-            )
-
-        sync_resultado = sincronizar_lote_partidos(
-            conexion, cliente, partidos, liga_id,
-            temporada_id=temporada_id,
-            competicion_id=competicion_id,
-            obtener_estadisticas_flag=obtener_stats,
-            callback_progreso=callback_progreso
-        )
-
-        print()  # Nueva línea después del progreso
-
-        resultado['partidos_insertados'] += sync_resultado['insertados']
-        resultado['partidos_actualizados'] += sync_resultado['actualizados']
-        resultado['con_estadisticas'] += sync_resultado['con_estadisticas']
-        resultado['errores'] += sync_resultado['errores']
-        resultado['temporadas_procesadas'] += 1
-
-        logger.info(
-            f"Temporada completada: "
-            f"+{sync_resultado['insertados']} "
-            f"~{sync_resultado['actualizados']} "
-            f"stats:{sync_resultado['con_estadisticas']} "
-            f"err:{sync_resultado['errores']}"
-        )
-
-        # Guardar checkpoint
-        checkpoint.guardar()
-
-    # Calcular estadísticas agregadas
-    if args.calcular_agregados and not args.dry_run:
-        logger.info("\nCalculando estadísticas agregadas de equipos...")
-        for temporada in temporadas[:2]:  # Solo últimas 2 temporadas
-            temp_nombre = temporada['nombre_normalizado']
-            temporada_id = resolver_temporada_id_por_sofascore(
-                conexion, competicion_id, temporada['id']
-            )
-            if temporada_id:
-                stats_resultado = actualizar_estadisticas_todos_equipos(
-                    conexion, competicion_id, temporada_id
-                )
-                logger.info(
-                    f"  {temp_nombre}: {stats_resultado['actualizados']} equipos actualizados"
-                )
-
-    return resultado
-
-
-def main():
-    """Función principal del script."""
-    args = parsear_argumentos()
-
-    # Configurar logging
-    nivel = logging.DEBUG if args.verbose else logging.INFO
-    configurar_logging(nivel=nivel)
-
-    logger.info("=" * 60)
-    logger.info("CARGA HISTÓRICA DE DATOS DE FÚTBOL - SOFASCORE")
-    logger.info("=" * 60)
-
-    # Parsear temporadas
-    temporadas_solicitadas = None
-    if args.temporadas:
-        temporadas_solicitadas = [t.strip() for t in args.temporadas.split(',')]
-        logger.info(f"Temporadas solicitadas: {temporadas_solicitadas}")
-
-    # Obtener ligas a procesar
+def obtener_conexion():
+    """Obtiene conexión a la BD."""
     try:
-        ligas = obtener_ligas_a_procesar(args.liga)
-        logger.info(f"Ligas a procesar: {', '.join(ligas)}")
-    except ValueError as e:
-        logger.error(str(e))
+        import psycopg
+    except ImportError:
+        logger.error("psycopg no instalado. Ejecuta: pip install psycopg[binary]")
         sys.exit(1)
-
-    # Gestionar checkpoint
-    checkpoint = GestorCheckpoint(args.checkpoint_file)
-
-    if args.checkpoint_file:
-        if checkpoint.cargar():
-            respuesta = input(
-                f"Se encontró checkpoint. ¿Continuar desde donde quedó? (s/n): "
-            )
-            if respuesta.lower() != 's':
-                checkpoint.datos['partidos_procesados'] = set()
-                logger.info("Reiniciando desde el principio")
-
-    # Conectar a BD
+    
+    database_url = os.getenv("DATABASE_URL", "").strip()
+    if not database_url:
+        logger.error("DATABASE_URL no configurada en .env")
+        sys.exit(1)
+    
+    if "sslmode=" not in database_url:
+        sep = "&" if "?" in database_url else "?"
+        database_url = f"{database_url}{sep}sslmode=require"
+    
     try:
-        pool = obtener_pool()
-        conexion = pool.getconn()
-        logger.info("Conexión a BD establecida")
+        return psycopg.connect(database_url)
     except Exception as e:
         logger.error(f"Error conectando a BD: {e}")
         sys.exit(1)
 
-    # Crear cliente Sofascore
-    cliente = SofascoreClient()
 
-    # Crear registrador de ingesta
-    registrador = RegistradorIngesta(conexion)
+# ============================================================================
+# VERIFICACIÓN Y MIGRACIÓN DE ESQUEMA
+# ============================================================================
 
-    # Resumen total
-    resumen_total = {
-        'ligas_procesadas': 0,
-        'temporadas_procesadas': 0,
+def verificar_y_migrar_esquema(conn):
+    """Verifica que el esquema tenga todas las columnas necesarias y las agrega si faltan."""
+    
+    logger.info("🔍 Verificando esquema de BD...")
+    
+    migraciones = []
+    
+    with conn.cursor() as cur:
+        # Verificar columna sofascore_season_id en temporadas_futbol
+        cur.execute("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'temporadas_futbol' AND column_name = 'sofascore_season_id'
+        """)
+        if not cur.fetchone():
+            migraciones.append({
+                'tabla': 'temporadas_futbol',
+                'columna': 'sofascore_season_id',
+                'sql': 'ALTER TABLE temporadas_futbol ADD COLUMN sofascore_season_id INTEGER'
+            })
+        
+        # Verificar columna nombre_comun en equipos_futbol (puede faltar)
+        cur.execute("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'equipos_futbol' AND column_name = 'nombre_comun'
+        """)
+        if not cur.fetchone():
+            migraciones.append({
+                'tabla': 'equipos_futbol',
+                'columna': 'nombre_comun',
+                'sql': 'ALTER TABLE equipos_futbol ADD COLUMN nombre_comun VARCHAR(50)'
+            })
+        
+        # Verificar columna sofascore_match_id en partidos_futbol
+        cur.execute("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'partidos_futbol' AND column_name = 'sofascore_match_id'
+        """)
+        if not cur.fetchone():
+            migraciones.append({
+                'tabla': 'partidos_futbol',
+                'columna': 'sofascore_match_id',
+                'sql': 'ALTER TABLE partidos_futbol ADD COLUMN sofascore_match_id INTEGER'
+            })
+        
+        # Verificar columna fuente_datos en partidos_futbol
+        cur.execute("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'partidos_futbol' AND column_name = 'fuente_datos'
+        """)
+        if not cur.fetchone():
+            migraciones.append({
+                'tabla': 'partidos_futbol',
+                'columna': 'fuente_datos',
+                'sql': "ALTER TABLE partidos_futbol ADD COLUMN fuente_datos VARCHAR(50) DEFAULT 'SOFASCORE'"
+            })
+    
+    # Aplicar migraciones
+    if migraciones:
+        logger.info(f"📝 Aplicando {len(migraciones)} migraciones de esquema...")
+        
+        for mig in migraciones:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(mig['sql'])
+                conn.commit()
+                logger.info(f"   ✅ Agregada columna {mig['tabla']}.{mig['columna']}")
+            except Exception as e:
+                conn.rollback()
+                logger.error(f"   ❌ Error agregando {mig['tabla']}.{mig['columna']}: {e}")
+                return False
+    else:
+        logger.info("   ✅ Esquema OK - No se requieren migraciones")
+    
+    return True
+
+
+# ============================================================================
+# FUNCIONES DE BD
+# ============================================================================
+
+def verificar_competicion(conn, sofascore_id: int) -> Optional[Dict]:
+    """Verifica que la competición existe y tiene sofascore_id configurado."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT id, codigo, nombre, sofascore_id 
+            FROM competiciones_futbol 
+            WHERE sofascore_id = %s AND activo = TRUE
+        """, (sofascore_id,))
+        row = cur.fetchone()
+        
+        if row:
+            return {
+                'id': row[0],
+                'codigo': row[1],
+                'nombre': row[2],
+                'sofascore_id': row[3]
+            }
+    return None
+
+
+def obtener_o_crear_temporada(conn, competicion_id, nombre: str, 
+                               sofascore_season_id: int) -> Optional[str]:
+    """Obtiene o crea una temporada."""
+    with conn.cursor() as cur:
+        # Buscar existente por nombre o sofascore_season_id
+        cur.execute("""
+            SELECT id, sofascore_season_id FROM temporadas_futbol
+            WHERE competicion_id = %s AND nombre = %s
+        """, (competicion_id, nombre))
+        row = cur.fetchone()
+        
+        if row:
+            # Actualizar sofascore_season_id si no lo tiene
+            if row[1] is None and sofascore_season_id:
+                cur.execute("""
+                    UPDATE temporadas_futbol 
+                    SET sofascore_season_id = %s
+                    WHERE id = %s
+                """, (sofascore_season_id, row[0]))
+                conn.commit()
+            return row[0]
+        
+        # Buscar por sofascore_season_id
+        cur.execute("""
+            SELECT id FROM temporadas_futbol
+            WHERE competicion_id = %s AND sofascore_season_id = %s
+        """, (competicion_id, sofascore_season_id))
+        row = cur.fetchone()
+        
+        if row:
+            return row[0]
+        
+        # Crear nueva temporada
+        try:
+            partes = nombre.replace('/', '-').split('-')
+            anio_inicio = int(partes[0]) if len(partes[0]) == 4 else int(f"20{partes[0]}")
+            if len(partes) > 1:
+                anio_fin_str = partes[1]
+                anio_fin = int(anio_fin_str) if len(anio_fin_str) == 4 else int(f"20{anio_fin_str}")
+            else:
+                anio_fin = anio_inicio + 1
+            
+            cur.execute("""
+                INSERT INTO temporadas_futbol (
+                    competicion_id, nombre, anio_inicio, anio_fin,
+                    fecha_inicio, fecha_fin, sofascore_season_id, activa
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
+                RETURNING id
+            """, (
+                competicion_id, nombre, anio_inicio, anio_fin,
+                f"{anio_inicio}-08-01", f"{anio_fin}-06-30",
+                sofascore_season_id
+            ))
+            nuevo_id = cur.fetchone()[0]
+            conn.commit()
+            logger.info(f"    ✅ Temporada creada: {nombre}")
+            return nuevo_id
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"    ❌ Error creando temporada: {e}")
+            return None
+
+
+def obtener_o_crear_equipo(conn, sofascore_id: int, nombre: str, 
+                           nombre_corto: str, competicion_id) -> Optional[str]:
+    """Obtiene o crea un equipo."""
+    with conn.cursor() as cur:
+        # Buscar por sofascore_id
+        cur.execute("""
+            SELECT id FROM equipos_futbol WHERE sofascore_id = %s
+        """, (sofascore_id,))
+        row = cur.fetchone()
+        
+        if row:
+            return row[0]
+        
+        # Crear nuevo
+        try:
+            nombre_comun = nombre.lower().strip()[:50] if nombre else ''
+            nombre_corto_val = (nombre_corto or nombre[:50])[:50] if nombre else ''
+            
+            cur.execute("""
+                INSERT INTO equipos_futbol (
+                    nombre, nombre_corto, nombre_comun,
+                    sofascore_id, competicion_principal_id, activo
+                ) VALUES (%s, %s, %s, %s, %s, TRUE)
+                RETURNING id
+            """, (
+                nombre[:100] if nombre else 'Desconocido',
+                nombre_corto_val,
+                nombre_comun,
+                sofascore_id, 
+                competicion_id
+            ))
+            nuevo_id = cur.fetchone()[0]
+            conn.commit()
+            return nuevo_id
+        except Exception as e:
+            conn.rollback()
+            # Intentar buscar por nombre
+            cur.execute("""
+                SELECT id FROM equipos_futbol 
+                WHERE nombre = %s OR nombre_corto = %s
+                LIMIT 1
+            """, (nombre, nombre_corto))
+            row = cur.fetchone()
+            if row:
+                # Actualizar sofascore_id
+                try:
+                    cur.execute("""
+                        UPDATE equipos_futbol SET sofascore_id = %s WHERE id = %s
+                    """, (sofascore_id, row[0]))
+                    conn.commit()
+                except:
+                    conn.rollback()
+                return row[0]
+            logger.debug(f"    Error creando equipo {nombre}: {e}")
+            return None
+
+
+def insertar_o_actualizar_partido(conn, datos: Dict, competicion_id, 
+                                   temporada_id, equipos_map: Dict) -> Tuple[bool, bool]:
+    """
+    Inserta o actualiza un partido.
+    Returns: (exito, fue_insercion)
+    """
+    try:
+        sofascore_id = datos.get('id')
+        home_team = datos.get('homeTeam', {})
+        away_team = datos.get('awayTeam', {})
+        
+        home_sofascore_id = home_team.get('id')
+        away_sofascore_id = away_team.get('id')
+        
+        if not all([sofascore_id, home_sofascore_id, away_sofascore_id]):
+            return False, False
+        
+        equipo_local_id = equipos_map.get(home_sofascore_id)
+        equipo_visitante_id = equipos_map.get(away_sofascore_id)
+        
+        if not equipo_local_id or not equipo_visitante_id:
+            return False, False
+        
+        # Extraer datos
+        timestamp = datos.get('startTimestamp', 0)
+        fecha_partido = datetime.fromtimestamp(timestamp) if timestamp else datetime.now()
+        
+        home_score = datos.get('homeScore', {})
+        away_score = datos.get('awayScore', {})
+        
+        local_goles_1t = home_score.get('period1')
+        local_goles_2t = home_score.get('period2')
+        local_goles_total = home_score.get('current') or home_score.get('normaltime')
+        
+        visitante_goles_1t = away_score.get('period1')
+        visitante_goles_2t = away_score.get('period2')
+        visitante_goles_total = away_score.get('current') or away_score.get('normaltime')
+        
+        estado_sofascore = datos.get('status', {}).get('type', 'notstarted')
+        estado = MAPEO_ESTADOS.get(estado_sofascore.lower(), 'PROGRAMADO')
+        
+        jornada = datos.get('roundInfo', {}).get('round')
+        
+        # Calcular ganador
+        ganador_id = None
+        if local_goles_total is not None and visitante_goles_total is not None:
+            if local_goles_total > visitante_goles_total:
+                ganador_id = equipo_local_id
+            elif visitante_goles_total > local_goles_total:
+                ganador_id = equipo_visitante_id
+        
+        with conn.cursor() as cur:
+            # Verificar si existe
+            cur.execute("""
+                SELECT id FROM partidos_futbol WHERE sofascore_match_id = %s
+            """, (sofascore_id,))
+            existente = cur.fetchone()
+            
+            if existente:
+                # Actualizar
+                cur.execute("""
+                    UPDATE partidos_futbol SET
+                        local_goles_1t = COALESCE(%s, local_goles_1t),
+                        local_goles_2t = COALESCE(%s, local_goles_2t),
+                        local_goles_total = COALESCE(%s, local_goles_total),
+                        visitante_goles_1t = COALESCE(%s, visitante_goles_1t),
+                        visitante_goles_2t = COALESCE(%s, visitante_goles_2t),
+                        visitante_goles_total = COALESCE(%s, visitante_goles_total),
+                        estado = %s::estado_partido_futbol,
+                        ganador_id = %s,
+                        actualizado_en = NOW()
+                    WHERE sofascore_match_id = %s
+                """, (
+                    local_goles_1t, local_goles_2t, local_goles_total,
+                    visitante_goles_1t, visitante_goles_2t, visitante_goles_total,
+                    estado, ganador_id, sofascore_id
+                ))
+                conn.commit()
+                return True, False
+            else:
+                # Insertar
+                cur.execute("""
+                    INSERT INTO partidos_futbol (
+                        competicion_id, temporada_id, 
+                        equipo_local_id, equipo_visitante_id,
+                        fecha_partido, fecha_partido_local, jornada, estado,
+                        local_goles_1t, local_goles_2t, local_goles_total,
+                        visitante_goles_1t, visitante_goles_2t, visitante_goles_total,
+                        ganador_id, sofascore_match_id, fuente_datos
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s::estado_partido_futbol,
+                        %s, %s, %s, %s, %s, %s, %s, %s, 'SOFASCORE'
+                    )
+                """, (
+                    competicion_id, temporada_id,
+                    equipo_local_id, equipo_visitante_id,
+                    fecha_partido, fecha_partido.date(), jornada, estado,
+                    local_goles_1t, local_goles_2t, local_goles_total,
+                    visitante_goles_1t, visitante_goles_2t, visitante_goles_total,
+                    ganador_id, sofascore_id
+                ))
+                conn.commit()
+                return True, True
+                
+    except Exception as e:
+        conn.rollback()
+        logger.debug(f"    Error partido {datos.get('id')}: {e}")
+        return False, False
+
+
+def actualizar_estadisticas_partido(conn, sofascore_id: int, stats: Dict) -> bool:
+    """Actualiza estadísticas de un partido."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE partidos_futbol SET
+                    local_corners_1t = COALESCE(%s, local_corners_1t),
+                    local_corners_2t = COALESCE(%s, local_corners_2t),
+                    local_corners_total = COALESCE(%s, local_corners_total),
+                    visitante_corners_1t = COALESCE(%s, visitante_corners_1t),
+                    visitante_corners_2t = COALESCE(%s, visitante_corners_2t),
+                    visitante_corners_total = COALESCE(%s, visitante_corners_total),
+                    local_disparos_total = COALESCE(%s, local_disparos_total),
+                    local_disparos_arco = COALESCE(%s, local_disparos_arco),
+                    visitante_disparos_total = COALESCE(%s, visitante_disparos_total),
+                    visitante_disparos_arco = COALESCE(%s, visitante_disparos_arco),
+                    local_posesion = COALESCE(%s, local_posesion),
+                    visitante_posesion = COALESCE(%s, visitante_posesion),
+                    local_xg = COALESCE(%s, local_xg),
+                    visitante_xg = COALESCE(%s, visitante_xg),
+                    datos_corners_completos = TRUE,
+                    datos_disparos_completos = TRUE,
+                    actualizado_en = NOW()
+                WHERE sofascore_match_id = %s
+            """, (
+                stats.get('corners_local_1t'),
+                stats.get('corners_local_2t'),
+                stats.get('corners_local_total'),
+                stats.get('corners_visitante_1t'),
+                stats.get('corners_visitante_2t'),
+                stats.get('corners_visitante_total'),
+                stats.get('disparos_local_total'),
+                stats.get('disparos_local_arco'),
+                stats.get('disparos_visitante_total'),
+                stats.get('disparos_visitante_arco'),
+                stats.get('posesion_local'),
+                stats.get('posesion_visitante'),
+                stats.get('xg_local'),
+                stats.get('xg_visitante'),
+                sofascore_id
+            ))
+            conn.commit()
+            return cur.rowcount > 0
+    except Exception as e:
+        conn.rollback()
+        logger.debug(f"    Error stats: {e}")
+        return False
+
+
+# ============================================================================
+# FUNCIONES DE SOFASCORE
+# ============================================================================
+
+def obtener_temporadas_sofascore(cliente: SofascoreClientSimple, liga_id: int) -> List[Dict]:
+    """Obtiene las temporadas disponibles de una liga."""
+    datos = cliente.get(f'/unique-tournament/{liga_id}/seasons')
+    if datos:
+        return datos.get('seasons', [])
+    return []
+
+
+def buscar_temporada_sofascore(temporadas: List[Dict], nombre_buscado: str) -> Optional[Dict]:
+    """Busca una temporada por nombre."""
+    nombre_buscado = nombre_buscado.lower().replace(' ', '').replace('-', '')
+    
+    for temp in temporadas:
+        nombre = temp.get('name', '').lower().replace(' ', '').replace('-', '').replace('/', '')
+        year = str(temp.get('year', ''))
+        
+        # Comparar
+        if nombre_buscado in nombre or nombre in nombre_buscado:
+            return temp
+        # Por año: "202425" en "laliga24/25"
+        if nombre_buscado[-4:] in nombre or nombre_buscado[-2:] in nombre[-2:]:
+            return temp
+        # Por año final
+        if year and nombre_buscado.endswith(year[-2:]):
+            return temp
+    
+    return None
+
+
+def obtener_partidos_temporada(cliente: SofascoreClientSimple, 
+                                liga_id: int, season_id: int,
+                                verbose: bool = False) -> List[Dict]:
+    """Obtiene todos los partidos de una temporada."""
+    todos = []
+    page = 0
+    max_pages = 50
+    
+    while page < max_pages:
+        datos = cliente.get(f'/unique-tournament/{liga_id}/season/{season_id}/events/last/{page}')
+        
+        if not datos:
+            break
+        
+        events = datos.get('events', [])
+        if not events:
+            break
+        
+        todos.extend(events)
+        page += 1
+        
+        if verbose:
+            print(f"\r    Obteniendo partidos: página {page}, total {len(todos)}...", end='', flush=True)
+    
+    if verbose:
+        print()
+    
+    return todos
+
+
+def obtener_estadisticas_partido(cliente: SofascoreClientSimple, evento_id: int) -> Optional[Dict]:
+    """Obtiene estadísticas de un partido."""
+    datos = cliente.get(f'/event/{evento_id}/statistics')
+    if not datos:
+        return None
+    
+    statistics = datos.get('statistics', [])
+    if not statistics:
+        return None
+    
+    resultado = {}
+    
+    for periodo in statistics:
+        period_name = periodo.get('period', 'ALL')
+        groups = periodo.get('groups', [])
+        
+        for group in groups:
+            for item in group.get('statisticsItems', []):
+                nombre = item.get('name', '')
+                home = item.get('home')
+                away = item.get('away')
+                
+                if nombre == 'Corner kicks':
+                    if period_name == 'ALL':
+                        resultado['corners_local_total'] = home
+                        resultado['corners_visitante_total'] = away
+                    elif period_name == '1ST':
+                        resultado['corners_local_1t'] = home
+                        resultado['corners_visitante_1t'] = away
+                    elif period_name == '2ND':
+                        resultado['corners_local_2t'] = home
+                        resultado['corners_visitante_2t'] = away
+                
+                elif nombre == 'Total shots' and period_name == 'ALL':
+                    resultado['disparos_local_total'] = home
+                    resultado['disparos_visitante_total'] = away
+                
+                elif nombre == 'Shots on target' and period_name == 'ALL':
+                    resultado['disparos_local_arco'] = home
+                    resultado['disparos_visitante_arco'] = away
+                
+                elif nombre == 'Ball possession' and period_name == 'ALL':
+                    try:
+                        if isinstance(home, str):
+                            home = float(home.replace('%', ''))
+                        if isinstance(away, str):
+                            away = float(away.replace('%', ''))
+                        resultado['posesion_local'] = home
+                        resultado['posesion_visitante'] = away
+                    except:
+                        pass
+                
+                elif nombre == 'Expected goals' and period_name == 'ALL':
+                    try:
+                        resultado['xg_local'] = float(home) if home else None
+                        resultado['xg_visitante'] = float(away) if away else None
+                    except:
+                        pass
+    
+    return resultado if resultado else None
+
+
+# ============================================================================
+# FUNCIÓN PRINCIPAL DE CARGA
+# ============================================================================
+
+def cargar_temporada(conn, cliente: SofascoreClientSimple,
+                     liga_id: int, temporada_nombre: str,
+                     competicion: Dict, con_estadisticas: bool = True,
+                     verbose: bool = False) -> Dict[str, int]:
+    """Carga todos los partidos de una temporada."""
+    
+    resultado = {
         'partidos_insertados': 0,
         'partidos_actualizados': 0,
         'con_estadisticas': 0,
-        'errores': 0,
+        'errores': 0
     }
+    
+    competicion_id = competicion['id']
+    
+    # 1. Obtener temporadas de Sofascore
+    logger.info(f"  Obteniendo temporadas de Sofascore...")
+    temporadas = obtener_temporadas_sofascore(cliente, liga_id)
+    
+    if not temporadas:
+        logger.error(f"  ❌ No se pudieron obtener temporadas")
+        resultado['errores'] = 1
+        return resultado
+    
+    # 2. Buscar la temporada solicitada
+    temporada_sf = buscar_temporada_sofascore(temporadas, temporada_nombre)
+    
+    if not temporada_sf:
+        logger.warning(f"  ⚠️ Temporada '{temporada_nombre}' no encontrada")
+        logger.info(f"  Disponibles: {[t.get('name') for t in temporadas[:5]]}")
+        resultado['errores'] = 1
+        return resultado
+    
+    sofascore_season_id = temporada_sf.get('id')
+    season_name = temporada_sf.get('name', temporada_nombre)
+    logger.info(f"  ✅ Temporada: {season_name} (ID: {sofascore_season_id})")
+    
+    # 3. Crear/obtener temporada en BD
+    temporada_id = obtener_o_crear_temporada(conn, competicion_id, 
+                                              temporada_nombre, sofascore_season_id)
+    if not temporada_id:
+        logger.error(f"  ❌ No se pudo crear temporada en BD")
+        resultado['errores'] = 1
+        return resultado
+    
+    # 4. Obtener partidos
+    logger.info(f"  Obteniendo partidos...")
+    partidos = obtener_partidos_temporada(cliente, liga_id, sofascore_season_id, verbose)
+    
+    if not partidos:
+        logger.warning(f"  ⚠️ No se encontraron partidos")
+        return resultado
+    
+    logger.info(f"  📊 {len(partidos)} partidos encontrados")
+    
+    # 5. Crear mapa de equipos
+    logger.info(f"  Sincronizando equipos...")
+    equipos_map = {}
+    equipos_procesados = set()
+    
+    for partido in partidos:
+        for team_key in ['homeTeam', 'awayTeam']:
+            team = partido.get(team_key, {})
+            sf_id = team.get('id')
+            if sf_id and sf_id not in equipos_procesados:
+                equipo_id = obtener_o_crear_equipo(
+                    conn, sf_id,
+                    team.get('name', ''),
+                    team.get('shortName', ''),
+                    competicion_id
+                )
+                if equipo_id:
+                    equipos_map[sf_id] = equipo_id
+                equipos_procesados.add(sf_id)
+    
+    logger.info(f"  ✅ {len(equipos_map)} equipos")
+    
+    # 6. Insertar partidos
+    logger.info(f"  Insertando partidos...")
+    for i, partido in enumerate(partidos):
+        if verbose and (i + 1) % 20 == 0:
+            print(f"\r    Progreso: {i + 1}/{len(partidos)}", end='', flush=True)
+        
+        exito, fue_insercion = insertar_o_actualizar_partido(
+            conn, partido, competicion_id, temporada_id, equipos_map
+        )
+        
+        if exito:
+            if fue_insercion:
+                resultado['partidos_insertados'] += 1
+            else:
+                resultado['partidos_actualizados'] += 1
+            
+            # 7. Obtener estadísticas
+            if con_estadisticas:
+                estado = partido.get('status', {}).get('type', '')
+                if estado == 'finished':
+                    sf_id = partido.get('id')
+                    stats = obtener_estadisticas_partido(cliente, sf_id)
+                    if stats and actualizar_estadisticas_partido(conn, sf_id, stats):
+                        resultado['con_estadisticas'] += 1
+        else:
+            resultado['errores'] += 1
+    
+    if verbose:
+        print()
+    
+    return resultado
 
-    inicio = datetime.now()
 
-    try:
-        for codigo_liga in ligas:
-            registrador.iniciar_sesion(
-                'historico',
-                liga_id=LIGAS_SOFASCORE[codigo_liga]
-            )
+# ============================================================================
+# MAIN
+# ============================================================================
 
-            resultado = procesar_liga(
-                conexion, cliente, codigo_liga,
-                temporadas_solicitadas, args,
-                checkpoint, registrador
-            )
-
-            resumen_total['ligas_procesadas'] += 1
-            resumen_total['temporadas_procesadas'] += resultado['temporadas_procesadas']
-            resumen_total['partidos_insertados'] += resultado['partidos_insertados']
-            resumen_total['partidos_actualizados'] += resultado['partidos_actualizados']
-            resumen_total['con_estadisticas'] += resultado['con_estadisticas']
-            resumen_total['errores'] += resultado['errores']
-
-            registrador.finalizar_sesion()
-            limpiar_cache()
-
-    except KeyboardInterrupt:
-        logger.warning("\n\nInterrumpido por usuario. Guardando checkpoint...")
-        checkpoint.guardar()
-        registrador.finalizar_sesion()
-
-    except Exception as e:
-        logger.error(f"Error durante la carga: {e}")
-        import traceback
-        traceback.print_exc()
-        checkpoint.guardar()
-        registrador.registrar_error(e)
-        registrador.finalizar_sesion()
-
-    finally:
-        # Cerrar conexiones
-        cliente.cerrar()
-        pool.putconn(conexion)
-        cerrar_pool()
-
-    # Mostrar resumen
-    duracion = (datetime.now() - inicio).total_seconds()
-
-    print("\n" + "=" * 60)
-    print("RESUMEN DE CARGA HISTÓRICA")
-    print("=" * 60)
-    print(f"Duración: {duracion/60:.1f} minutos")
-    print(f"Ligas procesadas: {resumen_total['ligas_procesadas']}")
-    print(f"Temporadas procesadas: {resumen_total['temporadas_procesadas']}")
-    print(f"Partidos insertados: {resumen_total['partidos_insertados']}")
-    print(f"Partidos actualizados: {resumen_total['partidos_actualizados']}")
-    print(f"Con estadísticas: {resumen_total['con_estadisticas']}")
-    print(f"Errores: {resumen_total['errores']}")
-    print("=" * 60)
-
-    # Limpiar checkpoint si todo fue exitoso
-    if resumen_total['errores'] == 0:
-        checkpoint.limpiar()
-        logger.info("Carga completada exitosamente")
+def main():
+    parser = argparse.ArgumentParser(
+        description='Carga histórica de fútbol desde Sofascore (v3 - corregida)'
+    )
+    parser.add_argument('--liga', required=True, 
+                       help=f"Código de liga: {', '.join(LIGAS_SOFASCORE.keys())}, o 'todas'")
+    parser.add_argument('--temporadas', required=True,
+                       help='Temporadas separadas por coma (ej: 2024-25,2023-24)')
+    parser.add_argument('--sin-estadisticas', action='store_true',
+                       help='No obtener estadísticas detalladas (más rápido)')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                       help='Mostrar información detallada')
+    parser.add_argument('--dry-run', action='store_true',
+                       help='Solo mostrar qué se haría')
+    args = parser.parse_args()
+    
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    
+    print()
+    print("=" * 70)
+    print("CARGA HISTÓRICA DE FÚTBOL - SOFASCORE (v3)")
+    print("=" * 70)
+    print()
+    
+    # Parsear ligas
+    if args.liga.lower() == 'todas':
+        ligas = ['laliga', 'premier', 'bundesliga', 'seriea', 'ligue1']
     else:
-        logger.warning(f"Carga completada con {resumen_total['errores']} errores")
-
-    sys.exit(0 if resumen_total['errores'] == 0 else 1)
+        ligas = [l.strip().lower() for l in args.liga.split(',')]
+    
+    for liga in ligas:
+        if liga not in LIGAS_SOFASCORE:
+            print(f"❌ Liga desconocida: {liga}")
+            print(f"   Opciones: {', '.join(LIGAS_SOFASCORE.keys())}")
+            sys.exit(1)
+    
+    temporadas = [t.strip() for t in args.temporadas.split(',')]
+    
+    print(f"📋 Ligas: {ligas}")
+    print(f"📅 Temporadas: {temporadas}")
+    print(f"📊 Con estadísticas: {'No' if args.sin_estadisticas else 'Sí'}")
+    print()
+    
+    if args.dry_run:
+        print("🔵 MODO DRY-RUN - No se harán cambios")
+        sys.exit(0)
+    
+    # Conectar
+    conn = obtener_conexion()
+    print("✅ Conexión a BD establecida")
+    
+    # Verificar y migrar esquema
+    if not verificar_y_migrar_esquema(conn):
+        print("❌ Error en migración de esquema")
+        conn.close()
+        sys.exit(1)
+    
+    cliente = SofascoreClientSimple()
+    print()
+    
+    total = {
+        'insertados': 0,
+        'actualizados': 0,
+        'con_stats': 0,
+        'errores': 0
+    }
+    
+    inicio = datetime.now()
+    
+    try:
+        for liga in ligas:
+            liga_id = LIGAS_SOFASCORE[liga]
+            
+            print(f"\n{'='*60}")
+            print(f"📌 {liga.upper()} (Sofascore ID: {liga_id})")
+            print(f"{'='*60}")
+            
+            competicion = verificar_competicion(conn, liga_id)
+            if not competicion:
+                print(f"❌ Competición no encontrada en BD (sofascore_id={liga_id})")
+                print(f"   Ejecuta: python actualizar_ids_sofascore.py")
+                total['errores'] += 1
+                continue
+            
+            print(f"✅ Competición: {competicion['nombre']}")
+            
+            for temp_nombre in temporadas:
+                print(f"\n  --- Temporada: {temp_nombre} ---")
+                
+                resultado = cargar_temporada(
+                    conn, cliente, liga_id, temp_nombre,
+                    competicion,
+                    con_estadisticas=not args.sin_estadisticas,
+                    verbose=args.verbose
+                )
+                
+                total['insertados'] += resultado['partidos_insertados']
+                total['actualizados'] += resultado['partidos_actualizados']
+                total['con_stats'] += resultado['con_estadisticas']
+                total['errores'] += resultado['errores']
+                
+                print(f"  ✅ {resultado['partidos_insertados']} nuevos, "
+                      f"{resultado['partidos_actualizados']} actualizados, "
+                      f"{resultado['con_estadisticas']} con stats")
+    
+    except KeyboardInterrupt:
+        print("\n\n⚠️ Interrumpido por usuario")
+    
+    finally:
+        cliente.cerrar()
+        conn.close()
+    
+    duracion = (datetime.now() - inicio).total_seconds() / 60
+    
+    print()
+    print("=" * 70)
+    print("RESUMEN FINAL")
+    print("=" * 70)
+    print(f"⏱️  Duración: {duracion:.1f} minutos")
+    print(f"✅ Partidos insertados: {total['insertados']}")
+    print(f"🔄 Partidos actualizados: {total['actualizados']}")
+    print(f"📊 Con estadísticas: {total['con_stats']}")
+    print(f"❌ Errores: {total['errores']}")
+    print("=" * 70)
+    
+    return 0 if total['errores'] == 0 else 1
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
