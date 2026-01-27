@@ -75,6 +75,7 @@ class SofascoreClient:
     """
 
     BASE_URL = "https://api.sofascore.com/api/v1"
+    HOMEPAGE_URL = "https://www.sofascore.com/"
 
     # Headers que simulan un navegador Chrome actualizado
     DEFAULT_HEADERS = {
@@ -83,12 +84,15 @@ class SofascoreClient:
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/120.0.0.0 Safari/537.36"
         ),
-        "Accept": "application/json",
+        "Accept": "application/json, text/plain, */*",
         "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
         "Accept-Encoding": "gzip, deflate, br",
         "Origin": "https://www.sofascore.com",
         "Referer": "https://www.sofascore.com/",
         "Connection": "keep-alive",
+        "Sec-CH-UA": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-CH-UA-Mobile": "?0",
+        "Sec-CH-UA-Platform": '"Windows"',
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-site",
@@ -155,6 +159,7 @@ class SofascoreClient:
 
         # Crear sesión HTTP persistente
         self.session = self._crear_sesion()
+        self._bootstrap_session()
 
         logger.debug(
             f"Cliente Sofascore inicializado: "
@@ -192,6 +197,36 @@ class SofascoreClient:
         session.mount("http://", adapter)
 
         return session
+
+    def _bootstrap_session(self) -> None:
+        """
+        Inicializa cookies y sesión visitando la homepage.
+
+        Algunos endpoints de Sofascore requieren cookies de sesión
+        para evitar bloqueos 403 (protección antibot).
+        """
+        try:
+            response = self.session.get(
+                self.HOMEPAGE_URL,
+                timeout=self.timeout,
+                allow_redirects=True,
+            )
+            logger.debug(
+                "Bootstrap session: %s (%s)",
+                response.status_code,
+                self.HOMEPAGE_URL,
+            )
+        except requests.exceptions.RequestException as exc:
+            logger.warning("No se pudo inicializar sesión Sofascore: %s", exc)
+
+    def _renovar_sesion(self) -> None:
+        """Recrea la sesión para intentar recuperar cookies/headers válidos."""
+        try:
+            if self.session:
+                self.session.close()
+        finally:
+            self.session = self._crear_sesion()
+            self._bootstrap_session()
 
     def _aplicar_rate_limiting(self) -> None:
         """
@@ -286,6 +321,8 @@ class SofascoreClient:
 
         url = f"{self.BASE_URL}{endpoint}"
 
+        refresco_intentado = False
+
         for intento in range(self.max_reintentos + 1):
             try:
                 # Aplicar rate limiting antes de la petición
@@ -326,6 +363,37 @@ class SofascoreClient:
                         f"Recurso no encontrado (404): {endpoint}"
                     )
                     return None
+
+                elif response.status_code == 403:
+                    self._contador_errores += 1
+                    tiempo_espera = self._calcular_tiempo_espera(intento)
+
+                    logger.warning(
+                        "Acceso prohibido (403) en %s. "
+                        "Refrescando sesión y reintentando en %.1fs",
+                        endpoint,
+                        tiempo_espera,
+                    )
+
+                    if intento < self.max_reintentos and not refresco_intentado:
+                        self._renovar_sesion()
+                        time.sleep(tiempo_espera)
+                        self._contador_reintentos += 1
+                        refresco_intentado = True
+                        continue
+                    elif intento < self.max_reintentos:
+                        time.sleep(tiempo_espera)
+                        self._contador_reintentos += 1
+                        continue
+                    else:
+                        raise SofascoreError(
+                            mensaje="Acceso prohibido por Sofascore (403)",
+                            codigo=response.status_code,
+                            detalles={
+                                'endpoint': endpoint,
+                                'body': response.text[:500],
+                            },
+                        )
 
                 elif response.status_code == 429:
                     # Rate limiting - backoff agresivo
