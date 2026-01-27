@@ -368,7 +368,7 @@ def main():
                     errores += 1
                     continue
                 else:
-                    logger.debug(f"ID válido: {codigo} → {sofascore_id} ({nombre_torneo})")
+                    logger.info(f"ID válido: {codigo} → {sofascore_id} ({nombre_torneo})")
 
             # Verificar si existe en BD
             if codigo in competiciones_bd:
