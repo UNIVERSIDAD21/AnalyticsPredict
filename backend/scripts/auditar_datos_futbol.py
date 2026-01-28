@@ -658,7 +658,7 @@ def main():
                     """
                     SELECT id, codigo, nombre
                     FROM competiciones_futbol
-                    WHERE codigo = %s AND activa = TRUE
+                    WHERE codigo = %s AND activo = TRUE
                     """,
                     (args.competicion,)
                 )
@@ -667,7 +667,7 @@ def main():
                     """
                     SELECT id, codigo, nombre
                     FROM competiciones_futbol
-                    WHERE activa = TRUE
+                    WHERE activo = TRUE
                     ORDER BY nombre
                     """
                 )
