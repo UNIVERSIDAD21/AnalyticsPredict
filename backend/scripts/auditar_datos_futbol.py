@@ -201,13 +201,13 @@ def validar_integridad_corners(conexion, competicion_id: Optional[int] = None) -
 
     query = """
         SELECT id, sofascore_match_id, fecha_partido,
-               corners_local_1t, corners_local_2t, corners_local_total,
-               corners_visitante_1t, corners_visitante_2t, corners_visitante_total
+               local_corners_1t, local_corners_2t, local_corners_total,
+               visitante_corners_1t, visitante_corners_2t, visitante_corners_total
         FROM partidos_futbol
         WHERE estado = 'FINALIZADO'
-          AND corners_local_1t IS NOT NULL
-          AND corners_local_2t IS NOT NULL
-          AND corners_local_total IS NOT NULL
+          AND local_corners_1t IS NOT NULL
+          AND local_corners_2t IS NOT NULL
+          AND local_corners_total IS NOT NULL
     """
     params = []
 
@@ -262,13 +262,13 @@ def validar_integridad_corners(conexion, competicion_id: Optional[int] = None) -
 
 def validar_disparos_arco(conexion, competicion_id: Optional[int] = None) -> Dict[str, Any]:
     """
-    Valida que los disparos al arco no superen los disparos totales.
+    Valida que disparos al arco <= disparos totales.
 
     Returns:
         Diccionario con resultados de validación.
     """
     resultado = {
-        'nombre': 'Disparos al arco <= Total',
+        'nombre': 'Integridad de disparos',
         'partidos_validados': 0,
         'errores': 0,
         'detalles': [],
@@ -276,12 +276,12 @@ def validar_disparos_arco(conexion, competicion_id: Optional[int] = None) -> Dic
 
     query = """
         SELECT id, sofascore_match_id, fecha_partido,
-               disparos_local_total, disparos_local_arco,
-               disparos_visitante_total, disparos_visitante_arco
+               local_disparos_total, local_disparos_arco,
+               visitante_disparos_total, visitante_disparos_arco
         FROM partidos_futbol
         WHERE estado = 'FINALIZADO'
-          AND disparos_local_total IS NOT NULL
-          AND disparos_local_arco IS NOT NULL
+          AND local_disparos_total IS NOT NULL
+          AND local_disparos_arco IS NOT NULL
     """
     params = []
 
@@ -299,28 +299,34 @@ def validar_disparos_arco(conexion, competicion_id: Optional[int] = None) -> Dic
             sofascore_id = row[1]
             fecha = row[2]
 
-            # Validar local
-            if row[4] > row[3]:
+            # Validar disparos local
+            total_local = row[3] or 0
+            arco_local = row[4] or 0
+
+            if arco_local > total_local:
                 resultado['errores'] += 1
                 resultado['detalles'].append({
                     'partido_id': partido_id,
                     'sofascore_id': sofascore_id,
                     'fecha': str(fecha),
                     'tipo': 'disparos_local',
-                    'arco': row[4],
-                    'total': row[3],
+                    'total': total_local,
+                    'arco': arco_local,
                 })
 
-            # Validar visitante
-            if row[6] > row[5]:
+            # Validar disparos visitante
+            total_visitante = row[5] or 0
+            arco_visitante = row[6] or 0
+
+            if arco_visitante > total_visitante:
                 resultado['errores'] += 1
                 resultado['detalles'].append({
                     'partido_id': partido_id,
                     'sofascore_id': sofascore_id,
                     'fecha': str(fecha),
                     'tipo': 'disparos_visitante',
-                    'arco': row[6],
-                    'total': row[5],
+                    'total': total_visitante,
+                    'arco': arco_visitante,
                 })
 
     return resultado
@@ -334,20 +340,20 @@ def validar_posesion(conexion, competicion_id: Optional[int] = None) -> Dict[str
         Diccionario con resultados de validación.
     """
     resultado = {
-        'nombre': 'Posesión suma ~100%',
+        'nombre': 'Integridad de posesión',
         'partidos_validados': 0,
         'errores': 0,
-        'tolerancia': 2,  # 99-101 es aceptable
+        'tolerancia': 2.0,  # ±2% de tolerancia
         'detalles': [],
     }
 
     query = """
         SELECT id, sofascore_match_id, fecha_partido,
-               posesion_local, posesion_visitante
+               local_posesion, visitante_posesion
         FROM partidos_futbol
         WHERE estado = 'FINALIZADO'
-          AND posesion_local IS NOT NULL
-          AND posesion_visitante IS NOT NULL
+          AND local_posesion IS NOT NULL
+          AND visitante_posesion IS NOT NULL
     """
     params = []
 
@@ -364,20 +370,21 @@ def validar_posesion(conexion, competicion_id: Optional[int] = None) -> Dict[str
             partido_id = row[0]
             sofascore_id = row[1]
             fecha = row[2]
-            posesion_local = row[3]
-            posesion_visitante = row[4]
+            pos_local = float(row[3] or 0)
+            pos_visitante = float(row[4] or 0)
 
-            suma = posesion_local + posesion_visitante
+            suma_posesion = pos_local + pos_visitante
 
-            if suma < 99 or suma > 101:
+            if abs(suma_posesion - 100.0) > 2.0:
                 resultado['errores'] += 1
                 resultado['detalles'].append({
                     'partido_id': partido_id,
                     'sofascore_id': sofascore_id,
                     'fecha': str(fecha),
-                    'local': posesion_local,
-                    'visitante': posesion_visitante,
-                    'suma': suma,
+                    'pos_local': pos_local,
+                    'pos_visitante': pos_visitante,
+                    'suma': suma_posesion,
+                    'diferencia': suma_posesion - 100.0,
                 })
 
     return resultado
@@ -391,7 +398,7 @@ def validar_rangos(conexion, competicion_id: Optional[int] = None) -> Dict[str, 
         Diccionario con resultados de validación.
     """
     resultado = {
-        'nombre': 'Valores fuera de rango',
+        'nombre': 'Validación de rangos',
         'partidos_validados': 0,
         'warnings': 0,
         'detalles': [],
@@ -399,10 +406,11 @@ def validar_rangos(conexion, competicion_id: Optional[int] = None) -> Dict[str, 
 
     query = """
         SELECT id, sofascore_match_id, fecha_partido,
-               corners_local_total, corners_visitante_total,
-               disparos_local_total, disparos_visitante_total,
-               xg_local, xg_visitante,
-               posesion_local, posesion_visitante
+               local_corners_total, visitante_corners_total,
+               local_disparos_total, visitante_disparos_total,
+               local_xg, visitante_xg,
+               local_posesion, visitante_posesion,
+               local_goles_total, visitante_goles_total
         FROM partidos_futbol
         WHERE estado = 'FINALIZADO'
     """
@@ -422,70 +430,72 @@ def validar_rangos(conexion, competicion_id: Optional[int] = None) -> Dict[str, 
             sofascore_id = row[1]
             fecha = row[2]
 
-            warnings_partido = []
+            valores = {
+                'corners_local': row[3],
+                'corners_visitante': row[4],
+                'disparos_local': row[5],
+                'disparos_visitante': row[6],
+                'xg_local': row[7],
+                'xg_visitante': row[8],
+                'posesion_local': row[9],
+                'posesion_visitante': row[10],
+                'goles_local': row[11],
+                'goles_visitante': row[12],
+            }
 
-            # Corners
-            if row[3] is not None and row[3] > RANGOS_NORMALES['corners_equipo'][1]:
-                warnings_partido.append(f"corners_local={row[3]}")
-            if row[4] is not None and row[4] > RANGOS_NORMALES['corners_equipo'][1]:
-                warnings_partido.append(f"corners_visitante={row[4]}")
+            # Validar rangos
+            for campo, valor in valores.items():
+                if valor is None:
+                    continue
 
-            # Disparos
-            if row[5] is not None:
-                if row[5] < RANGOS_NORMALES['disparos_equipo'][0] or row[5] > RANGOS_NORMALES['disparos_equipo'][1]:
-                    warnings_partido.append(f"disparos_local={row[5]}")
-            if row[6] is not None:
-                if row[6] < RANGOS_NORMALES['disparos_equipo'][0] or row[6] > RANGOS_NORMALES['disparos_equipo'][1]:
-                    warnings_partido.append(f"disparos_visitante={row[6]}")
+                # Determinar el tipo de rango
+                if 'corners' in campo:
+                    min_val, max_val = RANGOS_NORMALES['corners_equipo']
+                elif 'disparos' in campo:
+                    min_val, max_val = RANGOS_NORMALES['disparos_equipo']
+                elif 'xg' in campo:
+                    min_val, max_val = RANGOS_NORMALES['xg_equipo']
+                elif 'posesion' in campo:
+                    min_val, max_val = RANGOS_NORMALES['posesion']
+                elif 'goles' in campo:
+                    min_val, max_val = RANGOS_NORMALES['goles_equipo']
+                else:
+                    continue
 
-            # xG
-            if row[7] is not None and row[7] > RANGOS_NORMALES['xg_equipo'][1]:
-                warnings_partido.append(f"xg_local={row[7]}")
-            if row[8] is not None and row[8] > RANGOS_NORMALES['xg_equipo'][1]:
-                warnings_partido.append(f"xg_visitante={row[8]}")
-
-            # Posesión extrema
-            if row[9] is not None:
-                if row[9] < RANGOS_NORMALES['posesion'][0] or row[9] > RANGOS_NORMALES['posesion'][1]:
-                    warnings_partido.append(f"posesion_local={row[9]}%")
-            if row[10] is not None:
-                if row[10] < RANGOS_NORMALES['posesion'][0] or row[10] > RANGOS_NORMALES['posesion'][1]:
-                    warnings_partido.append(f"posesion_visitante={row[10]}%")
-
-            if warnings_partido:
-                resultado['warnings'] += 1
-                resultado['detalles'].append({
-                    'partido_id': partido_id,
-                    'sofascore_id': sofascore_id,
-                    'fecha': str(fecha),
-                    'valores_atipicos': warnings_partido,
-                })
+                if valor < min_val or valor > max_val:
+                    resultado['warnings'] += 1
+                    resultado['detalles'].append({
+                        'partido_id': partido_id,
+                        'sofascore_id': sofascore_id,
+                        'fecha': str(fecha),
+                        'campo': campo,
+                        'valor': float(valor),
+                        'rango': f'{min_val}-{max_val}',
+                    })
 
     return resultado
 
 
 def calcular_cobertura_estadisticas(conexion, competicion_id: Optional[int] = None) -> Dict[str, Any]:
     """
-    Calcula el porcentaje de partidos con diferentes estadísticas.
+    Calcula el porcentaje de partidos con cada tipo de estadística.
 
     Returns:
-        Diccionario con cobertura por tipo de estadística.
+        Diccionario con cobertura de estadísticas.
     """
     resultado = {
-        'nombre': 'Cobertura de estadísticas',
         'total_finalizados': 0,
         'cobertura': {},
     }
 
     base_query = """
-        SELECT
-            COUNT(*) as total,
-            SUM(CASE WHEN corners_local_total IS NOT NULL THEN 1 ELSE 0 END) as con_corners,
-            SUM(CASE WHEN corners_local_1t IS NOT NULL THEN 1 ELSE 0 END) as con_corners_tiempo,
-            SUM(CASE WHEN disparos_local_total IS NOT NULL THEN 1 ELSE 0 END) as con_disparos,
-            SUM(CASE WHEN xg_local IS NOT NULL THEN 1 ELSE 0 END) as con_xg,
-            SUM(CASE WHEN posesion_local IS NOT NULL THEN 1 ELSE 0 END) as con_posesion,
-            SUM(CASE WHEN datos_estadisticas_completos = TRUE THEN 1 ELSE 0 END) as completos
+        SELECT COUNT(*) as total,
+            SUM(CASE WHEN local_corners_total IS NOT NULL THEN 1 ELSE 0 END) as con_corners_total,
+            SUM(CASE WHEN local_corners_1t IS NOT NULL THEN 1 ELSE 0 END) as con_corners_tiempo,
+            SUM(CASE WHEN local_disparos_total IS NOT NULL THEN 1 ELSE 0 END) as con_disparos,
+            SUM(CASE WHEN local_xg IS NOT NULL THEN 1 ELSE 0 END) as con_xg,
+            SUM(CASE WHEN local_posesion IS NOT NULL THEN 1 ELSE 0 END) as con_posesion,
+            SUM(CASE WHEN datos_completos = TRUE THEN 1 ELSE 0 END) as completos
         FROM partidos_futbol
         WHERE estado = 'FINALIZADO'
     """
@@ -585,7 +595,7 @@ def imprimir_reporte(reporte: Dict[str, Any], solo_errores: bool = False, listar
         if solo_errores and errores == 0:
             continue
 
-        estado = "OK" if errores == 0 else f"ERRORES: {errores}"
+        estado = "✓ OK" if errores == 0 else f"✗ ERRORES: {errores}"
         print(f"\n{val['nombre']}: {estado}")
         print(f"  Partidos validados: {validados}")
 
