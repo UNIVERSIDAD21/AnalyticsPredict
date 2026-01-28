@@ -131,7 +131,7 @@ def validar_integridad_goles(conexion, competicion_id: Optional[int] = None) -> 
                local_goles_1t, local_goles_2t, local_goles_total,
                visitante_goles_1t, visitante_goles_2t, visitante_goles_total
         FROM partidos_futbol
-        WHERE estado = 'finished'
+        WHERE estado = 'FINALIZADO'
           AND local_goles_1t IS NOT NULL
           AND local_goles_2t IS NOT NULL
     """
@@ -204,7 +204,7 @@ def validar_integridad_corners(conexion, competicion_id: Optional[int] = None) -
                corners_local_1t, corners_local_2t, corners_local_total,
                corners_visitante_1t, corners_visitante_2t, corners_visitante_total
         FROM partidos_futbol
-        WHERE estado = 'finished'
+        WHERE estado = 'FINALIZADO'
           AND corners_local_1t IS NOT NULL
           AND corners_local_2t IS NOT NULL
           AND corners_local_total IS NOT NULL
@@ -279,7 +279,7 @@ def validar_disparos_arco(conexion, competicion_id: Optional[int] = None) -> Dic
                disparos_local_total, disparos_local_arco,
                disparos_visitante_total, disparos_visitante_arco
         FROM partidos_futbol
-        WHERE estado = 'finished'
+        WHERE estado = 'FINALIZADO'
           AND disparos_local_total IS NOT NULL
           AND disparos_local_arco IS NOT NULL
     """
@@ -345,7 +345,7 @@ def validar_posesion(conexion, competicion_id: Optional[int] = None) -> Dict[str
         SELECT id, sofascore_match_id, fecha_partido,
                posesion_local, posesion_visitante
         FROM partidos_futbol
-        WHERE estado = 'finished'
+        WHERE estado = 'FINALIZADO'
           AND posesion_local IS NOT NULL
           AND posesion_visitante IS NOT NULL
     """
@@ -404,7 +404,7 @@ def validar_rangos(conexion, competicion_id: Optional[int] = None) -> Dict[str, 
                xg_local, xg_visitante,
                posesion_local, posesion_visitante
         FROM partidos_futbol
-        WHERE estado = 'finished'
+        WHERE estado = 'FINALIZADO'
     """
     params = []
 
@@ -487,7 +487,7 @@ def calcular_cobertura_estadisticas(conexion, competicion_id: Optional[int] = No
             SUM(CASE WHEN posesion_local IS NOT NULL THEN 1 ELSE 0 END) as con_posesion,
             SUM(CASE WHEN datos_estadisticas_completos = TRUE THEN 1 ELSE 0 END) as completos
         FROM partidos_futbol
-        WHERE estado = 'finished'
+        WHERE estado = 'FINALIZADO'
     """
     params = []
 
