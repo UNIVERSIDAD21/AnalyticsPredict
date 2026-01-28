@@ -267,7 +267,9 @@ class EntrenadorFutbol:
 
         # Excluir copas si se indica
         if not self.config.incluir_copas:
-            query += " AND c.codigo NOT LIKE '%CHAMPIONS%' AND c.codigo NOT LIKE '%EUROPA%'"
+                codigos_excluir = ['EUR_CHAMPIONS', 'EUR_EUROPA', 'EUR_CONFERENCE']
+                query += " AND c.codigo NOT IN (%s, %s, %s)"
+                parametros.extend(codigos_excluir)
 
         query += " ORDER BY p.fecha_partido"
 
