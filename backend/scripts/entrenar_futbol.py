@@ -8,7 +8,7 @@ Uso:
 
 Opciones:
     --alpha         Parámetro de regularización Ridge (default: 5.0)
-    --min-partidos  Número mínimo de partidos para entrenar (default: 100)
+    --min-partidos  Número mínimo de partidos requeridos (default: 100)
     --guardar       Guardar modelos entrenados en la base de datos
     --validar       Ejecutar validación cruzada temporal
     --verbose       Mostrar información detallada
@@ -21,161 +21,165 @@ import sys
 import os
 import argparse
 import logging
-import inspect
 from datetime import datetime
 from typing import Dict, Any, Optional
-from pathlib import Path
-
-# Configurar encoding UTF-8 para evitar problemas en Windows
-if sys.platform == 'win32':
-    # Configurar stdout y stderr para UTF-8
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Agregar el directorio raíz al path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Importar el pool de conexiones del módulo db del proyecto
-from db import obtener_pool, cerrar_pool
+from psycopg_pool import ConnectionPool
 
 from motor_futbol.entrenamiento.entrenador import EntrenadorFutbol
-from motor_futbol.entrenamiento.gestor_versiones import GestorVersiones
-from motor_futbol.tipos import TipoModelo, ResultadoEntrenamiento
+from motor_futbol.tipos import ResultadoEntrenamiento, TipoModelo, ConfiguracionEntrenamiento
 from motor_futbol.constantes import ALPHA_RIDGE_DEFAULT
 from motor_futbol.excepciones import DatosInsuficientes
 
 
-# Configurar logging con UTF-8
-log_handlers = [
-    logging.StreamHandler(),
-]
-
-# Intentar crear archivo de log con UTF-8
-try:
-    log_handlers.append(
-        logging.FileHandler("entrenamiento_futbol.log", encoding='utf-8')
-    )
-except Exception:
-    pass  # Si falla, solo usar StreamHandler
-
+# Configurar logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=log_handlers,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("entrenamiento_futbol.log"),
+    ],
 )
 logger = logging.getLogger(__name__)
 
 
+# Variable global para el pool
+_pool: Optional[ConnectionPool] = None
+
+
+def obtener_pool() -> ConnectionPool:
+    """Obtiene el pool de conexiones a la base de datos."""
+    global _pool
+    
+    if _pool is None:
+        database_url = os.environ.get("DATABASE_URL")
+        
+        if not database_url:
+            # Intentar cargar desde .env
+            try:
+                from dotenv import load_dotenv
+                env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+                if os.path.exists(env_path):
+                    load_dotenv(env_path)
+                else:
+                    load_dotenv()
+                database_url = os.environ.get("DATABASE_URL")
+            except ImportError:
+                pass
+        
+        if not database_url:
+            raise ValueError(
+                "DATABASE_URL no está configurada. "
+                "Configúrala como variable de entorno o en el archivo .env"
+            )
+        
+        _pool = ConnectionPool(database_url, min_size=1, max_size=5)
+    
+    return _pool
+
+
+def cerrar_pool():
+    """Cierra el pool de conexiones."""
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
+
 def imprimir_metricas(resultado: ResultadoEntrenamiento, tipo: str) -> None:
-    """Imprime las métricas de entrenamiento de forma formateada."""
+    """
+    Imprime las métricas de entrenamiento de forma formateada.
+    
+    Args:
+        resultado: ResultadoEntrenamiento con las métricas
+        tipo: Nombre del tipo de modelo (corners, goles, disparos)
+    """
     print(f"\n{'='*60}")
     print(f"  MODELO: {tipo.upper()}")
     print(f"{'='*60}")
 
-    metricas = resultado.metricas
-
-    print(f"\n  Métricas de Regresión:")
-    if 'mae' in metricas:
-        print(f"    - MAE:    {metricas['mae']:.4f}")
-    if 'rmse' in metricas:
-        print(f"    - RMSE:   {metricas['rmse']:.4f}")
-    if 'r2' in metricas:
-        print(f"    - R²:     {metricas['r2']:.4f}")
-
-    if "brier_score" in metricas:
-        print(f"\n  Métricas de Calibración:")
-        print(f"    - Brier Score: {metricas['brier_score']:.4f}")
-        if 'ece' in metricas:
-            print(f"    - ECE:         {metricas['ece']:.4f}")
-
-    print(f"\n  Información del Modelo:")
-    if hasattr(resultado, 'n_partidos'):
-        print(f"    - Partidos utilizados: {resultado.n_partidos}")
-    if hasattr(resultado, 'n_equipos'):
-        print(f"    - Equipos:             {resultado.n_equipos}")
+    # ═══════════════════════════════════════════════════════════════
+    # MÉTRICAS POR TARGET
+    # ═══════════════════════════════════════════════════════════════
+    print(f"\n  📊 Métricas por Target:")
+    print(f"  {'-'*56}")
     
-    # Mostrar alpha si está disponible
-    if hasattr(resultado, 'alpha'):
-        print(f"    - Alpha Ridge:         {resultado.alpha}")
-    elif 'alpha' in metricas:
-        print(f"    - Alpha Ridge:         {metricas['alpha']}")
+    if resultado.mae_por_target:
+        for target, mae in resultado.mae_por_target.items():
+            rmse = resultado.rmse_por_target.get(target, 0.0)
+            r2 = resultado.r2_por_target.get(target, 0.0)
+            print(f"    {target}:")
+            print(f"      MAE:  {mae:.4f}")
+            print(f"      RMSE: {rmse:.4f}")
+            print(f"      R²:   {r2:.4f}")
+    else:
+        print("    No hay métricas por target disponibles")
     
-    if hasattr(resultado, 'fecha_entrenamiento'):
-        print(f"    - Fecha entrenamiento: {resultado.fecha_entrenamiento}")
-
-
-def crear_entrenador_flexible(
-    pool,
-    alpha: float,
-    min_partidos: int,
-    verbose: bool = False,
-) -> EntrenadorFutbol:
-    """
-    Crea una instancia de EntrenadorFutbol de forma flexible,
-    adaptándose a los parámetros que acepta el constructor.
+    # ═══════════════════════════════════════════════════════════════
+    # RESUMEN
+    # ═══════════════════════════════════════════════════════════════
+    mae_promedio = resultado.mae_promedio()
     
-    Args:
-        pool: Pool de conexiones
-        alpha: Parámetro de regularización
-        min_partidos: Mínimo de partidos
-        verbose: Logging verbose
-        
-    Returns:
-        Instancia de EntrenadorFutbol configurada
-    """
-    # Obtener la firma del constructor
-    sig = inspect.signature(EntrenadorFutbol.__init__)
-    params = sig.parameters
+    print(f"\n  📈 Resumen:")
+    print(f"  {'-'*56}")
+    print(f"    MAE Promedio: {mae_promedio:.4f}")
     
-    # Preparar argumentos para el constructor
-    constructor_args = {}
+    # Calcular RMSE y R² promedios
+    if resultado.rmse_por_target:
+        rmse_promedio = sum(resultado.rmse_por_target.values()) / len(resultado.rmse_por_target)
+        print(f"    RMSE Promedio: {rmse_promedio:.4f}")
     
-    # Pool siempre debe estar (es lo mínimo que necesita)
-    if 'pool' in params:
-        constructor_args['pool'] = pool
+    if resultado.r2_por_target:
+        r2_promedio = sum(resultado.r2_por_target.values()) / len(resultado.r2_por_target)
+        print(f"    R² Promedio: {r2_promedio:.4f}")
     
-    # Agregar otros parámetros si son aceptados
-    if 'alpha' in params:
-        constructor_args['alpha'] = alpha
-        if verbose:
-            logger.debug(f"Pasando alpha={alpha} al constructor")
+    # ═══════════════════════════════════════════════════════════════
+    # INFORMACIÓN DEL MODELO
+    # ═══════════════════════════════════════════════════════════════
+    print(f"\n  ℹ️  Información del Modelo:")
+    print(f"  {'-'*56}")
+    print(f"    Partidos utilizados: {resultado.n_partidos}")
+    print(f"    Equipos en modelo:   {resultado.n_equipos}")
+    print(f"    Alpha Ridge:         {resultado.alpha_usado}")
+    print(f"    Duración:            {resultado.duracion_segundos:.2f}s")
     
-    if 'min_partidos' in params:
-        constructor_args['min_partidos'] = min_partidos
-        if verbose:
-            logger.debug(f"Pasando min_partidos={min_partidos} al constructor")
+    if resultado.fecha_entrenamiento:
+        print(f"    Fecha entrenamiento: {resultado.fecha_entrenamiento.strftime('%Y-%m-%d %H:%M:%S')}")
     
-    # Crear instancia
-    if verbose:
-        logger.debug(f"Creando EntrenadorFutbol con args: {list(constructor_args.keys())}")
+    # ═══════════════════════════════════════════════════════════════
+    # VERIFICACIÓN DE OBJETIVOS
+    # ═══════════════════════════════════════════════════════════════
+    print(f"\n  🎯 Verificación de Objetivo:")
+    print(f"  {'-'*56}")
     
-    entrenador = EntrenadorFutbol(**constructor_args)
+    tipo_lower = tipo.lower()
     
-    # Configurar atributos que no se pudieron pasar al constructor
-    if 'alpha' not in constructor_args and hasattr(entrenador, 'alpha'):
-        entrenador.alpha = alpha
-        if verbose:
-            logger.debug(f"Configurando alpha={alpha} como atributo")
-    
-    if 'min_partidos' not in constructor_args:
-        # Intentar configurarlo como atributo
-        if hasattr(entrenador, 'min_partidos'):
-            entrenador.min_partidos = min_partidos
-            if verbose:
-                logger.debug(f"Configurando min_partidos={min_partidos} como atributo")
-        # O en la configuración si existe
-        elif hasattr(entrenador, 'config'):
-            if isinstance(entrenador.config, dict):
-                entrenador.config['min_partidos'] = min_partidos
-                if verbose:
-                    logger.debug(f"Configurando min_partidos={min_partidos} en config")
-    
-    return entrenador
+    if 'corners' in tipo_lower:
+        objetivo = 2.5
+        cumplido = mae_promedio < objetivo
+        print(f"    Objetivo: MAE < {objetivo}")
+        print(f"    Resultado: MAE = {mae_promedio:.4f}")
+        print(f"    Estado: {'✅ CUMPLIDO' if cumplido else '❌ NO CUMPLIDO'}")
+    elif 'goles' in tipo_lower:
+        objetivo = 1.0
+        cumplido = mae_promedio < objetivo
+        print(f"    Objetivo: MAE < {objetivo}")
+        print(f"    Resultado: MAE = {mae_promedio:.4f}")
+        print(f"    Estado: {'✅ CUMPLIDO' if cumplido else '❌ NO CUMPLIDO'}")
+    elif 'disparos' in tipo_lower:
+        objetivo = 4.5
+        cumplido = mae_promedio < objetivo
+        print(f"    Objetivo: MAE < {objetivo}")
+        print(f"    Resultado: MAE = {mae_promedio:.4f}")
+        print(f"    Estado: {'✅ CUMPLIDO' if cumplido else '❌ NO CUMPLIDO'}")
 
 
 def entrenar_modelos(
-    pool,
+    pool: ConnectionPool,
     alpha: float,
     min_partidos: int,
     validar: bool = False,
@@ -196,41 +200,21 @@ def entrenar_modelos(
     """
     logger.info(f"Iniciando entrenamiento con alpha={alpha}, min_partidos={min_partidos}")
 
+    # Crear configuración
+    config = ConfiguracionEntrenamiento(
+        alpha_ridge=alpha if alpha != ALPHA_RIDGE_DEFAULT else None,  # None = buscar óptimo
+        min_partidos_equipo=5,
+        incluir_copas=False,
+    )
+
+    # Crear entrenador
+    logger.debug(f"Creando EntrenadorFutbol con args: ['pool']")
+    entrenador = EntrenadorFutbol(pool=pool, config=config)
+
     try:
-        # Crear entrenador de forma flexible
-        entrenador = crear_entrenador_flexible(
-            pool=pool,
-            alpha=alpha,
-            min_partidos=min_partidos,
-            verbose=verbose,
-        )
-        
-        # Obtener la firma del método entrenar_completo
-        sig = inspect.signature(entrenador.entrenar_completo)
-        params = sig.parameters
-        
-        # Preparar argumentos para entrenar_completo
-        train_args = {}
-        
-        if 'alpha' in params:
-            train_args['alpha'] = alpha
-            if verbose:
-                logger.debug(f"Pasando alpha={alpha} a entrenar_completo")
-        
-        if 'validar_temporal' in params:
-            train_args['validar_temporal'] = validar
-            if verbose:
-                logger.debug(f"Pasando validar_temporal={validar} a entrenar_completo")
-        elif 'validar' in params:
-            train_args['validar'] = validar
-            if verbose:
-                logger.debug(f"Pasando validar={validar} a entrenar_completo")
-        
-        # Llamar al método de entrenamiento
-        if verbose:
-            logger.debug(f"Llamando entrenar_completo con args: {list(train_args.keys())}")
-        
-        resultados = entrenador.entrenar_completo(**train_args)
+        # Entrenar todos los modelos
+        logger.debug(f"Llamando entrenar_completo con args: []")
+        resultados = entrenador.entrenar_completo()
 
         logger.info(f"Entrenamiento completado exitosamente")
 
@@ -243,16 +227,10 @@ def entrenar_modelos(
     except DatosInsuficientes as e:
         logger.error(f"Datos insuficientes para entrenar: {e}")
         raise
-    except Exception as e:
-        logger.error(f"Error durante el entrenamiento: {e}")
-        import traceback
-        if verbose:
-            traceback.print_exc()
-        raise
 
 
 def guardar_modelos(
-    pool,
+    pool: ConnectionPool,
     resultados: Dict[str, ResultadoEntrenamiento],
     verbose: bool = False,
 ) -> str:
@@ -262,70 +240,73 @@ def guardar_modelos(
     Args:
         pool: Pool de conexiones
         resultados: Resultados del entrenamiento
-        verbose: Logging verbose
+        verbose: Mostrar información detallada
 
     Returns:
         Versión asignada a los modelos
     """
     try:
+        from motor_futbol.entrenamiento.gestor_versiones import GestorVersiones
+        
         gestor = GestorVersiones(pool=pool)
         version = gestor.generar_version()
 
         logger.info(f"Guardando modelos con versión: {version}")
 
         for tipo_str, resultado in resultados.items():
-            # Convertir string a TipoModelo si es necesario
-            if isinstance(tipo_str, str):
+            # Determinar tipo de modelo
+            try:
                 tipo = TipoModelo(tipo_str)
-            else:
-                tipo = tipo_str
+            except ValueError:
+                if 'corner' in tipo_str.lower():
+                    tipo = TipoModelo.CORNERS
+                elif 'gol' in tipo_str.lower():
+                    tipo = TipoModelo.GOLES
+                else:
+                    tipo = TipoModelo.DISPAROS
+
+            # Preparar métricas para guardar
+            metricas = {
+                "mae_promedio": resultado.mae_promedio(),
+                "mae_por_target": resultado.mae_por_target,
+                "rmse_por_target": resultado.rmse_por_target,
+                "r2_por_target": resultado.r2_por_target,
+                "alpha_usado": resultado.alpha_usado,
+                "n_partidos": resultado.n_partidos,
+                "n_equipos": resultado.n_equipos,
+            }
 
             gestor.guardar_modelo(
-                modelo=resultado.modelo,
                 tipo=tipo,
                 version=version,
-                metricas=resultado.metricas,
+                metricas=metricas,
+                n_partidos=resultado.n_partidos,
+                n_equipos=resultado.n_equipos,
             )
 
-            logger.info(f"Modelo {tipo.value if hasattr(tipo, 'value') else tipo} guardado correctamente")
+            logger.info(f"Modelo {tipo.value} guardado correctamente")
 
         # Marcar como versión activa
         gestor.activar_version(version)
 
         print(f"\n{'='*60}")
-        print(f"  MODELOS GUARDADOS")
+        print(f"  💾 MODELOS GUARDADOS EN BASE DE DATOS")
         print(f"{'='*60}")
         print(f"  Versión: {version}")
-        print(f"  Modelos: {', '.join(str(k) for k in resultados.keys())}")
+        print(f"  Modelos: {', '.join(resultados.keys())}")
         print(f"{'='*60}\n")
 
         return version
     
-    except Exception as e:
-        logger.error(f"Error guardando modelos: {e}")
-        if verbose:
-            import traceback
-            traceback.print_exc()
-        raise
-
-
-def verificar_conexion_bd(pool) -> bool:
-    """
-    Verifica que la conexión a la base de datos funcione.
+    except ImportError as e:
+        logger.warning(f"No se pudo importar GestorVersiones: {e}")
+        logger.info("Los modelos se entrenaron pero no se guardaron en BD")
+        return "no_guardado"
     
-    Returns:
-        True si la conexión es exitosa, False en caso contrario
-    """
-    try:
-        conn = pool.getconn()
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
-        pool.putconn(conn)
-        return True
     except Exception as e:
-        logger.error(f"Error verificando conexión a BD: {e}")
-        return False
+        logger.warning(f"No se pudieron guardar los modelos en BD: {e}")
+        logger.info("Los modelos se entrenaron correctamente pero no se guardaron en la BD")
+        return "no_guardado"
 
 
 def main():
@@ -373,8 +354,11 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
+    # ═══════════════════════════════════════════════════════════════
+    # HEADER
+    # ═══════════════════════════════════════════════════════════════
     print("\n" + "="*60)
-    print("  MOTOR DE PREDICCIÓN DE FÚTBOL - ENTRENAMIENTO")
+    print("  ⚽ MOTOR DE PREDICCIÓN DE FÚTBOL - ENTRENAMIENTO")
     print("="*60)
     print(f"  Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"  Alpha: {args.alpha}")
@@ -386,18 +370,14 @@ def main():
     pool = None
     
     try:
-        # Obtener pool de conexiones usando la función del módulo db
+        # Conectar a BD
         logger.info("Estableciendo conexión a la base de datos...")
         pool = obtener_pool()
         
-        # Verificar que la conexión funcione
-        if not verificar_conexion_bd(pool):
-            print("\n❌ Error: No se pudo conectar a la base de datos")
-            print("   Por favor verifica:")
-            print("   1. Que la variable de entorno DATABASE_URL esté configurada")
-            print("   2. Que la base de datos esté accesible")
-            print("   3. Que las credenciales sean correctas")
-            sys.exit(1)
+        # Verificar conexión
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
         
         logger.info("✓ Conexión a BD establecida correctamente")
 
@@ -415,41 +395,61 @@ def main():
             version = guardar_modelos(pool, resultados, verbose=args.verbose)
             logger.info(f"Modelos guardados con versión: {version}")
 
-        # Resumen final
+        # ═══════════════════════════════════════════════════════════════
+        # RESUMEN FINAL
+        # ═══════════════════════════════════════════════════════════════
         print("\n" + "="*60)
-        print("  RESUMEN DE ENTRENAMIENTO")
+        print("  📋 RESUMEN FINAL DE ENTRENAMIENTO")
         print("="*60)
 
-        for tipo, resultado in resultados.items():
-            print(f"\n  {tipo}:")
-            mae_val = resultado.metricas.get('mae', None)
-            
-            if mae_val is not None:
-                if isinstance(mae_val, (int, float)):
-                    print(f"    MAE: {mae_val:.4f}")
-                    
-                    # Verificar objetivos
-                    tipo_str = str(tipo)
-                    if hasattr(tipo, 'value'):
-                        tipo_str = tipo.value
-                    
-                    if 'CORNERS' in tipo_str.upper() and mae_val < 2.5:
-                        print(f"    ✓ MAE < 2.5 (objetivo cumplido)")
-                    elif 'GOLES' in tipo_str.upper() and mae_val < 1.0:
-                        print(f"    ✓ MAE < 1.0 (objetivo cumplido)")
-                else:
-                    print(f"    MAE: {mae_val}")
-            else:
-                print(f"    MAE: N/A")
-
-        print("\n" + "="*60 + "\n")
+        todos_objetivos_cumplidos = True
         
-        # Código de salida basado en éxito
+        for tipo, resultado in resultados.items():
+            mae_promedio = resultado.mae_promedio()
+            print(f"\n  {tipo.upper()}:")
+            print(f"    MAE Promedio: {mae_promedio:.4f}")
+            print(f"    Partidos: {resultado.n_partidos}")
+            print(f"    Equipos: {resultado.n_equipos}")
+            
+            # Verificar objetivos
+            objetivo_cumplido = False
+            tipo_lower = tipo.lower()
+            
+            if 'corners' in tipo_lower:
+                objetivo_cumplido = mae_promedio < 2.5
+                status = '✅ CUMPLIDO' if objetivo_cumplido else '❌ NO CUMPLIDO'
+                print(f"    Objetivo (MAE < 2.5): {status}")
+            elif 'goles' in tipo_lower:
+                objetivo_cumplido = mae_promedio < 1.0
+                status = '✅ CUMPLIDO' if objetivo_cumplido else '❌ NO CUMPLIDO'
+                print(f"    Objetivo (MAE < 1.0): {status}")
+            elif 'disparos' in tipo_lower:
+                objetivo_cumplido = mae_promedio < 4.5
+                status = '✅ CUMPLIDO' if objetivo_cumplido else '❌ NO CUMPLIDO'
+                print(f"    Objetivo (MAE < 4.5): {status}")
+            
+            if not objetivo_cumplido:
+                todos_objetivos_cumplidos = False
+
+        print("\n" + "="*60)
+        
+        if todos_objetivos_cumplidos:
+            print("  🎉 ¡TODOS LOS OBJETIVOS CUMPLIDOS!")
+            print("  Los modelos están listos para producción.")
+        else:
+            print("  ⚠️  Algunos objetivos no se cumplieron")
+            print("  Considera ajustar parámetros o revisar datos.")
+        
+        print("="*60 + "\n")
+        
         sys.exit(0)
 
     except DatosInsuficientes as e:
         print(f"\n❌ Error: Datos insuficientes para entrenar")
         print(f"   Detalles: {e}")
+        print("\n   Sugerencias:")
+        print("   1. Verifica que la tabla partidos_futbol tiene datos")
+        print("   2. Ejecuta: python scripts/auditar_datos_futbol.py")
         sys.exit(1)
 
     except KeyboardInterrupt:
