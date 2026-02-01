@@ -34,6 +34,11 @@ from .tipos import (
     ResultadoEntrenamiento,
     ConfiguracionEntrenamiento,
     ModeloRidgeFutbol,
+
+    # Dataclasses de calibración
+    ConfiguracionCalibracion,
+    ResultadoCalibracion,
+    DatosReliabilityDiagram,
 )
 
 from .constantes import (
@@ -68,6 +73,10 @@ __all__ = [
     "ResultadoEntrenamiento",
     "ConfiguracionEntrenamiento",
     "ModeloRidgeFutbol",
+    # Dataclasses de calibración
+    "ConfiguracionCalibracion",
+    "ResultadoCalibracion",
+    "DatosReliabilityDiagram",
     # Constantes
     "ALPHA_RIDGE_DEFAULT",
     "N_PARTIDOS_FORMA",
