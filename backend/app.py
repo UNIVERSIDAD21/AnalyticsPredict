@@ -26,6 +26,14 @@ from api.rutas_predicciones import router as router_predicciones
 from api.rutas_backtest import router as router_backtest
 from api.rutas_internas import router as router_interno
 from api.rutas_combinadas import router as router_combinadas
+
+# Routers de Fútbol
+from api.rutas_competiciones_futbol import router as router_competiciones_futbol
+from api.rutas_equipos_futbol import router as router_equipos_futbol
+from api.rutas_partidos_futbol import router as router_partidos_futbol
+from api.rutas_analisis_futbol import router as router_analisis_futbol
+from api.rutas_apuestas_futbol import router as router_apuestas_futbol
+from api.rutas_metricas_futbol import router as router_metricas_futbol
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from db import obtener_pool, cerrar_pool
 
@@ -237,6 +245,14 @@ app.include_router(router_metricas)
 app.include_router(router_backtest)
 app.include_router(router_predicciones)
 app.include_router(router_combinadas)
+
+# Routers de Fútbol
+app.include_router(router_competiciones_futbol)
+app.include_router(router_equipos_futbol)
+app.include_router(router_partidos_futbol)
+app.include_router(router_analisis_futbol)
+app.include_router(router_apuestas_futbol)
+app.include_router(router_metricas_futbol)
 
 
 @app.get(

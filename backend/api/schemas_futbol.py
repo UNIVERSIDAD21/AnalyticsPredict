@@ -1,0 +1,404 @@
+# -*- coding: utf-8 -*-
+"""
+schemas_futbol.py — Modelos Pydantic para la API de fútbol.
+
+Este módulo contiene todos los schemas de request/response para los endpoints
+del módulo de fútbol.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, date
+from decimal import Decimal
+from typing import Dict, List, Optional, Any, Literal
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS DE COMPETICIONES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class CompeticionBase(BaseModel):
+    """Schema base para una competición de fútbol."""
+    id: UUID
+    codigo: str
+    nombre: str
+    pais: str
+    tipo: str = Field(description="liga, copa_nacional, continental")
+    prioridad: int = 0
+    activa: bool = True
+
+
+class CompeticionDetalle(CompeticionBase):
+    """Schema con detalle adicional de una competición."""
+    temporada_actual: Optional[str] = None
+    total_equipos: int = 0
+    total_partidos: int = 0
+
+
+class ListaCompeticionesResponse(BaseModel):
+    """Respuesta para listado de competiciones."""
+    exito: bool = True
+    total: int
+    competiciones: List[CompeticionBase]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS DE EQUIPOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class EstadisticasEquipo(BaseModel):
+    """Estadísticas agregadas de un equipo."""
+    partidos_jugados: int = 0
+    victorias: int = 0
+    empates: int = 0
+    derrotas: int = 0
+    goles_favor: float = 0.0
+    goles_contra: float = 0.0
+    corners_favor: float = 0.0
+    corners_contra: float = 0.0
+    disparos_total: float = 0.0
+    disparos_arco: float = 0.0
+
+
+class EquipoBase(BaseModel):
+    """Schema base para un equipo de fútbol."""
+    id: UUID
+    nombre: str
+    nombre_corto: Optional[str] = None
+    pais: str
+    competicion_principal: Optional[str] = None
+    logo_url: Optional[str] = None
+
+
+class EquipoDetalle(EquipoBase):
+    """Schema con detalle completo de un equipo."""
+    estadisticas: Optional[EstadisticasEquipo] = None
+
+
+class ListaEquiposResponse(BaseModel):
+    """Respuesta para listado de equipos."""
+    exito: bool = True
+    total: int
+    pagina: int = 1
+    tamano: int = 20
+    equipos: List[EquipoBase]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS DE PARTIDOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PartidoResumen(BaseModel):
+    """Schema resumen de un partido."""
+    id: UUID
+    competicion: str
+    fecha_partido: datetime
+    equipo_local: str
+    equipo_visitante: str
+    estado: str
+    jornada: Optional[int] = None
+
+
+class PartidoDetalle(PartidoResumen):
+    """Schema con detalle completo de un partido."""
+    # Goles
+    local_goles_1t: Optional[int] = None
+    local_goles_2t: Optional[int] = None
+    local_goles_total: Optional[int] = None
+    visitante_goles_1t: Optional[int] = None
+    visitante_goles_2t: Optional[int] = None
+    visitante_goles_total: Optional[int] = None
+
+    # Corners
+    local_corners_1t: Optional[int] = None
+    local_corners_2t: Optional[int] = None
+    local_corners_total: Optional[int] = None
+    visitante_corners_1t: Optional[int] = None
+    visitante_corners_2t: Optional[int] = None
+    visitante_corners_total: Optional[int] = None
+
+    # Disparos
+    local_disparos_total: Optional[int] = None
+    local_disparos_arco: Optional[int] = None
+    visitante_disparos_total: Optional[int] = None
+    visitante_disparos_arco: Optional[int] = None
+
+    # Estadísticas de equipos
+    estadisticas_local: Optional[EstadisticasEquipo] = None
+    estadisticas_visitante: Optional[EstadisticasEquipo] = None
+
+
+class ListaPartidosResponse(BaseModel):
+    """Respuesta para listado de partidos."""
+    exito: bool = True
+    total: int
+    partidos: List[PartidoResumen]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS DE ANÁLISIS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AnalisisRequest(BaseModel):
+    """Request para análisis de un partido."""
+    partido_id: UUID
+    lineas_corners: Optional[List[float]] = Field(
+        default=[8.5, 9.5, 10.5, 11.5],
+        description="Líneas a analizar para corners"
+    )
+    lineas_goles: Optional[List[float]] = Field(
+        default=[1.5, 2.5, 3.5],
+        description="Líneas a analizar para goles"
+    )
+    lineas_disparos: Optional[List[float]] = Field(
+        default=[22.5, 24.5, 26.5],
+        description="Líneas a analizar para disparos"
+    )
+
+    @field_validator("lineas_corners", "lineas_goles", "lineas_disparos", mode="before")
+    @classmethod
+    def validar_lineas(cls, v):
+        if v is None:
+            return v
+        if not isinstance(v, list) or len(v) == 0:
+            return None
+        return v
+
+
+class ProbabilidadLinea(BaseModel):
+    """Probabilidades para una línea específica."""
+    over_raw: float = Field(ge=0, le=1)
+    over_calibrada: float = Field(ge=0, le=1)
+    under_raw: float = Field(ge=0, le=1)
+    under_calibrada: float = Field(ge=0, le=1)
+
+
+class PrediccionMercado(BaseModel):
+    """Predicción para un mercado específico."""
+    mercado: str
+    media: float
+    std: float
+    lineas: Dict[str, ProbabilidadLinea]
+
+
+class RecomendacionApuesta(BaseModel):
+    """Recomendación de apuesta generada por el análisis."""
+    mercado: str
+    lado: Literal["OVER", "UNDER"]
+    linea: float
+    probabilidad: float = Field(ge=0, le=1)
+    confianza: Literal["MUY_ALTA", "ALTA", "MEDIA", "BAJA", "MUY_BAJA"]
+    valor_esperado: Optional[float] = None
+
+
+class AnalisisResponse(BaseModel):
+    """Respuesta del análisis de un partido."""
+    exito: bool = True
+    partido: PartidoResumen
+    timestamp_analisis: datetime
+    mercados_corners: Dict[str, PrediccionMercado]
+    mercados_goles: Dict[str, PrediccionMercado]
+    mercados_disparos: Dict[str, PrediccionMercado]
+    recomendaciones: List[RecomendacionApuesta]
+    modelo_version: str
+    calibradores_activos: int = 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS DE APUESTAS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ApuestaRequest(BaseModel):
+    """Request para crear una apuesta."""
+    partido_id: UUID
+    mercado: str = Field(description="Uno de los 24 mercados de fútbol")
+    lado: Literal["OVER", "UNDER"]
+    linea: float = Field(gt=0)
+    cuota: float = Field(gt=1.0)
+    stake: float = Field(gt=0)
+    casa_apuestas: Optional[str] = None
+    notas: Optional[str] = None
+
+    @field_validator("mercado")
+    @classmethod
+    def validar_mercado(cls, v: str) -> str:
+        mercados_validos = {
+            # Corners (9)
+            "CORNERS_1T", "CORNERS_2T", "CORNERS_FT",
+            "CORNERS_LOCAL_1T", "CORNERS_LOCAL_2T", "CORNERS_LOCAL_FT",
+            "CORNERS_VISITANTE_1T", "CORNERS_VISITANTE_2T", "CORNERS_VISITANTE_FT",
+            # Goles (9)
+            "GOLES_1T", "GOLES_2T", "GOLES_FT",
+            "GOLES_LOCAL_1T", "GOLES_LOCAL_2T", "GOLES_LOCAL_FT",
+            "GOLES_VISITANTE_1T", "GOLES_VISITANTE_2T", "GOLES_VISITANTE_FT",
+            # Disparos (6)
+            "DISPAROS_FT", "DISPAROS_ARCO_FT",
+            "DISPAROS_LOCAL_FT", "DISPAROS_LOCAL_ARCO_FT",
+            "DISPAROS_VISITANTE_FT", "DISPAROS_VISITANTE_ARCO_FT",
+        }
+        v_upper = v.upper()
+        if v_upper not in mercados_validos:
+            raise ValueError(f"Mercado inválido: {v}. Debe ser uno de: {mercados_validos}")
+        return v_upper
+
+
+class ApuestaResponse(BaseModel):
+    """Respuesta con datos de una apuesta."""
+    id: UUID
+    partido_id: UUID
+    mercado: str
+    lado: str
+    linea: float
+    cuota: float
+    stake: float
+    estado: Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH", "CANCELADA"]
+    probabilidad_sistema: float
+    confianza: str
+    valor_esperado: float
+    ganancia_potencial: float
+    resultado: Optional[str] = None
+    ganancia_real: Optional[float] = None
+    fecha_creacion: datetime
+    fecha_resolucion: Optional[datetime] = None
+    casa_apuestas: Optional[str] = None
+    notas: Optional[str] = None
+
+
+class ApuestaUpdateRequest(BaseModel):
+    """Request para actualizar una apuesta pendiente."""
+    stake: Optional[float] = Field(None, gt=0)
+    cuota: Optional[float] = Field(None, gt=1.0)
+    notas: Optional[str] = None
+    cancelar: Optional[bool] = False
+
+
+class ResumenApuestas(BaseModel):
+    """Resumen estadístico de apuestas."""
+    total: int = 0
+    pendientes: int = 0
+    ganadas: int = 0
+    perdidas: int = 0
+    push: int = 0
+    roi: Optional[float] = None
+    win_rate: Optional[float] = None
+    stake_total: float = 0.0
+    ganancia_neta: float = 0.0
+
+
+class ListaApuestasResponse(BaseModel):
+    """Respuesta para listado de apuestas."""
+    exito: bool = True
+    total: int
+    resumen: ResumenApuestas
+    apuestas: List[ApuestaResponse]
+
+
+class ResolucionRequest(BaseModel):
+    """Request para resolver apuestas."""
+    partido_id: Optional[UUID] = None
+    forzar: bool = False
+
+
+class ResolucionResponse(BaseModel):
+    """Respuesta de resolución de apuestas."""
+    exito: bool = True
+    resueltas: int = 0
+    ganadas: int = 0
+    perdidas: int = 0
+    push: int = 0
+    errores: int = 0
+    ganancia_neta: float = 0.0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS DE MÉTRICAS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class MetricasCalibracion(BaseModel):
+    """Métricas de calibración para un mercado."""
+    mercado: str
+    brier_score: float
+    ece: float
+    log_loss: float
+    n_predicciones: int
+    calibrador_activo: bool = False
+    metodo_calibrador: Optional[str] = None
+    mejora_brier: Optional[float] = None
+
+
+class MetricasRendimiento(BaseModel):
+    """Métricas de rendimiento de apuestas."""
+    mercado: str
+    n_apuestas: int = 0
+    ganadas: int = 0
+    perdidas: int = 0
+    roi: float = 0.0
+    win_rate: float = 0.0
+    stake_total: float = 0.0
+    ganancia_neta: float = 0.0
+
+
+class MetricasModelo(BaseModel):
+    """Métricas de un modelo de predicción."""
+    tipo_modelo: str
+    version: str
+    fecha_entrenamiento: Optional[datetime] = None
+    mae: float = 0.0
+    rmse: float = 0.0
+    r2: float = 0.0
+    n_partidos_entrenamiento: int = 0
+    n_equipos: int = 0
+
+
+class EstadoModelos(BaseModel):
+    """Estado completo de los modelos."""
+    modelos: List[MetricasModelo]
+    ultima_actualizacion: Optional[datetime] = None
+    proximo_reentrenamiento: Optional[datetime] = None
+
+
+class ResumenSistema(BaseModel):
+    """Resumen ejecutivo del sistema."""
+    partidos_proximos: int = 0
+    predicciones_pendientes: int = 0
+    apuestas_activas: int = 0
+    roi_global: Optional[float] = None
+    win_rate_global: Optional[float] = None
+    modelo_activo: bool = False
+    calibradores_activos: int = 0
+    alerta_calibracion: Optional[str] = None
+
+
+class ListaMetricasCalibracionResponse(BaseModel):
+    """Respuesta para métricas de calibración."""
+    exito: bool = True
+    periodo: str
+    metricas: List[MetricasCalibracion]
+
+
+class ListaMetricasRendimientoResponse(BaseModel):
+    """Respuesta para métricas de rendimiento."""
+    exito: bool = True
+    periodo: str
+    metricas: List[MetricasRendimiento]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCHEMAS GENÉRICOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ErrorResponse(BaseModel):
+    """Schema para respuestas de error."""
+    exito: bool = False
+    error: str
+    detalle: Optional[str] = None
+    codigo: Optional[str] = None
+
+
+class MensajeResponse(BaseModel):
+    """Schema para mensajes simples."""
+    exito: bool = True
+    mensaje: str

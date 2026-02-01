@@ -98,7 +98,8 @@ def obtener_predicciones_periodo(
     """
     mercado_str = mercado.value.upper()
 
-    # Query base
+    # Query base - usa predicciones_futbol y obtiene resultados de partidos_futbol
+    # (NO existe tabla resultados_futbol separada)
     query = """
         SELECT
             prob_over_raw,
@@ -113,22 +114,62 @@ def obtener_predicciones_periodo(
                 COALESCE(p.prob_over_calibrada, p.prob_over_raw) as prob_over_calibrada,
                 p.linea,
                 CASE
-                    WHEN p.mercado LIKE '%%CORNERS%%' THEN
-                        COALESCE(r.corners_local_ft + r.corners_visitante_ft,
-                                 r.corners_local_1t + r.corners_visitante_1t +
-                                 r.corners_local_2t + r.corners_visitante_2t)
-                    WHEN p.mercado LIKE '%%GOLES%%' THEN
-                        COALESCE(r.goles_local_ft + r.goles_visitante_ft,
-                                 r.goles_local_1t + r.goles_visitante_1t +
-                                 r.goles_local_2t + r.goles_visitante_2t)
-                    WHEN p.mercado LIKE '%%DISPAROS%%' THEN
-                        r.disparos_local_total + r.disparos_visitante_total
+                    -- Corners Full Time (totales)
+                    WHEN p.mercado = 'CORNERS_FT' THEN
+                        pf.local_corners_total + pf.visitante_corners_total
+                    WHEN p.mercado = 'CORNERS_1T' THEN
+                        pf.local_corners_1t + pf.visitante_corners_1t
+                    WHEN p.mercado = 'CORNERS_2T' THEN
+                        pf.local_corners_2t + pf.visitante_corners_2t
+                    WHEN p.mercado = 'CORNERS_LOCAL_FT' THEN
+                        pf.local_corners_total
+                    WHEN p.mercado = 'CORNERS_LOCAL_1T' THEN
+                        pf.local_corners_1t
+                    WHEN p.mercado = 'CORNERS_LOCAL_2T' THEN
+                        pf.local_corners_2t
+                    WHEN p.mercado = 'CORNERS_VISITANTE_FT' THEN
+                        pf.visitante_corners_total
+                    WHEN p.mercado = 'CORNERS_VISITANTE_1T' THEN
+                        pf.visitante_corners_1t
+                    WHEN p.mercado = 'CORNERS_VISITANTE_2T' THEN
+                        pf.visitante_corners_2t
+                    -- Goles
+                    WHEN p.mercado = 'GOLES_FT' THEN
+                        pf.local_goles_total + pf.visitante_goles_total
+                    WHEN p.mercado = 'GOLES_1T' THEN
+                        pf.local_goles_1t + pf.visitante_goles_1t
+                    WHEN p.mercado = 'GOLES_2T' THEN
+                        pf.local_goles_2t + pf.visitante_goles_2t
+                    WHEN p.mercado = 'GOLES_LOCAL_FT' THEN
+                        pf.local_goles_total
+                    WHEN p.mercado = 'GOLES_LOCAL_1T' THEN
+                        pf.local_goles_1t
+                    WHEN p.mercado = 'GOLES_LOCAL_2T' THEN
+                        pf.local_goles_2t
+                    WHEN p.mercado = 'GOLES_VISITANTE_FT' THEN
+                        pf.visitante_goles_total
+                    WHEN p.mercado = 'GOLES_VISITANTE_1T' THEN
+                        pf.visitante_goles_1t
+                    WHEN p.mercado = 'GOLES_VISITANTE_2T' THEN
+                        pf.visitante_goles_2t
+                    -- Disparos
+                    WHEN p.mercado = 'DISPAROS_FT' THEN
+                        pf.local_disparos_total + pf.visitante_disparos_total
+                    WHEN p.mercado = 'DISPAROS_ARCO_FT' THEN
+                        pf.local_disparos_arco + pf.visitante_disparos_arco
+                    WHEN p.mercado = 'DISPAROS_LOCAL_FT' THEN
+                        pf.local_disparos_total
+                    WHEN p.mercado = 'DISPAROS_LOCAL_ARCO_FT' THEN
+                        pf.local_disparos_arco
+                    WHEN p.mercado = 'DISPAROS_VISITANTE_FT' THEN
+                        pf.visitante_disparos_total
+                    WHEN p.mercado = 'DISPAROS_VISITANTE_ARCO_FT' THEN
+                        pf.visitante_disparos_arco
                     ELSE NULL
                 END as resultado_real,
                 pf.fecha_partido
-            FROM predicciones_mercado p
+            FROM predicciones_futbol p
             JOIN partidos_futbol pf ON p.partido_id = pf.id
-            JOIN resultados_futbol r ON pf.id = r.partido_id
             WHERE p.mercado = %s
               AND p.prob_over_raw IS NOT NULL
               AND pf.estado = 'FINALIZADO'
