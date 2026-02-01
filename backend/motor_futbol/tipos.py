@@ -583,3 +583,131 @@ def normalizar_nombre_equipo(nombre: str) -> str:
         Nombre normalizado
     """
     return " ".join((nombre or "").strip().lower().replace("_", " ").split())
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECCIÓN 6: ESTRUCTURAS DE DATOS PARA CALIBRACIÓN
+# ══════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ConfiguracionCalibracion:
+    """Configuración para el sistema de calibración de probabilidades."""
+
+    metodo: str = "platt"  # 'platt' | 'isotonic' | 'auto'
+    min_muestras: int = 100
+    n_bins_ece: int = 10
+    validacion_cruzada: bool = True
+    n_folds: int = 5
+    train_ratio: float = 0.8  # Proporción de datos para entrenamiento
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte a diccionario."""
+        return {
+            "metodo": self.metodo,
+            "min_muestras": self.min_muestras,
+            "n_bins_ece": self.n_bins_ece,
+            "validacion_cruzada": self.validacion_cruzada,
+            "n_folds": self.n_folds,
+            "train_ratio": self.train_ratio,
+        }
+
+    @classmethod
+    def desde_dict(cls, data: Dict[str, Any]) -> "ConfiguracionCalibracion":
+        """Construye desde diccionario."""
+        return cls(
+            metodo=data.get("metodo", "platt"),
+            min_muestras=data.get("min_muestras", 100),
+            n_bins_ece=data.get("n_bins_ece", 10),
+            validacion_cruzada=data.get("validacion_cruzada", True),
+            n_folds=data.get("n_folds", 5),
+            train_ratio=data.get("train_ratio", 0.8),
+        )
+
+
+@dataclass
+class ResultadoCalibracion:
+    """Resultado de entrenar un calibrador de probabilidades."""
+
+    mercado: TipoMercadoFutbol
+    metodo: str  # 'platt' | 'isotonic'
+
+    # Métricas antes de calibración
+    brier_antes: float
+    log_loss_antes: float
+    ece_antes: float
+
+    # Métricas después de calibración
+    brier_despues: float
+    log_loss_despues: float
+    ece_despues: float
+
+    # Mejora
+    mejora_brier_porcentual: float = field(init=False)
+    mejora_ece_porcentual: float = field(init=False)
+
+    # Metadatos
+    n_muestras: int = 0
+    n_muestras_train: int = 0
+    n_muestras_validation: int = 0
+    fecha_entrenamiento: datetime = field(default_factory=datetime.now)
+    parametros: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Calcula métricas derivadas después de inicialización."""
+        if self.brier_antes > 0:
+            self.mejora_brier_porcentual = (
+                (self.brier_antes - self.brier_despues) / self.brier_antes * 100
+            )
+        else:
+            self.mejora_brier_porcentual = 0.0
+
+        if self.ece_antes > 0:
+            self.mejora_ece_porcentual = (
+                (self.ece_antes - self.ece_despues) / self.ece_antes * 100
+            )
+        else:
+            self.mejora_ece_porcentual = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte a diccionario."""
+        return {
+            "mercado": self.mercado.value,
+            "metodo": self.metodo,
+            "brier_antes": self.brier_antes,
+            "log_loss_antes": self.log_loss_antes,
+            "ece_antes": self.ece_antes,
+            "brier_despues": self.brier_despues,
+            "log_loss_despues": self.log_loss_despues,
+            "ece_despues": self.ece_despues,
+            "mejora_brier_porcentual": self.mejora_brier_porcentual,
+            "mejora_ece_porcentual": self.mejora_ece_porcentual,
+            "n_muestras": self.n_muestras,
+            "n_muestras_train": self.n_muestras_train,
+            "n_muestras_validation": self.n_muestras_validation,
+            "fecha_entrenamiento": self.fecha_entrenamiento.isoformat(),
+            "parametros": self.parametros,
+        }
+
+
+@dataclass
+class DatosReliabilityDiagram:
+    """Datos para generar un diagrama de confiabilidad (reliability diagram)."""
+
+    bins: List[Tuple[float, float]]  # Lista de (inicio, fin) de cada bin
+    frecuencia_predicha: List[float]  # Promedio de prob en cada bin
+    frecuencia_real: List[float]  # Proporción de outcomes=1 en cada bin
+    conteo: List[int]  # Número de muestras en cada bin
+
+    @property
+    def n_bins(self) -> int:
+        """Número de bins."""
+        return len(self.bins)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte a diccionario."""
+        return {
+            "bins": self.bins,
+            "frecuencia_predicha": self.frecuencia_predicha,
+            "frecuencia_real": self.frecuencia_real,
+            "conteo": self.conteo,
+        }

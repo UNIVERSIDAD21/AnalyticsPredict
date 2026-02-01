@@ -3,13 +3,18 @@
 calculadora_probabilidad.py — Funciones matemáticas para cálculos probabilísticos.
 
 Este módulo contiene funciones para convertir predicciones de media/std
-en probabilidades y calcular métricas relacionadas.
+en probabilidades y calcular métricas relacionadas. Incluye soporte para
+calibración de probabilidades.
 """
 
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..calibracion import GestorCalibradores
+    from ..tipos import TipoMercadoFutbol
 
 
 class CalculadoraProbabilidad:
@@ -358,3 +363,96 @@ class CalculadoraProbabilidad:
         cuota_justa_under = 1.0 / prob_under if prob_under > 0 else cuota_under
 
         return (cuota_justa_over, cuota_justa_under)
+
+    @staticmethod
+    def probabilidades_lineas_con_calibracion(
+        media: float,
+        std: float,
+        lineas: List[float],
+        mercado: "TipoMercadoFutbol",
+        gestor_calibradores: Optional["GestorCalibradores"] = None,
+    ) -> Dict[str, Dict[str, float]]:
+        """
+        Calcula probabilidades para múltiples líneas, con y sin calibración.
+
+        Esta función extiende probabilidades_lineas() agregando probabilidades
+        calibradas cuando hay un calibrador activo para el mercado.
+
+        Args:
+            media: Media predicha
+            std: Desviación estándar
+            lineas: Lista de líneas a calcular
+            mercado: Tipo de mercado de fútbol
+            gestor_calibradores: Gestor de calibradores (opcional)
+
+        Returns:
+            Dict con:
+            {
+                "over_X.X": {"raw": prob, "calibrada": prob_cal},
+                "under_X.X": {"raw": prob, "calibrada": prob_cal},
+                ...
+            }
+        """
+        resultado: Dict[str, Dict[str, float]] = {}
+
+        for linea in lineas:
+            prob_over = CalculadoraProbabilidad.prob_over(media, std, linea)
+            prob_under = 1.0 - prob_over
+
+            # Intentar calibrar si hay gestor disponible
+            prob_over_cal = prob_over
+            prob_under_cal = prob_under
+
+            if gestor_calibradores is not None:
+                try:
+                    prob_over_cal = gestor_calibradores.calibrar_probabilidad(
+                        mercado, prob_over
+                    )
+                    # Asegurar que las probabilidades complementarias suman 1
+                    prob_under_cal = 1.0 - prob_over_cal
+                except Exception:
+                    # Si falla la calibración, usar prob raw
+                    pass
+
+            resultado[f"over_{linea}"] = {
+                "raw": round(prob_over, 4),
+                "calibrada": round(float(prob_over_cal), 4),
+            }
+            resultado[f"under_{linea}"] = {
+                "raw": round(prob_under, 4),
+                "calibrada": round(float(prob_under_cal), 4),
+            }
+
+        return resultado
+
+    @staticmethod
+    def aplicar_calibracion(
+        prob_raw: float,
+        mercado: "TipoMercadoFutbol",
+        gestor_calibradores: Optional["GestorCalibradores"] = None,
+    ) -> Tuple[float, bool]:
+        """
+        Aplica calibración a una probabilidad raw.
+
+        Args:
+            prob_raw: Probabilidad sin calibrar
+            mercado: Tipo de mercado
+            gestor_calibradores: Gestor de calibradores
+
+        Returns:
+            Tupla (prob_calibrada, fue_calibrada)
+            - prob_calibrada: Probabilidad calibrada o raw si no hay calibrador
+            - fue_calibrada: True si se aplicó calibración
+        """
+        if gestor_calibradores is None:
+            return (prob_raw, False)
+
+        try:
+            prob_calibrada = gestor_calibradores.calibrar_probabilidad(
+                mercado, prob_raw
+            )
+            # Verificar que es diferente de raw (indica que hubo calibración)
+            fue_calibrada = abs(float(prob_calibrada) - prob_raw) > 1e-9
+            return (float(prob_calibrada), fue_calibrada)
+        except Exception:
+            return (prob_raw, False)
