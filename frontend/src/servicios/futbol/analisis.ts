@@ -27,13 +27,13 @@ function transformarPartidoResumen(
   return {
     id: String(data.id || ''),
     competicion: String(data.competicion || ''),
-    competicionNombre: String(data.competicion_nombre || ''),
+    competicionNombre: String(data.competicion_nombre || data.competicion || ''),
     fechaPartido: String(data.fecha_partido || ''),
     equipoLocal: String(data.equipo_local || ''),
-    equipoLocalNombre: String(data.equipo_local_nombre || ''),
+    equipoLocalNombre: String(data.equipo_local_nombre || data.equipo_local || ''),
     equipoLocalLogo: data.equipo_local_logo as string | undefined,
     equipoVisitante: String(data.equipo_visitante || ''),
-    equipoVisitanteNombre: String(data.equipo_visitante_nombre || ''),
+    equipoVisitanteNombre: String(data.equipo_visitante_nombre || data.equipo_visitante || ''),
     equipoVisitanteLogo: data.equipo_visitante_logo as string | undefined,
     estado: (data.estado as PartidoFutbolResumen['estado']) || 'PROGRAMADO',
     jornada: data.jornada ? Number(data.jornada) : undefined,
@@ -140,7 +140,7 @@ export async function analizarPartido(
       body.lineas_disparos = request.lineasDisparos;
     }
 
-    const respuesta = await clienteAPI.post('/api/futbol/analisis', body);
+    const respuesta = await clienteAPI.post('/api/futbol/analizar', body);
     const data = respuesta.data;
 
     // Transformar la respuesta a camelCase
