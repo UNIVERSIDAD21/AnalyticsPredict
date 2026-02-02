@@ -90,6 +90,7 @@ async def listar_partidos_proximos(
 
     fecha_inicio = datetime.now()
     fecha_fin = fecha_inicio + timedelta(days=dias)
+    estados_programados = ["PROGRAMADO", "SCHEDULED", "PENDIENTE"]
 
     query = """
         SELECT
@@ -104,19 +105,19 @@ async def listar_partidos_proximos(
         JOIN competiciones_futbol c ON pf.competicion_id = c.id
         JOIN equipos_futbol el ON pf.equipo_local_id = el.id
         JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
-        WHERE pf.estado = 'PROGRAMADO'
-          AND pf.fecha_partido >= %s
+        WHERE pf.fecha_partido >= %s
           AND pf.fecha_partido <= %s
+          AND (pf.estado::text = ANY(%s) OR pf.estado IS NULL)
     """
     count_query = """
         SELECT COUNT(*)
         FROM partidos_futbol pf
-        WHERE pf.estado = 'PROGRAMADO'
-          AND pf.fecha_partido >= %s
+        WHERE pf.fecha_partido >= %s
           AND pf.fecha_partido <= %s
+          AND (pf.estado::text = ANY(%s) OR pf.estado IS NULL)
     """
-    params = [fecha_inicio, fecha_fin]
-    count_params = [fecha_inicio, fecha_fin]
+    params = [fecha_inicio, fecha_fin, estados_programados]
+    count_params = [fecha_inicio, fecha_fin, estados_programados]
 
     if competicion_id:
         query += " AND pf.competicion_id = %s"

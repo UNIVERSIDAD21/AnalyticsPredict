@@ -25,6 +25,20 @@ router = APIRouter(prefix="/api/futbol/competiciones", tags=["Fútbol - Competic
 logger = logging.getLogger(__name__)
 
 
+def _mapear_tipo_competicion(tipo: str) -> str:
+    """Mapea el tipo de competición al valor del ENUM."""
+    mapeo = {
+        "liga": "LIGA",
+        "copa": "COPA_NACIONAL",
+        "copa_nacional": "COPA_NACIONAL",
+        "continental": "CONTINENTAL",
+        "champions": "CONTINENTAL",
+        "europa": "CONTINENTAL",
+    }
+    tipo_normalizado = tipo.strip().lower()
+    return mapeo.get(tipo_normalizado, tipo.strip().upper())
+
+
 @router.get(
     "",
     response_model=ListaCompeticionesResponse,
@@ -48,9 +62,9 @@ async def listar_competiciones(
             c.codigo,
             c.nombre,
             COALESCE(p.nombre, 'Internacional') as pais,
-            COALESCE(c.tipo, 'liga') as tipo,
+            COALESCE(c.tipo::text, 'LIGA') as tipo,
             COALESCE(c.prioridad, 0) as prioridad,
-            COALESCE(c.activa, true) as activa
+            COALESCE(c.activo, true) as activo
         FROM competiciones_futbol c
         LEFT JOIN paises_futbol p ON c.pais_id = p.id
         WHERE 1=1
@@ -58,15 +72,15 @@ async def listar_competiciones(
     params: List = []
 
     if tipo:
-        query += " AND c.tipo = %s"
-        params.append(tipo.lower())
+        query += " AND c.tipo = %s::tipo_competicion_futbol"
+        params.append(_mapear_tipo_competicion(tipo))
 
     if pais:
         query += " AND LOWER(p.nombre) LIKE LOWER(%s)"
         params.append(f"%{pais}%")
 
     if activa is not None:
-        query += " AND c.activa = %s"
+        query += " AND c.activo = %s"
         params.append(activa)
 
     query += " ORDER BY c.prioridad ASC, c.nombre ASC"
@@ -85,7 +99,7 @@ async def listar_competiciones(
                         pais=fila["pais"],
                         tipo=fila["tipo"],
                         prioridad=fila["prioridad"],
-                        activa=fila["activa"],
+                        activa=fila["activo"],
                     )
                     for fila in filas
                 ]
@@ -118,9 +132,9 @@ async def obtener_competicion(competicion_id: UUID) -> CompeticionDetalle:
             c.codigo,
             c.nombre,
             COALESCE(p.nombre, 'Internacional') as pais,
-            COALESCE(c.tipo, 'liga') as tipo,
+            COALESCE(c.tipo::text, 'LIGA') as tipo,
             COALESCE(c.prioridad, 0) as prioridad,
-            COALESCE(c.activa, true) as activa,
+            COALESCE(c.activo, true) as activo,
             (
                 SELECT t.nombre
                 FROM temporadas_futbol t
@@ -162,7 +176,7 @@ async def obtener_competicion(competicion_id: UUID) -> CompeticionDetalle:
                     pais=fila["pais"],
                     tipo=fila["tipo"],
                     prioridad=fila["prioridad"],
-                    activa=fila["activa"],
+                    activa=fila["activo"],
                     temporada_actual=fila["temporada_actual"],
                     total_equipos=fila["total_equipos"] or 0,
                     total_partidos=fila["total_partidos"] or 0,
