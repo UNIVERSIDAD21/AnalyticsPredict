@@ -405,6 +405,8 @@ async def obtener_partido(partido_id: UUID) -> PartidoDetalle:
                     equipo_visitante=fila["equipo_visitante"],
                     estado=fila["estado"],
                     jornada=fila["jornada"],
+                    equipo_local_id=fila["equipo_local_id"],
+                    equipo_visitante_id=fila["equipo_visitante_id"],
                     # Goles
                     local_goles_1t=fila["local_goles_1t"],
                     local_goles_2t=fila["local_goles_2t"],

@@ -104,6 +104,8 @@ class PartidoResumen(BaseModel):
 
 class PartidoDetalle(PartidoResumen):
     """Schema con detalle completo de un partido."""
+    equipo_local_id: Optional[UUID] = None
+    equipo_visitante_id: Optional[UUID] = None
     # Goles
     local_goles_1t: Optional[int] = None
     local_goles_2t: Optional[int] = None

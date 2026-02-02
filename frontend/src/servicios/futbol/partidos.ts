@@ -79,6 +79,8 @@ function transformarPartidoDetalle(
 
   return {
     ...resumen,
+    equipoLocalId: data.equipo_local_id ? String(data.equipo_local_id) : undefined,
+    equipoVisitanteId: data.equipo_visitante_id ? String(data.equipo_visitante_id) : undefined,
     // Goles por tiempo
     localGoles1t: data.local_goles_1t !== undefined ? Number(data.local_goles_1t) : undefined,
     localGoles2t: data.local_goles_2t !== undefined ? Number(data.local_goles_2t) : undefined,

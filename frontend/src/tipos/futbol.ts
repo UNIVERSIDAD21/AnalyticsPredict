@@ -127,6 +127,8 @@ export interface PartidoFutbolDetalle extends PartidoFutbolResumen {
   visitanteGoles1t?: number;
   visitanteGoles2t?: number;
   visitanteGolesTotal?: number;
+  equipoLocalId?: string;
+  equipoVisitanteId?: string;
   // Corners por tiempo
   localCorners1t?: number;
   localCorners2t?: number;
