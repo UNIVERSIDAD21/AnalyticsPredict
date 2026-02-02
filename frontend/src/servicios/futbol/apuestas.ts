@@ -49,6 +49,15 @@ function transformarPartidoResumen(
  * Transforma una apuesta de snake_case a camelCase
  */
 function transformarApuesta(data: Record<string, unknown>): ApuestaFutbol {
+  const gananciaPotencial =
+    data.ganancia_potencial ??
+    data.ganancias_potenciales ??
+    data.ganancia_potenciales ??
+    0;
+  const gananciaReal =
+    data.ganancia_real ?? data.ganancias_reales ?? data.ganancia ?? data.ganancia_neta;
+  const resultadoRaw = data.resultado_real ?? data.resultado;
+
   return {
     id: String(data.id || ''),
     partidoId: String(data.partido_id || ''),
@@ -63,12 +72,12 @@ function transformarApuesta(data: Record<string, unknown>): ApuestaFutbol {
     probabilidadSistema: Number(data.probabilidad_sistema || data.probabilidad || 0),
     confianza: (data.confianza as NivelConfianza) || 'MEDIA',
     valorEsperado: Number(data.valor_esperado || 0),
-    gananciasPotenciales: Number(data.ganancias_potenciales || 0),
+    gananciasPotenciales: Number(gananciaPotencial || 0),
     // Resultado
     resultadoReal:
-      data.resultado_real !== undefined ? Number(data.resultado_real) : undefined,
+      resultadoRaw !== undefined && resultadoRaw !== null ? Number(resultadoRaw) : undefined,
     gananciasReales:
-      data.ganancias_reales !== undefined ? Number(data.ganancias_reales) : undefined,
+      gananciaReal !== undefined && gananciaReal !== null ? Number(gananciaReal) : undefined,
     // Metadata
     casaApuestas: data.casa_apuestas as string | undefined,
     notas: data.notas as string | undefined,

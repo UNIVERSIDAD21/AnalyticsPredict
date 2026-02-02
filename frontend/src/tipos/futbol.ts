@@ -219,12 +219,20 @@ export type NivelConfianza = 'MUY_ALTA' | 'ALTA' | 'MEDIA' | 'BAJA' | 'MUY_BAJA'
 /**
  * Probabilidad por línea
  */
+export interface RazonAnalisisFutbol {
+  factor: string;
+  direccion: 'sube' | 'baja' | 'neutral';
+  impacto: number;
+  descripcion: string;
+}
+
 export interface ProbabilidadLinea {
   linea: number;
   overRaw: number;
   overCalibrada: number;
   underRaw: number;
   underCalibrada: number;
+  razones?: RazonAnalisisFutbol[];
 }
 
 /**
@@ -263,6 +271,7 @@ export interface AnalisisFutbolRequest {
   lineasCorners?: number[]; // Default: [8.5, 9.5, 10.5, 11.5]
   lineasGoles?: number[]; // Default: [1.5, 2.5, 3.5]
   lineasDisparos?: number[]; // Default: [22.5, 24.5, 26.5]
+  h2hLimite?: number;
 }
 
 /**

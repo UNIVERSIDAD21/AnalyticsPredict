@@ -38,6 +38,9 @@ from ..modelos.base import construir_matriz_diseno, ajustar_ridge
 
 logger = logging.getLogger(__name__)
 
+MIN_PARTIDOS_ENTRENAMIENTO = 100
+
+
 
 class EntrenadorFutbol:
     """
@@ -97,7 +100,7 @@ class EntrenadorFutbol:
             raise DatosInsuficientes(
                 "No hay partidos válidos para entrenamiento",
                 partidos_disponibles=0,
-                partidos_requeridos=50
+                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
             )
 
         logger.info(f"Partidos obtenidos: {len(partidos)}")
@@ -190,7 +193,7 @@ class EntrenadorFutbol:
 
         partidos = self._obtener_partidos_entrenamiento()
 
-        if len(partidos) < 50:
+        if len(partidos) < MIN_PARTIDOS_ENTRENAMIENTO:
             logger.warning(f"Pocos partidos para entrenamiento: {len(partidos)}")
             return {
                 "estado": "skip",
@@ -299,11 +302,11 @@ class EntrenadorFutbol:
             and p.get("visitante_corners_2t") is not None
         ]
 
-        if len(partidos_validos) < 50:
+        if len(partidos_validos) < MIN_PARTIDOS_ENTRENAMIENTO:
             raise DatosInsuficientes(
                 "Pocos partidos con corners completos",
                 partidos_disponibles=len(partidos_validos),
-                partidos_requeridos=50
+                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
             )
 
         # Preparar datos
@@ -337,11 +340,11 @@ class EntrenadorFutbol:
             and p.get("visitante_goles_2t") is not None
         ]
 
-        if len(partidos_validos) < 50:
+        if len(partidos_validos) < MIN_PARTIDOS_ENTRENAMIENTO:
             raise DatosInsuficientes(
                 "Pocos partidos con goles completos",
                 partidos_disponibles=len(partidos_validos),
-                partidos_requeridos=50
+                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
             )
 
         X, y_dict, nombres_equipos, fechas = self._preparar_datos_goles(partidos_validos)
@@ -369,11 +372,11 @@ class EntrenadorFutbol:
             and p.get("visitante_disparos_total") is not None
         ]
 
-        if len(partidos_validos) < 50:
+        if len(partidos_validos) < MIN_PARTIDOS_ENTRENAMIENTO:
             raise DatosInsuficientes(
                 "Pocos partidos con disparos",
                 partidos_disponibles=len(partidos_validos),
-                partidos_requeridos=50
+                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
             )
 
         X, y_dict, nombres_equipos, fechas = self._preparar_datos_disparos(partidos_validos)

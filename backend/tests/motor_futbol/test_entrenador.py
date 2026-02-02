@@ -339,7 +339,7 @@ class TestDatosMinimos:
             for i in range(5)
         ]
 
-        entrenador = EntrenadorFutbol(pool=mock_pool, min_partidos=50)
+        entrenador = EntrenadorFutbol(pool=mock_pool, min_partidos=100)
 
         from motor_futbol.excepciones import DatosInsuficientes
 

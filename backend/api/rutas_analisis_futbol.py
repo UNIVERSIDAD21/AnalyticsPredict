@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from uuid import UUID
 
 import numpy as np
@@ -88,6 +88,795 @@ def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, flo
     _cache_estadisticas[equipo_id] = (stats, ahora)
     return stats
 
+
+# ============================================================================
+# ANALISIS CONTEXTUAL PARA LINEAS (H2H + ESTADISTICAS INDIVIDUALES)
+# ============================================================================
+
+MAX_PARTIDOS_STATS = 100
+MIN_PARTIDOS_H2H = 3
+MIN_PARTIDOS_MUESTRA = 30
+UMBRAL_ALINEACION = 0.05
+UMBRAL_ALERTA = 0.20
+
+METRIC_COLUMN_MAP: Dict[str, Tuple[str, str]] = {
+    "corners_ft": ("local_corners_total", "visitante_corners_total"),
+    "corners_1t": ("local_corners_1t", "visitante_corners_1t"),
+    "corners_2t": ("local_corners_2t", "visitante_corners_2t"),
+    "goles_ft": ("local_goles_total", "visitante_goles_total"),
+    "goles_1t": ("local_goles_1t", "visitante_goles_1t"),
+    "goles_2t": ("local_goles_2t", "visitante_goles_2t"),
+    "disparos_ft": ("local_disparos_total", "visitante_disparos_total"),
+    "disparos_arco_ft": ("local_disparos_arco", "visitante_disparos_arco"),
+}
+
+UNIDADES_MERCADO = {
+    "corners": "corners",
+    "goles": "goles",
+    "disparos": "disparos",
+    "disparos_arco": "disparos a puerta",
+}
+
+VOLATILIDAD_UMBRALES = {
+    "corners": (1.5, 2.8),
+    "goles": (0.7, 1.3),
+    "disparos": (3.0, 5.5),
+    "disparos_arco": (1.3, 2.6),
+}
+
+
+def _limitar_h2h_limite(limite: Optional[int]) -> int:
+    """Asegura que el limite H2H este entre 5 y 20."""
+    if limite is None:
+        return 10
+    return max(5, min(int(limite), 20))
+
+
+def _parsear_mercado(mercado: str) -> Dict[str, str]:
+    """Deriva base, periodo, alcance y metric_key desde el mercado."""
+    mercado_upper = (mercado or "").upper()
+
+    if mercado_upper.startswith("CORNERS"):
+        base = "corners"
+    elif mercado_upper.startswith("GOLES"):
+        base = "goles"
+    elif mercado_upper.startswith("DISPAROS_ARCO"):
+        base = "disparos_arco"
+    else:
+        base = "disparos"
+
+    if "_1T" in mercado_upper:
+        periodo = "1t"
+    elif "_2T" in mercado_upper:
+        periodo = "2t"
+    else:
+        periodo = "ft"
+
+    if base.startswith("disparos"):
+        periodo = "ft"
+
+    if "_LOCAL_" in mercado_upper:
+        alcance = "local"
+    elif "_VISITANTE_" in mercado_upper:
+        alcance = "visitante"
+    else:
+        alcance = "total"
+
+    metric_key = f"{base}_{periodo}"
+    return {
+        "base": base,
+        "periodo": periodo,
+        "alcance": alcance,
+        "metric_key": metric_key,
+        "unidad": UNIDADES_MERCADO.get(base, "valor"),
+    }
+
+
+def _extraer_valor_equipo(
+    partido: Dict[str, Any],
+    equipo_id: str,
+    metric_key: str,
+) -> Optional[float]:
+    """Extrae el valor del equipo para una metrica dada."""
+    columnas = METRIC_COLUMN_MAP.get(metric_key)
+    if not columnas:
+        return None
+    col_local, col_visitante = columnas
+
+    if str(partido.get("equipo_local_id")) == equipo_id:
+        valor = partido.get(col_local)
+    elif str(partido.get("equipo_visitante_id")) == equipo_id:
+        valor = partido.get(col_visitante)
+    else:
+        return None
+
+    return float(valor) if valor is not None else None
+
+
+def _extraer_valor_total(
+    partido: Dict[str, Any],
+    metric_key: str,
+) -> Optional[float]:
+    """Extrae el total (local + visitante) para una metrica."""
+    columnas = METRIC_COLUMN_MAP.get(metric_key)
+    if not columnas:
+        return None
+    col_local, col_visitante = columnas
+    valor_local = partido.get(col_local)
+    valor_visitante = partido.get(col_visitante)
+    if valor_local is None or valor_visitante is None:
+        return None
+    return float(valor_local) + float(valor_visitante)
+
+
+def _resumen_valores(
+    valores: List[float],
+    incluir_std: bool = False,
+    incluir_valores: bool = False,
+) -> Dict[str, Any]:
+    """Calcula promedio, std y rango para una lista de valores."""
+    n = len(valores)
+    if n == 0:
+        resumen = {"n": 0, "promedio": None, "std": None, "min": None, "max": None}
+        if incluir_valores:
+            resumen["valores"] = []
+        return resumen
+
+    promedio = float(np.mean(valores))
+    std = float(np.std(valores, ddof=1)) if incluir_std and n > 1 else None
+    resumen = {
+        "n": n,
+        "promedio": promedio,
+        "std": std,
+        "min": float(min(valores)),
+        "max": float(max(valores)),
+    }
+    if incluir_valores:
+        resumen["valores"] = list(valores)
+    return resumen
+
+
+def _resumen_metricas_equipo(
+    partidos: List[Dict[str, Any]],
+    equipo_id: str,
+) -> Dict[str, Dict[str, Any]]:
+    """Calcula promedios por metrica para un equipo."""
+    acumulados: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+
+    for partido in partidos:
+        for metric_key in METRIC_COLUMN_MAP:
+            valor = _extraer_valor_equipo(partido, equipo_id, metric_key)
+            if valor is not None:
+                acumulados[metric_key].append(valor)
+
+    return {
+        metric_key: _resumen_valores(valores)
+        for metric_key, valores in acumulados.items()
+    }
+
+
+def _resumen_metricas_liga(
+    partidos: List[Dict[str, Any]],
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Calcula promedios de liga por metrica (local, visitante, global y total)."""
+    acumulados_local: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    acumulados_visitante: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    acumulados_total: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    acumulados_global: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+
+    for partido in partidos:
+        for metric_key, (col_local, col_visitante) in METRIC_COLUMN_MAP.items():
+            valor_local = partido.get(col_local)
+            valor_visitante = partido.get(col_visitante)
+            if valor_local is not None:
+                acumulados_local[metric_key].append(float(valor_local))
+                acumulados_global[metric_key].append(float(valor_local))
+            if valor_visitante is not None:
+                acumulados_visitante[metric_key].append(float(valor_visitante))
+                acumulados_global[metric_key].append(float(valor_visitante))
+            if valor_local is not None and valor_visitante is not None:
+                acumulados_total[metric_key].append(float(valor_local) + float(valor_visitante))
+
+    return {
+        "local": {
+            metric_key: _resumen_valores(valores)
+            for metric_key, valores in acumulados_local.items()
+        },
+        "visitante": {
+            metric_key: _resumen_valores(valores)
+            for metric_key, valores in acumulados_visitante.items()
+        },
+        "global": {
+            metric_key: _resumen_valores(valores)
+            for metric_key, valores in acumulados_global.items()
+        },
+        "total": {
+            metric_key: _resumen_valores(valores)
+            for metric_key, valores in acumulados_total.items()
+        },
+    }
+
+
+def _resumen_metricas_h2h(
+    partidos: List[Dict[str, Any]],
+    equipo_local_id: str,
+    equipo_visitante_id: str,
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Calcula resumen H2H por metrica para local, visitante y total."""
+    acumulados_local: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    acumulados_visitante: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    acumulados_total: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+
+    for partido in partidos:
+        for metric_key in METRIC_COLUMN_MAP:
+            valor_total = _extraer_valor_total(partido, metric_key)
+            if valor_total is not None:
+                acumulados_total[metric_key].append(valor_total)
+
+            valor_local = _extraer_valor_equipo(partido, equipo_local_id, metric_key)
+            if valor_local is not None:
+                acumulados_local[metric_key].append(valor_local)
+
+            valor_visitante = _extraer_valor_equipo(partido, equipo_visitante_id, metric_key)
+            if valor_visitante is not None:
+                acumulados_visitante[metric_key].append(valor_visitante)
+
+    return {
+        "local": {
+            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True)
+            for metric_key, valores in acumulados_local.items()
+        },
+        "visitante": {
+            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True)
+            for metric_key, valores in acumulados_visitante.items()
+        },
+        "total": {
+            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True)
+            for metric_key, valores in acumulados_total.items()
+        },
+    }
+
+
+def _obtener_partidos_equipo(
+    cursor,
+    equipo_id: str,
+    fecha_corte: datetime,
+    limite: int,
+    solo_local: Optional[bool] = None,
+) -> List[Dict[str, Any]]:
+    """Obtiene partidos recientes de un equipo (hasta limite)."""
+    query = """
+        SELECT
+            pf.equipo_local_id,
+            pf.equipo_visitante_id,
+            pf.local_goles_1t,
+            pf.local_goles_2t,
+            pf.local_goles_total,
+            pf.visitante_goles_1t,
+            pf.visitante_goles_2t,
+            pf.visitante_goles_total,
+            pf.local_corners_1t,
+            pf.local_corners_2t,
+            pf.local_corners_total,
+            pf.visitante_corners_1t,
+            pf.visitante_corners_2t,
+            pf.visitante_corners_total,
+            pf.local_disparos_total,
+            pf.local_disparos_arco,
+            pf.visitante_disparos_total,
+            pf.visitante_disparos_arco,
+            pf.fecha_partido
+        FROM partidos_futbol pf
+        WHERE (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
+          AND pf.estado = 'FINALIZADO'
+          AND pf.fecha_partido < %s
+    """
+    params: List[Any] = [equipo_id, equipo_id, fecha_corte]
+
+    if solo_local is True:
+        query += " AND pf.equipo_local_id = %s"
+        params.append(equipo_id)
+    elif solo_local is False:
+        query += " AND pf.equipo_visitante_id = %s"
+        params.append(equipo_id)
+
+    query += " ORDER BY pf.fecha_partido DESC LIMIT %s"
+    params.append(limite)
+
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def _obtener_partidos_liga(
+    cursor,
+    competicion_id: str,
+    fecha_corte: datetime,
+    limite: int,
+) -> List[Dict[str, Any]]:
+    """Obtiene partidos recientes de una liga (hasta limite)."""
+    query = """
+        SELECT
+            pf.equipo_local_id,
+            pf.equipo_visitante_id,
+            pf.local_goles_1t,
+            pf.local_goles_2t,
+            pf.local_goles_total,
+            pf.visitante_goles_1t,
+            pf.visitante_goles_2t,
+            pf.visitante_goles_total,
+            pf.local_corners_1t,
+            pf.local_corners_2t,
+            pf.local_corners_total,
+            pf.visitante_corners_1t,
+            pf.visitante_corners_2t,
+            pf.visitante_corners_total,
+            pf.local_disparos_total,
+            pf.local_disparos_arco,
+            pf.visitante_disparos_total,
+            pf.visitante_disparos_arco,
+            pf.fecha_partido
+        FROM partidos_futbol pf
+        WHERE pf.competicion_id = %s
+          AND pf.estado = 'FINALIZADO'
+          AND pf.fecha_partido < %s
+        ORDER BY pf.fecha_partido DESC
+        LIMIT %s
+    """
+    cursor.execute(query, [competicion_id, fecha_corte, limite])
+    return cursor.fetchall()
+
+
+def _obtener_partidos_h2h(
+    cursor,
+    equipo_local_id: str,
+    equipo_visitante_id: str,
+    fecha_corte: datetime,
+    limite: int,
+) -> List[Dict[str, Any]]:
+    """Obtiene partidos H2H recientes entre dos equipos."""
+    query = """
+        SELECT
+            pf.equipo_local_id,
+            pf.equipo_visitante_id,
+            pf.local_goles_1t,
+            pf.local_goles_2t,
+            pf.local_goles_total,
+            pf.visitante_goles_1t,
+            pf.visitante_goles_2t,
+            pf.visitante_goles_total,
+            pf.local_corners_1t,
+            pf.local_corners_2t,
+            pf.local_corners_total,
+            pf.visitante_corners_1t,
+            pf.visitante_corners_2t,
+            pf.visitante_corners_total,
+            pf.local_disparos_total,
+            pf.local_disparos_arco,
+            pf.visitante_disparos_total,
+            pf.visitante_disparos_arco,
+            pf.fecha_partido
+        FROM partidos_futbol pf
+        WHERE pf.estado = 'FINALIZADO'
+          AND (
+            (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
+            OR (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
+          )
+          AND pf.fecha_partido < %s
+        ORDER BY pf.fecha_partido DESC
+        LIMIT %s
+    """
+    params = [
+        equipo_local_id,
+        equipo_visitante_id,
+        equipo_visitante_id,
+        equipo_local_id,
+        fecha_corte,
+        limite,
+    ]
+    cursor.execute(query, params)
+    return cursor.fetchall()
+
+
+def _calcular_pct_diferencia(valor: Optional[float], referencia: Optional[float]) -> Optional[float]:
+    """Calcula porcentaje de diferencia entre valor y referencia."""
+    if valor is None or referencia in (None, 0):
+        return None
+    return (valor - referencia) / referencia * 100.0
+
+
+def _direccion_por_pct(pct: Optional[float], umbral: float = UMBRAL_ALINEACION) -> str:
+    """Determina direccion segun porcentaje."""
+    if pct is None:
+        return "neutral"
+    if pct > (umbral * 100):
+        return "sube"
+    if pct < -(umbral * 100):
+        return "baja"
+    return "neutral"
+
+
+def _texto_pct_vs_liga(pct: Optional[float]) -> Optional[str]:
+    """Texto de comparacion vs liga."""
+    if pct is None:
+        return None
+    return f"{abs(pct):.0f}% {'superior' if pct > 0 else 'inferior'}"
+
+
+def _clasificar_volatilidad(std: float, base: str) -> str:
+    """Clasifica volatilidad segun std y base."""
+    low, high = VOLATILIDAD_UMBRALES.get(base, (1.0, 2.0))
+    if std <= low:
+        return "baja"
+    if std <= high:
+        return "moderada"
+    return "alta"
+
+
+def _generar_razones_linea(
+    mercado: str,
+    linea: float,
+    equipo_local: str,
+    equipo_visitante: str,
+    resumen_h2h: Dict[str, Dict[str, Dict[str, Any]]],
+    stats_local_global: Dict[str, Dict[str, Any]],
+    stats_local_home: Dict[str, Dict[str, Any]],
+    stats_visitante_global: Dict[str, Dict[str, Any]],
+    stats_visitante_away: Dict[str, Dict[str, Any]],
+    promedios_liga: Dict[str, Dict[str, Dict[str, Any]]],
+    pred_media: Optional[float] = None,
+    pred_std: Optional[float] = None,
+) -> List[Dict[str, Any]]:
+    """Genera razones cuantitativas para una linea."""
+    razones: List[Dict[str, Any]] = []
+    config = _parsear_mercado(mercado)
+    metric_key = config["metric_key"]
+    base = config["base"]
+    unidad = config["unidad"]
+    alcance = config["alcance"]
+
+    # H2H
+    h2h_metric = resumen_h2h.get(alcance, {}).get(metric_key, {})
+    h2h_n = h2h_metric.get("n", 0) or 0
+    h2h_promedio = h2h_metric.get("promedio")
+    h2h_min = h2h_metric.get("min")
+    h2h_max = h2h_metric.get("max")
+    h2h_std = h2h_metric.get("std")
+    h2h_valores = h2h_metric.get("valores", [])
+
+    if h2h_n > 0 and h2h_promedio is not None:
+        diff_pct_h2h = _calcular_pct_diferencia(linea, h2h_promedio)
+        direccion_h2h = "neutral"
+        if h2h_promedio > linea:
+            direccion_h2h = "sube"
+        elif h2h_promedio < linea:
+            direccion_h2h = "baja"
+
+        rango_h2h = ""
+        if h2h_min is not None and h2h_max is not None:
+            rango_h2h = f" (rango: {h2h_min:.1f}-{h2h_max:.1f})"
+
+        over_count = sum(1 for v in h2h_valores if v > linea)
+        over_pct = (over_count / h2h_n * 100) if h2h_n else 0.0
+
+        if h2h_n < MIN_PARTIDOS_H2H:
+            razones.append(
+                {
+                    "factor": "Comparacion H2H",
+                    "direccion": "neutral",
+                    "impacto": 0.05,
+                    "descripcion": (
+                        f"Solo {h2h_n} H2H disponibles. Promedio H2H: "
+                        f"{h2h_promedio:.1f} {unidad}{rango_h2h}. "
+                        "Dato de referencia con baja robustez."
+                    ),
+                }
+            )
+        else:
+            texto_diff = ""
+            if diff_pct_h2h is not None:
+                texto_diff = (
+                    f"La linea de {linea:.1f} esta {abs(diff_pct_h2h):.0f}% "
+                    f"{'por debajo' if diff_pct_h2h < 0 else 'por encima'} del promedio H2H, "
+                )
+            sugerencia = "OVER" if h2h_promedio > linea else "UNDER"
+            descripcion = (
+                f"En ultimos {h2h_n} H2H: promedio de {h2h_promedio:.1f} {unidad}{rango_h2h}. "
+                f"{texto_diff}Over {linea:.1f} en {over_count}/{h2h_n} "
+                f"({over_pct:.0f}%). Sugiere valor en {sugerencia}."
+            )
+
+            # Outliers
+            outliers = 0
+            if h2h_std and h2h_std > 0:
+                outliers = sum(1 for v in h2h_valores if abs(v - h2h_promedio) > 3 * h2h_std)
+            if outliers:
+                descripcion += f" Se detecto {outliers} outlier (>3 sigma)."
+
+            razones.append(
+                {
+                    "factor": "Comparacion H2H",
+                    "direccion": direccion_h2h,
+                    "impacto": 0.15,
+                    "descripcion": descripcion,
+                }
+            )
+    else:
+        razones.append(
+            {
+                "factor": "Comparacion H2H",
+                "direccion": "neutral",
+                "impacto": 0.05,
+                "descripcion": "Sin datos H2H suficientes para este mercado.",
+            }
+        )
+
+    # Estadisticas equipo local
+    local_home = stats_local_home.get(metric_key, {})
+    local_global = stats_local_global.get(metric_key, {})
+    local_home_avg = local_home.get("promedio")
+    local_home_n = local_home.get("n", 0) or 0
+    local_global_avg = local_global.get("promedio")
+    local_global_n = local_global.get("n", 0) or 0
+
+    liga_local_avg = promedios_liga.get("local", {}).get(metric_key, {}).get("promedio")
+    liga_global_avg = promedios_liga.get("global", {}).get(metric_key, {}).get("promedio")
+
+    pct_local_vs_liga = _calcular_pct_diferencia(local_home_avg, liga_local_avg)
+    pct_global_vs_liga = _calcular_pct_diferencia(local_global_avg, liga_global_avg)
+
+    texto_liga_local = _texto_pct_vs_liga(pct_local_vs_liga)
+    texto_liga_global = _texto_pct_vs_liga(pct_global_vs_liga)
+
+    if local_home_avg is not None or local_global_avg is not None:
+        impacto_local = 0.12 if local_home_n >= MIN_PARTIDOS_MUESTRA else 0.08
+        factor_local = "Estadisticas Local"
+        if local_home_n < MIN_PARTIDOS_MUESTRA:
+            factor_local += " (Muestra Limitada)"
+
+        descripcion_local = []
+        if local_home_avg is not None:
+            descripcion_local.append(
+                f"{equipo_local} promedia {local_home_avg:.1f} {unidad} como local "
+                f"en ultimos {local_home_n} partidos."
+            )
+            if liga_local_avg is not None and texto_liga_local:
+                descripcion_local.append(
+                    f"Rendimiento {texto_liga_local} a la media de la liga "
+                    f"({liga_local_avg:.1f})."
+                )
+        if local_global_avg is not None:
+            texto_global = (
+                f"Global: {local_global_avg:.1f} {unidad} en {local_global_n} partidos."
+            )
+            if liga_global_avg is not None and texto_liga_global:
+                texto_global += f" ({texto_liga_global} vs liga {liga_global_avg:.1f})."
+            descripcion_local.append(texto_global)
+
+        direccion_local = _direccion_por_pct(pct_local_vs_liga)
+        razones.append(
+            {
+                "factor": factor_local,
+                "direccion": direccion_local,
+                "impacto": impacto_local,
+                "descripcion": " ".join(descripcion_local),
+            }
+        )
+    else:
+        razones.append(
+            {
+                "factor": "Estadisticas Local (Muestra Limitada)",
+                "direccion": "neutral",
+                "impacto": 0.05,
+                "descripcion": (
+                    f"Sin datos suficientes de {equipo_local} para {unidad} en los "
+                    f"ultimos {MAX_PARTIDOS_STATS} partidos."
+                ),
+            }
+        )
+
+    # Estadisticas equipo visitante
+    visitante_away = stats_visitante_away.get(metric_key, {})
+    visitante_global = stats_visitante_global.get(metric_key, {})
+    visitante_away_avg = visitante_away.get("promedio")
+    visitante_away_n = visitante_away.get("n", 0) or 0
+    visitante_global_avg = visitante_global.get("promedio")
+    visitante_global_n = visitante_global.get("n", 0) or 0
+
+    liga_visitante_avg = promedios_liga.get("visitante", {}).get(metric_key, {}).get("promedio")
+    pct_visitante_vs_liga = _calcular_pct_diferencia(visitante_away_avg, liga_visitante_avg)
+    texto_liga_visitante = _texto_pct_vs_liga(pct_visitante_vs_liga)
+
+    if visitante_away_avg is not None or visitante_global_avg is not None:
+        impacto_visitante = 0.10 if visitante_away_n >= MIN_PARTIDOS_MUESTRA else 0.07
+        factor_visitante = "Estadisticas Visitante"
+        if visitante_away_n < MIN_PARTIDOS_MUESTRA:
+            factor_visitante += " (Muestra Limitada)"
+
+        descripcion_visitante = []
+        if visitante_away_avg is not None:
+            descripcion_visitante.append(
+                f"{equipo_visitante} promedia {visitante_away_avg:.1f} {unidad} como visitante "
+                f"en ultimos {visitante_away_n} partidos."
+            )
+            if liga_visitante_avg is not None and texto_liga_visitante:
+                descripcion_visitante.append(
+                    f"Rendimiento {texto_liga_visitante} a la media de la liga "
+                    f"como visitantes ({liga_visitante_avg:.1f})."
+                )
+        if visitante_global_avg is not None:
+            texto_global = (
+                f"Global: {visitante_global_avg:.1f} {unidad} en {visitante_global_n} partidos."
+            )
+            if liga_global_avg is not None and texto_liga_global:
+                texto_global += f" ({texto_liga_global} vs liga {liga_global_avg:.1f})."
+            descripcion_visitante.append(texto_global)
+
+        direccion_visitante = _direccion_por_pct(pct_visitante_vs_liga)
+        razones.append(
+            {
+                "factor": factor_visitante,
+                "direccion": direccion_visitante,
+                "impacto": impacto_visitante,
+                "descripcion": " ".join(descripcion_visitante),
+            }
+        )
+    else:
+        razones.append(
+            {
+                "factor": "Estadisticas Visitante (Muestra Limitada)",
+                "direccion": "neutral",
+                "impacto": 0.05,
+                "descripcion": (
+                    f"Sin datos suficientes de {equipo_visitante} para {unidad} en los "
+                    f"ultimos {MAX_PARTIDOS_STATS} partidos."
+                ),
+            }
+        )
+
+    # Total esperado vs linea
+    esperado_local = local_home_avg if local_home_avg is not None else local_global_avg
+    esperado_visitante = (
+        visitante_away_avg if visitante_away_avg is not None else visitante_global_avg
+    )
+
+    esperado: Optional[float] = None
+    detalle_esperado = ""
+    if alcance == "total":
+        if esperado_local is not None and esperado_visitante is not None:
+            esperado = esperado_local + esperado_visitante
+            detalle_esperado = (
+                f"{esperado_local:.1f} ({equipo_local} local) + "
+                f"{esperado_visitante:.1f} ({equipo_visitante} visitante)"
+            )
+    elif alcance == "local":
+        if esperado_local is not None:
+            esperado = esperado_local
+            detalle_esperado = f"{esperado_local:.1f} ({equipo_local} local)"
+    else:
+        if esperado_visitante is not None:
+            esperado = esperado_visitante
+            detalle_esperado = f"{esperado_visitante:.1f} ({equipo_visitante} visitante)"
+
+    if esperado is None and pred_media is not None:
+        esperado = pred_media
+        detalle_esperado = f"{pred_media:.1f} (media modelo)"
+
+    if esperado is not None and esperado > 0:
+        diff_pct_esperado = _calcular_pct_diferencia(linea, esperado)
+        alineada = diff_pct_esperado is not None and abs(diff_pct_esperado) <= (UMBRAL_ALINEACION * 100)
+        sugerencia = "OVER" if esperado > linea else "UNDER"
+        texto_diff = ""
+        if diff_pct_esperado is not None:
+            texto_diff = (
+                f"La linea de {linea:.1f} esta {abs(diff_pct_esperado):.0f}% "
+                f"{'por debajo' if diff_pct_esperado < 0 else 'por encima'} del esperado, "
+            )
+        etiqueta_esperado = "Total esperado" if alcance == "total" else "Esperado del equipo"
+        referencia_esperado = etiqueta_esperado.lower()
+        descripcion_total = (
+            f"{etiqueta_esperado} basado en estadisticas individuales: {detalle_esperado} = "
+            f"{esperado:.1f} {unidad}. {texto_diff}"
+            f"linea {'alineada' if alineada else 'desalineada'} "
+            f"con el {referencia_esperado}. Indica oportunidad potencial en {sugerencia}."
+        )
+
+        direccion_total = "sube" if esperado > linea else "baja"
+        if alineada:
+            direccion_total = "neutral"
+
+        razones.append(
+            {
+                "factor": "Alineacion Historica",
+                "direccion": direccion_total,
+                "impacto": 0.12,
+                "descripcion": descripcion_total,
+            }
+        )
+
+        # Alerta por linea anomala
+        if diff_pct_esperado is not None and abs(diff_pct_esperado) >= (UMBRAL_ALERTA * 100):
+            referencia_alerta = "total esperado" if alcance == "total" else "esperado del equipo"
+            razones.append(
+                {
+                    "factor": "ALERTA: Linea Anomala",
+                    "direccion": "neutral",
+                    "impacto": 0.15,
+                    "descripcion": (
+                        f"La linea de {linea:.1f} esta {abs(diff_pct_esperado):.0f}% "
+                        f"{'por debajo' if diff_pct_esperado < 0 else 'por encima'} "
+                        f"del {referencia_alerta} ({esperado:.1f} {unidad}). "
+                        "Diferencia inusualmente alta. Podria indicar informacion del mercado "
+                        "sobre lesiones/alineaciones, error en la linea o trampa del bookmaker. "
+                        "Recomendacion: revisar noticias recientes antes de apostar."
+                    ),
+                }
+            )
+
+    # Volatilidad
+    if h2h_std is not None and h2h_std > 0:
+        margen_95 = 1.96 * h2h_std
+        nivel_vol = _clasificar_volatilidad(h2h_std, base)
+        razones.append(
+            {
+                "factor": "Volatilidad del Mercado",
+                "direccion": "neutral",
+                "impacto": 0.05,
+                "descripcion": (
+                    f"Desviacion estandar H2H: {h2h_std:.1f} {unidad}. "
+                    f"Volatilidad {nivel_vol} sugiere margen de +/-{margen_95:.1f} "
+                    f"{unidad} (95% de los casos)."
+                ),
+            }
+        )
+    elif pred_std is not None and pred_std > 0:
+        razones.append(
+            {
+                "factor": "Volatilidad del Mercado",
+                "direccion": "neutral",
+                "impacto": 0.05,
+                "descripcion": (
+                    f"Desviacion estandar del modelo: {pred_std:.1f} {unidad}. "
+                    "Volatilidad estimada ante H2H insuficiente."
+                ),
+            }
+        )
+
+    return razones
+
+
+def _agregar_razones_a_mercados(
+    mercados: Dict[str, PrediccionMercado],
+    equipo_local: str,
+    equipo_visitante: str,
+    resumen_h2h: Dict[str, Dict[str, Dict[str, Any]]],
+    stats_local_global: Dict[str, Dict[str, Any]],
+    stats_local_home: Dict[str, Dict[str, Any]],
+    stats_visitante_global: Dict[str, Dict[str, Any]],
+    stats_visitante_away: Dict[str, Dict[str, Any]],
+    promedios_liga: Dict[str, Dict[str, Dict[str, Any]]],
+) -> None:
+    """Enriquece cada linea con razones."""
+    for prediccion in mercados.values():
+        for linea_str, prob in prediccion.lineas.items():
+            try:
+                linea = float(linea_str)
+            except (TypeError, ValueError):
+                continue
+            razones = _generar_razones_linea(
+                mercado=prediccion.mercado,
+                linea=linea,
+                equipo_local=equipo_local,
+                equipo_visitante=equipo_visitante,
+                resumen_h2h=resumen_h2h,
+                stats_local_global=stats_local_global,
+                stats_local_home=stats_local_home,
+                stats_visitante_global=stats_visitante_global,
+                stats_visitante_away=stats_visitante_away,
+                promedios_liga=promedios_liga,
+                pred_media=prediccion.media,
+                pred_std=prediccion.std,
+            )
+            prob.razones = razones
 
 def _calcular_probabilidad_over(media: float, std: float, linea: float) -> float:
     """Calcula P(over) usando distribución normal."""
@@ -227,6 +1016,7 @@ async def analizar_partido(
     partido_query = """
         SELECT
             pf.id,
+            pf.competicion_id,
             c.nombre as competicion,
             pf.fecha_partido,
             el.nombre as equipo_local,
@@ -278,6 +1068,60 @@ async def analizar_partido(
                         status_code=400,
                         detail=f"Datos insuficientes para {partido['equipo_visitante']}"
                     )
+
+                # 2b. Contexto H2H + estadisticas recientes (hasta 100 partidos)
+                competicion_id = str(partido["competicion_id"])
+                fecha_corte = partido.get("fecha_partido") or datetime.now()
+                limite_h2h = _limitar_h2h_limite(request.h2h_limite)
+
+                try:
+                    partidos_h2h = _obtener_partidos_h2h(
+                        cursor,
+                        equipo_local_id,
+                        equipo_visitante_id,
+                        fecha_corte,
+                        limite_h2h,
+                    )
+                    partidos_local_global = _obtener_partidos_equipo(
+                        cursor, equipo_local_id, fecha_corte, MAX_PARTIDOS_STATS, None
+                    )
+                    partidos_local_home = _obtener_partidos_equipo(
+                        cursor, equipo_local_id, fecha_corte, MAX_PARTIDOS_STATS, True
+                    )
+                    partidos_visitante_global = _obtener_partidos_equipo(
+                        cursor, equipo_visitante_id, fecha_corte, MAX_PARTIDOS_STATS, None
+                    )
+                    partidos_visitante_away = _obtener_partidos_equipo(
+                        cursor, equipo_visitante_id, fecha_corte, MAX_PARTIDOS_STATS, False
+                    )
+                    partidos_liga = _obtener_partidos_liga(
+                        cursor, competicion_id, fecha_corte, MAX_PARTIDOS_STATS
+                    )
+
+                    resumen_h2h = _resumen_metricas_h2h(
+                        partidos_h2h, equipo_local_id, equipo_visitante_id
+                    )
+                    stats_local_global = _resumen_metricas_equipo(
+                        partidos_local_global, equipo_local_id
+                    )
+                    stats_local_home = _resumen_metricas_equipo(
+                        partidos_local_home, equipo_local_id
+                    )
+                    stats_visitante_global = _resumen_metricas_equipo(
+                        partidos_visitante_global, equipo_visitante_id
+                    )
+                    stats_visitante_away = _resumen_metricas_equipo(
+                        partidos_visitante_away, equipo_visitante_id
+                    )
+                    promedios_liga = _resumen_metricas_liga(partidos_liga)
+                except Exception as e:
+                    logger.warning(f"Error calculando contexto H2H/estadisticas: {e}")
+                    resumen_h2h = {"local": {}, "visitante": {}, "total": {}}
+                    stats_local_global = {}
+                    stats_local_home = {}
+                    stats_visitante_global = {}
+                    stats_visitante_away = {}
+                    promedios_liga = {"local": {}, "visitante": {}, "global": {}, "total": {}}
 
                 # 3. Calcular predicciones base
                 # Corners
@@ -392,6 +1236,41 @@ async def analizar_partido(
                         "DISPAROS_VISITANTE_ARCO_FT", disparos_visitante * 0.35, disparos_std * 0.5, lineas_disparos
                     ),
                 }
+
+                # 4b. Enriquecer con razones por linea
+                _agregar_razones_a_mercados(
+                    mercados_corners,
+                    partido["equipo_local"],
+                    partido["equipo_visitante"],
+                    resumen_h2h,
+                    stats_local_global,
+                    stats_local_home,
+                    stats_visitante_global,
+                    stats_visitante_away,
+                    promedios_liga,
+                )
+                _agregar_razones_a_mercados(
+                    mercados_goles,
+                    partido["equipo_local"],
+                    partido["equipo_visitante"],
+                    resumen_h2h,
+                    stats_local_global,
+                    stats_local_home,
+                    stats_visitante_global,
+                    stats_visitante_away,
+                    promedios_liga,
+                )
+                _agregar_razones_a_mercados(
+                    mercados_disparos,
+                    partido["equipo_local"],
+                    partido["equipo_visitante"],
+                    resumen_h2h,
+                    stats_local_global,
+                    stats_local_home,
+                    stats_visitante_global,
+                    stats_visitante_away,
+                    promedios_liga,
+                )
 
                 # 5. Generar recomendaciones
                 todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}

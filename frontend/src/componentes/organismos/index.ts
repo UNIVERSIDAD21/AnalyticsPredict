@@ -43,6 +43,7 @@ export { ComparativaEquipos } from './ComparativaEquipos';
 export { GraficoDistribucion } from './GraficoDistribucion';
 export { FormularioApuestaFutbol } from './FormularioApuestaFutbol';
 export type { DatosApuestaFutbol } from './FormularioApuestaFutbol';
+export { ModalGuardarApuestaFutbol } from './ModalGuardarApuestaFutbol';
 export { PanelAnalisisFutbol } from './PanelAnalisisFutbol';
 export { PanelH2HFutbol } from './PanelH2HFutbol';
 export { PanelHistorialEquipoFutbol } from './PanelHistorialEquipoFutbol';

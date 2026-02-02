@@ -6,7 +6,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { TrendingUp, Target, LineChart } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Tarjeta, Boton } from '../atomos';
-import type { PartidoFutbolEstadistico } from '../../tipos/futbol';
+import type {
+  PartidoFutbolEstadistico,
+  TipoMercadoFutbol,
+  NivelConfianza,
+} from '../../tipos/futbol';
 
 type MercadoAnalisis = 'GOLES' | 'CORNERS' | 'DISPAROS';
 type SegmentoAnalisis = 'FT' | '1T' | '2T';
@@ -21,6 +25,7 @@ interface PropsPanelAnalisisMercadoFutbol {
   h2h: PartidoFutbolEstadistico[];
   historialLocal: PartidoFutbolEstadistico[];
   historialVisitante: PartidoFutbolEstadistico[];
+  onGuardarApuesta?: (recomendacion: RecomendacionGuardado) => void;
 }
 
 interface ResumenProbabilidad {
@@ -28,6 +33,15 @@ interface ResumenProbabilidad {
   over: number;
   under: number;
   promedio: number;
+}
+
+interface RecomendacionGuardado {
+  mercado: TipoMercadoFutbol;
+  lado: 'OVER' | 'UNDER';
+  linea: number;
+  cuota?: number;
+  probabilidad: number;
+  confianza: NivelConfianza;
 }
 
 const mercadosDisponibles: { id: MercadoAnalisis; label: string }[] = [
@@ -131,6 +145,62 @@ function formatearPorcentaje(valor: number | null): string {
   return `${(valor * 100).toFixed(1)}%`;
 }
 
+function resolverTipoMercadoFutbol(
+  mercado: MercadoAnalisis,
+  segmento: SegmentoAnalisis,
+  alcance: AlcanceAnalisis,
+  tipoDisparo: TipoDisparo
+): TipoMercadoFutbol {
+  if (mercado === 'CORNERS') {
+    if (alcance === 'TOTAL') {
+      if (segmento === '1T') return 'CORNERS_1T';
+      if (segmento === '2T') return 'CORNERS_2T';
+      return 'CORNERS_FT';
+    }
+    if (alcance === 'LOCAL') {
+      if (segmento === '1T') return 'CORNERS_LOCAL_1T';
+      if (segmento === '2T') return 'CORNERS_LOCAL_2T';
+      return 'CORNERS_LOCAL_FT';
+    }
+    if (segmento === '1T') return 'CORNERS_VISITANTE_1T';
+    if (segmento === '2T') return 'CORNERS_VISITANTE_2T';
+    return 'CORNERS_VISITANTE_FT';
+  }
+
+  if (mercado === 'GOLES') {
+    if (alcance === 'TOTAL') {
+      if (segmento === '1T') return 'GOLES_1T';
+      if (segmento === '2T') return 'GOLES_2T';
+      return 'GOLES_FT';
+    }
+    if (alcance === 'LOCAL') {
+      if (segmento === '1T') return 'GOLES_LOCAL_1T';
+      if (segmento === '2T') return 'GOLES_LOCAL_2T';
+      return 'GOLES_LOCAL_FT';
+    }
+    if (segmento === '1T') return 'GOLES_VISITANTE_1T';
+    if (segmento === '2T') return 'GOLES_VISITANTE_2T';
+    return 'GOLES_VISITANTE_FT';
+  }
+
+  if (alcance === 'TOTAL') {
+    return tipoDisparo === 'ARCO' ? 'DISPAROS_ARCO_FT' : 'DISPAROS_FT';
+  }
+  if (alcance === 'LOCAL') {
+    return tipoDisparo === 'ARCO' ? 'DISPAROS_LOCAL_ARCO_FT' : 'DISPAROS_LOCAL_FT';
+  }
+  return tipoDisparo === 'ARCO'
+    ? 'DISPAROS_VISITANTE_ARCO_FT'
+    : 'DISPAROS_VISITANTE_FT';
+}
+
+function determinarConfianza(probabilidad: number): NivelConfianza {
+  if (probabilidad >= 0.8) return 'ALTA';
+  if (probabilidad >= 0.6) return 'MEDIA';
+  return 'BAJA';
+}
+
+
 export function PanelAnalisisMercadoFutbol({
   equipoLocalId,
   equipoVisitanteId,
@@ -139,6 +209,7 @@ export function PanelAnalisisMercadoFutbol({
   h2h,
   historialLocal,
   historialVisitante,
+  onGuardarApuesta,
 }: PropsPanelAnalisisMercadoFutbol) {
   const [mercado, setMercado] = useState<MercadoAnalisis>('CORNERS');
   const [segmento, setSegmento] = useState<SegmentoAnalisis>('FT');
@@ -232,6 +303,19 @@ export function PanelAnalisisMercadoFutbol({
     const implied = 1 / cuotaNumerica;
     return probLado - implied;
   }, [probLado, cuotaNumerica]);
+
+  const recomendacion = useMemo(() => {
+    if (!lineaNumerica) return null;
+    const probFinal = probLado ?? 0.5;
+    return {
+      mercado: resolverTipoMercadoFutbol(mercado, segmento, alcance, tipoDisparo),
+      lado,
+      linea: lineaNumerica,
+      cuota: cuotaNumerica ?? undefined,
+      probabilidad: probFinal,
+      confianza: determinarConfianza(probFinal),
+    };
+  }, [alcance, cuotaNumerica, lado, lineaNumerica, mercado, probLado, segmento, tipoDisparo]);
 
   return (
     <Tarjeta className="space-y-6">
@@ -423,6 +507,23 @@ export function PanelAnalisisMercadoFutbol({
               cuota seleccionada.
             </p>
           </div>
+
+          {onGuardarApuesta && (
+            <div className="flex justify-end">
+              <Boton
+                variante="primario"
+                tamano="sm"
+                onClick={() => {
+                  if (recomendacion) {
+                    onGuardarApuesta(recomendacion);
+                  }
+                }}
+                disabled={!recomendacion}
+              >
+                Guardar en Bitacora
+              </Boton>
+            </div>
+          )}
         </div>
       )}
     </Tarjeta>

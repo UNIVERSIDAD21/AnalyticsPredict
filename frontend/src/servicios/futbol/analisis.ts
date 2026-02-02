@@ -49,12 +49,14 @@ function transformarPartidoResumen(
 function transformarProbabilidadLinea(
   data: Record<string, unknown>
 ): ProbabilidadLinea {
+  const razones = Array.isArray(data.razones) ? (data.razones as ProbabilidadLinea['razones']) : undefined;
   return {
     linea: Number(data.linea || 0),
     overRaw: Number(data.over_raw || data.over || 0),
     overCalibrada: Number(data.over_calibrada || data.over || 0),
     underRaw: Number(data.under_raw || data.under || 0),
     underCalibrada: Number(data.under_calibrada || data.under || 0),
+    razones,
   };
 }
 
@@ -65,11 +67,26 @@ function transformarPrediccionMercado(
   data: Record<string, unknown>
 ): PrediccionMercadoFutbol {
   const probabilidades = data.probabilidades;
-  const probabilidadesArray = Array.isArray(probabilidades)
+  let probabilidadesArray = Array.isArray(probabilidades)
     ? probabilidades.map((p) =>
         transformarProbabilidadLinea(p as Record<string, unknown>)
       )
     : [];
+
+  if (
+    probabilidadesArray.length === 0 &&
+    data.lineas &&
+    typeof data.lineas === 'object'
+  ) {
+    probabilidadesArray = Object.entries(
+      data.lineas as Record<string, unknown>
+    ).map(([linea, payload]) =>
+      transformarProbabilidadLinea({
+        linea,
+        ...(payload as Record<string, unknown>),
+      })
+    );
+  }
 
   return {
     mercado: String(data.mercado || '') as TipoMercadoFutbol,
@@ -138,6 +155,9 @@ export async function analizarPartido(
     }
     if (request.lineasDisparos) {
       body.lineas_disparos = request.lineasDisparos;
+    }
+    if (request.h2hLimite !== undefined) {
+      body.h2h_limite = request.h2hLimite;
     }
 
     const respuesta = await clienteAPI.post('/api/futbol/analizar', body);

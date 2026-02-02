@@ -95,11 +95,16 @@ class PartidoResumen(BaseModel):
     """Schema resumen de un partido."""
     id: UUID
     competicion: str
+    competicion_nombre: Optional[str] = None
     fecha_partido: datetime
     equipo_local: str
+    equipo_local_nombre: Optional[str] = None
     equipo_visitante: str
+    equipo_visitante_nombre: Optional[str] = None
     estado: str
     jornada: Optional[int] = None
+    goles_local: Optional[int] = None
+    goles_visitante: Optional[int] = None
 
 
 class PartidoDetalle(PartidoResumen):
@@ -169,6 +174,12 @@ class ListaPartidosResponse(BaseModel):
 class AnalisisRequest(BaseModel):
     """Request para análisis de un partido."""
     partido_id: UUID
+    h2h_limite: Optional[int] = Field(
+        default=10,
+        ge=5,
+        le=20,
+        description="Cantidad de partidos H2H a considerar (5-20).",
+    )
     lineas_corners: Optional[List[float]] = Field(
         default=[8.5, 9.5, 10.5, 11.5],
         description="Líneas a analizar para corners"
@@ -198,6 +209,7 @@ class ProbabilidadLinea(BaseModel):
     over_calibrada: float = Field(ge=0, le=1)
     under_raw: float = Field(ge=0, le=1)
     under_calibrada: float = Field(ge=0, le=1)
+    razones: Optional[List[Dict[str, Any]]] = None
 
 
 class PrediccionMercado(BaseModel):
@@ -241,7 +253,7 @@ class ApuestaRequest(BaseModel):
     mercado: str = Field(description="Uno de los 24 mercados de fútbol")
     lado: Literal["OVER", "UNDER"]
     linea: float = Field(gt=0)
-    cuota: float = Field(gt=1.0)
+    cuota: Optional[float] = Field(default=None, ge=0)
     stake: float = Field(gt=0)
     casa_apuestas: Optional[str] = None
     notas: Optional[str] = None
@@ -268,17 +280,29 @@ class ApuestaRequest(BaseModel):
             raise ValueError(f"Mercado inválido: {v}. Debe ser uno de: {mercados_validos}")
         return v_upper
 
+    @field_validator("cuota")
+    @classmethod
+    def validar_cuota(cls, v: Optional[float]) -> Optional[float]:
+        if v is None:
+            return v
+        if v == 0:
+            return v
+        if v < 1.0:
+            raise ValueError("Cuota invalida: debe ser 0 (sin cuota) o >= 1.0")
+        return v
+
 
 class ApuestaResponse(BaseModel):
     """Respuesta con datos de una apuesta."""
     id: UUID
     partido_id: UUID
+    partido: Optional[PartidoResumen] = None
     mercado: str
     lado: str
     linea: float
     cuota: float
     stake: float
-    estado: Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH", "CANCELADA"]
+    estado: Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH", "CANCELADA", "VOID"]
     probabilidad_sistema: float
     confianza: str
     valor_esperado: float

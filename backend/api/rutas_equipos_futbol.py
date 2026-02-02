@@ -346,7 +346,7 @@ async def obtener_estadisticas_equipo(
 )
 async def obtener_partidos_equipo(
     equipo_id: UUID,
-    limite: int = Query(10, ge=1, le=50, description="Número de partidos"),
+    limite: int = Query(10, ge=1, le=100, description="Número de partidos"),
     tipo: Literal["proximos", "pasados", "todos"] = Query(
         "todos",
         description="Tipo de partidos a obtener"
@@ -425,7 +425,7 @@ async def obtener_partidos_equipo(
 )
 async def obtener_partidos_equipo_detalle(
     equipo_id: UUID,
-    limite: int = Query(10, ge=1, le=50, description="Número de partidos"),
+    limite: int = Query(10, ge=1, le=100, description="Número de partidos"),
 ) -> List[PartidoEstadistico]:
     """Obtiene historial detallado de partidos de un equipo."""
     pool = obtener_pool()

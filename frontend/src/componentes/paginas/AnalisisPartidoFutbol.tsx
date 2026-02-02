@@ -18,7 +18,6 @@ import {
   Clock,
   Trophy,
   MapPin,
-  BookmarkPlus,
   RefreshCw,
 } from 'lucide-react';
 import {
@@ -26,7 +25,7 @@ import {
   PanelAnalisisMercadoFutbol,
   PanelH2HFutbol,
   PanelHistorialEquipoFutbol,
-  FormularioApuestaFutbol,
+  ModalGuardarApuestaFutbol,
 } from '../organismos';
 import { MensajeError } from '../moleculas';
 import { Boton, Spinner, Tarjeta } from '../atomos';
@@ -39,10 +38,10 @@ import {
 import { useToasts } from '../../contextos/Toasts';
 import type {
   PartidoFutbolDetalle,
-  TipoMercadoFutbol,
   PartidoFutbolEstadistico,
+  TipoMercadoFutbol,
+  NivelConfianza,
 } from '../../tipos/futbol';
-import type { DatosApuestaFutbol } from '../organismos/FormularioApuestaFutbol';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -119,6 +118,15 @@ function SkeletonHeader() {
 
 interface PropsHeaderPartido {
   partido: PartidoFutbolDetalle;
+}
+
+interface RecomendacionSeleccionada {
+  mercado: TipoMercadoFutbol;
+  lado: 'OVER' | 'UNDER';
+  linea: number;
+  cuota?: number;
+  probabilidad: number;
+  confianza: NivelConfianza;
 }
 
 function HeaderPartido({ partido }: PropsHeaderPartido) {
@@ -208,84 +216,6 @@ function HeaderPartido({ partido }: PropsHeaderPartido) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// COMPONENTE MODAL FORMULARIO APUESTA
-// ══════════════════════════════════════════════════════════════
-
-interface PropsModalApuesta {
-  abierto: boolean;
-  partidoId: string;
-  nombrePartido: string;
-  valoresIniciales?: {
-    mercado?: TipoMercadoFutbol;
-    lado?: 'OVER' | 'UNDER';
-    linea?: number;
-  };
-  onCerrar: () => void;
-  onGuardado: () => void;
-}
-
-function ModalApuesta({
-  abierto,
-  partidoId,
-  nombrePartido,
-  valoresIniciales,
-  onCerrar,
-  onGuardado,
-}: PropsModalApuesta) {
-  const [guardando, setGuardando] = useState(false);
-  const { agregarToast } = useToasts();
-
-  const handleSubmit = async (datos: DatosApuestaFutbol) => {
-    setGuardando(true);
-    try {
-      await crearApuesta({
-        partidoId: datos.partidoId,
-        mercado: datos.mercado,
-        lado: datos.lado,
-        linea: datos.linea,
-        cuota: datos.cuota,
-        stake: datos.stake,
-        casaApuestas: datos.casaApuestas,
-        notas: datos.notas,
-      });
-      agregarToast({
-        titulo: 'Apuesta registrada',
-        mensaje: 'La apuesta se guardo correctamente en la bitacora.',
-        tipo: 'success',
-      });
-      onGuardado();
-      onCerrar();
-    } catch (err) {
-      const mensaje = err instanceof Error ? err.message : 'Error al guardar';
-      agregarToast({
-        titulo: 'Error al guardar',
-        mensaje,
-        tipo: 'error',
-      });
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  if (!abierto) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl my-8">
-        <FormularioApuestaFutbol
-          partidoId={partidoId}
-          nombrePartido={nombrePartido}
-          onSubmit={handleSubmit}
-          onCancelar={onCerrar}
-          cargando={guardando}
-          valoresIniciales={valoresIniciales}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
 // ══════════════════════════════════════════════════════════════
 
@@ -300,12 +230,10 @@ export function AnalisisPartidoFutbol() {
   const [partido, setPartido] = useState<PartidoFutbolDetalle | null>(null);
   const [cargandoPartido, setCargandoPartido] = useState(true);
   const [errorPartido, setErrorPartido] = useState<string | null>(null);
-  const [modalApuestaAbierto, setModalApuestaAbierto] = useState(false);
-  const [valoresFormulario, setValoresFormulario] = useState<{
-    mercado?: TipoMercadoFutbol;
-    lado?: 'OVER' | 'UNDER';
-    linea?: number;
-  }>({});
+  const [mostrarModalGuardar, setMostrarModalGuardar] = useState(false);
+  const [guardandoApuesta, setGuardandoApuesta] = useState(false);
+  const [recomendacionSeleccionada, setRecomendacionSeleccionada] =
+    useState<RecomendacionSeleccionada | null>(null);
   const [h2hPartidos, setH2hPartidos] = useState<PartidoFutbolEstadistico[]>([]);
   const [historialLocal, setHistorialLocal] = useState<PartidoFutbolEstadistico[]>([]);
   const [historialVisitante, setHistorialVisitante] = useState<
@@ -317,6 +245,7 @@ export function AnalisisPartidoFutbol() {
   const [refrescoContexto, setRefrescoContexto] = useState(0);
   const [cargandoContexto, setCargandoContexto] = useState(false);
   const [errorContexto, setErrorContexto] = useState<string | null>(null);
+  const { agregarToast } = useToasts();
 
   // Cargar partido
   useEffect(() => {
@@ -377,10 +306,47 @@ export function AnalisisPartidoFutbol() {
     setRefrescoContexto((valor) => valor + 1);
   }, []);
 
-  // Nombre del partido para el formulario
-  const nombrePartido = partido
-    ? `${partido.equipoLocalNombre} vs ${partido.equipoVisitanteNombre}`
-    : '';
+  const handleSolicitarGuardar = useCallback(
+    (recomendacion: RecomendacionSeleccionada) => {
+      setRecomendacionSeleccionada(recomendacion);
+      setMostrarModalGuardar(true);
+    },
+    []
+  );
+
+  const handleGuardarApuesta = useCallback(
+    async (stake: number) => {
+      if (!partido || !recomendacionSeleccionada) return;
+      setGuardandoApuesta(true);
+      try {
+        await crearApuesta({
+          partidoId: partido.id,
+          mercado: recomendacionSeleccionada.mercado,
+          lado: recomendacionSeleccionada.lado,
+          linea: recomendacionSeleccionada.linea,
+          cuota: recomendacionSeleccionada.cuota ?? 0,
+          stake,
+          notas: `Analisis automatico - Confianza: ${recomendacionSeleccionada.confianza}`,
+        });
+        setMostrarModalGuardar(false);
+        setRecomendacionSeleccionada(null);
+        agregarToast({
+          titulo: 'Apuesta guardada',
+          mensaje: 'Se registro correctamente en la bitacora',
+          tipo: 'success',
+        });
+      } catch (error) {
+        agregarToast({
+          titulo: 'Error al guardar',
+          mensaje: error instanceof Error ? error.message : 'Error desconocido',
+          tipo: 'error',
+        });
+      } finally {
+        setGuardandoApuesta(false);
+      }
+    },
+    [agregarToast, partido, recomendacionSeleccionada]
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -410,15 +376,6 @@ export function AnalisisPartidoFutbol() {
               cargando={cargandoContexto}
             >
               Actualizar datos
-            </Boton>
-            <Boton
-              variante="primario"
-              tamano="sm"
-              iconoInicio={<BookmarkPlus size={16} />}
-              onClick={() => setModalApuestaAbierto(true)}
-              disabled={!partido}
-            >
-              Nueva Apuesta
             </Boton>
           </div>
         </div>
@@ -467,6 +424,7 @@ export function AnalisisPartidoFutbol() {
             h2h={h2hPartidos}
             historialLocal={historialLocal}
             historialVisitante={historialVisitante}
+            onGuardarApuesta={handleSolicitarGuardar}
           />
         )}
 
@@ -498,20 +456,21 @@ export function AnalisisPartidoFutbol() {
         )}
       </main>
 
-      {/* Modal de apuesta */}
-      {partido && (
-        <ModalApuesta
-          abierto={modalApuestaAbierto}
-          partidoId={partido.id}
-          nombrePartido={nombrePartido}
-          valoresIniciales={valoresFormulario}
+      {partido && recomendacionSeleccionada && (
+        <ModalGuardarApuestaFutbol
+          mostrar={mostrarModalGuardar}
           onCerrar={() => {
-            setModalApuestaAbierto(false);
-            setValoresFormulario({});
+            setMostrarModalGuardar(false);
+            setRecomendacionSeleccionada(null);
           }}
-          onGuardado={() => {
-            // Podria recargar estadisticas aqui si fuera necesario
+          onGuardar={handleGuardarApuesta}
+          cargando={guardandoApuesta}
+          partidoInfo={{
+            equipoLocal: partido.equipoLocalNombre,
+            equipoVisitante: partido.equipoVisitanteNombre,
+            fecha: formatearFechaCompleta(partido.fechaPartido),
           }}
+          recomendacion={recomendacionSeleccionada}
         />
       )}
 
