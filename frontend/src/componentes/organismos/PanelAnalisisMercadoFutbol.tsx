@@ -9,9 +9,6 @@ import { Tarjeta, Boton } from '../atomos';
 import type { PartidoFutbolEstadistico } from '../../tipos/futbol';
 
 type MercadoAnalisis = 'GOLES' | 'CORNERS' | 'DISPAROS';
-type PeriodoCorners = 'FT' | '1T' | '2T';
-type AlcanceAnalisis = 'PARTIDO' | 'LOCAL' | 'VISITANTE';
-type TipoDisparo = 'TOTAL' | 'ARCO';
 
 interface PropsPanelAnalisisMercadoFutbol {
   equipoLocalId: string;
@@ -36,76 +33,35 @@ const mercadosDisponibles: { id: MercadoAnalisis; label: string }[] = [
   { id: 'DISPAROS', label: 'Disparos' },
 ];
 
-function obtenerValoresCorners(partido: PartidoFutbolEstadistico, periodo: PeriodoCorners) {
-  switch (periodo) {
-    case '1T':
-      return {
-        local: partido.cornersLocal1t,
-        visitante: partido.cornersVisitante1t,
-      };
-    case '2T':
-      return {
-        local: partido.cornersLocal2t,
-        visitante: partido.cornersVisitante2t,
-      };
+function obtenerValorTotal(partido: PartidoFutbolEstadistico, mercado: MercadoAnalisis) {
+  switch (mercado) {
+    case 'GOLES':
+      return partido.golesLocal + partido.golesVisitante;
+    case 'CORNERS':
+      return partido.cornersLocal + partido.cornersVisitante;
+    case 'DISPAROS':
+      return partido.disparosLocal + partido.disparosVisitante;
     default:
-      return {
-        local: partido.cornersLocal,
-        visitante: partido.cornersVisitante,
-      };
+      return 0;
   }
 }
 
-function obtenerValoresGoles(partido: PartidoFutbolEstadistico) {
-  return {
-    local: partido.golesLocal,
-    visitante: partido.golesVisitante,
-  };
-}
-
-function obtenerValoresDisparos(partido: PartidoFutbolEstadistico, tipo: TipoDisparo) {
-  if (tipo === 'ARCO') {
-    return {
-      local: partido.disparosArcoLocal,
-      visitante: partido.disparosArcoVisitante,
-    };
-  }
-  return {
-    local: partido.disparosLocal,
-    visitante: partido.disparosVisitante,
-  };
-}
-
-function obtenerValorAnalisis(
+function obtenerValorEquipo(
   partido: PartidoFutbolEstadistico,
   equipoId: string,
-  mercado: MercadoAnalisis,
-  alcance: AlcanceAnalisis,
-  periodoCorners: PeriodoCorners,
-  tipoDisparo: TipoDisparo
+  mercado: MercadoAnalisis
 ) {
-  let valores: { local: number; visitante: number };
-
-  switch (mercado) {
-    case 'CORNERS':
-      valores = obtenerValoresCorners(partido, periodoCorners);
-      break;
-    case 'DISPAROS':
-      valores = obtenerValoresDisparos(partido, tipoDisparo);
-      break;
-    default:
-      valores = obtenerValoresGoles(partido);
-      break;
-  }
-
-  if (alcance === 'PARTIDO') {
-    return valores.local + valores.visitante;
-  }
-
   const esLocal = partido.equipoLocalId === equipoId;
-  const valorEquipo = esLocal ? valores.local : valores.visitante;
-  const valorRival = esLocal ? valores.visitante : valores.local;
-  return alcance === 'LOCAL' ? valorEquipo : valorRival;
+  switch (mercado) {
+    case 'GOLES':
+      return esLocal ? partido.golesLocal : partido.golesVisitante;
+    case 'CORNERS':
+      return esLocal ? partido.cornersLocal : partido.cornersVisitante;
+    case 'DISPAROS':
+      return esLocal ? partido.disparosLocal : partido.disparosVisitante;
+    default:
+      return 0;
+  }
 }
 
 function calcularResumen(valores: number[], linea: number): ResumenProbabilidad {
@@ -134,9 +90,6 @@ export function PanelAnalisisMercadoFutbol({
   const [linea, setLinea] = useState('');
   const [cuota, setCuota] = useState('');
   const [lado, setLado] = useState<'OVER' | 'UNDER'>('OVER');
-  const [periodoCorners, setPeriodoCorners] = useState<PeriodoCorners>('FT');
-  const [alcance, setAlcance] = useState<AlcanceAnalisis>('PARTIDO');
-  const [tipoDisparo, setTipoDisparo] = useState<TipoDisparo>('TOTAL');
   const [mostrarResultado, setMostrarResultado] = useState(false);
 
   const lineaNumerica = linea ? Number(linea) : null;
@@ -144,35 +97,12 @@ export function PanelAnalisisMercadoFutbol({
 
   const resumenes = useMemo(() => {
     if (!lineaNumerica) return null;
-    const valoresH2H = h2h.map((partido) =>
-      obtenerValorAnalisis(
-        partido,
-        equipoLocalId,
-        mercado,
-        alcance,
-        periodoCorners,
-        tipoDisparo
-      )
-    );
+    const valoresH2H = h2h.map((partido) => obtenerValorTotal(partido, mercado));
     const valoresLocal = historialLocal.map((partido) =>
-      obtenerValorAnalisis(
-        partido,
-        equipoLocalId,
-        mercado,
-        'LOCAL',
-        periodoCorners,
-        tipoDisparo
-      )
+      obtenerValorEquipo(partido, equipoLocalId, mercado)
     );
     const valoresVisitante = historialVisitante.map((partido) =>
-      obtenerValorAnalisis(
-        partido,
-        equipoVisitanteId,
-        mercado,
-        'LOCAL',
-        periodoCorners,
-        tipoDisparo
-      )
+      obtenerValorEquipo(partido, equipoVisitanteId, mercado)
     );
 
     return {
@@ -180,18 +110,7 @@ export function PanelAnalisisMercadoFutbol({
       local: calcularResumen(valoresLocal, lineaNumerica),
       visitante: calcularResumen(valoresVisitante, lineaNumerica),
     };
-  }, [
-    h2h,
-    historialLocal,
-    historialVisitante,
-    lineaNumerica,
-    mercado,
-    equipoLocalId,
-    equipoVisitanteId,
-    alcance,
-    periodoCorners,
-    tipoDisparo,
-  ]);
+  }, [h2h, historialLocal, historialVisitante, lineaNumerica, mercado, equipoLocalId, equipoVisitanteId]);
 
   const probOverCombinada = useMemo(() => {
     if (!resumenes) return null;
@@ -227,7 +146,7 @@ export function PanelAnalisisMercadoFutbol({
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <label className="flex flex-col gap-2 text-sm text-texto-secundario">
           Mercado
           <select
@@ -240,45 +159,6 @@ export function PanelAnalisisMercadoFutbol({
                 {item.label}
               </option>
             ))}
-          </select>
-        </label>
-        {mercado === 'CORNERS' && (
-          <label className="flex flex-col gap-2 text-sm text-texto-secundario">
-            Periodo
-            <select
-              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
-              value={periodoCorners}
-              onChange={(event) => setPeriodoCorners(event.target.value as PeriodoCorners)}
-            >
-              <option value="FT">Partido completo</option>
-              <option value="1T">Primer tiempo</option>
-              <option value="2T">Segundo tiempo</option>
-            </select>
-          </label>
-        )}
-        {mercado === 'DISPAROS' && (
-          <label className="flex flex-col gap-2 text-sm text-texto-secundario">
-            Tipo de disparo
-            <select
-              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
-              value={tipoDisparo}
-              onChange={(event) => setTipoDisparo(event.target.value as TipoDisparo)}
-            >
-              <option value="TOTAL">Totales</option>
-              <option value="ARCO">A puerta</option>
-            </select>
-          </label>
-        )}
-        <label className="flex flex-col gap-2 text-sm text-texto-secundario">
-          Alcance
-          <select
-            className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
-            value={alcance}
-            onChange={(event) => setAlcance(event.target.value as AlcanceAnalisis)}
-          >
-            <option value="PARTIDO">Partido completo</option>
-            <option value="LOCAL">{equipoLocalNombre}</option>
-            <option value="VISITANTE">{equipoVisitanteNombre}</option>
           </select>
         </label>
         <label className="flex flex-col gap-2 text-sm text-texto-secundario">

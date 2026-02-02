@@ -343,19 +343,15 @@ export function AnalisisPartidoFutbol() {
   // Cargar contexto H2H e historial individual
   useEffect(() => {
     const cargarContexto = async () => {
-      if (!partido?.equipoLocalId || !partido?.equipoVisitanteId) return;
+      if (!partido?.equipoLocal || !partido?.equipoVisitante) return;
       setCargandoContexto(true);
       setErrorContexto(null);
 
       try {
         const [h2h, local, visitante] = await Promise.all([
-          obtenerH2HPartidos(
-            partido.equipoLocalId,
-            partido.equipoVisitanteId,
-            limiteH2h
-          ),
-          obtenerPartidosEquipoDetalle(partido.equipoLocalId, limiteLocal),
-          obtenerPartidosEquipoDetalle(partido.equipoVisitanteId, limiteVisitante),
+          obtenerH2HPartidos(partido.equipoLocal, partido.equipoVisitante, limiteH2h),
+          obtenerPartidosEquipoDetalle(partido.equipoLocal, limiteLocal),
+          obtenerPartidosEquipoDetalle(partido.equipoVisitante, limiteVisitante),
         ]);
         setH2hPartidos(h2h);
         setHistorialLocal(local);
@@ -456,17 +452,11 @@ export function AnalisisPartidoFutbol() {
           />
         )}
 
-        {partido && (!partido.equipoLocalId || !partido.equipoVisitanteId) && (
-          <Tarjeta className="text-sm text-texto-secundario">
-            No se pudieron obtener los IDs de los equipos para cargar el contexto H2H.
-          </Tarjeta>
-        )}
-
         {/* Panel analizador */}
         {partido && (
           <PanelAnalisisMercadoFutbol
-            equipoLocalId={partido.equipoLocalId ?? ''}
-            equipoVisitanteId={partido.equipoVisitanteId ?? ''}
+            equipoLocalId={partido.equipoLocal}
+            equipoVisitanteId={partido.equipoVisitante}
             equipoLocalNombre={partido.equipoLocalNombre}
             equipoVisitanteNombre={partido.equipoVisitanteNombre}
             h2h={h2hPartidos}
@@ -486,14 +476,14 @@ export function AnalisisPartidoFutbol() {
         {partido && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <PanelHistorialEquipoFutbol
-              equipoId={partido.equipoLocalId ?? ''}
+              equipoId={partido.equipoLocal}
               equipoNombre={partido.equipoLocalNombre}
               partidos={historialLocal}
               limite={limiteLocal}
               onCambiarLimite={setLimiteLocal}
             />
             <PanelHistorialEquipoFutbol
-              equipoId={partido.equipoVisitanteId ?? ''}
+              equipoId={partido.equipoVisitante}
               equipoNombre={partido.equipoVisitanteNombre}
               partidos={historialVisitante}
               limite={limiteVisitante}
