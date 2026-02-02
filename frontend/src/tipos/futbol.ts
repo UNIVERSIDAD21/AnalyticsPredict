@@ -160,6 +160,10 @@ export interface PartidoFutbolEstadistico {
   golesVisitante: number;
   cornersLocal: number;
   cornersVisitante: number;
+  cornersLocal1t?: number;
+  cornersLocal2t?: number;
+  cornersVisitante1t?: number;
+  cornersVisitante2t?: number;
   disparosLocal: number;
   disparosVisitante: number;
   disparosArcoLocal: number;
