@@ -23,13 +23,13 @@ function transformarPartidoResumen(
   return {
     id: String(data.id || ''),
     competicion: String(data.competicion || ''),
-    competicionNombre: String(data.competicion_nombre || ''),
+    competicionNombre: String(data.competicion_nombre || data.competicion || ''),
     fechaPartido: String(data.fecha_partido || ''),
     equipoLocal: String(data.equipo_local || ''),
-    equipoLocalNombre: String(data.equipo_local_nombre || ''),
+    equipoLocalNombre: String(data.equipo_local_nombre || data.equipo_local || ''),
     equipoLocalLogo: data.equipo_local_logo as string | undefined,
     equipoVisitante: String(data.equipo_visitante || ''),
-    equipoVisitanteNombre: String(data.equipo_visitante_nombre || ''),
+    equipoVisitanteNombre: String(data.equipo_visitante_nombre || data.equipo_visitante || ''),
     equipoVisitanteLogo: data.equipo_visitante_logo as string | undefined,
     estado: (data.estado as PartidoFutbolResumen['estado']) || 'PROGRAMADO',
     jornada: data.jornada ? Number(data.jornada) : undefined,
@@ -141,13 +141,13 @@ export async function obtenerPartidosProximos(
     const params: Record<string, string | number> = {};
 
     if (filtros?.competicion) {
-      params.competicion = filtros.competicion;
+      params.competicion_id = filtros.competicion;
     }
     if (filtros?.dias) {
       params.dias = filtros.dias;
     }
     if (filtros?.equipo) {
-      params.equipo = filtros.equipo;
+      params.equipo_id = filtros.equipo;
     }
     if (filtros?.limite) {
       params.limite = filtros.limite;
@@ -174,13 +174,13 @@ export async function obtenerPartidosRecientes(
     const params: Record<string, string | number> = {};
 
     if (filtros?.competicion) {
-      params.competicion = filtros.competicion;
+      params.competicion_id = filtros.competicion;
     }
     if (filtros?.dias) {
       params.dias = filtros.dias;
     }
     if (filtros?.equipo) {
-      params.equipo = filtros.equipo;
+      params.equipo_id = filtros.equipo;
     }
     if (filtros?.limite) {
       params.limite = filtros.limite;
