@@ -8,6 +8,7 @@ import App from './App';
 import './index.css';
 import { ToastsProvider } from './contextos/Toasts';
 import { ProveedorConfiguracionUsuario } from './contextos/ConfiguracionUsuario';
+import { ProveedorDeporte } from './contextos/DeporteContext';
 
 // Obtener elemento raíz
 const contenedorRaiz = document.getElementById('root');
@@ -21,7 +22,9 @@ createRoot(contenedorRaiz).render(
   <StrictMode>
     <ToastsProvider>
       <ProveedorConfiguracionUsuario>
-        <App />
+        <ProveedorDeporte>
+          <App />
+        </ProveedorDeporte>
       </ProveedorConfiguracionUsuario>
     </ToastsProvider>
   </StrictMode>

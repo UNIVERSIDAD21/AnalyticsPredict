@@ -33,3 +33,17 @@ export { SeccionFormaReciente } from './SeccionFormaReciente';
 
 export { PanelHistorialEquipo } from './PanelHistorialEquipo';
 export { SeccionHistorialDetallado } from './SeccionHistorialDetallado';
+
+// ══════════════════════════════════════════════════════════════
+// Módulo de Fútbol: Componentes específicos para fútbol
+// ══════════════════════════════════════════════════════════════
+
+export { ListaPartidosFutbol } from './ListaPartidosFutbol';
+export { ComparativaEquipos } from './ComparativaEquipos';
+export { GraficoDistribucion } from './GraficoDistribucion';
+export { FormularioApuestaFutbol } from './FormularioApuestaFutbol';
+export type { DatosApuestaFutbol } from './FormularioApuestaFutbol';
+export { PanelAnalisisFutbol } from './PanelAnalisisFutbol';
+export { TarjetaMercadoFutbol } from './TarjetaMercadoFutbol';
+export { TarjetaRecomendacion, ListaRecomendaciones } from './TarjetaRecomendacion';
+export { ResumenMetricasFutbol } from './ResumenMetricasFutbol';
