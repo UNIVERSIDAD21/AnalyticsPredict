@@ -90,7 +90,7 @@ async def listar_partidos_proximos(
 
     fecha_inicio = datetime.now()
     fecha_fin = fecha_inicio + timedelta(days=dias)
-    estados_programados = ["PROGRAMADO", "SCHEDULED", "PENDIENTE"]
+    estados_programados = ["PROGRAMADO"]  # CORREGIDO: valores válidos del ENUM
 
     query = """
         SELECT
