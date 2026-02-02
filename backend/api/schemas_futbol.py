@@ -145,6 +145,10 @@ class PartidoEstadistico(BaseModel):
     goles_visitante: Optional[int] = None
     corners_local: Optional[int] = None
     corners_visitante: Optional[int] = None
+    corners_local_1t: Optional[int] = None
+    corners_local_2t: Optional[int] = None
+    corners_visitante_1t: Optional[int] = None
+    corners_visitante_2t: Optional[int] = None
     disparos_local: Optional[int] = None
     disparos_visitante: Optional[int] = None
     disparos_arco_local: Optional[int] = None

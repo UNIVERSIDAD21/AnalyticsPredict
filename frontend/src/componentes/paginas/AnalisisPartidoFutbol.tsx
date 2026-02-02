@@ -343,15 +343,17 @@ export function AnalisisPartidoFutbol() {
   // Cargar contexto H2H e historial individual
   useEffect(() => {
     const cargarContexto = async () => {
-      if (!partido?.equipoLocal || !partido?.equipoVisitante) return;
+      const equipoLocalId = partido?.equipoLocalId ?? partido?.equipoLocal;
+      const equipoVisitanteId = partido?.equipoVisitanteId ?? partido?.equipoVisitante;
+      if (!equipoLocalId || !equipoVisitanteId) return;
       setCargandoContexto(true);
       setErrorContexto(null);
 
       try {
         const [h2h, local, visitante] = await Promise.all([
-          obtenerH2HPartidos(partido.equipoLocal, partido.equipoVisitante, limiteH2h),
-          obtenerPartidosEquipoDetalle(partido.equipoLocal, limiteLocal),
-          obtenerPartidosEquipoDetalle(partido.equipoVisitante, limiteVisitante),
+          obtenerH2HPartidos(equipoLocalId, equipoVisitanteId, limiteH2h),
+          obtenerPartidosEquipoDetalle(equipoLocalId, limiteLocal),
+          obtenerPartidosEquipoDetalle(equipoVisitanteId, limiteVisitante),
         ]);
         setH2hPartidos(h2h);
         setHistorialLocal(local);
@@ -367,6 +369,9 @@ export function AnalisisPartidoFutbol() {
 
     void cargarContexto();
   }, [partido, limiteH2h, limiteLocal, limiteVisitante, refrescoContexto]);
+
+  const equipoLocalId = partido?.equipoLocalId ?? partido?.equipoLocal;
+  const equipoVisitanteId = partido?.equipoVisitanteId ?? partido?.equipoVisitante;
 
   const handleActualizarContexto = useCallback(() => {
     setRefrescoContexto((valor) => valor + 1);
@@ -453,10 +458,10 @@ export function AnalisisPartidoFutbol() {
         )}
 
         {/* Panel analizador */}
-        {partido && (
+        {partido && equipoLocalId && equipoVisitanteId && (
           <PanelAnalisisMercadoFutbol
-            equipoLocalId={partido.equipoLocal}
-            equipoVisitanteId={partido.equipoVisitante}
+            equipoLocalId={equipoLocalId}
+            equipoVisitanteId={equipoVisitanteId}
             equipoLocalNombre={partido.equipoLocalNombre}
             equipoVisitanteNombre={partido.equipoVisitanteNombre}
             h2h={h2hPartidos}
@@ -473,17 +478,17 @@ export function AnalisisPartidoFutbol() {
         />
 
         {/* Historial individual */}
-        {partido && (
+        {partido && equipoLocalId && equipoVisitanteId && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <PanelHistorialEquipoFutbol
-              equipoId={partido.equipoLocal}
+              equipoId={equipoLocalId}
               equipoNombre={partido.equipoLocalNombre}
               partidos={historialLocal}
               limite={limiteLocal}
               onCambiarLimite={setLimiteLocal}
             />
             <PanelHistorialEquipoFutbol
-              equipoId={partido.equipoVisitante}
+              equipoId={equipoVisitanteId}
               equipoNombre={partido.equipoVisitanteNombre}
               partidos={historialVisitante}
               limite={limiteVisitante}

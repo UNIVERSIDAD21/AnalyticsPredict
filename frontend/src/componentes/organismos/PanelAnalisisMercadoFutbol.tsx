@@ -2,13 +2,16 @@
  * PanelAnalisisMercadoFutbol.tsx — Analizador de líneas con H2H e historial individual.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TrendingUp, Target, LineChart } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Tarjeta, Boton } from '../atomos';
 import type { PartidoFutbolEstadistico } from '../../tipos/futbol';
 
 type MercadoAnalisis = 'GOLES' | 'CORNERS' | 'DISPAROS';
+type SegmentoAnalisis = 'FT' | '1T' | '2T';
+type AlcanceAnalisis = 'TOTAL' | 'LOCAL' | 'VISITANTE';
+type TipoDisparo = 'TOTAL' | 'ARCO';
 
 interface PropsPanelAnalisisMercadoFutbol {
   equipoLocalId: string;
@@ -33,35 +36,86 @@ const mercadosDisponibles: { id: MercadoAnalisis; label: string }[] = [
   { id: 'DISPAROS', label: 'Disparos' },
 ];
 
-function obtenerValorTotal(partido: PartidoFutbolEstadistico, mercado: MercadoAnalisis) {
-  switch (mercado) {
-    case 'GOLES':
-      return partido.golesLocal + partido.golesVisitante;
-    case 'CORNERS':
-      return partido.cornersLocal + partido.cornersVisitante;
-    case 'DISPAROS':
-      return partido.disparosLocal + partido.disparosVisitante;
-    default:
-      return 0;
+const segmentosCorners: { id: SegmentoAnalisis; label: string }[] = [
+  { id: 'FT', label: 'Partido completo' },
+  { id: '1T', label: 'Primer tiempo' },
+  { id: '2T', label: 'Segundo tiempo' },
+];
+
+const alcancesDisponibles: { id: AlcanceAnalisis; label: string }[] = [
+  { id: 'TOTAL', label: 'Total del partido' },
+  { id: 'LOCAL', label: 'Equipo local' },
+  { id: 'VISITANTE', label: 'Equipo visitante' },
+];
+
+const tiposDisparoDisponibles: { id: TipoDisparo; label: string }[] = [
+  { id: 'TOTAL', label: 'Disparos totales' },
+  { id: 'ARCO', label: 'Disparos a puerta' },
+];
+
+function obtenerCornersEquipo(
+  partido: PartidoFutbolEstadistico,
+  esLocal: boolean,
+  segmento: SegmentoAnalisis
+) {
+  if (segmento === '1T') {
+    return esLocal ? partido.cornersLocal1t ?? 0 : partido.cornersVisitante1t ?? 0;
   }
+  if (segmento === '2T') {
+    return esLocal ? partido.cornersLocal2t ?? 0 : partido.cornersVisitante2t ?? 0;
+  }
+  return esLocal ? partido.cornersLocal : partido.cornersVisitante;
+}
+
+function obtenerCornersTotal(partido: PartidoFutbolEstadistico, segmento: SegmentoAnalisis) {
+  return (
+    obtenerCornersEquipo(partido, true, segmento) +
+    obtenerCornersEquipo(partido, false, segmento)
+  );
+}
+
+function obtenerValorTotalPartido(
+  partido: PartidoFutbolEstadistico,
+  mercado: MercadoAnalisis,
+  segmento: SegmentoAnalisis,
+  tipoDisparo: TipoDisparo
+) {
+  if (mercado === 'CORNERS') {
+    return obtenerCornersTotal(partido, segmento);
+  }
+
+  if (mercado === 'GOLES') {
+    return partido.golesLocal + partido.golesVisitante;
+  }
+
+  const disparosLocal =
+    tipoDisparo === 'ARCO' ? partido.disparosArcoLocal : partido.disparosLocal;
+  const disparosVisitante =
+    tipoDisparo === 'ARCO' ? partido.disparosArcoVisitante : partido.disparosVisitante;
+  return disparosLocal + disparosVisitante;
 }
 
 function obtenerValorEquipo(
   partido: PartidoFutbolEstadistico,
   equipoId: string,
-  mercado: MercadoAnalisis
+  mercado: MercadoAnalisis,
+  segmento: SegmentoAnalisis,
+  tipoDisparo: TipoDisparo
 ) {
   const esLocal = partido.equipoLocalId === equipoId;
-  switch (mercado) {
-    case 'GOLES':
-      return esLocal ? partido.golesLocal : partido.golesVisitante;
-    case 'CORNERS':
-      return esLocal ? partido.cornersLocal : partido.cornersVisitante;
-    case 'DISPAROS':
-      return esLocal ? partido.disparosLocal : partido.disparosVisitante;
-    default:
-      return 0;
+  if (mercado === 'CORNERS') {
+    return obtenerCornersEquipo(partido, esLocal, segmento);
   }
+  if (mercado === 'GOLES') {
+    return esLocal ? partido.golesLocal : partido.golesVisitante;
+  }
+  return tipoDisparo === 'ARCO'
+    ? esLocal
+      ? partido.disparosArcoLocal
+      : partido.disparosArcoVisitante
+    : esLocal
+      ? partido.disparosLocal
+      : partido.disparosVisitante;
 }
 
 function calcularResumen(valores: number[], linea: number): ResumenProbabilidad {
@@ -87,6 +141,9 @@ export function PanelAnalisisMercadoFutbol({
   historialVisitante,
 }: PropsPanelAnalisisMercadoFutbol) {
   const [mercado, setMercado] = useState<MercadoAnalisis>('CORNERS');
+  const [segmento, setSegmento] = useState<SegmentoAnalisis>('FT');
+  const [alcance, setAlcance] = useState<AlcanceAnalisis>('TOTAL');
+  const [tipoDisparo, setTipoDisparo] = useState<TipoDisparo>('TOTAL');
   const [linea, setLinea] = useState('');
   const [cuota, setCuota] = useState('');
   const [lado, setLado] = useState<'OVER' | 'UNDER'>('OVER');
@@ -95,14 +152,42 @@ export function PanelAnalisisMercadoFutbol({
   const lineaNumerica = linea ? Number(linea) : null;
   const cuotaNumerica = cuota ? Number(cuota) : null;
 
+  const segmentosDisponibles = useMemo(
+    () => (mercado === 'CORNERS' ? segmentosCorners : segmentosCorners.slice(0, 1)),
+    [mercado]
+  );
+
+  useEffect(() => {
+    if (mercado !== 'CORNERS') {
+      setSegmento('FT');
+    }
+    if (mercado !== 'DISPAROS') {
+      setTipoDisparo('TOTAL');
+    }
+  }, [mercado]);
+
   const resumenes = useMemo(() => {
     if (!lineaNumerica) return null;
-    const valoresH2H = h2h.map((partido) => obtenerValorTotal(partido, mercado));
+    const valoresH2H = h2h.map((partido) =>
+      alcance === 'TOTAL'
+        ? obtenerValorTotalPartido(partido, mercado, segmento, tipoDisparo)
+        : obtenerValorEquipo(
+            partido,
+            alcance === 'LOCAL' ? equipoLocalId : equipoVisitanteId,
+            mercado,
+            segmento,
+            tipoDisparo
+          )
+    );
     const valoresLocal = historialLocal.map((partido) =>
-      obtenerValorEquipo(partido, equipoLocalId, mercado)
+      alcance === 'TOTAL'
+        ? obtenerValorTotalPartido(partido, mercado, segmento, tipoDisparo)
+        : obtenerValorEquipo(partido, equipoLocalId, mercado, segmento, tipoDisparo)
     );
     const valoresVisitante = historialVisitante.map((partido) =>
-      obtenerValorEquipo(partido, equipoVisitanteId, mercado)
+      alcance === 'TOTAL'
+        ? obtenerValorTotalPartido(partido, mercado, segmento, tipoDisparo)
+        : obtenerValorEquipo(partido, equipoVisitanteId, mercado, segmento, tipoDisparo)
     );
 
     return {
@@ -110,7 +195,18 @@ export function PanelAnalisisMercadoFutbol({
       local: calcularResumen(valoresLocal, lineaNumerica),
       visitante: calcularResumen(valoresVisitante, lineaNumerica),
     };
-  }, [h2h, historialLocal, historialVisitante, lineaNumerica, mercado, equipoLocalId, equipoVisitanteId]);
+  }, [
+    h2h,
+    historialLocal,
+    historialVisitante,
+    lineaNumerica,
+    mercado,
+    segmento,
+    alcance,
+    tipoDisparo,
+    equipoLocalId,
+    equipoVisitanteId,
+  ]);
 
   const probOverCombinada = useMemo(() => {
     if (!resumenes) return null;
@@ -146,7 +242,7 @@ export function PanelAnalisisMercadoFutbol({
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
         <label className="flex flex-col gap-2 text-sm text-texto-secundario">
           Mercado
           <select
@@ -155,6 +251,52 @@ export function PanelAnalisisMercadoFutbol({
             onChange={(event) => setMercado(event.target.value as MercadoAnalisis)}
           >
             {mercadosDisponibles.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {mercado === 'CORNERS' && (
+          <label className="flex flex-col gap-2 text-sm text-texto-secundario">
+            Tramo
+            <select
+              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+              value={segmento}
+              onChange={(event) => setSegmento(event.target.value as SegmentoAnalisis)}
+            >
+              {segmentosDisponibles.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {mercado === 'DISPAROS' && (
+          <label className="flex flex-col gap-2 text-sm text-texto-secundario">
+            Tipo de disparo
+            <select
+              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+              value={tipoDisparo}
+              onChange={(event) => setTipoDisparo(event.target.value as TipoDisparo)}
+            >
+              {tiposDisparoDisponibles.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="flex flex-col gap-2 text-sm text-texto-secundario">
+          Alcance
+          <select
+            className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+            value={alcance}
+            onChange={(event) => setAlcance(event.target.value as AlcanceAnalisis)}
+          >
+            {alcancesDisponibles.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
               </option>
