@@ -131,6 +131,24 @@ class PartidoDetalle(PartidoResumen):
     estadisticas_visitante: Optional[EstadisticasEquipo] = None
 
 
+class PartidoEstadistico(BaseModel):
+    """Schema con estadísticas clave para análisis contextual."""
+    id: UUID
+    fecha_partido: datetime
+    equipo_local_id: UUID
+    equipo_visitante_id: UUID
+    equipo_local: str
+    equipo_visitante: str
+    goles_local: Optional[int] = None
+    goles_visitante: Optional[int] = None
+    corners_local: Optional[int] = None
+    corners_visitante: Optional[int] = None
+    disparos_local: Optional[int] = None
+    disparos_visitante: Optional[int] = None
+    disparos_arco_local: Optional[int] = None
+    disparos_arco_visitante: Optional[int] = None
+
+
 class ListaPartidosResponse(BaseModel):
     """Respuesta para listado de partidos."""
     exito: bool = True

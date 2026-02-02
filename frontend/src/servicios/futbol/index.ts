@@ -15,6 +15,7 @@ export {
   obtenerEquipo,
   obtenerEstadisticasEquipo,
   obtenerPartidosEquipo,
+  obtenerPartidosEquipoDetalle,
 } from './equipos';
 
 // Partidos
@@ -22,6 +23,7 @@ export {
   obtenerPartidosProximos,
   obtenerPartidosRecientes,
   obtenerPartido,
+  obtenerH2HPartidos,
 } from './partidos';
 
 // Análisis

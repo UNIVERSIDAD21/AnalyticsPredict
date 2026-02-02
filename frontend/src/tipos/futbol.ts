@@ -144,6 +144,26 @@ export interface PartidoFutbolDetalle extends PartidoFutbolResumen {
   estadisticasVisitante?: EstadisticasEquipoFutbol;
 }
 
+/**
+ * Partido con estadísticas completas para análisis contextual
+ */
+export interface PartidoFutbolEstadistico {
+  id: string;
+  fechaPartido: string;
+  equipoLocalId: string;
+  equipoVisitanteId: string;
+  equipoLocalNombre: string;
+  equipoVisitanteNombre: string;
+  golesLocal: number;
+  golesVisitante: number;
+  cornersLocal: number;
+  cornersVisitante: number;
+  disparosLocal: number;
+  disparosVisitante: number;
+  disparosArcoLocal: number;
+  disparosArcoVisitante: number;
+}
+
 // ══════════════════════════════════════════════════════════════
 // TIPOS DE MERCADO Y PREDICCIÓN
 // ══════════════════════════════════════════════════════════════
