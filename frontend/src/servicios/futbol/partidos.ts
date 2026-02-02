@@ -8,6 +8,7 @@ import type {
   PartidoFutbolDetalle,
   FiltrosPartidos,
   EstadisticasEquipoFutbol,
+  PartidoFutbolEstadistico,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -127,6 +128,32 @@ function transformarPartidoDetalle(
   };
 }
 
+/**
+ * Transforma un partido estadístico de snake_case a camelCase
+ */
+function transformarPartidoEstadistico(
+  data: Record<string, unknown>
+): PartidoFutbolEstadistico {
+  return {
+    id: String(data.id || ''),
+    fechaPartido: String(data.fecha_partido || ''),
+    equipoLocalId: String(data.equipo_local_id || ''),
+    equipoVisitanteId: String(data.equipo_visitante_id || ''),
+    equipoLocalNombre: String(data.equipo_local || ''),
+    equipoVisitanteNombre: String(data.equipo_visitante || ''),
+    golesLocal: Number(data.goles_local ?? data.local_goles_total ?? 0),
+    golesVisitante: Number(data.goles_visitante ?? data.visitante_goles_total ?? 0),
+    cornersLocal: Number(data.corners_local ?? data.local_corners_total ?? 0),
+    cornersVisitante: Number(data.corners_visitante ?? data.visitante_corners_total ?? 0),
+    disparosLocal: Number(data.disparos_local ?? data.local_disparos_total ?? 0),
+    disparosVisitante: Number(data.disparos_visitante ?? data.visitante_disparos_total ?? 0),
+    disparosArcoLocal: Number(data.disparos_arco_local ?? data.local_disparos_arco ?? 0),
+    disparosArcoVisitante: Number(
+      data.disparos_arco_visitante ?? data.visitante_disparos_arco ?? 0
+    ),
+  };
+}
+
 // ══════════════════════════════════════════════════════════════
 // SERVICIOS
 // ══════════════════════════════════════════════════════════════
@@ -204,6 +231,29 @@ export async function obtenerPartido(id: string): Promise<PartidoFutbolDetalle> 
   try {
     const respuesta = await clienteAPI.get(`/api/futbol/partidos/${id}`);
     return transformarPartidoDetalle(respuesta.data);
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+/**
+ * Obtiene enfrentamientos directos entre dos equipos
+ */
+export async function obtenerH2HPartidos(
+  equipoLocalId: string,
+  equipoVisitanteId: string,
+  limite: number = 10
+): Promise<PartidoFutbolEstadistico[]> {
+  try {
+    const respuesta = await clienteAPI.get('/api/futbol/partidos/h2h', {
+      params: {
+        equipo_local_id: equipoLocalId,
+        equipo_visitante_id: equipoVisitanteId,
+        limite,
+      },
+    });
+    const datos = respuesta.data?.partidos || respuesta.data || [];
+    return Array.isArray(datos) ? datos.map(transformarPartidoEstadistico) : [];
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }

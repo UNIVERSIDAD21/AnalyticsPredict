@@ -19,6 +19,7 @@ from .schemas_futbol import (
     PartidoDetalle,
     ListaPartidosResponse,
     EstadisticasEquipo,
+    PartidoEstadistico,
     ErrorResponse,
 )
 
@@ -244,6 +245,87 @@ async def listar_partidos_recientes(
 
     except Exception as e:
         logger.error(f"Error listando partidos recientes: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get(
+    "/h2h",
+    response_model=List[PartidoEstadistico],
+    summary="Historial head-to-head",
+    description="Obtiene enfrentamientos directos con estadísticas clave.",
+    responses={404: {"model": ErrorResponse}},
+)
+async def obtener_h2h(
+    equipo_local_id: UUID = Query(..., description="ID del equipo local"),
+    equipo_visitante_id: UUID = Query(..., description="ID del equipo visitante"),
+    limite: int = Query(10, ge=1, le=50, description="Número de partidos"),
+) -> List[PartidoEstadistico]:
+    """Obtiene historial H2H entre dos equipos."""
+    pool = obtener_pool()
+
+    query = """
+        SELECT
+            pf.id,
+            pf.fecha_partido,
+            el.id as equipo_local_id,
+            ev.id as equipo_visitante_id,
+            el.nombre as equipo_local,
+            ev.nombre as equipo_visitante,
+            pf.local_goles_total,
+            pf.visitante_goles_total,
+            pf.local_corners_total,
+            pf.visitante_corners_total,
+            pf.local_disparos_total,
+            pf.visitante_disparos_total,
+            pf.local_disparos_arco,
+            pf.visitante_disparos_arco
+        FROM partidos_futbol pf
+        JOIN equipos_futbol el ON pf.equipo_local_id = el.id
+        JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
+        WHERE pf.estado = 'FINALIZADO'
+          AND (
+            (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
+            OR (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
+          )
+        ORDER BY pf.fecha_partido DESC
+        LIMIT %s
+    """
+    params = [
+        str(equipo_local_id),
+        str(equipo_visitante_id),
+        str(equipo_visitante_id),
+        str(equipo_local_id),
+        limite,
+    ]
+
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(query, params)
+                filas = cursor.fetchall()
+
+                return [
+                    PartidoEstadistico(
+                        id=fila["id"],
+                        fecha_partido=fila["fecha_partido"],
+                        equipo_local_id=fila["equipo_local_id"],
+                        equipo_visitante_id=fila["equipo_visitante_id"],
+                        equipo_local=fila["equipo_local"],
+                        equipo_visitante=fila["equipo_visitante"],
+                        goles_local=fila["local_goles_total"],
+                        goles_visitante=fila["visitante_goles_total"],
+                        corners_local=fila["local_corners_total"],
+                        corners_visitante=fila["visitante_corners_total"],
+                        disparos_local=fila["local_disparos_total"],
+                        disparos_visitante=fila["visitante_disparos_total"],
+                        disparos_arco_local=fila["local_disparos_arco"],
+                        disparos_arco_visitante=fila["visitante_disparos_arco"],
+                    )
+                    for fila in filas
+                ]
+
+    except Exception as e:
+        logger.error(f"Error obteniendo H2H: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 

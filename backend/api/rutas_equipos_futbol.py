@@ -19,6 +19,7 @@ from .schemas_futbol import (
     EstadisticasEquipo,
     ListaEquiposResponse,
     PartidoResumen,
+    PartidoEstadistico,
     ErrorResponse,
 )
 
@@ -412,4 +413,84 @@ async def obtener_partidos_equipo(
         raise
     except Exception as e:
         logger.error(f"Error obteniendo partidos de equipo {equipo_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get(
+    "/{equipo_id}/partidos-detalle",
+    response_model=List[PartidoEstadistico],
+    summary="Historial detallado de partidos",
+    description="Obtiene el historial de partidos con estadísticas clave.",
+    responses={404: {"model": ErrorResponse}},
+)
+async def obtener_partidos_equipo_detalle(
+    equipo_id: UUID,
+    limite: int = Query(10, ge=1, le=50, description="Número de partidos"),
+) -> List[PartidoEstadistico]:
+    """Obtiene historial detallado de partidos de un equipo."""
+    pool = obtener_pool()
+
+    query = """
+        SELECT
+            pf.id,
+            pf.fecha_partido,
+            el.id as equipo_local_id,
+            ev.id as equipo_visitante_id,
+            el.nombre as equipo_local,
+            ev.nombre as equipo_visitante,
+            pf.local_goles_total,
+            pf.visitante_goles_total,
+            pf.local_corners_total,
+            pf.visitante_corners_total,
+            pf.local_disparos_total,
+            pf.visitante_disparos_total,
+            pf.local_disparos_arco,
+            pf.visitante_disparos_arco
+        FROM partidos_futbol pf
+        JOIN equipos_futbol el ON pf.equipo_local_id = el.id
+        JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
+        WHERE pf.estado = 'FINALIZADO'
+          AND (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
+        ORDER BY pf.fecha_partido DESC
+        LIMIT %s
+    """
+    params = [str(equipo_id), str(equipo_id), limite]
+
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                cursor.execute("SELECT 1 FROM equipos_futbol WHERE id = %s", [str(equipo_id)])
+                if not cursor.fetchone():
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Equipo no encontrado: {equipo_id}"
+                    )
+
+                cursor.execute(query, params)
+                filas = cursor.fetchall()
+
+                return [
+                    PartidoEstadistico(
+                        id=fila["id"],
+                        fecha_partido=fila["fecha_partido"],
+                        equipo_local_id=fila["equipo_local_id"],
+                        equipo_visitante_id=fila["equipo_visitante_id"],
+                        equipo_local=fila["equipo_local"],
+                        equipo_visitante=fila["equipo_visitante"],
+                        goles_local=fila["local_goles_total"],
+                        goles_visitante=fila["visitante_goles_total"],
+                        corners_local=fila["local_corners_total"],
+                        corners_visitante=fila["visitante_corners_total"],
+                        disparos_local=fila["local_disparos_total"],
+                        disparos_visitante=fila["visitante_disparos_total"],
+                        disparos_arco_local=fila["local_disparos_arco"],
+                        disparos_arco_visitante=fila["visitante_disparos_arco"],
+                    )
+                    for fila in filas
+                ]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo partidos detallados de equipo {equipo_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
