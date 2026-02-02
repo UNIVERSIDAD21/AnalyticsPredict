@@ -11,13 +11,13 @@ VERSIÓN 4 - CON MANEJO INTELIGENTE DE RATE LIMITING:
 
 Uso:
     # Carga normal (2 seg entre peticiones)
-    python cargar_historico_futbol_v4.py --liga laliga --temporadas 2024-25
+    python cargar_historico_futbol.py --liga laliga --temporadas 2024-25
 
     # Carga rápida sin estadísticas
-    python cargar_historico_futbol_v4.py --liga laliga --temporadas 2024-25 --sin-estadisticas
+    python cargar_historico_futbol.py --liga laliga --temporadas 2024-25 --sin-estadisticas
 
     # Carga lenta (si hay bloqueos)
-    python cargar_historico_futbol_v4.py --liga laliga --temporadas 2024-25 --intervalo 3
+    python cargar_historico_futbol.py --liga laliga --temporadas 2024-25 --intervalo 3
 
 Requisitos:
     pip install psycopg[binary] python-dotenv curl_cffi
