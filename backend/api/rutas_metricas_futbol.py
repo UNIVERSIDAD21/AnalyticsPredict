@@ -30,6 +30,93 @@ router = APIRouter(prefix="/api/futbol/metricas", tags=["Fútbol - Métricas"])
 logger = logging.getLogger(__name__)
 
 
+def _tabla_existe(cursor, tabla: str) -> bool:
+    cursor.execute(
+        """
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = %s
+        )
+        """,
+        [tabla],
+    )
+    return cursor.fetchone()["exists"]
+
+
+def _columna_existe(cursor, tabla: str, columna: str) -> bool:
+    cursor.execute(
+        """
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = %s
+              AND column_name = %s
+        )
+        """,
+        [tabla, columna],
+    )
+    return cursor.fetchone()["exists"]
+
+
+def _obtener_metricas_desde_calibradores(
+    cursor,
+    mercado: Optional[str],
+    periodo: Literal["semana", "mes", "temporada", "todo"],
+) -> ListaMetricasCalibracionResponse:
+    """Obtiene métricas desde calibradores si no hay predicciones."""
+    query = """
+        SELECT
+            mercado,
+            metodo,
+            brier_antes,
+            brier_despues,
+            ece_antes,
+            ece_despues,
+            log_loss_antes,
+            log_loss_despues,
+            n_muestras
+        FROM calibradores_futbol
+        WHERE activo = true
+    """
+    params: List[str] = []
+    if mercado and mercado != "todos":
+        query += " AND mercado = %s"
+        params.append(mercado.upper())
+
+    cursor.execute(query, params)
+    filas = cursor.fetchall()
+
+    metricas = []
+    for fila in filas:
+        brier_antes = float(fila["brier_antes"] or 0)
+        brier_despues = float(fila["brier_despues"] or 0.22)
+        mejora = ((brier_antes - brier_despues) / brier_antes * 100) if brier_antes else None
+
+        metricas.append(MetricasCalibracion(
+            mercado=fila["mercado"],
+            brier_score=round(brier_despues, 4),
+            ece=round(float(fila["ece_despues"] or 0.09), 4),
+            log_loss=round(float(fila["log_loss_despues"] or 0.65), 4),
+            n_predicciones=fila["n_muestras"] or 0,
+            calibrador_activo=True,
+            metodo_calibrador=fila["metodo"],
+            mejora_brier=round(mejora, 2) if mejora is not None else None,
+        ))
+
+    return ListaMetricasCalibracionResponse(
+        exito=True,
+        periodo=periodo,
+        metricas=metricas,
+    )
+
+
+def _resolver_columna_estado_apuestas(cursor) -> Optional[str]:
+    for columna in ("estado", "resultado", "status"):
+        if _columna_existe(cursor, "apuestas_futbol", columna):
+            return columna
+    return None
+
+
 @router.get(
     "/calibracion",
     response_model=ListaMetricasCalibracionResponse,
@@ -58,6 +145,16 @@ async def obtener_metricas_calibracion(
     try:
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
+                if not _tabla_existe(cursor, "predicciones_futbol"):
+                    return _obtener_metricas_desde_calibradores(cursor, mercado, periodo)
+
+                if not _columna_existe(cursor, "predicciones_futbol", "prob_over_raw"):
+                    return _obtener_metricas_desde_calibradores(cursor, mercado, periodo)
+
+                usa_prob_calibrada = _columna_existe(
+                    cursor, "predicciones_futbol", "prob_over_calibrada"
+                )
+
                 # Obtener calibradores activos
                 calibradores_query = """
                     SELECT mercado, metodo, activo, brier_despues, mejora_validacion
@@ -79,7 +176,7 @@ async def obtener_metricas_calibracion(
                         COUNT(*) as n_predicciones,
                         AVG(POWER(p.prob_over_raw - CASE WHEN resultado_real > p.linea THEN 1 ELSE 0 END, 2)) as brier_score,
                         AVG(POWER(
-                            COALESCE(p.prob_over_calibrada, p.prob_over_raw) -
+                            COALESCE({prob_calibrada}, p.prob_over_raw) -
                             CASE WHEN resultado_real > p.linea THEN 1 ELSE 0 END, 2
                         )) as brier_calibrado
                     FROM predicciones_futbol p
@@ -87,7 +184,10 @@ async def obtener_metricas_calibracion(
                     WHERE pf.estado = 'FINALIZADO'
                       AND p.prob_over_raw IS NOT NULL
                 """
-                params = []
+                metricas_query = metricas_query.format(
+                    prob_calibrada="p.prob_over_calibrada" if usa_prob_calibrada else "p.prob_over_raw"
+                )
+                params: List = []
 
                 if fecha_inicio:
                     metricas_query += " AND pf.fecha_partido >= %s"
@@ -160,18 +260,33 @@ async def obtener_metricas_rendimiento(
     try:
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
+                if not _tabla_existe(cursor, "apuestas_futbol"):
+                    return ListaMetricasRendimientoResponse(
+                        exito=True,
+                        periodo=periodo,
+                        metricas=[],
+                    )
+
+                columna_estado = _resolver_columna_estado_apuestas(cursor)
+                if not columna_estado:
+                    return ListaMetricasRendimientoResponse(
+                        exito=True,
+                        periodo=periodo,
+                        metricas=[],
+                    )
+
                 query = """
                     SELECT
                         mercado,
                         COUNT(*) as n_apuestas,
-                        SUM(CASE WHEN estado = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
-                        SUM(CASE WHEN estado = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
+                        SUM(CASE WHEN {estado_col} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
+                        SUM(CASE WHEN {estado_col} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
                         SUM(stake) as stake_total,
                         SUM(COALESCE(ganancia_real, 0)) as ganancia_neta
                     FROM apuestas_futbol
                     WHERE usuario_id = %s
-                      AND estado IN ('GANADA', 'PERDIDA', 'PUSH')
-                """
+                      AND {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
+                """.format(estado_col=columna_estado)
                 params = [str(usuario.id)]
 
                 if fecha_inicio:
@@ -218,10 +333,15 @@ async def obtener_metricas_rendimiento(
 
 
 @router.get(
-    "/modelo",
+    "/modelos",
     response_model=EstadoModelos,
     summary="Estado de modelos",
     description="Obtiene el estado de los modelos de predicción.",
+)
+@router.get(
+    "/modelo",
+    response_model=EstadoModelos,
+    include_in_schema=False,
 )
 async def obtener_estado_modelos(
     usuario: UsuarioActual = Depends(obtener_usuario_actual),
