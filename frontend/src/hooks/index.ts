@@ -10,3 +10,9 @@ export { useHistorialEquipo } from './useHistorialEquipo';
 export { useHistorialEquipoExtendido } from './useHistorialEquipoExtendido';
 export { useMetricasBitacora } from './useMetricasBitacora';
 export { useCombinadas } from './useCombinadas';
+
+// Hooks de fútbol
+export { usePartidosFutbol } from './usePartidosFutbol';
+export { useAnalisisFutbol } from './useAnalisisFutbol';
+export { useBitacoraFutbol } from './useBitacoraFutbol';
+export * from './useFutbol';

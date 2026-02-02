@@ -7,6 +7,10 @@ import {
   PaginaBitacora,
   PaginaPrincipal,
   PaginaConfiguracion,
+  PaginaFutbol,
+  AnalisisPartidoFutbol,
+  BitacoraFutbol,
+  DashboardFutbol,
 } from './componentes/paginas';
 
 /**
@@ -21,12 +25,28 @@ function App() {
     return () => window.removeEventListener('popstate', manejarRuta);
   }, []);
 
+  // Rutas existentes
   if (ruta === '/bitacora') {
     return <PaginaBitacora />;
   }
   if (ruta === '/configuracion') {
     return <PaginaConfiguracion />;
   }
+
+  // Rutas del módulo de fútbol
+  if (ruta === '/futbol') {
+    return <PaginaFutbol />;
+  }
+  if (ruta.startsWith('/futbol/partidos/')) {
+    return <AnalisisPartidoFutbol />;
+  }
+  if (ruta === '/futbol/bitacora') {
+    return <BitacoraFutbol />;
+  }
+  if (ruta === '/futbol/dashboard') {
+    return <DashboardFutbol />;
+  }
+
   return <PaginaPrincipal />;
 }
 

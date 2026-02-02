@@ -3,8 +3,10 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Activity, Zap, Settings } from 'lucide-react';
+import { Activity, Zap, Settings, BarChart3 } from 'lucide-react';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
+import { useDeporte } from '../../contextos/DeporteContext';
+import { SelectorDeporte } from '../atomos/SelectorDeporte';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
@@ -16,6 +18,7 @@ import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 export function Encabezado() {
   const [rutaActual, setRutaActual] = useState(window.location.pathname);
   const { configuracion } = useConfiguracionUsuario();
+  const { esFutbol } = useDeporte();
 
   useEffect(() => {
     const manejarRuta = () => setRutaActual(window.location.pathname);
@@ -31,13 +34,35 @@ export function Encabezado() {
 
   const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
 
+  // Determinar rutas según el deporte activo
+  const rutaAnalisis = esFutbol ? '/futbol' : '/';
+  const rutaBitacora = esFutbol ? '/futbol/bitacora' : '/bitacora';
+  const rutaDashboard = esFutbol ? '/futbol/dashboard' : null;
+
+  // Determinar si estamos en la ruta de análisis
+  const enAnalisis = esFutbol
+    ? rutaActual === '/futbol' || rutaActual.startsWith('/futbol/partidos/')
+    : rutaActual === '/';
+
+  // Determinar si estamos en la ruta de bitácora
+  const enBitacora = esFutbol
+    ? rutaActual === '/futbol/bitacora'
+    : rutaActual === '/bitacora';
+
+  // Determinar si estamos en el dashboard
+  const enDashboard = rutaActual === '/futbol/dashboard';
+
+  // Título dinámico según el deporte
+  const titulo = esFutbol ? 'FÚTBOL ANALYZER' : 'NBA ANALYZER';
+  const colorPrimario = esFutbol ? 'neon-verde' : 'neon-cyan';
+
   return (
     <header className="relative overflow-hidden border-b border-neon-cyan/20">
       {/* Fondo con efecto */}
       <div className="absolute inset-0 bg-gradient-to-r from-futurista-negro via-futurista-oscuro to-futurista-negro" />
 
       {/* Línea decorativa superior */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-cyan to-transparent" />
+      <div className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-${colorPrimario} to-transparent`} />
 
       {/* Grid pattern sutil */}
       <div className="absolute inset-0 grid-pattern opacity-30" />
@@ -49,16 +74,16 @@ export function Encabezado() {
           <div className="flex items-center gap-4">
             {/* Logo con glow */}
             <div className="relative">
-              <div className="absolute inset-0 bg-neon-cyan/20 blur-xl rounded-full" />
-              <div className="relative w-14 h-14 rounded-xl flex items-center justify-center border border-neon-cyan/30 bg-futurista-oscuro/80">
-                <Activity className="w-7 h-7 text-neon-cyan" />
+              <div className={`absolute inset-0 bg-${colorPrimario}/20 blur-xl rounded-full`} />
+              <div className={`relative w-14 h-14 rounded-xl flex items-center justify-center border border-${colorPrimario}/30 bg-futurista-oscuro/80`}>
+                <Activity className={`w-7 h-7 text-${colorPrimario}`} />
               </div>
             </div>
 
             {/* Título */}
             <div>
-              <h1 className="text-2xl md:text-3xl font-futurista font-bold tracking-wider text-texto-principal texto-glow-cyan">
-                NBA ANALYZER
+              <h1 className={`text-2xl md:text-3xl font-futurista font-bold tracking-wider text-texto-principal ${esFutbol ? 'texto-glow-verde' : 'texto-glow-cyan'}`}>
+                {titulo}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <Zap className="w-3 h-3 text-neon-magenta" />
@@ -70,29 +95,47 @@ export function Encabezado() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Selector de Deporte */}
+            <SelectorDeporte tamaño="sm" className="hidden sm:flex" />
+
+            {/* Navegación */}
             <div className="hidden md:flex items-center gap-2">
               <button
                 type="button"
                 className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
-                  rutaActual === '/'
-                    ? 'border-neon-cyan text-neon-cyan'
+                  enAnalisis
+                    ? `border-${colorPrimario} text-${colorPrimario}`
                     : 'border-neon-cyan/20 text-texto-secundario'
                 }`}
-                onClick={() => navegar('/')}
+                onClick={() => navegar(rutaAnalisis)}
               >
-                Análisis
+                {esFutbol ? 'Partidos' : 'Análisis'}
               </button>
               <button
                 type="button"
                 className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
-                  rutaActual === '/bitacora'
+                  enBitacora
                     ? 'border-neon-magenta text-neon-magenta'
                     : 'border-neon-cyan/20 text-texto-secundario'
                 }`}
-                onClick={() => navegar('/bitacora')}
+                onClick={() => navegar(rutaBitacora)}
               >
                 Bitácora
               </button>
+              {rutaDashboard && (
+                <button
+                  type="button"
+                  className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border flex items-center gap-1.5 ${
+                    enDashboard
+                      ? 'border-neon-azul text-neon-azul'
+                      : 'border-neon-cyan/20 text-texto-secundario'
+                  }`}
+                  onClick={() => navegar(rutaDashboard)}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Dashboard
+                </button>
+              )}
             </div>
 
             <div
@@ -135,7 +178,7 @@ export function Encabezado() {
       </div>
 
       {/* Línea decorativa inferior */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent" />
+      <div className={`absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-${colorPrimario}/50 to-transparent`} />
     </header>
   );
 }

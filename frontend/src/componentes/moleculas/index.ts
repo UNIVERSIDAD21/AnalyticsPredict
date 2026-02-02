@@ -44,3 +44,13 @@ export { SeccionAjustesAplicados } from './SeccionAjustesAplicados';
 export { FiltrosHistorial } from './FiltrosHistorial';
 export { TablaPartidosHistorial } from './TablaPartidosHistorial';
 export { EstadisticasOverUnder } from './EstadisticasOverUnder';
+
+// ══════════════════════════════════════════════════════════════
+// Módulo de Fútbol: Componentes moleculares
+// ══════════════════════════════════════════════════════════════
+
+export { SelectorCompeticion } from './SelectorCompeticion';
+export { TarjetaPartidoFutbol } from './TarjetaPartidoFutbol';
+export { IndicadorMercadoFutbol } from './IndicadorMercadoFutbol';
+export { BadgeConfianza, BadgeConfianzaIcono, BarraConfianza } from './BadgeConfianza';
+export { EstadisticaEquipoMini, ComparacionEquiposMini } from './EstadisticaEquipoMini';
