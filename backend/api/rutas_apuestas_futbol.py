@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 rutas_apuestas_futbol.py — Endpoints para gestión de apuestas de fútbol.
+
+CORRECCIONES APLICADAS:
+- _construir_partido_resumen: usa equipo_local_nombre en lugar de equipo_local_id
+- Manejo seguro de UUIDs en campos string
+- Logging mejorado para diagnóstico
 """
 
 from __future__ import annotations
@@ -67,6 +72,7 @@ def _obtener_columnas_apuestas(cursor) -> Set[str]:
     columnas = {row["column_name"] for row in cursor.fetchall()}
     _APUESTAS_COLUMNAS_CACHE["columnas"] = columnas
     _APUESTAS_COLUMNAS_CACHE["timestamp"] = ahora
+    logger.debug(f"Columnas apuestas_futbol cacheadas: {columnas}")
     return columnas
 
 
@@ -86,26 +92,49 @@ def _sql_columna(columna: Optional[str], alias: str) -> str:
 
 
 def _construir_partido_resumen(fila: Dict[str, Any]) -> Optional[PartidoResumen]:
-    """Construye PartidoResumen si hay datos de partido."""
-    partido_id = fila.get("partido_id_detalle")
+    """
+    Construye PartidoResumen si hay datos de partido.
+    
+    CORRECCIÓN: Usa equipo_local_nombre y equipo_visitante_nombre como valores
+    principales para equipo_local y equipo_visitante (son campos string).
+    Solo usa el ID como fallback convertido a string.
+    """
+    partido_id = fila.get("partido_id_detalle") or fila.get("partido_id")
     fecha_partido = fila.get("fecha_partido")
+    
     if not partido_id or not fecha_partido:
+        logger.debug(f"No se puede construir PartidoResumen: partido_id={partido_id}, fecha={fecha_partido}")
         return None
 
-    return PartidoResumen(
-        id=partido_id,
-        competicion=fila.get("competicion_nombre") or "",
-        competicion_nombre=fila.get("competicion_nombre"),
-        fecha_partido=fecha_partido,
-        equipo_local=fila.get("equipo_local_id") or fila.get("equipo_local_nombre") or "",
-        equipo_local_nombre=fila.get("equipo_local_nombre"),
-        equipo_visitante=fila.get("equipo_visitante_id") or fila.get("equipo_visitante_nombre") or "",
-        equipo_visitante_nombre=fila.get("equipo_visitante_nombre"),
-        estado=fila.get("partido_estado") or "",
-        jornada=fila.get("jornada"),
-        goles_local=fila.get("goles_local"),
-        goles_visitante=fila.get("goles_visitante"),
-    )
+    # CORRECCIÓN: Priorizar nombre sobre ID, y convertir UUID a string si es necesario
+    equipo_local_nombre = fila.get("equipo_local_nombre")
+    equipo_visitante_nombre = fila.get("equipo_visitante_nombre")
+    equipo_local_id = fila.get("equipo_local_id")
+    equipo_visitante_id = fila.get("equipo_visitante_id")
+    
+    # Usar nombre si existe, sino convertir ID a string
+    equipo_local = equipo_local_nombre or (str(equipo_local_id) if equipo_local_id else "Desconocido")
+    equipo_visitante = equipo_visitante_nombre or (str(equipo_visitante_id) if equipo_visitante_id else "Desconocido")
+
+    try:
+        return PartidoResumen(
+            id=partido_id if isinstance(partido_id, UUID) else UUID(str(partido_id)),
+            competicion=fila.get("competicion_nombre") or "Sin competición",
+            competicion_nombre=fila.get("competicion_nombre"),
+            fecha_partido=fecha_partido,
+            equipo_local=equipo_local,
+            equipo_local_nombre=equipo_local_nombre,
+            equipo_visitante=equipo_visitante,
+            equipo_visitante_nombre=equipo_visitante_nombre,
+            estado=fila.get("partido_estado") or fila.get("estado") or "PENDIENTE",
+            jornada=fila.get("jornada"),
+            goles_local=fila.get("goles_local"),
+            goles_visitante=fila.get("goles_visitante"),
+        )
+    except Exception as e:
+        logger.error(f"Error construyendo PartidoResumen: {e}, fila={fila}")
+        return None
+
 
 def _calcular_resultado_real(mercado: str, partido: dict) -> Optional[float]:
     """Calcula el resultado real para un mercado específico."""
@@ -166,7 +195,7 @@ async def crear_apuesta(
     if mercado not in MERCADOS_VALIDOS:
         raise HTTPException(
             status_code=400,
-            detail=f"Mercado invalido: {mercado}",
+            detail=f"Mercado invalido: {mercado}. Validos: {', '.join(sorted(MERCADOS_VALIDOS))}",
         )
 
     if not request.partido_id:
@@ -179,6 +208,8 @@ async def crear_apuesta(
     cuota = request.cuota or 0.0
     if cuota < 0:
         raise HTTPException(status_code=400, detail="cuota invalida")
+
+    logger.info(f"Creando apuesta: partido={request.partido_id}, mercado={mercado}, lado={request.lado}")
 
     try:
         with pool.connection() as conn:
@@ -211,10 +242,15 @@ async def crear_apuesta(
                 if not partido:
                     raise HTTPException(
                         status_code=404,
-                        detail="Partido no encontrado",
+                        detail=f"Partido no encontrado: {request.partido_id}",
                     )
 
+                logger.debug(f"Partido encontrado: {partido}")
+
+                # Obtener columnas disponibles en la tabla
                 columnas = _obtener_columnas_apuestas(cursor)
+                logger.debug(f"Columnas disponibles: {columnas}")
+                
                 col_estado = _resolver_columna(columnas, "estado", "status")
                 col_prob = _resolver_columna(columnas, "probabilidad_sistema", "probabilidad")
                 col_confianza = _resolver_columna(columnas, "confianza", "confianza_sistema")
@@ -238,6 +274,8 @@ async def crear_apuesta(
                 ganancia_potencial = request.stake * (cuota - 1) if cuota else 0.0
 
                 apuesta_id = uuid4()
+                
+                # Construir columnas e INSERT dinámicamente
                 columnas_insert = [
                     "id",
                     "usuario_id",
@@ -247,7 +285,7 @@ async def crear_apuesta(
                     "linea",
                     "stake",
                 ]
-                valores_insert = [
+                valores_insert: List[Any] = [
                     str(apuesta_id),
                     str(usuario.id),
                     str(request.partido_id),
@@ -285,7 +323,7 @@ async def crear_apuesta(
                     columnas_insert.append(col_casa)
                     valores_insert.append(request.casa_apuestas)
 
-                if "notas" in columnas:
+                if "notas" in columnas and request.notas is not None:
                     columnas_insert.append("notas")
                     valores_insert.append(request.notas)
 
@@ -293,6 +331,7 @@ async def crear_apuesta(
                     columnas_insert.append(col_fecha_creacion)
                     valores_insert.append(datetime.now())
 
+                # Construir y ejecutar INSERT
                 placeholders = ", ".join(["%s"] * len(valores_insert))
                 insert_query = (
                     f"INSERT INTO apuestas_futbol ({', '.join(columnas_insert)}) "
@@ -303,16 +342,24 @@ async def crear_apuesta(
                 if col_fecha_creacion:
                     returning = f"id, {col_fecha_creacion} as fecha_creacion"
 
+                logger.debug(f"INSERT query: {insert_query}")
+                logger.debug(f"Valores: {valores_insert}")
+
                 cursor.execute(f"{insert_query} RETURNING {returning}", valores_insert)
                 resultado = cursor.fetchone() or {}
                 conn.commit()
 
                 fecha_creacion = resultado.get("fecha_creacion") or datetime.now()
 
+                # Construir respuesta
+                partido_resumen = _construir_partido_resumen(partido)
+                
+                logger.info(f"Apuesta creada exitosamente: {apuesta_id}")
+
                 return ApuestaResponse(
                     id=apuesta_id,
                     partido_id=request.partido_id,
-                    partido=_construir_partido_resumen(partido),
+                    partido=partido_resumen,
                     mercado=mercado,
                     lado=request.lado,
                     linea=request.linea,
@@ -360,27 +407,21 @@ async def listar_apuestas(
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
                 col_estado = _resolver_columna(columnas, "estado", "status")
-                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
-                col_ganancia_real = _resolver_columna(
-                    columnas, "ganancia_real", "ganancias_reales", "ganancia", "ganancia_neta"
-                )
-                col_ganancia_pot = _resolver_columna(
-                    columnas,
-                    "ganancia_potencial",
-                    "ganancias_potenciales",
-                    "ganancia_potenciales",
-                )
+                col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
                 col_prob = _resolver_columna(columnas, "probabilidad_sistema", "probabilidad")
                 col_confianza = _resolver_columna(columnas, "confianza", "confianza_sistema")
                 col_valor = _resolver_columna(columnas, "valor_esperado")
+                col_ganancia_pot = _resolver_columna(
+                    columnas, "ganancia_potencial", "ganancias_potenciales"
+                )
+                col_ganancia_real = _resolver_columna(columnas, "ganancia_real", "ganancia_neta")
+                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
                 col_fecha_creacion = _resolver_columna(
                     columnas, "fecha_creacion", "creado_en", "created_at"
                 )
                 col_fecha_resolucion = _resolver_columna(
                     columnas, "fecha_resolucion", "resuelto_en"
                 )
-                col_casa = _resolver_columna(columnas, "casa_apuestas", "casa_apuesta")
-                col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
 
                 select_cols = [
                     "a.id",
@@ -388,19 +429,20 @@ async def listar_apuestas(
                     "a.mercado",
                     "a.lado",
                     "a.linea",
-                    _sql_columna(col_cuota, "cuota"),
                     "a.stake",
                     _sql_columna(col_estado, "estado"),
+                    _sql_columna(col_cuota, "cuota"),
                     _sql_columna(col_prob, "probabilidad_sistema"),
                     _sql_columna(col_confianza, "confianza"),
                     _sql_columna(col_valor, "valor_esperado"),
                     _sql_columna(col_ganancia_pot, "ganancia_potencial"),
-                    _sql_columna(col_resultado, "resultado"),
                     _sql_columna(col_ganancia_real, "ganancia_real"),
+                    _sql_columna(col_resultado, "resultado"),
                     _sql_columna(col_fecha_creacion, "fecha_creacion"),
                     _sql_columna(col_fecha_resolucion, "fecha_resolucion"),
-                    _sql_columna(col_casa, "casa_apuestas"),
-                    "a.notas",
+                    "a.notas" if "notas" in columnas else "NULL as notas",
+                    "a.casa_apuestas" if "casa_apuestas" in columnas else "NULL as casa_apuestas",
+                    # Datos del partido
                     "p.id as partido_id_detalle",
                     "p.fecha_partido",
                     "p.estado as partido_estado",
@@ -449,6 +491,7 @@ async def listar_apuestas(
                 query += " LIMIT %s OFFSET %s"
                 params.extend([limite_final, offset_final])
 
+                # Contar total
                 count_query = "SELECT COUNT(*) as total FROM apuestas_futbol a WHERE a.usuario_id = %s"
                 count_params: List[Any] = [str(usuario.id)]
 
@@ -500,59 +543,49 @@ async def listar_apuestas(
                         )
                     )
 
+                # Calcular resumen
+                resumen_query = f"""
+                    SELECT
+                        COUNT(*) as total,
+                        SUM(CASE WHEN {col_estado or "'PENDIENTE'"} = 'PENDIENTE' THEN 1 ELSE 0 END) as pendientes,
+                        SUM(CASE WHEN {col_estado or "''"} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
+                        SUM(CASE WHEN {col_estado or "''"} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
+                        SUM(CASE WHEN {col_estado or "''"} = 'PUSH' THEN 1 ELSE 0 END) as push,
+                        SUM(stake) as stake_total,
+                        SUM(COALESCE({col_ganancia_real or '0'}, 0)) as ganancia_neta
+                    FROM apuestas_futbol
+                    WHERE usuario_id = %s
+                """
+                cursor.execute(resumen_query, [str(usuario.id)])
+                res = cursor.fetchone()
+
+                total_resueltas = (res["ganadas"] or 0) + (res["perdidas"] or 0)
+                win_rate = (res["ganadas"] or 0) / total_resueltas * 100 if total_resueltas > 0 else None
+                stake_total = float(res["stake_total"] or 0)
+                ganancia_neta = float(res["ganancia_neta"] or 0)
+                roi = (ganancia_neta / stake_total * 100) if stake_total > 0 else None
+
                 resumen = ResumenApuestas(
-                    total=total or 0,
-                    pendientes=0,
-                    ganadas=0,
-                    perdidas=0,
-                    push=0,
-                    roi=None,
-                    win_rate=None,
-                    stake_total=0.0,
-                    ganancia_neta=0.0,
+                    total=res["total"] or 0,
+                    pendientes=res["pendientes"] or 0,
+                    ganadas=res["ganadas"] or 0,
+                    perdidas=res["perdidas"] or 0,
+                    push=res["push"] or 0,
+                    roi=round(roi, 2) if roi is not None else None,
+                    win_rate=round(win_rate, 2) if win_rate is not None else None,
+                    stake_total=stake_total,
+                    ganancia_neta=ganancia_neta,
                 )
-
-                if col_estado:
-                    resumen_query = f"""
-                        SELECT
-                            COUNT(*) as total,
-                            SUM(CASE WHEN {col_estado} = 'PENDIENTE' THEN 1 ELSE 0 END) as pendientes,
-                            SUM(CASE WHEN {col_estado} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
-                            SUM(CASE WHEN {col_estado} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
-                            SUM(CASE WHEN {col_estado} = 'PUSH' THEN 1 ELSE 0 END) as push,
-                            SUM(stake) as stake_total,
-                            SUM(COALESCE({col_ganancia_real or '0'}, 0)) as ganancia_neta
-                        FROM apuestas_futbol
-                        WHERE usuario_id = %s
-                    """
-                    cursor.execute(resumen_query, [str(usuario.id)])
-                    res = cursor.fetchone() or {}
-
-                    resueltas = (res.get("ganadas") or 0) + (res.get("perdidas") or 0) + (res.get("push") or 0)
-                    win_rate = (res.get("ganadas") or 0) / resueltas if resueltas > 0 else None
-                    stake_total = float(res.get("stake_total") or 0)
-                    ganancia_neta = float(res.get("ganancia_neta") or 0)
-                    roi = (ganancia_neta / stake_total * 100) if stake_total > 0 else None
-
-                    resumen = ResumenApuestas(
-                        total=res.get("total") or total or 0,
-                        pendientes=res.get("pendientes") or 0,
-                        ganadas=res.get("ganadas") or 0,
-                        perdidas=res.get("perdidas") or 0,
-                        push=res.get("push") or 0,
-                        roi=round(roi, 2) if roi is not None else None,
-                        win_rate=round(win_rate, 4) if win_rate is not None else None,
-                        stake_total=stake_total,
-                        ganancia_neta=ganancia_neta,
-                    )
 
                 return ListaApuestasResponse(
                     exito=True,
-                    total=total or 0,
+                    total=total,
                     resumen=resumen,
                     apuestas=apuestas,
                 )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error listando apuestas: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
@@ -561,14 +594,14 @@ async def listar_apuestas(
 @router.get(
     "/{apuesta_id}",
     response_model=ApuestaResponse,
-    summary="Detalle de apuesta",
+    summary="Obtener apuesta",
     responses={404: {"model": ErrorResponse}},
 )
 async def obtener_apuesta(
     apuesta_id: UUID,
     usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ApuestaResponse:
-    """Obtiene detalle de una apuesta."""
+    """Obtiene una apuesta por su ID."""
     pool = obtener_pool()
 
     try:
@@ -576,27 +609,21 @@ async def obtener_apuesta(
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
                 col_estado = _resolver_columna(columnas, "estado", "status")
-                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
-                col_ganancia_real = _resolver_columna(
-                    columnas, "ganancia_real", "ganancias_reales", "ganancia", "ganancia_neta"
-                )
-                col_ganancia_pot = _resolver_columna(
-                    columnas,
-                    "ganancia_potencial",
-                    "ganancias_potenciales",
-                    "ganancia_potenciales",
-                )
+                col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
                 col_prob = _resolver_columna(columnas, "probabilidad_sistema", "probabilidad")
                 col_confianza = _resolver_columna(columnas, "confianza", "confianza_sistema")
                 col_valor = _resolver_columna(columnas, "valor_esperado")
+                col_ganancia_pot = _resolver_columna(
+                    columnas, "ganancia_potencial", "ganancias_potenciales"
+                )
+                col_ganancia_real = _resolver_columna(columnas, "ganancia_real", "ganancia_neta")
+                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
                 col_fecha_creacion = _resolver_columna(
                     columnas, "fecha_creacion", "creado_en", "created_at"
                 )
                 col_fecha_resolucion = _resolver_columna(
                     columnas, "fecha_resolucion", "resuelto_en"
                 )
-                col_casa = _resolver_columna(columnas, "casa_apuestas", "casa_apuesta")
-                col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
 
                 select_cols = [
                     "a.id",
@@ -604,19 +631,20 @@ async def obtener_apuesta(
                     "a.mercado",
                     "a.lado",
                     "a.linea",
-                    _sql_columna(col_cuota, "cuota"),
                     "a.stake",
                     _sql_columna(col_estado, "estado"),
+                    _sql_columna(col_cuota, "cuota"),
                     _sql_columna(col_prob, "probabilidad_sistema"),
                     _sql_columna(col_confianza, "confianza"),
                     _sql_columna(col_valor, "valor_esperado"),
                     _sql_columna(col_ganancia_pot, "ganancia_potencial"),
-                    _sql_columna(col_resultado, "resultado"),
                     _sql_columna(col_ganancia_real, "ganancia_real"),
+                    _sql_columna(col_resultado, "resultado"),
                     _sql_columna(col_fecha_creacion, "fecha_creacion"),
                     _sql_columna(col_fecha_resolucion, "fecha_resolucion"),
-                    _sql_columna(col_casa, "casa_apuestas"),
-                    "a.notas",
+                    "a.notas" if "notas" in columnas else "NULL as notas",
+                    "a.casa_apuestas" if "casa_apuestas" in columnas else "NULL as casa_apuestas",
+                    # Datos del partido
                     "p.id as partido_id_detalle",
                     "p.fecha_partido",
                     "p.estado as partido_estado",
@@ -712,46 +740,49 @@ async def actualizar_apuesta(
                 if not apuesta:
                     raise HTTPException(status_code=404, detail="Apuesta no encontrada")
 
-                estado_actual = apuesta.get("estado") or "PENDIENTE"
-                if estado_actual != "PENDIENTE":
+                if apuesta.get("estado") not in (None, "PENDIENTE"):
                     raise HTTPException(
                         status_code=400,
-                        detail="Solo se pueden modificar apuestas pendientes"
+                        detail="Solo se pueden actualizar apuestas pendientes",
                     )
 
+                # Construir UPDATE dinámico
                 updates = []
-                params: List[Any] = []
+                params_update: List[Any] = []
 
-                if request.cancelar:
-                    if not col_estado:
-                        raise HTTPException(
-                            status_code=400,
-                            detail="No se puede cancelar la apuesta sin columna estado",
-                        )
+                if request.linea is not None:
+                    updates.append("linea = %s")
+                    params_update.append(request.linea)
+
+                if request.stake is not None:
+                    updates.append("stake = %s")
+                    params_update.append(request.stake)
+
+                if request.cuota is not None and col_cuota:
+                    updates.append(f"{col_cuota} = %s")
+                    params_update.append(request.cuota)
+
+                if request.notas is not None and col_notas:
+                    updates.append(f"{col_notas} = %s")
+                    params_update.append(request.notas)
+
+                if request.cancelar and col_estado:
                     updates.append(f"{col_estado} = %s")
-                    params.append("CANCELADA")
+                    params_update.append("CANCELADA")
                     if col_fecha_resolucion:
                         updates.append(f"{col_fecha_resolucion} = NOW()")
-                else:
-                    if request.stake is not None:
-                        updates.append("stake = %s")
-                        params.append(request.stake)
 
-                    if request.cuota is not None and col_cuota:
-                        updates.append(f"{col_cuota} = %s")
-                        params.append(request.cuota)
+                if not updates:
+                    raise HTTPException(status_code=400, detail="No hay campos para actualizar")
 
-                    if request.notas is not None and col_notas:
-                        updates.append("notas = %s")
-                        params.append(request.notas)
+                params_update.append(str(apuesta_id))
+                params_update.append(str(usuario.id))
 
-                if updates:
-                    params.append(str(apuesta_id))
-                    cursor.execute(
-                        f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s",
-                        params,
-                    )
-                    conn.commit()
+                cursor.execute(
+                    f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s AND usuario_id = %s",
+                    params_update,
+                )
+                conn.commit()
 
                 # Obtener apuesta actualizada
                 return await obtener_apuesta(apuesta_id, usuario)
@@ -763,17 +794,16 @@ async def actualizar_apuesta(
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.post(
-    "/resolver",
-    response_model=ResolucionResponse,
-    summary="Resolver apuestas",
-    description="Resuelve apuestas pendientes contra resultados reales.",
+@router.delete(
+    "/{apuesta_id}",
+    summary="Cancelar apuesta",
+    responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
-async def resolver_apuestas(
-    request: ResolucionRequest,
+async def cancelar_apuesta(
+    apuesta_id: UUID,
     usuario: UsuarioActual = Depends(obtener_usuario_actual),
-) -> ResolucionResponse:
-    """Resuelve apuestas pendientes."""
+) -> dict:
+    """Cancela una apuesta pendiente."""
     pool = obtener_pool()
 
     try:
@@ -781,56 +811,128 @@ async def resolver_apuestas(
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
                 col_estado = _resolver_columna(columnas, "estado", "status")
-                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
-                col_ganancia_real = _resolver_columna(
-                    columnas, "ganancia_real", "ganancias_reales", "ganancia", "ganancia_neta"
-                )
-                col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
                 col_fecha_resolucion = _resolver_columna(
                     columnas, "fecha_resolucion", "resuelto_en"
                 )
 
-                select_cols = [
-                    "a.id",
-                    "a.partido_id",
-                    "a.mercado",
-                    "a.lado",
-                    "a.linea",
-                    "a.stake",
-                    _sql_columna(col_cuota, "cuota"),
-                    "pf.local_goles_1t",
-                    "pf.local_goles_2t",
-                    "pf.local_goles_total",
-                    "pf.visitante_goles_1t",
-                    "pf.visitante_goles_2t",
-                    "pf.visitante_goles_total",
-                    "pf.local_corners_1t",
-                    "pf.local_corners_2t",
-                    "pf.local_corners_total",
-                    "pf.visitante_corners_1t",
-                    "pf.visitante_corners_2t",
-                    "pf.visitante_corners_total",
-                    "pf.local_disparos_total",
-                    "pf.local_disparos_arco",
-                    "pf.visitante_disparos_total",
-                    "pf.visitante_disparos_arco",
-                ]
+                # Verificar que existe y está pendiente
+                estado_col = col_estado or "'PENDIENTE'"
+                cursor.execute(
+                    f"SELECT id, {estado_col} as estado FROM apuestas_futbol WHERE id = %s AND usuario_id = %s",
+                    [str(apuesta_id), str(usuario.id)],
+                )
+                apuesta = cursor.fetchone()
 
-                query = f"""
-                    SELECT {', '.join(select_cols)}
-                    FROM apuestas_futbol a
-                    JOIN partidos_futbol pf ON a.partido_id = pf.id
-                    WHERE a.usuario_id = %s
-                      AND pf.estado = 'FINALIZADO'
-                """
-                params = [str(usuario.id)]
+                if not apuesta:
+                    raise HTTPException(status_code=404, detail="Apuesta no encontrada")
 
+                if apuesta.get("estado") not in (None, "PENDIENTE"):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Solo se pueden cancelar apuestas pendientes",
+                    )
+
+                # Cancelar
+                updates = []
                 if col_estado:
-                    query += f" AND a.{col_estado} = 'PENDIENTE'"
+                    updates.append(f"{col_estado} = 'CANCELADA'")
+                if col_fecha_resolucion:
+                    updates.append(f"{col_fecha_resolucion} = NOW()")
 
-                if request.partido_id:
+                if updates:
+                    cursor.execute(
+                        f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s",
+                        [str(apuesta_id)],
+                    )
+                    conn.commit()
+
+                return {"exito": True, "mensaje": "Apuesta cancelada"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelando apuesta {apuesta_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.post(
+    "/resolver",
+    response_model=ResolucionResponse,
+    summary="Resolver apuestas",
+    description="Resuelve apuestas pendientes basándose en resultados de partidos.",
+)
+async def resolver_apuestas(
+    request: ResolucionRequest = None,
+    partido_id: Optional[UUID] = Query(None, description="ID del partido a resolver"),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> ResolucionResponse:
+    """Resuelve apuestas pendientes."""
+    pool = obtener_pool()
+
+    # Usar partido_id de request o query param
+    partido_id_final = None
+    if request and request.partido_id:
+        partido_id_final = request.partido_id
+    elif partido_id:
+        partido_id_final = partido_id
+
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                columnas = _obtener_columnas_apuestas(cursor)
+                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
+                col_ganancia_real = _resolver_columna(columnas, "ganancia_real", "ganancia_neta")
+                col_fecha_resolucion = _resolver_columna(
+                    columnas, "fecha_resolucion", "resuelto_en"
+                )
+
+                if not col_estado:
+                    return ResolucionResponse(
+                        exito=True,
+                        resueltas=0,
+                        errores=0,
+                        ganancia_neta=0.0,
+                    )
+
+                # Obtener apuestas pendientes con datos del partido
+                query = f"""
+                    SELECT
+                        a.id,
+                        a.partido_id,
+                        a.mercado,
+                        a.lado,
+                        a.linea,
+                        a.stake,
+                        COALESCE(a.cuota, 0) as cuota,
+                        p.estado as partido_estado,
+                        p.local_goles_total,
+                        p.visitante_goles_total,
+                        p.local_goles_1t,
+                        p.visitante_goles_1t,
+                        p.local_goles_2t,
+                        p.visitante_goles_2t,
+                        p.local_corners_total,
+                        p.visitante_corners_total,
+                        p.local_corners_1t,
+                        p.visitante_corners_1t,
+                        p.local_corners_2t,
+                        p.visitante_corners_2t,
+                        p.local_disparos_total,
+                        p.visitante_disparos_total,
+                        p.local_disparos_arco,
+                        p.visitante_disparos_arco
+                    FROM apuestas_futbol a
+                    JOIN partidos_futbol p ON a.partido_id = p.id
+                    WHERE a.usuario_id = %s
+                      AND a.{col_estado} = 'PENDIENTE'
+                      AND p.estado = 'FINALIZADO'
+                """
+                params: List[Any] = [str(usuario.id)]
+
+                if partido_id_final:
                     query += " AND a.partido_id = %s"
-                    params.append(str(request.partido_id))
+                    params.append(str(partido_id_final))
 
                 cursor.execute(query, params)
                 apuestas = cursor.fetchall()
@@ -893,15 +995,12 @@ async def resolver_apuestas(
                                 f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s",
                                 params_update,
                             )
-                            ganancia_neta += ganancia
-                            resueltas += 1
-                        else:
-                            errores += 1
+
+                        resueltas += 1
+                        ganancia_neta += ganancia
 
                     except Exception as e:
-                        logger.error(
-                            f"Error resolviendo apuesta {apuesta['id']}: {e}", exc_info=True
-                        )
+                        logger.error(f"Error resolviendo apuesta {apuesta['id']}: {e}")
                         errores += 1
 
                 conn.commit()
@@ -916,103 +1015,8 @@ async def resolver_apuestas(
                     ganancia_neta=round(ganancia_neta, 2),
                 )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error resolviendo apuestas: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
-
-
-@router.get(
-    "/estadisticas",
-    response_model=ResumenApuestas,
-    summary="Estadisticas de apuestas",
-)
-async def obtener_estadisticas_apuestas(
-    desde: Optional[date] = Query(None),
-    hasta: Optional[date] = Query(None),
-    agrupar_por: Optional[str] = Query(None, description="mercado, mes, competicion"),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
-) -> ResumenApuestas:
-    """Obtiene estadisticas agregadas de apuestas."""
-    pool = obtener_pool()
-
-    try:
-        with pool.connection() as conn:
-            with conn.cursor(row_factory=dict_row) as cursor:
-                columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "estado", "status")
-                col_ganancia_real = _resolver_columna(
-                    columnas, "ganancia_real", "ganancias_reales", "ganancia", "ganancia_neta"
-                )
-                col_fecha_creacion = _resolver_columna(
-                    columnas, "fecha_creacion", "creado_en", "created_at"
-                )
-
-                select_cols = [
-                    "COUNT(*) as total",
-                    (
-                        f"SUM(CASE WHEN {col_estado} = 'PENDIENTE' THEN 1 ELSE 0 END) as pendientes"
-                        if col_estado
-                        else "0 as pendientes"
-                    ),
-                    (
-                        f"SUM(CASE WHEN {col_estado} = 'GANADA' THEN 1 ELSE 0 END) as ganadas"
-                        if col_estado
-                        else "0 as ganadas"
-                    ),
-                    (
-                        f"SUM(CASE WHEN {col_estado} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas"
-                        if col_estado
-                        else "0 as perdidas"
-                    ),
-                    (
-                        f"SUM(CASE WHEN {col_estado} = 'PUSH' THEN 1 ELSE 0 END) as push"
-                        if col_estado
-                        else "0 as push"
-                    ),
-                    "SUM(stake) as stake_total",
-                    (
-                        f"SUM(COALESCE({col_ganancia_real}, 0)) as ganancia_neta"
-                        if col_ganancia_real
-                        else "0 as ganancia_neta"
-                    ),
-                ]
-
-                query = f"""
-                    SELECT {', '.join(select_cols)}
-                    FROM apuestas_futbol
-                    WHERE usuario_id = %s
-                """
-                params: List[Any] = [str(usuario.id)]
-
-                if desde and col_fecha_creacion:
-                    query += f" AND {col_fecha_creacion} >= %s"
-                    params.append(desde)
-
-                if hasta and col_fecha_creacion:
-                    query += f" AND {col_fecha_creacion} <= %s"
-                    params.append(hasta)
-
-                cursor.execute(query, params)
-                res = cursor.fetchone() or {}
-
-                resueltas = (res.get("ganadas") or 0) + (res.get("perdidas") or 0) + (res.get("push") or 0)
-                win_rate = (res.get("ganadas") or 0) / resueltas if resueltas > 0 else None
-                stake_total = float(res.get("stake_total") or 0)
-                ganancia_neta = float(res.get("ganancia_neta") or 0)
-                roi = (ganancia_neta / stake_total * 100) if stake_total > 0 else None
-
-                return ResumenApuestas(
-                    total=res.get("total") or 0,
-                    pendientes=res.get("pendientes") or 0,
-                    ganadas=res.get("ganadas") or 0,
-                    perdidas=res.get("perdidas") or 0,
-                    push=res.get("push") or 0,
-                    roi=round(roi, 2) if roi is not None else None,
-                    win_rate=round(win_rate, 4) if win_rate is not None else None,
-                    stake_total=stake_total,
-                    ganancia_neta=ganancia_neta,
-                )
-
-    except Exception as e:
-        logger.error(f"Error obteniendo estadisticas: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
