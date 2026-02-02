@@ -18,28 +18,29 @@ import {
   Clock,
   Trophy,
   MapPin,
-  AlertTriangle,
-  Sparkles,
   BookmarkPlus,
   RefreshCw,
 } from 'lucide-react';
 import {
   Encabezado,
-  ComparativaEquipos,
-  PanelAnalisisFutbol,
+  PanelAnalisisMercadoFutbol,
+  PanelH2HFutbol,
+  PanelHistorialEquipoFutbol,
   FormularioApuestaFutbol,
 } from '../organismos';
-import { ListaRecomendaciones } from '../organismos/TarjetaRecomendacion';
 import { MensajeError } from '../moleculas';
 import { Boton, Spinner, Tarjeta } from '../atomos';
-import { useAnalisisFutbol } from '../../hooks';
-import { obtenerPartido } from '../../servicios/futbol';
-import { crearApuesta } from '../../servicios/futbol';
+import {
+  obtenerPartido,
+  obtenerH2HPartidos,
+  obtenerPartidosEquipoDetalle,
+  crearApuesta,
+} from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import type {
   PartidoFutbolDetalle,
   TipoMercadoFutbol,
-  RecomendacionApuesta,
+  PartidoFutbolEstadistico,
 } from '../../tipos/futbol';
 import type { DatosApuestaFutbol } from '../organismos/FormularioApuestaFutbol';
 
@@ -305,15 +306,17 @@ export function AnalisisPartidoFutbol() {
     lado?: 'OVER' | 'UNDER';
     linea?: number;
   }>({});
-
-  // Hook de analisis
-  const {
-    analisis,
-    cargando: cargandoAnalisis,
-    error: errorAnalisis,
-    ejecutarAnalisis,
-    limpiar: limpiarAnalisis,
-  } = useAnalisisFutbol();
+  const [h2hPartidos, setH2hPartidos] = useState<PartidoFutbolEstadistico[]>([]);
+  const [historialLocal, setHistorialLocal] = useState<PartidoFutbolEstadistico[]>([]);
+  const [historialVisitante, setHistorialVisitante] = useState<
+    PartidoFutbolEstadistico[]
+  >([]);
+  const [limiteH2h, setLimiteH2h] = useState(10);
+  const [limiteLocal, setLimiteLocal] = useState(10);
+  const [limiteVisitante, setLimiteVisitante] = useState(10);
+  const [refrescoContexto, setRefrescoContexto] = useState(0);
+  const [cargandoContexto, setCargandoContexto] = useState(false);
+  const [errorContexto, setErrorContexto] = useState<string | null>(null);
 
   // Cargar partido
   useEffect(() => {
@@ -337,42 +340,41 @@ export function AnalisisPartidoFutbol() {
     void cargarPartido();
   }, [partidoId]);
 
-  // Ejecutar analisis cuando el partido cargue
+  // Cargar contexto H2H e historial individual
   useEffect(() => {
-    if (partido && !analisis && !cargandoAnalisis && !errorAnalisis) {
-      void ejecutarAnalisis({ partidoId: partido.id });
-    }
-  }, [partido, analisis, cargandoAnalisis, errorAnalisis, ejecutarAnalisis]);
+    const cargarContexto = async () => {
+      if (!partido?.equipoLocalId || !partido?.equipoVisitanteId) return;
+      setCargandoContexto(true);
+      setErrorContexto(null);
 
-  // Handler para registrar apuesta desde panel
-  const handleRegistrarApuesta = useCallback(
-    (mercado: TipoMercadoFutbol, linea: number, lado: 'OVER' | 'UNDER') => {
-      setValoresFormulario({ mercado, linea, lado });
-      setModalApuestaAbierto(true);
-    },
-    []
-  );
+      try {
+        const [h2h, local, visitante] = await Promise.all([
+          obtenerH2HPartidos(
+            partido.equipoLocalId,
+            partido.equipoVisitanteId,
+            limiteH2h
+          ),
+          obtenerPartidosEquipoDetalle(partido.equipoLocalId, limiteLocal),
+          obtenerPartidosEquipoDetalle(partido.equipoVisitanteId, limiteVisitante),
+        ]);
+        setH2hPartidos(h2h);
+        setHistorialLocal(local);
+        setHistorialVisitante(visitante);
+      } catch (err) {
+        const mensaje =
+          err instanceof Error ? err.message : 'Error al cargar el contexto del partido';
+        setErrorContexto(mensaje);
+      } finally {
+        setCargandoContexto(false);
+      }
+    };
 
-  // Handler para registrar desde recomendacion
-  const handleRegistrarRecomendacion = useCallback(
-    (recomendacion: RecomendacionApuesta) => {
-      setValoresFormulario({
-        mercado: recomendacion.mercado,
-        linea: recomendacion.linea,
-        lado: recomendacion.lado,
-      });
-      setModalApuestaAbierto(true);
-    },
-    []
-  );
+    void cargarContexto();
+  }, [partido, limiteH2h, limiteLocal, limiteVisitante, refrescoContexto]);
 
-  // Handler para reanalizar
-  const handleReanalizar = useCallback(() => {
-    if (partido) {
-      limpiarAnalisis();
-      void ejecutarAnalisis({ partidoId: partido.id });
-    }
-  }, [partido, limpiarAnalisis, ejecutarAnalisis]);
+  const handleActualizarContexto = useCallback(() => {
+    setRefrescoContexto((valor) => valor + 1);
+  }, []);
 
   // Nombre del partido para el formulario
   const nombrePartido = partido
@@ -403,10 +405,10 @@ export function AnalisisPartidoFutbol() {
               variante="secundario"
               tamano="sm"
               iconoInicio={<RefreshCw size={16} />}
-              onClick={handleReanalizar}
-              cargando={cargandoAnalisis}
+              onClick={handleActualizarContexto}
+              cargando={cargandoContexto}
             >
-              Reanalizar
+              Actualizar datos
             </Boton>
             <Boton
               variante="primario"
@@ -435,81 +437,69 @@ export function AnalisisPartidoFutbol() {
         {/* Header del partido */}
         {partido && !cargandoPartido && <HeaderPartido partido={partido} />}
 
-        {/* Comparativa de equipos */}
-        {partido?.estadisticasLocal && partido?.estadisticasVisitante && (
-          <ComparativaEquipos
-            equipoLocal={{
-              nombre: partido.equipoLocalNombre,
-              estadisticas: partido.estadisticasLocal,
-            }}
-            equipoVisitante={{
-              nombre: partido.equipoVisitanteNombre,
-              estadisticas: partido.estadisticasVisitante,
-            }}
-          />
-        )}
-
-        {/* Estado de carga del analisis */}
-        {cargandoAnalisis && (
+        {/* Estado de carga del contexto */}
+        {cargandoContexto && (
           <Tarjeta className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Spinner tamano="lg" texto="Analizando partido..." centrado />
+            <Spinner tamano="lg" texto="Cargando contexto..." centrado />
             <p className="text-sm text-texto-secundario text-center max-w-md">
-              Ejecutando modelos de prediccion para corners, goles y disparos...
+              Recuperando H2H e historiales individuales con corners, goles y disparos.
             </p>
           </Tarjeta>
         )}
 
-        {/* Error de analisis */}
-        {errorAnalisis && !cargandoAnalisis && (
+        {/* Error de contexto */}
+        {errorContexto && !cargandoContexto && (
           <MensajeError
-            titulo="Error en el analisis"
-            mensaje={errorAnalisis}
-            onCerrar={handleReanalizar}
+            titulo="Error al cargar contexto"
+            mensaje={errorContexto}
+            onCerrar={handleActualizarContexto}
           />
         )}
 
-        {/* Panel de analisis */}
-        {analisis && !cargandoAnalisis && (
-          <PanelAnalisisFutbol
-            analisis={analisis}
-            onRegistrarApuesta={handleRegistrarApuesta}
+        {partido && (!partido.equipoLocalId || !partido.equipoVisitanteId) && (
+          <Tarjeta className="text-sm text-texto-secundario">
+            No se pudieron obtener los IDs de los equipos para cargar el contexto H2H.
+          </Tarjeta>
+        )}
+
+        {/* Panel analizador */}
+        {partido && (
+          <PanelAnalisisMercadoFutbol
+            equipoLocalId={partido.equipoLocalId ?? ''}
+            equipoVisitanteId={partido.equipoVisitanteId ?? ''}
+            equipoLocalNombre={partido.equipoLocalNombre}
+            equipoVisitanteNombre={partido.equipoVisitanteNombre}
+            h2h={h2hPartidos}
+            historialLocal={historialLocal}
+            historialVisitante={historialVisitante}
           />
         )}
 
-        {/* Seccion de recomendaciones */}
-        {analisis && analisis.recomendaciones.length > 0 && (
-          <Tarjeta className="space-y-4">
-            <div className="flex items-center gap-3 pb-4 border-b border-neon-cyan/20">
-              <Sparkles className="w-5 h-5 text-neon-verde" />
-              <h3 className="text-lg font-futurista font-bold text-texto-principal uppercase tracking-wider">
-                Recomendaciones del Sistema
-              </h3>
-              <span className="px-2 py-0.5 text-xs font-mono rounded-full bg-neon-verde/10 text-neon-verde border border-neon-verde/30">
-                {analisis.recomendaciones.length} encontradas
-              </span>
-            </div>
+        {/* H2H */}
+        <PanelH2HFutbol
+          partidos={h2hPartidos}
+          limite={limiteH2h}
+          onCambiarLimite={setLimiteH2h}
+        />
 
-            <ListaRecomendaciones
-              recomendaciones={analisis.recomendaciones}
-              onRegistrar={handleRegistrarRecomendacion}
-              maxItems={6}
+        {/* Historial individual */}
+        {partido && (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <PanelHistorialEquipoFutbol
+              equipoId={partido.equipoLocalId ?? ''}
+              equipoNombre={partido.equipoLocalNombre}
+              partidos={historialLocal}
+              limite={limiteLocal}
+              onCambiarLimite={setLimiteLocal}
             />
-          </Tarjeta>
-        )}
-
-        {/* Mensaje si no hay recomendaciones */}
-        {analisis && analisis.recomendaciones.length === 0 && (
-          <Tarjeta className="text-center py-8">
-            <AlertTriangle className="w-12 h-12 text-neon-amarillo mx-auto mb-4" />
-            <h3 className="text-lg font-futurista text-texto-principal mb-2">
-              Sin Recomendaciones
-            </h3>
-            <p className="text-texto-secundario max-w-md mx-auto">
-              El sistema no ha encontrado apuestas con valor suficiente para
-              este partido. Revisa los mercados manualmente o espera a que las
-              cuotas cambien.
-            </p>
-          </Tarjeta>
+            <PanelHistorialEquipoFutbol
+              equipoId={partido.equipoVisitanteId ?? ''}
+              equipoNombre={partido.equipoVisitanteNombre}
+              partidos={historialVisitante}
+              limite={limiteVisitante}
+              onCambiarLimite={setLimiteVisitante}
+            />
+          </div>
         )}
       </main>
 

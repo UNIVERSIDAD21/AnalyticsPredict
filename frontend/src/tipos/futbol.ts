@@ -127,6 +127,8 @@ export interface PartidoFutbolDetalle extends PartidoFutbolResumen {
   visitanteGoles1t?: number;
   visitanteGoles2t?: number;
   visitanteGolesTotal?: number;
+  equipoLocalId?: string;
+  equipoVisitanteId?: string;
   // Corners por tiempo
   localCorners1t?: number;
   localCorners2t?: number;
@@ -142,6 +144,34 @@ export interface PartidoFutbolDetalle extends PartidoFutbolResumen {
   // Estadísticas de equipos
   estadisticasLocal?: EstadisticasEquipoFutbol;
   estadisticasVisitante?: EstadisticasEquipoFutbol;
+}
+
+/**
+ * Partido con estadísticas completas para análisis contextual
+ */
+export interface PartidoFutbolEstadistico {
+  id: string;
+  fechaPartido: string;
+  equipoLocalId: string;
+  equipoVisitanteId: string;
+  equipoLocalNombre: string;
+  equipoVisitanteNombre: string;
+  golesLocal: number;
+  golesVisitante: number;
+  golesLocal1t: number;
+  golesVisitante1t: number;
+  golesLocal2t: number;
+  golesVisitante2t: number;
+  cornersLocal: number;
+  cornersVisitante: number;
+  cornersLocal1t: number;
+  cornersVisitante1t: number;
+  cornersLocal2t: number;
+  cornersVisitante2t: number;
+  disparosLocal: number;
+  disparosVisitante: number;
+  disparosArcoLocal: number;
+  disparosArcoVisitante: number;
 }
 
 // ══════════════════════════════════════════════════════════════
