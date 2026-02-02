@@ -64,27 +64,17 @@ def _obtener_metricas_desde_calibradores(
     periodo: Literal["semana", "mes", "temporada", "todo"],
 ) -> ListaMetricasCalibracionResponse:
     """Obtiene métricas desde calibradores si no hay predicciones."""
-    if not _tabla_existe(cursor, "calibradores_futbol"):
-        return ListaMetricasCalibracionResponse(
-            exito=True,
-            periodo=periodo,
-            metricas=[],
-        )
-
-    columnas = {
-        "brier_antes": _columna_existe(cursor, "calibradores_futbol", "brier_antes"),
-        "brier_despues": _columna_existe(cursor, "calibradores_futbol", "brier_despues"),
-        "ece_antes": _columna_existe(cursor, "calibradores_futbol", "ece_antes"),
-        "ece_despues": _columna_existe(cursor, "calibradores_futbol", "ece_despues"),
-        "log_loss_antes": _columna_existe(cursor, "calibradores_futbol", "log_loss_antes"),
-        "log_loss_despues": _columna_existe(cursor, "calibradores_futbol", "log_loss_despues"),
-        "n_muestras": _columna_existe(cursor, "calibradores_futbol", "n_muestras"),
-    }
-    select_campos = ["mercado", "metodo"]
-    select_campos.extend([nombre for nombre, existe in columnas.items() if existe])
-
-    query = f"""
-        SELECT {", ".join(select_campos)}
+    query = """
+        SELECT
+            mercado,
+            metodo,
+            brier_antes,
+            brier_despues,
+            ece_antes,
+            ece_despues,
+            log_loss_antes,
+            log_loss_despues,
+            n_muestras
         FROM calibradores_futbol
         WHERE activo = true
     """
@@ -98,16 +88,16 @@ def _obtener_metricas_desde_calibradores(
 
     metricas = []
     for fila in filas:
-        brier_antes = float(fila.get("brier_antes") or 0)
-        brier_despues = float(fila.get("brier_despues") or 0.22)
+        brier_antes = float(fila["brier_antes"] or 0)
+        brier_despues = float(fila["brier_despues"] or 0.22)
         mejora = ((brier_antes - brier_despues) / brier_antes * 100) if brier_antes else None
 
         metricas.append(MetricasCalibracion(
             mercado=fila["mercado"],
             brier_score=round(brier_despues, 4),
-            ece=round(float(fila.get("ece_despues") or 0.09), 4),
-            log_loss=round(float(fila.get("log_loss_despues") or 0.65), 4),
-            n_predicciones=fila.get("n_muestras") or 0,
+            ece=round(float(fila["ece_despues"] or 0.09), 4),
+            log_loss=round(float(fila["log_loss_despues"] or 0.65), 4),
+            n_predicciones=fila["n_muestras"] or 0,
             calibrador_activo=True,
             metodo_calibrador=fila["metodo"],
             mejora_brier=round(mejora, 2) if mejora is not None else None,
@@ -122,13 +112,6 @@ def _obtener_metricas_desde_calibradores(
 
 def _resolver_columna_estado_apuestas(cursor) -> Optional[str]:
     for columna in ("estado", "resultado", "status"):
-        if _columna_existe(cursor, "apuestas_futbol", columna):
-            return columna
-    return None
-
-
-def _resolver_columna_ganancia_apuestas(cursor) -> Optional[str]:
-    for columna in ("ganancia_real", "ganancia", "beneficio", "profit"):
         if _columna_existe(cursor, "apuestas_futbol", columna):
             return columna
     return None
@@ -292,16 +275,6 @@ async def obtener_metricas_rendimiento(
                         metricas=[],
                     )
 
-                if not _columna_existe(cursor, "apuestas_futbol", "stake"):
-                    return ListaMetricasRendimientoResponse(
-                        exito=True,
-                        periodo=periodo,
-                        metricas=[],
-                    )
-
-                columna_ganancia = _resolver_columna_ganancia_apuestas(cursor)
-                ganancia_expr = columna_ganancia if columna_ganancia else "NULL"
-
                 query = """
                     SELECT
                         mercado,
@@ -313,7 +286,7 @@ async def obtener_metricas_rendimiento(
                     FROM apuestas_futbol
                     WHERE usuario_id = %s
                       AND {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
-                """.format(estado_col=columna_estado, ganancia_col=ganancia_expr)
+                """.format(estado_col=columna_estado)
                 params = [str(usuario.id)]
 
                 if fecha_inicio:
