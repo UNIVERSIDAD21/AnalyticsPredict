@@ -64,20 +64,42 @@ def _obtener_metricas_desde_calibradores(
     periodo: Literal["semana", "mes", "temporada", "todo"],
 ) -> ListaMetricasCalibracionResponse:
     """Obtiene métricas desde calibradores si no hay predicciones."""
+    columnas_calibrador = {  # CORREGIDO
+        "brier_antes": _columna_existe(cursor, "calibradores_futbol", "brier_antes"),
+        "brier_despues": _columna_existe(cursor, "calibradores_futbol", "brier_despues"),
+        "ece_antes": _columna_existe(cursor, "calibradores_futbol", "ece_antes"),
+        "ece_despues": _columna_existe(cursor, "calibradores_futbol", "ece_despues"),
+        "log_loss_antes": _columna_existe(cursor, "calibradores_futbol", "log_loss_antes"),
+        "log_loss_despues": _columna_existe(cursor, "calibradores_futbol", "log_loss_despues"),
+    }
+    n_muestras_col = None  # CORREGIDO
+    for candidato in ("n_muestras", "n_muestras_entrenamiento"):
+        if _columna_existe(cursor, "calibradores_futbol", candidato):
+            n_muestras_col = candidato
+            break
+
     query = """
         SELECT
             mercado,
             metodo,
-            brier_antes,
-            brier_despues,
-            ece_antes,
-            ece_despues,
-            log_loss_antes,
-            log_loss_despues,
-            n_muestras
+            {brier_antes} AS brier_antes,
+            {brier_despues} AS brier_despues,
+            {ece_antes} AS ece_antes,
+            {ece_despues} AS ece_despues,
+            {log_loss_antes} AS log_loss_antes,
+            {log_loss_despues} AS log_loss_despues,
+            {n_muestras} AS n_muestras
         FROM calibradores_futbol
         WHERE activo = true
-    """
+    """.format(
+        brier_antes="brier_antes" if columnas_calibrador["brier_antes"] else "NULL",  # CORREGIDO
+        brier_despues="brier_despues" if columnas_calibrador["brier_despues"] else "NULL",  # CORREGIDO
+        ece_antes="ece_antes" if columnas_calibrador["ece_antes"] else "NULL",  # CORREGIDO
+        ece_despues="ece_despues" if columnas_calibrador["ece_despues"] else "NULL",  # CORREGIDO
+        log_loss_antes="log_loss_antes" if columnas_calibrador["log_loss_antes"] else "NULL",  # CORREGIDO
+        log_loss_despues="log_loss_despues" if columnas_calibrador["log_loss_despues"] else "NULL",  # CORREGIDO
+        n_muestras=n_muestras_col if n_muestras_col else "NULL",  # CORREGIDO
+    )
     params: List[str] = []
     if mercado and mercado != "todos":
         query += " AND mercado = %s"
@@ -113,6 +135,20 @@ def _obtener_metricas_desde_calibradores(
 def _resolver_columna_estado_apuestas(cursor) -> Optional[str]:
     for columna in ("estado", "resultado", "status"):
         if _columna_existe(cursor, "apuestas_futbol", columna):
+            return columna
+    return None
+
+
+def _resolver_columna_ganancia_apuestas(cursor) -> Optional[str]:  # CORREGIDO
+    for columna in ("ganancia_real", "ganancia_neta", "ganancia", "beneficio_real", "beneficio"):
+        if _columna_existe(cursor, "apuestas_futbol", columna):
+            return columna
+    return None
+
+
+def _resolver_columna_modelo(cursor, columnas: List[str]) -> Optional[str]:  # CORREGIDO
+    for columna in columnas:
+        if _columna_existe(cursor, "modelo_versiones_futbol", columna):
             return columna
     return None
 
@@ -275,6 +311,7 @@ async def obtener_metricas_rendimiento(
                         metricas=[],
                     )
 
+                ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "0"  # CORREGIDO
                 query = """
                     SELECT
                         mercado,
@@ -286,7 +323,10 @@ async def obtener_metricas_rendimiento(
                     FROM apuestas_futbol
                     WHERE usuario_id = %s
                       AND {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
-                """.format(estado_col=columna_estado)
+                """.format(
+                    estado_col=columna_estado,
+                    ganancia_col=ganancia_col,  # CORREGIDO
+                )
                 params = [str(usuario.id)]
 
                 if fecha_inicio:
@@ -352,24 +392,7 @@ async def obtener_estado_modelos(
     try:
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
-                columnas_modelo = {
-                    "tipo_modelo": _columna_existe(cursor, "modelo_versiones_futbol", "tipo_modelo"),
-                    "version": _columna_existe(cursor, "modelo_versiones_futbol", "version"),
-                    "fecha_entrenamiento": _columna_existe(
-                        cursor, "modelo_versiones_futbol", "fecha_entrenamiento"
-                    ),
-                    "mae": _columna_existe(cursor, "modelo_versiones_futbol", "mae"),
-                    "rmse": _columna_existe(cursor, "modelo_versiones_futbol", "rmse"),
-                    "r2": _columna_existe(cursor, "modelo_versiones_futbol", "r2"),
-                    "n_partidos_entrenamiento": _columna_existe(
-                        cursor, "modelo_versiones_futbol", "n_partidos_entrenamiento"
-                    ),
-                    "n_equipos": _columna_existe(cursor, "modelo_versiones_futbol", "n_equipos"),
-                }
-
-                if not _tabla_existe(cursor, "modelo_versiones_futbol") or not all(
-                    columnas_modelo.values()
-                ):
+                if not _tabla_existe(cursor, "modelo_versiones_futbol"):
                     return EstadoModelos(
                         modelos=[
                             MetricasModelo(
@@ -397,21 +420,68 @@ async def obtener_estado_modelos(
                         ultima_actualizacion=None,
                         proximo_reentrenamiento=datetime.now() + timedelta(days=7),
                     )
+                columna_tipo = _resolver_columna_modelo(cursor, ["tipo_modelo", "tipo", "modelo"])
+                columna_version = _resolver_columna_modelo(cursor, ["version"])
+                columna_fecha = _resolver_columna_modelo(cursor, ["fecha_entrenamiento", "creado_en"])
+                if not all([columna_tipo, columna_version, columna_fecha]):  # CORREGIDO
+                    return EstadoModelos(
+                        modelos=[
+                            MetricasModelo(
+                                tipo_modelo="corners",
+                                version="1.0",
+                                mae=1.371,
+                                n_partidos_entrenamiento=5196,
+                                n_equipos=28,
+                            ),
+                            MetricasModelo(
+                                tipo_modelo="goles",
+                                version="1.0",
+                                mae=0.632,
+                                n_partidos_entrenamiento=3840,
+                                n_equipos=28,
+                            ),
+                            MetricasModelo(
+                                tipo_modelo="disparos",
+                                version="1.0",
+                                mae=2.493,
+                                n_partidos_entrenamiento=5196,
+                                n_equipos=28,
+                            ),
+                        ],
+                        ultima_actualizacion=None,
+                        proximo_reentrenamiento=datetime.now() + timedelta(days=7),
+                    )
+                columna_mae = _resolver_columna_modelo(cursor, ["mae", "mae_total", "mae_promedio"])
+                columna_rmse = _resolver_columna_modelo(cursor, ["rmse", "rmse_total"])
+                columna_r2 = _resolver_columna_modelo(cursor, ["r2", "r2_total"])
+                columna_partidos = _resolver_columna_modelo(
+                    cursor, ["n_partidos_entrenamiento", "partidos_entrenamiento", "n_partidos"]
+                )
+                columna_equipos = _resolver_columna_modelo(cursor, ["n_equipos", "equipos"])
                 # Obtener versiones de modelos
                 cursor.execute("""
                     SELECT
-                        tipo_modelo,
-                        version,
-                        fecha_entrenamiento,
-                        mae,
-                        rmse,
-                        r2,
-                        n_partidos_entrenamiento,
-                        n_equipos
+                        {columna_tipo} as tipo_modelo,
+                        {columna_version} as version,
+                        {columna_fecha} as fecha_entrenamiento,
+                        {columna_mae} as mae,
+                        {columna_rmse} as rmse,
+                        {columna_r2} as r2,
+                        {columna_partidos} as n_partidos_entrenamiento,
+                        {columna_equipos} as n_equipos
                     FROM modelo_versiones_futbol
-                    ORDER BY fecha_entrenamiento DESC
+                    ORDER BY {columna_fecha} DESC
                     LIMIT 3
-                """)
+                """.format(
+                    columna_tipo=columna_tipo,
+                    columna_version=columna_version,
+                    columna_fecha=columna_fecha,
+                    columna_mae=columna_mae or "NULL",  # CORREGIDO
+                    columna_rmse=columna_rmse or "NULL",  # CORREGIDO
+                    columna_r2=columna_r2 or "NULL",  # CORREGIDO
+                    columna_partidos=columna_partidos or "NULL",  # CORREGIDO
+                    columna_equipos=columna_equipos or "NULL",  # CORREGIDO
+                ))
                 filas = cursor.fetchall()
 
                 modelos = []
@@ -502,23 +572,36 @@ async def obtener_resumen_sistema(
                 predicciones_pendientes = cursor.fetchone()["count"]
 
                 # Apuestas activas del usuario
-                cursor.execute("""
-                    SELECT COUNT(*) FROM apuestas_futbol
-                    WHERE usuario_id = %s AND estado = 'PENDIENTE'
-                """, [str(usuario.id)])
-                apuestas_activas = cursor.fetchone()["count"]
+                columna_estado = _resolver_columna_estado_apuestas(cursor)
+                if columna_estado:  # CORREGIDO
+                    cursor.execute(f"""
+                        SELECT COUNT(*) FROM apuestas_futbol
+                        WHERE usuario_id = %s AND {columna_estado} = 'PENDIENTE'
+                    """, [str(usuario.id)])
+                    apuestas_activas = cursor.fetchone()["count"]
+                else:
+                    apuestas_activas = 0
 
                 # ROI y win rate global
-                cursor.execute("""
-                    SELECT
-                        SUM(stake) as stake_total,
-                        SUM(COALESCE(ganancia_real, 0)) as ganancia_neta,
-                        SUM(CASE WHEN estado = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
-                        SUM(CASE WHEN estado IN ('GANADA', 'PERDIDA') THEN 1 ELSE 0 END) as resueltas
-                    FROM apuestas_futbol
-                    WHERE usuario_id = %s
-                """, [str(usuario.id)])
-                stats = cursor.fetchone()
+                ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "0"  # CORREGIDO
+                if columna_estado:
+                    cursor.execute(f"""
+                        SELECT
+                            SUM(stake) as stake_total,
+                            SUM(COALESCE({ganancia_col}, 0)) as ganancia_neta,
+                            SUM(CASE WHEN {columna_estado} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
+                            SUM(CASE WHEN {columna_estado} IN ('GANADA', 'PERDIDA') THEN 1 ELSE 0 END) as resueltas
+                        FROM apuestas_futbol
+                        WHERE usuario_id = %s
+                    """, [str(usuario.id)])
+                    stats = cursor.fetchone()
+                else:
+                    stats = {
+                        "stake_total": 0,
+                        "ganancia_neta": 0,
+                        "ganadas": 0,
+                        "resueltas": 0,
+                    }
 
                 roi = None
                 win_rate = None
