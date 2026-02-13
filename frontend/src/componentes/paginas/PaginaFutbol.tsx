@@ -5,7 +5,7 @@
  * resumen rapido y navegacion a analisis.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Calendar,
@@ -24,7 +24,8 @@ import { SelectorCompeticion, MensajeError } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { usePartidosFutbol } from '../../hooks';
 import { obtenerCompeticiones } from '../../servicios/futbol';
-import type { Competicion, FiltrosPartidos } from '../../tipos/futbol';
+import { obtenerFechaISOBogota, obtenerHoyISOBogota } from '../../utilidades';
+import type { Competicion, FiltrosPartidos, PartidoFutbolResumen } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -35,6 +36,105 @@ const navegar = (ruta: string) => {
   window.history.pushState({}, '', ruta);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
+
+const obtenerFechaPartidoISO = (valor: string): string => obtenerFechaISOBogota(valor);
+
+function formatearFechaHoraCorta(fechaISO: string): string {
+  const fecha = new Date(fechaISO);
+  return fecha.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+interface PropsPanelSeleccionPartido {
+  partidos: PartidoFutbolResumen[];
+  partidoSeleccionadoId: string;
+  onSeleccionarPartido: (partidoId: string) => void;
+  onAnalizarPartido: () => void;
+  cargando: boolean;
+}
+
+function PanelSeleccionPartido({
+  partidos,
+  partidoSeleccionadoId,
+  onSeleccionarPartido,
+  onAnalizarPartido,
+  cargando,
+}: PropsPanelSeleccionPartido) {
+  const partidoSeleccionado = useMemo(
+    () => partidos.find((partido) => partido.id === partidoSeleccionadoId) ?? null,
+    [partidoSeleccionadoId, partidos]
+  );
+
+  return (
+    <Tarjeta className="mb-6 border border-neon-cyan/25">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 items-end">
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan">
+              Seleccionar partido para analizar
+            </h3>
+            <p className="text-xs text-texto-secundario mt-1">
+              Flujo directo: eliges un partido y vas al análisis, como en NBA.
+            </p>
+          </div>
+
+          <label className="flex flex-col gap-2 text-sm text-texto-secundario">
+            Partido
+            <select
+              value={partidoSeleccionadoId}
+              onChange={(event) => onSeleccionarPartido(event.target.value)}
+              disabled={cargando || partidos.length === 0}
+              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+            >
+              <option value="">Selecciona un partido...</option>
+              {partidos.map((partido) => (
+                <option key={partido.id} value={partido.id}>
+                  {partido.equipoLocalNombre} vs {partido.equipoVisitanteNombre} ·{' '}
+                  {formatearFechaHoraCorta(partido.fechaPartido)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="space-y-3">
+          <div className="rounded-lg border border-neon-cyan/20 bg-futurista-negro/40 p-3 min-h-[92px]">
+            {partidoSeleccionado ? (
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-texto-principal">
+                  {partidoSeleccionado.equipoLocalNombre} vs {partidoSeleccionado.equipoVisitanteNombre}
+                </p>
+                <p className="text-xs text-texto-secundario">
+                  {partidoSeleccionado.competicionNombre}
+                </p>
+                <p className="text-xs text-neon-cyan">
+                  {formatearFechaHoraCorta(partidoSeleccionado.fechaPartido)}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-texto-terciario">
+                Selecciona un partido para habilitar el análisis.
+              </p>
+            )}
+          </div>
+
+          <Boton
+            variante="primario"
+            anchoCompleto
+            onClick={onAnalizarPartido}
+            disabled={!partidoSeleccionadoId}
+          >
+            Analizar partido
+          </Boton>
+        </div>
+      </div>
+    </Tarjeta>
+  );
+}
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE SKELETON
@@ -295,7 +395,10 @@ export function PaginaFutbol() {
   const [competicionSeleccionada, setCompeticionSeleccionada] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [partidosHoyPersistidos, setPartidosHoyPersistidos] = useState<PartidoFutbolResumen[]>([]);
+  const diaPersistidoRef = useRef<string>(obtenerHoyISOBogota());
 
   // Estado de competiciones
   const [competiciones, setCompeticiones] = useState<Competicion[]>([]);
@@ -311,6 +414,12 @@ export function PaginaFutbol() {
     return f;
   }, [competicionSeleccionada, fechaDesde, fechaHasta]);
 
+  const filtrosHoy = useMemo<FiltrosPartidos>(() => {
+    const f: FiltrosPartidos = {};
+    if (competicionSeleccionada) f.competicion = competicionSeleccionada;
+    return f;
+  }, [competicionSeleccionada]);
+
   // Hook de partidos
   const {
     partidos,
@@ -321,6 +430,18 @@ export function PaginaFutbol() {
   } = usePartidosFutbol({
     tipo: 'proximos',
     filtrosIniciales: filtros,
+    cargarAlMontar: true,
+  });
+
+  const {
+    partidos: partidosHoy,
+    cargando: cargandoHoy,
+    error: errorHoy,
+    recargar: recargarHoy,
+    setFiltros: setFiltrosHoy,
+  } = usePartidosFutbol({
+    tipo: 'hoy',
+    filtrosIniciales: filtrosHoy,
     cargarAlMontar: true,
   });
 
@@ -342,13 +463,85 @@ export function PaginaFutbol() {
   // Actualizar filtros cuando cambien
   useEffect(() => {
     setFiltros(filtros);
-  }, [filtros, setFiltros]);
+    setFiltrosHoy(filtrosHoy);
+  }, [filtros, filtrosHoy, setFiltros, setFiltrosHoy]);
+
+  // Reiniciar snapshot de "hoy" cuando cambia la competicion.
+  useEffect(() => {
+    setPartidosHoyPersistidos([]);
+    diaPersistidoRef.current = obtenerHoyISOBogota();
+  }, [competicionSeleccionada]);
+
+  // Mantener un snapshot de todos los partidos de hoy hasta cambio de dia.
+  useEffect(() => {
+    const hoy = obtenerHoyISOBogota();
+
+    if (diaPersistidoRef.current !== hoy) {
+      diaPersistidoRef.current = hoy;
+      setPartidosHoyPersistidos([]);
+    }
+
+    const candidatosHoy = [...partidos, ...partidosHoy].filter(
+      (p) => obtenerFechaPartidoISO(p.fechaPartido) === hoy
+    );
+
+    if (candidatosHoy.length === 0) {
+      return;
+    }
+
+    setPartidosHoyPersistidos((anteriores) => {
+      const mapa = new Map<string, PartidoFutbolResumen>();
+
+      anteriores.forEach((partido) => {
+        mapa.set(partido.id, partido);
+      });
+      candidatosHoy.forEach((partido) => {
+        mapa.set(partido.id, partido);
+      });
+
+      return Array.from(mapa.values()).sort(
+        (a, b) => new Date(a.fechaPartido).getTime() - new Date(b.fechaPartido).getTime()
+      );
+    });
+  }, [partidos, partidosHoy]);
+
+  const partidosParaMostrar = useMemo<PartidoFutbolResumen[]>(() => {
+    const hoy = obtenerHoyISOBogota();
+    const partidosNoHoy = partidos.filter((p) => obtenerFechaPartidoISO(p.fechaPartido) !== hoy);
+    const mapa = new Map<string, PartidoFutbolResumen>();
+
+    [...partidosNoHoy, ...partidosHoyPersistidos].forEach((partido) => {
+      mapa.set(partido.id, partido);
+    });
+
+    return Array.from(mapa.values()).sort(
+      (a, b) => new Date(a.fechaPartido).getTime() - new Date(b.fechaPartido).getTime()
+    );
+  }, [partidos, partidosHoyPersistidos]);
+
+  useEffect(() => {
+    if (partidoSeleccionadoId && partidosParaMostrar.some((p) => p.id === partidoSeleccionadoId)) {
+      return;
+    }
+
+    if (partidosParaMostrar.length > 0) {
+      setPartidoSeleccionadoId(partidosParaMostrar[0].id);
+      return;
+    }
+
+    setPartidoSeleccionadoId('');
+  }, [partidoSeleccionadoId, partidosParaMostrar]);
+
+  const recargarTodo = useCallback(() => {
+    recargar();
+    recargarHoy();
+  }, [recargar, recargarHoy]);
 
   // Calcular estadisticas rapidas
   const estadisticasRapidas = useMemo(() => {
-    const hoy = new Date().toISOString().split('T')[0];
-    const partidosHoy = partidos.filter(
-      (p) => p.fechaPartido.split('T')[0] === hoy
+    const hoy = obtenerHoyISOBogota();
+    const partidosHoy = partidosParaMostrar.filter(
+      (p) => obtenerFechaPartidoISO(p.fechaPartido) === hoy
     ).length;
 
     // Estos valores serian de un servicio real
@@ -357,7 +550,7 @@ export function PaginaFutbol() {
       apuestasActivas: 3, // Mock
       roiMensual: 8.5, // Mock
     };
-  }, [partidos]);
+  }, [partidosParaMostrar]);
 
   // Handlers
   const limpiarFiltros = useCallback(() => {
@@ -369,6 +562,11 @@ export function PaginaFutbol() {
   const irAAnalisis = useCallback((partidoId: string) => {
     navegar(`/futbol/partidos/${partidoId}`);
   }, []);
+
+  const analizarPartidoSeleccionado = useCallback(() => {
+    if (!partidoSeleccionadoId) return;
+    irAAnalisis(partidoSeleccionadoId);
+  }, [irAAnalisis, partidoSeleccionadoId]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -414,8 +612,8 @@ export function PaginaFutbol() {
             <Boton
               variante="secundario"
               iconoInicio={<RefreshCw size={16} />}
-              onClick={recargar}
-              cargando={cargandoPartidos}
+              onClick={recargarTodo}
+              cargando={cargandoPartidos || cargandoHoy}
             >
               <span className="hidden sm:inline">Actualizar</span>
             </Boton>
@@ -435,10 +633,10 @@ export function PaginaFutbol() {
           <TarjetaResumen
             titulo="Partidos Hoy"
             valor={estadisticasRapidas.partidosHoy}
-            subtitulo="programados"
+            subtitulo="totales del dia"
             icono={<Clock size={20} className="text-neon-cyan" />}
             color="cyan"
-            loading={cargandoPartidos}
+            loading={cargandoPartidos || cargandoHoy}
           />
           <TarjetaResumen
             titulo="Apuestas Activas"
@@ -457,15 +655,23 @@ export function PaginaFutbol() {
         </div>
 
         {/* Error */}
-        {error && (
+        {(error || errorHoy) && (
           <div className="mb-6">
             <MensajeError
               titulo="Error al cargar partidos"
-              mensaje={error}
-              onCerrar={recargar}
+              mensaje={error || errorHoy || 'Error desconocido'}
+              onCerrar={recargarTodo}
             />
           </div>
         )}
+
+        <PanelSeleccionPartido
+          partidos={partidosParaMostrar}
+          partidoSeleccionadoId={partidoSeleccionadoId}
+          onSeleccionarPartido={setPartidoSeleccionadoId}
+          onAnalizarPartido={analizarPartidoSeleccionado}
+          cargando={cargandoPartidos || cargandoHoy}
+        />
 
         {/* Layout principal */}
         <div className="flex gap-6">
@@ -487,8 +693,8 @@ export function PaginaFutbol() {
           {/* Contenido principal */}
           <div className="flex-1 min-w-0">
             <ListaPartidosFutbol
-              partidos={partidos}
-              cargando={cargandoPartidos}
+              partidos={partidosParaMostrar}
+              cargando={cargandoPartidos || cargandoHoy}
               onAnalizar={irAAnalisis}
             />
           </div>

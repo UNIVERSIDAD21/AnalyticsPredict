@@ -11,7 +11,7 @@
  * URL: /futbol/partidos/:id
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Calendar,
@@ -36,11 +36,16 @@ import {
   crearApuesta,
 } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
+import {
+  formatearFechaPartidoBogota,
+  formatearHoraPartidoBogota,
+} from '../../utilidades';
 import type {
   PartidoFutbolDetalle,
   PartidoFutbolEstadistico,
   TipoMercadoFutbol,
   NivelConfianza,
+  UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -63,8 +68,7 @@ const navegar = (ruta: string) => {
 };
 
 function formatearFechaCompleta(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleDateString('es-ES', {
+  return formatearFechaPartidoBogota(fechaISO, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -73,11 +77,7 @@ function formatearFechaCompleta(fechaISO: string): string {
 }
 
 function formatearHora(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatearHoraPartidoBogota(fechaISO);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -240,12 +240,89 @@ export function AnalisisPartidoFutbol() {
     PartidoFutbolEstadistico[]
   >([]);
   const [limiteH2h, setLimiteH2h] = useState(10);
-  const [limiteLocal, setLimiteLocal] = useState(10);
-  const [limiteVisitante, setLimiteVisitante] = useState(10);
+  const [limiteLocal, setLimiteLocal] = useState(0);
+  const [limiteVisitante, setLimiteVisitante] = useState(0);
+  const [ubicacionLocal, setUbicacionLocal] =
+    useState<UbicacionHistorialEquipo>('todos');
+  const [ubicacionVisitante, setUbicacionVisitante] =
+    useState<UbicacionHistorialEquipo>('todos');
   const [refrescoContexto, setRefrescoContexto] = useState(0);
   const [cargandoContexto, setCargandoContexto] = useState(false);
   const [errorContexto, setErrorContexto] = useState<string | null>(null);
   const { agregarToast } = useToasts();
+  const historialCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
+  const h2hCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
+  const solicitudContextoRef = useRef(0);
+
+  useEffect(() => {
+    historialCacheRef.current.clear();
+    h2hCacheRef.current.clear();
+  }, [partidoId]);
+
+  const obtenerHistorialEquipoCached = useCallback(
+    async (
+      equipoId: string,
+      limite: number,
+      ubicacion: UbicacionHistorialEquipo
+    ): Promise<PartidoFutbolEstadistico[]> => {
+      const claveBase = `${equipoId}|${ubicacion}`;
+      const claveExacta = `${claveBase}|${limite}`;
+
+      const exactoCache = historialCacheRef.current.get(claveExacta);
+      if (exactoCache) {
+        return exactoCache;
+      }
+
+      if (limite > 0) {
+        const todosCache = historialCacheRef.current.get(`${claveBase}|0`);
+        if (todosCache) {
+          const recorte = todosCache.slice(0, limite);
+          historialCacheRef.current.set(claveExacta, recorte);
+          return recorte;
+        }
+      }
+
+      const data = await obtenerPartidosEquipoDetalle(
+        equipoId,
+        limite === 0 ? undefined : limite,
+        ubicacion
+      );
+      historialCacheRef.current.set(claveExacta, data);
+      if (limite === 0) {
+        historialCacheRef.current.set(`${claveBase}|0`, data);
+      }
+      return data;
+    },
+    []
+  );
+
+  const obtenerH2HCached = useCallback(
+    async (
+      equipoLocalId: string,
+      equipoVisitanteId: string,
+      limite: number
+    ): Promise<PartidoFutbolEstadistico[]> => {
+      const claveEquipos =
+        equipoLocalId < equipoVisitanteId
+          ? `${equipoLocalId}|${equipoVisitanteId}`
+          : `${equipoVisitanteId}|${equipoLocalId}`;
+      const clave = `${claveEquipos}|${limite}`;
+
+      const cache = h2hCacheRef.current.get(clave);
+      if (cache) {
+        return cache;
+      }
+
+      const data = await obtenerH2HPartidos(
+        equipoLocalId,
+        equipoVisitanteId,
+        limite === 0 ? undefined : limite
+      );
+      h2hCacheRef.current.set(clave, data);
+      return data;
+    },
+    []
+  );
 
   // Cargar partido
   useEffect(() => {
@@ -275,34 +352,65 @@ export function AnalisisPartidoFutbol() {
       const equipoLocalId = partido?.equipoLocalId ?? partido?.equipoLocal;
       const equipoVisitanteId = partido?.equipoVisitanteId ?? partido?.equipoVisitante;
       if (!equipoLocalId || !equipoVisitanteId) return;
+      const solicitudId = ++solicitudContextoRef.current;
       setCargandoContexto(true);
       setErrorContexto(null);
 
       try {
         const [h2h, local, visitante] = await Promise.all([
-          obtenerH2HPartidos(equipoLocalId, equipoVisitanteId, limiteH2h),
-          obtenerPartidosEquipoDetalle(equipoLocalId, limiteLocal),
-          obtenerPartidosEquipoDetalle(equipoVisitanteId, limiteVisitante),
+          obtenerH2HCached(equipoLocalId, equipoVisitanteId, limiteH2h),
+          obtenerHistorialEquipoCached(equipoLocalId, limiteLocal, ubicacionLocal),
+          obtenerHistorialEquipoCached(
+            equipoVisitanteId,
+            limiteVisitante,
+            ubicacionVisitante
+          ),
         ]);
+
+        if (solicitudId !== solicitudContextoRef.current) {
+          return;
+        }
+
         setH2hPartidos(h2h);
         setHistorialLocal(local);
         setHistorialVisitante(visitante);
       } catch (err) {
+        if (solicitudId !== solicitudContextoRef.current) {
+          return;
+        }
         const mensaje =
           err instanceof Error ? err.message : 'Error al cargar el contexto del partido';
         setErrorContexto(mensaje);
       } finally {
-        setCargandoContexto(false);
+        if (solicitudId === solicitudContextoRef.current) {
+          setCargandoContexto(false);
+        }
       }
     };
 
-    void cargarContexto();
-  }, [partido, limiteH2h, limiteLocal, limiteVisitante, refrescoContexto]);
+    const timer = window.setTimeout(() => {
+      void cargarContexto();
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    partido,
+    limiteH2h,
+    limiteLocal,
+    limiteVisitante,
+    ubicacionLocal,
+    ubicacionVisitante,
+    refrescoContexto,
+    obtenerH2HCached,
+    obtenerHistorialEquipoCached,
+  ]);
 
   const equipoLocalId = partido?.equipoLocalId ?? partido?.equipoLocal;
   const equipoVisitanteId = partido?.equipoVisitanteId ?? partido?.equipoVisitante;
 
   const handleActualizarContexto = useCallback(() => {
+    historialCacheRef.current.clear();
+    h2hCacheRef.current.clear();
     setRefrescoContexto((valor) => valor + 1);
   }, []);
 
@@ -444,6 +552,8 @@ export function AnalisisPartidoFutbol() {
               partidos={historialLocal}
               limite={limiteLocal}
               onCambiarLimite={setLimiteLocal}
+              ubicacion={ubicacionLocal}
+              onCambiarUbicacion={setUbicacionLocal}
             />
             <PanelHistorialEquipoFutbol
               equipoId={equipoVisitanteId}
@@ -451,6 +561,8 @@ export function AnalisisPartidoFutbol() {
               partidos={historialVisitante}
               limite={limiteVisitante}
               onCambiarLimite={setLimiteVisitante}
+              ubicacion={ubicacionVisitante}
+              onCambiarUbicacion={setUbicacionVisitante}
             />
           </div>
         )}
@@ -482,7 +594,7 @@ export function AnalisisPartidoFutbol() {
               Analisis de Partido — Modelos de Corners, Goles y Disparos
             </p>
             <p className="text-texto-terciario/60 text-xs">
-              Predicciones calibradas con datos historicos.
+              Predicciones con datos historicos.
             </p>
           </div>
         </div>
@@ -490,3 +602,4 @@ export function AnalisisPartidoFutbol() {
     </div>
   );
 }
+

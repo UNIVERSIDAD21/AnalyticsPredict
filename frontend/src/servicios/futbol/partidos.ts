@@ -11,6 +11,14 @@ import type {
   PartidoFutbolEstadistico,
 } from '../../tipos/futbol';
 
+const obtenerFechaLocalISO = (): string => {
+  const ahora = new Date();
+  const year = ahora.getFullYear();
+  const month = String(ahora.getMonth() + 1).padStart(2, '0');
+  const day = String(ahora.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // ══════════════════════════════════════════════════════════════
 // TRANSFORMADORES
 // ══════════════════════════════════════════════════════════════
@@ -231,6 +239,34 @@ export async function obtenerPartidosRecientes(
 }
 
 /**
+ * Obtiene los partidos de hoy (programados, en curso y finalizados)
+ */
+export async function obtenerPartidosHoy(
+  filtros?: FiltrosPartidos
+): Promise<PartidoFutbolResumen[]> {
+  try {
+    const params: Record<string, string | number> = {};
+    params.fecha = obtenerFechaLocalISO();
+
+    if (filtros?.competicion) {
+      params.competicion_id = filtros.competicion;
+    }
+    if (filtros?.equipo) {
+      params.equipo_id = filtros.equipo;
+    }
+
+    const respuesta = await clienteAPI.get('/api/futbol/partidos/hoy', {
+      params,
+    });
+    const datos = respuesta.data?.partidos || respuesta.data || [];
+
+    return Array.isArray(datos) ? datos.map(transformarPartidoResumen) : [];
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+/**
  * Obtiene el detalle de un partido
  */
 export async function obtenerPartido(id: string): Promise<PartidoFutbolDetalle> {
@@ -248,15 +284,18 @@ export async function obtenerPartido(id: string): Promise<PartidoFutbolDetalle> 
 export async function obtenerH2HPartidos(
   equipoLocalId: string,
   equipoVisitanteId: string,
-  limite: number = 10
+  limite?: number
 ): Promise<PartidoFutbolEstadistico[]> {
   try {
+    const params: Record<string, string | number> = {
+      equipo_local_id: equipoLocalId,
+      equipo_visitante_id: equipoVisitanteId,
+    };
+    if (limite && limite > 0) {
+      params.limite = limite;
+    }
     const respuesta = await clienteAPI.get('/api/futbol/partidos/h2h', {
-      params: {
-        equipo_local_id: equipoLocalId,
-        equipo_visitante_id: equipoVisitanteId,
-        limite,
-      },
+      params,
     });
     const datos = respuesta.data?.partidos || respuesta.data || [];
     return Array.isArray(datos) ? datos.map(transformarPartidoEstadistico) : [];

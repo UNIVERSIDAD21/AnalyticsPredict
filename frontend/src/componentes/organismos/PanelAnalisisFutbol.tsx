@@ -409,9 +409,6 @@ export function PanelAnalisisFutbol({
               <span className="text-texto-terciario">
                 v{analisis.modeloVersion}
               </span>
-              <span className="text-neon-verde">
-                {analisis.calibradoresActivos} calibradores
-              </span>
             </div>
           </div>
 

@@ -526,7 +526,7 @@ def obtener_partidos_futuros(
     cliente: SofascoreClientInteligente,
     liga_id: int,
     temporada_id: int,
-    dias: int = 14,
+    dias: int = 5,
     max_paginas: int = 5
 ) -> List[Dict]:
     """Obtiene partidos futuros."""
@@ -763,8 +763,8 @@ def main():
     parser.add_argument(
         '--dias-futuros',
         type=int,
-        default=14,
-        help='Días hacia adelante para partidos futuros (default: 14)'
+        default=5,
+        help='Días hacia adelante para partidos futuros (default: 5)'
     )
     
     parser.add_argument(

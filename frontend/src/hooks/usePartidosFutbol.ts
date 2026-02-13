@@ -4,7 +4,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { PartidoFutbolResumen, FiltrosPartidos } from '../tipos/futbol';
-import { obtenerPartidosProximos, obtenerPartidosRecientes } from '../servicios/futbol';
+import {
+  obtenerPartidosHoy,
+  obtenerPartidosProximos,
+  obtenerPartidosRecientes,
+} from '../servicios/futbol';
 
 type EstadoPeticion = 'inactivo' | 'cargando' | 'exito' | 'error';
 
@@ -24,8 +28,8 @@ interface RetornoUsePartidosFutbol {
 }
 
 interface OpcionesUsePartidosFutbol {
-  /** Tipo de partidos a cargar: 'proximos' o 'recientes' */
-  tipo?: 'proximos' | 'recientes';
+  /** Tipo de partidos a cargar: 'hoy', 'proximos' o 'recientes' */
+  tipo?: 'hoy' | 'proximos' | 'recientes';
   /** Filtros iniciales */
   filtrosIniciales?: FiltrosPartidos;
   /** Cargar automáticamente al montar */
@@ -63,7 +67,12 @@ export function usePartidosFutbol(
     setError(null);
 
     try {
-      const servicio = tipo === 'proximos' ? obtenerPartidosProximos : obtenerPartidosRecientes;
+      const servicio =
+        tipo === 'hoy'
+          ? obtenerPartidosHoy
+          : tipo === 'proximos'
+            ? obtenerPartidosProximos
+            : obtenerPartidosRecientes;
       const datos = await servicio(filtrosMemo);
       setPartidos(datos);
       setEstado('exito');

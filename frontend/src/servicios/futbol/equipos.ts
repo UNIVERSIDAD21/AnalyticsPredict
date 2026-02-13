@@ -8,6 +8,7 @@ import type {
   EstadisticasEquipoFutbol,
   PartidoFutbolResumen,
   PartidoFutbolEstadistico,
+  UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -173,11 +174,15 @@ export async function obtenerEstadisticasEquipo(
  */
 export async function obtenerPartidosEquipo(
   id: string,
-  limite: number = 10
+  limite?: number
 ): Promise<PartidoFutbolResumen[]> {
   try {
+    const params: Record<string, string | number> = {};
+    if (limite && limite > 0) {
+      params.limite = limite;
+    }
     const respuesta = await clienteAPI.get(`/api/futbol/equipos/${id}/partidos`, {
-      params: { limite },
+      params,
     });
     const datos = respuesta.data?.partidos || respuesta.data || [];
 
@@ -192,11 +197,17 @@ export async function obtenerPartidosEquipo(
  */
 export async function obtenerPartidosEquipoDetalle(
   id: string,
-  limite: number = 10
+  limite?: number,
+  ubicacion: UbicacionHistorialEquipo = 'todos'
 ): Promise<PartidoFutbolEstadistico[]> {
   try {
+    const params: Record<string, string | number> = {};
+    if (limite && limite > 0) {
+      params.limite = limite;
+    }
+    params.ubicacion = ubicacion;
     const respuesta = await clienteAPI.get(`/api/futbol/equipos/${id}/partidos-detalle`, {
-      params: { limite },
+      params,
     });
     const datos = respuesta.data?.partidos || respuesta.data || [];
 

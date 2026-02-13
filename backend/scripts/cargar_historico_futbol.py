@@ -56,15 +56,15 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 LIGAS_SOFASCORE = {
-    'laliga': 8,
-    'premier': 17,
-    'bundesliga': 35,
-    'seriea': 23,
+    'laliga': 8,  #ya
+    'premier': 17, #ya
+    'bundesliga': 35, #ya
+    'seriea': 23, #ya
     'ligue1': 34,
     'champions': 7,
     'europa': 679,
     'conference': 17015,
-    'copa_rey': 329,
+    'copa_rey': 329, #ya
     'fa_cup': 29,
     'dfb_pokal': 44,
     'coppa_italia': 327,

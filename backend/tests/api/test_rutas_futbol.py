@@ -277,6 +277,24 @@ class TestPartidos:
 
         assert response.status_code == 200
 
+    def test_listar_partidos_hoy(self, client, mock_pool):
+        """Verifica que se listan partidos del dia sin filtrar por estado."""
+        cursor_mock = MagicMock()
+        cursor_mock.fetchall.return_value = []
+        conn_mock = MagicMock()
+        conn_mock.__enter__ = MagicMock(return_value=conn_mock)
+        conn_mock.__exit__ = MagicMock(return_value=False)
+        conn_mock.cursor.return_value.__enter__ = MagicMock(return_value=cursor_mock)
+        conn_mock.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        mock_pool.connection.return_value = conn_mock
+
+        response = client.get("/api/futbol/partidos/hoy")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["exito"] is True
+        assert "partidos" in data
+
     def test_detalle_partido_no_existente_404(self, client, mock_pool):
         """Verifica 404 para partido inexistente."""
         cursor_mock = MagicMock()

@@ -20,6 +20,7 @@ export {
 
 // Partidos
 export {
+  obtenerPartidosHoy,
   obtenerPartidosProximos,
   obtenerPartidosRecientes,
   obtenerPartido,

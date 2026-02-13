@@ -9,6 +9,10 @@ import { Calendar, Clock, Target, CornerUpRight, Crosshair, ArrowRight } from 'l
 import { clsx } from 'clsx';
 import { PartidoFutbolResumen, EstadoPartido } from '../../tipos/futbol';
 import { Tarjeta, Boton } from '../atomos';
+import {
+  formatearFechaPartidoBogota,
+  formatearHoraPartidoBogota,
+} from '../../utilidades';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -37,8 +41,7 @@ interface PropsTarjetaPartidoFutbol {
  * Formatea fecha del partido
  */
 function formatearFecha(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleDateString('es-ES', {
+  return formatearFechaPartidoBogota(fechaISO, {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
@@ -49,11 +52,7 @@ function formatearFecha(fechaISO: string): string {
  * Formatea hora del partido
  */
 function formatearHora(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatearHoraPartidoBogota(fechaISO);
 }
 
 /**

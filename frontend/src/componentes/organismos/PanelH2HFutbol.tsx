@@ -12,7 +12,7 @@ interface PropsPanelH2HFutbol {
   onCambiarLimite: (limite: number) => void;
 }
 
-const opcionesLimite = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
+const opcionesLimite = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
 function formatearFecha(fechaISO: string): string {
   const fecha = new Date(fechaISO);
@@ -49,7 +49,7 @@ export function PanelH2HFutbol({
           >
             {opcionesLimite.map((opcion) => (
               <option key={opcion} value={opcion}>
-                {opcion}
+                {opcion === 0 ? 'Todos' : opcion}
               </option>
             ))}
           </select>

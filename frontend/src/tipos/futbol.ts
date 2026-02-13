@@ -116,6 +116,8 @@ export interface FiltrosPartidos {
   limite?: number;
 }
 
+export type UbicacionHistorialEquipo = 'todos' | 'local' | 'visitante';
+
 /**
  * Partido detalle (para análisis)
  */

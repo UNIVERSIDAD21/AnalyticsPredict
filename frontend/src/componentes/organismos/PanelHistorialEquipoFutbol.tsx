@@ -1,10 +1,11 @@
 /**
- * PanelHistorialEquipoFutbol.tsx — Historial individual de un equipo con estadísticas clave.
+ * PanelHistorialEquipoFutbol.tsx - Historial individual de un equipo con estadisticas clave.
  */
 
+import { useEffect, useMemo, useState } from 'react';
 import { Shield } from 'lucide-react';
 import { Tarjeta } from '../atomos';
-import type { PartidoFutbolEstadistico } from '../../tipos/futbol';
+import type { PartidoFutbolEstadistico, UbicacionHistorialEquipo } from '../../tipos/futbol';
 
 interface PropsPanelHistorialEquipoFutbol {
   equipoId: string;
@@ -12,9 +13,13 @@ interface PropsPanelHistorialEquipoFutbol {
   partidos: PartidoFutbolEstadistico[];
   limite: number;
   onCambiarLimite: (limite: number) => void;
+  ubicacion: UbicacionHistorialEquipo;
+  onCambiarUbicacion: (ubicacion: UbicacionHistorialEquipo) => void;
 }
 
-const opcionesLimite = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100];
+const opcionesLimite = [0, 10, 20, 30, 40, 50, 75, 100, 150, 200, 300, 500];
+const FILAS_INICIALES = 120;
+const BLOQUE_FILAS = 120;
 
 function formatearFecha(fechaISO: string): string {
   const fecha = new Date(fechaISO);
@@ -53,10 +58,32 @@ export function PanelHistorialEquipoFutbol({
   partidos,
   limite,
   onCambiarLimite,
+  ubicacion,
+  onCambiarUbicacion,
 }: PropsPanelHistorialEquipoFutbol) {
-  const goles = partidos.map((partido) => obtenerValoresEquipo(partido, equipoId).golesFavor);
-  const corners = partidos.map((partido) => obtenerValoresEquipo(partido, equipoId).cornersFavor);
-  const disparos = partidos.map((partido) => obtenerValoresEquipo(partido, equipoId).disparosFavor);
+  const [filasRenderizadas, setFilasRenderizadas] = useState(FILAS_INICIALES);
+
+  const filas = useMemo(
+    () =>
+      partidos.map((partido) => ({
+        partido,
+        valores: obtenerValoresEquipo(partido, equipoId),
+      })),
+    [partidos, equipoId]
+  );
+
+  useEffect(() => {
+    setFilasRenderizadas(FILAS_INICIALES);
+  }, [equipoId, limite, ubicacion, partidos.length]);
+
+  const filasVisibles = useMemo(
+    () => filas.slice(0, filasRenderizadas),
+    [filas, filasRenderizadas]
+  );
+
+  const goles = useMemo(() => filas.map((fila) => fila.valores.golesFavor), [filas]);
+  const corners = useMemo(() => filas.map((fila) => fila.valores.cornersFavor), [filas]);
+  const disparos = useMemo(() => filas.map((fila) => fila.valores.disparosFavor), [filas]);
 
   return (
     <Tarjeta className="space-y-4">
@@ -67,21 +94,36 @@ export function PanelHistorialEquipoFutbol({
             {equipoNombre}
           </h3>
         </div>
-        <label className="text-xs text-texto-secundario flex items-center gap-2">
-          Últimos
-          <select
-            className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-2 py-1 text-xs text-texto-principal"
-            value={limite}
-            onChange={(event) => onCambiarLimite(Number(event.target.value))}
-          >
-            {opcionesLimite.map((opcion) => (
-              <option key={opcion} value={opcion}>
-                {opcion}
-              </option>
-            ))}
-          </select>
-          partidos
-        </label>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-texto-secundario">
+          <label className="flex items-center gap-2">
+            Muestra
+            <select
+              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-2 py-1 text-xs text-texto-principal"
+              value={limite}
+              onChange={(event) => onCambiarLimite(Number(event.target.value))}
+            >
+              {opcionesLimite.map((opcion) => (
+                <option key={opcion} value={opcion}>
+                  {opcion === 0 ? 'Todos' : opcion}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2">
+            Condicion
+            <select
+              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-2 py-1 text-xs text-texto-principal"
+              value={ubicacion}
+              onChange={(event) =>
+                onCambiarUbicacion(event.target.value as UbicacionHistorialEquipo)
+              }
+            >
+              <option value="todos">Todos</option>
+              <option value="local">Casa</option>
+              <option value="visitante">Visitante</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
@@ -101,7 +143,7 @@ export function PanelHistorialEquipoFutbol({
 
       {partidos.length === 0 ? (
         <div className="text-sm text-texto-secundario">
-          No hay historial reciente con estadísticas disponibles.
+          No hay historial reciente con estadisticas disponibles.
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -110,7 +152,7 @@ export function PanelHistorialEquipoFutbol({
               <tr className="border-b border-neon-cyan/20 text-xs uppercase tracking-wider text-texto-terciario">
                 <th className="text-left py-2 px-2">Fecha</th>
                 <th className="text-left py-2 px-2">Rival</th>
-                <th className="text-left py-2 px-2">Condición</th>
+                <th className="text-left py-2 px-2">Condicion</th>
                 <th className="text-center py-2 px-2">Goles</th>
                 <th className="text-center py-2 px-2">Corners</th>
                 <th className="text-center py-2 px-2">Disparos</th>
@@ -118,8 +160,7 @@ export function PanelHistorialEquipoFutbol({
               </tr>
             </thead>
             <tbody>
-              {partidos.map((partido) => {
-                const valores = obtenerValoresEquipo(partido, equipoId);
+              {filasVisibles.map(({ partido, valores }) => {
                 return (
                   <tr
                     key={partido.id}
@@ -147,6 +188,24 @@ export function PanelHistorialEquipoFutbol({
               })}
             </tbody>
           </table>
+          {filas.length > filasVisibles.length && (
+            <div className="flex items-center justify-between pt-3">
+              <p className="text-xs text-texto-terciario">
+                Mostrando {filasVisibles.length} de {filas.length} partidos
+              </p>
+              <button
+                type="button"
+                className="px-3 py-1.5 text-xs rounded border border-neon-cyan/30 text-neon-cyan hover:bg-neon-cyan/10 transition-colors"
+                onClick={() =>
+                  setFilasRenderizadas((actual) =>
+                    Math.min(actual + BLOQUE_FILAS, filas.length)
+                  )
+                }
+              >
+                Cargar mas
+              </button>
+            </div>
+          )}
         </div>
       )}
     </Tarjeta>

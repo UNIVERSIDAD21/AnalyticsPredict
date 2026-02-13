@@ -6,7 +6,7 @@ rutas_partidos_futbol.py — Endpoints para gestión de partidos de fútbol.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional, List
 from uuid import UUID
 
@@ -249,6 +249,81 @@ async def listar_partidos_recientes(
 
 
 @router.get(
+    "/hoy",
+    response_model=ListaPartidosResponse,
+    summary="Partidos de hoy",
+    description="Lista todos los partidos del dia actual, incluyendo programados, en curso y finalizados.",
+)
+async def listar_partidos_hoy(
+    fecha: Optional[date] = Query(None, description="Fecha objetivo YYYY-MM-DD (por defecto, hoy servidor)"),
+    competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
+    equipo_id: Optional[UUID] = Query(None, description="Filtrar por equipo"),
+) -> ListaPartidosResponse:
+    """Lista todos los partidos de hoy sin restringir por estado."""
+    pool = obtener_pool()
+
+    query = """
+        SELECT
+            pf.id,
+            c.nombre as competicion,
+            pf.fecha_partido,
+            el.nombre as equipo_local,
+            ev.nombre as equipo_visitante,
+            pf.estado,
+            pf.jornada,
+            pf.local_goles_total as goles_local,
+            pf.visitante_goles_total as goles_visitante
+        FROM partidos_futbol pf
+        JOIN competiciones_futbol c ON pf.competicion_id = c.id
+        JOIN equipos_futbol el ON pf.equipo_local_id = el.id
+        JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
+        WHERE DATE(pf.fecha_partido) = %s
+    """
+    fecha_objetivo = fecha or datetime.now().date()
+    params: list[str] = [fecha_objetivo.isoformat()]
+
+    if competicion_id:
+        query += " AND pf.competicion_id = %s"
+        params.append(str(competicion_id))
+
+    if equipo_id:
+        query += " AND (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)"
+        params.extend([str(equipo_id), str(equipo_id)])
+
+    query += " ORDER BY pf.fecha_partido ASC"
+
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(query, params)
+                filas = cursor.fetchall()
+
+                partidos = [
+                    PartidoResumen(
+                        id=fila["id"],
+                        competicion=fila["competicion"],
+                        fecha_partido=fila["fecha_partido"],
+                        equipo_local=fila["equipo_local"],
+                        equipo_visitante=fila["equipo_visitante"],
+                        estado=fila["estado"],
+                        jornada=fila["jornada"],
+                        goles_local=fila["goles_local"],
+                        goles_visitante=fila["goles_visitante"],
+                    )
+                    for fila in filas
+                ]
+
+                return ListaPartidosResponse(
+                    exito=True,
+                    total=len(partidos),
+                    partidos=partidos,
+                )
+    except Exception as e:
+        logger.error(f"Error listando partidos de hoy: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get(
     "/h2h",
     response_model=List[PartidoEstadistico],
     summary="Historial head-to-head",
@@ -258,7 +333,7 @@ async def listar_partidos_recientes(
 async def obtener_h2h(
     equipo_local_id: UUID = Query(..., description="ID del equipo local"),
     equipo_visitante_id: UUID = Query(..., description="ID del equipo visitante"),
-    limite: int = Query(10, ge=1, le=50, description="Número de partidos"),
+    limite: Optional[int] = Query(None, ge=1, le=50, description="Número de partidos"),
 ) -> List[PartidoEstadistico]:
     """Obtiene historial H2H entre dos equipos."""
     pool = obtener_pool()
@@ -292,15 +367,16 @@ async def obtener_h2h(
             OR (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
           )
         ORDER BY pf.fecha_partido DESC
-        LIMIT %s
     """
     params = [
         str(equipo_local_id),
         str(equipo_visitante_id),
         str(equipo_visitante_id),
         str(equipo_local_id),
-        limite,
     ]
+    if limite is not None:
+        query += " LIMIT %s"
+        params.append(limite)
 
     try:
         with pool.connection() as conn:

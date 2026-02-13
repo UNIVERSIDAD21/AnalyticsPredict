@@ -3,4 +3,5 @@
  */
 
 export * from './formateadores';
+export * from './fechasFutbol';
 export * from './validadores';

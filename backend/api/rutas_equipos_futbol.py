@@ -346,10 +346,14 @@ async def obtener_estadisticas_equipo(
 )
 async def obtener_partidos_equipo(
     equipo_id: UUID,
-    limite: int = Query(10, ge=1, le=100, description="Número de partidos"),
+    limite: Optional[int] = Query(None, ge=1, description="Numero de partidos (omitido = todos)"),
     tipo: Literal["proximos", "pasados", "todos"] = Query(
         "todos",
         description="Tipo de partidos a obtener"
+    ),
+    ubicacion: Literal["todos", "local", "visitante"] = Query(
+        "todos",
+        description="Filtra por condicion del equipo (todos/local/visitante)",
     ),
 ) -> List[PartidoResumen]:
     """Obtiene historial de partidos de un equipo."""
@@ -373,14 +377,25 @@ async def obtener_partidos_equipo(
     params = [str(equipo_id), str(equipo_id)]
 
     if tipo == "proximos":
-        query += " AND pf.estado = 'PROGRAMADO' ORDER BY pf.fecha_partido ASC"
+        query += " AND pf.estado = 'PROGRAMADO'"
     elif tipo == "pasados":
-        query += " AND pf.estado = 'FINALIZADO' ORDER BY pf.fecha_partido DESC"
+        query += " AND pf.estado = 'FINALIZADO'"
+
+    if ubicacion == "local":
+        query += " AND pf.equipo_local_id = %s"
+        params.append(str(equipo_id))
+    elif ubicacion == "visitante":
+        query += " AND pf.equipo_visitante_id = %s"
+        params.append(str(equipo_id))
+
+    if tipo == "proximos":
+        query += " ORDER BY pf.fecha_partido ASC"
     else:
         query += " ORDER BY pf.fecha_partido DESC"
 
-    query += " LIMIT %s"
-    params.append(limite)
+    if limite is not None:
+        query += " LIMIT %s"
+        params.append(limite)
 
     try:
         with pool.connection() as conn:
@@ -425,7 +440,11 @@ async def obtener_partidos_equipo(
 )
 async def obtener_partidos_equipo_detalle(
     equipo_id: UUID,
-    limite: int = Query(10, ge=1, le=100, description="Número de partidos"),
+    limite: Optional[int] = Query(None, ge=1, description="Numero de partidos (omitido = todos)"),
+    ubicacion: Literal["todos", "local", "visitante"] = Query(
+        "todos",
+        description="Filtra por condicion del equipo (todos/local/visitante)",
+    ),
 ) -> List[PartidoEstadistico]:
     """Obtiene historial detallado de partidos de un equipo."""
     pool = obtener_pool()
@@ -455,10 +474,20 @@ async def obtener_partidos_equipo_detalle(
         JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
         WHERE pf.estado = 'FINALIZADO'
           AND (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
-        ORDER BY pf.fecha_partido DESC
-        LIMIT %s
     """
-    params = [str(equipo_id), str(equipo_id), limite]
+    params = [str(equipo_id), str(equipo_id)]
+    if ubicacion == "local":
+        query += " AND pf.equipo_local_id = %s"
+        params.append(str(equipo_id))
+    elif ubicacion == "visitante":
+        query += " AND pf.equipo_visitante_id = %s"
+        params.append(str(equipo_id))
+
+    query += " ORDER BY pf.fecha_partido DESC"
+
+    if limite is not None:
+        query += " LIMIT %s"
+        params.append(limite)
 
     try:
         with pool.connection() as conn:

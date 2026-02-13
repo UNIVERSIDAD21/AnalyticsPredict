@@ -12,6 +12,11 @@ import { useMemo, useState } from 'react';
 import { Calendar, Filter, Trophy, Search, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { PartidoFutbolResumen } from '../../tipos/futbol';
+import {
+  formatearFechaPartidoBogota,
+  obtenerFechaISOBogota,
+  obtenerHoyISOBogota,
+} from '../../utilidades';
 import { TarjetaPartidoFutbol } from '../moleculas/TarjetaPartidoFutbol';
 import { Tarjeta } from '../atomos';
 
@@ -44,17 +49,16 @@ interface PartidosAgrupados {
  * Formatea una fecha ISO a formato legible
  */
 function formatearFechaGrupo(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  const hoy = new Date();
+  const hoy = new Date(`${obtenerHoyISOBogota()}T00:00:00-05:00`);
   const manana = new Date(hoy);
   manana.setDate(manana.getDate() + 1);
   const ayer = new Date(hoy);
   ayer.setDate(ayer.getDate() - 1);
 
-  const fechaSolo = fecha.toISOString().split('T')[0];
-  const hoySolo = hoy.toISOString().split('T')[0];
-  const mananaSolo = manana.toISOString().split('T')[0];
-  const ayerSolo = ayer.toISOString().split('T')[0];
+  const fechaSolo = fechaISO;
+  const hoySolo = obtenerHoyISOBogota();
+  const mananaSolo = `${manana.getFullYear()}-${String(manana.getMonth() + 1).padStart(2, '0')}-${String(manana.getDate()).padStart(2, '0')}`;
+  const ayerSolo = `${ayer.getFullYear()}-${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
 
   if (fechaSolo === hoySolo) {
     return 'Hoy';
@@ -64,7 +68,7 @@ function formatearFechaGrupo(fechaISO: string): string {
     return 'Ayer';
   }
 
-  return fecha.toLocaleDateString('es-ES', {
+  return formatearFechaPartidoBogota(`${fechaISO}T00:00:00Z`, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -78,7 +82,7 @@ function agruparPorFecha(partidos: PartidoFutbolResumen[]): PartidosAgrupados[] 
   const grupos: Record<string, PartidoFutbolResumen[]> = {};
 
   partidos.forEach((partido) => {
-    const fecha = partido.fechaPartido.split('T')[0];
+    const fecha = obtenerFechaISOBogota(partido.fechaPartido);
     if (!grupos[fecha]) {
       grupos[fecha] = [];
     }

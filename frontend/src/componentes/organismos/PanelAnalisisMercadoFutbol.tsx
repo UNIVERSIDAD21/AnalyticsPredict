@@ -281,17 +281,31 @@ export function PanelAnalisisMercadoFutbol({
 
   const probOverCombinada = useMemo(() => {
     if (!resumenes) return null;
-    const probabilidades = [
-      resumenes.h2h.total > 0 ? resumenes.h2h.over / resumenes.h2h.total : null,
-      resumenes.local.total > 0 ? resumenes.local.over / resumenes.local.total : null,
-      resumenes.visitante.total > 0
-        ? resumenes.visitante.over / resumenes.visitante.total
-        : null,
-    ].filter((valor): valor is number => valor !== null);
+    const probabilidades: Array<number | null> = [];
+    if (alcance === 'TOTAL') {
+      probabilidades.push(
+        resumenes.h2h.total > 0 ? resumenes.h2h.over / resumenes.h2h.total : null,
+        resumenes.local.total > 0 ? resumenes.local.over / resumenes.local.total : null,
+        resumenes.visitante.total > 0
+          ? resumenes.visitante.over / resumenes.visitante.total
+          : null
+      );
+    } else if (alcance === 'LOCAL') {
+      probabilidades.push(
+        resumenes.local.total > 0 ? resumenes.local.over / resumenes.local.total : null
+      );
+    } else {
+      probabilidades.push(
+        resumenes.visitante.total > 0
+          ? resumenes.visitante.over / resumenes.visitante.total
+          : null
+      );
+    }
 
-    if (probabilidades.length === 0) return null;
-    return probabilidades.reduce((acc, value) => acc + value, 0) / probabilidades.length;
-  }, [resumenes]);
+    const disponibles = probabilidades.filter((valor): valor is number => valor !== null);
+    if (disponibles.length === 0) return null;
+    return disponibles.reduce((acc, value) => acc + value, 0) / disponibles.length;
+  }, [alcance, resumenes]);
 
   const probLado = useMemo(() => {
     if (probOverCombinada === null) return null;
@@ -316,6 +330,22 @@ export function PanelAnalisisMercadoFutbol({
       confianza: determinarConfianza(probFinal),
     };
   }, [alcance, cuotaNumerica, lado, lineaNumerica, mercado, probLado, segmento, tipoDisparo]);
+
+  const tituloProbabilidad = useMemo(() => {
+    if (!lineaNumerica) return 'Probabilidad';
+    if (alcance === 'TOTAL') {
+      return `Probabilidad combinada (${lado} ${lineaNumerica})`;
+    }
+    const etiqueta = alcance === 'LOCAL' ? equipoLocalNombre : equipoVisitanteNombre;
+    return `Probabilidad ${etiqueta} (${lado} ${lineaNumerica})`;
+  }, [alcance, equipoLocalNombre, equipoVisitanteNombre, lado, lineaNumerica]);
+
+  const mensajeEdge = useMemo(() => {
+    if (alcance === 'TOTAL') {
+      return 'El edge compara la probabilidad combinada con la probabilidad implicita de la cuota seleccionada.';
+    }
+    return 'El edge compara la probabilidad del equipo seleccionado con la probabilidad implicita de la cuota.';
+  }, [alcance]);
 
   return (
     <Tarjeta className="space-y-6">
@@ -476,7 +506,7 @@ export function PanelAnalisisMercadoFutbol({
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-neon-magenta" />
               <p className="text-sm text-texto-principal font-semibold">
-                Probabilidad combinada ({lado} {lineaNumerica})
+                {tituloProbabilidad}
               </p>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
@@ -502,10 +532,7 @@ export function PanelAnalisisMercadoFutbol({
                 </p>
               </div>
             </div>
-            <p className="text-xs text-texto-terciario">
-              El edge compara la probabilidad combinada con la probabilidad implícita de la
-              cuota seleccionada.
-            </p>
+            <p className="text-xs text-texto-terciario">{mensajeEdge}</p>
           </div>
 
           {onGuardarApuesta && (
