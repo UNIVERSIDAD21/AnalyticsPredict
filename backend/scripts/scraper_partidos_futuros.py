@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 scraper_partidos_futuros.py — Sincroniza partidos próximos (sin resultado) desde ESPN.
@@ -108,7 +108,7 @@ def obtener_equipo_id(cursor: psycopg.Cursor, nombre: str, abbr: str) -> Optiona
 def obtener_temporada_activa(cursor: psycopg.Cursor) -> Optional[Dict[str, Any]]:
     cursor.execute(
         """
-        SELECT id, nombre FROM temporadas
+        SELECT id, nombre FROM temporadas_baloncesto
         WHERE activa = true
         LIMIT 1
         """
@@ -132,7 +132,7 @@ def upsert_partido_futuro(
     try:
         cursor.execute(
             """
-            INSERT INTO partidos (
+            INSERT INTO partidos_baloncesto (
                 temporada_id, fecha_partido, tipo_partido, espn_game_id,
                 equipo_local_id, equipo_visitante_id,
                 local_q1, local_q2, local_q3, local_q4, local_ot, local_total,

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """calculador_descanso.py — Cálculo de descanso y back-to-back."""
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def calcular_descanso(
                     p.equipo_visitante_id,
                     p.local_total,
                     p.visitante_total
-                FROM partidos p
+                FROM partidos_baloncesto p
                 WHERE p.tipo_partido = 'REG'
                   AND (p.equipo_local_id = %s OR p.equipo_visitante_id = %s)
                   AND p.fecha_partido < %s
@@ -60,3 +60,4 @@ def calcular_descanso(
         ultimo_partido=ultimo_partido,
         distancia_viaje_km=None,
     )
+

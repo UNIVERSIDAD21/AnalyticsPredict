@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 rutas_analisis.py — Endpoints de análisis ACTUALIZADO.
 
@@ -239,7 +239,7 @@ def _buscar_partido_por_equipos_fecha(
                         p.equipo_visitante_id,
                         p.fecha_partido,
                         p.tipo_partido
-                    FROM partidos p
+                    FROM partidos_baloncesto p
                     JOIN equipos el ON p.equipo_local_id = el.id
                     JOIN equipos ev ON p.equipo_visitante_id = ev.id
                     WHERE
@@ -521,3 +521,4 @@ async def analizar_en_vivo(
         peso_en_vivo=peticion.peso_en_vivo,
         usuario_id=usuario_id,
     )
+

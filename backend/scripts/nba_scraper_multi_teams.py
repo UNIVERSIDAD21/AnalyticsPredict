@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 nba_scraper_multi_teams.py — Script CORREGIDO para poblar el sistema NBA
@@ -291,7 +291,7 @@ def obtener_temporadas_bd(conexion, temporadas_csv: List) -> Dict:
 
             # Buscar temporada existente por anio_inicio y anio_fin o por nombre
             cursor.execute(
-                "SELECT id FROM temporadas WHERE (anio_inicio = %s AND anio_fin = %s) OR nombre = %s",
+                "SELECT id FROM temporadas_baloncesto WHERE (anio_inicio = %s AND anio_fin = %s) OR nombre = %s",
                 (anio_inicio, anio_fin, nombre)
             )
             row = cursor.fetchone()
@@ -305,7 +305,7 @@ def obtener_temporadas_bd(conexion, temporadas_csv: List) -> Dict:
             activa = True if (max_temp is None or temp_int == max_temp) else False
             cursor.execute(
                 """
-                INSERT INTO temporadas (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
+                INSERT INTO temporadas_baloncesto (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
@@ -598,7 +598,7 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
                 
                 cursor.execute(
                     """
-                    INSERT INTO partidos (
+                    INSERT INTO partidos_baloncesto (
                         temporada_id, fecha_partido, tipo_partido, espn_game_id,
                         equipo_local_id, equipo_visitante_id,
                         local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
@@ -646,7 +646,7 @@ def poblar_partidos(conexion, csv_paths: List[Path]) -> int:
         conexion.commit()
     
     with conexion.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM partidos")
+        cursor.execute("SELECT COUNT(*) FROM partidos_baloncesto")
         total_bd = cursor.fetchone()[0]
     
     print()

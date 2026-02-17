@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 poblar_estadisticas_equipos.py — Calcula y guarda estadísticas de equipos en PostgreSQL.
@@ -260,7 +260,7 @@ def main() -> int:
         for temp in temporadas:
             nombre_temp = f"{temp-1}-{temp}"
             cursor.execute(
-                "SELECT id FROM temporadas WHERE nombre = %s",
+                "SELECT id FROM temporadas_baloncesto WHERE nombre = %s",
                 [nombre_temp]
             )
             resultado = cursor.fetchone()
@@ -271,7 +271,7 @@ def main() -> int:
                 # Crear temporada
                 cursor.execute(
                     """
-                    INSERT INTO temporadas (nombre, anio_inicio, anio_fin, activa)
+                    INSERT INTO temporadas_baloncesto (nombre, anio_inicio, anio_fin, activa)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,

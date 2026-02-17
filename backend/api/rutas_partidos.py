@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 rutas_partidos.py — Endpoints para consultar partidos.
 
@@ -162,10 +162,10 @@ def _consultar_partidos(
             p.visitante_q3,
             p.visitante_q4,
             p.visitante_ot
-        FROM partidos p
+        FROM partidos_baloncesto p
         JOIN equipos el ON p.equipo_local_id = el.id
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
-        JOIN temporadas t ON p.temporada_id = t.id
+        JOIN temporadas_baloncesto t ON p.temporada_id = t.id
         WHERE {where_clause}
         ORDER BY
             p.fecha_partido ASC,
@@ -366,10 +366,10 @@ async def buscar_partido(
             t.nombre AS temporada_nombre,
             p.local_total,
             p.visitante_total
-        FROM partidos p
+        FROM partidos_baloncesto p
         JOIN equipos el ON p.equipo_local_id = el.id
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
-        JOIN temporadas t ON p.temporada_id = t.id
+        JOIN temporadas_baloncesto t ON p.temporada_id = t.id
         WHERE
             LOWER(el.nombre) LIKE LOWER(%s)
             AND LOWER(ev.nombre) LIKE LOWER(%s)
@@ -477,10 +477,10 @@ async def obtener_partido(partido_id: str):
             p.visitante_q4,
             p.visitante_ot,
             p.visitante_total
-        FROM partidos p
+        FROM partidos_baloncesto p
         JOIN equipos el ON p.equipo_local_id = el.id
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
-        JOIN temporadas t ON p.temporada_id = t.id
+        JOIN temporadas_baloncesto t ON p.temporada_id = t.id
         WHERE p.id = %s
     """
 
@@ -538,3 +538,4 @@ async def obtener_partido(partido_id: str):
             "partido": None,
             "mensaje": f"Error: {str(e)}",
         }
+

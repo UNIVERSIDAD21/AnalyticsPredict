@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 rutas_predicciones.py — Endpoints de historial de predicciones.
 """
@@ -139,7 +139,7 @@ async def obtener_historial_predicciones(
             COUNT(*) FILTER (WHERE pr.outcome_binario = false) AS perdidas,
             COUNT(*) FILTER (WHERE pr.outcome_binario IS NULL AND pr.resuelto = true) AS push
         FROM predicciones_registradas pr
-        JOIN partidos p ON pr.partido_id = p.id
+        JOIN partidos_baloncesto p ON pr.partido_id = p.id
         {where_sql}
     """
 
@@ -161,7 +161,7 @@ async def obtener_historial_predicciones(
             pr.resuelto,
             pr.outcome_binario
         FROM predicciones_registradas pr
-        JOIN partidos p ON pr.partido_id = p.id
+        JOIN partidos_baloncesto p ON pr.partido_id = p.id
         JOIN equipos el ON p.equipo_local_id = el.id
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
         {where_sql}
@@ -242,3 +242,4 @@ async def obtener_historial_predicciones(
         ),
         predicciones=predicciones,
     )
+

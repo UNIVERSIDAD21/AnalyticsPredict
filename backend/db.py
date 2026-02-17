@@ -46,6 +46,7 @@ def obtener_pool() -> ConnectionPool:
             max_size=5,
             max_idle=300,
             max_lifetime=1800,
+            check=ConnectionPool.check_connection,
             open=True  # Abrir inmediatamente al crear
         )
     return _pool

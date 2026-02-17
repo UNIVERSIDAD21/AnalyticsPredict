@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 entrenador_bd.py — Entrenador de modelo Ridge desde PostgreSQL.
 
@@ -267,7 +267,7 @@ class EntrenadorBD:
                 ev.nombre as equipo_visitante,
                 p.local_q1, p.local_q2, p.local_q3, p.local_q4,
                 p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4
-            FROM partidos p
+            FROM partidos_baloncesto p
             JOIN equipos el ON p.equipo_local_id = el.id
             JOIN equipos ev ON p.equipo_visitante_id = ev.id
             WHERE 
@@ -346,7 +346,7 @@ class EntrenadorBD:
     ) -> List[str]:
         query = """
             SELECT DISTINCT p.temporada_id
-            FROM partidos p
+            FROM partidos_baloncesto p
             WHERE p.fecha_partido < %s
         """
         parametros: List[object] = [cutoff_fecha]
@@ -581,7 +581,7 @@ class EntrenadorBD:
     def _obtener_conteo_partidos(self) -> int:
         """Obtiene el conteo actual de partidos válidos en la BD."""
         query = """
-            SELECT COUNT(*) FROM partidos 
+            SELECT COUNT(*) FROM partidos_baloncesto 
             WHERE local_q1 IS NOT NULL 
             AND local_q2 IS NOT NULL 
             AND local_q3 IS NOT NULL 
@@ -802,3 +802,4 @@ class EntrenadorBD:
     def ultima_fecha_entrenamiento(self) -> Optional[datetime]:
         """Retorna la fecha del último entrenamiento."""
         return self._ultima_fecha_entrenamiento
+

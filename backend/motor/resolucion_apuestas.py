@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 resolucion_apuestas.py — Resolvedor de outcomes para apuestas de bitacora.
 
@@ -261,7 +261,7 @@ def resolver_apuestas(
             p.visitante_q4,
             p.visitante_total
         FROM apuestas a
-        LEFT JOIN partidos p ON a.partido_id::uuid = p.id
+        LEFT JOIN partidos_baloncesto p ON a.partido_id::uuid = p.id
         WHERE {where_clause}
         ORDER BY a.fecha_partido ASC NULLS LAST
         LIMIT %s
@@ -562,3 +562,4 @@ def obtener_apuestas_pendientes_por_mercado(
     except Exception:
         logger.exception("Error obteniendo apuestas pendientes por mercado")
         return {}
+

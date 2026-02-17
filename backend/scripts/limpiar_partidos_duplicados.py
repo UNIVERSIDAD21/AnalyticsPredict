@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 limpiar_partidos_duplicados.py — Elimina partidos duplicados de la BD.
@@ -70,7 +70,7 @@ def main() -> int:
                         END,
                         id DESC
                 ) AS rn
-            FROM partidos
+            FROM partidos_baloncesto
         )
         SELECT id, fecha_partido, equipo_local_id, equipo_visitante_id, local_total
         FROM duplicados
@@ -101,7 +101,7 @@ def main() -> int:
             if args.execute:
                 ids_eliminar = [duplicado["id"] for duplicado in duplicados]
                 cursor.execute(
-                    "DELETE FROM partidos WHERE id = ANY(%s)",
+                    "DELETE FROM partidos_baloncesto WHERE id = ANY(%s)",
                     [ids_eliminar],
                 )
                 conexion.commit()
@@ -115,3 +115,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

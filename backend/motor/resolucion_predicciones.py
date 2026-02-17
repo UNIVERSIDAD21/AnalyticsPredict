@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 resolucion_predicciones.py — Resolvedor de outcomes para predicciones registradas.
 
@@ -241,7 +241,7 @@ def resolver_predicciones(
             p.visitante_q4,
             p.visitante_total
         FROM predicciones_registradas pr
-        LEFT JOIN partidos p ON pr.partido_id = p.id
+        LEFT JOIN partidos_baloncesto p ON pr.partido_id = p.id
         WHERE {where_clause}
         ORDER BY pr.fecha_partido ASC
         LIMIT %s
@@ -485,3 +485,4 @@ def obtener_predicciones_pendientes_por_mercado(pool=None) -> Dict[str, int]:
     except Exception:
         logger.exception("Error obteniendo predicciones pendientes por mercado")
         return {}
+

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 scraper_equipos_recientes.py — Sincroniza e imprime los partidos terminados de los últimos N días para 1 equipo o TODOS.
@@ -236,7 +236,7 @@ def asegurar_temporadas(conexion, seasons: List[int]) -> Dict[int, str]:
             nombre = f"{anio_inicio}-{anio_fin}"
 
             cur.execute(
-                "SELECT id FROM temporadas WHERE (anio_inicio = %s AND anio_fin = %s) OR nombre = %s",
+                "SELECT id FROM temporadas_baloncesto WHERE (anio_inicio = %s AND anio_fin = %s) OR nombre = %s",
                 (anio_inicio, anio_fin, nombre),
             )
             row = cur.fetchone()
@@ -250,7 +250,7 @@ def asegurar_temporadas(conexion, seasons: List[int]) -> Dict[int, str]:
 
             cur.execute(
                 """
-                INSERT INTO temporadas (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
+                INSERT INTO temporadas_baloncesto (nombre, anio_inicio, anio_fin, fecha_inicio, fecha_fin, activa)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
@@ -366,7 +366,7 @@ def upsert_partido_con_fecha(
     with conexion.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO partidos (
+            INSERT INTO partidos_baloncesto (
                 temporada_id, fecha_partido, tipo_partido, espn_game_id,
                 equipo_local_id, equipo_visitante_id,
                 local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
@@ -475,7 +475,7 @@ def consultar_partidos_bd(conexion, equipo_id: str, fecha_min: date, limite: int
                 p.visitante_total,
                 p.hubo_overtime,
                 p.espn_game_id
-            FROM partidos p
+            FROM partidos_baloncesto p
             JOIN equipos el ON el.id = p.equipo_local_id
             JOIN equipos ev ON ev.id = p.equipo_visitante_id
             WHERE p.fecha_partido >= %s
@@ -790,7 +790,7 @@ def main() -> int:
                 cur.execute(
                     """
                     SELECT COUNT(*)
-                    FROM partidos p
+                    FROM partidos_baloncesto p
                     WHERE p.fecha_partido >= %s
                     """,
                     (fecha_min,)
@@ -814,7 +814,7 @@ def main() -> int:
                             p.visitante_total,
                             p.hubo_overtime,
                             p.espn_game_id
-                        FROM partidos p
+                        FROM partidos_baloncesto p
                         JOIN equipos el ON el.id = p.equipo_local_id
                         JOIN equipos ev ON ev.id = p.equipo_visitante_id
                         WHERE p.fecha_partido >= %s
@@ -857,3 +857,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

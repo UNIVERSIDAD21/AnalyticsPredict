@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """calculador_h2h.py — Cálculos de enfrentamientos directos."""
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def calcular_h2h(
                     p.visitante_total,
                     p.ganador_id,
                     p.diferencia_puntos
-                FROM partidos p
+                FROM partidos_baloncesto p
                 WHERE p.tipo_partido = 'REG'
                   AND p.local_total IS NOT NULL
                   AND p.visitante_total IS NOT NULL
@@ -101,3 +101,4 @@ def calcular_h2h(
         ultimo_enfrentamiento=ultimo,
         partidos=partidos,
     )
+

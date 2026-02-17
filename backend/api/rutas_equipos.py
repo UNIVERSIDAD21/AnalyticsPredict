@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """rutas_equipos.py — Endpoint de equipos con tiebreakers correctos de la NBA."""
 
 from __future__ import annotations
@@ -106,15 +106,15 @@ async def listar_temporadas_por_equipos(
                 """
                 WITH equipos_temporada AS (
                     SELECT p.temporada_id, p.equipo_local_id AS equipo_id
-                    FROM partidos p
+                    FROM partidos_baloncesto p
                     WHERE p.local_q1 IS NOT NULL
                     UNION
                     SELECT p.temporada_id, p.equipo_visitante_id AS equipo_id
-                    FROM partidos p
+                    FROM partidos_baloncesto p
                     WHERE p.local_q1 IS NOT NULL
                 )
                 SELECT t.id, t.nombre
-                FROM temporadas t
+                FROM temporadas_baloncesto t
                 JOIN equipos_temporada et ON et.temporada_id = t.id
                 WHERE et.equipo_id = ANY(%s)
                 GROUP BY t.id, t.nombre
@@ -188,8 +188,8 @@ def obtener_temporadas_disponibles() -> list:
             cursor.execute(
                 """
                 SELECT DISTINCT t.id, t.nombre
-                FROM temporadas t
-                JOIN partidos p ON p.temporada_id = t.id
+                FROM temporadas_baloncesto t
+                JOIN partidos_baloncesto p ON p.temporada_id = t.id
                 WHERE p.local_q1 IS NOT NULL
                 ORDER BY t.nombre DESC
                 """
@@ -212,7 +212,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
             if not temporada_filtro:
                 cursor.execute(
                     """
-                    SELECT id FROM temporadas
+                    SELECT id FROM temporadas_baloncesto
                     ORDER BY nombre DESC
                     LIMIT 1
                     """
@@ -276,7 +276,7 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
                         p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_ot, p.visitante_total,
                         p.fecha_partido,
                         p.ganador_id
-                    FROM partidos p
+                    FROM partidos_baloncesto p
                     WHERE {where_sql}
                     ORDER BY p.fecha_partido DESC
                     """,
@@ -658,10 +658,10 @@ async def listar_historial_equipo(
                         WHEN p.equipo_local_id = %s THEN 'LOCAL'
                         ELSE 'VISITANTE'
                     END as ubicacion_equipo
-                FROM partidos p
+                FROM partidos_baloncesto p
                 JOIN equipos el ON p.equipo_local_id = el.id
                 JOIN equipos ev ON p.equipo_visitante_id = ev.id
-                LEFT JOIN temporadas t ON p.temporada_id = t.id
+                LEFT JOIN temporadas_baloncesto t ON p.temporada_id = t.id
                 WHERE {where_sql}
                 ORDER BY p.fecha_partido {orden_sql}
                 {limite_sql}
@@ -673,8 +673,8 @@ async def listar_historial_equipo(
             cursor.execute(
                 """
                 SELECT DISTINCT t.id, t.nombre
-                FROM temporadas t
-                JOIN partidos p ON p.temporada_id = t.id
+                FROM temporadas_baloncesto t
+                JOIN partidos_baloncesto p ON p.temporada_id = t.id
                 WHERE (p.equipo_local_id = %s OR p.equipo_visitante_id = %s)
                 ORDER BY t.nombre DESC
                 """,
@@ -753,3 +753,4 @@ async def listar_historial_equipo(
             ]
         },
     )
+

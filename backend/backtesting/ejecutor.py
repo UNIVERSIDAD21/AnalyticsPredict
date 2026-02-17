@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 ejecutor.py — Orquestador end-to-end de backtesting walk-forward.
 """
@@ -259,7 +259,7 @@ def _obtener_partidos_backtest(config: ConfiguracionBacktest) -> list[dict[str, 
             p.equipo_visitante_id,
             el.nombre AS equipo_local,
             ev.nombre AS equipo_visitante
-        FROM partidos p
+        FROM partidos_baloncesto p
         JOIN equipos el ON p.equipo_local_id = el.id
         JOIN equipos ev ON p.equipo_visitante_id = ev.id
         WHERE p.fecha_partido >= %s
@@ -368,3 +368,4 @@ def _resolver_mercados(config: ConfiguracionBacktest) -> list[str]:
     if not config.incluir_completo:
         mercados = [mercado for mercado in mercados if mercado != Mercado.COMPLETO.value]
     return mercados
+

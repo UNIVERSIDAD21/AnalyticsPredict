@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 resolucion_combinadas.py — Resolución automática de combinadas.
 
@@ -157,7 +157,7 @@ def resolver_combinadas(
             p.fecha_partido
         FROM selecciones_combinada sc
         JOIN apuestas_combinadas ac ON ac.id = sc.combinada_id
-        LEFT JOIN partidos p ON p.id = sc.partido_id
+        LEFT JOIN partidos_baloncesto p ON p.id = sc.partido_id
         WHERE sc.resultado = 'PENDIENTE'
           AND ac.resultado = 'PENDIENTE'
     """
@@ -241,3 +241,4 @@ def resolver_combinadas(
                     resumen.detalles_errores.append(str(exc))
 
     return resumen.to_dict()
+

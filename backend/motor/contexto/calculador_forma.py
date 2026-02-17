@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """calculador_forma.py — Cálculo de forma reciente por equipo."""
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def calcular_forma_reciente(
                     p.local_total,
                     p.visitante_total,
                     p.ganador_id
-                FROM partidos p
+                FROM partidos_baloncesto p
                 WHERE p.tipo_partido = 'REG'
                   AND (p.equipo_local_id = %s OR p.equipo_visitante_id = %s)
                   AND p.local_total IS NOT NULL
@@ -109,3 +109,4 @@ def calcular_forma_reciente(
         diferencia_vs_temporada=round(diferencia, 2),
         tendencia=tendencia,
     )
+
