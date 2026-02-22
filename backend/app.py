@@ -10,7 +10,9 @@ CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
 
 from contextlib import asynccontextmanager
 from datetime import datetime
-import os
+from uuid import uuid4
+import logging
+import traceback
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,6 +50,24 @@ from motor_autoentrenamiento import (
 
 # Variable global para el gestor
 _gestor_modelo = None
+logger = logging.getLogger(__name__)
+
+
+def _respuesta_error(request: Request, status_code: int, codigo: str, mensaje: str, detalle=None):
+    """Formato estándar de error para toda la API."""
+    trace_id = getattr(request.state, "trace_id", None)
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "ok": False,
+            "error": {
+                "code": codigo,
+                "message": mensaje,
+                "detail": detalle,
+                "trace_id": trace_id,
+            },
+        },
+    )
 
 
 @asynccontextmanager
@@ -158,6 +178,16 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def middleware_trace_id(request: Request, call_next):
+    """Asigna un trace_id por request y lo retorna en headers."""
+    trace_id = str(uuid4())
+    request.state.trace_id = trace_id
+    response = await call_next(request)
+    response.headers["X-Trace-Id"] = trace_id
+    return response
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # MANEJADORES DE ERRORES
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -165,70 +195,56 @@ app.add_middleware(
 @app.exception_handler(ErrorEquipoNoEncontrado)
 async def manejador_equipo_no_encontrado(request: Request, exc: ErrorEquipoNoEncontrado):
     """Maneja errores cuando un equipo no existe en el modelo."""
-    return JSONResponse(
+    detalle = {
+        "equipo": exc.equipo,
+        "sugerencia": "Usa GET /api/equipos para ver la lista de equipos válidos.",
+    }
+    return _respuesta_error(
+        request,
         status_code=400,
-        content={
-            "exito": False,
-            "error": {
-                "tipo": "EQUIPO_NO_ENCONTRADO",
-                "mensaje": str(exc),
-                "equipo": exc.equipo,
-            },
-            "sugerencia": "Usa GET /api/equipos para ver la lista de equipos válidos.",
-        },
+        codigo="EQUIPO_NO_ENCONTRADO",
+        mensaje=str(exc),
+        detalle=detalle,
     )
 
 
 @app.exception_handler(ErrorValidacion)
 async def manejador_error_validacion(request: Request, exc: ErrorValidacion):
     """Maneja errores de validación de datos de entrada."""
-    return JSONResponse(
+    detalle = {"campo": exc.campo if hasattr(exc, "campo") else None}
+    return _respuesta_error(
+        request,
         status_code=422,
-        content={
-            "exito": False,
-            "error": {
-                "tipo": "ERROR_VALIDACION",
-                "mensaje": str(exc),
-                "campo": exc.campo if hasattr(exc, "campo") else None,
-            },
-        },
+        codigo="ERROR_VALIDACION",
+        mensaje=str(exc),
+        detalle=detalle,
     )
 
 
 @app.exception_handler(ErrorAnalisis)
 async def manejador_error_analisis(request: Request, exc: ErrorAnalisis):
     """Maneja errores durante el análisis."""
-    return JSONResponse(
+    return _respuesta_error(
+        request,
         status_code=500,
-        content={
-            "exito": False,
-            "error": {
-                "tipo": "ERROR_ANALISIS",
-                "mensaje": str(exc),
-            },
-        },
+        codigo="ERROR_ANALISIS",
+        mensaje=str(exc),
     )
 
 
 @app.exception_handler(Exception)
 async def manejador_error_general(request: Request, exc: Exception):
     """Maneja cualquier error no capturado."""
-    if CONFIGURACION.debug:
-        import traceback
-        detalle = traceback.format_exc()
-    else:
-        detalle = "Contacta al administrador si el problema persiste."
+    trace_id = getattr(request.state, "trace_id", "sin-trace")
+    logger.exception("Error interno no controlado trace_id=%s", trace_id)
 
-    return JSONResponse(
+    detalle = traceback.format_exc() if CONFIGURACION.debug else None
+    return _respuesta_error(
+        request,
         status_code=500,
-        content={
-            "exito": False,
-            "error": {
-                "tipo": "ERROR_INTERNO",
-                "mensaje": "Ocurrió un error inesperado en el servidor.",
-                "detalle": detalle if CONFIGURACION.debug else None,
-            },
-        },
+        codigo="ERROR_INTERNO",
+        mensaje="Ocurrió un error inesperado en el servidor.",
+        detalle=detalle,
     )
 
 

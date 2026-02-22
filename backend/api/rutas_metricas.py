@@ -127,6 +127,19 @@ class RespuestaCurvaCalibracion(BaseModel):
     timestamp_calculo: str
 
 
+class ResumenDeporte(BaseModel):
+    deporte: str
+    total_predicciones: int
+    pendientes_resolver: int
+    ultima_prediccion: Optional[str] = None
+
+
+class ResumenDeportesResponse(BaseModel):
+    exito: bool
+    resumen: List[ResumenDeporte]
+    timestamp: str
+
+
 @router.get(
     "/calibracion",
     response_model=RespuestaMetricasCalibracion,
@@ -324,6 +337,65 @@ async def obtener_metricas_calibracion(
         alertas_activas=alertas_filtradas,
         timestamp_calculo=timestamp,
     )
+
+
+@router.get(
+    "/resumen-deportes",
+    response_model=ResumenDeportesResponse,
+    summary="Resumen operativo por deporte",
+    description="Retorna conteos rápidos de predicciones en baloncesto y fútbol.",
+)
+async def obtener_resumen_deportes() -> ResumenDeportesResponse:
+    pool = obtener_pool()
+
+    query_nba = """
+        SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE resuelto = false OR resuelto IS NULL) AS pendientes,
+            MAX(COALESCE(creado_en, timestamp_generacion)) AS ultima
+        FROM predicciones_registradas
+    """
+
+    query_futbol = """
+        SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE resuelto = false OR resuelto IS NULL) AS pendientes,
+            MAX(COALESCE(creado_en, timestamp_generacion)) AS ultima
+        FROM predicciones_futbol
+    """
+
+    try:
+        with pool.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query_nba)
+                nba = cursor.fetchone()
+
+                cursor.execute(query_futbol)
+                futbol = cursor.fetchone()
+
+        resumen = [
+            ResumenDeporte(
+                deporte="baloncesto",
+                total_predicciones=int(nba[0] or 0),
+                pendientes_resolver=int(nba[1] or 0),
+                ultima_prediccion=nba[2].isoformat() if nba[2] else None,
+            ),
+            ResumenDeporte(
+                deporte="futbol",
+                total_predicciones=int(futbol[0] or 0),
+                pendientes_resolver=int(futbol[1] or 0),
+                ultima_prediccion=futbol[2].isoformat() if futbol[2] else None,
+            ),
+        ]
+
+        return ResumenDeportesResponse(
+            exito=True,
+            resumen=resumen,
+            timestamp=datetime.now().isoformat(),
+        )
+    except Exception as exc:
+        logger.exception("Error obteniendo resumen de deportes")
+        raise HTTPException(status_code=500, detail=f"Error interno: {exc}")
 
 
 @router.get(
@@ -718,3 +790,1056 @@ def _guardar_cache(
     data: dict[str, object],
 ) -> None:
     cache[key] = (time.monotonic(), data)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# TABLERO PROFESIONAL DE SALUD DE PREDICCIÓN (MULTIDEPORTE)
+# ══════════════════════════════════════════════════════════════════════
+
+
+class MetricasDeporteAvanzadas(BaseModel):
+    deporte: str
+    n_total: int
+    n_resueltas: int
+    n_pendientes: int
+    accuracy: Optional[float] = None
+    brier: Optional[float] = None
+    brier_7d: Optional[float] = None
+    brier_prev_30d: Optional[float] = None
+    deriva_pct: Optional[float] = None
+    alerta_deriva: bool = False
+    ultima_prediccion: Optional[str] = None
+    ultima_resolucion: Optional[str] = None
+
+
+class ModeloSalud(BaseModel):
+    deporte: str
+    version_modelo: Optional[str] = None
+    fecha_entrenamiento: Optional[str] = None
+    partidos_entrenamiento: Optional[int] = None
+
+
+class TableroSaludResponse(BaseModel):
+    exito: bool
+    score_global: int
+    resumen_ejecutivo: str
+    deportes: List[MetricasDeporteAvanzadas]
+    modelos: List[ModeloSalud]
+    alertas: List[str]
+    timestamp: str
+
+
+def _score_salud(
+    *,
+    brier: Optional[float],
+    deriva_pct: Optional[float],
+    n_resueltas: int,
+    pendientes: int,
+) -> int:
+    score = 100
+
+    if brier is None:
+        score -= 15
+    elif brier > 0.30:
+        score -= 25
+    elif brier > 0.25:
+        score -= 15
+    elif brier > 0.20:
+        score -= 8
+
+    if deriva_pct is not None:
+        if deriva_pct > 25:
+            score -= 25
+        elif deriva_pct > 15:
+            score -= 15
+        elif deriva_pct > 8:
+            score -= 8
+
+    if n_resueltas < 100:
+        score -= 10
+    if pendientes > (n_resueltas * 2 + 500):
+        score -= 10
+
+    return max(0, min(100, score))
+
+
+@router.get(
+    "/tablero-salud",
+    response_model=TableroSaludResponse,
+    summary="Tablero profesional de salud de predicción",
+    description="Incluye accuracy, Brier por deporte, deriva reciente y estado de modelos.",
+)
+async def obtener_tablero_salud() -> TableroSaludResponse:
+    pool = obtener_pool()
+    alertas: List[str] = []
+
+    query_deporte = """
+        WITH base AS (
+            SELECT
+                %s::text AS deporte,
+                COUNT(*) AS n_total,
+                COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
+                COUNT(*) FILTER (WHERE outcome_binario IS NULL OR resuelto IS DISTINCT FROM true) AS n_pendientes,
+                AVG(CASE
+                    WHEN outcome_binario IS NULL THEN NULL
+                    WHEN (({prob_expr}) >= 0.5 AND outcome_binario = true)
+                      OR (({prob_expr}) < 0.5 AND outcome_binario = false) THEN 1.0
+                    ELSE 0.0
+                END) AS accuracy,
+                AVG(POWER(({prob_expr}) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
+                    FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+                MAX(COALESCE(timestamp_generacion, creado_en)) AS ultima_prediccion,
+                MAX(timestamp_resolucion) AS ultima_resolucion
+            FROM {tabla}
+            WHERE {prob_expr} IS NOT NULL
+        ),
+        rec7 AS (
+            SELECT AVG(POWER(({prob_expr}) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2)) AS brier_7d
+            FROM {tabla}
+            WHERE outcome_binario IS NOT NULL
+              AND {prob_expr} IS NOT NULL
+              AND COALESCE(timestamp_resolucion, timestamp_generacion, creado_en) >= (NOW() - INTERVAL '7 days')
+        ),
+        prev30 AS (
+            SELECT AVG(POWER(({prob_expr}) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2)) AS brier_prev_30d
+            FROM {tabla}
+            WHERE outcome_binario IS NOT NULL
+              AND {prob_expr} IS NOT NULL
+              AND COALESCE(timestamp_resolucion, timestamp_generacion, creado_en) >= (NOW() - INTERVAL '37 days')
+              AND COALESCE(timestamp_resolucion, timestamp_generacion, creado_en) <  (NOW() - INTERVAL '7 days')
+        )
+        SELECT
+            base.deporte,
+            base.n_total,
+            base.n_resueltas,
+            base.n_pendientes,
+            base.accuracy,
+            base.brier,
+            rec7.brier_7d,
+            prev30.brier_prev_30d,
+            base.ultima_prediccion,
+            base.ultima_resolucion
+        FROM base, rec7, prev30
+    """
+
+    query_nba = query_deporte.format(
+        tabla="predicciones_registradas",
+        prob_expr="COALESCE(p_calibrada, p_raw)",
+    )
+    query_fut = query_deporte.format(
+        tabla="predicciones_futbol",
+        prob_expr="COALESCE(prob_over_calibrada, prob_over)",
+    )
+
+    query_modelo_nba = """
+        SELECT version, fecha_entrenamiento, partidos_entrenamiento
+        FROM modelo_versiones
+        ORDER BY fecha_entrenamiento DESC NULLS LAST
+        LIMIT 1
+    """
+
+    query_modelo_fut = """
+        SELECT version, fecha_entrenamiento, partidos_entrenamiento
+        FROM modelo_versiones_futbol
+        ORDER BY creado_en DESC NULLS LAST
+        LIMIT 1
+    """
+
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query_nba, ["baloncesto"])
+            nba = cursor.fetchone()
+
+            cursor.execute(query_fut, ["futbol"])
+            fut = cursor.fetchone()
+
+            cursor.execute(query_modelo_nba)
+            modelo_nba = cursor.fetchone()
+
+            cursor.execute(query_modelo_fut)
+            modelo_fut = cursor.fetchone()
+
+    deportes: List[MetricasDeporteAvanzadas] = []
+    for fila in [nba, fut]:
+        deporte = fila[0]
+        brier_7d = float(fila[6]) if fila[6] is not None else None
+        brier_prev_30d = float(fila[7]) if fila[7] is not None else None
+        deriva_pct = None
+        if brier_7d is not None and brier_prev_30d not in (None, 0):
+            deriva_pct = ((brier_7d - brier_prev_30d) / brier_prev_30d) * 100.0
+
+        alerta_deriva = bool(deriva_pct is not None and deriva_pct > 15.0)
+        if alerta_deriva:
+            alertas.append(
+                f"Deriva detectada en {deporte}: Brier 7d empeoró {deriva_pct:.1f}% vs 30d previos."
+            )
+
+        deportes.append(
+            MetricasDeporteAvanzadas(
+                deporte=deporte,
+                n_total=int(fila[1] or 0),
+                n_resueltas=int(fila[2] or 0),
+                n_pendientes=int(fila[3] or 0),
+                accuracy=float(fila[4]) if fila[4] is not None else None,
+                brier=float(fila[5]) if fila[5] is not None else None,
+                brier_7d=brier_7d,
+                brier_prev_30d=brier_prev_30d,
+                deriva_pct=deriva_pct,
+                alerta_deriva=alerta_deriva,
+                ultima_prediccion=fila[8].isoformat() if fila[8] else None,
+                ultima_resolucion=fila[9].isoformat() if fila[9] else None,
+            )
+        )
+
+    modelos = [
+        ModeloSalud(
+            deporte="baloncesto",
+            version_modelo=str(modelo_nba[0]) if modelo_nba else None,
+            fecha_entrenamiento=modelo_nba[1].isoformat() if modelo_nba and modelo_nba[1] else None,
+            partidos_entrenamiento=int(modelo_nba[2]) if modelo_nba and modelo_nba[2] is not None else None,
+        ),
+        ModeloSalud(
+            deporte="futbol",
+            version_modelo=str(modelo_fut[0]) if modelo_fut else None,
+            fecha_entrenamiento=modelo_fut[1].isoformat() if modelo_fut and modelo_fut[1] else None,
+            partidos_entrenamiento=int(modelo_fut[2]) if modelo_fut and modelo_fut[2] is not None else None,
+        ),
+    ]
+
+    for d in deportes:
+        if d.n_resueltas == 0 and d.n_total > 0:
+            alertas.append(
+                f"{d.deporte}: hay predicciones pero 0 resueltas; sin resolución no se puede medir accuracy/Brier."
+            )
+        if d.n_pendientes > 1000:
+            alertas.append(
+                f"{d.deporte}: backlog alto de pendientes ({d.n_pendientes}). Prioriza job de resolución." 
+            )
+
+    if not alertas:
+        alertas.append("Sin alertas críticas activas de deriva por ahora.")
+
+    scores = [
+        _score_salud(
+            brier=d.brier,
+            deriva_pct=d.deriva_pct,
+            n_resueltas=d.n_resueltas,
+            pendientes=d.n_pendientes,
+        )
+        for d in deportes
+    ]
+    score_global = int(sum(scores) / len(scores)) if scores else 0
+
+    if score_global >= 85:
+        resumen = "Sistema saludable. Prioridad: aumentar cobertura de resoluciones y mantener calibración."
+    elif score_global >= 70:
+        resumen = "Sistema estable con áreas de mejora. Recomendada recalibración incremental y monitoreo semanal."
+    else:
+        resumen = "Sistema en riesgo de calidad. Requiere intervención en calibración, resolución y control de deriva."
+
+    return TableroSaludResponse(
+        exito=True,
+        score_global=score_global,
+        resumen_ejecutivo=resumen,
+        deportes=deportes,
+        modelos=modelos,
+        alertas=alertas,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+class MetricaMercadoGlobal(BaseModel):
+    deporte: str
+    mercado: str
+    n_resueltas: int
+    accuracy: Optional[float] = None
+    brier: Optional[float] = None
+    precision_label: str = "insuficiente"
+
+
+class CalidadMercadosResponse(BaseModel):
+    exito: bool
+    ranking: List[MetricaMercadoGlobal]
+    recomendaciones: List[str]
+    timestamp: str
+
+
+@router.get(
+    "/calidad-mercados",
+    response_model=CalidadMercadosResponse,
+    summary="Ranking profesional de calidad por mercado",
+    description="Consolida accuracy/Brier por mercado en baloncesto y fútbol para priorizar mejoras.",
+)
+async def obtener_calidad_mercados(
+    min_muestras: int = Query(30, ge=10, le=500),
+    limite: int = Query(20, ge=5, le=100),
+) -> CalidadMercadosResponse:
+    pool = obtener_pool()
+
+    query_nba = """
+        SELECT
+            'baloncesto'::text AS deporte,
+            mercado::text AS mercado,
+            COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
+            AVG(CASE
+                WHEN outcome_binario IS NULL THEN NULL
+                WHEN ((COALESCE(p_calibrada, p_raw)) >= 0.5 AND outcome_binario = true)
+                  OR ((COALESCE(p_calibrada, p_raw)) < 0.5 AND outcome_binario = false) THEN 1.0
+                ELSE 0.0
+            END) AS accuracy,
+            AVG(POWER(COALESCE(p_calibrada, p_raw) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
+                FILTER (WHERE outcome_binario IS NOT NULL) AS brier
+        FROM predicciones_registradas
+        GROUP BY mercado
+    """
+
+    query_fut = """
+        SELECT
+            'futbol'::text AS deporte,
+            mercado::text AS mercado,
+            COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
+            AVG(CASE
+                WHEN outcome_binario IS NULL THEN NULL
+                WHEN ((COALESCE(prob_over_calibrada, prob_over)) >= 0.5 AND outcome_binario = true)
+                  OR ((COALESCE(prob_over_calibrada, prob_over)) < 0.5 AND outcome_binario = false) THEN 1.0
+                ELSE 0.0
+            END) AS accuracy,
+            AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
+                FILTER (WHERE outcome_binario IS NOT NULL) AS brier
+        FROM predicciones_futbol
+        GROUP BY mercado
+    """
+
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query_nba)
+            rows_nba = cursor.fetchall()
+            cursor.execute(query_fut)
+            rows_fut = cursor.fetchall()
+
+    filas = rows_nba + rows_fut
+
+    ranking: List[MetricaMercadoGlobal] = []
+    for deporte, mercado, n_resueltas, accuracy, brier in filas:
+        n = int(n_resueltas or 0)
+        if n < min_muestras:
+            continue
+
+        if n >= 300:
+            precision = "alta"
+        elif n >= 100:
+            precision = "media"
+        else:
+            precision = "baja"
+
+        ranking.append(
+            MetricaMercadoGlobal(
+                deporte=str(deporte),
+                mercado=str(mercado),
+                n_resueltas=n,
+                accuracy=float(accuracy) if accuracy is not None else None,
+                brier=float(brier) if brier is not None else None,
+                precision_label=precision,
+            )
+        )
+
+    ranking.sort(
+        key=lambda x: (
+            999 if x.brier is None else x.brier,
+            -(x.n_resueltas or 0),
+        )
+    )
+    ranking = ranking[:limite]
+
+    recomendaciones: List[str] = []
+    peores = [r for r in ranking if r.brier is not None and r.brier > 0.26][:5]
+    for r in peores:
+        recomendaciones.append(
+            f"{r.deporte}/{r.mercado}: Brier {r.brier:.3f} (n={r.n_resueltas}). Priorizar recalibración específica."
+        )
+
+    if not recomendaciones:
+        recomendaciones.append("No hay mercados críticos con muestra suficiente por encima del umbral de Brier.")
+
+    return CalidadMercadosResponse(
+        exito=True,
+        ranking=ranking,
+        recomendaciones=recomendaciones,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+class AccionSugerida(BaseModel):
+    prioridad: str
+    semaforo: str
+    accion: str
+    motivo: str
+    impacto_score: float = 0.0
+
+
+class RecomendacionesAccionResponse(BaseModel):
+    exito: bool
+    score_global: int
+    semaforo_global: str
+    acciones: List[AccionSugerida]
+    timestamp: str
+
+
+def _semaforo_por_score(score: int) -> str:
+    if score >= 85:
+        return "verde"
+    if score >= 70:
+        return "amarillo"
+    return "rojo"
+
+
+@router.get(
+    "/recomendaciones-accion",
+    response_model=RecomendacionesAccionResponse,
+    summary="Recomendaciones automáticas de acción",
+    description="Genera plan de acción priorizado según salud global y calidad por mercado.",
+)
+async def obtener_recomendaciones_accion(
+    min_muestras: int = Query(30, ge=10, le=500),
+) -> RecomendacionesAccionResponse:
+    tablero = await obtener_tablero_salud()
+    calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=30)
+
+    acciones: List[AccionSugerida] = []
+
+    semaforo_global = _semaforo_por_score(tablero.score_global)
+
+    # Acciones por deporte
+    for d in tablero.deportes:
+        if d.n_resueltas == 0 and d.n_total > 0:
+            acciones.append(
+                AccionSugerida(
+                    prioridad="P1",
+                    semaforo="rojo",
+                    accion=f"Ejecutar ciclo de resolución para {d.deporte}",
+                    motivo="No hay predicciones resueltas; no se puede medir calidad real.",
+                    impacto_score=float(d.n_total or 0),
+                )
+            )
+
+        if d.brier is not None and d.brier > 0.26:
+            acciones.append(
+                AccionSugerida(
+                    prioridad="P1",
+                    semaforo="rojo",
+                    accion=f"Recalibrar modelo de {d.deporte}",
+                    motivo=f"Brier alto ({d.brier:.3f}).",
+                    impacto_score=float((d.n_resueltas or 0) * (d.brier or 0)),
+                )
+            )
+        elif d.brier is not None and d.brier > 0.22:
+            acciones.append(
+                AccionSugerida(
+                    prioridad="P2",
+                    semaforo="amarillo",
+                    accion=f"Monitorear y ajustar calibración de {d.deporte}",
+                    motivo=f"Brier en zona de mejora ({d.brier:.3f}).",
+                    impacto_score=float((d.n_resueltas or 0) * (d.brier or 0) * 0.6),
+                )
+            )
+
+        if d.deriva_pct is not None and d.deriva_pct > 15:
+            acciones.append(
+                AccionSugerida(
+                    prioridad="P1",
+                    semaforo="rojo",
+                    accion=f"Activar recalibración de emergencia en {d.deporte}",
+                    motivo=f"Deriva de Brier +{d.deriva_pct:.1f}%.",
+                    impacto_score=float((d.n_resueltas or 0) * ((d.deriva_pct or 0) / 100.0)),
+                )
+            )
+
+    # Acciones por mercado crítico
+    criticos = [m for m in calidad.ranking if m.brier is not None and m.brier > 0.26]
+    for m in criticos[:5]:
+        acciones.append(
+            AccionSugerida(
+                prioridad="P1",
+                semaforo="rojo",
+                accion=f"Recalibrar mercado {m.deporte}/{m.mercado}",
+                motivo=f"Brier {m.brier:.3f} con n={m.n_resueltas}.",
+                impacto_score=float((m.n_resueltas or 0) * (m.brier or 0)),
+            )
+        )
+
+    if not acciones:
+        acciones.append(
+            AccionSugerida(
+                prioridad="P3",
+                semaforo="verde",
+                accion="Mantener operación y monitoreo semanal",
+                motivo="Sin señales críticas en score global ni mercados.",
+                impacto_score=0.0,
+            )
+        )
+
+    # Orden profesional: prioridad + severidad + impacto esperado
+    orden_prioridad = {"P1": 1, "P2": 2, "P3": 3}
+    orden_semaforo = {"rojo": 1, "amarillo": 2, "verde": 3}
+    acciones.sort(
+        key=lambda a: (
+            orden_prioridad[a.prioridad],
+            orden_semaforo[a.semaforo],
+            -(a.impacto_score or 0.0),
+        )
+    )
+
+    return RecomendacionesAccionResponse(
+        exito=True,
+        score_global=tablero.score_global,
+        semaforo_global=semaforo_global,
+        acciones=acciones,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+class DriftMercadoItem(BaseModel):
+    deporte: str
+    mercado: str
+    n_7d: int
+    n_prev_30d: int
+    brier_7d: Optional[float] = None
+    brier_prev_30d: Optional[float] = None
+    drift_pct: Optional[float] = None
+    severidad: str
+
+
+class DriftMercadosResponse(BaseModel):
+    exito: bool
+    items: List[DriftMercadoItem]
+    resumen: str
+    timestamp: str
+
+
+def _severidad_drift(drift_pct: Optional[float]) -> str:
+    if drift_pct is None:
+        return "sin_datos"
+    if drift_pct > 25:
+        return "critica"
+    if drift_pct > 15:
+        return "alta"
+    if drift_pct > 8:
+        return "media"
+    return "estable"
+
+
+@router.get(
+    "/drift-mercados",
+    response_model=DriftMercadosResponse,
+    summary="Drift de calidad por mercado",
+    description="Compara Brier de 7 días vs 30 días previos para detectar degradación por mercado.",
+)
+async def obtener_drift_mercados(
+    min_muestras: int = Query(20, ge=10, le=500),
+    limite: int = Query(50, ge=5, le=200),
+) -> DriftMercadosResponse:
+    pool = obtener_pool()
+
+    query_template = """
+        WITH base AS (
+            SELECT
+                '{deporte}'::text AS deporte,
+                {mercado_col}::text AS mercado,
+                COUNT(*) FILTER (
+                    WHERE {outcome_col} IS NOT NULL
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) >= (NOW() - INTERVAL '7 days')
+                ) AS n_7d,
+                COUNT(*) FILTER (
+                    WHERE {outcome_col} IS NOT NULL
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) >= (NOW() - INTERVAL '37 days')
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) <  (NOW() - INTERVAL '7 days')
+                ) AS n_prev_30d,
+                AVG(
+                    POWER({prob_expr} - CASE WHEN {outcome_col} THEN 1 ELSE 0 END, 2)
+                ) FILTER (
+                    WHERE {outcome_col} IS NOT NULL
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) >= (NOW() - INTERVAL '7 days')
+                ) AS brier_7d,
+                AVG(
+                    POWER({prob_expr} - CASE WHEN {outcome_col} THEN 1 ELSE 0 END, 2)
+                ) FILTER (
+                    WHERE {outcome_col} IS NOT NULL
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) >= (NOW() - INTERVAL '37 days')
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) <  (NOW() - INTERVAL '7 days')
+                ) AS brier_prev_30d
+            FROM {tabla}
+            WHERE {prob_expr} IS NOT NULL
+            GROUP BY {mercado_col}
+        )
+        SELECT * FROM base
+    """
+
+    query_nba = query_template.format(
+        deporte="baloncesto",
+        mercado_col="mercado",
+        outcome_col="outcome_binario",
+        ts_res_col="timestamp_resolucion",
+        ts_gen_col="timestamp_generacion",
+        ts_alt_col="creado_en",
+        prob_expr="COALESCE(p_calibrada, p_raw)",
+        tabla="predicciones_registradas",
+    )
+
+    query_fut = query_template.format(
+        deporte="futbol",
+        mercado_col="mercado",
+        outcome_col="outcome_binario",
+        ts_res_col="timestamp_resolucion",
+        ts_gen_col="timestamp_generacion",
+        ts_alt_col="creado_en",
+        prob_expr="COALESCE(prob_over_calibrada, prob_over)",
+        tabla="predicciones_futbol",
+    )
+
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query_nba)
+            rows_nba = cursor.fetchall()
+            cursor.execute(query_fut)
+            rows_fut = cursor.fetchall()
+
+    items: List[DriftMercadoItem] = []
+    for r in rows_nba + rows_fut:
+        deporte, mercado, n_7d, n_prev_30d, brier_7d, brier_prev_30d = r
+        n7 = int(n_7d or 0)
+        n30 = int(n_prev_30d or 0)
+        if n7 < min_muestras or n30 < min_muestras:
+            continue
+
+        b7 = float(brier_7d) if brier_7d is not None else None
+        b30 = float(brier_prev_30d) if brier_prev_30d is not None else None
+        drift_pct = None
+        if b7 is not None and b30 not in (None, 0):
+            drift_pct = ((b7 - b30) / b30) * 100.0
+
+        items.append(
+            DriftMercadoItem(
+                deporte=str(deporte),
+                mercado=str(mercado),
+                n_7d=n7,
+                n_prev_30d=n30,
+                brier_7d=b7,
+                brier_prev_30d=b30,
+                drift_pct=drift_pct,
+                severidad=_severidad_drift(drift_pct),
+            )
+        )
+
+    items.sort(
+        key=lambda x: (
+            999 if x.drift_pct is None else -x.drift_pct,
+            -(x.n_7d + x.n_prev_30d),
+        )
+    )
+    items = items[:limite]
+
+    criticas = sum(1 for i in items if i.severidad == "critica")
+    altas = sum(1 for i in items if i.severidad == "alta")
+    if criticas > 0:
+        resumen = f"Drift crítico detectado en {criticas} mercados."
+    elif altas > 0:
+        resumen = f"Drift alto detectado en {altas} mercados."
+    elif items:
+        resumen = "Sin drift crítico/alto con muestra suficiente."
+    else:
+        resumen = "Sin datos suficientes para evaluar drift por mercado."
+
+    return DriftMercadosResponse(
+        exito=True,
+        items=items,
+        resumen=resumen,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+class AlertaIngestionItem(BaseModel):
+    fuente: str
+    ultima_actualizacion: Optional[str] = None
+    horas_sin_actualizar: Optional[float] = None
+    stale: bool
+    severidad: str
+    detalle: str
+
+
+class AlertasIngestionResponse(BaseModel):
+    exito: bool
+    alertas: List[AlertaIngestionItem]
+    resumen: str
+    timestamp: str
+
+
+def _tabla_existe(cursor, tabla: str) -> bool:
+    cursor.execute("SELECT to_regclass(%s)", [f"public.{tabla}"])
+    return cursor.fetchone()[0] is not None
+
+
+def _columnas_tabla(cursor, tabla: str) -> set[str]:
+    cursor.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema='public' AND table_name=%s
+        """,
+        [tabla],
+    )
+    return {str(r[0]) for r in cursor.fetchall()}
+
+
+def _ultima_fecha_columna(cursor, tabla: str, columnas_candidatas: List[str]):
+    columnas = _columnas_tabla(cursor, tabla)
+    for c in columnas_candidatas:
+        if c in columnas:
+            try:
+                cursor.execute(f"SELECT MAX({c}) FROM {tabla}")
+                return cursor.fetchone()[0], c
+            except Exception:
+                continue
+    return None, None
+
+
+@router.get(
+    "/alertas-ingestion",
+    response_model=AlertasIngestionResponse,
+    summary="Alertas de ingestión stale",
+    description="Detecta fuentes sin actualización reciente para prevenir degradación silenciosa.",
+)
+async def obtener_alertas_ingestion(
+    max_horas_sin_actualizar: int = Query(24, ge=1, le=240),
+) -> AlertasIngestionResponse:
+    pool = obtener_pool()
+    now = datetime.now()
+    alertas: List[AlertaIngestionItem] = []
+
+    fuentes = [
+        ("ingestion_state_baloncesto", ["actualizado_en", "updated_at", "last_run_at", "creado_en"]),
+        ("ingestion_state_futbol", ["actualizado_en", "updated_at", "last_run_at", "creado_en"]),
+        ("predicciones_registradas", ["timestamp_generacion", "creado_en", "actualizado_en"]),
+        ("predicciones_futbol", ["timestamp_generacion", "creado_en", "actualizado_en"]),
+    ]
+
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            for tabla, candidatos in fuentes:
+                if not _tabla_existe(cursor, tabla):
+                    alertas.append(
+                        AlertaIngestionItem(
+                            fuente=tabla,
+                            stale=True,
+                            severidad="alta",
+                            detalle="Tabla no existe en esquema público.",
+                        )
+                    )
+                    continue
+
+                valor, col = _ultima_fecha_columna(cursor, tabla, candidatos)
+                if valor is None:
+                    alertas.append(
+                        AlertaIngestionItem(
+                            fuente=tabla,
+                            stale=True,
+                            severidad="media",
+                            detalle="No se encontró columna de timestamp utilizable.",
+                        )
+                    )
+                    continue
+
+                if hasattr(valor, "tzinfo") and valor.tzinfo is not None:
+                    valor_dt = valor.replace(tzinfo=None)
+                else:
+                    valor_dt = valor
+
+                horas = (now - valor_dt).total_seconds() / 3600.0
+                stale = horas > max_horas_sin_actualizar
+
+                if stale and horas > max_horas_sin_actualizar * 2:
+                    sev = "critica"
+                elif stale:
+                    sev = "alta"
+                elif horas > max_horas_sin_actualizar * 0.7:
+                    sev = "media"
+                else:
+                    sev = "baja"
+
+                alertas.append(
+                    AlertaIngestionItem(
+                        fuente=tabla,
+                        ultima_actualizacion=valor_dt.isoformat(),
+                        horas_sin_actualizar=round(horas, 2),
+                        stale=stale,
+                        severidad=sev,
+                        detalle=f"Referencia: {tabla}.{col}",
+                    )
+                )
+
+    criticas = sum(1 for a in alertas if a.severidad == "critica")
+    stale_count = sum(1 for a in alertas if a.stale)
+    if criticas > 0:
+        resumen = f"{criticas} fuentes en estado crítico de actualización."
+    elif stale_count > 0:
+        resumen = f"{stale_count} fuentes stale detectadas."
+    else:
+        resumen = "Sin fuentes stale según el umbral configurado."
+
+    return AlertasIngestionResponse(
+        exito=True,
+        alertas=alertas,
+        resumen=resumen,
+        timestamp=now.isoformat(),
+    )
+
+
+class MercadoPolicyItem(BaseModel):
+    deporte: str
+    mercado: str
+    estado: str  # verde|amarillo|rojo
+    bloqueado: bool
+    motivo: str
+    brier: Optional[float] = None
+    n_resueltas: int = 0
+
+
+class PoliticaMercadosResponse(BaseModel):
+    exito: bool
+    politica: str
+    mercados: List[MercadoPolicyItem]
+    resumen: dict
+    timestamp: str
+
+
+@router.get(
+    "/politica-mercados",
+    response_model=PoliticaMercadosResponse,
+    summary="Policy-as-code para habilitar/bloquear mercados",
+    description="Clasifica mercados en verde/amarillo/rojo y marca bloqueados según umbrales de riesgo.",
+)
+async def obtener_politica_mercados(
+    min_muestras: int = Query(30, ge=10, le=500),
+    bloquear_brier: float = Query(0.28, ge=0.18, le=0.40),
+    warning_brier: float = Query(0.24, ge=0.18, le=0.40),
+) -> PoliticaMercadosResponse:
+    calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=200)
+
+    mercados: List[MercadoPolicyItem] = []
+    for m in calidad.ranking:
+        brier = m.brier
+        if brier is None:
+            estado = "amarillo"
+            bloqueado = True
+            motivo = "Sin brier disponible con muestra suficiente."
+        elif brier >= bloquear_brier:
+            estado = "rojo"
+            bloqueado = True
+            motivo = f"Brier alto ({brier:.3f}) >= umbral bloqueo ({bloquear_brier:.3f})."
+        elif brier >= warning_brier:
+            estado = "amarillo"
+            bloqueado = False
+            motivo = f"Brier en zona de vigilancia ({brier:.3f})."
+        else:
+            estado = "verde"
+            bloqueado = False
+            motivo = "Mercado apto para operación estándar."
+
+        mercados.append(
+            MercadoPolicyItem(
+                deporte=m.deporte,
+                mercado=m.mercado,
+                estado=estado,
+                bloqueado=bloqueado,
+                motivo=motivo,
+                brier=brier,
+                n_resueltas=m.n_resueltas,
+            )
+        )
+
+    resumen = {
+        "total": len(mercados),
+        "rojos": sum(1 for x in mercados if x.estado == "rojo"),
+        "amarillos": sum(1 for x in mercados if x.estado == "amarillo"),
+        "verdes": sum(1 for x in mercados if x.estado == "verde"),
+        "bloqueados": sum(1 for x in mercados if x.bloqueado),
+    }
+
+    return PoliticaMercadosResponse(
+        exito=True,
+        politica=(
+            "Bloquear mercados con Brier >= bloquear_brier; "
+            "vigilar warning_brier <= Brier < bloquear_brier; operar normal por debajo."
+        ),
+        mercados=mercados,
+        resumen=resumen,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+class SugerenciaUmbral(BaseModel):
+    deporte: str
+    warning_brier_sugerido: float
+    bloqueo_brier_sugerido: float
+    muestra_base: int
+    razon: str
+
+
+class SugerenciasUmbralesResponse(BaseModel):
+    exito: bool
+    sugerencias: List[SugerenciaUmbral]
+    timestamp: str
+
+
+class ModoEstrictoResponse(BaseModel):
+    exito: bool
+    habilitar_recomendaciones: bool
+    semaforo_global: str
+    score_global: int
+    motivos_bloqueo: List[str]
+    timestamp: str
+
+
+class ResumenEjecutivoCompactoResponse(BaseModel):
+    exito: bool
+    go_no_go: str
+    score_global: int
+    semaforo_global: str
+    alertas_criticas: int
+    top_acciones: List[str]
+    timestamp: str
+
+
+@router.get(
+    "/sugerencias-umbrales",
+    response_model=SugerenciasUmbralesResponse,
+    summary="Sugerencias automáticas de umbrales por deporte",
+    description="Propone umbrales warning/bloqueo según desempeño histórico de mercados.",
+)
+async def obtener_sugerencias_umbrales(
+    min_muestras: int = Query(30, ge=10, le=500),
+) -> SugerenciasUmbralesResponse:
+    calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=500)
+
+    por_deporte: Dict[str, List[float]] = {}
+    muestras: Dict[str, int] = {}
+    for item in calidad.ranking:
+        if item.brier is None:
+            continue
+        por_deporte.setdefault(item.deporte, []).append(float(item.brier))
+        muestras[item.deporte] = muestras.get(item.deporte, 0) + int(item.n_resueltas or 0)
+
+    sugerencias: List[SugerenciaUmbral] = []
+    for deporte, briers in por_deporte.items():
+        if not briers:
+            continue
+        briers_sorted = sorted(briers)
+        p60 = briers_sorted[min(len(briers_sorted) - 1, int(len(briers_sorted) * 0.60))]
+        p80 = briers_sorted[min(len(briers_sorted) - 1, int(len(briers_sorted) * 0.80))]
+
+        warning = max(0.20, min(0.30, round(p60 + 0.01, 3)))
+        bloqueo = max(warning + 0.02, min(0.36, round(p80 + 0.015, 3)))
+
+        sugerencias.append(
+            SugerenciaUmbral(
+                deporte=deporte,
+                warning_brier_sugerido=warning,
+                bloqueo_brier_sugerido=bloqueo,
+                muestra_base=int(muestras.get(deporte, 0)),
+                razon=(
+                    "Basado en percentiles de Brier por mercado (P60 warning, P80 bloqueo) "
+                    "con límites de seguridad."
+                ),
+            )
+        )
+
+    if not sugerencias:
+        sugerencias.append(
+            SugerenciaUmbral(
+                deporte="global",
+                warning_brier_sugerido=0.24,
+                bloqueo_brier_sugerido=0.28,
+                muestra_base=0,
+                razon="Sin datos suficientes; usar umbrales conservadores por defecto.",
+            )
+        )
+
+    return SugerenciasUmbralesResponse(
+        exito=True,
+        sugerencias=sugerencias,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+@router.get(
+    "/modo-estricto",
+    response_model=ModoEstrictoResponse,
+    summary="Gate global de operación en modo producción estricto",
+    description="Determina si el sistema debe permitir recomendaciones según score, drift e ingestión.",
+)
+async def obtener_modo_estricto(
+    score_minimo: int = Query(75, ge=40, le=95),
+    max_fuentes_stale_criticas: int = Query(0, ge=0, le=10),
+) -> ModoEstrictoResponse:
+    tablero = await obtener_tablero_salud()
+    ingest = await obtener_alertas_ingestion(max_horas_sin_actualizar=24)
+
+    semaforo = _semaforo_por_score(tablero.score_global)
+    criticas_ingestion = sum(1 for a in ingest.alertas if a.severidad == "critica")
+
+    motivos: List[str] = []
+    if tablero.score_global < score_minimo:
+        motivos.append(
+            f"score_global {tablero.score_global} < score_minimo {score_minimo}"
+        )
+    if semaforo == "rojo":
+        motivos.append("semaforo global en rojo")
+    if criticas_ingestion > max_fuentes_stale_criticas:
+        motivos.append(
+            f"fuentes stale críticas {criticas_ingestion} > permitido {max_fuentes_stale_criticas}"
+        )
+
+    # Si hay deporte sin resueltas con volumen relevante, modo estricto bloquea
+    for d in tablero.deportes:
+        if d.n_total >= 100 and d.n_resueltas == 0:
+            motivos.append(
+                f"{d.deporte}: n_total={d.n_total} sin predicciones resueltas"
+            )
+
+    return ModoEstrictoResponse(
+        exito=True,
+        habilitar_recomendaciones=(len(motivos) == 0),
+        semaforo_global=semaforo,
+        score_global=tablero.score_global,
+        motivos_bloqueo=motivos,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
+@router.get(
+    "/resumen-ejecutivo-compacto",
+    response_model=ResumenEjecutivoCompactoResponse,
+    summary="Resumen ejecutivo compacto (30 segundos)",
+    description="Salida breve con GO/NO-GO, score, severidad y acciones top.",
+)
+async def obtener_resumen_ejecutivo_compacto(
+    min_muestras: int = Query(30, ge=10, le=500),
+) -> ResumenEjecutivoCompactoResponse:
+    tablero = await obtener_tablero_salud()
+    modo = await obtener_modo_estricto(
+        score_minimo=75,
+        max_fuentes_stale_criticas=0,
+    )
+    recomendaciones = await obtener_recomendaciones_accion(min_muestras=min_muestras)
+
+    alertas_criticas = sum(1 for a in tablero.alertas if "crít" in a.lower() or "crit" in a.lower())
+    top_acciones = [f"[{a.prioridad}/{a.semaforo}] {a.accion}" for a in recomendaciones.acciones[:5]]
+
+    return ResumenEjecutivoCompactoResponse(
+        exito=True,
+        go_no_go="GO" if modo.habilitar_recomendaciones else "NO-GO",
+        score_global=tablero.score_global,
+        semaforo_global=modo.semaforo_global,
+        alertas_criticas=alertas_criticas,
+        top_acciones=top_acciones,
+        timestamp=datetime.now().isoformat(),
+    )

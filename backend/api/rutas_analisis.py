@@ -212,6 +212,63 @@ def _colectar_advertencias_resultado(resultado) -> List[str]:
     return advertencias
 
 
+def _obtener_mercados_bloqueados_nba(
+    *,
+    min_muestras: int = 100,
+    umbral_brier: float = 0.28,
+) -> set[str]:
+    """Mercados NBA a bloquear automáticamente según calidad histórica."""
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT mercado
+                    FROM predicciones_registradas
+                    WHERE outcome_binario IS NOT NULL
+                      AND COALESCE(p_calibrada, p_raw) IS NOT NULL
+                    GROUP BY mercado
+                    HAVING COUNT(*) >= %s
+                       AND AVG(
+                            POWER(
+                              COALESCE(p_calibrada, p_raw)
+                              - CASE WHEN outcome_binario THEN 1 ELSE 0 END,
+                              2
+                            )
+                       ) >= %s
+                    """,
+                    [min_muestras, umbral_brier],
+                )
+                return {str(r["mercado"]).upper() for r in cursor.fetchall()}
+    except Exception:
+        logger.exception("No se pudo calcular mercados bloqueados NBA")
+        return set()
+
+
+def _modo_estricto_nba_activo(minimo_predicciones: int = 100) -> bool:
+    """Si existe volumen alto sin resueltas, deshabilita recomendaciones NBA."""
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                      COUNT(*) AS total,
+                      COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS resueltas
+                    FROM predicciones_registradas
+                    """
+                )
+                row = cursor.fetchone() or {"total": 0, "resueltas": 0}
+                total = int(row["total"] or 0)
+                resueltas = int(row["resueltas"] or 0)
+                return total >= minimo_predicciones and resueltas == 0
+    except Exception:
+        logger.exception("No se pudo evaluar modo estricto NBA")
+        return False
+
+
 def _buscar_partido_por_equipos_fecha(
     equipo_local: str,
     equipo_visitante: str,
@@ -411,6 +468,40 @@ def ejecutar_analisis(
     except Exception as exc:
         raise ErrorAnalisis("No se pudo completar el análisis.") from exc
 
+    # Enforce de política de calidad por mercado (NBA)
+    mercados_bloqueados_nba = _obtener_mercados_bloqueados_nba(
+        min_muestras=100,
+        umbral_brier=0.28,
+    )
+    modo_estricto_nba = _modo_estricto_nba_activo()
+    if resultado.candidatos and mercados_bloqueados_nba:
+        candidatos_filtrados = []
+        for c in resultado.candidatos:
+            mercado_c = getattr(c, "cuarto", None)
+            mercado_txt = str(getattr(mercado_c, "value", mercado_c)).upper()
+            if mercado_txt in mercados_bloqueados_nba:
+                continue
+            candidatos_filtrados.append(c)
+
+        if len(candidatos_filtrados) != len(resultado.candidatos):
+            logger.info(
+                "Policy gate NBA aplicado. bloqueados=%s candidatos_antes=%s candidatos_despues=%s",
+                sorted(mercados_bloqueados_nba),
+                len(resultado.candidatos),
+                len(candidatos_filtrados),
+            )
+            resultado.candidatos = candidatos_filtrados
+            # reset mejor apuesta para evitar recomendar un mercado bloqueado
+            resultado.mejor_apuesta = candidatos_filtrados[0] if candidatos_filtrados else None
+
+    # Gate global NBA (modo estricto)
+    if modo_estricto_nba:
+        resultado.candidatos = []
+        resultado.mejor_apuesta = None
+        logger.warning(
+            "Modo estricto NBA activo: recomendaciones deshabilitadas por falta de resueltas con volumen suficiente."
+        )
+
     contexto_registro = _extraer_contexto_registro(peticion)
     if contexto_registro and resultado.candidatos:
         modelo_version_id = getattr(modelo, "version", None)
@@ -469,6 +560,12 @@ def ejecutar_analisis(
             mejor["cuota_under"] = peticion.cuota_under
 
     advertencias_motor = _colectar_advertencias_resultado(resultado)
+    if mercados_bloqueados_nba:
+        advertencias_motor.append(
+            f"POLICY_GATE_NBA_MERCADOS_BLOQUEADOS:{','.join(sorted(mercados_bloqueados_nba))}"
+        )
+    if modo_estricto_nba:
+        advertencias_motor.append("MODO_ESTRICTO_NBA_ACTIVO")
     advertencias = list(dict.fromkeys(advertencias_entrada + advertencias_motor))
     return RespuestaAnalisis(
         exito=True,

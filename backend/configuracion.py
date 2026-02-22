@@ -15,6 +15,13 @@ from typing import List
 import os
 
 
+def _parsear_bool(valor: str, default: bool = False) -> bool:
+    """Parsea valores booleanos desde variables de entorno de forma segura."""
+    if valor is None:
+        return default
+    return str(valor).strip().lower() in {"1", "true", "yes", "on", "si", "sí"}
+
+
 @dataclass
 class Configuracion:
     """
@@ -31,7 +38,7 @@ class Configuracion:
     entorno: str = field(default_factory=lambda: os.getenv("ENTORNO", "desarrollo"))
     """Entorno de ejecución: 'desarrollo', 'pruebas', 'produccion'"""
 
-    debug: bool = field(default_factory=lambda: os.getenv("DEBUG", "true").lower() == "true")
+    debug: bool = field(default_factory=lambda: _parsear_bool(os.getenv("DEBUG"), default=False))
     """Modo debug: activa logs detallados y recarga automática"""
 
     # ══════════════════════════════════════════════════════════
@@ -87,6 +94,13 @@ class Configuracion:
     def __post_init__(self):
         """Inicialización posterior: configura valores que dependen del entorno."""
 
+        entornos_validos = {"desarrollo", "pruebas", "produccion"}
+        if self.entorno not in entornos_validos:
+            raise ValueError(
+                f"ENTORNO inválido: '{self.entorno}'. "
+                f"Valores permitidos: {', '.join(sorted(entornos_validos))}."
+            )
+
         # Configurar CORS según entorno
         if not self.origenes_cors:
             if self.entorno == "desarrollo":
@@ -102,6 +116,14 @@ class Configuracion:
                 self.origenes_cors = [o.strip() for o in origenes_env.split(",") if o.strip()]
             else:
                 self.origenes_cors = ["*"]  # Pruebas: permitir todo
+
+        if self.entorno == "produccion":
+            if self.debug:
+                raise ValueError("DEBUG=true no está permitido en producción.")
+            if not self.origenes_cors:
+                raise ValueError("ORIGENES_CORS es obligatorio en producción.")
+            if "*" in self.origenes_cors:
+                raise ValueError("ORIGENES_CORS no puede contener '*' en producción.")
 
     def __str__(self) -> str:
         """Representación legible de la configuración."""

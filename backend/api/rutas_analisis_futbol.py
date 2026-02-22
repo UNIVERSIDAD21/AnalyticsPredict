@@ -12,6 +12,7 @@ import logging
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
+from uuid import uuid4
 from uuid import UUID
 
 import numpy as np
@@ -250,7 +251,7 @@ def _resumen_metricas_equipo(
                 acumulados[metric_key].append(valor)
 
     return {
-        metric_key: _resumen_valores(valores)
+        metric_key: _resumen_valores(valores, incluir_std=True)
         for metric_key, valores in acumulados.items()
     }
 
@@ -914,14 +915,24 @@ def _generar_predicciones_mercado(
     """Genera predicciones para un mercado específico."""
     lineas_dict = {}
 
+    # Penalización conservadora de confianza cuando la varianza es alta
+    factor_conservador = 1.0
+    if std > 5.0:
+        factor_conservador = 0.85
+    elif std > 3.0:
+        factor_conservador = 0.92
+
     for linea in lineas:
         prob_over_raw = _calcular_probabilidad_over(media, std, linea)
+        prob_over_raw = 0.5 + (prob_over_raw - 0.5) * factor_conservador
+        prob_over_raw = float(max(0.02, min(0.98, prob_over_raw)))
         prob_under_raw = 1.0 - prob_over_raw
 
         # Aplicar calibración si está disponible
         if calibrador is not None:
             try:
                 prob_over_cal = float(calibrador.transform([[prob_over_raw]])[0])
+                prob_over_cal = float(max(0.02, min(0.98, prob_over_cal)))
                 prob_under_cal = 1.0 - prob_over_cal
             except Exception:
                 prob_over_cal = prob_over_raw
@@ -943,6 +954,199 @@ def _generar_predicciones_mercado(
         std=round(std, 2),
         lineas=lineas_dict,
     )
+
+
+def _obtener_resumen_seguro(
+    contenedor: Dict[str, Dict[str, Any]],
+    clave: str,
+) -> Dict[str, Any]:
+    return contenedor.get(clave, {}) if contenedor else {}
+
+
+def _valor_robusto(
+    *,
+    valor_ctx: Optional[float],
+    n_ctx: int,
+    valor_global: Optional[float],
+    n_global: int,
+    valor_liga: Optional[float],
+) -> float:
+    """Combina contexto local/visitante + global + liga con pesos por muestra."""
+    piezas: List[Tuple[float, float]] = []
+
+    if valor_ctx is not None and n_ctx > 0:
+        peso_ctx = min(0.65, 0.2 + (n_ctx / 40.0))
+        piezas.append((valor_ctx, peso_ctx))
+
+    if valor_global is not None and n_global > 0:
+        peso_global = min(0.45, 0.15 + (n_global / 120.0))
+        piezas.append((valor_global, peso_global))
+
+    if valor_liga is not None:
+        piezas.append((valor_liga, 0.25))
+
+    if not piezas:
+        return 0.0
+
+    suma_pesos = sum(p for _, p in piezas)
+    if suma_pesos <= 0:
+        return float(piezas[0][0])
+
+    return float(sum(v * p for v, p in piezas) / suma_pesos)
+
+
+def _std_robusta(
+    *,
+    std_ctx: Optional[float],
+    std_global: Optional[float],
+    default_std: float,
+) -> float:
+    base = std_ctx or std_global or default_std
+    return float(max(base, default_std * 0.55))
+
+
+def _media_reciente_metrica(
+    partidos: List[Dict[str, Any]],
+    equipo_id: str,
+    metric_key: str,
+    limite: int = 5,
+) -> Optional[float]:
+    """Calcula media reciente para capturar forma (últimos N partidos)."""
+    if not partidos:
+        return None
+    valores: List[float] = []
+    for partido in partidos[:limite]:
+        v = _extraer_valor_equipo(partido, equipo_id, metric_key)
+        if v is not None:
+            valores.append(v)
+    if not valores:
+        return None
+    return float(np.mean(valores))
+
+
+def _aplicar_ajuste_forma(
+    valor_base: float,
+    reciente: Optional[float],
+    referencia: Optional[float],
+    cap_pct: float = 0.12,
+) -> float:
+    """Ajuste de forma reciente con tope para evitar sobreajuste."""
+    if reciente is None or referencia in (None, 0):
+        return valor_base
+    delta_pct = (reciente - referencia) / referencia
+    delta_pct = max(-cap_pct, min(cap_pct, delta_pct))
+    return float(valor_base * (1.0 + delta_pct * 0.35))
+
+
+def _home_advantage_liga(
+    promedios_liga: Dict[str, Dict[str, Dict[str, Any]]],
+    metric_key: str,
+) -> float:
+    """Factor de ventaja local por mercado basado en liga (profesional, pero conservador)."""
+    local_avg = _obtener_resumen_seguro(promedios_liga.get("local", {}), metric_key).get("promedio")
+    vis_avg = _obtener_resumen_seguro(promedios_liga.get("visitante", {}), metric_key).get("promedio")
+    if local_avg in (None, 0) or vis_avg is None:
+        return 1.0
+    ratio = float(local_avg if vis_avg == 0 else (local_avg / vis_avg))
+    return max(0.95, min(1.08, ratio))
+
+
+def _obtener_estado_mercados_futbol(
+    cursor,
+    *,
+    min_muestras: int = 100,
+    warning_brier: float = 0.24,
+    bloquear_brier: float = 0.28,
+) -> Dict[str, str]:
+    """Retorna estado por mercado: verde|amarillo|rojo."""
+    try:
+        cursor.execute(
+            """
+            SELECT mercado::text,
+                   COUNT(*) AS n,
+                   AVG(
+                     POWER(
+                       COALESCE(prob_over_calibrada, prob_over)
+                       - CASE WHEN outcome_binario THEN 1 ELSE 0 END,
+                       2
+                     )
+                   ) AS brier
+            FROM predicciones_futbol
+            WHERE outcome_binario IS NOT NULL
+              AND COALESCE(prob_over_calibrada, prob_over) IS NOT NULL
+            GROUP BY mercado
+            HAVING COUNT(*) >= %s
+            """,
+            [min_muestras],
+        )
+        estado: Dict[str, str] = {}
+        for mercado, _n, brier in cursor.fetchall():
+            m = str(mercado).upper()
+            b = float(brier) if brier is not None else None
+            if b is None:
+                continue
+            if b >= bloquear_brier:
+                estado[m] = "rojo"
+            elif b >= warning_brier:
+                estado[m] = "amarillo"
+            else:
+                estado[m] = "verde"
+        return estado
+    except Exception:
+        logger.exception("No se pudo calcular estado de mercados fútbol")
+        return {}
+
+
+def _obtener_mercados_bloqueados_por_brier(
+    cursor,
+    *,
+    min_muestras: int = 100,
+    umbral_brier: float = 0.28,
+) -> set[str]:
+    """Mercados a bloquear automáticamente por baja calidad histórica."""
+    try:
+        cursor.execute(
+            """
+            SELECT mercado::text
+            FROM predicciones_futbol
+            WHERE outcome_binario IS NOT NULL
+              AND COALESCE(prob_over_calibrada, prob_over) IS NOT NULL
+            GROUP BY mercado
+            HAVING COUNT(*) >= %s
+               AND AVG(
+                    POWER(
+                      COALESCE(prob_over_calibrada, prob_over)
+                      - CASE WHEN outcome_binario THEN 1 ELSE 0 END,
+                      2
+                    )
+               ) >= %s
+            """,
+            [min_muestras, umbral_brier],
+        )
+        return {str(r[0]).upper() for r in cursor.fetchall()}
+    except Exception:
+        logger.exception("No se pudo calcular política de bloqueo por Brier")
+        return set()
+
+
+def _modo_estricto_futbol_activo(cursor, minimo_predicciones: int = 100) -> bool:
+    """Si hay volumen pero cero resueltas, bloquear recomendaciones."""
+    try:
+        cursor.execute(
+            """
+            SELECT
+              COUNT(*) AS total,
+              COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS resueltas
+            FROM predicciones_futbol
+            """
+        )
+        row = cursor.fetchone()
+        total = int(row[0] or 0)
+        resueltas = int(row[1] or 0)
+        return total >= minimo_predicciones and resueltas == 0
+    except Exception:
+        logger.exception("No se pudo evaluar modo estricto de fútbol")
+        return False
 
 
 def _generar_recomendaciones(
@@ -989,6 +1193,111 @@ def _generar_recomendaciones(
     return recomendaciones[:10]  # Top 10 recomendaciones
 
 
+def _obtener_modelo_version_futbol_id(cursor) -> Optional[int]:
+    """Obtiene un modelo_version_id válido para FK de predicciones_futbol."""
+    try:
+        cursor.execute(
+            """
+            SELECT id
+            FROM modelo_versiones_futbol
+            ORDER BY creado_en DESC NULLS LAST, id DESC
+            LIMIT 1
+            """
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return int(row["id"] if isinstance(row, dict) else row[0])
+    except Exception:
+        logger.exception("No se pudo obtener modelo_version_id de modelo_versiones_futbol")
+        return None
+
+
+def _registrar_predicciones_futbol(
+    cursor,
+    *,
+    partido: Dict[str, Any],
+    mercados: Dict[str, PrediccionMercado],
+    modelo_version_id: Optional[int],
+) -> int:
+    """Persiste predicciones por línea en predicciones_futbol."""
+    filas = []
+
+    for prediccion in mercados.values():
+        mercado = (prediccion.mercado or "").upper()
+        for linea_str, probs in prediccion.lineas.items():
+            try:
+                linea_valor = float(linea_str)
+            except (TypeError, ValueError):
+                continue
+
+            filas.append(
+                [
+                    str(uuid4()),
+                    str(partido["id"]),
+                    modelo_version_id,
+                    str(partido["competicion_id"]),
+                    str(partido["temporada_id"]),
+                    str(partido["equipo_local_id"]),
+                    str(partido["equipo_visitante_id"]),
+                    partido["equipo_local"],
+                    partido["equipo_visitante"],
+                    partido["fecha_partido"],
+                    mercado,
+                    linea_valor,
+                    False,
+                    float(prediccion.media),
+                    float(prediccion.std),
+                    float(probs.over_raw),
+                    float(probs.under_raw),
+                    float(probs.over_calibrada),
+                    float(probs.under_calibrada),
+                    float(prediccion.media - 1.96 * prediccion.std),
+                    float(prediccion.media + 1.96 * prediccion.std),
+                    95,
+                ]
+            )
+
+    if not filas:
+        return 0
+
+    cursor.executemany(
+        """
+        INSERT INTO predicciones_futbol (
+            id,
+            partido_id,
+            modelo_version_id,
+            competicion_id,
+            temporada_id,
+            equipo_local_id,
+            equipo_visitante_id,
+            equipo_local_nombre,
+            equipo_visitante_nombre,
+            fecha_partido,
+            mercado,
+            linea,
+            linea_es_sintetica,
+            media_predicha,
+            desviacion_predicha,
+            prob_over,
+            prob_under,
+            prob_over_calibrada,
+            prob_under_calibrada,
+            intervalo_inferior,
+            intervalo_superior,
+            nivel_intervalo
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+            %s::mercado_futbol, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s, %s
+        )
+        """,
+        filas,
+    )
+
+    return len(filas)
+
+
 @router.post(
     "/analizar",
     response_model=AnalisisResponse,
@@ -1017,6 +1326,7 @@ async def analizar_partido(
         SELECT
             pf.id,
             pf.competicion_id,
+            pf.temporada_id,
             c.nombre as competicion,
             pf.fecha_partido,
             el.nombre as equipo_local,
@@ -1044,10 +1354,19 @@ async def analizar_partido(
                         detail="Partido no encontrado"
                     )
 
-                if partido["estado"] == "FINALIZADO":
+                estado_partido = str(partido["estado"] or "").upper()
+                estados_no_analizables = {
+                    "FINALIZADO",
+                    "CANCELADO",
+                    "POSTERGADO",
+                    "POSPUESTO",
+                    "APLAZADO",
+                    "SUSPENDIDO",
+                }
+                if estado_partido in estados_no_analizables:
                     raise HTTPException(
                         status_code=400,
-                        detail="No se puede analizar un partido finalizado"
+                        detail=f"No se puede analizar un partido con estado: {estado_partido}",
                     )
 
                 # 2. Obtener estadísticas de equipos
@@ -1123,24 +1442,130 @@ async def analizar_partido(
                     stats_visitante_away = {}
                     promedios_liga = {"local": {}, "visitante": {}, "global": {}, "total": {}}
 
-                # 3. Calcular predicciones base
-                # Corners
-                corners_local = stats_local["corners_favor"]
-                corners_visitante = stats_visitante["corners_favor"]
+                # 3. Calcular predicciones base (robustas: contexto + global + liga)
+                local_corners_ctx = _obtener_resumen_seguro(stats_local_home, "corners_ft")
+                local_corners_global = _obtener_resumen_seguro(stats_local_global, "corners_ft")
+                vis_corners_ctx = _obtener_resumen_seguro(stats_visitante_away, "corners_ft")
+                vis_corners_global = _obtener_resumen_seguro(stats_visitante_global, "corners_ft")
+                liga_corners = _obtener_resumen_seguro(promedios_liga.get("global", {}), "corners_ft")
+
+                corners_local = _valor_robusto(
+                    valor_ctx=local_corners_ctx.get("promedio"),
+                    n_ctx=int(local_corners_ctx.get("n") or 0),
+                    valor_global=local_corners_global.get("promedio"),
+                    n_global=int(local_corners_global.get("n") or 0),
+                    valor_liga=liga_corners.get("promedio"),
+                )
+                corners_visitante = _valor_robusto(
+                    valor_ctx=vis_corners_ctx.get("promedio"),
+                    n_ctx=int(vis_corners_ctx.get("n") or 0),
+                    valor_global=vis_corners_global.get("promedio"),
+                    n_global=int(vis_corners_global.get("n") or 0),
+                    valor_liga=liga_corners.get("promedio"),
+                )
+                # Ajuste por forma reciente + ventaja local
+                corners_local = _aplicar_ajuste_forma(
+                    corners_local,
+                    _media_reciente_metrica(partidos_local_home, equipo_local_id, "corners_ft"),
+                    local_corners_ctx.get("promedio") or local_corners_global.get("promedio"),
+                )
+                corners_visitante = _aplicar_ajuste_forma(
+                    corners_visitante,
+                    _media_reciente_metrica(partidos_visitante_away, equipo_visitante_id, "corners_ft"),
+                    vis_corners_ctx.get("promedio") or vis_corners_global.get("promedio"),
+                )
+                ha_corners = _home_advantage_liga(promedios_liga, "corners_ft")
+                corners_local *= ha_corners
+                corners_visitante /= ha_corners
+
                 corners_total = corners_local + corners_visitante
-                corners_std = 2.5  # Std típica para corners
+                corners_std = _std_robusta(
+                    std_ctx=local_corners_ctx.get("std") or vis_corners_ctx.get("std"),
+                    std_global=local_corners_global.get("std") or vis_corners_global.get("std"),
+                    default_std=2.5,
+                )
 
-                # Goles
-                goles_local = stats_local["goles_favor"]
-                goles_visitante = stats_visitante["goles_favor"]
+                local_goles_ctx = _obtener_resumen_seguro(stats_local_home, "goles_ft")
+                local_goles_global = _obtener_resumen_seguro(stats_local_global, "goles_ft")
+                vis_goles_ctx = _obtener_resumen_seguro(stats_visitante_away, "goles_ft")
+                vis_goles_global = _obtener_resumen_seguro(stats_visitante_global, "goles_ft")
+                liga_goles = _obtener_resumen_seguro(promedios_liga.get("global", {}), "goles_ft")
+
+                goles_local = _valor_robusto(
+                    valor_ctx=local_goles_ctx.get("promedio"),
+                    n_ctx=int(local_goles_ctx.get("n") or 0),
+                    valor_global=local_goles_global.get("promedio"),
+                    n_global=int(local_goles_global.get("n") or 0),
+                    valor_liga=liga_goles.get("promedio"),
+                )
+                goles_visitante = _valor_robusto(
+                    valor_ctx=vis_goles_ctx.get("promedio"),
+                    n_ctx=int(vis_goles_ctx.get("n") or 0),
+                    valor_global=vis_goles_global.get("promedio"),
+                    n_global=int(vis_goles_global.get("n") or 0),
+                    valor_liga=liga_goles.get("promedio"),
+                )
+                goles_local = _aplicar_ajuste_forma(
+                    goles_local,
+                    _media_reciente_metrica(partidos_local_home, equipo_local_id, "goles_ft"),
+                    local_goles_ctx.get("promedio") or local_goles_global.get("promedio"),
+                )
+                goles_visitante = _aplicar_ajuste_forma(
+                    goles_visitante,
+                    _media_reciente_metrica(partidos_visitante_away, equipo_visitante_id, "goles_ft"),
+                    vis_goles_ctx.get("promedio") or vis_goles_global.get("promedio"),
+                )
+                ha_goles = _home_advantage_liga(promedios_liga, "goles_ft")
+                goles_local *= ha_goles
+                goles_visitante /= ha_goles
+
                 goles_total = goles_local + goles_visitante
-                goles_std = 1.2
+                goles_std = _std_robusta(
+                    std_ctx=local_goles_ctx.get("std") or vis_goles_ctx.get("std"),
+                    std_global=local_goles_global.get("std") or vis_goles_global.get("std"),
+                    default_std=1.2,
+                )
 
-                # Disparos
-                disparos_local = stats_local["disparos_total"]
-                disparos_visitante = stats_visitante["disparos_total"]
+                local_disp_ctx = _obtener_resumen_seguro(stats_local_home, "disparos_ft")
+                local_disp_global = _obtener_resumen_seguro(stats_local_global, "disparos_ft")
+                vis_disp_ctx = _obtener_resumen_seguro(stats_visitante_away, "disparos_ft")
+                vis_disp_global = _obtener_resumen_seguro(stats_visitante_global, "disparos_ft")
+                liga_disp = _obtener_resumen_seguro(promedios_liga.get("global", {}), "disparos_ft")
+
+                disparos_local = _valor_robusto(
+                    valor_ctx=local_disp_ctx.get("promedio"),
+                    n_ctx=int(local_disp_ctx.get("n") or 0),
+                    valor_global=local_disp_global.get("promedio"),
+                    n_global=int(local_disp_global.get("n") or 0),
+                    valor_liga=liga_disp.get("promedio"),
+                )
+                disparos_visitante = _valor_robusto(
+                    valor_ctx=vis_disp_ctx.get("promedio"),
+                    n_ctx=int(vis_disp_ctx.get("n") or 0),
+                    valor_global=vis_disp_global.get("promedio"),
+                    n_global=int(vis_disp_global.get("n") or 0),
+                    valor_liga=liga_disp.get("promedio"),
+                )
+                disparos_local = _aplicar_ajuste_forma(
+                    disparos_local,
+                    _media_reciente_metrica(partidos_local_home, equipo_local_id, "disparos_ft"),
+                    local_disp_ctx.get("promedio") or local_disp_global.get("promedio"),
+                )
+                disparos_visitante = _aplicar_ajuste_forma(
+                    disparos_visitante,
+                    _media_reciente_metrica(partidos_visitante_away, equipo_visitante_id, "disparos_ft"),
+                    vis_disp_ctx.get("promedio") or vis_disp_global.get("promedio"),
+                )
+                ha_disp = _home_advantage_liga(promedios_liga, "disparos_ft")
+                disparos_local *= ha_disp
+                disparos_visitante /= ha_disp
+
                 disparos_total = disparos_local + disparos_visitante
-                disparos_std = 4.0
+                disparos_std = _std_robusta(
+                    std_ctx=local_disp_ctx.get("std") or vis_disp_ctx.get("std"),
+                    std_global=local_disp_global.get("std") or vis_disp_global.get("std"),
+                    default_std=4.0,
+                )
 
                 # 4. Generar predicciones para cada mercado
                 lineas_corners = request.lineas_corners or [8.5, 9.5, 10.5, 11.5]
@@ -1279,6 +1704,62 @@ async def analizar_partido(
                     stats_local["partidos"],
                     stats_visitante["partidos"],
                 )
+
+                # 5a. Enforce de política de calidad por mercado (bloqueo + modo seguro)
+                estado_mercados = _obtener_estado_mercados_futbol(
+                    cursor,
+                    min_muestras=100,
+                    warning_brier=0.24,
+                    bloquear_brier=0.28,
+                )
+                mercados_bloqueados = {m for m, s in estado_mercados.items() if s == "rojo"}
+
+                recomendaciones_filtradas = []
+                for r in recomendaciones:
+                    mercado_r = str(r.mercado).upper()
+                    estado = estado_mercados.get(mercado_r, "verde")
+                    if estado == "rojo":
+                        continue
+                    # Modo seguro: en amarillo exigimos mayor probabilidad mínima
+                    if estado == "amarillo" and float(r.probabilidad) < 0.60:
+                        continue
+                    recomendaciones_filtradas.append(r)
+
+                if len(recomendaciones_filtradas) != len(recomendaciones):
+                    recomendaciones = recomendaciones_filtradas
+                    logger.info(
+                        "Policy gate fútbol aplicado. bloqueados=%s recomendaciones_restantes=%s",
+                        sorted(mercados_bloqueados),
+                        len(recomendaciones),
+                    )
+
+                # 5a-bis. Gate global de modo estricto (fútbol)
+                if _modo_estricto_futbol_activo(cursor):
+                    recomendaciones = []
+                    logger.warning(
+                        "Modo estricto fútbol activo: recomendaciones deshabilitadas por falta de resueltas con volumen suficiente."
+                    )
+
+                # 5b. Registrar predicciones para calibración/métricas
+                try:
+                    modelo_version_id_futbol = _obtener_modelo_version_futbol_id(cursor)
+                    total_registradas = _registrar_predicciones_futbol(
+                        cursor,
+                        partido=partido,
+                        mercados=todos_mercados,
+                        modelo_version_id=modelo_version_id_futbol,
+                    )
+                    logger.info(
+                        "Predicciones fútbol registradas: %s (partido_id=%s)",
+                        total_registradas,
+                        partido["id"],
+                    )
+                except Exception as e:
+                    logger.exception(
+                        "Error registrando predicciones_futbol (partido_id=%s): %s",
+                        partido["id"],
+                        e,
+                    )
 
                 # 6. Construir respuesta
                 partido_resumen = PartidoResumen(

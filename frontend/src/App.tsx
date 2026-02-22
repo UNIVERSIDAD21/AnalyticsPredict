@@ -2,7 +2,7 @@
  * App.tsx — Componente raíz de la aplicación
  */
 
-import { useEffect, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import {
   PaginaBitacora,
   PaginaPrincipal,
@@ -17,37 +17,25 @@ import {
  * Componente principal de la aplicación
  */
 function App() {
-  const [ruta, setRuta] = useState(window.location.pathname);
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Rutas principales */}
+        <Route path="/" element={<PaginaPrincipal />} />
+        <Route path="/bitacora" element={<PaginaBitacora />} />
+        <Route path="/configuracion" element={<PaginaConfiguracion />} />
 
-  useEffect(() => {
-    const manejarRuta = () => setRuta(window.location.pathname);
-    window.addEventListener('popstate', manejarRuta);
-    return () => window.removeEventListener('popstate', manejarRuta);
-  }, []);
+        {/* Rutas del módulo de fútbol */}
+        <Route path="/futbol" element={<PaginaFutbol />} />
+        <Route path="/futbol/partidos/:id" element={<AnalisisPartidoFutbol />} />
+        <Route path="/futbol/bitacora" element={<BitacoraFutbol />} />
+        <Route path="/futbol/dashboard" element={<DashboardFutbol />} />
 
-  // Rutas existentes
-  if (ruta === '/bitacora') {
-    return <PaginaBitacora />;
-  }
-  if (ruta === '/configuracion') {
-    return <PaginaConfiguracion />;
-  }
-
-  // Rutas del módulo de fútbol
-  if (ruta === '/futbol') {
-    return <PaginaFutbol />;
-  }
-  if (ruta.startsWith('/futbol/partidos/')) {
-    return <AnalisisPartidoFutbol />;
-  }
-  if (ruta === '/futbol/bitacora') {
-    return <BitacoraFutbol />;
-  }
-  if (ruta === '/futbol/dashboard') {
-    return <DashboardFutbol />;
-  }
-
-  return <PaginaPrincipal />;
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

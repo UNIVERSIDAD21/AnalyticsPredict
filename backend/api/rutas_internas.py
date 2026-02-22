@@ -39,6 +39,7 @@ from motor.resolucion_predicciones import (
     obtener_estadisticas_predicciones,
     obtener_predicciones_pendientes_por_mercado,
 )
+from motor.resolucion_predicciones_futbol import resolver_predicciones_futbol
 
 router = APIRouter(prefix="/api/interno", tags=["Interno"])
 logger = logging.getLogger(__name__)
@@ -79,11 +80,35 @@ class RespuestaResolucion(BaseModel):
     mensaje: str
 
 
+class PeticionResolverPrediccionesFutbol(BaseModel):
+    """Parámetros para resolver predicciones de fútbol."""
+
+    limite: int = Field(default=2000, gt=0, le=20000, description="Batch size máximo")
+    mercado: Optional[str] = Field(
+        default=None,
+        description="Filtrar por mercado de fútbol (opcional)",
+    )
+    solo_hasta_fecha: Optional[date] = Field(
+        default=None, description="Solo resolver hasta esta fecha (YYYY-MM-DD)"
+    )
+    force: bool = Field(
+        default=False,
+        description="Re-resolver predicciones ya resueltas (peligroso)",
+    )
+
+
 class RespuestaEstadisticas(BaseModel):
     """Estadísticas de predicciones."""
 
     exito: bool
     estadisticas: dict
+
+
+class RespuestaCicloCalidad(BaseModel):
+    exito: bool
+    resumen_baloncesto: dict
+    resumen_futbol: dict
+    mensaje: str
 
 
 class PeticionBacktest(BaseModel):
@@ -257,6 +282,96 @@ async def resolver_predicciones_endpoint(
         return RespuestaResolucion(
             exito=False,
             resumen={},
+            mensaje=f"Error: {str(e)}",
+        )
+
+
+@router.post(
+    "/resolver-predicciones-futbol",
+    response_model=RespuestaResolucion,
+    summary="Resolver predicciones pendientes (fútbol)",
+    description="""
+    Resuelve `predicciones_futbol` pendientes usando resultados reales de `partidos_futbol`.
+
+    Reglas:
+    - Solo resuelve partidos FINALIZADO.
+    - Calcula valor_real por mercado (goles/corners/disparos).
+    - outcome_binario = OVER/UNDER contra la línea.
+    - PUSH cuando valor_real == línea.
+    """,
+)
+async def resolver_predicciones_futbol_endpoint(
+    peticion: PeticionResolverPrediccionesFutbol,
+) -> RespuestaResolucion:
+    logger.info(
+        "Iniciando resolución fútbol: limite=%d mercado=%s hasta=%s force=%s",
+        peticion.limite,
+        peticion.mercado,
+        peticion.solo_hasta_fecha,
+        peticion.force,
+    )
+
+    try:
+        resumen = resolver_predicciones_futbol(
+            limite=peticion.limite,
+            mercado=peticion.mercado,
+            solo_hasta_fecha=peticion.solo_hasta_fecha,
+            force=peticion.force,
+        )
+
+        mensaje = f"Resolución fútbol completada: {resumen.resueltas} resueltas"
+        if resumen.push > 0:
+            mensaje += f", {resumen.push} PUSH"
+        if resumen.pendientes > 0:
+            mensaje += f", {resumen.pendientes} pendientes"
+        if resumen.sin_datos_partido > 0:
+            mensaje += f", {resumen.sin_datos_partido} sin datos"
+        if resumen.errores > 0:
+            mensaje += f", {resumen.errores} errores"
+
+        return RespuestaResolucion(
+            exito=True,
+            resumen=resumen.to_dict(),
+            mensaje=mensaje,
+        )
+    except Exception as e:
+        logger.exception("Error en resolución de predicciones fútbol")
+        return RespuestaResolucion(
+            exito=False,
+            resumen={},
+            mensaje=f"Error: {str(e)}",
+        )
+
+
+@router.post(
+    "/ciclo-calidad",
+    response_model=RespuestaCicloCalidad,
+    summary="Ejecutar ciclo de calidad (resolver baloncesto + fútbol)",
+)
+async def ejecutar_ciclo_calidad(
+    limite_baloncesto: int = Query(1000, ge=1, le=20000),
+    limite_futbol: int = Query(2000, ge=1, le=20000),
+) -> RespuestaCicloCalidad:
+    try:
+        resumen_b = resolver_predicciones(limite=limite_baloncesto)
+        resumen_f = resolver_predicciones_futbol(limite=limite_futbol)
+
+        mensaje = (
+            f"Ciclo OK | baloncesto: {resumen_b.resueltas} resueltas "
+            f"| futbol: {resumen_f.resueltas} resueltas"
+        )
+        return RespuestaCicloCalidad(
+            exito=True,
+            resumen_baloncesto=resumen_b.to_dict(),
+            resumen_futbol=resumen_f.to_dict(),
+            mensaje=mensaje,
+        )
+    except Exception as e:
+        logger.exception("Error ejecutando ciclo de calidad")
+        return RespuestaCicloCalidad(
+            exito=False,
+            resumen_baloncesto={},
+            resumen_futbol={},
             mensaje=f"Error: {str(e)}",
         )
 

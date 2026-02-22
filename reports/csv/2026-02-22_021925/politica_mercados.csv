@@ -1,0 +1,6 @@
+deporte,mercado,estado,bloqueado,motivo,brier,n_resueltas
+baloncesto,COMPLETO,verde,False,Mercado apto para operación estándar.,0.19357766738390092,1292
+baloncesto,Q2,verde,False,Mercado apto para operación estándar.,0.21089032127659574,188
+baloncesto,Q1,verde,False,Mercado apto para operación estándar.,0.2231200235882353,340
+baloncesto,Q3,rojo,True,Brier alto (0.306) >= umbral bloqueo (0.280).,0.30588802956043953,182
+baloncesto,Q4,rojo,True,Brier alto (0.317) >= umbral bloqueo (0.280).,0.31741192853333333,150

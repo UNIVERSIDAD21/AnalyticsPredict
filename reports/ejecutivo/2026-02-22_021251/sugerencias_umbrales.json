@@ -1,0 +1,1 @@
+{"exito":true,"sugerencias":[{"deporte":"baloncesto","warning_brier_sugerido":0.3,"bloqueo_brier_sugerido":0.332,"muestra_base":2152,"razon":"Basado en percentiles de Brier por mercado (P60 warning, P80 bloqueo) con límites de seguridad."}],"timestamp":"2026-02-22T02:12:55.613341"}
