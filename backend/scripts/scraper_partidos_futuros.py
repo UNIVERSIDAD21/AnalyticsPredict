@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 
 import psycopg
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -29,6 +31,18 @@ load_dotenv(BACKEND_DIR / ".env")
 
 ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba"
 ZONA_HORARIA_NBA = ZoneInfo("America/New_York")
+
+_SESSION = requests.Session()
+_RETRY = Retry(
+    total=4,
+    connect=4,
+    read=4,
+    backoff_factor=1.0,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)
+_SESSION.mount("https://", HTTPAdapter(max_retries=_RETRY))
+_SESSION.mount("http://", HTTPAdapter(max_retries=_RETRY))
 
 
 def obtener_database_url() -> str:
@@ -45,7 +59,7 @@ def fetch_scoreboard(fecha: date) -> List[Dict[str, Any]]:
     url = f"{ESPN_API}/scoreboard"
     params = {"dates": fecha.strftime("%Y%m%d")}
 
-    resp = requests.get(url, params=params, timeout=30)
+    resp = _SESSION.get(url, params=params, timeout=(10, 30))
     resp.raise_for_status()
     data = resp.json()
     return data.get("events", [])
@@ -117,10 +131,55 @@ def obtener_temporada_activa(cursor: psycopg.Cursor) -> Optional[Dict[str, Any]]
     return dict(row) if row else None
 
 
+def obtener_competicion_nba_id(cursor: psycopg.Cursor) -> Optional[str]:
+    """Obtiene el ID de la competición NBA en `competiciones_baloncesto`."""
+    consultas = [
+        (
+            """
+            SELECT id
+            FROM competiciones_baloncesto
+            WHERE UPPER(nombre) IN ('NBA', 'NATIONAL BASKETBALL ASSOCIATION')
+            LIMIT 1
+            """,
+            [],
+        ),
+        (
+            """
+            SELECT id
+            FROM competiciones_baloncesto
+            WHERE UPPER(nombre) LIKE '%NBA%'
+            LIMIT 1
+            """,
+            [],
+        ),
+        (
+            """
+            SELECT id
+            FROM competiciones_baloncesto
+            ORDER BY nombre ASC
+            LIMIT 1
+            """,
+            [],
+        ),
+    ]
+
+    for sql, params in consultas:
+        try:
+            cursor.execute(sql, params)
+            row = cursor.fetchone()
+            if row:
+                return str(row["id"])
+        except Exception:
+            continue
+
+    return None
+
+
 def upsert_partido_futuro(
     cursor: psycopg.Cursor,
     fecha_partido: date,
     temporada_id: str,
+    competicion_id: str,
     espn_game_id: str,
     equipo_local_id: str,
     equipo_visitante_id: str,
@@ -130,30 +189,33 @@ def upsert_partido_futuro(
     Usa INSERT ... ON CONFLICT para manejar duplicados de forma atómica.
     """
     try:
+        cursor.execute("SAVEPOINT sp_partido")
         cursor.execute(
             """
             INSERT INTO partidos_baloncesto (
-                temporada_id, fecha_partido, tipo_partido, espn_game_id,
+                temporada_id, competicion_id, fecha_partido, tipo_partido, espn_game_id,
                 equipo_local_id, equipo_visitante_id,
                 local_q1, local_q2, local_q3, local_q4, local_ot, local_total,
                 visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_ot, visitante_total,
                 diferencia_puntos, hubo_overtime
             ) VALUES (
-                %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s, %s,
                 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
                 0, false
             )
-            ON CONFLICT (espn_game_id) 
+            ON CONFLICT (espn_game_id)
             WHERE espn_game_id IS NOT NULL
             DO UPDATE SET
                 fecha_partido = EXCLUDED.fecha_partido,
                 temporada_id = EXCLUDED.temporada_id,
+                competicion_id = EXCLUDED.competicion_id,
                 actualizado_en = now()
             RETURNING (xmax = 0) AS es_nuevo
             """,
             [
                 temporada_id,
+                competicion_id,
                 fecha_partido,
                 "REG",
                 espn_game_id,
@@ -162,8 +224,10 @@ def upsert_partido_futuro(
             ],
         )
         row = cursor.fetchone()
+        cursor.execute("RELEASE SAVEPOINT sp_partido")
         return bool(row and row["es_nuevo"])
     except Exception as e:
+        cursor.execute("ROLLBACK TO SAVEPOINT sp_partido")
         print(f"    ⚠️ Error al insertar partido {espn_game_id}: {e}")
         return False
 
@@ -196,6 +260,13 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
             temporada_id = str(temporada["id"])
             print(f"📅 Temporada activa: {temporada['nombre']}")
 
+            competicion_id = obtener_competicion_nba_id(cursor)
+            if not competicion_id:
+                raise RuntimeError(
+                    "No se encontró una competición NBA en competiciones_baloncesto. "
+                    "Crea/valida la fila de NBA antes de sincronizar."
+                )
+
             for i in range(dias + 1):
                 fecha = hoy + timedelta(days=i)
                 stats["dias_procesados"] += 1
@@ -226,6 +297,7 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
                             cursor,
                             fecha_partido=parsed["fecha_partido"],
                             temporada_id=temporada_id,
+                            competicion_id=competicion_id,
                             espn_game_id=parsed["espn_game_id"],
                             equipo_local_id=home_id,
                             equipo_visitante_id=away_id,
