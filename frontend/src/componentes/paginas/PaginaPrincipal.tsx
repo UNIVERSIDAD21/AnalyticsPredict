@@ -16,7 +16,7 @@ import {
 import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
-import { Activity, TrendingUp, Target, BarChart3, ArrowLeft, Gauge } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, ArrowLeft } from 'lucide-react';
 import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
@@ -73,54 +73,6 @@ function EstadoVacio() {
   );
 }
 
-function TarjetaSaludCalidad({
-  score,
-  semaforo,
-  habilitarRecomendaciones,
-  motivosBloqueo,
-}: {
-  score: number | null;
-  semaforo: 'verde' | 'amarillo' | 'rojo' | null;
-  habilitarRecomendaciones: boolean | null;
-  motivosBloqueo: string[];
-}) {
-  const color = semaforo === 'verde'
-    ? 'text-neon-verde border-neon-verde/40 bg-neon-verde/10'
-    : semaforo === 'amarillo'
-      ? 'text-yellow-300 border-yellow-300/40 bg-yellow-300/10'
-      : semaforo === 'rojo'
-        ? 'text-neon-magenta border-neon-magenta/40 bg-neon-magenta/10'
-        : 'text-texto-secundario border-neon-cyan/20 bg-futurista-oscuro/30';
-
-  return (
-    <div className={`px-4 py-3 rounded-lg border ${color}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Gauge className="w-5 h-5" />
-          <div>
-            <p className="text-xs uppercase tracking-wider">Salud del sistema</p>
-            <p className="text-sm font-semibold">Semáforo: {semaforo ?? 'sin datos'}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wider">Score</p>
-          <p className="text-xl font-futurista">{score ?? '--'}</p>
-        </div>
-      </div>
-      <div className="mt-2 text-xs">
-        Recomendaciones: {habilitarRecomendaciones === null ? 'sin datos' : (habilitarRecomendaciones ? 'habilitadas' : 'bloqueadas')}
-      </div>
-      {!habilitarRecomendaciones && motivosBloqueo.length > 0 && (
-        <ul className="mt-2 text-xs list-disc pl-4 space-y-1 opacity-90">
-          {motivosBloqueo.slice(0, 2).map((m, i) => (
-            <li key={i}>{m}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
 // ══════════════════════════════════════════════════════════════
@@ -167,10 +119,7 @@ export function PaginaPrincipal() {
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
-  const [scoreCalidad, setScoreCalidad] = useState<number | null>(null);
-  const [semaforoCalidad, setSemaforoCalidad] = useState<'verde' | 'amarillo' | 'rojo' | null>(null);
-  const [habilitarRecomendaciones, setHabilitarRecomendaciones] = useState<boolean | null>(null);
-  const [motivosBloqueo, setMotivosBloqueo] = useState<string[]>([]);
+  // Se removió el panel de salud del sistema por requerimiento de producto.
 
   const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
     if (!resultado || !seleccionUsuario) return null;
@@ -345,34 +294,7 @@ export function PaginaPrincipal() {
     }
   }, []);
 
-  useEffect(() => {
-    const cargarSalud = async () => {
-      try {
-        const [respAccion, respModo] = await Promise.all([
-          fetch('/api/metricas/recomendaciones-accion?min_muestras=30'),
-          fetch('/api/metricas/modo-estricto?score_minimo=75'),
-        ]);
-
-        if (respAccion.ok) {
-          const data = await respAccion.json();
-          setScoreCalidad(typeof data.score_global === 'number' ? data.score_global : null);
-          if (['verde', 'amarillo', 'rojo'].includes(data.semaforo_global)) {
-            setSemaforoCalidad(data.semaforo_global);
-          }
-        }
-
-        if (respModo.ok) {
-          const modo = await respModo.json();
-          setHabilitarRecomendaciones(Boolean(modo.habilitar_recomendaciones));
-          setMotivosBloqueo(Array.isArray(modo.motivos_bloqueo) ? modo.motivos_bloqueo : []);
-        }
-      } catch {
-        // silencioso: no bloquear UX principal
-      }
-    };
-
-    cargarSalud();
-  }, []);
+  // Panel de salud removido por requerimiento.
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -407,14 +329,7 @@ export function PaginaPrincipal() {
           </button>
         </div>
 
-        <div className="mb-6">
-          <TarjetaSaludCalidad
-            score={scoreCalidad}
-            semaforo={semaforoCalidad}
-            habilitarRecomendaciones={habilitarRecomendaciones}
-            motivosBloqueo={motivosBloqueo}
-          />
-        </div>
+        {/* Panel de salud removido por requerimiento */}
         {/* Error de conexión */}
         {estadoEquipos === 'error' && (
           <div className="mb-6">

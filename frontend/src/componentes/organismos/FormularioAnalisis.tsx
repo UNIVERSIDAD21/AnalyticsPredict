@@ -248,9 +248,15 @@ export function FormularioAnalisis({
     obtenerTemporadasEquipos(ids)
       .then((temporadas) => {
         if (!activo) return;
-        setTemporadasDisponibles(temporadas);
+
+        // Evitar temporadas duplicadas por nombre (pueden existir IDs duplicados legacy en BD).
+        const temporadasUnicas = Array.from(
+          new Map(temporadas.map((t) => [t.nombre.trim().toLowerCase(), t])).values()
+        );
+
+        setTemporadasDisponibles(temporadasUnicas);
         setTemporadasSeleccionadas((prev) => {
-          const disponiblesIds = temporadas.map((temporada) => temporada.id);
+          const disponiblesIds = temporadasUnicas.map((temporada) => temporada.id);
           const filtradas = prev.filter((id) => disponiblesIds.includes(id));
           if (filtradas.length === 0 && disponiblesIds.length > 0) {
             return [...disponiblesIds];

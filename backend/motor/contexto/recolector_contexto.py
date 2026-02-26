@@ -37,28 +37,54 @@ def _obtener_equipo_id(pool, nombre_equipo: str) -> Tuple[str, str]:
 
 
 def _obtener_stats_temporada(pool, equipo_id: str) -> Dict[str, Any]:
+    """Obtiene stats de temporada con fallback seguro si la tabla legacy no existe."""
+    consultas = (
+        """
+        SELECT
+            ppg_total,
+            opp_total,
+            victorias,
+            derrotas,
+            victorias_local,
+            derrotas_local,
+            victorias_visitante,
+            derrotas_visitante
+        FROM estadisticas_equipos
+        WHERE equipo_id = %s
+        ORDER BY temporada_id DESC
+        LIMIT 1
+        """,
+        """
+        SELECT
+            ppg_total,
+            opp_total,
+            victorias,
+            derrotas,
+            victorias_local,
+            derrotas_local,
+            victorias_visitante,
+            derrotas_visitante
+        FROM estadisticas_equipos_baloncesto
+        WHERE equipo_id = %s
+        ORDER BY temporada_id DESC
+        LIMIT 1
+        """,
+    )
+
     with pool.connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                SELECT
-                    ppg_total,
-                    opp_total,
-                    victorias,
-                    derrotas,
-                    victorias_local,
-                    derrotas_local,
-                    victorias_visitante,
-                    derrotas_visitante
-                FROM estadisticas_equipos
-                WHERE equipo_id = %s
-                ORDER BY temporada_id DESC
-                LIMIT 1
-                """,
-                [equipo_id],
-            )
-            fila = cursor.fetchone()
-    return dict(fila) if fila else {}
+            for query in consultas:
+                try:
+                    cursor.execute(query, [equipo_id])
+                    fila = cursor.fetchone()
+                    if fila:
+                        return dict(fila)
+                except Exception:
+                    # Si la tabla no existe u otro error estructural, intentar fallback.
+                    conexion.rollback()
+                    continue
+
+    return {}
 
 
 def _recolectar_contexto_ids(

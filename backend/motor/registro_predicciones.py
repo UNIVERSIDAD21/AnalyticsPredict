@@ -22,6 +22,24 @@ from uuid import UUID
 
 from db import obtener_pool
 
+
+def _resolver_competicion_id_desde_partido(partido_id: UUID, pool) -> Optional[UUID]:
+    """Obtiene competicion_id del partido para cumplir constraint NOT NULL."""
+    try:
+        with pool.connection() as conexion:
+            with conexion.cursor() as cursor:
+                cursor.execute(
+                    "SELECT competicion_id FROM partidos_baloncesto WHERE id = %s LIMIT 1",
+                    [str(partido_id)],
+                )
+                fila = cursor.fetchone()
+                if not fila or fila[0] is None:
+                    return None
+                return UUID(str(fila[0]))
+    except Exception:
+        logger.exception("Error resolviendo competicion_id desde partido_id=%s", partido_id)
+        return None
+
 logger = logging.getLogger(__name__)
 
 # Nombre del constraint único para idempotencia
@@ -52,6 +70,7 @@ def registrar_prediccion(
     *,
     partido_id: UUID,
     temporada_id: UUID,
+    competicion_id: Optional[UUID] = None,
     equipo_local_id: UUID,
     equipo_visitante_id: UUID,
     fecha_partido: date,
@@ -117,6 +136,15 @@ def registrar_prediccion(
 
     pool = pool or obtener_pool()
 
+    if competicion_id is None:
+        competicion_id = _resolver_competicion_id_desde_partido(partido_id, pool)
+    if competicion_id is None:
+        logger.warning(
+            "Predicción no registrable: competicion_id no disponible (partido_id=%s)",
+            partido_id,
+        )
+        return (None, "fallida") if return_status else None
+
     # Verificar que modelo_version_id existe en BD (FK válida)
     if not verificar_modelo_version_existe(modelo_version_id, pool):
         logger.error(
@@ -136,6 +164,7 @@ def registrar_prediccion(
                     INSERT INTO predicciones_registradas (
                         partido_id,
                         temporada_id,
+                        competicion_id,
                         equipo_local_id,
                         equipo_visitante_id,
                         fecha_partido,
@@ -156,7 +185,7 @@ def registrar_prediccion(
                         calibrador_metodo,
                         p_calibrada
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     ON CONFLICT ON CONSTRAINT {CONSTRAINT_LLAVE_NATURAL}
@@ -166,6 +195,7 @@ def registrar_prediccion(
                     [
                         str(partido_id),
                         str(temporada_id),
+                        str(competicion_id),
                         str(equipo_local_id),
                         str(equipo_visitante_id),
                         fecha_partido,

@@ -42,7 +42,7 @@ function calcularDelta(pRaw: number | null, pCalibrada: number | null): string {
 }
 
 function obtenerNombreCalibrador(calibrador: string | null): string {
-  if (!calibrador) return '—';
+  if (!calibrador) return 'Auto';
   const nombres: Record<string, string> = {
     platt: 'Platt Scaling',
     isotonic: 'Isotonic Regression',
@@ -64,7 +64,9 @@ export function SeccionCalibracion({
   pCalibrada,
   calibradorUsado,
 }: PropsSeccionCalibracion) {
-  const tieneCalibrador = calibradorUsado !== null && calibradorUsado !== 'none' && pCalibrada !== null;
+  const tieneCalibrador =
+    pCalibrada !== null &&
+    (calibradorUsado === null || calibradorUsado.toLowerCase() !== 'none');
   const delta = calcularDelta(pRaw, pCalibrada);
 
   // Sin calibrador activo

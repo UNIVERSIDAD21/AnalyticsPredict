@@ -375,7 +375,7 @@ def upsert_partido_con_fecha(
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (temporada_id, fecha_partido, tipo_partido, equipo_local_id, equipo_visitante_id)
             DO UPDATE SET
-                espn_game_id = COALESCE(EXCLUDED.espn_game_id, partidos.espn_game_id),
+                espn_game_id = COALESCE(EXCLUDED.espn_game_id, partidos_baloncesto.espn_game_id),
                 local_q1 = EXCLUDED.local_q1,
                 local_q2 = EXCLUDED.local_q2,
                 local_q3 = EXCLUDED.local_q3,
@@ -643,6 +643,10 @@ def sincronizar_equipo(
 
                 except Exception as e:
                     stats["errores"] += 1
+                    try:
+                        conexion.rollback()
+                    except Exception:
+                        pass
                     if stats["errores"] <= 3:  # Limitar mensajes de error por equipo
                         print(f"⚠️  Error en evento {equipo_bd.abreviatura}: {e}")
 

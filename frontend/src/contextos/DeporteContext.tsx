@@ -70,20 +70,11 @@ function detectarDeporteDesdeURL(): Deporte {
  * Obtiene el deporte guardado o detecta desde URL
  */
 function obtenerDeporteInicial(): Deporte {
-  // Primero verificar la URL
+  // Regla de producto: al iniciar siempre caer en NBA (Análisis).
+  // Solo respetar FUTBOL cuando la URL explícitamente está en /futbol.
   const deporteURL = detectarDeporteDesdeURL();
   if (deporteURL === 'FUTBOL') {
     return 'FUTBOL';
-  }
-
-  // Si no está en ruta de fútbol, verificar localStorage
-  try {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    if (guardado === 'NBA' || guardado === 'FUTBOL') {
-      return guardado;
-    }
-  } catch {
-    // localStorage no disponible
   }
 
   return 'NBA';

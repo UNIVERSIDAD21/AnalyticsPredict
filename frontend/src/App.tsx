@@ -9,7 +9,6 @@ import {
   PaginaConfiguracion,
   PaginaFutbol,
   AnalisisPartidoFutbol,
-  BitacoraFutbol,
   DashboardFutbol,
 } from './componentes/paginas';
 
@@ -28,7 +27,7 @@ function App() {
         {/* Rutas del módulo de fútbol */}
         <Route path="/futbol" element={<PaginaFutbol />} />
         <Route path="/futbol/partidos/:id" element={<AnalisisPartidoFutbol />} />
-        <Route path="/futbol/bitacora" element={<BitacoraFutbol />} />
+        <Route path="/futbol/bitacora" element={<PaginaBitacora />} />
         <Route path="/futbol/dashboard" element={<DashboardFutbol />} />
 
         {/* Fallback */}
