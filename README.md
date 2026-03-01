@@ -131,3 +131,6 @@ Checklist local:
 - Sugerencias de umbrales automáticos: `GET /api/metricas/sugerencias-umbrales`
 - Gate global producción estricta: `GET /api/metricas/modo-estricto` (GO/NO-GO)
 - Resumen ejecutivo 30s: `GET /api/metricas/resumen-ejecutivo-compacto`
+
+## Operative check
+- Updated by Borlty on 2026-03-01 to validate commit/push pipeline.
