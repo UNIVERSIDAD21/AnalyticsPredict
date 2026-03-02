@@ -241,6 +241,7 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
         "ya_existian": 0,
         "errores": 0,
         "equipos_no_encontrados": 0,
+        "dias_sin_eventos": 0,
     }
 
     # Obtener la fecha actual en zona horaria NBA
@@ -274,6 +275,8 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
                 try:
                     eventos = fetch_scoreboard(fecha)
                     print(f"  📅 {fecha} ({i} días desde hoy): {len(eventos)} eventos")
+                    if len(eventos) == 0:
+                        stats["dias_sin_eventos"] += 1
 
                     for evento in eventos:
                         stats["eventos_encontrados"] += 1
@@ -316,6 +319,8 @@ def sincronizar_partidos_futuros(dias: int = 14) -> Dict[str, int]:
                     stats["errores"] += 1
                     print(f"    ❌ Error en {fecha}: {exc}")
 
+    if stats["dias_sin_eventos"] >= max(2, dias // 3):
+        print("⚠️ Alerta calidad: muchos días sin eventos en ESPN, revisar fuente/API")
     return stats
 
 

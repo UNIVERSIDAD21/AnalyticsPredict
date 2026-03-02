@@ -34,6 +34,7 @@ import os
 import sys
 import time
 import json
+import random
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -87,11 +88,12 @@ SOFASCORE_API_BASE = "https://api.sofascore.com/api/v1"
 class SofascoreClientInteligente:
     """Cliente HTTP para Sofascore con bypass de protecciones anti-bot."""
     
-    def __init__(self, min_intervalo: float = 2.0):
+    def __init__(self, min_intervalo: float = 2.0, timeout_segundos: float = 30.0):
         self.min_intervalo = min_intervalo
         self.ultima_peticion = 0
         self.session = None
         self.usar_curl_cffi = False
+        self.timeout_segundos = timeout_segundos
         
         # Contadores
         self.bloqueos_consecutivos = 0
@@ -119,7 +121,7 @@ class SofascoreClientInteligente:
         ahora = time.time()
         transcurrido = ahora - self.ultima_peticion
         if transcurrido < self.min_intervalo:
-            time.sleep(self.min_intervalo - transcurrido)
+            time.sleep(self.min_intervalo - transcurrido + random.uniform(0.05, 0.25))
         self.ultima_peticion = time.time()
     
     def _manejar_bloqueo(self):
@@ -150,9 +152,9 @@ class SofascoreClientInteligente:
             
             try:
                 if self.usar_curl_cffi:
-                    response = self.session.get(url)
+                    response = self.session.get(url, timeout=self.timeout_segundos)
                 else:
-                    response = self.session.get(url, timeout=30)
+                    response = self.session.get(url, timeout=(8, self.timeout_segundos))
                 
                 if response.status_code == 200:
                     self._reiniciar_contadores()
@@ -169,9 +171,12 @@ class SofascoreClientInteligente:
                 else:
                     logger.warning(f"HTTP {response.status_code} en {endpoint}")
                     
+            except TimeoutError:
+                logger.warning(f"⏱️ Timeout en {endpoint} (>{self.timeout_segundos}s)")
+                time.sleep(2 ** intento)
             except Exception as e:
                 logger.error(f"Error en {endpoint}: {e}")
-                time.sleep(2)
+                time.sleep(2 ** intento)
         
         return None
     
@@ -792,6 +797,12 @@ def main():
         default=2.0,
         help='Segundos entre peticiones (default: 2.0)'
     )
+    parser.add_argument(
+        '--timeout',
+        type=float,
+        default=30.0,
+        help='Timeout por petición HTTP en segundos (default: 30.0)'
+    )
     
     parser.add_argument(
         '--verbose', '-v',
@@ -831,6 +842,7 @@ def main():
         print(f"📅 Días hacia adelante: {args.dias_futuros}")
     print(f"📊 Con estadísticas: {'No' if args.solo_resultados else 'Sí'}")
     print(f"⏱️  Intervalo: {args.intervalo}s entre peticiones")
+    print(f"⏱️  Timeout HTTP: {args.timeout}s")
     print()
     
     # Conectar a BD
@@ -842,7 +854,7 @@ def main():
         sys.exit(1)
     
     # Crear cliente
-    cliente = SofascoreClientInteligente(min_intervalo=args.intervalo)
+    cliente = SofascoreClientInteligente(min_intervalo=args.intervalo, timeout_segundos=args.timeout)
     
     # Verificar acceso
     if not cliente.verificar_acceso():
