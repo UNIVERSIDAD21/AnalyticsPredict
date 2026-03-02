@@ -9,7 +9,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Calendar, Filter, Trophy, Search, X } from 'lucide-react';
+import { Calendar, Filter, Trophy, Search, X, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { PartidoFutbolResumen } from '../../tipos/futbol';
 import {
@@ -63,7 +63,7 @@ function formatearFechaGrupo(fechaISO: string): string {
   if (fechaSolo === hoySolo) {
     return 'Hoy';
   } else if (fechaSolo === mananaSolo) {
-    return 'Manana';
+    return 'Mañana';
   } else if (fechaSolo === ayerSolo) {
     return 'Ayer';
   }
@@ -214,6 +214,26 @@ export function ListaPartidosFutbol({
   const [filtroCompeticion, setFiltroCompeticion] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [gruposColapsados, setGruposColapsados] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = window.sessionStorage.getItem('futbol_grupos_colapsados');
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const alternarGrupo = (fecha: string) => {
+    setGruposColapsados((prev) => {
+      const next = { ...prev, [fecha]: !prev[fecha] };
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('futbol_grupos_colapsados', JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
 
   // Obtener competiciones disponibles
   const competiciones = useMemo(() => obtenerCompeticiones(partidos), [partidos]);
@@ -383,10 +403,16 @@ export function ListaPartidosFutbol({
         />
       ) : (
         <div className="space-y-8">
-          {partidosAgrupados.map((grupo) => (
+          {partidosAgrupados.map((grupo) => {
+            const colapsado = gruposColapsados[grupo.fecha] ?? (grupo.fechaFormateada !== 'Hoy' && grupo.fechaFormateada !== 'Mañana');
+            return (
             <div key={grupo.fecha} className="space-y-4">
               {/* Header de fecha */}
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => alternarGrupo(grupo.fecha)}
+                className="flex w-full items-center gap-3 text-left"
+              >
                 <div className="w-8 h-8 rounded-lg bg-neon-magenta/10 border border-neon-magenta/30 flex items-center justify-center">
                   <Calendar size={16} className="text-neon-magenta" />
                 </div>
@@ -396,10 +422,12 @@ export function ListaPartidosFutbol({
                 <span className="text-xs text-texto-terciario px-2 py-0.5 rounded-full bg-futurista-medio/50">
                   {grupo.partidos.length} partido{grupo.partidos.length !== 1 ? 's' : ''}
                 </span>
-              </div>
+                <ChevronDown size={18} className={clsx('ml-auto text-texto-terciario transition-transform', colapsado && '-rotate-90')} />
+              </button>
 
               {/* Grid de partidos */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {!colapsado && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-entrada">
                 {grupo.partidos.map((partido) => (
                   <TarjetaPartidoFutbol
                     key={partido.id}
@@ -408,8 +436,9 @@ export function ListaPartidosFutbol({
                   />
                 ))}
               </div>
+              )}
             </div>
-          ))}
+          );})}
         </div>
       )}
     </div>
