@@ -235,7 +235,7 @@ export function FormularioGuardarApuesta({
 
       // Campos de Score (P1)
       score_total: snapshot.score_total ?? undefined,
-      score_componentes: snapshot.score_componentes as Record<string, number> | undefined,
+      score_componentes: snapshot.score_componentes as unknown as Record<string, number> | undefined,
       score_explicacion: snapshot.score_explicacion ?? undefined,
       score_penalizaciones: snapshot.score_penalizaciones ?? undefined,
 
@@ -247,7 +247,7 @@ export function FormularioGuardarApuesta({
       bankroll_momento: snapshot.bankroll_momento ?? undefined,
       perfil_riesgo_usado: snapshot.perfil_riesgo_usado ?? undefined,
       sizing_advertencias: snapshot.sizing_advertencias ?? undefined,
-      sizing_penalizaciones: snapshot.sizing_penalizaciones as Record<string, number> | undefined,
+      sizing_penalizaciones: snapshot.sizing_penalizaciones as unknown as Record<string, number> | undefined,
     };
 
     onGuardar(payload);

@@ -151,7 +151,7 @@ export function PaginaBitacora() {
     ganancia: resumen?.ganancia_total ?? 0,
     winrate: resumen?.winrate ?? 0,
     roi: resumen?.roi ?? 0,
-  } as Record<string, number>;
+  } as unknown as Record<string, number>;
 
   return (
     <div className="min-h-screen flex flex-col">

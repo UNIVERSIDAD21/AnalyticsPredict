@@ -47,3 +47,10 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Node
+node_modules/
+**/node_modules/
+frontend/.vite/
+backend/.vite/
+*.tsbuildinfo

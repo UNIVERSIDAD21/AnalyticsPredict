@@ -163,7 +163,7 @@ export function PaginaPrincipal() {
       prediccion_desviacion: prediccion?.desviacion_total ?? null,
       confianza_sistema: resultado.nivel_confianza,
       valor_esperado_individual: analisisMercado?.valor_esperado ?? null,
-      razones: resultado.razones as Array<Record<string, unknown>>,
+      razones: resultado.razones as unknown as Array<Record<string, unknown>>,
     };
   }, [resultado, seleccionUsuario, ultimaPeticion]);
   const historialRef = useRef<HTMLDivElement>(null);
@@ -370,7 +370,7 @@ export function PaginaPrincipal() {
                     analizar(peticion);
                   }}
                   cargando={estadoAnalisis === 'cargando'}
-                  cargandoEquipos={estadoEquipos === 'cargando'}
+                  cargandoEquipos={false}
                 />
               </div>
             </div>

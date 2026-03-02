@@ -2,7 +2,7 @@
  * api.ts — Cliente HTTP base para comunicación con el backend
  */
 
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
 import { ErrorAPI } from '../tipos';
 
 // ══════════════════════════════════════════════════════════════
@@ -74,10 +74,14 @@ clienteAPI.interceptors.response.use(
 clienteAPI.interceptors.request.use((config) => {
   const usuarioId = obtenerUsuarioId();
   if (usuarioId) {
-    config.headers = {
-      ...config.headers,
-      'X-Usuario-Id': usuarioId,
-    };
+    if (config.headers instanceof AxiosHeaders) {
+      config.headers.set('X-Usuario-Id', usuarioId);
+    } else {
+      config.headers = {
+        ...((config.headers as Record<string, unknown>) ?? {}),
+        'X-Usuario-Id': usuarioId,
+      } as unknown as AxiosHeaders;
+    }
   }
   return config;
 });
