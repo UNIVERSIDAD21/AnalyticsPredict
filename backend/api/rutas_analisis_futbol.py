@@ -29,6 +29,7 @@ from .schemas_futbol import (
     ProbabilidadLinea,
     RecomendacionApuesta,
     ErrorResponse,
+    ProbabilidadesGanadorFutbol,
 )
 from .dependencias import obtener_usuario_actual, UsuarioActual
 
@@ -89,6 +90,23 @@ def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, flo
     _cache_estadisticas[equipo_id] = (stats, ahora)
     return stats
 
+
+
+
+def _calcular_1x2_poisson(goles_local: float, goles_visitante: float, max_goles: int = 10) -> tuple[float, float, float, str]:
+    """Calcula probabilidades 1X2 con Poisson independiente."""
+    pl = np.array([stats.poisson.pmf(i, max(goles_local, 0.05)) for i in range(max_goles + 1)])
+    pv = np.array([stats.poisson.pmf(i, max(goles_visitante, 0.05)) for i in range(max_goles + 1)])
+    matriz = np.outer(pl, pv)
+    prob_local = float(np.tril(matriz, -1).sum())
+    prob_empate = float(np.trace(matriz))
+    prob_visitante = float(np.triu(matriz, 1).sum())
+    total = prob_local + prob_empate + prob_visitante
+    if total > 0:
+        prob_local, prob_empate, prob_visitante = prob_local / total, prob_empate / total, prob_visitante / total
+    score_idx = np.unravel_index(np.argmax(matriz), matriz.shape)
+    marcador = f"{score_idx[0]}-{score_idx[1]}"
+    return prob_local, prob_empate, prob_visitante, marcador
 
 # ============================================================================
 # ANALISIS CONTEXTUAL PARA LINEAS (H2H + ESTADISTICAS INDIVIDUALES)
@@ -1772,6 +1790,16 @@ async def analizar_partido(
                     jornada=partido["jornada"],
                 )
 
+                prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_poisson(goles_local, goles_visitante)
+                ganador_probable = "LOCAL" if prob_local >= prob_empate and prob_local >= prob_visitante else ("VISITANTE" if prob_visitante >= prob_empate else "EMPATE")
+                diferencial_xg = goles_local - goles_visitante
+                razones_1x2 = [
+                    f"Diferencial esperado de gol: {diferencial_xg:+.2f} ({partido['equipo_local']} vs {partido['equipo_visitante']}).",
+                    f"Probabilidades 1X2: Local {prob_local*100:.1f}%, Empate {prob_empate*100:.1f}%, Visitante {prob_visitante*100:.1f}%.",
+                    f"Marcador más probable según distribución de Poisson: {marcador_probable}.",
+                    f"Base ofensiva estimada: xG local {goles_local:.2f} y xG visitante {goles_visitante:.2f}.",
+                ]
+
                 duracion = time.time() - inicio
                 logger.info(f"Análisis completado en {duracion:.2f}s para partido {request.partido_id}")
 
@@ -1785,6 +1813,14 @@ async def analizar_partido(
                     recomendaciones=recomendaciones,
                     modelo_version="1.0.0",
                     calibradores_activos=calibradores_activos,
+                    prediccion_ganador=ProbabilidadesGanadorFutbol(
+                        prob_local=prob_local,
+                        prob_empate=prob_empate,
+                        prob_visitante=prob_visitante,
+                        ganador_probable=ganador_probable,
+                        marcador_probable=marcador_probable,
+                        razones=razones_1x2,
+                    ),
                 )
 
     except HTTPException:

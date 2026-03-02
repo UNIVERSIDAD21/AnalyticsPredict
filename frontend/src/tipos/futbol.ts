@@ -276,6 +276,17 @@ export interface AnalisisFutbolRequest {
   h2hLimite?: number;
 }
 
+
+
+export interface PrediccionGanadorFutbol {
+  probLocal: number;
+  probEmpate: number;
+  probVisitante: number;
+  ganadorProbable: 'LOCAL' | 'EMPATE' | 'VISITANTE';
+  marcadorProbable: string;
+  razones: string[];
+}
+
 /**
  * Response de análisis
  */
@@ -292,6 +303,7 @@ export interface AnalisisFutbolResponse {
   // Metadata
   modeloVersion: string;
   calibradoresActivos: number;
+  prediccionGanador?: PrediccionGanadorFutbol;
 }
 
 // ══════════════════════════════════════════════════════════════

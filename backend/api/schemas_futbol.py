@@ -230,6 +230,17 @@ class RecomendacionApuesta(BaseModel):
     valor_esperado: Optional[float] = None
 
 
+
+
+class ProbabilidadesGanadorFutbol(BaseModel):
+    """Probabilidades 1X2 para ganador del partido."""
+    prob_local: float = Field(ge=0, le=1)
+    prob_empate: float = Field(ge=0, le=1)
+    prob_visitante: float = Field(ge=0, le=1)
+    ganador_probable: Literal["LOCAL", "EMPATE", "VISITANTE"]
+    marcador_probable: str
+    razones: List[str] = []
+
 class AnalisisResponse(BaseModel):
     """Respuesta del análisis de un partido."""
     exito: bool = True
@@ -241,6 +252,7 @@ class AnalisisResponse(BaseModel):
     recomendaciones: List[RecomendacionApuesta]
     modelo_version: str
     calibradores_activos: int = 0
+    prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -417,6 +429,7 @@ class ResumenSistema(BaseModel):
     win_rate_global: Optional[float] = None
     modelo_activo: bool = False
     calibradores_activos: int = 0
+    prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
     alerta_calibracion: Optional[str] = None
 
 
