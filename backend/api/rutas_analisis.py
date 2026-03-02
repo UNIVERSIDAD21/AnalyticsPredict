@@ -31,6 +31,7 @@ from motor_autoentrenamiento import EntrenadorBD, ModeloEnMemoria, obtener_model
 from motor.tipos import ConfiguracionSizing, Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
 from db import obtener_pool
+from servicios.apuestas_analizadas import registrar_apuesta_analizada
 from .dependencias import obtener_usuario_id_opcional
 from .excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from .modelos_peticion import PeticionAnalisis, PeticionAnalisisEnVivo

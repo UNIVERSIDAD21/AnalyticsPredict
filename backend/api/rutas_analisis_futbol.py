@@ -21,6 +21,7 @@ from psycopg.rows import dict_row
 from scipy import stats
 
 from db import obtener_pool
+from servicios.apuestas_analizadas import registrar_apuesta_analizada
 from .schemas_futbol import (
     AnalisisRequest,
     AnalisisResponse,
@@ -1778,6 +1779,21 @@ async def analizar_partido(
                         partido["id"],
                         e,
                     )
+
+
+                try:
+                    registrar_apuesta_analizada(
+                        deporte='futbol',
+                        partido_id=str(partido['id']),
+                        mercado='GOLES_FT',
+                        lado='OVER' if (goles_local + goles_visitante) >= 2.5 else 'UNDER',
+                        linea=2.5,
+                        probabilidad_sistema=max(prob_local, prob_empate, prob_visitante),
+                        confianza='MEDIA',
+                        payload_json='{"fuente":"analisis_futbol"}',
+                    )
+                except Exception:
+                    logger.exception('No se pudo registrar apuesta analizada futbol')
 
                 # 6. Construir respuesta
                 partido_resumen = PartidoResumen(
