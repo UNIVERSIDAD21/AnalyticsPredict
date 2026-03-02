@@ -24,6 +24,7 @@ import { SelectorCompeticion, MensajeError } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { usePartidosFutbol } from '../../hooks';
 import { obtenerCompeticiones, obtenerResumenCalidad1x2 } from '../../servicios/futbol';
+import { listarApuestasAnalizadas } from '../../servicios/bitacora';
 import { obtenerFechaISOBogota, obtenerHoyISOBogota } from '../../utilidades';
 import type { Competicion, FiltrosPartidos, PartidoFutbolResumen } from '../../tipos/futbol';
 
@@ -404,6 +405,7 @@ export function PaginaFutbol() {
   const [competiciones, setCompeticiones] = useState<Competicion[]>([]);
   const [cargandoCompeticiones, setCargandoCompeticiones] = useState(true);
   const [resumenCalidad1x2, setResumenCalidad1x2] = useState<{ hitRateSinPush: number; ganadas: number; perdidas: number; push: number } | null>(null);
+  const [apuestasAnalizadasResumen, setApuestasAnalizadasResumen] = useState<{ pendientes: number; finalizadas: number } | null>(null);
 
   // Filtros memorizados
   const filtros = useMemo<FiltrosPartidos>(() => {
@@ -450,9 +452,10 @@ export function PaginaFutbol() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const [data, resumen] = await Promise.all([
+        const [data, resumen, apuestasAnalizadas] = await Promise.all([
           obtenerCompeticiones(),
           obtenerResumenCalidad1x2().catch(() => null),
+          listarApuestasAnalizadas({ limite: 200 }).catch(() => null),
         ]);
         setCompeticiones(data);
         if (resumen) {
@@ -462,6 +465,11 @@ export function PaginaFutbol() {
             perdidas: resumen.perdidas,
             push: resumen.push,
           });
+        }
+        if (apuestasAnalizadas) {
+          const finalizadas = (apuestasAnalizadas.items || []).filter((x: any) => x.estado === 'FINALIZADA').length;
+          const pendientes = Math.max(0, (apuestasAnalizadas.total || 0) - finalizadas);
+          setApuestasAnalizadasResumen({ pendientes, finalizadas });
         }
       } catch (err) {
         console.error('Error cargando competiciones:', err);
@@ -559,7 +567,6 @@ export function PaginaFutbol() {
     // Estos valores serian de un servicio real
     return {
       partidosHoy,
-      apuestasActivas: 3, // Mock
     };
   }, [partidosParaMostrar]);
 
@@ -650,9 +657,9 @@ export function PaginaFutbol() {
             loading={cargandoPartidos || cargandoHoy}
           />
           <TarjetaResumen
-            titulo="Apuestas Activas"
-            valor={estadisticasRapidas.apuestasActivas}
-            subtitulo="pendientes"
+            titulo="Apuestas Analizadas"
+            valor={apuestasAnalizadasResumen?.pendientes ?? 0}
+            subtitulo={apuestasAnalizadasResumen ? `finalizadas: ${apuestasAnalizadasResumen.finalizadas}` : 'sin datos'}
             icono={<Target size={20} className="text-neon-magenta" />}
             color="magenta"
           />
