@@ -642,3 +642,48 @@ async def obtener_resumen_sistema(
     except Exception as e:
         logger.error(f"Error obteniendo resumen del sistema: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+def _resumen_calidad_1x2_futbol(cursor) -> dict:
+    """Resumen de calidad simple para 1X2 usando apuestas_analizadas."""
+    cursor.execute(
+        """
+        SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE estado = 'FINALIZADA') AS finalizadas,
+            COUNT(*) FILTER (WHERE resultado_outcome = 'GANADA') AS ganadas,
+            COUNT(*) FILTER (WHERE resultado_outcome = 'PERDIDA') AS perdidas,
+            COUNT(*) FILTER (WHERE resultado_outcome = 'PUSH') AS push
+        FROM apuestas_analizadas
+        WHERE deporte = 'futbol'
+        """
+    )
+    row = cursor.fetchone()
+    total = int(row[0] or 0)
+    finalizadas = int(row[1] or 0)
+    ganadas = int(row[2] or 0)
+    perdidas = int(row[3] or 0)
+    push = int(row[4] or 0)
+    hit_rate = (ganadas / max(1, ganadas + perdidas)) * 100.0
+    return {
+        'total': total,
+        'finalizadas': finalizadas,
+        'ganadas': ganadas,
+        'perdidas': perdidas,
+        'push': push,
+        'hit_rate_sin_push': round(hit_rate, 2),
+    }
+
+
+@router.get(
+    "/resumen-calidad-1x2",
+    summary="Resumen de calidad de predicción 1X2 (fútbol)",
+)
+async def resumen_calidad_1x2() -> dict:
+    pool = obtener_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            return {
+                'exito': True,
+                'resumen': _resumen_calidad_1x2_futbol(cursor),
+            }
