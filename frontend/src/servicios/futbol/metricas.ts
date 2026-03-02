@@ -185,3 +185,30 @@ export async function obtenerResumenSistema(): Promise<ResumenSistema> {
     throw new Error(extraerMensajeError(error));
   }
 }
+
+
+export interface ResumenCalidad1x2Futbol {
+  total: number;
+  finalizadas: number;
+  ganadas: number;
+  perdidas: number;
+  push: number;
+  hitRateSinPush: number;
+}
+
+export async function obtenerResumenCalidad1x2(): Promise<ResumenCalidad1x2Futbol> {
+  try {
+    const respuesta = await clienteAPI.get('/api/futbol/metricas/resumen-calidad-1x2');
+    const r = respuesta.data?.resumen || {};
+    return {
+      total: Number(r.total || 0),
+      finalizadas: Number(r.finalizadas || 0),
+      ganadas: Number(r.ganadas || 0),
+      perdidas: Number(r.perdidas || 0),
+      push: Number(r.push || 0),
+      hitRateSinPush: Number(r.hit_rate_sin_push || 0),
+    };
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}

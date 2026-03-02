@@ -47,4 +47,5 @@ export {
   obtenerMetricasRendimiento,
   obtenerEstadoModelos,
   obtenerResumenSistema,
+  obtenerResumenCalidad1x2,
 } from './metricas';

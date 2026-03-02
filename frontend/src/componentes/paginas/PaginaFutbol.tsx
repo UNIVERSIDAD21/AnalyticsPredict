@@ -23,7 +23,7 @@ import { Encabezado, ListaPartidosFutbol } from '../organismos';
 import { SelectorCompeticion, MensajeError } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { usePartidosFutbol } from '../../hooks';
-import { obtenerCompeticiones } from '../../servicios/futbol';
+import { obtenerCompeticiones, obtenerResumenCalidad1x2 } from '../../servicios/futbol';
 import { obtenerFechaISOBogota, obtenerHoyISOBogota } from '../../utilidades';
 import type { Competicion, FiltrosPartidos, PartidoFutbolResumen } from '../../tipos/futbol';
 
@@ -403,6 +403,7 @@ export function PaginaFutbol() {
   // Estado de competiciones
   const [competiciones, setCompeticiones] = useState<Competicion[]>([]);
   const [cargandoCompeticiones, setCargandoCompeticiones] = useState(true);
+  const [resumenCalidad1x2, setResumenCalidad1x2] = useState<{ hitRateSinPush: number; ganadas: number; perdidas: number; push: number } | null>(null);
 
   // Filtros memorizados
   const filtros = useMemo<FiltrosPartidos>(() => {
@@ -449,8 +450,19 @@ export function PaginaFutbol() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const data = await obtenerCompeticiones();
+        const [data, resumen] = await Promise.all([
+          obtenerCompeticiones(),
+          obtenerResumenCalidad1x2().catch(() => null),
+        ]);
         setCompeticiones(data);
+        if (resumen) {
+          setResumenCalidad1x2({
+            hitRateSinPush: resumen.hitRateSinPush,
+            ganadas: resumen.ganadas,
+            perdidas: resumen.perdidas,
+            push: resumen.push,
+          });
+        }
       } catch (err) {
         console.error('Error cargando competiciones:', err);
       } finally {
@@ -548,7 +560,6 @@ export function PaginaFutbol() {
     return {
       partidosHoy,
       apuestasActivas: 3, // Mock
-      roiMensual: 8.5, // Mock
     };
   }, [partidosParaMostrar]);
 
@@ -646,9 +657,9 @@ export function PaginaFutbol() {
             color="magenta"
           />
           <TarjetaResumen
-            titulo="ROI Mensual"
-            valor={`+${estadisticasRapidas.roiMensual}%`}
-            subtitulo="ultimos 30 dias"
+            titulo="Hit Rate 1X2"
+            valor={`${(resumenCalidad1x2?.hitRateSinPush ?? 0).toFixed(1)}%`}
+            subtitulo={resumenCalidad1x2 ? `G/P/Pu: ${resumenCalidad1x2.ganadas}/${resumenCalidad1x2.perdidas}/${resumenCalidad1x2.push}` : 'sin datos'}
             icono={<TrendingUp size={20} className="text-neon-verde" />}
             color="verde"
           />
