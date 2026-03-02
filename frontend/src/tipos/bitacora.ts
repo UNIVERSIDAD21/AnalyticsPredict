@@ -106,3 +106,27 @@ export interface PeticionActualizarResultado {
   resultado: Exclude<ResultadoApuesta, 'PENDIENTE'>;
   puntos_reales?: number | null;
 }
+
+
+export interface ApuestaAnalizada {
+  id: number;
+  deporte: 'baloncesto' | 'futbol' | string;
+  partido_id: string;
+  mercado?: string | null;
+  lado?: string | null;
+  linea?: number | null;
+  probabilidad_sistema?: number | null;
+  confianza?: string | null;
+  estado: string;
+  resultado_outcome?: 'GANADA' | 'PERDIDA' | 'PUSH' | null;
+  valor_real?: number | null;
+  resultado_resumen?: string | null;
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
+export interface RespuestaApuestasAnalizadas {
+  exito: boolean;
+  total: number;
+  items: ApuestaAnalizada[];
+}
