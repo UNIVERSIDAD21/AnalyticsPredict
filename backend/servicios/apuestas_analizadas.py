@@ -24,6 +24,8 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
                     probabilidad_sistema NUMERIC,
                     confianza TEXT,
                     estado TEXT NOT NULL DEFAULT 'PENDIENTE',
+                    resultado_outcome TEXT,
+                    valor_real NUMERIC,
                     resultado_resumen TEXT,
                     payload JSONB,
                     creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -31,6 +33,8 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
                 );
                 """
             )
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS resultado_outcome TEXT;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS valor_real NUMERIC;")
             cur.execute(
                 """
                 CREATE UNIQUE INDEX IF NOT EXISTS uq_apuestas_analizadas_natural
@@ -60,7 +64,7 @@ def registrar_apuesta_analizada(
                 INSERT INTO apuestas_analizadas
                 (deporte, partido_id, mercado, lado, linea, probabilidad_sistema, confianza, payload)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-                ON CONFLICT (deporte, partido_id, COALESCE(mercado,''), COALESCE(lado,''), COALESCE(linea, -1))
+                ON CONFLICT (deporte, partido_id, mercado, lado, linea)
                 DO UPDATE SET
                     probabilidad_sistema = EXCLUDED.probabilidad_sistema,
                     confianza = EXCLUDED.confianza,
@@ -85,10 +89,49 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
     asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:
         with conn.cursor() as cur:
+            # Baloncesto: soporte Q1-Q4/COMPLETO con outcome over-under
             cur.execute(
                 """
                 UPDATE apuestas_analizadas a
                 SET estado = 'FINALIZADA',
+                    valor_real = CASE
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                        ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
+                    END,
+                    resultado_outcome = CASE
+                        WHEN a.lado IS NULL OR a.linea IS NULL THEN NULL
+                        WHEN (
+                            CASE
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
+                            END
+                        ) = a.linea THEN 'PUSH'
+                        WHEN UPPER(COALESCE(a.lado, '')) = 'OVER' AND (
+                            CASE
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
+                            END
+                        ) > a.linea THEN 'GANADA'
+                        WHEN UPPER(COALESCE(a.lado, '')) = 'UNDER' AND (
+                            CASE
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
+                            END
+                        ) < a.linea THEN 'GANADA'
+                        ELSE 'PERDIDA'
+                    END,
                     resultado_resumen = CONCAT('Resultado final: ', pb.local_total, '-', pb.visitante_total),
                     actualizado_en = now()
                 FROM partidos_baloncesto pb
@@ -100,10 +143,20 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                 """
             )
             res_b = cur.rowcount
+
+            # Fútbol: default sobre total goles FT
             cur.execute(
                 """
                 UPDATE apuestas_analizadas a
                 SET estado = 'FINALIZADA',
+                    valor_real = COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0),
+                    resultado_outcome = CASE
+                        WHEN a.lado IS NULL OR a.linea IS NULL THEN NULL
+                        WHEN (COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0)) = a.linea THEN 'PUSH'
+                        WHEN UPPER(COALESCE(a.lado, '')) = 'OVER' AND (COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0)) > a.linea THEN 'GANADA'
+                        WHEN UPPER(COALESCE(a.lado, '')) = 'UNDER' AND (COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0)) < a.linea THEN 'GANADA'
+                        ELSE 'PERDIDA'
+                    END,
                     resultado_resumen = CONCAT('Resultado final: ', pf.local_goles_total, '-', pf.visitante_goles_total),
                     actualizado_en = now()
                 FROM partidos_futbol pf
