@@ -40,7 +40,7 @@ from motor.resolucion_predicciones import (
     obtener_predicciones_pendientes_por_mercado,
 )
 from motor.resolucion_predicciones_futbol import resolver_predicciones_futbol
-from servicios.apuestas_analizadas import resolver_apuestas_analizadas
+from servicios.apuestas_analizadas import resolver_apuestas_analizadas, resumen_apuestas_analizadas
 
 router = APIRouter(prefix="/api/interno", tags=["Interno"])
 logger = logging.getLogger(__name__)
@@ -357,11 +357,13 @@ async def ejecutar_ciclo_calidad(
         resumen_b = resolver_predicciones(limite=limite_baloncesto)
         resumen_f = resolver_predicciones_futbol(limite=limite_futbol)
         resumen_apuestas = resolver_apuestas_analizadas()
+        resumen_bitacora = resumen_apuestas_analizadas()
 
         mensaje = (
             f"Ciclo OK | baloncesto: {resumen_b.resueltas} resueltas "
             f"| futbol: {resumen_f.resueltas} resueltas "
-            f"| apuestas_analizadas_actualizadas: {resumen_apuestas.get('total', 0)}"
+            f"| apuestas_analizadas_actualizadas: {resumen_apuestas.get('total', 0)} "
+            f"| bitacora(g/p/pu): {resumen_bitacora.get('ganadas',0)}/{resumen_bitacora.get('perdidas',0)}/{resumen_bitacora.get('push',0)}"
         )
         return RespuestaCicloCalidad(
             exito=True,

@@ -1790,7 +1790,15 @@ async def analizar_partido(
                         linea=2.5,
                         probabilidad_sistema=max(prob_local, prob_empate, prob_visitante),
                         confianza='MEDIA',
-                        payload_json='{"fuente":"analisis_futbol"}',
+                        payload_json=(
+                            '{"fuente":"analisis_futbol",'
+                            f'"prob_local":{prob_local:.6f},'
+                            f'"prob_empate":{prob_empate:.6f},'
+                            f'"prob_visitante":{prob_visitante:.6f},'
+                            f'"ganador_probable":"{ganador_probable}",'
+                            f'"marcador_probable":"{marcador_probable}"'
+                            '}'
+                        ),
                     )
                 except Exception:
                     logger.exception('No se pudo registrar apuesta analizada futbol')

@@ -168,3 +168,27 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
             )
             res_f = cur.rowcount
     return {"baloncesto": res_b, "futbol": res_f, "total": res_b + res_f}
+
+
+def resumen_apuestas_analizadas(pool=None) -> dict:
+    pool = pool or obtener_pool()
+    asegurar_tabla_apuestas_analizadas(pool)
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    COUNT(*) FILTER (WHERE estado = 'PENDIENTE') AS pendientes,
+                    COUNT(*) FILTER (WHERE resultado_outcome = 'GANADA') AS ganadas,
+                    COUNT(*) FILTER (WHERE resultado_outcome = 'PERDIDA') AS perdidas,
+                    COUNT(*) FILTER (WHERE resultado_outcome = 'PUSH') AS push
+                FROM apuestas_analizadas
+            """)
+            row = cur.fetchone()
+            return {
+                'total': int(row[0] or 0),
+                'pendientes': int(row[1] or 0),
+                'ganadas': int(row[2] or 0),
+                'perdidas': int(row[3] or 0),
+                'push': int(row[4] or 0),
+            }
