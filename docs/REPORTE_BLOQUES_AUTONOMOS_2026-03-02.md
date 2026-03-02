@@ -25,3 +25,20 @@ Se completaron bloques de limpieza, mejora de predicciones NBA/Fútbol, UX fútb
 1. Dashboard UI de calidad 1X2 en frontend.
 2. Resolución granular en fútbol por mercado (corners/disparos) en bitácora.
 3. Job programado de ciclo-calidad con trazabilidad por ejecución.
+
+- Bloque 12: documentación consolidada de avances y próximos pasos
+- Bloque 13: UI fútbol consume hit rate 1X2 real desde backend
+- Bloque 14: endpoint para listar apuestas analizadas
+- Bloque 15: hardening de endpoint + prueba básica
+- Bloque 16: tipos/servicio frontend para apuestas analizadas
+- Bloque 17: tarjeta fútbol con métricas reales de apuestas analizadas
+- Bloque 18: prueba de endpoint resumen-calidad-1x2
+
+## Validaciones recientes
+- backend/tests/test_smoke_api.py ✅
+- backend/tests/test_poisson_1x2_futbol.py ✅
+- backend/tests/test_nba_ganador_probable.py ✅
+- backend/tests/test_metricas_1x2_futbol.py ✅
+- backend/tests/test_rutas_bitacora_apuestas_analizadas.py ✅
+- backend/tests/test_resumen_calidad_1x2_endpoint.py ✅
+- frontend build ✅
