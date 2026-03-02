@@ -42,3 +42,7 @@ Se completaron bloques de limpieza, mejora de predicciones NBA/Fútbol, UX fútb
 - backend/tests/test_rutas_bitacora_apuestas_analizadas.py ✅
 - backend/tests/test_resumen_calidad_1x2_endpoint.py ✅
 - frontend build ✅
+
+- Bloque 19: actualización del reporte con bloques 12-18 y validaciones
+- Bloque 20: script local para ejecutar ciclo de calidad
+- Bloque 21: script de ciclo de calidad parametrizable por límites
