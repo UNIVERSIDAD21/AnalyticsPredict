@@ -1038,8 +1038,9 @@ async def obtener_metricas_bitacora(
 
 @router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
 async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
-    from db import obtener_pool
+    from servicios.apuestas_analizadas import asegurar_tabla_apuestas_analizadas
     pool = obtener_pool()
+    asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
