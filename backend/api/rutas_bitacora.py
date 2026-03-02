@@ -1034,3 +1034,24 @@ async def obtener_metricas_bitacora(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error calculando métricas: {str(e)}",
         )
+
+
+@router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
+async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
+    from db import obtener_pool
+    pool = obtener_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, deporte, partido_id, mercado, lado, linea,
+                       probabilidad_sistema, confianza, estado, resultado_outcome,
+                       valor_real, resultado_resumen, creado_en, actualizado_en
+                FROM apuestas_analizadas
+                ORDER BY actualizado_en DESC
+                LIMIT %s OFFSET %s
+                """,
+                [max(1, min(limite, 1000)), max(0, offset)],
+            )
+            filas = cur.fetchall() or []
+    return {"exito": True, "total": len(filas), "items": filas}
