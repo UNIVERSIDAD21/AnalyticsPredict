@@ -9,7 +9,8 @@ import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
 import { useBitacora } from '../../hooks';
 import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada, actualizarResultadoCombinada } from '../../servicios';
-import { RegistroBitacoraUnificada, ResultadoApuesta } from '../../tipos';
+import { listarApuestasAnalizadas } from '../../servicios/bitacora';
+import { RegistroBitacoraUnificada, ResultadoApuesta, ApuestaAnalizada } from '../../tipos';
 
 const TAMANO_PAGINA = 20;
 
@@ -32,6 +33,8 @@ export function PaginaBitacora() {
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const [apuestaAEliminar, setApuestaAEliminar] = useState<RegistroBitacoraUnificada | null>(null);
   const [eliminando, setEliminando] = useState(false);
+  const [apuestasAnalizadas, setApuestasAnalizadas] = useState<ApuestaAnalizada[]>([]);
+  const [cargandoAnalizadas, setCargandoAnalizadas] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -68,6 +71,21 @@ export function PaginaBitacora() {
       setMensajeError(error);
     }
   }, [error]);
+
+  useEffect(() => {
+    const cargarAnalizadas = async () => {
+      setCargandoAnalizadas(true);
+      try {
+        const data = await listarApuestasAnalizadas({ limite: 8 });
+        setApuestasAnalizadas(data.items || []);
+      } catch {
+        setApuestasAnalizadas([]);
+      } finally {
+        setCargandoAnalizadas(false);
+      }
+    };
+    void cargarAnalizadas();
+  }, [pagina]);
 
   const manejarFiltro = (campo: string, valor: string) => {
     if (campo === 'busqueda') {
@@ -208,6 +226,44 @@ export function PaginaBitacora() {
             <p className="text-xs text-texto-secundario uppercase tracking-widest">ROI</p>
             <p className="text-xl text-texto-principal font-bold">{Number(resumenDatos.roi).toFixed(2)}%</p>
           </div>
+        </div>
+
+
+        <div className="tarjeta p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-futurista text-texto-principal uppercase tracking-wider">Apuestas analizadas automáticas</h3>
+            <span className="text-xs text-texto-secundario">ultimas {apuestasAnalizadas.length}</span>
+          </div>
+          {cargandoAnalizadas ? (
+            <p className="text-sm text-texto-secundario">Cargando...</p>
+          ) : apuestasAnalizadas.length === 0 ? (
+            <p className="text-sm text-texto-secundario">Sin registros automáticos por ahora.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-texto-terciario border-b border-neon-cyan/10">
+                    <th className="text-left py-2">Deporte</th>
+                    <th className="text-left py-2">Mercado</th>
+                    <th className="text-left py-2">Estado</th>
+                    <th className="text-left py-2">Outcome</th>
+                    <th className="text-left py-2">Valor real</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {apuestasAnalizadas.map((a) => (
+                    <tr key={a.id} className="border-b border-neon-cyan/5">
+                      <td className="py-2 capitalize">{a.deporte}</td>
+                      <td className="py-2">{a.mercado ?? '-'}</td>
+                      <td className="py-2">{a.estado}</td>
+                      <td className="py-2">{a.resultado_outcome ?? '-'}</td>
+                      <td className="py-2">{a.valor_real ?? '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <FiltrosApuestas
