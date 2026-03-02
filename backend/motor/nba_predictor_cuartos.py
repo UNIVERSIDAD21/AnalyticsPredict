@@ -556,16 +556,16 @@ def analizar_partido(
     else:
         cuarto_predicho = predicciones[mercado]
 
+    prediccion_referencia = prediccion_juego_completo if mercado == "COMPLETO" and prediccion_juego_completo else predicciones.get(mercado)
     razones = generar_razones_basicas(
         nombre_equipo=equipo,
         nombre_rival=rival,
-        media_equipo=predicciones[mercado].media_equipo
-        if mercado in predicciones else float(np.mean(media_equipo)),
-        media_rival=predicciones[mercado].media_rival
-        if mercado in predicciones else float(np.mean(media_rival)),
-        media_total=predicciones[mercado].media_total
-        if mercado in predicciones else float(np.mean(media_equipo + media_rival)),
+        media_equipo=prediccion_referencia.media_equipo if prediccion_referencia else float(np.mean(media_equipo)),
+        media_rival=prediccion_referencia.media_rival if prediccion_referencia else float(np.mean(media_rival)),
+        media_total=prediccion_referencia.media_total if prediccion_referencia else float(np.mean(media_equipo + media_rival)),
         mercado=mercado,
+        ganador_probable=prediccion_referencia.ganador_probable if prediccion_referencia else None,
+        probabilidad_ganador=prediccion_referencia.probabilidad_ganador if prediccion_referencia else None,
     )
 
     analisis_mercado = None
@@ -773,6 +773,8 @@ def analizar_partido(
                     media_ajustada=prediccion_ajustada.media_ajustada,
                     linea=prediccion_base.linea_analizada,
                     ajustes=prediccion_ajustada.ajustes_aplicados,
+                    ganador_probable=prediccion_base.ganador_probable,
+                    probabilidad_ganador=prediccion_base.probabilidad_ganador,
                 )
         except Exception:
             logger.exception("Error aplicando contexto; se devuelve predicción base.")

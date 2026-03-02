@@ -148,6 +148,13 @@ export function ResultadoAnalisis({
   // Obtener media y desviación
   let mediaTotal = 0;
   let desviacion = 0;
+  const prediccionGanador = mercado === 'COMPLETO'
+    ? resultado.prediccion_juego_completo
+    : (mercado ? resultado.predicciones[mercado] : null);
+  const etiquetaGanador = mercado === 'COMPLETO' ? 'Ganador del partido' : 'Ganador del cuarto';
+  const nombreGanador = prediccionGanador?.ganador_probable === 'equipo'
+    ? resultado.equipo_nombre_completo
+    : resultado.rival_nombre_completo;
 
   if (mercado === 'COMPLETO' && resultado.prediccion_juego_completo) {
     mediaTotal = resultado.prediccion_juego_completo.media_total;
@@ -252,6 +259,24 @@ export function ResultadoAnalisis({
                   : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`
                 }
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {prediccionGanador && (
+        <div className="tarjeta p-4 border border-neon-cyan/20">
+          <p className="text-xs uppercase tracking-wider text-neon-cyan font-semibold">{etiquetaGanador}</p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-lg font-futurista text-texto-principal">{nombreGanador}</p>
+              <p className="text-sm text-texto-secundario">
+                Probabilidad: <span className="text-neon-verde font-semibold">{(prediccionGanador.probabilidad_ganador * 100).toFixed(1)}%</span>
+              </p>
+            </div>
+            <div className="text-right text-xs text-texto-secundario">
+              <p>Marcador estimado: {prediccionGanador.media_equipo.toFixed(1)} - {prediccionGanador.media_rival.toFixed(1)}</p>
+              <p>Total estimado: {prediccionGanador.media_total.toFixed(1)}</p>
             </div>
           </div>
         </div>
