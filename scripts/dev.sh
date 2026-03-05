@@ -23,8 +23,27 @@ echo "[dev] Root: $ROOT_DIR"
 
 if [[ "$AUTO_KILL_PORTS" == "true" ]]; then
   echo "[dev] Liberando puertos $BACKEND_PORT y $FRONTEND_PORT (si están ocupados)..."
-  fuser -k "${BACKEND_PORT}/tcp" >/dev/null 2>&1 || true
-  fuser -k "${FRONTEND_PORT}/tcp" >/dev/null 2>&1 || true
+
+  kill_port() {
+    local port="$1"
+
+    if command -v fuser >/dev/null 2>&1; then
+      fuser -k "${port}/tcp" >/dev/null 2>&1 || true
+      return
+    fi
+
+    if command -v lsof >/dev/null 2>&1; then
+      local pids
+      pids="$(lsof -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+      [[ -n "$pids" ]] && kill $pids >/dev/null 2>&1 || true
+      return
+    fi
+
+    echo "[dev] Aviso: no se encontró fuser ni lsof; no se pudo liberar el puerto $port automáticamente."
+  }
+
+  kill_port "$BACKEND_PORT"
+  kill_port "$FRONTEND_PORT"
 fi
 
 # Backend
