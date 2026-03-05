@@ -1,4 +1,15 @@
-.PHONY: dev backend frontend calidad-ciclo calidad-ciclo-fast reporte-ejecutivo qa-preflight reporte-semanal-template reporte-semanal-auto export-metricas-csv snapshot-tendencias revision-politica check-modo-estricto cierre-operativo estado-unificado operacion-diaria-full
+.PHONY: help dev backend frontend calidad-ciclo calidad-ciclo-fast reporte-ejecutivo qa-preflight reporte-semanal-template reporte-semanal-auto export-metricas-csv snapshot-tendencias revision-politica check-modo-estricto cierre-operativo estado-unificado operacion-diaria-full
+
+help:
+	@echo "Targets disponibles:"
+	@echo "  make dev                  # Levanta entorno local"
+	@echo "  make backend              # Inicia API backend"
+	@echo "  make frontend             # Inicia frontend"
+	@echo "  make calidad-ciclo        # Ejecuta ciclo completo de calidad"
+	@echo "  make calidad-ciclo-fast   # Ciclo de calidad rápido"
+	@echo "  make reporte-ejecutivo    # Genera reporte ejecutivo"
+	@echo "  make qa-preflight         # Validaciones previas"
+	@echo "  make operacion-diaria-full# Pipeline diaria completa"
 
 dev:
 	bash scripts/dev.sh
