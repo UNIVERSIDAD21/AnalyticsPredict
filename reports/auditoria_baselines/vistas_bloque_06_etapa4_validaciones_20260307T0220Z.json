@@ -1,0 +1,139 @@
+{
+  "applied_sql": [
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/01_base_unificada_v1.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/03_vw_perf_market_odds_confidence.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/04_vw_policy_odds_compliance.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/06_vw_calibration_scorecard.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/07_vw_stake_and_risk_consistency.sql"
+  ],
+  "validation_file": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/08_validaciones_vistas_calibration_risk.sql",
+  "results": {
+    "q1": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "n_rows": 1185,
+        "n_eventos": 1292,
+        "calibration_gap_prom": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "n_rows": 295,
+        "n_eventos": 340,
+        "calibration_gap_prom": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "n_rows": 163,
+        "n_eventos": 188,
+        "calibration_gap_prom": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "n_rows": 148,
+        "n_eventos": 182,
+        "calibration_gap_prom": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "n_rows": 121,
+        "n_eventos": 150,
+        "calibration_gap_prom": "0.000000"
+      }
+    ],
+    "q2": [
+      {
+        "sport": "NBA",
+        "confidence_bucket": "0.60-0.69",
+        "n_rows": 235,
+        "n_eventos": 235,
+        "hit_rate_prom": "0.595745",
+        "prob_media_prom": "0.649618"
+      },
+      {
+        "sport": "NBA",
+        "confidence_bucket": "0.70-0.79",
+        "n_rows": 230,
+        "n_eventos": 230,
+        "hit_rate_prom": "0.721739",
+        "prob_media_prom": "0.748066"
+      },
+      {
+        "sport": "NBA",
+        "confidence_bucket": "0.80+",
+        "n_rows": 371,
+        "n_eventos": 371,
+        "hit_rate_prom": "0.765499",
+        "prob_media_prom": "0.887749"
+      },
+      {
+        "sport": "NBA",
+        "confidence_bucket": "<0.60",
+        "n_rows": 1076,
+        "n_eventos": 1316,
+        "hit_rate_prom": "0.340149",
+        "prob_media_prom": "0.280604"
+      }
+    ],
+    "q3": [
+      {
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa",
+        "n_rows": 1912
+      }
+    ],
+    "q4": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "n_eventos": 97,
+        "violaciones_policy": 9,
+        "avg_stake": "2068.909091",
+        "avg_stake_dispersion": "33.169736"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "n_eventos": 17,
+        "violaciones_policy": 10,
+        "avg_stake": "1000.000000",
+        "avg_stake_dispersion": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "n_eventos": 9,
+        "violaciones_policy": 0,
+        "avg_stake": "1000.000000",
+        "avg_stake_dispersion": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "n_eventos": 4,
+        "violaciones_policy": 4,
+        "avg_stake": "1000.000000",
+        "avg_stake_dispersion": "0.000000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "n_eventos": 2,
+        "violaciones_policy": 2,
+        "avg_stake": "1000.000000",
+        "avg_stake_dispersion": "0.000000"
+      }
+    ],
+    "q5": [
+      {
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa",
+        "n_rows": 70
+      }
+    ]
+  }
+}
