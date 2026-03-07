@@ -77,10 +77,26 @@ def _obtener_columnas_apuestas(cursor) -> Set[str]:
 
 
 def _resolver_columna(columnas: Set[str], *candidatos: str) -> Optional[str]:
-    """Devuelve el primer nombre de columna disponible."""
+    """Devuelve el primer nombre de columna disponible y alerta uso legacy."""
+    if not candidatos:
+        return None
+
+    canonica = candidatos[0]
     for candidato in candidatos:
         if candidato in columnas:
+            if candidato != canonica:
+                logger.warning(
+                    "[anti-drift] Usando columna legacy '%s' en lugar de canónica '%s'",
+                    candidato,
+                    canonica,
+                )
             return candidato
+
+    logger.warning(
+        "[anti-drift] No se encontró ninguna columna candidata. canónica esperada='%s', candidatos=%s",
+        canonica,
+        candidatos,
+    )
     return None
 
 

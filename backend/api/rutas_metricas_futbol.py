@@ -133,16 +133,32 @@ def _obtener_metricas_desde_calibradores(
 
 
 def _resolver_columna_estado_apuestas(cursor) -> Optional[str]:
+    canonica = "estado"
     for columna in ("estado", "resultado", "status"):
         if _columna_existe(cursor, "apuestas_futbol", columna):
+            if columna != canonica:
+                logger.warning(
+                    "[anti-drift] apuestas_futbol usa columna legacy '%s' para estado (canónica '%s')",
+                    columna,
+                    canonica,
+                )
             return columna
+    logger.warning("[anti-drift] No existe columna de estado en apuestas_futbol")
     return None
 
 
 def _resolver_columna_ganancia_apuestas(cursor) -> Optional[str]:  # CORREGIDO
-    for columna in ("ganancia_real", "ganancia_neta", "ganancia", "beneficio_real", "beneficio"):
+    canonica = "ganancia"
+    for columna in ("ganancia", "ganancia_real", "ganancia_neta", "beneficio_real", "beneficio"):
         if _columna_existe(cursor, "apuestas_futbol", columna):
+            if columna != canonica:
+                logger.warning(
+                    "[anti-drift] apuestas_futbol usa columna legacy '%s' para ganancia (canónica '%s')",
+                    columna,
+                    canonica,
+                )
             return columna
+    logger.warning("[anti-drift] No existe columna de ganancia en apuestas_futbol")
     return None
 
 
