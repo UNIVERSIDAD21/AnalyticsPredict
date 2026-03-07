@@ -1,0 +1,607 @@
+{
+  "quarter_roi": [
+    {
+      "mercado": "Q1",
+      "n": 17,
+      "win_rate_pct": "76.4706",
+      "roi_pct": "10.8318",
+      "stake_total": "17000.00",
+      "ganancia_total": "1841.40"
+    },
+    {
+      "mercado": "Q2",
+      "n": 9,
+      "win_rate_pct": "88.8889",
+      "roi_pct": "61.4111",
+      "stake_total": "9000.00",
+      "ganancia_total": "5527.00"
+    },
+    {
+      "mercado": "Q3",
+      "n": 4,
+      "win_rate_pct": "50.0000",
+      "roi_pct": "-56.7500",
+      "stake_total": "4000.00",
+      "ganancia_total": "-2270.00"
+    },
+    {
+      "mercado": "Q4",
+      "n": 2,
+      "win_rate_pct": "100.0000",
+      "roi_pct": "63.3000",
+      "stake_total": "2000.00",
+      "ganancia_total": "1266.00"
+    }
+  ],
+  "quarter_line_dist": [
+    {
+      "mercado": "Q1",
+      "linea": "51.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "53.00"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "53.5",
+      "n": 1,
+      "win_rate_pct": "0.00",
+      "roi_pct": "-406.70"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "57.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "60.00"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "58.5",
+      "n": 1,
+      "win_rate_pct": "0.00",
+      "roi_pct": "-100.00"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "60.5",
+      "n": 3,
+      "win_rate_pct": "100.00",
+      "roi_pct": "38.17"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "61.5",
+      "n": 4,
+      "win_rate_pct": "50.00",
+      "roi_pct": "-8.03"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "62.5",
+      "n": 3,
+      "win_rate_pct": "100.00",
+      "roi_pct": "60.00"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "64.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "53.00"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "68.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "165.00"
+    },
+    {
+      "mercado": "Q1",
+      "linea": "71.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "97.44"
+    },
+    {
+      "mercado": "Q2",
+      "linea": "51.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "79.00"
+    },
+    {
+      "mercado": "Q2",
+      "linea": "58.5",
+      "n": 2,
+      "win_rate_pct": "100.00",
+      "roi_pct": "44.75"
+    },
+    {
+      "mercado": "Q2",
+      "linea": "59.5",
+      "n": 3,
+      "win_rate_pct": "66.67",
+      "roi_pct": "83.33"
+    },
+    {
+      "mercado": "Q2",
+      "linea": "60.5",
+      "n": 2,
+      "win_rate_pct": "100.00",
+      "roi_pct": "42.50"
+    },
+    {
+      "mercado": "Q2",
+      "linea": "62.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "49.20"
+    },
+    {
+      "mercado": "Q3",
+      "linea": "52.5",
+      "n": 1,
+      "win_rate_pct": "0.00",
+      "roi_pct": "-250.00"
+    },
+    {
+      "mercado": "Q3",
+      "linea": "59.5",
+      "n": 1,
+      "win_rate_pct": "0.00",
+      "roi_pct": "-50.00"
+    },
+    {
+      "mercado": "Q3",
+      "linea": "64.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "43.00"
+    },
+    {
+      "mercado": "Q3",
+      "linea": "65.0",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "30.00"
+    },
+    {
+      "mercado": "Q4",
+      "linea": "62.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "39.00"
+    },
+    {
+      "mercado": "Q4",
+      "linea": "63.5",
+      "n": 1,
+      "win_rate_pct": "100.00",
+      "roi_pct": "87.60"
+    }
+  ],
+  "quarter_confidence": [
+    {
+      "mercado": "Q1",
+      "confianza": "ALTA",
+      "n": 2,
+      "win_rate_pct": "100.00",
+      "roi_pct": "131.22"
+    },
+    {
+      "mercado": "Q1",
+      "confianza": "BAJA",
+      "n": 5,
+      "win_rate_pct": "60.00",
+      "roi_pct": "-72.94"
+    },
+    {
+      "mercado": "Q1",
+      "confianza": "MEDIA",
+      "n": 10,
+      "win_rate_pct": "80.00",
+      "roi_pct": "28.64"
+    },
+    {
+      "mercado": "Q2",
+      "confianza": "BAJA",
+      "n": 5,
+      "win_rate_pct": "100.00",
+      "roi_pct": "93.70"
+    },
+    {
+      "mercado": "Q2",
+      "confianza": "MEDIA",
+      "n": 4,
+      "win_rate_pct": "75.00",
+      "roi_pct": "21.05"
+    },
+    {
+      "mercado": "Q3",
+      "confianza": "BAJA",
+      "n": 2,
+      "win_rate_pct": "0.00",
+      "roi_pct": "-150.00"
+    },
+    {
+      "mercado": "Q3",
+      "confianza": "MEDIA",
+      "n": 2,
+      "win_rate_pct": "100.00",
+      "roi_pct": "36.50"
+    },
+    {
+      "mercado": "Q4",
+      "confianza": "MEDIA",
+      "n": 2,
+      "win_rate_pct": "100.00",
+      "roi_pct": "63.30"
+    }
+  ],
+  "full_line_bucket": [
+    {
+      "linea_bucket": "205-214.9",
+      "n": 17,
+      "win_rate_pct": "76.47",
+      "roi_pct": "-19.92"
+    },
+    {
+      "linea_bucket": "215-224.9",
+      "n": 12,
+      "win_rate_pct": "66.67",
+      "roi_pct": "-53.75"
+    },
+    {
+      "linea_bucket": "<205",
+      "n": 2,
+      "win_rate_pct": "100.00",
+      "roi_pct": "30.00"
+    },
+    {
+      "linea_bucket": ">=225",
+      "n": 66,
+      "win_rate_pct": "78.79",
+      "roi_pct": "4.40"
+    }
+  ],
+  "full_odds_bucket": [
+    {
+      "odds_bucket": "1.6-1.8",
+      "n": 6,
+      "win_rate_pct": "50.00",
+      "roi_pct": "-115.26"
+    },
+    {
+      "odds_bucket": "1.8-2.0",
+      "n": 6,
+      "win_rate_pct": "50.00",
+      "roi_pct": "-7.67"
+    },
+    {
+      "odds_bucket": "<1.6",
+      "n": 82,
+      "win_rate_pct": "84.15",
+      "roi_pct": "3.61"
+    },
+    {
+      "odds_bucket": ">=2.0",
+      "n": 3,
+      "win_rate_pct": "0.00",
+      "roi_pct": "-215.63"
+    }
+  ],
+  "odds_bucket_global": [
+    {
+      "odds_bucket": "1.6-1.8",
+      "n": 15,
+      "win_rate_pct": "66.67",
+      "roi_pct": "-33.52"
+    },
+    {
+      "odds_bucket": "1.8-2.0",
+      "n": 17,
+      "win_rate_pct": "76.47",
+      "roi_pct": "35.70"
+    },
+    {
+      "odds_bucket": "<1.6",
+      "n": 92,
+      "win_rate_pct": "82.61",
+      "roi_pct": "2.33"
+    },
+    {
+      "odds_bucket": ">=2.0",
+      "n": 5,
+      "win_rate_pct": "20.00",
+      "roi_pct": "-137.38"
+    }
+  ],
+  "confidence_buckets": [
+    {
+      "prob_bucket": "<0.50",
+      "n": 9,
+      "prob_media": "0.3131",
+      "hit_rate": "0.3333",
+      "roi_pct": "-190.89"
+    },
+    {
+      "prob_bucket": "0.80-1.00",
+      "n": 64,
+      "prob_media": "0.8965",
+      "hit_rate": "0.8125",
+      "roi_pct": "17.97"
+    },
+    {
+      "prob_bucket": "0.70-0.79",
+      "n": 30,
+      "prob_media": "0.7445",
+      "hit_rate": "0.8667",
+      "roi_pct": "27.32"
+    },
+    {
+      "prob_bucket": "0.60-0.69",
+      "n": 26,
+      "prob_media": "0.6541",
+      "hit_rate": "0.7308",
+      "roi_pct": "-33.40"
+    }
+  ],
+  "calibration_raw": [
+    {
+      "prob_bin": "0.08",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.09",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.23",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.35",
+      "n": 1,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.37",
+      "n": 2,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.39",
+      "n": 1,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.44",
+      "n": 1,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.48",
+      "n": 1,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.61",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.62",
+      "n": 3,
+      "observed_win": "0.6667"
+    },
+    {
+      "prob_bin": "0.63",
+      "n": 4,
+      "observed_win": "0.5000"
+    },
+    {
+      "prob_bin": "0.64",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.65",
+      "n": 4,
+      "observed_win": "0.5000"
+    },
+    {
+      "prob_bin": "0.66",
+      "n": 2,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.67",
+      "n": 3,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.68",
+      "n": 6,
+      "observed_win": "0.6667"
+    },
+    {
+      "prob_bin": "0.69",
+      "n": 2,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.70",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.71",
+      "n": 4,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.72",
+      "n": 3,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.73",
+      "n": 4,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.74",
+      "n": 5,
+      "observed_win": "0.6000"
+    },
+    {
+      "prob_bin": "0.75",
+      "n": 4,
+      "observed_win": "0.7500"
+    },
+    {
+      "prob_bin": "0.76",
+      "n": 2,
+      "observed_win": "0.5000"
+    },
+    {
+      "prob_bin": "0.77",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.78",
+      "n": 3,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.79",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.80",
+      "n": 2,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.81",
+      "n": 3,
+      "observed_win": "0.6667"
+    },
+    {
+      "prob_bin": "0.82",
+      "n": 1,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.83",
+      "n": 3,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.84",
+      "n": 5,
+      "observed_win": "0.8000"
+    },
+    {
+      "prob_bin": "0.85",
+      "n": 7,
+      "observed_win": "0.7143"
+    },
+    {
+      "prob_bin": "0.86",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.87",
+      "n": 7,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.88",
+      "n": 2,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.89",
+      "n": 3,
+      "observed_win": "0.6667"
+    },
+    {
+      "prob_bin": "0.90",
+      "n": 1,
+      "observed_win": "0.0000"
+    },
+    {
+      "prob_bin": "0.91",
+      "n": 1,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.92",
+      "n": 4,
+      "observed_win": "0.7500"
+    },
+    {
+      "prob_bin": "0.93",
+      "n": 8,
+      "observed_win": "0.7500"
+    },
+    {
+      "prob_bin": "0.94",
+      "n": 5,
+      "observed_win": "0.6000"
+    },
+    {
+      "prob_bin": "0.95",
+      "n": 2,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.96",
+      "n": 7,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.97",
+      "n": 3,
+      "observed_win": "1.0000"
+    },
+    {
+      "prob_bin": "0.99",
+      "n": 1,
+      "observed_win": "1.0000"
+    }
+  ],
+  "temporal_apuestas": [
+    {
+      "fuente": "apuestas",
+      "min_fecha": "2026-01-10",
+      "max_fecha": "2026-02-22",
+      "n": 144
+    }
+  ],
+  "temporal_predicciones": [
+    {
+      "fuente": "predicciones_registradas",
+      "min_fecha": "2026-01-10",
+      "max_fecha": "2026-03-06",
+      "n": 2514
+    }
+  ],
+  "temporal_partidos": [
+    {
+      "fuente": "partidos_baloncesto",
+      "min_fecha": "2018-04-14",
+      "max_fecha": "2026-03-15",
+      "n": 12492
+    }
+  ]
+}
