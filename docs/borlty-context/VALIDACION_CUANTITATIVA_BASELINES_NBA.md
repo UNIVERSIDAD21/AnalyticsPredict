@@ -9,15 +9,13 @@ Validar cuantitativamente en BD real los baselines:
 - Quarter markets vs full-game
 
 ## Estado de ejecución
-**Estado:** BLOQUEADO (inconcluso)
+**Estado:** EJECUTADO EN BD REAL (cerrado con evidencia)
 
-Se preparó y ejecutó pipeline reproducible de validación, pero la ejecución contra BD real quedó bloqueada por credenciales no disponibles en entorno local.
-
-### Bloqueo real observado
-- `DATABASE_URL` no configurada en `.env` ni variables de entorno.
-- Evidencia de ejecución:
-  - Comando: `python scripts/validar_baselines_nba.py --inicio 2024-01-01 --fin 2026-12-31`
-  - Error: `RuntimeError: DATABASE_URL no configurada en entorno/.env`
+### Ejecución reproducible
+- Comando:
+  - `python scripts/validar_baselines_nba.py --inicio 2024-01-01 --fin 2026-12-31`
+- Salida generada:
+  - `reports/auditoria_baselines/baseline_nba_2024-01-01_2026-12-31_20260307T002134Z.json`
 
 ---
 
@@ -104,30 +102,73 @@ python scripts/validar_baselines_nba.py --inicio 2024-01-01 --fin 2026-12-31
 
 ---
 
+## Rango temporal y universo efectivo analizado
+
+- Rango solicitado: **2024-01-01 → 2026-12-31**
+- Rango efectivo en datos: **2026-01-10 → 2026-02-22**
+- Universo total: **144** apuestas
+- Universo resuelto (GANADA/PERDIDA/PUSH): **129**
+
+---
+
+## Resultados numéricos
+
+### Global NBA
+- `n_resueltas`: 129
+- `n_ganadas`: 100
+- `win_rate_pct`: **77.5194%**
+- `roi_pct`: **-1.0974%**
+- `stake_total`: 195,064.00
+- `ganancia_total`: -2,140.71
+
+### Confidence (segmentado)
+- ALTA: n=54, win_rate=83.3333%, ROI=16.9618%
+- MEDIA: n=43, win_rate=83.7209%, ROI=26.0943%
+- BAJA: n=32, win_rate=59.3750%, ROI=-65.7300%
+
+### Odds segmentado
+- ODDS_GT_2_0: n=5, win_rate=20.0000%, ROI=-137.3800%
+- ODDS_LE_2_0: n=124, win_rate=79.8387%, ROI=2.4877%
+
+### Tipo de mercado
+- FULL_GAME_MARKETS: n=97, win_rate=77.3196%, ROI=-5.2158%
+- QUARTER_MARKETS: n=32, win_rate=78.1250%, ROI=19.8888%
+
+---
+
 ## Tamaño de muestra por segmento
 
-**No disponible (bloqueado):** requiere conexión exitosa a BD para calcular `n_resueltas`, `n_winloss`, `stake_total` y `ganancia_total` por segmento.
+- Global resueltas: n=129
+- Confidence: ALTA n=54, MEDIA n=43, BAJA n=32
+- Odds: >2.0 n=5, <=2.0 n=124
+- Mercados: Quarter n=32, Full-game n=97
 
 ---
 
 ## Veredicto por baseline
 
-| Baseline | Veredicto | Justificación |
+| Baseline | Veredicto | Evidencia |
 |---|---|---|
-| Win rate NBA 81.48% | INCONCLUSO | No se pudo ejecutar query en BD real |
-| ROI NBA 11.53% | INCONCLUSO | No se pudo ejecutar query en BD real |
-| Confidence paradox | INCONCLUSO | No se pudo segmentar por `confianza_sistema` |
-| Odds > 2.0 negativo | INCONCLUSO | No se pudo segmentar por `cuota` |
-| Quarter > full-game | INCONCLUSO | No se pudo segmentar por `mercado` |
+| Win rate NBA 81.48% | **REFUTADO** | Observado 77.5194% |
+| ROI NBA 11.53% | **REFUTADO** | Observado -1.0974% |
+| Confidence paradox | **INCONCLUSO** | ALTA rinde peor que MEDIA (sí), pero mejor que BAJA (no cumple “peor que MEDIUM/LOW” de forma completa) |
+| Odds > 2.0 con rendimiento muy negativo | **CONFIRMADO** | ROI -137.38% (n=5; muestra pequeña) |
+| Quarter markets mejores que full-game | **CONFIRMADO** | ROI Quarter 19.8888% vs Full-game -5.2158% |
 
 ---
 
-## Próximo paso inmediato para desbloquear
+## Bloqueos reales / limitaciones
 
-1. Cargar `DATABASE_URL` real (Neon) en:
-   - `backend/.env` o variable de entorno del shell.
-2. Re-ejecutar script de validación.
-3. Generar versión final con resultados numéricos y veredictos confirmados/refutados.
+1. El baseline de odds > 2.0 se confirma con **muestra baja (n=5)**; se recomienda seguir monitoreo y no sobreajustar por tamaño muestral.
+2. El rango efectivo con datos cae en 2026-01-10 a 2026-02-22; para inferencia más robusta conviene ampliar histórico útil si existe fuera de `apuestas`.
+
+---
+
+## Conclusión operativa
+
+La foto actual de BD **refuta** los baselines históricos globales (81.48% / 11.53%) y confirma dos reglas operativas relevantes:
+- evitar/exigir cautela extrema en odds > 2.0,
+- priorizar quarter markets sobre full-game en estado actual.
 
 ---
 

@@ -273,7 +273,7 @@ export async function obtenerEstadisticas(
   filtros?: FiltrosEstadisticas
 ): Promise<ResumenApuestasFutbol> {
   try {
-    const params: Record<string, string> = {};
+    const params: Record<string, string | number> = {};
 
     if (filtros?.mercado) {
       params.mercado = filtros.mercado;
@@ -285,10 +285,15 @@ export async function obtenerEstadisticas(
       params.hasta = filtros.hasta;
     }
 
-    const respuesta = await clienteAPI.get('/api/futbol/apuestas/estadisticas', {
+    // Decisión de contrato: reutilizar endpoint canónico existente
+    // `/api/futbol/apuestas` que ya retorna `resumen` + `apuestas`,
+    // en lugar de depender de `/api/futbol/apuestas/estadisticas` (no expuesto en backend).
+    const respuesta = await clienteAPI.get('/api/futbol/apuestas', {
       params,
     });
-    return transformarResumen(respuesta.data);
+
+    const resumen = (respuesta.data?.resumen || {}) as Record<string, unknown>;
+    return transformarResumen(resumen);
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }

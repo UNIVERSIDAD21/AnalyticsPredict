@@ -195,7 +195,15 @@ def run(inicio: str, fin: str) -> Path:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / f"baseline_nba_{inicio}_{fin}_{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}.json"
-    out.write_text(json.dumps([asdict(r) for r in resultados], ensure_ascii=False, indent=2), encoding="utf-8")
+    out.write_text(
+        json.dumps(
+            [asdict(r) for r in resultados],
+            ensure_ascii=False,
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
     return out
 
 

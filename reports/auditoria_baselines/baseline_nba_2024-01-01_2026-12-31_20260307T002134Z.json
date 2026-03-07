@@ -1,0 +1,113 @@
+[
+  {
+    "nombre": "universo",
+    "sql": "WITH base AS (\n      SELECT id, creado_en, fecha_partido, mercado, lado, cuota, stake, ganancia, confianza_sistema, resultado\n      FROM apuestas\n      WHERE COALESCE(fecha_partido::date, creado_en::date) BETWEEN %(inicio)s::date AND %(fin)s::date\n    )\n    SELECT\n      COUNT(*) AS n_total,\n      COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA','PUSH')) AS n_resueltas,\n      MIN(COALESCE(fecha_partido::date, creado_en::date)) AS fecha_min,\n      MAX(COALESCE(fecha_partido::date, creado_en::date)) AS fecha_max\n    FROM base;",
+    "filas": [
+      {
+        "n_total": 144,
+        "n_resueltas": 129,
+        "fecha_min": "2026-01-10",
+        "fecha_max": "2026-02-22"
+      }
+    ]
+  },
+  {
+    "nombre": "global_winrate_roi",
+    "sql": "WITH base AS (\n      SELECT *\n      FROM apuestas\n      WHERE COALESCE(fecha_partido::date, creado_en::date) BETWEEN %(inicio)s::date AND %(fin)s::date\n        AND resultado IN ('GANADA','PERDIDA','PUSH')\n    )\n    SELECT\n      COUNT(*) AS n_resueltas,\n      COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')) AS n_winloss,\n      COUNT(*) FILTER (WHERE resultado = 'GANADA') AS n_ganadas,\n      ROUND(\n        100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA')\n        / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),\n        4\n      ) AS win_rate_pct,\n      ROUND(\n        100.0 * COALESCE(SUM(ganancia), 0)\n        / NULLIF(COALESCE(SUM(stake), 0), 0),\n        4\n      ) AS roi_pct,\n      ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,\n      ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total\n    FROM base;",
+    "filas": [
+      {
+        "n_resueltas": 129,
+        "n_winloss": 129,
+        "n_ganadas": 100,
+        "win_rate_pct": "77.5194",
+        "roi_pct": "-1.0974",
+        "stake_total": "195064.00",
+        "ganancia_total": "-2140.71"
+      }
+    ]
+  },
+  {
+    "nombre": "confidence_segmentado",
+    "sql": "WITH base AS (\n      SELECT *\n      FROM apuestas\n      WHERE COALESCE(fecha_partido::date, creado_en::date) BETWEEN %(inicio)s::date AND %(fin)s::date\n        AND resultado IN ('GANADA','PERDIDA','PUSH')\n    )\n    SELECT\n      UPPER(COALESCE(confianza_sistema, 'SIN_DATO')) AS confianza,\n      COUNT(*) AS n_resueltas,\n      COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')) AS n_winloss,\n      COUNT(*) FILTER (WHERE resultado = 'GANADA') AS n_ganadas,\n      ROUND(\n        100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA')\n        / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),\n        4\n      ) AS win_rate_pct,\n      ROUND(100.0 * COALESCE(SUM(ganancia),0) / NULLIF(COALESCE(SUM(stake),0),0), 4) AS roi_pct,\n      ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,\n      ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total\n    FROM base\n    GROUP BY 1\n    ORDER BY CASE UPPER(COALESCE(confianza_sistema, 'SIN_DATO'))\n      WHEN 'ALTA' THEN 1\n      WHEN 'MEDIA' THEN 2\n      WHEN 'BAJA' THEN 3\n      ELSE 9\n    END;",
+    "filas": [
+      {
+        "confianza": "ALTA",
+        "n_resueltas": 54,
+        "n_winloss": 54,
+        "n_ganadas": 45,
+        "win_rate_pct": "83.3333",
+        "roi_pct": "16.9618",
+        "stake_total": "78064.00",
+        "ganancia_total": "13241.09"
+      },
+      {
+        "confianza": "MEDIA",
+        "n_resueltas": 43,
+        "n_winloss": 43,
+        "n_ganadas": 36,
+        "win_rate_pct": "83.7209",
+        "roi_pct": "26.0943",
+        "stake_total": "67000.00",
+        "ganancia_total": "17483.20"
+      },
+      {
+        "confianza": "BAJA",
+        "n_resueltas": 32,
+        "n_winloss": 32,
+        "n_ganadas": 19,
+        "win_rate_pct": "59.3750",
+        "roi_pct": "-65.7300",
+        "stake_total": "50000.00",
+        "ganancia_total": "-32865.00"
+      }
+    ]
+  },
+  {
+    "nombre": "odds_segmentado",
+    "sql": "WITH base AS (\n      SELECT *\n      FROM apuestas\n      WHERE COALESCE(fecha_partido::date, creado_en::date) BETWEEN %(inicio)s::date AND %(fin)s::date\n        AND resultado IN ('GANADA','PERDIDA','PUSH')\n        AND cuota IS NOT NULL\n    )\n    SELECT\n      CASE WHEN cuota > 2.0 THEN 'ODDS_GT_2_0' ELSE 'ODDS_LE_2_0' END AS segmento_odds,\n      COUNT(*) AS n_resueltas,\n      COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')) AS n_winloss,\n      ROUND(\n        100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA')\n        / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),\n        4\n      ) AS win_rate_pct,\n      ROUND(100.0 * COALESCE(SUM(ganancia),0) / NULLIF(COALESCE(SUM(stake),0),0), 4) AS roi_pct,\n      ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,\n      ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total\n    FROM base\n    GROUP BY 1\n    ORDER BY 1;",
+    "filas": [
+      {
+        "segmento_odds": "ODDS_GT_2_0",
+        "n_resueltas": 5,
+        "n_winloss": 5,
+        "win_rate_pct": "20.0000",
+        "roi_pct": "-137.3800",
+        "stake_total": "5000.00",
+        "ganancia_total": "-6869.00"
+      },
+      {
+        "segmento_odds": "ODDS_LE_2_0",
+        "n_resueltas": 124,
+        "n_winloss": 124,
+        "win_rate_pct": "79.8387",
+        "roi_pct": "2.4877",
+        "stake_total": "190064.00",
+        "ganancia_total": "4728.29"
+      }
+    ]
+  },
+  {
+    "nombre": "markets_segmentado",
+    "sql": "WITH base AS (\n      SELECT *\n      FROM apuestas\n      WHERE COALESCE(fecha_partido::date, creado_en::date) BETWEEN %(inicio)s::date AND %(fin)s::date\n        AND resultado IN ('GANADA','PERDIDA','PUSH')\n    )\n    SELECT\n      CASE\n        WHEN UPPER(COALESCE(mercado, '')) IN ('Q1','Q2','Q3','Q4') THEN 'QUARTER_MARKETS'\n        WHEN UPPER(COALESCE(mercado, '')) IN ('COMPLETO','FULL','FULL_GAME') THEN 'FULL_GAME_MARKETS'\n        ELSE 'OTROS'\n      END AS segmento_mercado,\n      COUNT(*) AS n_resueltas,\n      COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')) AS n_winloss,\n      ROUND(\n        100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA')\n        / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),\n        4\n      ) AS win_rate_pct,\n      ROUND(100.0 * COALESCE(SUM(ganancia),0) / NULLIF(COALESCE(SUM(stake),0),0), 4) AS roi_pct,\n      ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,\n      ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total\n    FROM base\n    GROUP BY 1\n    ORDER BY 1;",
+    "filas": [
+      {
+        "segmento_mercado": "FULL_GAME_MARKETS",
+        "n_resueltas": 97,
+        "n_winloss": 97,
+        "win_rate_pct": "77.3196",
+        "roi_pct": "-5.2158",
+        "stake_total": "163064.00",
+        "ganancia_total": "-8505.11"
+      },
+      {
+        "segmento_mercado": "QUARTER_MARKETS",
+        "n_resueltas": 32,
+        "n_winloss": 32,
+        "win_rate_pct": "78.1250",
+        "roi_pct": "19.8888",
+        "stake_total": "32000.00",
+        "ganancia_total": "6364.40"
+      }
+    ]
+  }
+]
