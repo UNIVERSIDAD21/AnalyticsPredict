@@ -1,0 +1,316 @@
+{
+  "coverage": [
+    {
+      "dataset": "expanded",
+      "n": 907,
+      "min_fecha": "2026-01-10",
+      "max_fecha": "2026-02-12"
+    },
+    {
+      "dataset": "short_apuestas",
+      "n": 129,
+      "min_fecha": "2026-01-10",
+      "max_fecha": "2026-02-03"
+    },
+    {
+      "dataset": "predicciones_registradas_raw",
+      "n": 2514,
+      "min_fecha": "2026-01-10",
+      "max_fecha": "2026-03-06"
+    },
+    {
+      "dataset": "partidos_baloncesto",
+      "n": 12492,
+      "min_fecha": "2018-04-14",
+      "max_fecha": "2026-03-15"
+    }
+  ],
+  "global_compare": [
+    {
+      "dataset": "expanded",
+      "n": 907,
+      "win_rate_pct": "65.4906",
+      "roi_unit_pct": "3.7552"
+    },
+    {
+      "dataset": "short_apuestas",
+      "n": 129,
+      "win_rate_pct": "77.5194",
+      "roi_unit_pct": "11.7829"
+    }
+  ],
+  "market_compare": [
+    {
+      "dataset": "expanded",
+      "mercado": "COMPLETO",
+      "n": 539,
+      "win_rate_pct": "70.1299",
+      "roi_unit_pct": "1.9128"
+    },
+    {
+      "dataset": "short_apuestas",
+      "mercado": "COMPLETO",
+      "n": 97,
+      "win_rate_pct": "77.3196",
+      "roi_unit_pct": "3.5567"
+    },
+    {
+      "dataset": "expanded",
+      "mercado": "Q1",
+      "n": 139,
+      "win_rate_pct": "60.4317",
+      "roi_unit_pct": "8.1367"
+    },
+    {
+      "dataset": "short_apuestas",
+      "mercado": "Q1",
+      "n": 17,
+      "win_rate_pct": "76.4706",
+      "roi_unit_pct": "30.0000"
+    },
+    {
+      "dataset": "expanded",
+      "mercado": "Q2",
+      "n": 83,
+      "win_rate_pct": "72.2892",
+      "roi_unit_pct": "34.3976"
+    },
+    {
+      "dataset": "short_apuestas",
+      "mercado": "Q2",
+      "n": 9,
+      "win_rate_pct": "88.8889",
+      "roi_unit_pct": "63.1111"
+    },
+    {
+      "dataset": "expanded",
+      "mercado": "Q3",
+      "n": 82,
+      "win_rate_pct": "51.2195",
+      "roi_unit_pct": "-7.9390"
+    },
+    {
+      "dataset": "short_apuestas",
+      "mercado": "Q3",
+      "n": 4,
+      "win_rate_pct": "50.0000",
+      "roi_unit_pct": "-13.5000"
+    },
+    {
+      "dataset": "expanded",
+      "mercado": "Q4",
+      "n": 64,
+      "win_rate_pct": "46.8750",
+      "roi_unit_pct": "-15.0000"
+    },
+    {
+      "dataset": "short_apuestas",
+      "mercado": "Q4",
+      "n": 2,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "75.5000"
+    }
+  ],
+  "odds_compare": [
+    {
+      "dataset": "expanded",
+      "odds_bucket": "1.6-1.8",
+      "n": 85,
+      "win_rate_pct": "58.8235",
+      "roi_unit_pct": "1.6471"
+    },
+    {
+      "dataset": "short_apuestas",
+      "odds_bucket": "1.6-1.8",
+      "n": 15,
+      "win_rate_pct": "66.6667",
+      "roi_unit_pct": "14.5333"
+    },
+    {
+      "dataset": "expanded",
+      "odds_bucket": "1.8-2.0",
+      "n": 239,
+      "win_rate_pct": "58.9958",
+      "roi_unit_pct": "9.7113"
+    },
+    {
+      "dataset": "short_apuestas",
+      "odds_bucket": "1.8-2.0",
+      "n": 17,
+      "win_rate_pct": "76.4706",
+      "roi_unit_pct": "43.0000"
+    },
+    {
+      "dataset": "expanded",
+      "odds_bucket": "<1.6",
+      "n": 481,
+      "win_rate_pct": "75.4678",
+      "roi_unit_pct": "0.0125"
+    },
+    {
+      "dataset": "short_apuestas",
+      "odds_bucket": "<1.6",
+      "n": 92,
+      "win_rate_pct": "82.6087",
+      "roi_unit_pct": "9.2500"
+    },
+    {
+      "dataset": "expanded",
+      "odds_bucket": ">=2.0",
+      "n": 102,
+      "win_rate_pct": "39.2157",
+      "roi_unit_pct": "9.2059"
+    },
+    {
+      "dataset": "short_apuestas",
+      "odds_bucket": ">=2.0",
+      "n": 5,
+      "win_rate_pct": "20.0000",
+      "roi_unit_pct": "-56.0000"
+    }
+  ],
+  "confidence_compare": [
+    {
+      "dataset": "expanded",
+      "conf_bucket": "0.60-0.69",
+      "n": 205,
+      "prob_media": "0.6485",
+      "hit_rate": "0.6049",
+      "roi_unit_pct": "-4.2244"
+    },
+    {
+      "dataset": "short_apuestas",
+      "conf_bucket": "0.60-0.69",
+      "n": 26,
+      "prob_media": "0.6541",
+      "hit_rate": "0.7308",
+      "roi_unit_pct": "10.9231"
+    },
+    {
+      "dataset": "expanded",
+      "conf_bucket": "0.70-0.79",
+      "n": 189,
+      "prob_media": "0.7502",
+      "hit_rate": "0.6772",
+      "roi_unit_pct": "5.3228"
+    },
+    {
+      "dataset": "short_apuestas",
+      "conf_bucket": "0.70-0.79",
+      "n": 30,
+      "prob_media": "0.7445",
+      "hit_rate": "0.8667",
+      "roi_unit_pct": "34.5000"
+    },
+    {
+      "dataset": "expanded",
+      "conf_bucket": "0.80+",
+      "n": 297,
+      "prob_media": "0.8830",
+      "hit_rate": "0.7609",
+      "roi_unit_pct": "13.3333"
+    },
+    {
+      "dataset": "short_apuestas",
+      "conf_bucket": "0.80+",
+      "n": 64,
+      "prob_media": "0.8965",
+      "hit_rate": "0.8125",
+      "roi_unit_pct": "10.7188"
+    },
+    {
+      "dataset": "expanded",
+      "conf_bucket": "<0.60",
+      "n": 216,
+      "prob_media": "0.5483",
+      "hit_rate": "0.5370",
+      "roi_unit_pct": "-3.2130"
+    },
+    {
+      "dataset": "short_apuestas",
+      "conf_bucket": "<0.60",
+      "n": 9,
+      "prob_media": "0.3131",
+      "hit_rate": "0.3333",
+      "roi_unit_pct": "-53.8889"
+    }
+  ],
+  "quarter_focus_expanded": [
+    {
+      "mercado": "Q1",
+      "n": 139,
+      "win_rate_pct": "60.4317",
+      "roi_unit_pct": "8.1367"
+    },
+    {
+      "mercado": "Q2",
+      "n": 83,
+      "win_rate_pct": "72.2892",
+      "roi_unit_pct": "34.3976"
+    },
+    {
+      "mercado": "Q3",
+      "n": 82,
+      "win_rate_pct": "51.2195",
+      "roi_unit_pct": "-7.9390"
+    },
+    {
+      "mercado": "Q4",
+      "n": 64,
+      "win_rate_pct": "46.8750",
+      "roi_unit_pct": "-15.0000"
+    }
+  ],
+  "full_break_line_expanded": [
+    {
+      "line_bucket": "205-214.9",
+      "n": 95,
+      "win_rate_pct": "76.8421",
+      "roi_unit_pct": "5.1263"
+    },
+    {
+      "line_bucket": "215-224.9",
+      "n": 121,
+      "win_rate_pct": "56.1983",
+      "roi_unit_pct": "-5.6198"
+    },
+    {
+      "line_bucket": "<205",
+      "n": 21,
+      "win_rate_pct": "90.4762",
+      "roi_unit_pct": "24.9524"
+    },
+    {
+      "line_bucket": ">=225",
+      "n": 302,
+      "win_rate_pct": "72.1854",
+      "roi_unit_pct": "2.3179"
+    }
+  ],
+  "full_break_odds_expanded": [
+    {
+      "odds_bucket": "1.6-1.8",
+      "n": 11,
+      "win_rate_pct": "54.5455",
+      "roi_unit_pct": "-5.2727"
+    },
+    {
+      "odds_bucket": "1.8-2.0",
+      "n": 45,
+      "win_rate_pct": "62.2222",
+      "roi_unit_pct": "16.6222"
+    },
+    {
+      "odds_bucket": "<1.6",
+      "n": 413,
+      "win_rate_pct": "78.4504",
+      "roi_unit_pct": "2.2978"
+    },
+    {
+      "odds_bucket": ">=2.0",
+      "n": 70,
+      "win_rate_pct": "28.5714",
+      "roi_unit_pct": "-8.6857"
+    }
+  ]
+}
