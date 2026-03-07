@@ -1,0 +1,193 @@
+{
+  "algorithm_reconstruction": [
+    {
+      "nivel_confianza": "ALTA",
+      "n": 210,
+      "hit_rate": "0.7810",
+      "roi_unit": "0.1441",
+      "prob_media": "0.9085",
+      "z_media": "1.7092"
+    },
+    {
+      "nivel_confianza": "MEDIA",
+      "n": 276,
+      "hit_rate": "0.6884",
+      "roi_unit": "0.0703",
+      "prob_media": "0.7727",
+      "z_media": "0.7549"
+    },
+    {
+      "nivel_confianza": "BAJA",
+      "n": 421,
+      "hit_rate": "0.5701",
+      "roi_unit": "-0.0371",
+      "prob_media": "0.5971",
+      "z_media": "0.2486"
+    }
+  ],
+  "monotonicity_by_market": [
+    {
+      "mercado": "COMPLETO",
+      "nivel_confianza": "ALTA",
+      "n": 157,
+      "hit_rate": "0.8280",
+      "roi_unit": "0.1213"
+    },
+    {
+      "mercado": "COMPLETO",
+      "nivel_confianza": "MEDIA",
+      "n": 174,
+      "hit_rate": "0.7299",
+      "roi_unit": "0.0476"
+    },
+    {
+      "mercado": "COMPLETO",
+      "nivel_confianza": "BAJA",
+      "n": 208,
+      "hit_rate": "0.5817",
+      "roi_unit": "-0.0818"
+    },
+    {
+      "mercado": "Q1",
+      "nivel_confianza": "ALTA",
+      "n": 23,
+      "hit_rate": "0.8696",
+      "roi_unit": "0.6374"
+    },
+    {
+      "mercado": "Q1",
+      "nivel_confianza": "MEDIA",
+      "n": 40,
+      "hit_rate": "0.6000",
+      "roi_unit": "0.0625"
+    },
+    {
+      "mercado": "Q1",
+      "nivel_confianza": "BAJA",
+      "n": 76,
+      "hit_rate": "0.5263",
+      "roi_unit": "-0.0770"
+    },
+    {
+      "mercado": "Q2",
+      "nivel_confianza": "ALTA",
+      "n": 10,
+      "hit_rate": "0.6000",
+      "roi_unit": "0.1900"
+    },
+    {
+      "mercado": "Q2",
+      "nivel_confianza": "MEDIA",
+      "n": 25,
+      "hit_rate": "0.7200",
+      "roi_unit": "0.2920"
+    },
+    {
+      "mercado": "Q2",
+      "nivel_confianza": "BAJA",
+      "n": 48,
+      "hit_rate": "0.7500",
+      "roi_unit": "0.4031"
+    },
+    {
+      "mercado": "Q3",
+      "nivel_confianza": "ALTA",
+      "n": 9,
+      "hit_rate": "0.3333",
+      "roi_unit": "-0.3833"
+    },
+    {
+      "mercado": "Q3",
+      "nivel_confianza": "MEDIA",
+      "n": 21,
+      "hit_rate": "0.5714",
+      "roi_unit": "0.0443"
+    },
+    {
+      "mercado": "Q3",
+      "nivel_confianza": "BAJA",
+      "n": 52,
+      "hit_rate": "0.5192",
+      "roi_unit": "-0.0767"
+    },
+    {
+      "mercado": "Q4",
+      "nivel_confianza": "ALTA",
+      "n": 11,
+      "hit_rate": "0.4545",
+      "roi_unit": "-0.1727"
+    },
+    {
+      "mercado": "Q4",
+      "nivel_confianza": "MEDIA",
+      "n": 16,
+      "hit_rate": "0.5625",
+      "roi_unit": "0.0244"
+    },
+    {
+      "mercado": "Q4",
+      "nivel_confianza": "BAJA",
+      "n": 37,
+      "hit_rate": "0.4324",
+      "roi_unit": "-0.2186"
+    }
+  ],
+  "root_cause_components": [
+    {
+      "eje": "edge_z",
+      "bucket": "z_1.0_1.49",
+      "n": 144,
+      "hit_rate": "0.7292",
+      "roi_unit": "0.0407"
+    },
+    {
+      "eje": "edge_z",
+      "bucket": "z_<1.0",
+      "n": 697,
+      "hit_rate": "0.6169",
+      "roi_unit": "0.0055"
+    },
+    {
+      "eje": "edge_z",
+      "bucket": "z_>=1.5",
+      "n": 66,
+      "hit_rate": "0.8939",
+      "roi_unit": "0.3697"
+    },
+    {
+      "eje": "probabilidad",
+      "bucket": "prob_0.60_0.69",
+      "n": 205,
+      "hit_rate": "0.6049",
+      "roi_unit": "-0.0422"
+    },
+    {
+      "eje": "probabilidad",
+      "bucket": "prob_<0.60",
+      "n": 216,
+      "hit_rate": "0.5370",
+      "roi_unit": "-0.0321"
+    },
+    {
+      "eje": "probabilidad",
+      "bucket": "prob_>=0.70",
+      "n": 486,
+      "hit_rate": "0.7284",
+      "roi_unit": "0.1022"
+    },
+    {
+      "eje": "volatilidad",
+      "bucket": "vol_alta",
+      "n": 907,
+      "hit_rate": "0.6549",
+      "roi_unit": "0.0376"
+    }
+  ],
+  "sizing_dependency_check": [
+    {
+      "volatilidad": "alta",
+      "n": 907,
+      "pct_vol_alta_total": "100.00"
+    }
+  ]
+}
