@@ -1,0 +1,329 @@
+{
+  "create_view_file": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/01_base_unificada_v1.sql",
+  "validation_file": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/02_validaciones_base_unificada_v1.sql",
+  "results": {
+    "q1": [
+      {
+        "source": "apuestas",
+        "n": 129
+      },
+      {
+        "source": "predicciones_registradas",
+        "n": 2152
+      }
+    ],
+    "q2": [
+      {
+        "sport": "NBA",
+        "n": 2281
+      }
+    ],
+    "q3": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "1.6-1.8",
+        "n": 31,
+        "hit_rate": "0.5484"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "1.8-2.0",
+        "n": 120,
+        "hit_rate": "0.4833"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "<1.6",
+        "n": 653,
+        "hit_rate": "0.7902"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "n": 585,
+        "hit_rate": "0.2222"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "1.6-1.8",
+        "n": 46,
+        "hit_rate": "0.5870"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "1.8-2.0",
+        "n": 141,
+        "hit_rate": "0.4965"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "<1.6",
+        "n": 83,
+        "hit_rate": "0.5422"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": ">=2.0",
+        "n": 87,
+        "hit_rate": "0.4713"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "1.6-1.8",
+        "n": 43,
+        "hit_rate": "0.5814"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "1.8-2.0",
+        "n": 115,
+        "hit_rate": "0.5043"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "<1.6",
+        "n": 19,
+        "hit_rate": "0.4737"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": ">=2.0",
+        "n": 20,
+        "hit_rate": "0.5000"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "1.6-1.8",
+        "n": 41,
+        "hit_rate": "0.5366"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "1.8-2.0",
+        "n": 112,
+        "hit_rate": "0.4821"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "<1.6",
+        "n": 16,
+        "hit_rate": "0.5625"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": ">=2.0",
+        "n": 17,
+        "hit_rate": "0.4706"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "1.6-1.8",
+        "n": 27,
+        "hit_rate": "0.5926"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "1.8-2.0",
+        "n": 105,
+        "hit_rate": "0.4952"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "<1.6",
+        "n": 8,
+        "hit_rate": "0.3750"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": ">=2.0",
+        "n": 12,
+        "hit_rate": "0.5000"
+      }
+    ],
+    "q4": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "confidence_bucket": "0.60-0.69",
+        "n": 129,
+        "hit_rate": "0.6279"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "confidence_bucket": "0.70-0.79",
+        "n": 165,
+        "hit_rate": "0.7939"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "confidence_bucket": "0.80+",
+        "n": 336,
+        "hit_rate": "0.8036"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "confidence_bucket": "<0.60",
+        "n": 759,
+        "hit_rate": "0.3149"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "confidence_bucket": "0.60-0.69",
+        "n": 54,
+        "hit_rate": "0.6481"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "confidence_bucket": "0.70-0.79",
+        "n": 43,
+        "hit_rate": "0.6512"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "confidence_bucket": "0.80+",
+        "n": 42,
+        "hit_rate": "0.8095"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "confidence_bucket": "<0.60",
+        "n": 218,
+        "hit_rate": "0.3945"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "confidence_bucket": "0.60-0.69",
+        "n": 34,
+        "hit_rate": "0.8529"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "confidence_bucket": "0.70-0.79",
+        "n": 27,
+        "hit_rate": "0.7037"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "confidence_bucket": "0.80+",
+        "n": 17,
+        "hit_rate": "0.7059"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "confidence_bucket": "<0.60",
+        "n": 119,
+        "hit_rate": "0.3529"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "confidence_bucket": "0.60-0.69",
+        "n": 28,
+        "hit_rate": "0.3214"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "confidence_bucket": "0.70-0.79",
+        "n": 14,
+        "hit_rate": "0.6429"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "confidence_bucket": "0.80+",
+        "n": 19,
+        "hit_rate": "0.4737"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "confidence_bucket": "<0.60",
+        "n": 125,
+        "hit_rate": "0.5280"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "confidence_bucket": "0.60-0.69",
+        "n": 16,
+        "hit_rate": "0.3125"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "confidence_bucket": "0.70-0.79",
+        "n": 11,
+        "hit_rate": "0.4545"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "confidence_bucket": "0.80+",
+        "n": 21,
+        "hit_rate": "0.5238"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "confidence_bucket": "<0.60",
+        "n": 104,
+        "hit_rate": "0.5385"
+      }
+    ],
+    "q5": [
+      {
+        "source": "apuestas",
+        "n": 129,
+        "n_roi_monetario": 129,
+        "n_roi_unitario": 0,
+        "n_conflicto_ambos_no_nulos": 0
+      },
+      {
+        "source": "predicciones_registradas",
+        "n": 2152,
+        "n_roi_monetario": 0,
+        "n_roi_unitario": 2152,
+        "n_conflicto_ambos_no_nulos": 0
+      }
+    ],
+    "q6": [
+      {
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa",
+        "n": 2281
+      }
+    ]
+  }
+}
