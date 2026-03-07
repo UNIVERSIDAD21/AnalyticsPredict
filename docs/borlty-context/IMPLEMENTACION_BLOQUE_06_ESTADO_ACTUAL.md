@@ -1,5 +1,11 @@
 # IMPLEMENTACION_BLOQUE_06_ESTADO_ACTUAL.md
 
+## Estado global del bloque 06
+- Implementado: ✅
+- Auditado: ✅
+- Aceptado: ✅
+- Hotfix pendiente en esta etapa: ❌
+
 ## Estado físico implementado del bloque 06
 
 ## Capa base
