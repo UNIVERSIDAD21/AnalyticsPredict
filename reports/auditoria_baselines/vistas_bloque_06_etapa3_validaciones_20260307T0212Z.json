@@ -1,0 +1,549 @@
+{
+  "applied_sql": [
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/01_base_unificada_v1.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/03_vw_perf_market_odds_confidence.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/04_vw_policy_odds_compliance.sql"
+  ],
+  "validation_file": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/05_validaciones_vistas_perf_policy.sql",
+  "results": {
+    "q1": [
+      {
+        "source": "apuestas",
+        "n_base_rows": 129,
+        "n_perf_rows": 129
+      },
+      {
+        "source": "predicciones_registradas",
+        "n_base_rows": 2152,
+        "n_perf_rows": 2152
+      }
+    ],
+    "q2": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "source": "apuestas",
+        "n": 3,
+        "win_rate": "0.000000",
+        "roi_pct_monetario": "-298.450000",
+        "roi_unit_pct": null,
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 582,
+        "win_rate": "0.275183",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-16.181727",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": ">=2.0",
+        "source": "apuestas",
+        "n": 2,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": "-20.000000",
+        "roi_unit_pct": null,
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 85,
+        "win_rate": "0.510044",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "34.157073",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 20,
+        "win_rate": "0.566138",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "46.248677",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 17,
+        "win_rate": "0.302083",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-18.583333",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 12,
+        "win_rate": "0.557143",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "53.628571",
+        "source_quality_flag": "B"
+      }
+    ],
+    "q3": [
+      {
+        "source": "apuestas",
+        "n": 82,
+        "n_roi_monetario": 82,
+        "n_roi_unitario": 0,
+        "n_conflicto": 0
+      },
+      {
+        "source": "predicciones_registradas",
+        "n": 505,
+        "n_roi_monetario": 0,
+        "n_roi_unitario": 505,
+        "n_conflicto": 0
+      }
+    ],
+    "q4": [
+      {
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa",
+        "n": 587
+      }
+    ],
+    "q5": [
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-12",
+        "source": "predicciones_registradas",
+        "n": 6,
+        "status_policy": "BLOQUEADO",
+        "brechas": 6,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-11",
+        "source": "predicciones_registradas",
+        "n": 30,
+        "status_policy": "BLOQUEADO",
+        "brechas": 30,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-10",
+        "source": "predicciones_registradas",
+        "n": 8,
+        "status_policy": "BLOQUEADO",
+        "brechas": 8,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-09",
+        "source": "predicciones_registradas",
+        "n": 21,
+        "status_policy": "BLOQUEADO",
+        "brechas": 21,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-08",
+        "source": "predicciones_registradas",
+        "n": 8,
+        "status_policy": "BLOQUEADO",
+        "brechas": 8,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-07",
+        "source": "predicciones_registradas",
+        "n": 20,
+        "status_policy": "BLOQUEADO",
+        "brechas": 20,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-06",
+        "source": "predicciones_registradas",
+        "n": 12,
+        "status_policy": "BLOQUEADO",
+        "brechas": 12,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-04",
+        "source": "predicciones_registradas",
+        "n": 17,
+        "status_policy": "BLOQUEADO",
+        "brechas": 17,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-03",
+        "source": "predicciones_registradas",
+        "n": 25,
+        "status_policy": "BLOQUEADO",
+        "brechas": 25,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-02",
+        "source": "predicciones_registradas",
+        "n": 8,
+        "status_policy": "BLOQUEADO",
+        "brechas": 8,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-02-01",
+        "source": "predicciones_registradas",
+        "n": 20,
+        "status_policy": "BLOQUEADO",
+        "brechas": 20,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-31",
+        "source": "predicciones_registradas",
+        "n": 12,
+        "status_policy": "BLOQUEADO",
+        "brechas": 12,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-29",
+        "source": "predicciones_registradas",
+        "n": 20,
+        "status_policy": "BLOQUEADO",
+        "brechas": 20,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-28",
+        "source": "predicciones_registradas",
+        "n": 19,
+        "status_policy": "BLOQUEADO",
+        "brechas": 19,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-27",
+        "source": "predicciones_registradas",
+        "n": 17,
+        "status_policy": "BLOQUEADO",
+        "brechas": 17,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-26",
+        "source": "predicciones_registradas",
+        "n": 15,
+        "status_policy": "BLOQUEADO",
+        "brechas": 15,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-25",
+        "source": "predicciones_registradas",
+        "n": 14,
+        "status_policy": "BLOQUEADO",
+        "brechas": 14,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-24",
+        "source": "predicciones_registradas",
+        "n": 17,
+        "status_policy": "BLOQUEADO",
+        "brechas": 17,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-23",
+        "source": "predicciones_registradas",
+        "n": 18,
+        "status_policy": "BLOQUEADO",
+        "brechas": 18,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-22",
+        "source": "predicciones_registradas",
+        "n": 19,
+        "status_policy": "BLOQUEADO",
+        "brechas": 19,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-21",
+        "source": "predicciones_registradas",
+        "n": 14,
+        "status_policy": "BLOQUEADO",
+        "brechas": 14,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-20",
+        "source": "predicciones_registradas",
+        "n": 15,
+        "status_policy": "BLOQUEADO",
+        "brechas": 15,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-19",
+        "source": "predicciones_registradas",
+        "n": 24,
+        "status_policy": "BLOQUEADO",
+        "brechas": 24,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-18",
+        "source": "predicciones_registradas",
+        "n": 14,
+        "status_policy": "BLOQUEADO",
+        "brechas": 14,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-17",
+        "source": "predicciones_registradas",
+        "n": 23,
+        "status_policy": "BLOQUEADO",
+        "brechas": 23,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-16",
+        "source": "predicciones_registradas",
+        "n": 21,
+        "status_policy": "BLOQUEADO",
+        "brechas": 21,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-15",
+        "source": "apuestas",
+        "n": 1,
+        "status_policy": "BLOQUEADO",
+        "brechas": 1,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-15",
+        "source": "predicciones_registradas",
+        "n": 44,
+        "status_policy": "BLOQUEADO",
+        "brechas": 44,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-14",
+        "source": "predicciones_registradas",
+        "n": 22,
+        "status_policy": "BLOQUEADO",
+        "brechas": 22,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-13",
+        "source": "predicciones_registradas",
+        "n": 19,
+        "status_policy": "BLOQUEADO",
+        "brechas": 19,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-12",
+        "source": "predicciones_registradas",
+        "n": 16,
+        "status_policy": "BLOQUEADO",
+        "brechas": 16,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-11",
+        "source": "predicciones_registradas",
+        "n": 44,
+        "status_policy": "BLOQUEADO",
+        "brechas": 44,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "periodo": "2026-01-10",
+        "source": "apuestas",
+        "n": 2,
+        "status_policy": "BLOQUEADO",
+        "brechas": 2,
+        "tiene_violacion": true,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      }
+    ],
+    "q6": [
+      {
+        "status_policy": "BLOQUEADO",
+        "n_rows": 33,
+        "n_events": 585
+      },
+      {
+        "status_policy": "MUESTRA_INSUFICIENTE",
+        "n_rows": 21,
+        "n_events": 48
+      },
+      {
+        "status_policy": "PERMITIDO",
+        "n_rows": 108,
+        "n_events": 1075
+      },
+      {
+        "status_policy": "PERMITIDO_CON_CAUTELA",
+        "n_rows": 29,
+        "n_events": 150
+      },
+      {
+        "status_policy": "RESTRINGIDO",
+        "n_rows": 82,
+        "n_events": 423
+      }
+    ]
+  }
+}
