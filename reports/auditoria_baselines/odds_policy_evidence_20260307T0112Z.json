@@ -1,0 +1,370 @@
+{
+  "expanded_market_odds": [
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": "1.6-1.8",
+      "n": 11,
+      "win_rate_pct": "54.5455",
+      "roi_unit_pct": "-5.2727",
+      "prob_media": "0.8421",
+      "p_implied_media": "0.5789",
+      "edge_medio": "0.2631"
+    },
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": "1.8-2.0",
+      "n": 45,
+      "win_rate_pct": "62.2222",
+      "roi_unit_pct": "16.6222",
+      "prob_media": "0.7500",
+      "p_implied_media": "0.5334",
+      "edge_medio": "0.2166"
+    },
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": "<1.6",
+      "n": 413,
+      "win_rate_pct": "78.4504",
+      "roi_unit_pct": "2.2978",
+      "prob_media": "0.7656",
+      "p_implied_media": "0.7678",
+      "edge_medio": "-0.0022"
+    },
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": ">=2.0",
+      "n": 70,
+      "win_rate_pct": "28.5714",
+      "roi_unit_pct": "-8.6857",
+      "prob_media": "0.6130",
+      "p_implied_media": "0.3236",
+      "edge_medio": "0.2894"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": "1.6-1.8",
+      "n": 25,
+      "win_rate_pct": "76.0000",
+      "roi_unit_pct": "30.2800",
+      "prob_media": "0.7982",
+      "p_implied_media": "0.5823",
+      "edge_medio": "0.2159"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": "1.8-2.0",
+      "n": 50,
+      "win_rate_pct": "56.0000",
+      "roi_unit_pct": "3.8400",
+      "prob_media": "0.7062",
+      "p_implied_media": "0.5403",
+      "edge_medio": "0.1659"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": "<1.6",
+      "n": 44,
+      "win_rate_pct": "59.0909",
+      "roi_unit_pct": "-11.1818",
+      "prob_media": "0.6680",
+      "p_implied_media": "0.6718",
+      "edge_medio": "-0.0038"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": ">=2.0",
+      "n": 20,
+      "win_rate_pct": "55.0000",
+      "roi_unit_pct": "33.7000",
+      "prob_media": "0.6449",
+      "p_implied_media": "0.4091",
+      "edge_medio": "0.2358"
+    },
+    {
+      "mercado": "Q2",
+      "odds_bucket": "1.6-1.8",
+      "n": 18,
+      "win_rate_pct": "61.1111",
+      "roi_unit_pct": "4.9444",
+      "prob_media": "0.6834",
+      "p_implied_media": "0.5822",
+      "edge_medio": "0.1012"
+    },
+    {
+      "mercado": "Q2",
+      "odds_bucket": "1.8-2.0",
+      "n": 50,
+      "win_rate_pct": "80.0000",
+      "roi_unit_pct": "47.9800",
+      "prob_media": "0.6921",
+      "p_implied_media": "0.5391",
+      "edge_medio": "0.1531"
+    },
+    {
+      "mercado": "Q2",
+      "odds_bucket": "<1.6",
+      "n": 7,
+      "win_rate_pct": "42.8571",
+      "roi_unit_pct": "-35.4286",
+      "prob_media": "0.7028",
+      "p_implied_media": "0.6881",
+      "edge_medio": "0.0147"
+    },
+    {
+      "mercado": "Q2",
+      "odds_bucket": ">=2.0",
+      "n": 8,
+      "win_rate_pct": "75.0000",
+      "roi_unit_pct": "76.8750",
+      "prob_media": "0.6167",
+      "p_implied_media": "0.4337",
+      "edge_medio": "0.1830"
+    },
+    {
+      "mercado": "Q3",
+      "odds_bucket": "1.6-1.8",
+      "n": 17,
+      "win_rate_pct": "41.1765",
+      "roi_unit_pct": "-27.7059",
+      "prob_media": "0.7413",
+      "p_implied_media": "0.5817",
+      "edge_medio": "0.1595"
+    },
+    {
+      "mercado": "Q3",
+      "odds_bucket": "1.8-2.0",
+      "n": 51,
+      "win_rate_pct": "50.9804",
+      "roi_unit_pct": "-5.0000",
+      "prob_media": "0.6681",
+      "p_implied_media": "0.5397",
+      "edge_medio": "0.1284"
+    },
+    {
+      "mercado": "Q3",
+      "odds_bucket": "<1.6",
+      "n": 11,
+      "win_rate_pct": "63.6364",
+      "roi_unit_pct": "-6.0000",
+      "prob_media": "0.5917",
+      "p_implied_media": "0.6915",
+      "edge_medio": "-0.0997"
+    },
+    {
+      "mercado": "Q3",
+      "odds_bucket": ">=2.0",
+      "n": 3,
+      "win_rate_pct": "66.6667",
+      "roi_unit_pct": "47.0000",
+      "prob_media": "0.6102",
+      "p_implied_media": "0.4561",
+      "edge_medio": "0.1541"
+    },
+    {
+      "mercado": "Q4",
+      "odds_bucket": "1.6-1.8",
+      "n": 14,
+      "win_rate_pct": "50.0000",
+      "roi_unit_pct": "-12.6429",
+      "prob_media": "0.6969",
+      "p_implied_media": "0.5707",
+      "edge_medio": "0.1262"
+    },
+    {
+      "mercado": "Q4",
+      "odds_bucket": "1.8-2.0",
+      "n": 43,
+      "win_rate_pct": "44.1860",
+      "roi_unit_pct": "-17.7442",
+      "prob_media": "0.6911",
+      "p_implied_media": "0.5344",
+      "edge_medio": "0.1568"
+    },
+    {
+      "mercado": "Q4",
+      "odds_bucket": "<1.6",
+      "n": 6,
+      "win_rate_pct": "50.0000",
+      "roi_unit_pct": "-22.8333",
+      "prob_media": "0.6274",
+      "p_implied_media": "0.6865",
+      "edge_medio": "-0.0592"
+    },
+    {
+      "mercado": "Q4",
+      "odds_bucket": ">=2.0",
+      "n": 1,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "117.0000",
+      "prob_media": "0.7133",
+      "p_implied_media": "0.4608",
+      "edge_medio": "0.2525"
+    }
+  ],
+  "short_market_odds": [
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": "1.6-1.8",
+      "n": 6,
+      "win_rate_pct": "50.0000",
+      "roi_unit_pct": "-15.1667",
+      "prob_media": "0.8350",
+      "p_implied_media": "0.5889",
+      "edge_medio": "0.2461"
+    },
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": "1.8-2.0",
+      "n": 6,
+      "win_rate_pct": "50.0000",
+      "roi_unit_pct": "-5.3333",
+      "prob_media": "0.7927",
+      "p_implied_media": "0.5301",
+      "edge_medio": "0.2626"
+    },
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": "<1.6",
+      "n": 82,
+      "win_rate_pct": "84.1463",
+      "roi_unit_pct": "9.3659",
+      "prob_media": "0.7987",
+      "p_implied_media": "0.7694",
+      "edge_medio": "0.0293"
+    },
+    {
+      "mercado": "COMPLETO",
+      "odds_bucket": ">=2.0",
+      "n": 3,
+      "win_rate_pct": "0.0000",
+      "roi_unit_pct": "-100.0000",
+      "prob_media": "0.5925",
+      "p_implied_media": "0.3299",
+      "edge_medio": "0.2626"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": "1.6-1.8",
+      "n": 1,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "66.0000",
+      "prob_media": "0.8715",
+      "p_implied_media": "0.6024",
+      "edge_medio": "0.2691"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": "1.8-2.0",
+      "n": 4,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "85.2500",
+      "prob_media": "0.7821",
+      "p_implied_media": "0.5400",
+      "edge_medio": "0.2421"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": "<1.6",
+      "n": 10,
+      "win_rate_pct": "70.0000",
+      "roi_unit_pct": "8.3000",
+      "prob_media": "0.6782",
+      "p_implied_media": "0.6466",
+      "edge_medio": "0.0316"
+    },
+    {
+      "mercado": "Q1",
+      "odds_bucket": ">=2.0",
+      "n": 2,
+      "win_rate_pct": "50.0000",
+      "roi_unit_pct": "10.0000",
+      "prob_media": "0.4803",
+      "p_implied_media": "0.4631",
+      "edge_medio": "0.0171"
+    },
+    {
+      "mercado": "Q2",
+      "odds_bucket": "1.6-1.8",
+      "n": 3,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "77.3333",
+      "prob_media": "0.6774",
+      "p_implied_media": "0.5640",
+      "edge_medio": "0.1135"
+    },
+    {
+      "mercado": "Q2",
+      "odds_bucket": "1.8-2.0",
+      "n": 6,
+      "win_rate_pct": "83.3333",
+      "roi_unit_pct": "56.0000",
+      "prob_media": "0.6939",
+      "p_implied_media": "0.5316",
+      "edge_medio": "0.1623"
+    },
+    {
+      "mercado": "Q3",
+      "odds_bucket": "1.6-1.8",
+      "n": 3,
+      "win_rate_pct": "33.3333",
+      "roi_unit_pct": "-46.6667",
+      "prob_media": "0.7078",
+      "p_implied_media": "0.5872",
+      "edge_medio": "0.1206"
+    },
+    {
+      "mercado": "Q3",
+      "odds_bucket": "1.8-2.0",
+      "n": 1,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "86.0000",
+      "prob_media": "0.7994",
+      "p_implied_media": "0.5376",
+      "edge_medio": "0.2618"
+    },
+    {
+      "mercado": "Q4",
+      "odds_bucket": "1.6-1.8",
+      "n": 2,
+      "win_rate_pct": "100.0000",
+      "roi_unit_pct": "75.5000",
+      "prob_media": "0.8179",
+      "p_implied_media": "0.5699",
+      "edge_medio": "0.2480"
+    }
+  ],
+  "global_odds_reliability": [
+    {
+      "odds_bucket": "1.6-1.8",
+      "n": 85,
+      "prob_media": "0.7515",
+      "hit_rate": "0.5882",
+      "edge_medio": "0.1717",
+      "roi_unit_pct": "1.6471"
+    },
+    {
+      "odds_bucket": "1.8-2.0",
+      "n": 239,
+      "prob_media": "0.7007",
+      "hit_rate": "0.5900",
+      "edge_medio": "0.1631",
+      "roi_unit_pct": "9.7113"
+    },
+    {
+      "odds_bucket": "<1.6",
+      "n": 481,
+      "prob_media": "0.7501",
+      "hit_rate": "0.7547",
+      "edge_medio": "-0.0050",
+      "roi_unit_pct": "0.0125"
+    },
+    {
+      "odds_bucket": ">=2.0",
+      "n": 102,
+      "prob_media": "0.6205",
+      "hit_rate": "0.3922",
+      "edge_medio": "0.2662",
+      "roi_unit_pct": "9.2059"
+    }
+  ]
+}
