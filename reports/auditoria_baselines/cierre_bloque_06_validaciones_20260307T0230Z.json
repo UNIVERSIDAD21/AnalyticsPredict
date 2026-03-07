@@ -1,0 +1,1408 @@
+{
+  "applied_sql": [
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/01_base_unificada_v1.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/03_vw_perf_market_odds_confidence.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/04_vw_policy_odds_compliance.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/06_vw_calibration_scorecard.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/07_vw_stake_and_risk_consistency.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/09_vw_data_quality_core.sql",
+    "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/10_vw_nba_vs_futbol_madurez_operativa.sql"
+  ],
+  "validation_file": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/sql/analitica_bloque_06/11_validaciones_minimas_bloque_06_completo.sql",
+  "results": {
+    "q1": [
+      {
+        "source": "apuestas",
+        "n": 129
+      },
+      {
+        "source": "predicciones_registradas",
+        "n": 2152
+      }
+    ],
+    "q2": [
+      {
+        "sport": "NBA",
+        "n": 2281
+      }
+    ],
+    "q3": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "1.6-1.8",
+        "source": "apuestas",
+        "n": 6,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": "-68.321000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "1.6-1.8",
+        "source": "predicciones_registradas",
+        "n": 25,
+        "win_rate": "0.492064",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-15.568452"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "1.8-2.0",
+        "source": "apuestas",
+        "n": 6,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": "-7.666667",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "1.8-2.0",
+        "source": "predicciones_registradas",
+        "n": 114,
+        "win_rate": "0.503810",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-6.043175"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "<1.6",
+        "source": "apuestas",
+        "n": 82,
+        "win_rate": "0.823810",
+        "roi_pct_monetario": "-5.476607",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": "<1.6",
+        "source": "predicciones_registradas",
+        "n": 571,
+        "win_rate": "0.773800",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "0.769524"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "source": "apuestas",
+        "n": 3,
+        "win_rate": "0.000000",
+        "roi_pct_monetario": "-298.450000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 582,
+        "win_rate": "0.275183",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-16.181727"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "1.6-1.8",
+        "source": "apuestas",
+        "n": 1,
+        "win_rate": "1.000000",
+        "roi_pct_monetario": "165.000000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "1.6-1.8",
+        "source": "predicciones_registradas",
+        "n": 45,
+        "win_rate": "0.597118",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "2.486216"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "1.8-2.0",
+        "source": "apuestas",
+        "n": 4,
+        "win_rate": "1.000000",
+        "roi_pct_monetario": "56.110000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "1.8-2.0",
+        "source": "predicciones_registradas",
+        "n": 137,
+        "win_rate": "0.611068",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "14.135349"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "<1.6",
+        "source": "apuestas",
+        "n": 10,
+        "win_rate": "0.722222",
+        "roi_pct_monetario": "-17.200000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": "<1.6",
+        "source": "predicciones_registradas",
+        "n": 73,
+        "win_rate": "0.558433",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-15.688145"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": ">=2.0",
+        "source": "apuestas",
+        "n": 2,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": "-20.000000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 85,
+        "win_rate": "0.510044",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "34.157073"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "1.6-1.8",
+        "source": "apuestas",
+        "n": 3,
+        "win_rate": "1.000000",
+        "roi_pct_monetario": "55.733333",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "1.6-1.8",
+        "source": "predicciones_registradas",
+        "n": 40,
+        "win_rate": "0.601191",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "3.546958"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "1.8-2.0",
+        "source": "apuestas",
+        "n": 6,
+        "win_rate": "0.900000",
+        "roi_pct_monetario": "77.900000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "1.8-2.0",
+        "source": "predicciones_registradas",
+        "n": 109,
+        "win_rate": "0.619989",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "14.880147"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": "<1.6",
+        "source": "predicciones_registradas",
+        "n": 19,
+        "win_rate": "0.590278",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-12.458333"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 20,
+        "win_rate": "0.566138",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "46.248677"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "1.6-1.8",
+        "source": "apuestas",
+        "n": 3,
+        "win_rate": "0.333333",
+        "roi_pct_monetario": "-90.000000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "1.6-1.8",
+        "source": "predicciones_registradas",
+        "n": 38,
+        "win_rate": "0.527961",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-6.836874"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "1.8-2.0",
+        "source": "apuestas",
+        "n": 1,
+        "win_rate": "1.000000",
+        "roi_pct_monetario": "43.000000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "1.8-2.0",
+        "source": "predicciones_registradas",
+        "n": 111,
+        "win_rate": "0.497987",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-6.911704"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": "<1.6",
+        "source": "predicciones_registradas",
+        "n": 16,
+        "win_rate": "0.656250",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-4.989583"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 17,
+        "win_rate": "0.302083",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-18.583333"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "1.6-1.8",
+        "source": "apuestas",
+        "n": 2,
+        "win_rate": "1.000000",
+        "roi_pct_monetario": "63.300000",
+        "roi_unit_pct": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "1.6-1.8",
+        "source": "predicciones_registradas",
+        "n": 25,
+        "win_rate": "0.566667",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-2.177778"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "1.8-2.0",
+        "source": "predicciones_registradas",
+        "n": 105,
+        "win_rate": "0.438032",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-18.636754"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": "<1.6",
+        "source": "predicciones_registradas",
+        "n": 8,
+        "win_rate": "0.428571",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-33.857143"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "odds_bucket": ">=2.0",
+        "source": "predicciones_registradas",
+        "n": 12,
+        "win_rate": "0.557143",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "53.628571"
+      }
+    ],
+    "q4": [
+      {
+        "status_policy": "BLOQUEADO",
+        "n_rows": 33,
+        "n_eventos": 585
+      },
+      {
+        "status_policy": "MUESTRA_INSUFICIENTE",
+        "n_rows": 21,
+        "n_eventos": 48
+      },
+      {
+        "status_policy": "PERMITIDO",
+        "n_rows": 108,
+        "n_eventos": 1075
+      },
+      {
+        "status_policy": "PERMITIDO_CON_CAUTELA",
+        "n_rows": 29,
+        "n_eventos": 150
+      },
+      {
+        "status_policy": "RESTRINGIDO",
+        "n_rows": 82,
+        "n_eventos": 423
+      }
+    ],
+    "q5": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "n_eventos": 1292,
+        "calibration_gap_prom": "0.000000",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "n_eventos": 340,
+        "calibration_gap_prom": "0.000000",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "n_eventos": 188,
+        "calibration_gap_prom": "0.000000",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "n_eventos": 182,
+        "calibration_gap_prom": "0.000000",
+        "source_quality_flag": "B"
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "n_eventos": 150,
+        "calibration_gap_prom": "0.000000",
+        "source_quality_flag": "B"
+      }
+    ],
+    "q6": [
+      {
+        "sport": "NBA",
+        "market_type": "COMPLETO",
+        "n_eventos": 97,
+        "violaciones_policy": 9,
+        "avg_stake": "2068.909091",
+        "avg_kelly": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q1",
+        "n_eventos": 17,
+        "violaciones_policy": 10,
+        "avg_stake": "1000.000000",
+        "avg_kelly": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q2",
+        "n_eventos": 9,
+        "violaciones_policy": 0,
+        "avg_stake": "1000.000000",
+        "avg_kelly": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q3",
+        "n_eventos": 4,
+        "violaciones_policy": 4,
+        "avg_stake": "1000.000000",
+        "avg_kelly": null
+      },
+      {
+        "sport": "NBA",
+        "market_type": "Q4",
+        "n_eventos": 2,
+        "violaciones_policy": 2,
+        "avg_stake": "1000.000000",
+        "avg_kelly": null
+      }
+    ],
+    "q7": [
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-12",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "554.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 24,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-11",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "578.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 60,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-10",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "602.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 16,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-09",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "626.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 42,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-08",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "650.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 16,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-07",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "674.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 40,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-06",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "698.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 24,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-04",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "746.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 34,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-02-03",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "770.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 5,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-03",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "770.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 50,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-02",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "794.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 16,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-02-01",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "818.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 3,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-02-01",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "818.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 40,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-31",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "842.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 3,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-31",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "842.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 66,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-29",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "890.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 40,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-28",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "914.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 38,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-27",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "938.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 1,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-27",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "938.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 64,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-26",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "962.4567",
+        "outlier_rate": "0.166667",
+        "source_coverage": 6,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-26",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "962.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 30,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-25",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "986.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 28,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-24",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1010.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 10,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-24",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1010.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 122,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-23",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1034.4567",
+        "outlier_rate": "0.250000",
+        "source_coverage": 4,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-23",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1034.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 36,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-22",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1058.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 4,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-22",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1058.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 102,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-21",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1082.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 6,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-21",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1082.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 28,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-20",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1106.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 6,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-20",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1106.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 44,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-19",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1130.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 6,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-19",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1130.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 98,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-18",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1154.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 5,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-18",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1154.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 42,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-17",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1178.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 7,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-17",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1178.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 80,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-16",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1202.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 5,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-16",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1202.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 150,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-15",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1226.4567",
+        "outlier_rate": "0.142857",
+        "source_coverage": 7,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-15",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1226.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 216,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-14",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1250.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 6,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-14",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1250.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 96,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-13",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1274.4567",
+        "outlier_rate": "0.166667",
+        "source_coverage": 6,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-13",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1274.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 52,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-12",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1298.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 8,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-12",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1298.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 104,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-11",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1322.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 15,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-11",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1322.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 322,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "apuestas",
+        "periodo": "2026-01-10",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1346.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 16,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "source_table": "predicciones_registradas",
+        "periodo": "2026-01-10",
+        "completeness_rate": "1.000000",
+        "freshness_lag_horas": "1346.4567",
+        "outlier_rate": "0.000000",
+        "source_coverage": 32,
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      }
+    ],
+    "q8": [
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-12",
+        "n": 24,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-6.785714",
+        "calibration_score": "0.704482",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.928571",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-11",
+        "n": 60,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-12.433333",
+        "calibration_score": "0.826968",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-10",
+        "n": 16,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "5.250000",
+        "calibration_score": "0.789475",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-09",
+        "n": 42,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-13.448166",
+        "calibration_score": "0.768116",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.666667",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-08",
+        "n": 16,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-0.937500",
+        "calibration_score": "0.822064",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.750000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-07",
+        "n": 40,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-15.625731",
+        "calibration_score": "0.641531",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.666667",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-06",
+        "n": 24,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-7.833333",
+        "calibration_score": "0.704867",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-04",
+        "n": 34,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-11.564706",
+        "calibration_score": "0.627972",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-03",
+        "n": 55,
+        "win_rate": "0.509091",
+        "roi_pct_monetario": "-13.333333",
+        "roi_unit_pct": "-10.172857",
+        "calibration_score": "0.641990",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.875000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-02",
+        "n": 16,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-17.000000",
+        "calibration_score": "0.605928",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-02-01",
+        "n": 43,
+        "win_rate": "0.511628",
+        "roi_pct_monetario": "-13.333333",
+        "roi_unit_pct": "-16.782582",
+        "calibration_score": "0.812713",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.777778",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-31",
+        "n": 69,
+        "win_rate": "0.521739",
+        "roi_pct_monetario": "30.000000",
+        "roi_unit_pct": "3.600649",
+        "calibration_score": "0.708568",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.913043",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-29",
+        "n": 40,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "13.350340",
+        "calibration_score": "0.740541",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.571429",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-28",
+        "n": 38,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-14.026144",
+        "calibration_score": "0.646104",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.666667",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-27",
+        "n": 65,
+        "win_rate": "0.507692",
+        "roi_pct_monetario": "165.000000",
+        "roi_unit_pct": "12.579335",
+        "calibration_score": "0.792511",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.894737",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-26",
+        "n": 36,
+        "win_rate": "0.472222",
+        "roi_pct_monetario": "-276.060000",
+        "roi_unit_pct": "-20.333333",
+        "calibration_score": "0.766849",
+        "quality_score": "0.958333",
+        "policy_compliance": "0.833333",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-25",
+        "n": 28,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": null,
+        "roi_unit_pct": "-14.928571",
+        "calibration_score": "0.728224",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-24",
+        "n": 132,
+        "win_rate": "0.522727",
+        "roi_pct_monetario": "21.817500",
+        "roi_unit_pct": "9.286132",
+        "calibration_score": "0.737537",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.934783",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-23",
+        "n": 40,
+        "win_rate": "0.500000",
+        "roi_pct_monetario": "-269.100000",
+        "roi_unit_pct": "-25.792484",
+        "calibration_score": "0.645970",
+        "quality_score": "0.937500",
+        "policy_compliance": "0.777778",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-22",
+        "n": 106,
+        "win_rate": "0.509434",
+        "roi_pct_monetario": "55.475000",
+        "roi_unit_pct": "-13.924769",
+        "calibration_score": "0.650769",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.884615",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-21",
+        "n": 34,
+        "win_rate": "0.588235",
+        "roi_pct_monetario": "85.833333",
+        "roi_unit_pct": "30.032051",
+        "calibration_score": "0.873736",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.777778",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-20",
+        "n": 50,
+        "win_rate": "0.520000",
+        "roi_pct_monetario": "33.000000",
+        "roi_unit_pct": "-12.413462",
+        "calibration_score": "0.771906",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.800000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-19",
+        "n": 104,
+        "win_rate": "0.528846",
+        "roi_pct_monetario": "53.100000",
+        "roi_unit_pct": "-5.476562",
+        "calibration_score": "0.777304",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.948718",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-18",
+        "n": 47,
+        "win_rate": "0.531915",
+        "roi_pct_monetario": "15.000000",
+        "roi_unit_pct": "18.206349",
+        "calibration_score": "0.748565",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.944444",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-17",
+        "n": 87,
+        "win_rate": "0.528736",
+        "roi_pct_monetario": "20.625000",
+        "roi_unit_pct": "-9.934524",
+        "calibration_score": "0.571761",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.904762",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-16",
+        "n": 155,
+        "win_rate": "0.509677",
+        "roi_pct_monetario": "27.692000",
+        "roi_unit_pct": "6.317737",
+        "calibration_score": "0.767093",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.940000",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-15",
+        "n": 223,
+        "win_rate": "0.506726",
+        "roi_pct_monetario": "-117.971250",
+        "roi_unit_pct": "6.392159",
+        "calibration_score": "0.721242",
+        "quality_score": "0.964286",
+        "policy_compliance": "0.924528",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-14",
+        "n": 102,
+        "win_rate": "0.529412",
+        "roi_pct_monetario": "134.182500",
+        "roi_unit_pct": "-6.774697",
+        "calibration_score": "0.785014",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.909091",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-13",
+        "n": 58,
+        "win_rate": "0.534483",
+        "roi_pct_monetario": "-96.655333",
+        "roi_unit_pct": "-31.502886",
+        "calibration_score": "0.581610",
+        "quality_score": "0.958333",
+        "policy_compliance": "0.857143",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-12",
+        "n": 112,
+        "win_rate": "0.535714",
+        "roi_pct_monetario": "109.084056",
+        "roi_unit_pct": "16.339024",
+        "calibration_score": "0.802472",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.945946",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-11",
+        "n": 337,
+        "win_rate": "0.507418",
+        "roi_pct_monetario": "3.975000",
+        "roi_unit_pct": "-3.668766",
+        "calibration_score": "0.681551",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.942308",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      },
+      {
+        "sport": "NBA",
+        "periodo": "2026-01-10",
+        "n": 48,
+        "win_rate": "0.583333",
+        "roi_pct_monetario": "10.743056",
+        "roi_unit_pct": "-27.809524",
+        "calibration_score": "0.587019",
+        "quality_score": "1.000000",
+        "policy_compliance": "0.961538",
+        "source_quality_flag": "B",
+        "residual_warning": "confidence_temporal_policy_activa"
+      }
+    ]
+  }
+}
