@@ -96,10 +96,29 @@ clienteAPI.interceptors.request.use((config) => {
 export function extraerMensajeError(error: unknown): string {
   // Error de Axios con respuesta del servidor
   if (axios.isAxiosError(error)) {
-    const respuesta = error.response?.data as ErrorAPI | undefined;
+    const data = (error.response?.data ?? {}) as Record<string, unknown>;
+    const envelopeError = (data.error ?? {}) as Record<string, unknown>;
 
-    if (respuesta?.error?.mensaje) {
-      return respuesta.error.mensaje;
+    const candidatos = [
+      // Envelope custom
+      envelopeError.mensaje,
+      envelopeError.message,
+      envelopeError.detail,
+      // FastAPI estándar
+      data.detail,
+      // Respuestas legacy
+      data.mensaje,
+      data.message,
+      // Fallback Axios
+      error.message,
+    ];
+
+    const mensajeDetectado = candidatos.find(
+      (valor) => typeof valor === 'string' && valor.trim().length > 0
+    ) as string | undefined;
+
+    if (mensajeDetectado) {
+      return mensajeDetectado;
     }
 
     if (error.response?.status === 400) {
@@ -130,7 +149,7 @@ export function extraerMensajeError(error: unknown): string {
       return 'No se recibió respuesta del servidor. Verifica tu conexión e intenta nuevamente.';
     }
 
-    return error.message || 'Error desconocido en la petición.';
+    return 'Error desconocido en la petición.';
   }
 
   // Error genérico
