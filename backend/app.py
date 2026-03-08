@@ -29,6 +29,7 @@ from api.rutas_backtest import router as router_backtest
 from api.rutas_internas import router as router_interno
 from api.rutas_combinadas import router as router_combinadas
 from api.rutas_calidad import router as router_calidad
+from api.rutas_explicabilidad import router as router_explicabilidad
 
 # Routers de Fútbol
 from api.rutas_competiciones_futbol import router as router_competiciones_futbol
@@ -263,6 +264,7 @@ app.include_router(router_backtest)
 app.include_router(router_predicciones)
 app.include_router(router_combinadas)
 app.include_router(router_calidad)
+app.include_router(router_explicabilidad)
 
 # Routers de Fútbol
 app.include_router(router_competiciones_futbol)
