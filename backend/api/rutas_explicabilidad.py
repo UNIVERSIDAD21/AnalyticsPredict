@@ -13,6 +13,7 @@ from psycopg.rows import dict_row
 from db import obtener_pool
 from calidad.scorecard import obtener_scorecard_actual
 from calidad.alertas import obtener_alertas_activas
+from feature_flags import FEATURE_CONTRATO_EXPLICACION_V1, flag_activo
 from explicabilidad.contrato import (
     ContratoExplicacion,
     QualityCoherenceError,
@@ -103,6 +104,23 @@ async def get_explicacion_prediccion(
     version: str = Query(default="v1", pattern="^(v1|legacy)$"),
     accept: Optional[str] = Header(default=None),
 ):
+    accept_legacy = bool(accept and "version=legacy" in accept)
+    contrato_v1_activo = flag_activo(FEATURE_CONTRATO_EXPLICACION_V1)
+
+    if not contrato_v1_activo and not (version == "legacy" or accept_legacy):
+        return JSONResponse(
+            status_code=404,
+            content={
+                "exito": False,
+                "error": {
+                    "code": "FEATURE_DISABLED",
+                    "message": "Contrato de explicación v1 desactivado por feature flag",
+                    "detail": {"feature": FEATURE_CONTRATO_EXPLICACION_V1},
+                    "trace_id": None,
+                },
+            },
+        )
+
     pool = obtener_pool()
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cursor:
@@ -172,7 +190,6 @@ async def get_explicacion_prediccion(
             },
         )
 
-    accept_legacy = bool(accept and "version=legacy" in accept)
     if version == "legacy" or accept_legacy:
         legacy = adaptar_legacy(contrato)
         return {"exito": True, "contrato": legacy}

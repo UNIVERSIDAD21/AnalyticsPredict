@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
+from feature_flags import FEATURE_CALIDAD_SCORECARD, flag_activo
+
 logger = logging.getLogger(__name__)
 
 
@@ -473,7 +475,13 @@ def calcular_scorecard(conn: Any, domain: str, periodo: date) -> Dict[str, Any]:
 
 
 def obtener_scorecard_actual(conn: Any, domain: str) -> Optional[Dict[str, Any]]:
-    """Obtiene el scorecard más reciente de un dominio para consumo API."""
+    """Obtiene el scorecard más reciente de un dominio para consumo API.
+
+    Si FEATURE_CALIDAD_SCORECARD está desactivado, retorna None sin error.
+    """
+    if not flag_activo(FEATURE_CALIDAD_SCORECARD):
+        return None
+
     dom = _normalizar_domain(domain)
 
     sql = """

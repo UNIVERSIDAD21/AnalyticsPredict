@@ -139,10 +139,11 @@ def test_smoke_endpoint_alertas_http_200() -> None:
     assert "alertas" in data
 
 
-def test_smoke_endpoint_explicacion_http_200_o_422() -> None:
+def test_smoke_endpoint_explicacion_http_200_o_422_o_404_featureflag() -> None:
     client = TestClient(app)
     resp = client.get("/api/prediccion/no-existe/explicacion")
-    assert resp.status_code in {200, 422}
+    # 404 es válido cuando FEATURE_CONTRATO_EXPLICACION_V1=false (rollout gradual B08).
+    assert resp.status_code in {200, 422, 404}
 
 
 def test_coherencia_scorecard_critica_activa_no_nivel_a(monkeypatch: pytest.MonkeyPatch) -> None:

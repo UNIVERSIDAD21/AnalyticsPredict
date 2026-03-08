@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
+from feature_flags import FEATURE_ALERTAS_CALIDAD, flag_activo
+
 logger = logging.getLogger(__name__)
 
 SEVERITY_ORDER = {"MEDIA": 1, "ALTA": 2, "CRITICA": 3}
@@ -209,7 +211,13 @@ def generar_alertas(conn: Any, scorecard_result: Dict[str, Any], domain: str, pe
 
 
 def obtener_alertas_activas(conn: Any, domain: Optional[str] = None, severidad_min: str = "MEDIA", ventana_dias: int = 14) -> List[Dict[str, Any]]:
-    """Obtiene alertas activas (OPEN/ACK) con filtro de severidad mínima."""
+    """Obtiene alertas activas (OPEN/ACK) con filtro de severidad mínima.
+
+    Si FEATURE_ALERTAS_CALIDAD está desactivado, retorna lista vacía.
+    """
+    if not flag_activo(FEATURE_ALERTAS_CALIDAD):
+        return []
+
     sev_min = severidad_min.upper()
     if sev_min not in SEVERITY_ORDER:
         raise ValueError("severidad_min inválida")
