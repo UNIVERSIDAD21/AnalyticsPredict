@@ -298,6 +298,82 @@ Rango de predicción: {lower} – {upper}”
 
 ---
 
+## 9. INTEGRACIÓN CON BACKEND
+
+### 9.1 Consumo del Contrato
+
+```typescript
+const fetchExplanation = async (predictionId: string): Promise<PredictionExplanation> => {
+  const response = await fetch(`/api/v2/predictions/${predictionId}/explanation`);
+  const data = await response.json();
+
+  // Validar schema
+  if (!validateSchema(data)) throw new Error('Invalid schema');
+
+  return data;
+};
+```
+
+### 9.2 Manejo de Errores
+
+```typescript
+try {
+  const explanation = await fetchExplanation(id);
+  renderExplanation(explanation);
+} catch (error) {
+  showErrorState("No se pudo cargar la explicación");
+}
+```
+
+### 9.3 Caching
+
+- Cache de explicaciones por **5 minutos**.
+- Invalidar cache si se detecta actualización de datos (`generated_at` nuevo o cambio de `data_quality.score`).
+- Recomendación: estrategia `stale-while-revalidate` para UX fluida.
+
+---
+
+## 10. TESTING Y VALIDACIÓN
+
+### 10.1 Test Cases UI
+
+| Test | Descripción | Verificación |
+|------|-------------|--------------|
+| Render A | Calidad A sin warnings | Badge verde, warnings panel oculto |
+| Render B | Calidad B con warnings | Badge amarillo, warnings visibles |
+| Render C | Calidad C | Badge rojo, mensaje crítico prominente |
+| Responsive | Mobile, tablet, desktop | Layout correcto en cada breakpoint |
+
+### 10.2 Test de Accesibilidad
+
+- Lighthouse score > 90.
+- axe-core sin errores críticos.
+- Navegación completa por teclado.
+
+---
+
+## 11. IMPLEMENTACIÓN FASEADA
+
+### 11.1 Fase 1 (MVP)
+
+- Componentes básicos: `QualityBadge`, `ConfidenceIndicator`, `FactorsList`.
+- Vista principal sin interacciones avanzadas.
+- Disclaimers obligatorios visibles.
+
+### 11.2 Fase 2
+
+- `WarningPanel` completo.
+- Tooltips interactivos.
+- Contexto histórico expandible.
+
+### 11.3 Fase 3
+
+- Animaciones y polish visual.
+- Responsive completo.
+- Accesibilidad optimizada.
+
+---
+
 ## Mapeo rápido al contrato backend
 
 Campos usados desde `PredictionExplanation`:
@@ -309,6 +385,18 @@ Campos usados desde `PredictionExplanation`:
 - Estados especiales: `metadata.is_legacy_contract`, flags de drift/quality
 
 ---
+
+## Validación de alcance de esta propuesta
+
+- ✓ Wireframes para niveles A, B, C.
+- ✓ Sistema de diseño (colores + tipografía) definido.
+- ✓ Componentes organizados con Atomic Design.
+- ✓ Flujos de interacción documentados.
+- ✓ Plan de responsividad cubierto.
+- ✓ Criterios de accesibilidad especificados.
+- ✓ Disclaimers y textos legales incluidos.
+- ✓ Plan de implementación faseada incluido.
+- ✓ Sin implementación de código productivo (solo diseño/propuesta).
 
 ## Cierre
 
