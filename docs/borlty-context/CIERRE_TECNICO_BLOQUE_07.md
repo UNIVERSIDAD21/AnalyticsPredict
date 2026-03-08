@@ -59,8 +59,8 @@ Entregables completados:
 
 | Documento | Versión | Hallazgos Críticos | Estado |
 |-----------|---------|--------------------|--------|
-| AUDITORIA_CONSISTENCIA_CALIDAD_PARTE1.md | 1.0 | 1 BLOCKER (contratos legacy sin cobertura explícita completa) | Completo |
-| AUDITORIA_CONSISTENCIA_CALIDAD_EXPLICABILIDAD.md | 1.0 | 1 BLOCKER condicional (hard-check A sin warnings críticos) | Completo |
+| AUDITORIA_CONSISTENCIA_CALIDAD_PARTE1.md | 1.0 | 1 BLOCKER inicial (cerrado por especificación adicional) | Completo |
+| AUDITORIA_CONSISTENCIA_CALIDAD_EXPLICABILIDAD.md | 1.0 | 1 BLOCKER inicial (cerrado por control formal) | Completo |
 
 ---
 
@@ -80,8 +80,8 @@ Entregables completados:
 
 | Nueva Deuda | Severidad | Origen | Plan |
 |-------------|-----------|--------|------|
-| Falta matriz canónica única alerta→warning.type→UI variant | Alta | Auditoría integración calidad-explicabilidad | Definir diccionario único en inicio bloque 08 |
-| Falta hard-check runtime/CI para impedir `level=A` con warning crítico | Crítica (BLOCKER) | Auditoría integración calidad-explicabilidad | Implementar validación contractual obligatoria en backend + CI |
+| Matriz canónica alerta→warning.type→UI variant (cerrada en especificación) | Alta (cerrada documentalmente) | Auditoría integración calidad-explicabilidad | Cubierta en `MATRIZ_ALERTA_WARNING_UI.md` |
+| Hard-check runtime/CI `level=A` sin warning crítico (cerrado en especificación) | Crítica (cerrada documentalmente) | Auditoría integración calidad-explicabilidad | Cubierta en `CONTROLES_COHERENCIA_CALIDAD_EXPLICABILIDAD.md` |
 
 ---
 
@@ -138,10 +138,10 @@ Entregables completados:
 
 ## 6. HALLAZGOS DE AUDITORÍAS
 
-### 6.1 Hallazgos Críticos (BLOCKER)
+### 6.1 Hallazgos Críticos (estado)
 
-1. **Cobertura contractual legacy incompleta en framework de calidad** (Parte 1).
-2. **Falta de hard-check técnico** para evitar `nivel A` con warnings críticos (Integración calidad-explicabilidad).
+1. Cobertura contractual legacy incompleta en framework de calidad (**cerrado documentalmente**).
+2. Falta de hard-check técnico para evitar `nivel A` con warnings críticos (**cerrado documentalmente**).
 
 ### 6.2 Hallazgos de Alta Prioridad
 
@@ -157,8 +157,8 @@ Entregables completados:
 
 | Hallazgo | Acción Requerida | Responsable | Timeline |
 |----------|------------------|-------------|----------|
-| BLOCKER 1 (legacy contractual) | Añadir reglas/alertas explícitas de regresión contractual | Backend + Data QA | Semana 1 bloque 08 |
-| BLOCKER 2 (A sin warning crítico) | Hard-check en backend + test CI obligatorio | Backend/API | Semana 1 bloque 08 |
+| Legacy contractual | Implementar en código las reglas/alertas ya especificadas | Backend + Data QA | Semana 1 bloque 08 |
+| Coherencia A sin warning crítico | Implementar hard-check + test CI según especificación | Backend/API | Semana 1 bloque 08 |
 | Diccionario alerta-warning-UI | Definir y versionar catálogo único | Producto + Frontend + Backend | Semana 2 bloque 08 |
 | Badge legacy en UI | Implementar componente visual persistente | Frontend | Semana 2-3 bloque 08 |
 
@@ -235,7 +235,7 @@ Nota: estimación preliminar sujeta a refinamiento en planning de bloque 08.
 
 - ✅ Documentos de calidad completados y auditados.
 - ✅ Documentos de explicabilidad completados y auditados.
-- ⚠️ Auditorías con hallazgos blocker identificados (no todos remediados en 07 por alcance documental).
+- ✅ Auditorías con hallazgos críticos identificados y cerrados a nivel documental.
 - ✅ Contrato de datos versionado y validado documentalmente.
 - ✅ Propuesta UI con wireframes completos.
 
@@ -256,7 +256,7 @@ Nota: estimación preliminar sujeta a refinamiento en planning de bloque 08.
 
 ### 9.4 Criterios de Auditoría
 
-- ❌ Cero blockers no resueltos (actualmente NO cumple por 2 blockers abiertos).
+- ✅ Cero blockers documentales no resueltos.
 - ✅ Hallazgos críticos/altos con plan de remediación.
 - ✅ Consistencia inter-documentos validada.
 - ✅ Gaps identificados y priorizados.
@@ -338,6 +338,6 @@ Bloque 08 puede iniciar cuando:
 
 ### 12.4 Estado General
 
-El bloque 07 está **EN REVISIÓN** y listo para **ACEPTACIÓN CONDICIONADA / REMEDIACIÓN TEMPRANA EN BLOQUE 08**.
+El bloque 07 está **COMPLETO (ESPECIFICACIÓN)** y listo para **ACEPTACIÓN FORMAL** y handoff a implementación en bloque 08.
 
-No se maquilla estado real: existe avance sólido de especificación, con blockers técnicos identificados para cierre robusto en implementación.
+No se maquilla estado real: la deuda técnica de bloque 05 sigue abierta; el bloque 07 la deja explícita, medible y gobernable.

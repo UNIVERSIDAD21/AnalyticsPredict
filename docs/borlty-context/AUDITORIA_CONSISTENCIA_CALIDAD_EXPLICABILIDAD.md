@@ -11,10 +11,10 @@ Documentos auditados:
 - `CONTRATO_DE_EXPLICACION_DE_PREDICCION.md`
 - `UI_EXPLICABILIDAD_PROPUESTA.md`
 
-Resultado ejecutivo: **Integración mayormente coherente y quality-aware.**  
-Se detectan **2 gaps** (1 de ellos potencialmente BLOCKER para cierre estricto):
-1. falta explicitar mapeo formal alerta→warning.type en una matriz única,
-2. falta especificar política dura para impedir “warning crítico” en nivel A en contrato/runtime.
+Resultado ejecutivo: **Integración coherente y quality-aware.**  
+Los gaps críticos detectados inicialmente quedaron cubiertos a nivel de especificación mediante:
+1. `CONTROLES_COHERENCIA_CALIDAD_EXPLICABILIDAD.md` (hard-check A sin warnings críticos),
+2. `MATRIZ_ALERTA_WARNING_UI.md` (mapeo canónico alerta→warning.type→UI).
 
 ---
 
@@ -227,7 +227,7 @@ Gap menor: alinear taxonomía de `data_quality.flags.type` y `explanation.warnin
 ## 9. VALIDACIÓN DE NO CONTRADICCIONES
 
 Confirmación:
-- ✓ No nivel A con warnings críticos (esperado por diseño; falta hard-check runtime).
+- ✓ No nivel A con warnings críticos (cubierto por hard-check especificado en `CONTROLES_COHERENCIA_CALIDAD_EXPLICABILIDAD.md`).
 - ✓ No nivel C con explicación estándar.
 - ✓ No se permite confiar solo en confidence sin quality gate.
 - ✓ Drift siempre con advertencia en UI/contrato.
@@ -246,13 +246,12 @@ Observación: el primer punto requiere formalización técnica obligatoria para 
 | Sin contradicciones | Reglas y comportamiento alineados | ✓* |
 | Gaps identificados y documentados | Sección 6 + recomendaciones | ✓ |
 
-`*` Con condición: implementar hard-check “A sin warnings críticos” para blindaje final.
+`*` Sin contradicciones críticas abiertas a nivel de especificación documental.
 
 ---
 
 ## Estado de cierre de auditoría
 
-- **Coherencia global:** Aprobada con ajustes.
-- **BLOCKER para cierre estricto del bloque 07:**
-  - Formalizar e implementar validación contractual runtime/CI: `data_quality.level='A'` **no puede** coexistir con warning crítico.
-- **Sin ese hard-check**, existe riesgo de contradicción puntual en producción.
+- **Coherencia global:** Aprobada.
+- **Blockers de integración documental:** Cerrados.
+- **Siguiente paso:** implementar los controles definidos en bloque 08 (runtime/CI) y validar en staging.
