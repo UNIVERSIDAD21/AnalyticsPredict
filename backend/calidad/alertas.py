@@ -90,13 +90,72 @@ def _debounce_ok(conn: Any, domain: str, periodo: date, candidate: AlertCandidat
     return prev_count >= max(1, debounce_periods - 1)
 
 
-def _upsert_alert(conn: Any, domain: str, periodo: date, candidate: AlertCandidate, emitted: bool) -> None:
+def _get_cooldown_activo(conn: Any, domain: str, periodo: date, candidate: AlertCandidate, cooldown_periods: int) -> bool:
+    """Retorna True si una alerta está dentro de su ventana de cooldown.
+
+    - DQ-CRIT-03 no usa cooldown (invariante crítico).
+    - Para el resto, si hubo emisión reciente en ventana, se suprime re-emisión.
+    """
+    if candidate.alert_id == "DQ-CRIT-03":
+        return False
+    if cooldown_periods <= 0:
+        return False
+
+    fecha_inicio = periodo - timedelta(days=cooldown_periods)
+    sql = """
+    SELECT COUNT(*)
+    FROM analytics.dq_alerts
+    WHERE domain=%s
+      AND alert_id=%s
+      AND incident_key=%s
+      AND emitted=TRUE
+      AND periodo BETWEEN %s AND %s
+    """
+    try:
+        count_recent = int(
+            _query_value(
+                conn,
+                sql,
+                (domain, candidate.alert_id, candidate.incident_key, fecha_inicio, periodo),
+            )
+        )
+        return count_recent > 0
+    except Exception:
+        return False
+
+
+def _es_reincidente_14d(conn: Any, domain: str, periodo: date, candidate: AlertCandidate) -> bool:
+    fecha_inicio = periodo - timedelta(days=14)
+    sql = """
+    SELECT COUNT(*)
+    FROM analytics.dq_alerts
+    WHERE domain=%s
+      AND alert_id=%s
+      AND incident_key=%s
+      AND emitted=TRUE
+      AND periodo BETWEEN %s AND %s
+    """
+    try:
+        c = int(_query_value(conn, sql, (domain, candidate.alert_id, candidate.incident_key, fecha_inicio, periodo - timedelta(days=1))))
+        return c > 0
+    except Exception:
+        return False
+
+
+def _upsert_alert(
+    conn: Any,
+    domain: str,
+    periodo: date,
+    candidate: AlertCandidate,
+    emitted: bool,
+    alerta_reincidente: bool,
+) -> None:
     sql = """
     INSERT INTO analytics.dq_alerts (
       periodo, domain, alert_id, severity, component, title, condition_text,
       incident_key, root_cause, status, emitted, trigger_value, threshold_value,
-      warning_type, warning_severity, payload
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+      warning_type, warning_severity, payload, alerta_reincidente, first_occurrence_at
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, NOW())
     ON CONFLICT (periodo, domain, alert_id, incident_key)
     DO UPDATE SET
       updated_at = NOW(),
@@ -106,7 +165,9 @@ def _upsert_alert(conn: Any, domain: str, periodo: date, candidate: AlertCandida
         WHEN analytics.dq_alerts.status = 'RESOLVED' THEN 'OPEN'
         ELSE analytics.dq_alerts.status
       END,
-      payload = EXCLUDED.payload
+      payload = EXCLUDED.payload,
+      alerta_reincidente = analytics.dq_alerts.alerta_reincidente OR EXCLUDED.alerta_reincidente,
+      first_occurrence_at = COALESCE(analytics.dq_alerts.first_occurrence_at, NOW())
     """
     import json
 
@@ -130,12 +191,20 @@ def _upsert_alert(conn: Any, domain: str, periodo: date, candidate: AlertCandida
                 candidate.warning_type,
                 candidate.warning_severity,
                 json.dumps(candidate.payload or {}),
+                alerta_reincidente,
             ),
         )
 
 
-def _evaluar_alertas(conn: Any, scorecard_result: Dict[str, Any], domain: str, periodo: date) -> List[AlertCandidate]:
+def _evaluar_alertas(
+    conn: Any,
+    scorecard_result: Dict[str, Any],
+    domain: str,
+    periodo: date,
+    cooldown_config: Optional[Dict[str, int]] = None,
+) -> List[AlertCandidate]:
     dom = _normalizar_domain(domain)
+    _ = cooldown_config or {"DQ-MED-05": 3, "DQ-HIGH-05": 1, "DQ-CRIT-03": 0}
     candidates: List[AlertCandidate] = []
 
     nivel = str(scorecard_result.get("nivel", "")).upper()
@@ -176,7 +245,14 @@ def _evaluar_alertas(conn: Any, scorecard_result: Dict[str, Any], domain: str, p
     return candidates
 
 
-def generar_alertas(conn: Any, scorecard_result: Dict[str, Any], domain: str, periodo: date, debounce_periods: int = 2) -> Dict[str, Any]:
+def generar_alertas(
+    conn: Any,
+    scorecard_result: Dict[str, Any],
+    domain: str,
+    periodo: date,
+    debounce_periods: int = 2,
+    cooldown_config: Optional[Dict[str, int]] = None,
+) -> Dict[str, Any]:
     """Genera y persiste alertas operacionales de calidad."""
     dom = _normalizar_domain(domain)
 
@@ -184,13 +260,25 @@ def generar_alertas(conn: Any, scorecard_result: Dict[str, Any], domain: str, pe
         raise ValueError("Hard-check violado: nivel A no puede coexistir con warning crítico activo")
 
     try:
-        candidates = _evaluar_alertas(conn, scorecard_result, dom, periodo)
+        cooldowns = cooldown_config or {
+            "DQ-MED-05": 3,
+            "DQ-HIGH-05": 1,
+            "DQ-CRIT-03": 0,
+        }
+
+        candidates = _evaluar_alertas(conn, scorecard_result, dom, periodo, cooldowns)
         emitted_count = 0
         suppressed_count = 0
 
         for c in candidates:
-            emit = _debounce_ok(conn, dom, periodo, c, debounce_periods)
-            _upsert_alert(conn, dom, periodo, c, emit)
+            by_debounce = _debounce_ok(conn, dom, periodo, c, debounce_periods)
+            cd_periods = int(cooldowns.get(c.alert_id, 0))
+            cooldown_active = _get_cooldown_activo(conn, dom, periodo, c, cd_periods)
+            emit = by_debounce and not cooldown_active
+
+            reincidente = _es_reincidente_14d(conn, dom, periodo, c)
+            _upsert_alert(conn, dom, periodo, c, emit, reincidente)
+
             if emit:
                 emitted_count += 1
             else:
@@ -226,7 +314,8 @@ def obtener_alertas_activas(conn: Any, domain: Optional[str] = None, severidad_m
     sql = """
     SELECT id, periodo, domain, alert_id, severity, component, title, condition_text,
            incident_key, status, emitted, repeat_count, trigger_value, threshold_value,
-           warning_type, warning_severity, payload, created_at, updated_at
+           warning_type, warning_severity, payload, created_at, updated_at,
+           alerta_reincidente, first_occurrence_at
     FROM analytics.dq_alerts
     WHERE periodo >= %s
       AND status IN ('OPEN', 'ACK')
@@ -270,6 +359,8 @@ def obtener_alertas_activas(conn: Any, domain: Optional[str] = None, severidad_m
                 "warning_type": row[14],
                 "warning_severity": row[15],
                 "payload": row[16] or {},
+                "alerta_reincidente": bool(row[19]) if row[19] is not None else False,
+                "first_occurrence_at": row[20].isoformat() if row[20] is not None and hasattr(row[20], "isoformat") else (str(row[20]) if row[20] is not None else None),
             }
         )
     return result
