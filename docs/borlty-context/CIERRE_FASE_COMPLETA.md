@@ -67,3 +67,25 @@ Justificación:
 - 8/9 criterios de éxito en verde.
 - Deuda B05 documentada y visible.
 - Persisten fallos funcionales en tests (no de colección) que pasan como condición de saneamiento de siguiente fase.
+
+## Suite post-saneamiento H1–H4
+
+Comando ejecutado en H5:
+```bash
+./backend/.venv/bin/pytest backend/tests/ -q 2>&1 | tee /tmp/pytest_h5.txt
+```
+
+Resultado real:
+- **462 passed**
+- **13 failed**
+- **0 errores de colección**
+- 9 skipped
+
+Verificaciones de invariantes H5:
+- 0 errores de colección: ✅
+- passed ≥ 423: ✅ (462)
+- Ningún test eliminado: ✅ (sin borrados de `backend/tests/*` en la serie H1–H4/H5)
+
+Conclusión H5:
+- Se alcanza el criterio de éxito operativo de esta fase (**≥460 passed**).
+- La deuda residual queda documentada explícitamente en `DEUDA_TESTS_FUNCIONALES.md` (13 fallos pendientes), sin silenciamiento.
