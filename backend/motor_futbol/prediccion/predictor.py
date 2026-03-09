@@ -66,6 +66,10 @@ class PredictorFutbol:
     def __init__(
         self,
         pool,
+        generador: Optional[GeneradorFeaturesFutbol] = None,
+        modelo_corners: Optional[ModeloCorners] = None,
+        modelo_goles: Optional[ModeloGoles] = None,
+        modelo_disparos: Optional[ModeloDisparos] = None,
         cargar_modelos: bool = True,
         ruta_modelos: Optional[str] = None,
     ):
@@ -78,14 +82,32 @@ class PredictorFutbol:
             ruta_modelos: Ruta opcional para cargar modelos desde archivo
         """
         self._pool = pool
-        self.generador = GeneradorFeaturesFutbol(pool)
-        self.modelo_corners: Optional[ModeloCorners] = None
-        self.modelo_goles: Optional[ModeloGoles] = None
-        self.modelo_disparos: Optional[ModeloDisparos] = None
-        self.version_activa: str = ""
-        self._modelos_cargados = False
 
-        if cargar_modelos:
+        custom_contract = any(
+            x is not None for x in [generador, modelo_corners, modelo_goles, modelo_disparos]
+        )
+        if custom_contract:
+            if not all(x is not None for x in [generador, modelo_corners, modelo_goles, modelo_disparos]):
+                raise TypeError(
+                    "Si se inyecta contrato custom, debe incluir generador y los tres modelos"
+                )
+            self.generador = generador
+            self.modelo_corners = modelo_corners
+            self.modelo_goles = modelo_goles
+            self.modelo_disparos = modelo_disparos
+            self._modelos_cargados = True
+        else:
+            self.generador = GeneradorFeaturesFutbol(pool)
+            self.modelo_corners = None
+            self.modelo_goles = None
+            self.modelo_disparos = None
+            self._modelos_cargados = False
+
+        self.version_activa: str = ""
+
+        if custom_contract:
+            self._actualizar_version()
+        elif cargar_modelos:
             try:
                 self.cargar_modelos(ruta_modelos)
             except Exception as e:

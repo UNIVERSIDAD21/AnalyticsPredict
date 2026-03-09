@@ -431,20 +431,40 @@ class PrediccionMercado:
 class PrediccionPartido:
     """Predicción completa para un partido."""
     partido_id: UUID
-    fecha_analisis: datetime
-    equipo_local: str
-    equipo_visitante: str
-    competicion: str
+    fecha_analisis: Optional[datetime] = None
+    equipo_local: str = ""
+    equipo_visitante: str = ""
+    competicion: str = ""
 
     mercados_corners: Dict[str, PrediccionMercado] = field(default_factory=dict)
     mercados_goles: Dict[str, PrediccionMercado] = field(default_factory=dict)
     mercados_disparos: Dict[str, PrediccionMercado] = field(default_factory=dict)
+    mercados: Optional[Dict[str, PrediccionMercado]] = None
+    fecha_prediccion: Optional[datetime] = None
 
     nivel_confianza: NivelConfianza = NivelConfianza.MEDIA
     version_modelo: str = ""
 
     metricas_modelo: Dict[str, float] = field(default_factory=dict)
     recomendaciones: List[Dict[str, Any]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.fecha_analisis is None:
+            self.fecha_analisis = self.fecha_prediccion or datetime.now()
+        if self.fecha_prediccion is None:
+            self.fecha_prediccion = self.fecha_analisis
+
+        if self.mercados is not None and not (
+            self.mercados_corners or self.mercados_goles or self.mercados_disparos
+        ):
+            # Compatibilidad legacy: mapa único de mercados
+            self.mercados_corners = dict(self.mercados)
+        elif self.mercados is None:
+            self.mercados = {
+                **self.mercados_corners,
+                **self.mercados_goles,
+                **self.mercados_disparos,
+            }
 
     def obtener_mercado(self, tipo: TipoMercadoFutbol) -> Optional[PrediccionMercado]:
         """Obtiene predicción para un mercado específico."""
