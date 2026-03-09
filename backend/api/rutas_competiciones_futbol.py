@@ -66,7 +66,7 @@ async def listar_competiciones(
             COALESCE(c.prioridad, 0) as prioridad,
             COALESCE(c.activo, true) as activo
         FROM competiciones_futbol c
-        LEFT JOIN paises_futbol p ON c.pais_id = p.id
+        LEFT JOIN paises p ON c.pais_id = p.id
         WHERE 1=1
     """
     params: List = []
@@ -153,7 +153,7 @@ async def obtener_competicion(competicion_id: UUID) -> CompeticionDetalle:
                 WHERE pf.competicion_id = c.id
             ) as total_partidos
         FROM competiciones_futbol c
-        LEFT JOIN paises_futbol p ON c.pais_id = p.id
+        LEFT JOIN paises p ON c.pais_id = p.id
         WHERE c.id = %s
     """
 
@@ -216,7 +216,7 @@ async def listar_equipos_competicion(
         FROM equipos_futbol e
         JOIN partidos_futbol pf ON (e.id = pf.equipo_local_id OR e.id = pf.equipo_visitante_id)
         JOIN competiciones_futbol c ON pf.competicion_id = c.id
-        LEFT JOIN paises_futbol p ON e.pais_id = p.id
+        LEFT JOIN paises p ON e.pais_id = p.id
         WHERE pf.competicion_id = %s
     """
     params = [str(competicion_id)]

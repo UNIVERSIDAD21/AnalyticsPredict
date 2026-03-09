@@ -61,10 +61,10 @@ async def listar_equipos(
             ) as competicion_principal,
             e.logo_url
         FROM equipos_futbol e
-        LEFT JOIN paises_futbol p ON e.pais_id = p.id
+        LEFT JOIN paises p ON e.pais_id = p.id
         WHERE 1=1
     """
-    count_query = "SELECT COUNT(*) FROM equipos_futbol e LEFT JOIN paises_futbol p ON e.pais_id = p.id WHERE 1=1"
+    count_query = "SELECT COUNT(*) FROM equipos_futbol e LEFT JOIN paises p ON e.pais_id = p.id WHERE 1=1"
     params: List = []
     count_params: List = []
 
@@ -168,7 +168,7 @@ async def obtener_equipo(equipo_id: UUID) -> EquipoDetalle:
                 LIMIT 1
             ) as competicion_principal
         FROM equipos_futbol e
-        LEFT JOIN paises_futbol p ON e.pais_id = p.id
+        LEFT JOIN paises p ON e.pais_id = p.id
         WHERE e.id = %s
     """
 
