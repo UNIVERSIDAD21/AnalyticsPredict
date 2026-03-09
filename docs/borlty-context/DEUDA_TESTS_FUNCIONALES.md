@@ -63,22 +63,13 @@ Total items: 58
 | `backend/tests/motor_futbol/test_predictor.py` | `TestPredecirPartido::test_prediccion_tiene_todos_los_mercados` | Predictor fútbol no cumple expectativas de estructura/mercados/fecha_corte | Refactor predictor y salida de mercados (bloque 10) |
 | `backend/tests/motor_futbol/test_predictor.py` | `TestPredecirPartido::test_fecha_corte_obligatoria` | Predictor fútbol no cumple expectativas de estructura/mercados/fecha_corte | Refactor predictor y salida de mercados (bloque 10) |
 
-## Residual post-saneamiento H1–H4 (corrida H5)
+## Residual post-saneamiento H1–H6
 
-Resultado base H5: **462 passed / 13 failed / 0 errores de colección**.
+Resultado final actual:
+- **475 passed**
+- **0 failed**
+- **0 errores de colección**
 
-| archivo_test | test_name | motivo | feature_pendiente |
-|---|---|---|---|
-| `backend/tests/motor_futbol/test_modelo.py` | `TestConstruirMatrizDiseno::test_matriz_diseno_one_hot_equipo` | Construcción de matriz no está aplicando one-hot según contrato esperado | Alinear `construir_matriz_diseno` con contrato legacy de modelo (bloque 10) |
-| `backend/tests/motor_futbol/test_modelo.py` | `TestAjustarRidge::test_ajustar_ridge_pesos_dimensiones` | `ajustar_ridge` retorna residuales con forma distinta a la esperada por contrato | Ajustar API de `ajustar_ridge` (salida pesos+residuales) sin romper pipeline (bloque 10) |
-| `backend/tests/motor_futbol/test_modelo.py` | `TestAjustarRidge::test_ajustar_ridge_formula_correcta` | Implementación ridge no coincide con fórmula de referencia del test | Corregir cálculo ridge o exponer variante compatible (bloque 10) |
-| `backend/tests/motor_futbol/test_modelo.py` | `TestModeloDisparos::test_modelo_disparos_6_mercados` | Modelo disparos no se marca entrenado por mismatch de targets esperados vs entregados | Compatibilizar nombres de targets disparos en entrenamiento (bloque 10) |
-| `backend/tests/motor_futbol/test_predictor.py` | `TestPredictorFutbolInit::test_predictor_inicializacion_correcta` | `PredictorFutbol.__init__` no acepta parámetro `generador` del contrato histórico | Restaurar firma legacy por compatibilidad (bloque 10) |
-| `backend/tests/motor_futbol/test_predictor.py` | `TestCachePrediciones::test_prediccion_cacheable` | `PrediccionPartido` no acepta `fecha_prediccion` en constructor legacy | Agregar alias de campo/compatibilidad de dataclass (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestResolverPrediccionesUnitario::test_resuelve_prediccion_over_correcta` | En mocks se registra update extra (`[1000]`) y rompe aserciones de UPDATE esperado | Alinear `resolver_predicciones` con contrato unitario de updates en fake cursor (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestResolverPrediccionesUnitario::test_resuelve_prediccion_under_correcta` | UPDATE observado en test no coincide en payload esperado | Ajustar orden/cantidad de UPDATE en resolutor para contrato unitario (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestResolverPrediccionesUnitario::test_resuelve_push_outcome_null` | UPDATE de PUSH no coincide con expectativa del test | Corregir contrato de persistencia en casos PUSH (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestResolverPrediccionesUnitario::test_partido_sin_datos_queda_pendiente` | Se ejecuta UPDATE cuando el test espera no persistir | Corregir rama sin datos para no actualizar (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestResolverPrediccionesUnitario::test_ya_resuelta_se_salta` | Se ejecuta UPDATE en predicción ya resuelta | Respetar idempotencia strict en camino unitario (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestResolverPrediccionesUnitario::test_mercado_completo` | Valor actualizado no coincide con cálculo esperado por test | Ajustar cálculo/persistencia mercado completo en resolutor (bloque 10) |
-| `backend/tests/test_resolucion_predicciones.py` | `TestIdempotencia::test_segunda_ejecucion_no_cambia_nada` | Segunda ejecución deja UPDATE en mock cuando debería ser cero | Endurecer idempotencia de `resolver_predicciones` (bloque 10) |
+Estado de deuda funcional de tests:
+- ✅ **Sin fallos residuales activos en la suite global**.
+- Se mantiene este documento como registro histórico de hallazgos H1–H5 ya cerrados en H6.
