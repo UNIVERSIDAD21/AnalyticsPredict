@@ -10,6 +10,7 @@ import logging
 from fastapi import APIRouter, Header, Query
 from fastapi.responses import JSONResponse
 from psycopg.rows import dict_row
+from psycopg import OperationalError
 
 from db import obtener_pool
 from calidad.scorecard import obtener_scorecard_actual
@@ -42,6 +43,8 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
               COALESCE(pr.linea, 0)::numeric AS value,
               CASE WHEN UPPER(COALESCE(pr.lado,'')) LIKE 'OVER%%' THEN 'over' ELSE 'under' END AS recommendation,
               COALESCE(pr.p_calibrada, pr.p_raw, 0.5) * 100.0 AS confidence_numeric,
+              CASE WHEN pr.p_calibrada IS NULL THEN 'p_raw' ELSE 'p_calibrada' END AS calibration_source,
+              TRUE AS market_valid,
               GREATEST(COALESCE(pr.linea,0) - 3, 0)::numeric AS interval_lower,
               (COALESCE(pr.linea,0) + 3)::numeric AS interval_upper,
               'points'::text AS unit,
@@ -59,6 +62,10 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
         row = cursor.fetchone()
         if row:
             return row
+    except (KeyError, AttributeError) as e:
+        logger.warning("Inconsistencia de atributos en fetch NBA", extra={"error": str(e)})
+    except OperationalError:
+        raise
     except Exception:
         pass
 
@@ -76,6 +83,8 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
               COALESCE(pf.linea, 2.5)::numeric AS value,
               CASE WHEN COALESCE(pf.prob_over_calibrada, pf.prob_over, 0.5) >= 0.5 THEN 'over' ELSE 'under' END AS recommendation,
               COALESCE(pf.prob_over_calibrada, pf.prob_over, 0.5) * 100.0 AS confidence_numeric,
+              CASE WHEN pf.prob_over_calibrada IS NULL THEN 'p_raw' ELSE 'p_calibrada' END AS calibration_source,
+              TRUE AS market_valid,
               GREATEST(COALESCE(pf.linea,2.5) - 0.5, 0)::numeric AS interval_lower,
               (COALESCE(pf.linea,2.5) + 0.5)::numeric AS interval_upper,
               'goals'::text AS unit,
@@ -87,7 +96,13 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
             """,
             (prediction_id,),
         )
-        return cursor.fetchone()
+        row = cursor.fetchone()
+        return row
+    except (KeyError, AttributeError) as e:
+        logger.warning("Inconsistencia de atributos en fetch FUT", extra={"error": str(e)})
+        return None
+    except OperationalError:
+        raise
     except Exception:
         return None
 
@@ -176,37 +191,41 @@ async def get_explicacion_prediccion(
             },
         )
 
-    pool = obtener_pool()
-    with pool.connection() as conn:
-        with conn.cursor(row_factory=dict_row) as cursor:
-            pred = _fetch_prediccion(cursor, prediction_id)
-            if not pred:
-                return JSONResponse(
-                    status_code=422,
-                    content={
-                        "exito": False,
-                        "error": {
-                            "code": "PREDICCION_NO_EXISTE",
-                            "message": "No existe la predicción solicitada",
-                            "detail": {"prediction_id": prediction_id},
-                            "trace_id": None,
+    try:
+        pool = obtener_pool()
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                pred = _fetch_prediccion(cursor, prediction_id)
+                if not pred:
+                    return JSONResponse(
+                        status_code=404,
+                        content={
+                            "exito": False,
+                            "error": {
+                                "code": "PREDICTION_NOT_FOUND",
+                                "message": "No existe la predicción solicitada",
+                                "detail": {"prediction_id": prediction_id},
+                                "trace_id": None,
+                            },
                         },
-                    },
-                )
+                    )
 
-            domain = "NBA" if pred["sport"] == "NBA" else "FUTBOL"
-            scorecard = obtener_scorecard_actual(conn, domain) or {
-                "score_final": 60.0,
-                "nivel": "C",
-                "criticas_activas": 1,
-                "drift_penalty": 0.0,
-                "partial_penalty": 0.0,
-                "componentes": {},
-                "overrides": {},
-                "periodo": datetime.utcnow().date().isoformat(),
-            }
-
-            alertas = obtener_alertas_activas(conn, domain=domain, severidad_min="MEDIA", ventana_dias=14)
+                domain = "NBA" if pred["sport"] == "NBA" else "FUTBOL"
+                scorecard = obtener_scorecard_actual(conn, domain)
+                alertas = obtener_alertas_activas(conn, domain=domain, severidad_min="MEDIA", ventana_dias=14)
+    except OperationalError:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "exito": False,
+                "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Base de datos no disponible temporalmente",
+                    "detail": None,
+                    "trace_id": None,
+                },
+            },
+        )
 
     factores = [
         {

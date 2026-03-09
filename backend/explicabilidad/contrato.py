@@ -17,7 +17,7 @@ class QualityCoherenceError(ValueError):
 Sport = Literal["NBA", "FOOTBALL"]
 Recommendation = Literal["over", "under", "skip"]
 ConfidenceLevel = Literal["high", "medium", "low"]
-QualityLevel = Literal["A", "B", "C"]
+QualityLevel = Literal["A", "B", "C", "UNKNOWN"]
 
 
 class GameInfo(BaseModel):
@@ -66,7 +66,7 @@ class TopFactor(BaseModel):
 
 
 class ExplanationWarning(BaseModel):
-    type: Literal["quality", "drift", "coverage", "beta", "stale", "outlier", "incomplete"]
+    type: Literal["quality", "drift", "coverage", "beta", "stale", "outlier", "incomplete", "no_scorecard"]
     message: str
     severity: Literal["high", "medium", "low"]
 
@@ -156,7 +156,12 @@ def _apply_quality_aware_confidence(numeric: float, level: str) -> tuple[str, fl
     return ("low", min(numeric, 49.0))
 
 
-def _debt_flags_for_contract(sport: str, level: str, flags: List[QualityFlag]) -> List[str]:
+def _debt_flags_for_contract(
+    sport: str,
+    level: str,
+    flags: List[QualityFlag],
+    prediccion: Optional[Dict[str, Any]] = None,
+) -> List[str]:
     debt = [
         "confidence_parcial_bloque_05",
         "contratos_legacy_coexistentes_bloque_05:EN_MIGRACION",
@@ -165,6 +170,14 @@ def _debt_flags_for_contract(sport: str, level: str, flags: List[QualityFlag]) -
         debt.append("drift_futbol_parcial_alto_bloque_05")
     if level in {"B", "C"}:
         debt.append("quality_gate_activo")
+
+    pred = prediccion or {}
+    if pred.get("calibration_source") == "p_raw":
+        debt.append("calibracion_ausente")
+    if not bool(pred.get("market_valid", True)):
+        debt.append("mercado_desconocido")
+    if level == "UNKNOWN":
+        debt.append("scorecard_no_disponible")
     return debt
 
 
@@ -176,8 +189,8 @@ def construir_contrato(
     historico: Optional[Dict[str, Any]] = None,
 ) -> ContratoExplicacion:
     """Construye contrato canónico quality-aware."""
-    level = str(scorecard.get("nivel", "C")).upper()
-    score = float(scorecard.get("score_final", 0.0))
+    level = str((scorecard or {}).get("nivel", "UNKNOWN")).upper()
+    score = float((scorecard or {}).get("score_final", 0.0))
 
     flags = _quality_flags_from_alertas(alertas)
     has_critical_warning = any(f.severity == "critical" for f in flags)
@@ -196,7 +209,15 @@ def construir_contrato(
         for a in alertas
     ]
 
-    if level == "B":
+    if level == "UNKNOWN":
+        warnings.append(
+            ExplanationWarning(
+                type="no_scorecard",
+                message="No hay scorecard disponible para esta predicción; usando modo degradado.",
+                severity="medium",
+            )
+        )
+    elif level == "B":
         warnings.append(
             ExplanationWarning(
                 type="quality",
@@ -204,12 +225,23 @@ def construir_contrato(
                 severity="medium",
             )
         )
-    if level == "C":
+    elif level == "C":
         warnings.append(
             ExplanationWarning(
                 type="quality",
                 message="ADVERTENCIA: Calidad de datos insuficiente",
                 severity="high",
+            )
+        )
+
+    market_valid = bool(prediccion.get("market_valid", True))
+
+    if not market_valid:
+        warnings.append(
+            ExplanationWarning(
+                type="quality",
+                message="Mercado desconocido; explicación limitada.",
+                severity="medium",
             )
         )
 
@@ -222,10 +254,10 @@ def construir_contrato(
             )
         )
 
-    top_factors = [TopFactor(**f) for f in factores[:5]]
+    top_factors = [TopFactor(**f) for f in factores[:5]] if market_valid else []
     hist_model = HistoricalContext(**historico) if historico else None
 
-    debt_flags = _debt_flags_for_contract(prediccion["sport"], level, flags)
+    debt_flags = _debt_flags_for_contract(prediccion["sport"], level, flags, prediccion)
 
     contrato = ContratoExplicacion(
         version="1.0.0",
