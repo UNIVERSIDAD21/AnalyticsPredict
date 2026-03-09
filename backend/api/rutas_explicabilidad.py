@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
+import logging
 
 from fastapi import APIRouter, Header, Query
 from fastapi.responses import JSONResponse
@@ -22,6 +23,8 @@ from explicabilidad.contrato import (
 )
 
 router = APIRouter(prefix="/api/prediccion", tags=["Explicabilidad"])
+logger = logging.getLogger(__name__)
+SUNSET_MAX_DATE = datetime(2026, 12, 31, tzinfo=timezone.utc)
 
 
 def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any]]:
@@ -87,6 +90,58 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
         return cursor.fetchone()
     except Exception:
         return None
+
+
+def _registrar_uso_contrato(conn: Any, domain: str, es_legacy: bool) -> None:
+    """Persistencia de telemetría por dominio/día para contrato v1/legacy."""
+    sql = """
+    INSERT INTO analytics.contrato_uso_log (fecha, domain, total_llamadas_v1, total_llamadas_legacy)
+    VALUES (CURRENT_DATE, %s, %s, %s)
+    ON CONFLICT (fecha, domain)
+    DO UPDATE SET
+      total_llamadas_v1 = analytics.contrato_uso_log.total_llamadas_v1 + EXCLUDED.total_llamadas_v1,
+      total_llamadas_legacy = analytics.contrato_uso_log.total_llamadas_legacy + EXCLUDED.total_llamadas_legacy,
+      updated_at = NOW()
+    """
+    inc_v1 = 0 if es_legacy else 1
+    inc_legacy = 1 if es_legacy else 0
+    try:
+      with conn.cursor() as cur:
+          cur.execute(sql, (domain, inc_v1, inc_legacy))
+      conn.commit()
+    except Exception:
+      conn.rollback()
+      logger.warning("No fue posible registrar telemetría de contrato", extra={"domain": domain, "legacy": es_legacy})
+
+
+def _calcular_sunset(conn: Any, domain: str) -> str:
+    """Sunset = hoy+30d si legacy<5% por 7 días, si no fecha tope bloque 10."""
+    sql = """
+    SELECT fecha, total_llamadas_v1, total_llamadas_legacy
+    FROM analytics.contrato_uso_log
+    WHERE domain = %s
+      AND fecha >= CURRENT_DATE - INTERVAL '7 days'
+    ORDER BY fecha DESC
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (domain,))
+            rows = cur.fetchall() or []
+    except Exception:
+        rows = []
+
+    if len(rows) >= 7:
+        ok = True
+        for _fecha, v1, legacy in rows[:7]:
+            total = float((v1 or 0) + (legacy or 0))
+            ratio = (float(legacy or 0) / total) if total > 0 else 0.0
+            if ratio >= 0.05:
+                ok = False
+                break
+        if ok:
+            target = datetime.now(timezone.utc) + timedelta(days=30)
+            return min(target, SUNSET_MAX_DATE).date().isoformat()
+    return SUNSET_MAX_DATE.date().isoformat()
 
 
 @router.get(
@@ -190,8 +245,29 @@ async def get_explicacion_prediccion(
             },
         )
 
-    if version == "legacy" or accept_legacy:
+    es_legacy = version == "legacy" or accept_legacy
+
+    with pool.connection() as conn2:
+        _registrar_uso_contrato(conn2, domain, es_legacy)
+        sunset_date = _calcular_sunset(conn2, domain)
+
+    logger.info(
+        "explicacion_contrato_entregado",
+        extra={
+            "prediction_id": prediction_id,
+            "domain": domain,
+            "is_legacy_contract": es_legacy,
+            "contract_version": "legacy" if es_legacy else "v1.0.0",
+        },
+    )
+
+    if es_legacy:
         legacy = adaptar_legacy(contrato)
-        return {"exito": True, "contrato": legacy}
+        headers = {
+            "Deprecation": "true",
+            "Sunset": sunset_date,
+            "Link": f"</api/prediccion/{prediction_id}/explicacion?version=v1>; rel=\"successor-version\"",
+        }
+        return JSONResponse(content={"exito": True, "contrato": legacy}, headers=headers)
 
     return contrato

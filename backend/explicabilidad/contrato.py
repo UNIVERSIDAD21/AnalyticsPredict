@@ -159,7 +159,7 @@ def _apply_quality_aware_confidence(numeric: float, level: str) -> tuple[str, fl
 def _debt_flags_for_contract(sport: str, level: str, flags: List[QualityFlag]) -> List[str]:
     debt = [
         "confidence_parcial_bloque_05",
-        "contratos_legacy_coexistentes_bloque_05",
+        "contratos_legacy_coexistentes_bloque_05:EN_MIGRACION",
     ]
     if sport == "FOOTBALL" or any(f.type == "drift" for f in flags):
         debt.append("drift_futbol_parcial_alto_bloque_05")
