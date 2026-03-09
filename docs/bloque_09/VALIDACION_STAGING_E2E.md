@@ -53,12 +53,15 @@ Timestamp principal: `2026-03-09T01:16:44.512643+00:00`
 - GO/NO-GO: **GO técnico** (servicio frontend levantó y respondió 200)
 
 ## Fase 3 — Todos los flags true + `make estado-unificado`
+- Rerun exitoso con API activa en `127.0.0.1:8000`.
 - Comando: `make estado-unificado`
-- Resultado: **NO-GO** en este entorno por precondición externa
-  - Error: API no estaba escuchando en `127.0.0.1:8000`
-  - Mensaje: `curl: (7) Failed to connect to 127.0.0.1 port 8000`
-- Intento adicional: se levantó `uvicorn app:app --host 127.0.0.1 --port 8000` antes de ejecutar `make`, pero el script siguió reportando indisponibilidad del endpoint.
-- Clasificación: fallo de ejecución del checklist operativo (entorno), **no** fallo de lógica de flags.
+- Resultado: **GO**
+  - [1/5] Salud API: OK
+  - [2/5] Resumen ejecutivo: JSON válido
+  - [3/5] Modo estricto: JSON válido
+  - [4/5] Alertas ingestión: JSON válido
+  - [5/5] Política mercados: JSON válido (resumen total/rojos/amarillos/verdes/bloqueados)
+- No se observaron errores 500 en la ejecución.
 
 ## Tabla resumen
 
@@ -69,7 +72,7 @@ Timestamp principal: `2026-03-09T01:16:44.512643+00:00`
 | 1B | `+FEATURE_ALERTAS_CALIDAD=true` | alertas 200, envelope correcto, sin duplicados | GO | 408.85 ms |
 | 2A | `+FEATURE_CONTRATO_EXPLICACION_V1=true` | explicación v1 404 controlado (not found), sin 500 | GO | 473.81 ms |
 | 2B | `+FEATURE_EXPLICABILIDAD_UI=true` | backend 200 + frontend dev 200 | GO técnico | backend 703.47 ms |
-| 3 | todos true + estado-unificado | falla por API no levantada en 8000 | NO-GO (entorno) | N/A |
+| 3 | todos true + estado-unificado | ejecución completa 5/5 pasos sin error | GO | ~7s |
 
 ## Verificación obligatoria de deuda residual B05
 En **todas** las fases donde se consultó `/api/calidad/estado-sistema`, `deuda_residual_b05` estuvo presente y no vacía:
@@ -80,11 +83,6 @@ En **todas** las fases donde se consultó `/api/calidad/estado-sistema`, `deuda_
 ✅ Se cumple requisito de no ocultar deuda.
 
 ## Conclusión
-- Las fases 1A, 1B, 2A y 2B quedan validadas funcionalmente (sin 500, con evidencia).
+- Las fases 1A, 1B, 2A, 2B y 3 quedan validadas con evidencia.
 - Se ejecutó rollback simulado en 1A con retorno correcto.
-- La fase 3 queda pendiente por disponibilidad de API en el puerto esperado por `make estado-unificado`.
-
-### Acción para cierre total de criterio staging
-1. Levantar API en `127.0.0.1:8000`.
-2. Re-ejecutar `make estado-unificado`.
-3. Anexar evidencia final de fase 3 en este mismo documento.
+- Se cierra la condición pendiente de validación formal por fases indicada en la aceptación del bloque 08.

@@ -65,9 +65,9 @@ async def get_estado_sistema():
             alertas_crit_fut = obtener_alertas_activas(conn, domain="FUTBOL", severidad_min="CRITICA")
 
     deuda_residual_b05 = {
-        "confidence_parcial": True,
-        "contratos_legacy_coexistentes": True,
-        "drift_futbol_parcial_alto": True,
+        "confidence_parcial": "EN_PROCESO",
+        "contratos_legacy_coexistentes": "EN_MIGRACION",
+        "drift_futbol_parcial_alto": "ACTIVO",
     }
 
     return {

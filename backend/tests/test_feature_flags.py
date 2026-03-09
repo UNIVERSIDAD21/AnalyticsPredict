@@ -102,4 +102,4 @@ def test_estado_sistema_endpoint_flags_correctos(monkeypatch: pytest.MonkeyPatch
     data = resp.json()
     assert data["exito"] is True
     assert "feature_flags" in data
-    assert data["deuda_residual_b05"].get("drift_futbol_parcial_alto") is True
+    assert data["deuda_residual_b05"].get("drift_futbol_parcial_alto") == "ACTIVO"

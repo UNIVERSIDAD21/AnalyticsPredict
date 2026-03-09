@@ -24,11 +24,7 @@ curl -sSf "$BASE_URL/api/metricas/alertas-ingestion?max_horas_sin_actualizar=24"
 echo
 
 echo "[5/5] Política mercados (resumen)"
-curl -sSf "$BASE_URL/api/metricas/politica-mercados?min_muestras=30" | python3 - <<'PY'
-import sys, json
-j=json.load(sys.stdin)
-print(json.dumps({'exito':j.get('exito'),'resumen':j.get('resumen')}, indent=2, ensure_ascii=False))
-PY
+curl -sSf "$BASE_URL/api/metricas/politica-mercados?min_muestras=30" | python3 -c "import sys, json; j=json.load(sys.stdin); print(json.dumps({'exito': j.get('exito'), 'resumen': j.get('resumen')}, indent=2, ensure_ascii=False))"
 
 echo
 echo "=== FIN ESTADO UNIFICADO ==="
