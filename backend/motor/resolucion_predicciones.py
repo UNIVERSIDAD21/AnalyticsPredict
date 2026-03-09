@@ -245,7 +245,7 @@ def resolver_predicciones(
         WHERE {where_clause}
         ORDER BY pr.fecha_partido ASC
         LIMIT %s
-        FOR UPDATE SKIP LOCKED
+        for update SKIP LOCKED
     """
 
     try:
