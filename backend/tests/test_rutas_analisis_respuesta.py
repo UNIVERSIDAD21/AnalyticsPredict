@@ -23,9 +23,13 @@ def _peticion_base(**overrides):
 
 
 def _stub_ejecucion(monkeypatch, datos_respuesta):
+    class _ResultadoStub:
+        def __init__(self):
+            self.candidatos = []
+
     monkeypatch.setattr(rutas_analisis, "obtener_modelo", lambda: object())
     monkeypatch.setattr(rutas_analisis, "validar_equipos", lambda *args, **kwargs: None)
-    monkeypatch.setattr(rutas_analisis, "analizar_partido", lambda **kwargs: object())
+    monkeypatch.setattr(rutas_analisis, "analizar_partido", lambda **kwargs: _ResultadoStub())
     monkeypatch.setattr(
         rutas_analisis,
         "resultado_a_dict",

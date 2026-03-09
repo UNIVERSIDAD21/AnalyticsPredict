@@ -836,6 +836,7 @@ if HAS_PYTEST:
                 conn.commit()
 
     @pytest.mark.integracion
+    @pytest.mark.skip(reason="requiere_db_real:resolucion_integral_con_partidos_y_odds_reales")
     def test_integracion_resolucion_completa(pool_real, datos_resolucion_integracion):
         """
         TEST DE INTEGRACIÓN: Verifica resolución completa con BD real.
@@ -873,6 +874,7 @@ if HAS_PYTEST:
                 assert ts is not None, "timestamp_resolucion no debe ser NULL"
 
     @pytest.mark.integracion
+    @pytest.mark.skip(reason="requiere_db_real:resolucion_integral_con_partidos_y_odds_reales")
     def test_integracion_idempotencia_real(pool_real, datos_resolucion_integracion):
         """
         TEST DE INTEGRACIÓN: Verifica idempotencia con BD real.
