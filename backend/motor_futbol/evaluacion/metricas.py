@@ -125,6 +125,14 @@ class CalculadorMetricas:
             "mape": CalculadorMetricas.mape(y_real, y_pred),
         }
 
+    @staticmethod
+    def calcular_metricas_regresion(
+        y_real: np.ndarray,
+        y_pred: np.ndarray,
+    ) -> Dict[str, float]:
+        """Calcula MAE/RMSE/R²/MAPE para predicciones continuas (unidades originales)."""
+        return CalculadorMetricas.metricas_regresion(y_real, y_pred)
+
     # ══════════════════════════════════════════════════════════════════════════
     # MÉTRICAS DE CALIBRACIÓN
     # ══════════════════════════════════════════════════════════════════════════
@@ -299,6 +307,14 @@ class CalculadorMetricas:
             "mce": CalculadorMetricas.mce(probabilidades, resultados),
         }
 
+    @staticmethod
+    def calcular_metricas_calibracion(
+        probabilidades: np.ndarray,
+        resultados: np.ndarray,
+    ) -> Dict[str, float]:
+        """Calcula Brier/LogLoss/ECE/MCE para probabilidades (unidad [0,1])."""
+        return CalculadorMetricas.metricas_calibracion(probabilidades, resultados)
+
     # ══════════════════════════════════════════════════════════════════════════
     # MÉTRICAS DE RENTABILIDAD
     # ══════════════════════════════════════════════════════════════════════════
@@ -311,18 +327,19 @@ class CalculadorMetricas:
         """
         Calcula Return on Investment.
 
-        ROI = (ganancias - perdidas) / total_apostado × 100
+        ROI = ganancias_netas / total_apostado
 
         Args:
             ganancias: Suma de ganancias netas (puede ser negativo)
             total_apostado: Total de dinero apostado
 
         Returns:
-            ROI como porcentaje
+            ROI en decimal (0.0 a 1.0+), no porcentaje.
         """
         if total_apostado == 0:
             return 0.0
-        return (ganancias / total_apostado) * 100
+        # ROI en decimal (0.0 a 1.0+), no porcentaje
+        return float(ganancias / total_apostado)
 
     @staticmethod
     def win_rate(
@@ -337,30 +354,46 @@ class CalculadorMetricas:
             total_apuestas: Total de apuestas
 
         Returns:
-            Win Rate como porcentaje
+            Win Rate en decimal (0.0 a 1.0).
         """
         if total_apuestas == 0:
             return 0.0
-        return (apuestas_ganadas / total_apuestas) * 100
+        return float(apuestas_ganadas / total_apuestas)
 
     @staticmethod
     def yield_apuestas(
         ganancias: float,
-        n_apuestas: int,
+        total_apostado: float,
     ) -> float:
         """
-        Calcula Yield (ganancia promedio por apuesta).
+        Calcula Yield de apuestas.
 
         Args:
             ganancias: Ganancias netas totales
-            n_apuestas: Número de apuestas
+            total_apostado: Stake total apostado
 
         Returns:
-            Yield como porcentaje
+            Yield en decimal (0.0 a 1.0+).
         """
-        if n_apuestas == 0:
+        if total_apostado == 0:
             return 0.0
-        return (ganancias / n_apuestas) * 100
+        return float(ganancias / total_apostado)
+
+    @staticmethod
+    def calcular_metricas_rentabilidad(
+        beneficio: float,
+        total_apostado: float,
+        ganadas: int,
+        total_apuestas: int,
+    ) -> Dict[str, float]:
+        """Calcula ROI/WinRate/Yield en DECIMAL y agrega profit/total_apostado."""
+        return {
+            "roi": CalculadorMetricas.roi(beneficio, total_apostado),
+            "win_rate": CalculadorMetricas.win_rate(ganadas, total_apuestas),
+            "yield": CalculadorMetricas.yield_apuestas(beneficio, total_apostado),
+            "profit": float(beneficio),
+            "total_apostado": float(total_apostado),
+        }
 
     @staticmethod
     def simular_apuestas(
@@ -421,7 +454,7 @@ class CalculadorMetricas:
             "perdidas": int(apuestas - ganadas),
             "roi": CalculadorMetricas.roi(ganancias_netas, total_apostado),
             "win_rate": CalculadorMetricas.win_rate(int(ganadas), int(apuestas)),
-            "yield": CalculadorMetricas.yield_apuestas(ganancias_netas, int(apuestas)),
+            "yield": CalculadorMetricas.yield_apuestas(ganancias_netas, total_apostado),
             "ganancias_netas": float(ganancias_netas),
             "total_apostado": float(total_apostado),
             "edge_promedio": float(np.mean(edges[mask_apuesta])),
