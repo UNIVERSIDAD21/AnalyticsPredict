@@ -107,6 +107,13 @@ def ajustar_ridge(
     return W, std
 
 
+def calcular_std_residuales(residuales: np.ndarray) -> np.ndarray:
+    """Compatibilidad legacy: calcula desviación estándar por target."""
+    if residuales.ndim == 1:
+        residuales = residuales.reshape(-1, 1)
+    return np.std(residuales, axis=0)
+
+
 class ModeloPrediccionBase(ABC):
     """
     Clase base abstracta para modelos de predicción Ridge.

@@ -201,6 +201,50 @@ class ValidacionCruzadaTemporal:
         return mejor_alpha, resultados
 
 
+class TimeSeriesSplitFutbol:
+    """Compatibilidad con tests legacy, wrapper simple temporal."""
+
+    def __init__(self, n_splits: int = 5):
+        self.n_splits = n_splits
+
+    def split(self, fechas: np.ndarray):
+        n = len(fechas)
+        if n <= self.n_splits + 1:
+            yield np.arange(max(1, n - 1)), np.arange(max(1, n - 1), n)
+            return
+        fold = n // (self.n_splits + 1)
+        for i in range(self.n_splits):
+            train_end = (i + 1) * fold
+            test_end = min((i + 2) * fold, n)
+            if train_end < 1 or test_end <= train_end:
+                continue
+            yield np.arange(train_end), np.arange(train_end, test_end)
+
+
+class ValidacionTemporal:
+    """Compatibilidad con API esperada por tests históricos."""
+
+    def __init__(self, n_splits: int = 5):
+        self.n_splits = n_splits
+        self._splitter = TimeSeriesSplitFutbol(n_splits=n_splits)
+
+    def _generar_splits(self, fechas: np.ndarray):
+        return self._splitter.split(fechas)
+
+    def validar(self, modelo, X: np.ndarray, y: np.ndarray, fechas: np.ndarray):
+        metricas = []
+        for train_idx, test_idx in self._generar_splits(fechas):
+            X_train, y_train = X[train_idx], y[train_idx]
+            X_test, y_test = X[test_idx], y[test_idx]
+            modelo.entrenar(X_train, y_train)
+            pred = modelo.predecir(X_test)
+            if isinstance(pred, tuple):
+                pred = pred[0]
+            mae = float(np.mean(np.abs(y_test - pred))) if len(y_test) else 0.0
+            metricas.append({"mae": mae, "n_test": len(test_idx)})
+        return {"metricas_por_fold": metricas}
+
+
 class ValidacionPorTemporada:
     """
     Validación leave-one-season-out.
