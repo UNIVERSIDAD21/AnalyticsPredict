@@ -192,7 +192,8 @@ class TestValidacionTemporal:
         Los datos deben mantenerse en orden cronológico.
         """
         fechas = np.array([
-            datetime(2024, 1, i) for i in range(1, 101)
+            datetime(2024, 1, 1) + timedelta(days=i)
+            for i in range(100)
         ])
 
         n_splits = 5
@@ -209,7 +210,10 @@ class TestValidacionTemporal:
 
     def test_time_series_split_n_splits(self):
         """El número de splits es correcto."""
-        fechas = np.array([datetime(2024, 1, i) for i in range(1, 101)])
+        fechas = np.array([
+            datetime(2024, 1, 1) + timedelta(days=i)
+            for i in range(100)
+        ])
 
         n_splits = 5
         splitter = TimeSeriesSplitFutbol(n_splits=n_splits)
@@ -220,7 +224,10 @@ class TestValidacionTemporal:
 
     def test_time_series_split_train_crece(self):
         """El conjunto de entrenamiento crece con cada split."""
-        fechas = np.array([datetime(2024, 1, i) for i in range(1, 101)])
+        fechas = np.array([
+            datetime(2024, 1, 1) + timedelta(days=i)
+            for i in range(100)
+        ])
 
         splitter = TimeSeriesSplitFutbol(n_splits=5)
 
@@ -249,7 +256,9 @@ class TestValidacionTemporalClase:
         # Mock del modelo
         mock_modelo = Mock()
         mock_modelo.entrenar = Mock()
-        mock_modelo.predecir = Mock(return_value=(np.random.randn(20), np.ones(20)))
+        mock_modelo.predecir = Mock(
+            side_effect=lambda x_test: (np.random.randn(len(x_test)), np.ones(len(x_test)))
+        )
 
         resultados = validacion.validar(mock_modelo, X, y, fechas)
 

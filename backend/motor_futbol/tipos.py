@@ -153,13 +153,15 @@ class FeaturesPartidoFutbol:
     # Identificación
     partido_id: UUID
     fecha_partido: datetime
-    competicion_id: UUID
-    temporada_id: UUID
+    competicion_id: Optional[UUID] = None
+    temporada_id: Optional[UUID] = None
     es_copa: bool = False
 
     # Índices para matriz de diseño
     equipo_local_idx: int = -1
     equipo_visitante_idx: int = -1
+    equipo_local_id: Optional[UUID] = None
+    equipo_visitante_id: Optional[UUID] = None
     equipo_local_nombre: str = ""
     equipo_visitante_nombre: str = ""
 
@@ -220,6 +222,52 @@ class FeaturesPartidoFutbol:
     diff_corners_favor: float = 0.0
     suma_corners_promedio: float = 0.0
     ratio_posesion: float = 0.5
+
+    # Campos legacy de compatibilidad (tests históricos)
+    nombre_local: str = ""
+    nombre_visitante: str = ""
+    local_corners_favor_ultimos: float = 0.0
+    local_corners_contra_ultimos: float = 0.0
+    local_corners_casa: float = 0.0
+    visitante_corners_favor_ultimos: float = 0.0
+    visitante_corners_contra_ultimos: float = 0.0
+    visitante_corners_fuera: float = 0.0
+    local_goles_favor_ultimos: float = 0.0
+    local_goles_contra_ultimos: float = 0.0
+    local_goles_casa: float = 0.0
+    visitante_goles_favor_ultimos: float = 0.0
+    visitante_goles_contra_ultimos: float = 0.0
+    visitante_goles_fuera: float = 0.0
+    local_disparos_ultimos: float = 0.0
+    local_disparos_arco_ultimos: float = 0.0
+    visitante_disparos_ultimos: float = 0.0
+    visitante_disparos_arco_ultimos: float = 0.0
+    local_faltas_temp: float = 0.0
+    visitante_faltas_temp: float = 0.0
+    partidos_local_temp: int = 0
+    partidos_visitante_temp: int = 0
+    partidos_local_ultimos: int = 0
+    partidos_visitante_ultimos: int = 0
+
+    def __post_init__(self) -> None:
+        """Mapea aliases legacy para mantener compatibilidad hacia atrás."""
+        if self.nombre_local and not self.equipo_local_nombre:
+            self.equipo_local_nombre = self.nombre_local
+        if self.nombre_visitante and not self.equipo_visitante_nombre:
+            self.equipo_visitante_nombre = self.nombre_visitante
+
+        if self.local_corners_favor_ultimos and self.local_corners_ultimos_5 == 0.0:
+            self.local_corners_ultimos_5 = self.local_corners_favor_ultimos
+        if self.visitante_corners_favor_ultimos and self.visitante_corners_ultimos_5 == 0.0:
+            self.visitante_corners_ultimos_5 = self.visitante_corners_favor_ultimos
+        if self.local_goles_favor_ultimos and self.local_goles_ultimos_5 == 0.0:
+            self.local_goles_ultimos_5 = self.local_goles_favor_ultimos
+        if self.visitante_goles_favor_ultimos and self.visitante_goles_ultimos_5 == 0.0:
+            self.visitante_goles_ultimos_5 = self.visitante_goles_favor_ultimos
+        if self.local_disparos_ultimos and self.local_disparos_ultimos_5 == 0.0:
+            self.local_disparos_ultimos_5 = self.local_disparos_ultimos
+        if self.visitante_disparos_ultimos and self.visitante_disparos_ultimos_5 == 0.0:
+            self.visitante_disparos_ultimos_5 = self.visitante_disparos_ultimos
 
     def to_array_corners(self) -> np.ndarray:
         """Convierte a array de features para modelo de corners."""

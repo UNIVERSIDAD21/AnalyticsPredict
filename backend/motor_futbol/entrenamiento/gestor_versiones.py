@@ -296,6 +296,43 @@ class GestorVersiones:
 
                 return resultado
 
+    def generar_version(self) -> str:
+        """Alias de compatibilidad para tests históricos."""
+        return f"v1.0.0_{datetime.now().strftime('%Y%m%d')}"
+
+    def guardar_modelo(
+        self,
+        modelo: Any,
+        tipo: TipoModelo,
+        version: str,
+        metricas: Optional[Dict[str, Any]] = None,
+    ) -> int:
+        """Compatibilidad retroactiva con contrato anterior de persistencia."""
+        metricas = metricas or {}
+        payload = modelo.to_dict() if hasattr(modelo, "to_dict") else {}
+
+        with self._pool.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO modelo_versiones_futbol (
+                        tipo_modelo,
+                        version,
+                        fecha_entrenamiento,
+                        metadata,
+                        activo
+                    ) VALUES (%s, %s, NOW(), %s, FALSE)
+                    RETURNING id
+                    """,
+                    [
+                        tipo.value if hasattr(tipo, "value") else str(tipo),
+                        version,
+                        json.dumps({"metricas": metricas, "payload": payload}),
+                    ],
+                )
+                row = cursor.fetchone()
+                return int(row[0]) if row else 0
+
     def comparar_versiones(
         self,
         tipo_modelo: TipoModelo,

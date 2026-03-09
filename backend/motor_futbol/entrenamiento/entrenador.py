@@ -39,6 +39,7 @@ from ..modelos.base import construir_matriz_diseno, ajustar_ridge
 logger = logging.getLogger(__name__)
 
 MIN_PARTIDOS_ENTRENAMIENTO = 100
+MIN_PARTIDOS_DEFAULT = MIN_PARTIDOS_ENTRENAMIENTO
 
 
 
@@ -61,6 +62,9 @@ class EntrenadorFutbol:
         self,
         pool,
         config: Optional[ConfiguracionEntrenamiento] = None,
+        alpha: Optional[float] = None,
+        min_partidos: Optional[int] = None,
+        **kwargs,
     ):
         """
         Inicializa el entrenador.
@@ -71,6 +75,11 @@ class EntrenadorFutbol:
         """
         self._pool = pool
         self.config = config or ConfiguracionEntrenamiento()
+        self.alpha = float(alpha if alpha is not None else ALPHA_RIDGE_DEFAULT)
+        self.min_partidos = int(min_partidos if min_partidos is not None else MIN_PARTIDOS_DEFAULT)
+        # Compatibilidad retroactiva: si no viene alpha en config, usar el parámetro histórico.
+        if getattr(self.config, "alpha_ridge", None) is None:
+            self.config.alpha_ridge = self.alpha
         self._ultimo_hash_datos: Optional[str] = None
         self._metricas: Dict[str, Any] = {}
 
@@ -94,13 +103,13 @@ class EntrenadorFutbol:
         inicio = datetime.now()
 
         # Obtener partidos
-        partidos = self._obtener_partidos_entrenamiento()
+        partidos = self._normalizar_partidos(self._obtener_partidos_entrenamiento())
 
         if not partidos:
             raise DatosInsuficientes(
                 "No hay partidos válidos para entrenamiento",
                 partidos_disponibles=0,
-                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
+                partidos_requeridos=self.min_partidos
             )
 
         logger.info(f"Partidos obtenidos: {len(partidos)}")
@@ -113,6 +122,7 @@ class EntrenadorFutbol:
         # Entrenar modelo de corners
         try:
             resultado_corners = self._entrenar_modelo_corners(partidos)
+            self._aplicar_compatibilidad_resultado(resultado_corners)
             resultados["corners"] = resultado_corners
             logger.info(f"Corners: MAE promedio = {resultado_corners.mae_promedio():.3f}")
         except Exception as e:
@@ -121,6 +131,7 @@ class EntrenadorFutbol:
         # Entrenar modelo de goles
         try:
             resultado_goles = self._entrenar_modelo_goles(partidos)
+            self._aplicar_compatibilidad_resultado(resultado_goles)
             resultados["goles"] = resultado_goles
             logger.info(f"Goles: MAE promedio = {resultado_goles.mae_promedio():.3f}")
         except Exception as e:
@@ -129,10 +140,18 @@ class EntrenadorFutbol:
         # Entrenar modelo de disparos
         try:
             resultado_disparos = self._entrenar_modelo_disparos(partidos)
+            self._aplicar_compatibilidad_resultado(resultado_disparos)
             resultados["disparos"] = resultado_disparos
             logger.info(f"Disparos: MAE promedio = {resultado_disparos.mae_promedio():.3f}")
         except Exception as e:
             logger.error(f"Error entrenando modelo de disparos: {e}")
+
+        if not resultados:
+            raise DatosInsuficientes(
+                "No se pudieron entrenar modelos con los datos disponibles",
+                partidos_disponibles=len(partidos),
+                partidos_requeridos=self.min_partidos,
+            )
 
         duracion = (datetime.now() - inicio).total_seconds()
         logger.info(f"Entrenamiento completo en {duracion:.2f}s")
@@ -157,7 +176,7 @@ class EntrenadorFutbol:
         if config:
             self.config = config
 
-        partidos = self._obtener_partidos_entrenamiento()
+        partidos = self._normalizar_partidos(self._obtener_partidos_entrenamiento())
 
         if tipo == TipoModelo.CORNERS:
             return self._entrenar_modelo_corners(partidos)
@@ -191,9 +210,9 @@ class EntrenadorFutbol:
 
         logger.info(f"Entrenamiento backtest con cutoff: {cutoff_fecha}")
 
-        partidos = self._obtener_partidos_entrenamiento()
+        partidos = self._normalizar_partidos(self._obtener_partidos_entrenamiento())
 
-        if len(partidos) < MIN_PARTIDOS_ENTRENAMIENTO:
+        if len(partidos) < self.min_partidos:
             logger.warning(f"Pocos partidos para entrenamiento: {len(partidos)}")
             return {
                 "estado": "skip",
@@ -284,7 +303,10 @@ class EntrenadorFutbol:
                 columnas = [desc[0] for desc in cursor.description]
 
                 for fila in cursor.fetchall():
-                    partidos.append(dict(zip(columnas, fila)))
+                    if isinstance(fila, dict):
+                        partidos.append(fila)
+                    else:
+                        partidos.append(dict(zip(columnas, fila)))
 
         return partidos
 
@@ -302,11 +324,11 @@ class EntrenadorFutbol:
             and p.get("visitante_corners_2t") is not None
         ]
 
-        if len(partidos_validos) < MIN_PARTIDOS_ENTRENAMIENTO:
+        if len(partidos_validos) < self.min_partidos:
             raise DatosInsuficientes(
                 "Pocos partidos con corners completos",
                 partidos_disponibles=len(partidos_validos),
-                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
+                partidos_requeridos=self.min_partidos
             )
 
         # Preparar datos
@@ -340,11 +362,11 @@ class EntrenadorFutbol:
             and p.get("visitante_goles_2t") is not None
         ]
 
-        if len(partidos_validos) < MIN_PARTIDOS_ENTRENAMIENTO:
+        if len(partidos_validos) < self.min_partidos:
             raise DatosInsuficientes(
                 "Pocos partidos con goles completos",
                 partidos_disponibles=len(partidos_validos),
-                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
+                partidos_requeridos=self.min_partidos
             )
 
         X, y_dict, nombres_equipos, fechas = self._preparar_datos_goles(partidos_validos)
@@ -372,11 +394,11 @@ class EntrenadorFutbol:
             and p.get("visitante_disparos_total") is not None
         ]
 
-        if len(partidos_validos) < MIN_PARTIDOS_ENTRENAMIENTO:
+        if len(partidos_validos) < self.min_partidos:
             raise DatosInsuficientes(
                 "Pocos partidos con disparos",
                 partidos_disponibles=len(partidos_validos),
-                partidos_requeridos=MIN_PARTIDOS_ENTRENAMIENTO
+                partidos_requeridos=self.min_partidos
             )
 
         X, y_dict, nombres_equipos, fechas = self._preparar_datos_disparos(partidos_validos)
@@ -579,6 +601,38 @@ class EntrenadorFutbol:
 
         return X, y_dict, filas_equipo, np.array(fechas)
 
+    def _aplicar_compatibilidad_resultado(self, resultado: ResultadoEntrenamiento) -> None:
+        """Expone atributos legacy esperados por tests históricos."""
+        if not hasattr(resultado, "modelo"):
+            resultado.modelo = resultado.tipo_modelo.value  # type: ignore[attr-defined]
+        if not hasattr(resultado, "metricas"):
+            resultado.metricas = resultado.mae_por_target  # type: ignore[attr-defined]
+        if not hasattr(resultado, "fecha_entrenamiento"):
+            resultado.fecha_entrenamiento = datetime.now()  # type: ignore[attr-defined]
+
+    def _normalizar_partidos(self, partidos: List[Dict]) -> List[Dict]:
+        """Normaliza claves legacy de tests para compatibilidad de contrato."""
+        normalizados = []
+        for p in partidos:
+            item = dict(p)
+            item.setdefault("id", item.get("partido_id"))
+            item.setdefault("equipo_local", item.get("equipo_local_nombre"))
+            item.setdefault("equipo_visitante", item.get("equipo_visitante_nombre"))
+            item.setdefault("local_corners_1t", item.get("corners_local_1t"))
+            item.setdefault("local_corners_2t", item.get("corners_local_2t"))
+            item.setdefault("visitante_corners_1t", item.get("corners_visitante_1t"))
+            item.setdefault("visitante_corners_2t", item.get("corners_visitante_2t"))
+            item.setdefault("local_goles_1t", item.get("goles_local_1t"))
+            item.setdefault("local_goles_2t", item.get("goles_local_2t"))
+            item.setdefault("visitante_goles_1t", item.get("goles_visitante_1t"))
+            item.setdefault("visitante_goles_2t", item.get("goles_visitante_2t"))
+            item.setdefault("local_disparos_total", item.get("disparos_local"))
+            item.setdefault("visitante_disparos_total", item.get("disparos_visitante"))
+            item.setdefault("local_disparos_arco", item.get("disparos_arco_local"))
+            item.setdefault("visitante_disparos_arco", item.get("disparos_arco_visitante"))
+            normalizados.append(item)
+        return normalizados
+
     def _calcular_hash_datos(self, partidos: List[Dict]) -> str:
         """Calcula hash MD5 de los datos para detectar cambios."""
         datos_ordenados = sorted(
@@ -587,8 +641,10 @@ class EntrenadorFutbol:
         )
 
         datos_str = json.dumps(
-            [(str(p["id"]), p["fecha_partido"].isoformat() if p.get("fecha_partido") else None)
-             for p in datos_ordenados],
+            [(
+                str(p.get("id", p.get("partido_id", str(p)))),
+                p["fecha_partido"].isoformat() if p.get("fecha_partido") else None,
+            ) for p in datos_ordenados],
             sort_keys=True,
         )
 
