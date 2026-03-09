@@ -349,12 +349,24 @@ class FeaturesPartidoFutbol:
 
 @dataclass
 class PrediccionMercado:
-    """Predicción para un mercado específico."""
+    """Predicción para un mercado específico.
+
+    Compatibilidad legacy:
+    - `interval_conf_90` se acepta como alias histórico de `intervalo_90`.
+    """
     mercado: TipoMercadoFutbol
     media: float
     std: float
-    intervalo_90: Tuple[float, float]
-    probabilidades: Dict[str, float]  # {"over_9.5": 0.58, "under_9.5": 0.42}
+    intervalo_90: Tuple[float, float] = (0.0, 0.0)
+    probabilidades: Dict[str, float] = field(default_factory=dict)  # {"over_9.5": 0.58, "under_9.5": 0.42}
+    interval_conf_90: Optional[Tuple[float, float]] = None
+    intervalo_confianza_90: Optional[Tuple[float, float]] = None
+
+    def __post_init__(self) -> None:
+        if self.interval_conf_90 is not None:
+            self.intervalo_90 = self.interval_conf_90
+        if self.intervalo_confianza_90 is not None:
+            self.intervalo_90 = self.intervalo_confianza_90
 
     def prob_over(self, linea: float) -> float:
         """Obtiene probabilidad over para una línea específica."""
