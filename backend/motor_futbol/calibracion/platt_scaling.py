@@ -15,6 +15,7 @@ donde logit(p) = log(p / (1-p))
 from __future__ import annotations
 
 import math
+import logging
 from datetime import datetime
 from typing import Dict, Any, Union, Optional
 
@@ -28,6 +29,8 @@ from .metricas_calibracion import (
     calcular_log_loss,
     calcular_ece,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _logit(p: np.ndarray, epsilon: float = 1e-9) -> np.ndarray:
@@ -105,6 +108,8 @@ class CalibradorPlatt(CalibradorBase):
         self.a: float = 1.0  # Escala
         self.b: float = 0.0  # Sesgo
         self._modelo: Optional[LogisticRegression] = None
+        self._es_fallback: bool = False
+        self._fallback_prob: float = 0.5
 
     def entrenar(
         self,
@@ -155,6 +160,51 @@ class CalibradorPlatt(CalibradorBase):
 
         # Transformar a logit para el modelo
         X = _logit(prob).reshape(-1, 1)
+
+        clases_unicas = np.unique(out)
+        if len(clases_unicas) < 2:
+            # FALLBACK: dataset de clase única → probabilidad constante.
+            # No es un calibrador útil; se activa solo en edge cases de test
+            # o mercados con 0 pérdidas/ganancias en ventana de entrenamiento.
+            self._fallback_prob = float(np.mean(out))
+            self._es_fallback = True
+            self.entrenado = True
+            self.fecha_entrenamiento = datetime.now()
+            self.parametros = {
+                "a": self.a,
+                "b": self.b,
+                "regularization_c": regularization_c,
+                "fallback_clase_unica": True,
+                "fallback_prob": self._fallback_prob,
+            }
+            logger.warning(
+                "CalibradorPlatt activó fallback por clase única",
+                extra={
+                    "mercado": self.mercado.value,
+                    "n_muestras": len(out),
+                    "clases": [float(c) for c in clases_unicas],
+                },
+            )
+            prob_calibrada = np.full(len(prob), self._fallback_prob, dtype=float)
+            brier_despues = calcular_brier_score(prob_calibrada, out)
+            log_loss_despues = calcular_log_loss(prob_calibrada, out)
+            ece_despues = calcular_ece(prob_calibrada, out)
+
+            return ResultadoCalibracion(
+                mercado=self.mercado,
+                metodo=self.NOMBRE_METODO,
+                brier_antes=brier_antes,
+                log_loss_antes=log_loss_antes,
+                ece_antes=ece_antes,
+                brier_despues=brier_despues,
+                log_loss_despues=log_loss_despues,
+                ece_despues=ece_despues,
+                n_muestras=len(prob),
+                fecha_entrenamiento=self.fecha_entrenamiento,
+                parametros=self.parametros,
+            )
+
+        self._es_fallback = False
 
         # Ajustar regresión logística
         self._modelo = LogisticRegression(
@@ -231,9 +281,12 @@ class CalibradorPlatt(CalibradorBase):
         # Validar entrada
         self.validar_entrada(prob)
 
-        # Transformar: sigmoid(a * logit(prob) + b)
-        logit_prob = _logit(prob)
-        prob_calibrada = _sigmoid(self.a * logit_prob + self.b)
+        if self._es_fallback:
+            prob_calibrada = np.full(len(prob), self._fallback_prob, dtype=float)
+        else:
+            # Transformar: sigmoid(a * logit(prob) + b)
+            logit_prob = _logit(prob)
+            prob_calibrada = _sigmoid(self.a * logit_prob + self.b)
 
         # Asegurar que está en [0, 1]
         prob_calibrada = np.clip(prob_calibrada, 0.0, 1.0)
@@ -254,6 +307,8 @@ class CalibradorPlatt(CalibradorBase):
         data.update({
             "a": self.a,
             "b": self.b,
+            "es_fallback": self._es_fallback,
+            "fallback_prob": self._fallback_prob,
         })
         return data
 
@@ -275,6 +330,8 @@ class CalibradorPlatt(CalibradorBase):
         calibrador.b = data.get("b", 0.0)
         calibrador.entrenado = data.get("entrenado", True)
         calibrador.parametros = data.get("parametros", {"a": calibrador.a, "b": calibrador.b})
+        calibrador._es_fallback = bool(data.get("es_fallback", False))
+        calibrador._fallback_prob = float(data.get("fallback_prob", 0.5))
 
         if data.get("fecha_entrenamiento"):
             calibrador.fecha_entrenamiento = datetime.fromisoformat(
