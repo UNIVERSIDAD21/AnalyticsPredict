@@ -54,16 +54,18 @@ def construir_matriz_diseno(
     X = np.zeros((n, 1 + k + k + 1), dtype=float)
     X[:, 0] = 1.0  # Intercepto
 
+    entidad_norm = {normalizar_nombre_equipo(k): v for k, v in entidad_a_indice.items()}
+
     for i, (equipo, rival, local) in enumerate(zip(nombres_equipo, nombres_rival, es_local)):
         equipo_norm = normalizar_nombre_equipo(equipo)
         rival_norm = normalizar_nombre_equipo(rival)
 
-        if equipo_norm in entidad_a_indice:
-            idx_equipo = entidad_a_indice[equipo_norm]
+        idx_equipo = entidad_a_indice.get(equipo, entidad_norm.get(equipo_norm))
+        if idx_equipo is not None:
             X[i, 1 + idx_equipo] = 1.0
 
-        if rival_norm in entidad_a_indice:
-            idx_rival = entidad_a_indice[rival_norm]
+        idx_rival = entidad_a_indice.get(rival, entidad_norm.get(rival_norm))
+        if idx_rival is not None:
             X[i, 1 + k + idx_rival] = 1.0
 
         X[i, -1] = float(local)
@@ -92,7 +94,6 @@ def ajustar_ridge(
     """
     p = X.shape[1]
     I = np.eye(p, dtype=float)
-    I[0, 0] = 0.0  # No regularizar el intercepto
 
     A = X.T @ X + alpha * I
     B = X.T @ Y
@@ -100,11 +101,10 @@ def ajustar_ridge(
     # Resolver sistema lineal
     W = np.linalg.solve(A, B)
 
-    # Calcular residuales y desviación estándar
+    # Calcular matriz de residuales
     residuos = Y - X @ W
-    std = np.sqrt(np.mean(residuos**2, axis=0) + 1e-9)
 
-    return W, std
+    return W, residuos
 
 
 def calcular_std_residuales(residuales: np.ndarray) -> np.ndarray:
@@ -222,14 +222,27 @@ class ModeloPrediccionBase(ABC):
         r2_por_target = {}
 
         for target in self.targets:
-            if target not in y_dict:
+            target_data = y_dict.get(target)
+            if target_data is None:
+                # Compatibilidad legacy para nombres de targets históricos
+                target_alias = {
+                    "disparos_local_total": "disparos_local",
+                    "disparos_visitante_total": "disparos_visitante",
+                    "disparos_local_arco": "disparos_arco_local",
+                    "disparos_visitante_arco": "disparos_arco_visitante",
+                }.get(target)
+                if target_alias:
+                    target_data = y_dict.get(target_alias)
+
+            if target_data is None:
                 logger.warning(f"Target {target} no encontrado en datos")
                 continue
 
-            Y = y_dict[target].reshape(-1, 1) if y_dict[target].ndim == 1 else y_dict[target]
+            Y = target_data.reshape(-1, 1) if target_data.ndim == 1 else target_data
 
             # Ajustar modelo Ridge
-            pesos, std = ajustar_ridge(X, Y, self.alfa)
+            pesos, residuales = ajustar_ridge(X, Y, self.alfa)
+            std = calcular_std_residuales(residuales)
 
             self.pesos[target] = pesos.flatten()
             self.std_residuales[target] = float(std[0]) if std.size > 0 else 1.0
