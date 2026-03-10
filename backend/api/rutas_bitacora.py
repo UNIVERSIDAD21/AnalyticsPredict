@@ -19,6 +19,7 @@ from motor.resolucion_apuestas import (
     obtener_estadisticas_apuestas,
     obtener_apuestas_pendientes_por_mercado,
 )
+from servicios.apuestas_analizadas import resolver_apuestas_analizadas
 
 # Importar Jsonb para serializar correctamente campos JSON en la base de datos.
 try:
@@ -87,6 +88,19 @@ class RespuestaBitacoraUnificada(BaseModel):
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
+
+
+def _auto_resolver_bitacoras(usuario_id: UUID) -> None:
+    """Actualiza automáticamente apuestas/analizados ya finalizados."""
+    try:
+        resolver_apuestas(usuario_id=str(usuario_id), limite=5000)
+    except Exception:
+        logger.exception("Auto-resolución de apuestas falló para usuario=%s", usuario_id)
+
+    try:
+        resolver_apuestas_analizadas()
+    except Exception:
+        logger.exception("Auto-resolución de análisis falló")
 
 
 def _serializar_jsonb(valor: object | None) -> object | None:
@@ -315,6 +329,8 @@ async def listar_apuestas(
     tamano: int = Query(10, ge=1, le=50),
 ) -> RespuestaListaApuestas:
     """Lista apuestas con filtros y paginación."""
+    _auto_resolver_bitacoras(usuario_id)
+
     where_sql, parametros = _construir_where(
         usuario_id=usuario_id,
         resultado=resultado,
@@ -373,6 +389,8 @@ async def resumen_apuestas(
     usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaResumenApuestas:
     """Retorna el resumen agregado de apuestas para el usuario (incluye simples y combinadas)."""
+    _auto_resolver_bitacoras(usuario_id)
+
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             # Consulta unificada que combina apuestas simples y combinadas
@@ -445,6 +463,8 @@ async def listar_bitacora_unificada(
     tamano: int = Query(20, ge=1, le=50),
 ) -> RespuestaBitacoraUnificada:
     """Lista la bitácora unificada de apuestas simples y combinadas."""
+    _auto_resolver_bitacoras(usuario_id)
+
     condiciones = ["usuario_id = %s"]
     parametros: List[object] = [str(usuario_id)]
 
@@ -723,6 +743,8 @@ async def obtener_estadisticas(
     usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaEstadisticas:
     """Obtiene estadísticas de apuestas del usuario."""
+    _auto_resolver_bitacoras(usuario_id)
+
     try:
         estadisticas = obtener_estadisticas_apuestas(usuario_id=str(usuario_id))
         pendientes_por_mercado = obtener_apuestas_pendientes_por_mercado(
@@ -834,6 +856,8 @@ async def obtener_metricas_bitacora(
     ),
 ) -> RespuestaMetricasBitacora:
     """Calcula métricas desde la bitácora de apuestas."""
+    _auto_resolver_bitacoras(usuario_id)
+
     advertencias: List[str] = []
 
     # Construir filtros base
@@ -1039,6 +1063,7 @@ async def obtener_metricas_bitacora(
 @router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
 async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
     from servicios.apuestas_analizadas import asegurar_tabla_apuestas_analizadas
+    resolver_apuestas_analizadas()
     pool = obtener_pool()
     asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:

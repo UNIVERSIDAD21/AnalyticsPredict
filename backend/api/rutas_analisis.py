@@ -399,15 +399,58 @@ def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str,
     return None
 
 
+def _buscar_partido_por_equipos_nba(
+    equipo_local: str,
+    equipo_visitante: str,
+) -> Optional[Dict[str, Any]]:
+    """Busca partido NBA más cercano por equipos para registro en bitácora."""
+    try:
+        with obtener_pool().connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        p.id as partido_id,
+                        p.temporada_id,
+                        p.equipo_local_id,
+                        p.equipo_visitante_id,
+                        p.fecha_partido,
+                        p.tipo_partido
+                    FROM partidos_baloncesto p
+                    JOIN equipos el ON p.equipo_local_id = el.id
+                    JOIN equipos ev ON p.equipo_visitante_id = ev.id
+                    WHERE LOWER(el.nombre) = LOWER(%s)
+                      AND LOWER(ev.nombre) = LOWER(%s)
+                    ORDER BY ABS(EXTRACT(EPOCH FROM (p.fecha_partido - CURRENT_DATE))) ASC
+                    LIMIT 1
+                    """,
+                    [equipo_local, equipo_visitante],
+                )
+                row = cursor.fetchone()
+                return dict(row) if row else None
+    except Exception:
+        logger.exception(
+            "No se pudo resolver partido NBA por equipos para bitácora (%s vs %s)",
+            equipo_local,
+            equipo_visitante,
+        )
+        return None
+
+
 def _partido_id_bitacora_nba(
     peticion: PeticionAnalisis,
     contexto_registro: Optional[Dict[str, Any]],
 ) -> Optional[str]:
-    """Obtiene un partido_id para bitácora; si falta, crea UUID determinístico."""
+    """Obtiene un partido_id para bitácora; usa lookup por equipos si falta contexto."""
     if contexto_registro and contexto_registro.get("partido_id"):
         return str(contexto_registro["partido_id"])
     if peticion.partido_id:
         return str(peticion.partido_id)
+
+    lookup = _buscar_partido_por_equipos_nba(peticion.equipo_local, peticion.equipo_visitante)
+    if lookup and lookup.get("partido_id"):
+        return str(lookup["partido_id"])
+
     if peticion.fecha_partido:
         semilla = (
             f"nba:{peticion.equipo_local}:{peticion.equipo_visitante}:"
