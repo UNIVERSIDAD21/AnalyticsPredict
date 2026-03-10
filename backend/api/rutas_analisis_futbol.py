@@ -8,6 +8,7 @@ Este es el endpoint más importante del sistema. Genera predicciones para los
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from datetime import datetime
@@ -1780,29 +1781,6 @@ async def analizar_partido(
                         e,
                     )
 
-
-                try:
-                    registrar_apuesta_analizada(
-                        deporte='futbol',
-                        partido_id=str(partido['id']),
-                        mercado='GOLES_FT',
-                        lado='OVER' if (goles_local + goles_visitante) >= 2.5 else 'UNDER',
-                        linea=2.5,
-                        probabilidad_sistema=max(prob_local, prob_empate, prob_visitante),
-                        confianza='MEDIA',
-                        payload_json=(
-                            '{"fuente":"analisis_futbol",'
-                            f'"prob_local":{prob_local:.6f},'
-                            f'"prob_empate":{prob_empate:.6f},'
-                            f'"prob_visitante":{prob_visitante:.6f},'
-                            f'"ganador_probable":"{ganador_probable}",'
-                            f'"marcador_probable":"{marcador_probable}"'
-                            '}'
-                        ),
-                    )
-                except Exception:
-                    logger.exception('No se pudo registrar apuesta analizada futbol')
-
                 # 6. Construir respuesta
                 partido_resumen = PartidoResumen(
                     id=partido["id"],
@@ -1823,6 +1801,58 @@ async def analizar_partido(
                     f"Marcador más probable según distribución de Poisson: {marcador_probable}.",
                     f"Base ofensiva estimada: xG local {goles_local:.2f} y xG visitante {goles_visitante:.2f}.",
                 ]
+
+                try:
+                    if recomendaciones:
+                        for rec in recomendaciones:
+                            payload = {
+                                "fuente": "analisis_futbol",
+                                "partido": {
+                                    "equipo_local": partido["equipo_local"],
+                                    "equipo_visitante": partido["equipo_visitante"],
+                                },
+                                "prediccion_ganador": {
+                                    "prob_local": prob_local,
+                                    "prob_empate": prob_empate,
+                                    "prob_visitante": prob_visitante,
+                                    "ganador_probable": ganador_probable,
+                                    "marcador_probable": marcador_probable,
+                                },
+                            }
+                            registrar_apuesta_analizada(
+                                deporte="futbol",
+                                partido_id=str(partido["id"]),
+                                mercado=rec.mercado,
+                                lado=rec.lado,
+                                linea=float(rec.linea),
+                                probabilidad_sistema=float(rec.probabilidad),
+                                confianza=rec.confianza,
+                                payload_json=json.dumps(payload, ensure_ascii=False),
+                            )
+                    else:
+                        payload = {
+                            "fuente": "analisis_futbol",
+                            "sin_recomendaciones": True,
+                            "prediccion_ganador": {
+                                "prob_local": prob_local,
+                                "prob_empate": prob_empate,
+                                "prob_visitante": prob_visitante,
+                                "ganador_probable": ganador_probable,
+                                "marcador_probable": marcador_probable,
+                            },
+                        }
+                        registrar_apuesta_analizada(
+                            deporte="futbol",
+                            partido_id=str(partido["id"]),
+                            mercado="ANALISIS_FT",
+                            lado=None,
+                            linea=None,
+                            probabilidad_sistema=max(prob_local, prob_empate, prob_visitante),
+                            confianza="MEDIA",
+                            payload_json=json.dumps(payload, ensure_ascii=False),
+                        )
+                except Exception:
+                    logger.exception("No se pudo registrar análisis de fútbol en bitácora")
 
                 duracion = time.time() - inicio
                 logger.info(f"Análisis completado en {duracion:.2f}s para partido {request.partido_id}")

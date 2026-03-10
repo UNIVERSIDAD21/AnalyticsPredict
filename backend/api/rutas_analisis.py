@@ -10,9 +10,10 @@ CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Optional, List, Dict, Any
-from uuid import UUID
+from uuid import UUID, NAMESPACE_URL, uuid5
 
 from fastapi import APIRouter, Depends
 from psycopg.rows import dict_row
@@ -398,6 +399,76 @@ def _extraer_contexto_registro(peticion: PeticionAnalisis) -> Optional[Dict[str,
     return None
 
 
+def _partido_id_bitacora_nba(
+    peticion: PeticionAnalisis,
+    contexto_registro: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    """Obtiene un partido_id para bitácora; si falta, crea UUID determinístico."""
+    if contexto_registro and contexto_registro.get("partido_id"):
+        return str(contexto_registro["partido_id"])
+    if peticion.partido_id:
+        return str(peticion.partido_id)
+    if peticion.fecha_partido:
+        semilla = (
+            f"nba:{peticion.equipo_local}:{peticion.equipo_visitante}:"
+            f"{peticion.fecha_partido.isoformat()}:{peticion.mercado}"
+        )
+        return str(uuid5(NAMESPACE_URL, semilla))
+    return None
+
+
+def _registrar_bitacora_analisis_nba(
+    peticion: PeticionAnalisis,
+    resultado,
+    contexto_registro: Optional[Dict[str, Any]],
+) -> None:
+    """Registra en bitácora TODA ejecución de análisis NBA."""
+    partido_id = _partido_id_bitacora_nba(peticion, contexto_registro)
+    if not partido_id:
+        logger.warning("No se pudo registrar análisis NBA en bitácora: partido_id ausente")
+        return
+
+    candidatos = resultado.candidatos or []
+    if candidatos:
+        for candidato in candidatos:
+            payload = {
+                "fuente": "analisis_nba",
+                "equipo_local": peticion.equipo_local,
+                "equipo_visitante": peticion.equipo_visitante,
+                "mercado_peticion": peticion.mercado,
+                "candidato": candidato.como_diccionario() if hasattr(candidato, "como_diccionario") else {},
+            }
+            registrar_apuesta_analizada(
+                deporte="baloncesto",
+                partido_id=partido_id,
+                mercado=str(candidato.cuarto),
+                lado=str(candidato.lado.value),
+                linea=float(candidato.linea),
+                probabilidad_sistema=float(candidato.probabilidad),
+                confianza=(candidato.sizing.confianza.value if getattr(candidato, "sizing", None) else None),
+                payload_json=json.dumps(payload, ensure_ascii=False),
+            )
+        return
+
+    payload = {
+        "fuente": "analisis_nba",
+        "equipo_local": peticion.equipo_local,
+        "equipo_visitante": peticion.equipo_visitante,
+        "mercado_peticion": peticion.mercado,
+        "sin_candidatos": True,
+    }
+    registrar_apuesta_analizada(
+        deporte="baloncesto",
+        partido_id=partido_id,
+        mercado=str(peticion.mercado),
+        lado=str(peticion.lado),
+        linea=float(peticion.linea) if peticion.linea is not None else None,
+        probabilidad_sistema=None,
+        confianza=None,
+        payload_json=json.dumps(payload, ensure_ascii=False),
+    )
+
+
 def ejecutar_analisis(
     peticion: PeticionAnalisis,
     marcador_q1: Optional[str] = None,
@@ -551,6 +622,12 @@ def ejecutar_analisis(
                         "API_USUARIO",
                         modelo_version_id,
                     )
+
+    try:
+        _registrar_bitacora_analisis_nba(peticion, resultado, contexto_registro)
+    except Exception:
+        logger.exception("No se pudo registrar análisis NBA en bitácora")
+
     datos_respuesta = resultado_a_dict(resultado)
     datos_respuesta.pop("advertencias", None)
     if datos_respuesta.get("mejor_apuesta") is not None:

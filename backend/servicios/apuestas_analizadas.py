@@ -35,10 +35,14 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
             )
             cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS resultado_outcome TEXT;")
             cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS valor_real NUMERIC;")
+            # Historial completo: NO deduplicar por clave natural.
+            # Antes existía un índice único que sobreescribía análisis repetidos.
+            # Para bitácora completa por evento, se elimina esa restricción.
+            cur.execute("DROP INDEX IF EXISTS uq_apuestas_analizadas_natural;")
             cur.execute(
                 """
-                CREATE UNIQUE INDEX IF NOT EXISTS uq_apuestas_analizadas_natural
-                ON apuestas_analizadas (deporte, partido_id, COALESCE(mercado,''), COALESCE(lado,''), COALESCE(linea, -1));
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_lookup
+                ON apuestas_analizadas (deporte, partido_id, mercado, lado, linea);
                 """
             )
 
@@ -64,12 +68,6 @@ def registrar_apuesta_analizada(
                 INSERT INTO apuestas_analizadas
                 (deporte, partido_id, mercado, lado, linea, probabilidad_sistema, confianza, payload)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-                ON CONFLICT (deporte, partido_id, mercado, lado, linea)
-                DO UPDATE SET
-                    probabilidad_sistema = EXCLUDED.probabilidad_sistema,
-                    confianza = EXCLUDED.confianza,
-                    payload = EXCLUDED.payload,
-                    actualizado_en = now();
                 """,
                 [
                     deporte,
