@@ -54,6 +54,7 @@ from .utilidades import (
 CLAVES_CUARTOS = ("Q1", "Q2", "Q3", "Q4")
 INDICE_CUARTOS = {"Q1": 0, "Q2": 1, "Q3": 2, "Q4": 3}
 RIESGO_DESVIACION_UMBRAL = 7.5
+SIGMA_GANADOR_NBA_COMPLETO = 12.5
 
 logger = logging.getLogger(__name__)
 
@@ -217,11 +218,21 @@ def calcular_prediccion_cuarto(
         probabilidad_over = calcular_probabilidad_over(media_total, desviacion_total, linea)
         probabilidad_under = 1.0 - probabilidad_over
 
+    desviacion_equipo_victoria = desviacion_equipo
+    desviacion_rival_victoria = desviacion_rival
+
+    if cuarto == "COMPLETO":
+        # Para probabilidad de ganador en juego completo usamos sigma empírico NBA
+        # para evitar sobreestimar incertidumbre al propagar residuos por cuarto.
+        sigma_por_lado = SIGMA_GANADOR_NBA_COMPLETO / np.sqrt(2.0)
+        desviacion_equipo_victoria = float(sigma_por_lado)
+        desviacion_rival_victoria = float(sigma_por_lado)
+
     probabilidad_ganador = calcular_probabilidad_victoria(
         media_equipo,
-        desviacion_equipo,
+        desviacion_equipo_victoria,
         media_rival,
-        desviacion_rival,
+        desviacion_rival_victoria,
     )
 
     return PrediccionCuarto(
