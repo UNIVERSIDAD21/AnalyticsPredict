@@ -545,6 +545,31 @@ async def listar_bitacora_unificada(
     )
 
 
+@router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
+async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
+    """Lista apuestas analizadas automáticas (bitácora de análisis del sistema)."""
+    from servicios.apuestas_analizadas import asegurar_tabla_apuestas_analizadas, resolver_apuestas_analizadas
+    from psycopg.rows import dict_row
+    resolver_apuestas_analizadas()
+    pool = obtener_pool()
+    asegurar_tabla_apuestas_analizadas(pool)
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT id, deporte, partido_id, mercado, lado, linea,
+                       probabilidad_sistema, confianza, estado, resultado_outcome,
+                       valor_real, resultado_resumen, creado_en, actualizado_en
+                FROM apuestas_analizadas
+                ORDER BY actualizado_en DESC
+                LIMIT %s OFFSET %s
+                """,
+                [max(1, min(limite, 1000)), max(0, offset)],
+            )
+            filas = cur.fetchall() or []
+    return {"exito": True, "total": len(filas), "items": filas}
+
+
 @router.get("/{apuesta_id}", summary="Detalle de apuesta", response_model=RespuestaApuesta)
 async def obtener_apuesta(
     apuesta_id: UUID,
@@ -1060,24 +1085,3 @@ async def obtener_metricas_bitacora(
         )
 
 
-@router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
-async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
-    from servicios.apuestas_analizadas import asegurar_tabla_apuestas_analizadas
-    resolver_apuestas_analizadas()
-    pool = obtener_pool()
-    asegurar_tabla_apuestas_analizadas(pool)
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT id, deporte, partido_id, mercado, lado, linea,
-                       probabilidad_sistema, confianza, estado, resultado_outcome,
-                       valor_real, resultado_resumen, creado_en, actualizado_en
-                FROM apuestas_analizadas
-                ORDER BY actualizado_en DESC
-                LIMIT %s OFFSET %s
-                """,
-                [max(1, min(limite, 1000)), max(0, offset)],
-            )
-            filas = cur.fetchall() or []
-    return {"exito": True, "total": len(filas), "items": filas}
