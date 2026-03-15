@@ -81,6 +81,16 @@ class PeticionAnalisis(BaseModel):
         gt=1.0,
         description="Cuota decimal para el lado UNDER (opcional)",
     )
+    cuota_ganador_equipo: Optional[float] = Field(
+        None,
+        gt=1.0,
+        description="Cuota decimal del ganador para el equipo analizado (opcional, mercado COMPLETO)",
+    )
+    cuota_ganador_rival: Optional[float] = Field(
+        None,
+        gt=1.0,
+        description="Cuota decimal del ganador para el rival (opcional, mercado COMPLETO)",
+    )
     lado: Literal["OVER", "UNDER"] = Field(
         "OVER",
         description="Lado asociado a la cuota legacy (OVER/UNDER)",

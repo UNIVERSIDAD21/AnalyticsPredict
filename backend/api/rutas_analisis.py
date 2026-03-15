@@ -564,6 +564,8 @@ def ejecutar_analisis(
             cuota=peticion.cuota_analisis,
             cuota_over=peticion.cuota_over,
             cuota_under=peticion.cuota_under,
+            cuota_ganador_equipo=peticion.cuota_ganador_equipo,
+            cuota_ganador_rival=peticion.cuota_ganador_rival,
             lado=peticion.lado,
             modo_devig=peticion.modo_devig,
             bankroll_override=bankroll_override,

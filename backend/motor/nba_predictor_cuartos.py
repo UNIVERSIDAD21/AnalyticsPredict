@@ -55,6 +55,8 @@ CLAVES_CUARTOS = ("Q1", "Q2", "Q3", "Q4")
 INDICE_CUARTOS = {"Q1": 0, "Q2": 1, "Q3": 2, "Q4": 3}
 RIESGO_DESVIACION_UMBRAL = 7.5
 SIGMA_GANADOR_NBA_COMPLETO = 12.5
+PESO_MODELO_GANADOR = 0.25
+PESO_MERCADO_GANADOR = 0.75
 
 logger = logging.getLogger(__name__)
 
@@ -501,6 +503,8 @@ def analizar_partido(
     cuota: Optional[float] = None,
     cuota_over: Optional[float] = None,
     cuota_under: Optional[float] = None,
+    cuota_ganador_equipo: Optional[float] = None,
+    cuota_ganador_rival: Optional[float] = None,
     lado: LadoApuesta | str = LadoApuesta.OVER,
     modo_devig: str = "estricto",
     bankroll_override: Optional[float] = None,
@@ -564,6 +568,37 @@ def analizar_partido(
             float(np.sqrt(np.sum(desviacion_rival ** 2))),
             linea=linea,
         )
+
+        if prediccion_juego_completo is not None and cuota_ganador_equipo is not None:
+            try:
+                datos_devig_ganador = calcular_devig(
+                    cuota_ganador_equipo,
+                    cuota_ganador_rival,
+                    modo_estimado=cuota_ganador_rival is None,
+                )
+                p_modelo_ganador = float(prediccion_juego_completo.probabilidad_ganador)
+                p_mercado_ganador = float(datos_devig_ganador.p_mkt_fair)
+                p_blend_ganador = limitar_entre_0_y_1(
+                    PESO_MODELO_GANADOR * p_modelo_ganador
+                    + PESO_MERCADO_GANADOR * p_mercado_ganador
+                )
+                prediccion_juego_completo.probabilidad_ganador = p_blend_ganador
+                prediccion_juego_completo.ganador_probable = (
+                    "equipo" if p_blend_ganador >= 0.5 else "rival"
+                )
+                metadata["blend_ganador"] = {
+                    "aplicado": True,
+                    "peso_modelo": PESO_MODELO_GANADOR,
+                    "peso_mercado": PESO_MERCADO_GANADOR,
+                    "p_modelo": p_modelo_ganador,
+                    "p_mercado": p_mercado_ganador,
+                    "p_final": p_blend_ganador,
+                    "metodo_devig": datos_devig_ganador.metodo,
+                    "overround": datos_devig_ganador.overround,
+                }
+            except Exception as exc:
+                logger.warning("No se pudo aplicar blend de ganador: %s", exc)
+                metadata["blend_ganador"] = {"aplicado": False, "motivo": str(exc)}
     else:
         cuarto_predicho = predicciones[mercado]
 
