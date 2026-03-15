@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organismos';
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
@@ -35,6 +35,7 @@ export function PaginaBitacora() {
   const [eliminando, setEliminando] = useState(false);
   const [apuestasAnalizadas, setApuestasAnalizadas] = useState<ApuestaAnalizada[]>([]);
   const [cargandoAnalizadas, setCargandoAnalizadas] = useState(false);
+  const [seccionExpandida, setSeccionExpandida] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -171,6 +172,86 @@ export function PaginaBitacora() {
     roi: resumen?.roi ?? 0,
   } as unknown as Record<string, number>;
 
+  const formatearFechaCorta = (fecha?: string | null): string => {
+    if (!fecha) return '—';
+    const d = new Date(fecha);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+    });
+  };
+
+  const formatearLinea = (linea?: number | null): string => {
+    if (linea === null || linea === undefined) return '—';
+    return Number(linea).toFixed(1);
+  };
+
+  const formatearProbabilidad = (valor?: number | null): string => {
+    if (valor === null || valor === undefined) return '—';
+    return `${(valor * 100).toFixed(1)}%`;
+  };
+
+  const formatearGanancia = (valor?: number | null): string => {
+    if (valor === null || valor === undefined) return '—';
+    const signo = valor > 0 ? '+' : '';
+    return `${signo}$${valor.toFixed(2)}`;
+  };
+
+  const obtenerTextoPartido = (apuesta: ApuestaAnalizada): string => {
+    const fallback = apuesta.partido_id?.slice(0, 8) || '—';
+    const resumen = apuesta.resultado_resumen;
+
+    if (!resumen) return fallback;
+
+    try {
+      const parsed = JSON.parse(resumen) as {
+        equipo_local?: string;
+        equipo_visitante?: string;
+        home_team?: string;
+        away_team?: string;
+        local?: string;
+        visitante?: string;
+      };
+
+      const local = parsed.equipo_local || parsed.home_team || parsed.local;
+      const visitante = parsed.equipo_visitante || parsed.away_team || parsed.visitante;
+
+      if (local && visitante) {
+        return `${local} vs ${visitante}`;
+      }
+    } catch {
+      // Si no es JSON válido, se muestra como texto plano
+    }
+
+    return resumen;
+  };
+
+  const truncar = (texto: string, max = 30): string => {
+    if (!texto) return '—';
+    return texto.length > max ? `${texto.slice(0, max)}…` : texto;
+  };
+
+  const normalizarEstado = (apuesta: ApuestaAnalizada): 'GANADA' | 'PERDIDA' | 'PUSH' | 'PENDIENTE' => {
+    const base = (apuesta.resultado_outcome || apuesta.estado || '').toUpperCase();
+    if (base === 'GANADA' || base === 'PERDIDA' || base === 'PUSH') return base;
+    return 'PENDIENTE';
+  };
+
+  const clasesEstado: Record<'GANADA' | 'PERDIDA' | 'PUSH' | 'PENDIENTE', string> = {
+    GANADA: 'bg-neon-verde/20 text-neon-verde border-neon-verde/30',
+    PERDIDA: 'bg-neon-rojo/20 text-neon-rojo border-neon-rojo/30',
+    PUSH: 'bg-advertencia-500/20 text-advertencia-500 border-advertencia-500/30',
+    PENDIENTE: 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/30',
+  };
+
+  const clasesConfianza: Record<string, string> = {
+    ALTA: 'text-neon-verde',
+    MEDIA: 'text-advertencia-500',
+    BAJA: 'text-neon-rojo',
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Encabezado />
@@ -232,38 +313,100 @@ export function PaginaBitacora() {
         <div className="tarjeta p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-futurista text-texto-principal uppercase tracking-wider">Apuestas analizadas automáticas</h3>
-            <span className="text-xs text-texto-secundario">ultimas {apuestasAnalizadas.length}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-texto-secundario">ultimas {apuestasAnalizadas.length}</span>
+              <button
+                type="button"
+                onClick={() => setSeccionExpandida((prev) => !prev)}
+                className="inline-flex items-center justify-center p-1.5 rounded-md border border-neon-cyan/20 text-texto-terciario hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition-colors"
+                aria-label={seccionExpandida ? 'Colapsar sección' : 'Expandir sección'}
+              >
+                {seccionExpandida ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          {cargandoAnalizadas ? (
+
+          {seccionExpandida && (cargandoAnalizadas ? (
             <p className="text-sm text-texto-secundario">Cargando...</p>
           ) : apuestasAnalizadas.length === 0 ? (
             <p className="text-sm text-texto-secundario">Sin registros automáticos por ahora.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[980px]">
                 <thead>
-                  <tr className="text-texto-terciario border-b border-neon-cyan/10">
-                    <th className="text-left py-2">Deporte</th>
-                    <th className="text-left py-2">Mercado</th>
-                    <th className="text-left py-2">Estado</th>
-                    <th className="text-left py-2">Outcome</th>
-                    <th className="text-left py-2">Valor real</th>
+                  <tr className="border-b border-neon-cyan/10">
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">Fecha</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">Partido</th>
+                    <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">Mdo</th>
+                    <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">Lado</th>
+                    <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">Línea</th>
+                    <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">Cuota</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">Stake</th>
+                    <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">Prob</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-texto-terciario">Ganancia</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">Conf</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">EV</th>
+                    <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">Estado</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {apuestasAnalizadas.map((a) => (
-                    <tr key={a.id} className="border-b border-neon-cyan/5">
-                      <td className="py-2 capitalize">{a.deporte}</td>
-                      <td className="py-2">{a.mercado ?? '-'}</td>
-                      <td className="py-2">{a.estado}</td>
-                      <td className="py-2">{a.resultado_outcome ?? '-'}</td>
-                      <td className="py-2">{a.valor_real ?? '-'}</td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-neon-cyan/10">
+                  {apuestasAnalizadas.map((a) => {
+                    const estadoNormalizado = normalizarEstado(a);
+                    const claseEstado = clasesEstado[estadoNormalizado];
+                    const confianza = (a.confianza || '').toUpperCase();
+                    const claseConfianza = clasesConfianza[confianza] || 'text-texto-secundario';
+
+                    return (
+                      <tr key={a.id} className="hover:bg-neon-cyan/5 transition-colors">
+                        <td className="px-3 py-2.5 text-sm text-texto-secundario whitespace-nowrap">
+                          {formatearFechaCorta(a.creado_en)}
+                        </td>
+                        <td className="px-3 py-2.5 text-sm text-texto-principal" title={obtenerTextoPartido(a)}>
+                          {truncar(obtenerTextoPartido(a), 30)}
+                        </td>
+                        <td className="px-2 py-2.5 text-sm text-texto-principal">
+                          {a.mercado === 'COMPLETO' ? 'FG' : (a.mercado ?? '—')}
+                        </td>
+                        <td className="px-2 py-2.5 text-sm text-texto-principal">
+                          {a.lado ?? '—'}
+                        </td>
+                        <td className="px-2 py-2.5 text-right text-sm font-mono text-texto-principal">
+                          {formatearLinea(a.linea)}
+                        </td>
+                        <td className="px-2 py-2.5 text-right text-sm text-texto-terciario">—</td>
+                        <td className="px-3 py-2.5 text-right text-sm text-texto-terciario">—</td>
+                        <td className="px-2 py-2.5 text-right text-sm font-mono text-texto-secundario">
+                          {formatearProbabilidad(a.probabilidad_sistema)}
+                        </td>
+                        <td
+                          className={`px-3 py-2.5 text-right text-sm font-mono font-semibold ${
+                            a.valor_real === null || a.valor_real === undefined
+                              ? 'text-texto-terciario'
+                              : a.valor_real > 0
+                                ? 'text-neon-verde'
+                                : a.valor_real < 0
+                                  ? 'text-neon-rojo'
+                                  : 'text-texto-secundario'
+                          }`}
+                        >
+                          {formatearGanancia(a.valor_real)}
+                        </td>
+                        <td className="px-2 py-2.5 text-center text-xs font-semibold">
+                          <span className={claseConfianza}>{confianza || '—'}</span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center text-sm text-texto-terciario">—</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border ${claseEstado}`}>
+                            {estadoNormalizado}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-          )}
+          ))}
         </div>
 
         <FiltrosApuestas
