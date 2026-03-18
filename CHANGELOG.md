@@ -149,3 +149,9 @@
   - Test añadido: `test_accept_legal_actualiza_version_del_usuario`.
 - Validación A4 fase 2:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (13 passed)
+- Cierre A4 (fase 3): guard legal endurecido en flujos críticos de auth
+  - `backend/api/rutas_auth.py` ahora bloquea `login`, `refresh`, `me` y `logout` con `403 LEGAL_REACCEPT_REQUIRED` si `legal_accepted_version` no coincide con `LEGAL_CURRENT_VERSION`.
+  - Se mantiene vía de regularización explícita con `POST /api/auth/accept-legal?version=v2`.
+  - Test nuevo `test_guard_legal_bloquea_login_si_version_queda_desactualizada` en `backend/tests/api/test_auth_endpoints.py`.
+- Validación A4 fase 3:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅

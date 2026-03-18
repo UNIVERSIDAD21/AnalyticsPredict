@@ -171,6 +171,31 @@ def test_accept_legal_actualiza_version_del_usuario(tmp_path: Path, monkeypatch)
     assert body["data"]["user"]["legal_accepted_at"] is not None
 
 
+def test_guard_legal_bloquea_login_si_version_queda_desactualizada(tmp_path: Path, monkeypatch):
+    client = _crear_cliente(tmp_path)
+
+    monkeypatch.setattr(rutas_auth, "CURRENT_LEGAL_VERSION", "2026-03-18")
+    reg = client.post(
+        "/api/auth/register",
+        json={
+            "email": "guard@ap.com",
+            "password": "12345678",
+            "accepted_legal": True,
+            "legal_version": "2026-03-18",
+        },
+    )
+    assert reg.status_code == 201
+
+    monkeypatch.setattr(rutas_auth, "CURRENT_LEGAL_VERSION", "2026-04-01")
+    resp = client.post("/api/auth/login", json={"email": "guard@ap.com", "password": "12345678"})
+
+    assert resp.status_code == 403
+    body = resp.json()
+    assert body["detail"]["code"] == "LEGAL_REACCEPT_REQUIRED"
+    assert body["detail"]["current_legal_version"] == "2026-04-01"
+    assert body["detail"]["accepted_legal_version"] == "2026-03-18"
+
+
 def test_contract_usage_resume_metricas(tmp_path: Path, monkeypatch):
     client = _crear_cliente(tmp_path)
 

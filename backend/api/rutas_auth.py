@@ -154,6 +154,23 @@ def _validar_access_token(token: str, store: AuthStore) -> dict:
     return payload
 
 
+def _validar_aceptacion_legal_vigente(user: dict) -> None:
+    legal_version = (user.get("legal_accepted_version") or "").strip()
+    if legal_version == CURRENT_LEGAL_VERSION:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "code": "LEGAL_REACCEPT_REQUIRED",
+            "message": "Debes aceptar la versión legal vigente para continuar.",
+            "current_legal_version": CURRENT_LEGAL_VERSION,
+            "accepted_legal_version": legal_version or None,
+            "action": "POST /api/auth/accept-legal?version=v2",
+        },
+    )
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(
     payload: RegisterRequest,
@@ -201,6 +218,8 @@ def login(
     if not user or not verificar_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
 
+    _validar_aceptacion_legal_vigente(user)
+
     tokens = _emitir_tokens(user["id"], user["email"])
     payload_legacy = {
         "ok": True,
@@ -238,6 +257,8 @@ def refresh(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inválido")
 
+    _validar_aceptacion_legal_vigente(user)
+
     store.revocar_jti(token_data["jti"])
     tokens = _emitir_tokens(user["id"], user["email"])
     payload_legacy = {"ok": True, **tokens}
@@ -253,6 +274,11 @@ def logout(
 ):
     token = _extraer_bearer_token(authorization)
     payload = _validar_access_token(token, store)
+    user = store.obtener_usuario_por_id(int(payload["sub"]))
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
+    _validar_aceptacion_legal_vigente(user)
+
     jti = payload.get("jti")
     if jti:
         store.revocar_jti(jti)
@@ -416,6 +442,8 @@ def me(
     user = store.obtener_usuario_por_id(int(payload["sub"]))
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
+
+    _validar_aceptacion_legal_vigente(user)
 
     payload_legacy = {
         "ok": True,
