@@ -76,6 +76,7 @@ export function limpiarSesionAuth() {
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.localStorage.removeItem(USER_KEY);
+  window.localStorage.removeItem('usuarioId');
 }
 
 export async function login(email: string, password: string): Promise<RespuestaAuth> {

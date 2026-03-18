@@ -27,12 +27,34 @@ const URL_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const TIMEOUT = 30000;
 
 /**
- * Obtiene el ID del usuario autenticado para la bitácora
+ * UUID de fallback para entornos de desarrollo/local.
+ * Debe coincidir con backend/api/dependencias.py (USUARIO_DESARROLLO)
+ */
+const UUID_DESARROLLO = '00000000-0000-0000-0000-000000000001';
+
+function esUuidValido(valor: string | null | undefined): valor is string {
+  if (!valor) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor.trim());
+}
+
+/**
+ * Obtiene un UUID de usuario válido para headers de backend.
+ * Si hay valores legacy no-UUID (ej: IDs numéricos), aplica fallback seguro.
  */
 function obtenerUsuarioId(): string | null {
-  const idEnv = import.meta.env.VITE_USUARIO_ID as string | undefined;
-  const idStorage = typeof window !== 'undefined' ? window.localStorage.getItem('usuarioId') : null;
-  return idStorage || idEnv || null;
+  const idEnv = (import.meta.env.VITE_USUARIO_ID as string | undefined)?.trim();
+  const idStorage = typeof window !== 'undefined' ? window.localStorage.getItem('usuarioId')?.trim() : null;
+
+  if (esUuidValido(idStorage)) {
+    return idStorage;
+  }
+
+  if (esUuidValido(idEnv)) {
+    return idEnv;
+  }
+
+  // Evitar romper endpoints que exigen UUID cuando aún existen sesiones legacy.
+  return UUID_DESARROLLO;
 }
 
 function obtenerAccessToken(): string | null {
