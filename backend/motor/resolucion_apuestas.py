@@ -34,6 +34,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 from typing import Optional, List, Dict, Any, Literal
 from uuid import UUID
@@ -244,6 +245,7 @@ def resolver_apuestas(
         SELECT
             a.id AS apuesta_id,
             a.partido_id,
+            a.fecha_partido,
             a.mercado,
             a.lado,
             a.linea,
@@ -292,6 +294,7 @@ def resolver_apuestas(
                     (
                         apuesta_id,
                         partido_id,
+                        fecha_partido,
                         ap_mercado,
                         lado,
                         linea,
@@ -321,6 +324,19 @@ def resolver_apuestas(
                         resumen.pendientes += 1
                         resumen.detalles_errores.append(
                             f"apuesta_id={apuesta_id}: partido_id es NULL"
+                        )
+                        continue
+
+                    # Guard-rail temporal: no resolver apuestas de fecha actual/futura
+                    # para evitar cierres prematuros por diferencias de zona horaria/carga parcial.
+                    hoy_bogota = datetime.now(ZoneInfo("America/Bogota")).date()
+                    if fecha_partido is not None and fecha_partido >= hoy_bogota:
+                        resumen.pendientes += 1
+                        logger.debug(
+                            "Apuesta pendiente: partido_id=%s fecha_partido=%s >= hoy_bogota=%s",
+                            partido_id,
+                            fecha_partido,
+                            hoy_bogota,
                         )
                         continue
 
