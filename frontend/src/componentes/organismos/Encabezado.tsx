@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Activity, Zap, Settings, BarChart3, LogOut } from 'lucide-react';
+import { Activity, Zap, Settings, BarChart3, LogOut, MessageSquare } from 'lucide-react';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
@@ -53,6 +53,7 @@ export function Encabezado() {
 
   // Determinar si estamos en el dashboard
   const enDashboard = rutaActual === '/futbol/dashboard';
+  const enChat = rutaActual === '/chat';
 
   // Título dinámico según el deporte
   const titulo = esFutbol ? 'FÚTBOL ANALYZER' : 'NBA ANALYZER';
@@ -138,6 +139,18 @@ export function Encabezado() {
                   Dashboard
                 </button>
               )}
+              <button
+                type="button"
+                className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border flex items-center gap-1.5 ${
+                  enChat
+                    ? 'border-neon-magenta text-neon-magenta'
+                    : 'border-neon-cyan/20 text-texto-secundario'
+                }`}
+                onClick={() => navegar('/chat')}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Chat
+              </button>
             </div>
 
             <div

@@ -11,6 +11,11 @@
   - Router integrado en `backend/app.py`.
   - Nuevo esquema `backend/esquemas/chat.py`.
   - Tests API nuevos: `backend/tests/api/test_chat_endpoints.py`.
+- Continuación B5 (frontend):
+  - Nueva página `frontend/src/componentes/paginas/PaginaChat.tsx` con UI de chat, historial, reset de contexto y disclaimer visible.
+  - Nuevo servicio `frontend/src/servicios/chat.ts` para integrar envío/historial/reset.
+  - Ruta protegida `/chat` agregada en `App.tsx` y acceso desde `Encabezado`.
+  - Validación frontend ejecutada: `npm run lint` + `npm run build` OK.
 - Inicio de B4 (notificaciones MVP):
   - Nuevas rutas backend en `api/rutas_notificaciones.py`:
     - `GET /api/notificaciones/preferencias`

@@ -15,6 +15,7 @@ import {
   PaginaLegal,
   PaginaOnboarding,
   PaginaDashboardUsuario,
+  PaginaChat,
 } from './componentes/paginas';
 import { useAuth } from './contextos/AuthContext';
 import { obtenerEstadoOnboarding } from './servicios/onboarding';
@@ -73,6 +74,7 @@ function App() {
         <Route path="/dashboard" element={<RutaProtegida><RutaConOnboarding><PaginaDashboardUsuario /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><PaginaBitacora /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><PaginaConfiguracion /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/chat" element={<RutaProtegida><RutaConOnboarding><PaginaChat /></RutaConOnboarding></RutaProtegida>} />
 
         {/* Rutas del módulo de fútbol protegidas */}
         <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><PaginaFutbol /></RutaConOnboarding></RutaProtegida>} />
