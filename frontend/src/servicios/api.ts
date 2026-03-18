@@ -2,7 +2,14 @@
  * api.ts — Cliente HTTP base para comunicación con el backend
  */
 
-import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosResponse } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import { ErrorAPI } from '../tipos';
 
 // ══════════════════════════════════════════════════════════════
@@ -28,6 +35,27 @@ function obtenerUsuarioId(): string | null {
   return idStorage || idEnv || null;
 }
 
+function obtenerAccessToken(): string | null {
+  return typeof window !== 'undefined' ? window.localStorage.getItem('auth.accessToken') : null;
+}
+
+function obtenerRefreshToken(): string | null {
+  return typeof window !== 'undefined' ? window.localStorage.getItem('auth.refreshToken') : null;
+}
+
+function guardarTokens(accessToken: string, refreshToken: string) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem('auth.accessToken', accessToken);
+  window.localStorage.setItem('auth.refreshToken', refreshToken);
+}
+
+function limpiarTokens() {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem('auth.accessToken');
+  window.localStorage.removeItem('auth.refreshToken');
+  window.localStorage.removeItem('auth.user');
+}
+
 // ══════════════════════════════════════════════════════════════
 // CLIENTE AXIOS
 // ══════════════════════════════════════════════════════════════
@@ -51,19 +79,67 @@ export const clienteAPI: AxiosInstance = axios.create({
 /**
  * Interceptor de respuestas exitosas
  */
+type ConfigConRetry = InternalAxiosRequestConfig & { _retry?: boolean };
+
+async function intentarRefreshToken(configOriginal?: AxiosRequestConfig): Promise<AxiosResponse | null> {
+  const refreshToken = obtenerRefreshToken();
+  if (!refreshToken || !configOriginal) return null;
+
+  try {
+    const respuestaRefresh = await axios.post(
+      `${URL_BASE}/api/auth/refresh`,
+      { refresh_token: refreshToken },
+      { timeout: TIMEOUT }
+    );
+
+    const nuevoAccessToken = respuestaRefresh.data?.access_token as string | undefined;
+    const nuevoRefreshToken = respuestaRefresh.data?.refresh_token as string | undefined;
+
+    if (!nuevoAccessToken || !nuevoRefreshToken) {
+      limpiarTokens();
+      return null;
+    }
+
+    guardarTokens(nuevoAccessToken, nuevoRefreshToken);
+
+    const headersPlano: Record<string, string> = {
+      ...((configOriginal.headers as Record<string, string> | undefined) ?? {}),
+      Authorization: `Bearer ${nuevoAccessToken}`,
+    };
+
+    return clienteAPI.request({
+      ...configOriginal,
+      headers: headersPlano,
+    });
+  } catch {
+    limpiarTokens();
+    return null;
+  }
+}
+
 clienteAPI.interceptors.response.use(
   (respuesta: AxiosResponse) => {
-    // Log en desarrollo
     if (import.meta.env.DEV) {
       console.log(`✅ ${respuesta.config.method?.toUpperCase()} ${respuesta.config.url}`, respuesta.data);
     }
     return respuesta;
   },
-  (error: AxiosError<ErrorAPI>) => {
-    // Log en desarrollo
+  async (error: AxiosError<ErrorAPI>) => {
     if (import.meta.env.DEV) {
       console.error(`❌ Error en petición:`, error.response?.data || error.message);
     }
+
+    const status = error.response?.status;
+    const originalConfig = error.config as ConfigConRetry | undefined;
+    const url = originalConfig?.url ?? '';
+    const esRutaAuth = url.includes('/api/auth/login') || url.includes('/api/auth/refresh');
+
+    if (status === 401 && originalConfig && !originalConfig._retry && !esRutaAuth) {
+      originalConfig._retry = true;
+      const reintento = await intentarRefreshToken(originalConfig);
+      if (reintento) return reintento;
+    }
+
     return Promise.reject(error);
   }
 );
@@ -73,6 +149,8 @@ clienteAPI.interceptors.response.use(
  */
 clienteAPI.interceptors.request.use((config) => {
   const usuarioId = obtenerUsuarioId();
+  const accessToken = obtenerAccessToken();
+
   if (usuarioId) {
     if (config.headers instanceof AxiosHeaders) {
       config.headers.set('X-Usuario-Id', usuarioId);
@@ -83,6 +161,18 @@ clienteAPI.interceptors.request.use((config) => {
       } as unknown as AxiosHeaders;
     }
   }
+
+  if (accessToken) {
+    if (config.headers instanceof AxiosHeaders) {
+      config.headers.set('Authorization', `Bearer ${accessToken}`);
+    } else {
+      config.headers = {
+        ...((config.headers as Record<string, unknown>) ?? {}),
+        Authorization: `Bearer ${accessToken}`,
+      } as unknown as AxiosHeaders;
+    }
+  }
+
   return config;
 });
 

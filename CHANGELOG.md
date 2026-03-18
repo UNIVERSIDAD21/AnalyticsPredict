@@ -30,3 +30,14 @@
   - Esquemas Pydantic en `backend/esquemas/auth.py`.
   - Pruebas API añadidas: `backend/tests/api/test_auth_endpoints.py` ✅ (3 passed).
 - Ajuste en staging Docker: soporte de puertos de frontend/backend parametrizados vía `STAGING_FRONTEND_PORT` y `STAGING_BACKEND_PORT`.
+- Continuación de A2 en frontend:
+  - Contexto de autenticación en `frontend/src/contextos/AuthContext.tsx`.
+  - Página de login en `frontend/src/componentes/paginas/PaginaLogin.tsx`.
+  - Protección de rutas en `frontend/src/App.tsx` (redirect a `/login` si no hay sesión).
+  - Integración de proveedor auth en `frontend/src/main.tsx`.
+  - Servicio de sesión en `frontend/src/servicios/auth.ts` y tipos en `frontend/src/tipos/auth.ts`.
+  - Cliente API actualizado con `Authorization: Bearer`, refresh automático en 401 y limpieza de sesión al fallar refresh (`frontend/src/servicios/api.ts`).
+  - Botón de cierre de sesión en header (`frontend/src/componentes/organismos/Encabezado.tsx`).
+- Validaciones frontend ejecutadas:
+  - `npm run lint` ✅ (sin errores, warnings legacy de hooks)
+  - `npm run build` ✅

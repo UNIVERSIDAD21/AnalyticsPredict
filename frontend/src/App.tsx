@@ -2,7 +2,8 @@
  * App.tsx — Componente raíz de la aplicación
  */
 
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
   PaginaBitacora,
   PaginaPrincipal,
@@ -10,7 +11,24 @@ import {
   PaginaFutbol,
   AnalisisPartidoFutbol,
   DashboardFutbol,
+  PaginaLogin,
 } from './componentes/paginas';
+import { useAuth } from './contextos/AuthContext';
+
+function RutaProtegida({ children }: { children: ReactElement }) {
+  const { autenticado, cargando } = useAuth();
+  const location = useLocation();
+
+  if (cargando) {
+    return <div className="min-h-screen flex items-center justify-center text-texto-secundario">Validando sesión…</div>;
+  }
+
+  if (!autenticado) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return children;
+}
 
 /**
  * Componente principal de la aplicación
@@ -19,16 +37,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas principales */}
-        <Route path="/" element={<PaginaPrincipal />} />
-        <Route path="/bitacora" element={<PaginaBitacora />} />
-        <Route path="/configuracion" element={<PaginaConfiguracion />} />
+        <Route path="/login" element={<PaginaLogin />} />
 
-        {/* Rutas del módulo de fútbol */}
-        <Route path="/futbol" element={<PaginaFutbol />} />
-        <Route path="/futbol/partidos/:id" element={<AnalisisPartidoFutbol />} />
-        <Route path="/futbol/bitacora" element={<PaginaBitacora />} />
-        <Route path="/futbol/dashboard" element={<DashboardFutbol />} />
+        {/* Rutas principales protegidas */}
+        <Route path="/" element={<RutaProtegida><PaginaPrincipal /></RutaProtegida>} />
+        <Route path="/bitacora" element={<RutaProtegida><PaginaBitacora /></RutaProtegida>} />
+        <Route path="/configuracion" element={<RutaProtegida><PaginaConfiguracion /></RutaProtegida>} />
+
+        {/* Rutas del módulo de fútbol protegidas */}
+        <Route path="/futbol" element={<RutaProtegida><PaginaFutbol /></RutaProtegida>} />
+        <Route path="/futbol/partidos/:id" element={<RutaProtegida><AnalisisPartidoFutbol /></RutaProtegida>} />
+        <Route path="/futbol/bitacora" element={<RutaProtegida><PaginaBitacora /></RutaProtegida>} />
+        <Route path="/futbol/dashboard" element={<RutaProtegida><DashboardFutbol /></RutaProtegida>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

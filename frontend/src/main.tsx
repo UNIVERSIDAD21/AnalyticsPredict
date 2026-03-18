@@ -9,6 +9,7 @@ import './index.css';
 import { ToastsProvider } from './contextos/Toasts';
 import { ProveedorConfiguracionUsuario } from './contextos/ConfiguracionUsuario';
 import { ProveedorDeporte } from './contextos/DeporteContext';
+import { ProveedorAuth } from './contextos/AuthContext';
 
 // Obtener elemento raíz
 const contenedorRaiz = document.getElementById('root');
@@ -22,9 +23,11 @@ createRoot(contenedorRaiz).render(
   <StrictMode>
     <ToastsProvider>
       <ProveedorConfiguracionUsuario>
-        <ProveedorDeporte>
-          <App />
-        </ProveedorDeporte>
+        <ProveedorAuth>
+          <ProveedorDeporte>
+            <App />
+          </ProveedorDeporte>
+        </ProveedorAuth>
       </ProveedorConfiguracionUsuario>
     </ToastsProvider>
   </StrictMode>

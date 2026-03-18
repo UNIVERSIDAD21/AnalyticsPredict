@@ -3,10 +3,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Activity, Zap, Settings, BarChart3 } from 'lucide-react';
+import { Activity, Zap, Settings, BarChart3, LogOut } from 'lucide-react';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
+import { useAuth } from '../../contextos/AuthContext';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
@@ -19,6 +20,7 @@ export function Encabezado() {
   const [rutaActual, setRutaActual] = useState(window.location.pathname);
   const { configuracion } = useConfiguracionUsuario();
   const { esFutbol } = useDeporte();
+  const { usuario, logout } = useAuth();
 
   useEffect(() => {
     const manejarRuta = () => setRutaActual(window.location.pathname);
@@ -171,6 +173,19 @@ export function Encabezado() {
             >
               <Settings className="w-4 h-4" />
               <span className="hidden md:inline">Config</span>
+            </button>
+
+            <button
+              type="button"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border border-neon-cyan/20 text-texto-secundario hover:border-neon-magenta hover:text-neon-magenta"
+              onClick={() => {
+                void logout();
+                navegar('/login');
+              }}
+              title={usuario?.email || 'Cerrar sesión'}
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden md:inline">Salir</span>
             </button>
 
           </div>
