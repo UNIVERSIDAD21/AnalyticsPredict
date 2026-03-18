@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+import api.rutas_auth as rutas_auth
 from api.rutas_auth import router
 
 
@@ -68,3 +69,26 @@ def test_forgot_y_reset_password(tmp_path: Path):
 
     r_login_new = client.post("/api/auth/login", json={"email": "recover@ap.com", "password": "87654321"})
     assert r_login_new.status_code == 200
+
+
+def test_forgot_password_modo_smtp_envia_correo_y_no_expone_token(tmp_path: Path, monkeypatch):
+    client = _crear_cliente(tmp_path)
+    client.post("/api/auth/register", json={"email": "smtp@ap.com", "password": "12345678"})
+
+    enviado = {"ok": False, "destino": None}
+
+    def _fake_mailer(destinatario: str, token: str):
+        enviado["ok"] = True
+        enviado["destino"] = destinatario
+        assert len(token) > 20
+
+    monkeypatch.setattr(rutas_auth, "RESET_EMAIL_MODE", "smtp")
+    monkeypatch.setattr(rutas_auth, "enviar_correo_recuperacion", _fake_mailer)
+
+    r_forgot = client.post("/api/auth/forgot-password", json={"email": "smtp@ap.com"})
+    assert r_forgot.status_code == 200
+    body = r_forgot.json()
+    assert body["ok"] is True
+    assert "reset_token_dev" not in body
+    assert enviado["ok"] is True
+    assert enviado["destino"] == "smtp@ap.com"

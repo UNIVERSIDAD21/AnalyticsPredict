@@ -24,12 +24,14 @@ from servicios.auth_seguridad import (
     verificar_password,
 )
 from servicios.auth_store import AuthStore, obtener_auth_store
+from servicios.auth_mailer import AuthMailerError, enviar_correo_recuperacion
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
 ACCESS_TTL_SECONDS = int(os.getenv("AUTH_ACCESS_TTL_SECONDS", "900"))  # 15 min
 REFRESH_TTL_SECONDS = int(os.getenv("AUTH_REFRESH_TTL_SECONDS", "2592000"))  # 30 días
 RESET_TTL_MINUTES = int(os.getenv("AUTH_RESET_TTL_MINUTES", "30"))
+RESET_EMAIL_MODE = os.getenv("AUTH_RESET_EMAIL_MODE", "dev").strip().lower()
 
 
 def _emitir_tokens(user_id: int, email: str) -> dict:
@@ -140,10 +142,23 @@ def forgot_password(payload: ForgotPasswordRequest, store: AuthStore = Depends(o
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=RESET_TTL_MINUTES)).isoformat()
     store.guardar_reset_token(user["id"], token, expires_at)
 
+    if RESET_EMAIL_MODE == "smtp":
+        try:
+            enviar_correo_recuperacion(user["email"], token)
+        except AuthMailerError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"No se pudo enviar el correo de recuperación: {exc}",
+            ) from exc
+        return {
+            "ok": True,
+            "message": "Si el correo existe, recibirá instrucciones",
+        }
+
+    # Modo dev: expone token para pruebas manuales/locales.
     return {
         "ok": True,
         "message": "Si el correo existe, recibirá instrucciones",
-        # TODO A2: enviar token por proveedor de correo real y eliminar esta salida.
         "reset_token_dev": token,
     }
 

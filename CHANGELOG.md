@@ -57,3 +57,12 @@
   - Variables nuevas documentadas en `backend/.env.example` y `deploy/staging/staging.env.example` (`AUTH_STORE_DRIVER`, `AUTH_SECRET_KEY`, `AUTH_DB_PATH`).
 - Validaciones backend ejecutadas:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (6 passed)
+- Continuación A2 (recuperación por correo real):
+  - Nuevo servicio `backend/servicios/auth_mailer.py` para envío SMTP de recuperación de contraseña.
+  - `POST /api/auth/forgot-password` ahora soporta:
+    - `AUTH_RESET_EMAIL_MODE=smtp` → envía correo y no expone token.
+    - `AUTH_RESET_EMAIL_MODE=dev` → mantiene `reset_token_dev` para desarrollo.
+  - Variables SMTP/documentación añadidas en `backend/.env.example` y `deploy/staging/staging.env.example`.
+  - Test nuevo para modo SMTP en `backend/tests/api/test_auth_endpoints.py`.
+- Validaciones backend post-correo:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (7 passed)
