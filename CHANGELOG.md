@@ -8,6 +8,11 @@
     - nivel de confianza B3 por cobertura de datos.
   - Integración en `backend/api/rutas_analisis_futbol.py` para usar combinación cross-liga y confianza/recomendación ajustada por muestra relevante.
   - Test unitario nuevo: `backend/tests/test_b3_estabilizacion_futbol.py`.
+- Continuación B3: policy gate semanal por drift/calidad de fútbol por liga:
+  - Nuevo endpoint `GET /api/futbol/metricas/b3-estabilidad` con clasificación `estable|warning|critico|insuficiente` por liga.
+  - Regla de criticidad: degradación semanal de Brier (abs >= 0.03 y rel >= 15%) con muestra mínima por ventana.
+  - Salida incluye `gate_aprobado` para decisión operativa del ciclo.
+  - Test unitario nuevo: `backend/tests/test_b3_estabilidad_metricas.py`. 
 - Cierre formal de B2 (onboarding + dashboard usuario):
   - Estado de bloque actualizado a `CERRADO` en `docs/arquitectura/ESTADO_PROYECTO.md`.
   - Criterio de cierre: onboarding obligatorio + persistencia backend + telemetría de conversión + KPI real de `completion_rate` y `time_to_value` disponible en API/UI.

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict, Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Depends
@@ -28,6 +28,11 @@ from .dependencias import obtener_usuario_actual, UsuarioActual
 
 router = APIRouter(prefix="/api/futbol/metricas", tags=["Fútbol - Métricas"])
 logger = logging.getLogger(__name__)
+
+
+UMBRAL_DEGRADACION_BRIER_ABS = 0.03
+UMBRAL_DEGRADACION_BRIER_REL = 0.15
+MIN_MUESTRA_SEMANAL_B3 = 40
 
 
 def _tabla_existe(cursor, tabla: str) -> bool:
@@ -689,6 +694,142 @@ def _resumen_calidad_1x2_futbol(cursor) -> dict:
         'push': push,
         'hit_rate_sin_push': round(hit_rate, 2),
     }
+
+
+def _clasificar_estabilidad_b3(
+    filas_actual: List[Dict[str, Any]],
+    filas_prev: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    prev_map = {str(f["competicion_id"]): f for f in filas_prev}
+    ligas: List[Dict[str, Any]] = []
+    criticas = 0
+
+    for fila in filas_actual:
+        comp_id = str(fila["competicion_id"])
+        n_actual = int(fila.get("n") or 0)
+        brier_actual = float(fila.get("brier") or 0)
+
+        prev = prev_map.get(comp_id)
+        n_prev = int((prev or {}).get("n") or 0)
+        brier_prev = float((prev or {}).get("brier") or 0)
+
+        delta_abs = brier_actual - brier_prev if n_prev > 0 else None
+        delta_rel = (delta_abs / brier_prev) if (delta_abs is not None and brier_prev > 0) else None
+
+        if n_actual < MIN_MUESTRA_SEMANAL_B3 or n_prev < MIN_MUESTRA_SEMANAL_B3:
+            estado = "insuficiente"
+        elif (
+            delta_abs is not None
+            and delta_abs >= UMBRAL_DEGRADACION_BRIER_ABS
+            and (delta_rel is not None and delta_rel >= UMBRAL_DEGRADACION_BRIER_REL)
+        ):
+            estado = "critico"
+            criticas += 1
+        elif delta_abs is not None and delta_abs > 0:
+            estado = "warning"
+        else:
+            estado = "estable"
+
+        ligas.append(
+            {
+                "competicion_id": comp_id,
+                "competicion_codigo": fila.get("competicion_codigo"),
+                "competicion_nombre": fila.get("competicion_nombre"),
+                "n_actual": n_actual,
+                "n_previo": n_prev,
+                "brier_actual": round(brier_actual, 4),
+                "brier_previo": round(brier_prev, 4) if n_prev > 0 else None,
+                "delta_abs": round(delta_abs, 4) if delta_abs is not None else None,
+                "delta_rel_pct": round((delta_rel or 0) * 100, 2) if delta_rel is not None else None,
+                "estado": estado,
+            }
+        )
+
+    ciclos_validos = sum(
+        1 for l in ligas if l["n_actual"] >= MIN_MUESTRA_SEMANAL_B3 and l["n_previo"] >= MIN_MUESTRA_SEMANAL_B3
+    )
+
+    gate_aprobado = criticas == 0 and ciclos_validos > 0
+
+    return {
+        "gate_aprobado": gate_aprobado,
+        "ligas_criticas": criticas,
+        "ligas_evaluadas": len(ligas),
+        "ligas_con_muestra": ciclos_validos,
+        "ligas": sorted(ligas, key=lambda x: (x["estado"], x["competicion_nombre"])),
+    }
+
+
+@router.get(
+    "/b3-estabilidad",
+    summary="Estado semanal de estabilidad B3 por liga",
+)
+async def obtener_estado_b3_estabilidad(
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> dict:
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                query = """
+                    SELECT
+                        pf.competicion_id,
+                        c.codigo AS competicion_codigo,
+                        c.nombre AS competicion_nombre,
+                        COUNT(*) AS n,
+                        AVG(
+                            POWER(
+                                COALESCE(p.prob_over_calibrada, p.prob_over)
+                                - CASE WHEN p.outcome_binario THEN 1 ELSE 0 END,
+                                2
+                            )
+                        ) AS brier
+                    FROM predicciones_futbol p
+                    JOIN partidos_futbol pf ON pf.id = p.partido_id
+                    JOIN competiciones_futbol c ON c.id = pf.competicion_id
+                    WHERE p.outcome_binario IS NOT NULL
+                      AND COALESCE(p.prob_over_calibrada, p.prob_over) IS NOT NULL
+                      AND pf.fecha_partido >= NOW() - INTERVAL '7 days'
+                    GROUP BY pf.competicion_id, c.codigo, c.nombre
+                """
+                cursor.execute(query)
+                filas_actual = cursor.fetchall()
+
+                query_prev = """
+                    SELECT
+                        pf.competicion_id,
+                        c.codigo AS competicion_codigo,
+                        c.nombre AS competicion_nombre,
+                        COUNT(*) AS n,
+                        AVG(
+                            POWER(
+                                COALESCE(p.prob_over_calibrada, p.prob_over)
+                                - CASE WHEN p.outcome_binario THEN 1 ELSE 0 END,
+                                2
+                            )
+                        ) AS brier
+                    FROM predicciones_futbol p
+                    JOIN partidos_futbol pf ON pf.id = p.partido_id
+                    JOIN competiciones_futbol c ON c.id = pf.competicion_id
+                    WHERE p.outcome_binario IS NOT NULL
+                      AND COALESCE(p.prob_over_calibrada, p.prob_over) IS NOT NULL
+                      AND pf.fecha_partido >= NOW() - INTERVAL '14 days'
+                      AND pf.fecha_partido < NOW() - INTERVAL '7 days'
+                    GROUP BY pf.competicion_id, c.codigo, c.nombre
+                """
+                cursor.execute(query_prev)
+                filas_prev = cursor.fetchall()
+
+                resumen = _clasificar_estabilidad_b3(filas_actual, filas_prev)
+                resumen["exito"] = True
+                resumen["ventana_actual_dias"] = 7
+                resumen["ventana_previa_dias"] = 7
+                resumen["umbral_brier_abs"] = UMBRAL_DEGRADACION_BRIER_ABS
+                resumen["umbral_brier_rel_pct"] = UMBRAL_DEGRADACION_BRIER_REL * 100
+                return resumen
+    except Exception as e:
+        logger.error("Error obteniendo estado B3 estabilidad: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
 @router.get(
