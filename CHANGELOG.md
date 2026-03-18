@@ -1,6 +1,16 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Inicio de B5 (chat contextual):
+  - Nuevo módulo `backend/servicios/chat_contexto.py` con persistencia de mensajes (SQLite), ventana deslizante y motor local/mock inteligente.
+  - Guardrails activos en B5: disclaimer fijo y bloqueo de prompts de advice sensible/riesgo extremo.
+  - Nuevas rutas backend:
+    - `POST /api/chat/mensaje`
+    - `GET /api/chat/historial`
+    - `POST /api/chat/reset`
+  - Router integrado en `backend/app.py`.
+  - Nuevo esquema `backend/esquemas/chat.py`.
+  - Tests API nuevos: `backend/tests/api/test_chat_endpoints.py`.
 - Inicio de B4 (notificaciones MVP):
   - Nuevas rutas backend en `api/rutas_notificaciones.py`:
     - `GET /api/notificaciones/preferencias`
