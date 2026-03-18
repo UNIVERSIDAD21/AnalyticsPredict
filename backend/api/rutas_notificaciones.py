@@ -68,6 +68,38 @@ def guardar_preferencias(
     return {"ok": True, "data": data}
 
 
+@router.post("/encolar-prueba")
+def encolar_prueba(
+    payload: EnviarPruebaRequest,
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+    store: NotificacionesStore = Depends(obtener_notificaciones_store),
+):
+    if not usuario.email:
+        raise HTTPException(status_code=400, detail="X-Usuario-Email es requerido para encolar")
+
+    prefs = store.obtener_preferencias(str(usuario.id))["preferencias"]
+    if not prefs.get("email_habilitado", True) or not prefs.get(payload.tipo, True):
+        envio = store.registrar_envio(str(usuario.id), "email", payload.tipo, "omitido", "preferencias deshabilitan envío")
+        return {"ok": True, "data": {"encolado": False, "envio": envio}}
+
+    asunto = payload.asunto or f"[AnalyticsPredict] Notificación ({payload.tipo})"
+    mensaje = payload.mensaje or (
+        "Notificación encolada correctamente desde B4.\n\n"
+        f"Tipo: {payload.tipo}\n"
+        f"Usuario: {usuario.id}\n"
+    )
+
+    job = store.encolar_notificacion(
+        user_id=str(usuario.id),
+        email=usuario.email,
+        tipo=payload.tipo,
+        asunto=asunto,
+        mensaje=mensaje,
+        max_intentos=3,
+    )
+    return {"ok": True, "data": {"encolado": True, "job": job}}
+
+
 @router.post("/enviar-prueba")
 def enviar_prueba(
     payload: EnviarPruebaRequest,
@@ -101,6 +133,44 @@ def enviar_prueba(
         raise HTTPException(status_code=500, detail=f"No se pudo enviar correo: {exc}") from exc
 
     return {"ok": True, "data": envio}
+
+
+@router.post("/procesar-cola")
+def procesar_cola(
+    max_items: int = Query(20, ge=1, le=100),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+    store: NotificacionesStore = Depends(obtener_notificaciones_store),
+):
+    jobs = store.obtener_pendientes(user_id=str(usuario.id), limit=max_items)
+    enviados = 0
+    reprogramados = 0
+    fallidos = 0
+
+    for job in jobs:
+        try:
+            _enviar_correo(job["email"], job["asunto"], job["mensaje"])
+            store.marcar_procesada(int(job["id"]))
+            store.registrar_envio(str(usuario.id), "email", job["tipo"], "enviado")
+            enviados += 1
+        except Exception as exc:
+            intentos = int(job.get("intentos") or 0) + 1
+            max_intentos = int(job.get("max_intentos") or 3)
+            estado = store.marcar_fallida(int(job["id"]), intentos=intentos, max_intentos=max_intentos, detalle=str(exc))
+            store.registrar_envio(str(usuario.id), "email", job["tipo"], estado, str(exc))
+            if estado == "pendiente":
+                reprogramados += 1
+            else:
+                fallidos += 1
+
+    return {
+        "ok": True,
+        "data": {
+            "total_tomados": len(jobs),
+            "enviados": enviados,
+            "reprogramados": reprogramados,
+            "fallidos": fallidos,
+        },
+    }
 
 
 @router.get("/historial")

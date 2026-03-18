@@ -11,6 +11,12 @@
   - Integración de router en `backend/app.py`.
   - Nuevo esquema `backend/esquemas/notificaciones.py`.
   - Tests nuevos: `backend/tests/api/test_notificaciones_endpoints.py`.
+- Continuación B4: jobs y reintentos básicos para notificaciones email:
+  - Cola persistente `notificaciones_cola` con `intentos`, `max_intentos`, `proximo_intento_at` y `last_error`.
+  - Nuevos endpoints:
+    - `POST /api/notificaciones/encolar-prueba`
+    - `POST /api/notificaciones/procesar-cola`
+  - Procesamiento con backoff básico y trazabilidad en historial (`enviado`, `pendiente`, `fallido`, `omitido`).
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,

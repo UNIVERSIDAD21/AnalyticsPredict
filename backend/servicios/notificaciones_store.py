@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Persistencia B4 de preferencias e historial de notificaciones."""
+"""Persistencia B4 de preferencias, historial y cola de notificaciones."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Iterator, Protocol
 
 
@@ -16,6 +16,10 @@ class NotificacionesStore(Protocol):
     def guardar_preferencias(self, user_id: str, preferencias: dict) -> dict: ...
     def registrar_envio(self, user_id: str, canal: str, tipo: str, estado: str, detalle: str | None = None) -> dict: ...
     def listar_envios(self, user_id: str, limit: int = 20) -> list[dict]: ...
+    def encolar_notificacion(self, user_id: str, email: str, tipo: str, asunto: str, mensaje: str, max_intentos: int = 3) -> dict: ...
+    def obtener_pendientes(self, user_id: str | None = None, limit: int = 20) -> list[dict]: ...
+    def marcar_procesada(self, queue_id: int) -> None: ...
+    def marcar_fallida(self, queue_id: int, intentos: int, max_intentos: int, detalle: str) -> str: ...
 
 
 _PREFS_DEFAULT = {
@@ -65,6 +69,25 @@ class SQLiteNotificacionesStore:
                   estado TEXT NOT NULL,
                   detalle TEXT,
                   created_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS notificaciones_cola (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id TEXT NOT NULL,
+                  email TEXT NOT NULL,
+                  tipo TEXT NOT NULL,
+                  asunto TEXT NOT NULL,
+                  mensaje TEXT NOT NULL,
+                  estado TEXT NOT NULL,
+                  intentos INTEGER NOT NULL DEFAULT 0,
+                  max_intentos INTEGER NOT NULL DEFAULT 3,
+                  proximo_intento_at TEXT NOT NULL,
+                  last_error TEXT,
+                  created_at TEXT NOT NULL,
+                  updated_at TEXT NOT NULL
                 )
                 """
             )
@@ -133,6 +156,88 @@ class SQLiteNotificacionesStore:
                 (user_id, limit),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def encolar_notificacion(self, user_id: str, email: str, tipo: str, asunto: str, mensaje: str, max_intentos: int = 3) -> dict:
+        now = datetime.now(timezone.utc).isoformat()
+        with self._conn() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO notificaciones_cola(
+                  user_id, email, tipo, asunto, mensaje, estado,
+                  intentos, max_intentos, proximo_intento_at, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, 'pendiente', 0, ?, ?, ?, ?)
+                """,
+                (user_id, email, tipo, asunto, mensaje, max_intentos, now, now, now),
+            )
+            queue_id = int(cur.lastrowid)
+        return {
+            "id": queue_id,
+            "user_id": user_id,
+            "email": email,
+            "tipo": tipo,
+            "estado": "pendiente",
+            "intentos": 0,
+            "max_intentos": max_intentos,
+            "proximo_intento_at": now,
+        }
+
+    def obtener_pendientes(self, user_id: str | None = None, limit: int = 20) -> list[dict]:
+        now = datetime.now(timezone.utc).isoformat()
+        with self._conn() as conn:
+            if user_id:
+                rows = conn.execute(
+                    """
+                    SELECT *
+                    FROM notificaciones_cola
+                    WHERE user_id=? AND estado='pendiente' AND proximo_intento_at <= ?
+                    ORDER BY id ASC
+                    LIMIT ?
+                    """,
+                    (user_id, now, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT *
+                    FROM notificaciones_cola
+                    WHERE estado='pendiente' AND proximo_intento_at <= ?
+                    ORDER BY id ASC
+                    LIMIT ?
+                    """,
+                    (now, limit),
+                ).fetchall()
+        return [dict(r) for r in rows]
+
+    def marcar_procesada(self, queue_id: int) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE notificaciones_cola SET estado='enviado', updated_at=? WHERE id=?",
+                (now, queue_id),
+            )
+
+    def marcar_fallida(self, queue_id: int, intentos: int, max_intentos: int, detalle: str) -> str:
+        now_dt = datetime.now(timezone.utc)
+        now = now_dt.isoformat()
+
+        if intentos >= max_intentos:
+            nuevo_estado = "fallido"
+            proximo = now
+        else:
+            nuevo_estado = "pendiente"
+            backoff_min = min(30, 2 ** max(1, intentos))
+            proximo = (now_dt + timedelta(minutes=backoff_min)).isoformat()
+
+        with self._conn() as conn:
+            conn.execute(
+                """
+                UPDATE notificaciones_cola
+                SET estado=?, intentos=?, last_error=?, proximo_intento_at=?, updated_at=?
+                WHERE id=?
+                """,
+                (nuevo_estado, intentos, detalle, proximo, now, queue_id),
+            )
+        return nuevo_estado
 
 
 def obtener_notificaciones_store() -> NotificacionesStore:

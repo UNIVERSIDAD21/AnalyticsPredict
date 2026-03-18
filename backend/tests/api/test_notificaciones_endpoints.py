@@ -63,15 +63,19 @@ def test_preferencias_default_y_actualizacion(tmp_path: Path):
     assert r2.json()["data"]["preferencias"]["alertas_partidos"] is False
 
 
-def test_enviar_prueba_registra_historial(monkeypatch, tmp_path: Path):
+def test_encolar_y_procesar_registra_historial(monkeypatch, tmp_path: Path):
     client = _crear_cliente(tmp_path)
 
     os.environ["AUTH_SMTP_HOST"] = "smtp.local"
     monkeypatch.setattr("api.rutas_notificaciones.smtplib.SMTP", _DummySMTP)
 
-    r = client.post("/api/notificaciones/enviar-prueba", json={"tipo": "alertas_partidos"})
-    assert r.status_code == 200
-    assert r.json()["data"]["estado"] == "enviado"
+    q = client.post("/api/notificaciones/encolar-prueba", json={"tipo": "alertas_partidos"})
+    assert q.status_code == 200
+    assert q.json()["data"]["encolado"] is True
+
+    p = client.post("/api/notificaciones/procesar-cola")
+    assert p.status_code == 200
+    assert p.json()["data"]["enviados"] >= 1
 
     h = client.get("/api/notificaciones/historial")
     assert h.status_code == 200
