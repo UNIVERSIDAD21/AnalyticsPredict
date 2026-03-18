@@ -573,8 +573,10 @@ async def contract_usage(days: int = Query(default=7, ge=1, le=90)):
     }
 
 
-@router.get("/unificada", summary="Bitácora unificada", response_model=RespuestaBitacoraUnificada)
+@router.get("/unificada", summary="Bitácora unificada")
 async def listar_bitacora_unificada(
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
     resultado: Optional[str] = Query(None),
     tipo_apuesta: Optional[str] = Query(None),
@@ -584,7 +586,7 @@ async def listar_bitacora_unificada(
     orden: Optional[str] = Query(None),
     pagina: int = Query(1, ge=1),
     tamano: int = Query(20, ge=1, le=50),
-) -> RespuestaBitacoraUnificada:
+):
     """Lista la bitácora unificada de apuestas simples y combinadas."""
     _auto_resolver_bitacoras(usuario_id)
 
@@ -659,17 +661,23 @@ async def listar_bitacora_unificada(
             registro["selecciones"] = selecciones_por_combinada.get(registro["id"], [])
         registros_final.append(registro)
 
-    return RespuestaBitacoraUnificada(
+    payload_legacy = RespuestaBitacoraUnificada(
         exito=True,
         total=total,
         pagina=pagina,
         total_paginas=total_paginas,
         registros=registros_final,
-    )
+    ).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, "unificada")
 
 
 @router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
-async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
+async def listar_apuestas_analizadas(
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
+    limite: int = 200,
+    offset: int = 0,
+):
     """Lista apuestas analizadas automáticas (bitácora de análisis del sistema)."""
     from servicios.apuestas_analizadas import asegurar_tabla_apuestas_analizadas, resolver_apuestas_analizadas
     from psycopg.rows import dict_row
@@ -690,7 +698,8 @@ async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
                 [max(1, min(limite, 1000)), max(0, offset)],
             )
             filas = cur.fetchall() or []
-    return {"exito": True, "total": len(filas), "items": filas}
+    payload_legacy = {"exito": True, "total": len(filas), "items": filas}
+    return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas")
 
 
 @router.get("/{apuesta_id}", summary="Detalle de apuesta")

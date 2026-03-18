@@ -37,6 +37,14 @@ def test_respuesta_contrato_bitacora_v2_y_legacy(tmp_path, monkeypatch):
     rutas_bitacora._respuesta_contrato(payload_legacy, "legacy", response_metrics, "metricas")
     assert "/api/bitacora/metricas?version=v2" in response_metrics.headers["Link"]
 
+    response_unificada = Response()
+    rutas_bitacora._respuesta_contrato(payload_legacy, "legacy", response_unificada, "unificada")
+    assert "/api/bitacora/unificada?version=v2" in response_unificada.headers["Link"]
+
+    response_analizadas = Response()
+    rutas_bitacora._respuesta_contrato(payload_legacy, "legacy", response_analizadas, "apuestas-analizadas")
+    assert "/api/bitacora/apuestas-analizadas?version=v2" in response_analizadas.headers["Link"]
+
     response_detalle = Response()
     rutas_bitacora._respuesta_contrato(
         payload_legacy,
