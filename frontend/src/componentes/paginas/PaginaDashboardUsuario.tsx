@@ -3,7 +3,12 @@ import { BarChart3, CheckCircle2, CircleDollarSign, RefreshCw } from 'lucide-rea
 import { Encabezado } from '../organismos';
 import { Boton, Spinner } from '../atomos';
 import { useAuth } from '../../contextos/AuthContext';
-import { obtenerEstadoOnboarding, obtenerResumenDashboard, type ResumenDashboard } from '../../servicios/onboarding';
+import {
+  obtenerEstadoOnboarding,
+  obtenerResumenDashboard,
+  registrarEventoOnboarding,
+  type ResumenDashboard,
+} from '../../servicios/onboarding';
 import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
 
 const navegar = (ruta: string) => {
@@ -59,6 +64,7 @@ export function PaginaDashboardUsuario() {
 
   useEffect(() => {
     void recargar();
+    void registrarEventoOnboarding('dashboard_viewed');
   }, []);
 
   return (

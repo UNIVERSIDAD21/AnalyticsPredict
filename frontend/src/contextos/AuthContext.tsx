@@ -11,6 +11,7 @@ import {
   obtenerUsuarioAuth,
 } from '../servicios/auth';
 import type { UsuarioAuth } from '../tipos/auth';
+import { refrescarEstadoOnboarding } from '../servicios/onboarding';
 
 interface AuthContextType {
   autenticado: boolean;
@@ -42,6 +43,7 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
 
       if (user) {
         setUsuario(user);
+        void refrescarEstadoOnboarding(String(user.id));
         setCargando(false);
         return;
       }
@@ -50,6 +52,7 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
         const perfil = await obtenerPerfil(access);
         guardarSesionAuth({ accessToken: access, refreshToken: refresh, user: perfil });
         setUsuario(perfil);
+        void refrescarEstadoOnboarding(String(perfil.id));
       } catch {
         limpiarSesionAuth();
         setUsuario(null);
@@ -70,6 +73,7 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
       user: perfil,
     });
     setUsuario(perfil);
+    void refrescarEstadoOnboarding(String(perfil.id));
   }, []);
 
   const register = useCallback(async (email: string, password: string, legalVersion: string, acceptedLegal: boolean) => {
@@ -81,6 +85,7 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
       user: perfil,
     });
     setUsuario(perfil);
+    void refrescarEstadoOnboarding(String(perfil.id));
   }, []);
 
   const logout = useCallback(async () => {

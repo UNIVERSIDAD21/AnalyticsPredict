@@ -1,9 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Compass, Rocket, ShieldCheck } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton } from '../atomos';
 import { useAuth } from '../../contextos/AuthContext';
-import { guardarEstadoOnboarding, type PerfilOnboarding } from '../../servicios/onboarding';
+import {
+  guardarEstadoOnboarding,
+  registrarEventoOnboarding,
+  type PerfilOnboarding,
+} from '../../servicios/onboarding';
 import { useToasts } from '../../contextos/Toasts';
 
 const navegar = (ruta: string) => {
@@ -31,9 +35,16 @@ export function PaginaOnboarding() {
     return true;
   }, [paso, perfil.nombre]);
 
-  const finalizar = () => {
+  useEffect(() => {
+    void registrarEventoOnboarding('onboarding_started', { paso_inicial: 1 });
+  }, []);
+
+  const finalizar = async () => {
     if (!usuario?.id) return;
-    guardarEstadoOnboarding(String(usuario.id), perfil);
+
+    await guardarEstadoOnboarding(String(usuario.id), perfil);
+    await registrarEventoOnboarding('onboarding_completed', { objetivo: perfil.objetivoPrincipal });
+
     agregarToast({
       titulo: 'Onboarding completado',
       mensaje: 'Tu dashboard personalizado ya está listo.',

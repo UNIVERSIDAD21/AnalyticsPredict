@@ -33,6 +33,7 @@ from api.rutas_calidad import router as router_calidad
 from api.rutas_explicabilidad import router as router_explicabilidad
 from api.rutas_auth import router as router_auth
 from api.rutas_pagos import router as router_pagos
+from api.rutas_onboarding import router as router_onboarding
 
 # Routers de Fútbol
 from api.rutas_competiciones_futbol import router as router_competiciones_futbol
@@ -280,6 +281,7 @@ app.include_router(router_calidad)
 app.include_router(router_explicabilidad)
 app.include_router(router_auth)
 app.include_router(router_pagos)
+app.include_router(router_onboarding)
 
 # Routers de Fútbol
 app.include_router(router_competiciones_futbol)

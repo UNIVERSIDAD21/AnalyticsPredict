@@ -50,18 +50,76 @@ export function obtenerEstadoOnboarding(usuarioId: string): EstadoOnboarding {
   }
 }
 
-export function guardarEstadoOnboarding(usuarioId: string, perfil: PerfilOnboarding): EstadoOnboarding {
-  const estado: EstadoOnboarding = {
-    completado: true,
-    actualizadoEn: new Date().toISOString(),
-    perfil,
+function mapearPerfilBackend(data: Record<string, unknown>): PerfilOnboarding {
+  return {
+    nombre: String(data.nombre ?? ''),
+    objetivoPrincipal: String(data.objetivo_principal ?? 'rentabilidad') as PerfilOnboarding['objetivoPrincipal'],
+    deportePreferido: String(data.deporte_preferido ?? 'ambos') as PerfilOnboarding['deportePreferido'],
+    frecuencia: String(data.frecuencia ?? 'semanal') as PerfilOnboarding['frecuencia'],
+    bankrollReferencial: (data.bankroll_referencial as number | null | undefined) ?? null,
   };
+}
 
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(claveOnboarding(usuarioId), JSON.stringify(estado));
+function mapearPerfilPayload(perfil: PerfilOnboarding) {
+  return {
+    nombre: perfil.nombre,
+    objetivo_principal: perfil.objetivoPrincipal,
+    deporte_preferido: perfil.deportePreferido,
+    frecuencia: perfil.frecuencia,
+    bankroll_referencial: perfil.bankrollReferencial,
+  };
+}
+
+export async function guardarEstadoOnboarding(usuarioId: string, perfil: PerfilOnboarding): Promise<EstadoOnboarding> {
+  try {
+    const { data } = await clienteAPI.post('/api/onboarding/perfil', mapearPerfilPayload(perfil));
+    const estado: EstadoOnboarding = {
+      completado: !!data?.data?.completado,
+      actualizadoEn: data?.data?.updated_at ?? null,
+      perfil: data?.data?.perfil ? mapearPerfilBackend(data.data.perfil as Record<string, unknown>) : perfil,
+    };
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(claveOnboarding(usuarioId), JSON.stringify(estado));
+    }
+
+    return estado;
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
   }
+}
 
-  return estado;
+export async function refrescarEstadoOnboarding(usuarioId: string): Promise<EstadoOnboarding> {
+  try {
+    const { data } = await clienteAPI.get('/api/onboarding/estado');
+    const estado: EstadoOnboarding = {
+      completado: !!data?.data?.completado,
+      actualizadoEn: data?.data?.updated_at ?? null,
+      perfil: data?.data?.perfil ? mapearPerfilBackend(data.data.perfil as Record<string, unknown>) : null,
+    };
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(claveOnboarding(usuarioId), JSON.stringify(estado));
+    }
+
+    return estado;
+  } catch {
+    return obtenerEstadoOnboarding(usuarioId);
+  }
+}
+
+export async function registrarEventoOnboarding(
+  eventName: 'onboarding_started' | 'onboarding_completed' | 'dashboard_viewed',
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    await clienteAPI.post('/api/onboarding/evento', {
+      event_name: eventName,
+      metadata,
+    });
+  } catch {
+    // best-effort telemetry
+  }
 }
 
 export async function obtenerResumenDashboard(): Promise<ResumenDashboard> {
