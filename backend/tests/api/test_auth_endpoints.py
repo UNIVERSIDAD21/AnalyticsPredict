@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from pathlib import Path
+import json
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -129,3 +130,32 @@ def test_contrato_legacy_explicito_en_login_tiene_headers_deprecacion(tmp_path: 
     assert resp.headers.get("Deprecation") == "true"
     assert resp.headers.get("Sunset")
     assert "successor-version" in (resp.headers.get("Link") or "")
+
+
+def test_contract_usage_resume_metricas(tmp_path: Path, monkeypatch):
+    client = _crear_cliente(tmp_path)
+
+    usage_path = tmp_path / "auth-contract-usage.json"
+    usage_path.write_text(
+        json.dumps(
+            {
+                "by_date": {
+                    "2026-03-18": {"v2": 8, "legacy": 2},
+                    "2026-03-17": {"v2": 10, "legacy": 0},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(rutas_auth, "AUTH_USAGE_PATH", usage_path)
+
+    resp = client.get("/api/auth/contract-usage?days=2")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["ok"] is True
+    assert body["data"]["summary"]["total"] == 20
+    assert body["data"]["summary"]["legacy"] == 2
+    assert body["data"]["summary"]["legacy_ratio"] == 0.1
+    assert len(body["data"]["rows"]) == 2

@@ -73,6 +73,18 @@ def _aplicar_headers_deprecacion(response: Response, endpoint: str) -> None:
     response.headers["Link"] = f'</api/auth/{endpoint}?version=v2>; rel="successor-version"'
 
 
+def _leer_uso_contrato() -> dict:
+    if not AUTH_USAGE_PATH.exists():
+        return {"by_date": {}}
+    try:
+        data = json.loads(AUTH_USAGE_PATH.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("by_date", {}), dict):
+            return data
+    except Exception:
+        pass
+    return {"by_date": {}}
+
+
 def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, endpoint: str) -> dict:
     _registrar_uso_contrato(version)
 
@@ -268,6 +280,56 @@ def reset_password(
     store.marcar_reset_token_usado(payload.token)
     payload_legacy = {"ok": True, "message": "Contraseña actualizada"}
     return _respuesta_contrato(payload_legacy, version, response, "reset-password")
+
+
+@router.get("/contract-usage")
+def contract_usage(days: int = Query(default=7, ge=1, le=90)):
+    data = _leer_uso_contrato().get("by_date", {})
+    fechas = sorted(data.keys(), reverse=True)[:days]
+
+    rows = []
+    total_v2 = 0
+    total_legacy = 0
+
+    for fecha in fechas:
+        row = data.get(fecha, {})
+        v2 = int(row.get("v2", 0) or 0)
+        legacy = int(row.get("legacy", 0) or 0)
+        total = v2 + legacy
+        legacy_ratio = (legacy / total) if total > 0 else 0.0
+
+        total_v2 += v2
+        total_legacy += legacy
+        rows.append(
+            {
+                "date": fecha,
+                "v2": v2,
+                "legacy": legacy,
+                "total": total,
+                "legacy_ratio": round(legacy_ratio, 4),
+            }
+        )
+
+    total_calls = total_v2 + total_legacy
+    ratio_global = (total_legacy / total_calls) if total_calls > 0 else 0.0
+
+    return {
+        "ok": True,
+        "data": {
+            "days": days,
+            "rows": rows,
+            "summary": {
+                "v2": total_v2,
+                "legacy": total_legacy,
+                "total": total_calls,
+                "legacy_ratio": round(ratio_global, 4),
+            },
+        },
+        "meta": {
+            "contract_version": "v2",
+            "sunset": AUTH_SUNSET_DATE,
+        },
+    }
 
 
 @router.get("/me")

@@ -99,3 +99,9 @@
   - Suite de tests auth actualizada para cubrir ambos flujos (default v2 + legacy explícito).
 - Validaciones A3 fase 3:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (10 passed)
+- A3 (fase 4): telemetría operable de adopción de contrato en Auth API
+  - Nuevo endpoint `GET /api/auth/contract-usage?days=7` para consultar uso `v2` vs `legacy` por fecha y resumen.
+  - Se reutiliza almacenamiento local de telemetría (`backend/data/auth_contract_usage.json`) ya presente en auth.
+  - Test añadido para validar resumen de métricas de contrato.
+- Validaciones A3 fase 4:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (11 passed)
