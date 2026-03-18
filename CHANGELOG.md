@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Cierre formal de B2 (onboarding + dashboard usuario):
+  - Estado de bloque actualizado a `CERRADO` en `docs/arquitectura/ESTADO_PROYECTO.md`.
+  - Criterio de cierre: onboarding obligatorio + persistencia backend + telemetría de conversión + KPI real de `completion_rate` y `time_to_value` disponible en API/UI.
+  - Seguimiento posterior definido como operativo (no bloqueante) para ajuste fino de UX/copy.
 - Inicio de B2 (onboarding + dashboard usuario) en frontend:
   - Nueva ruta `/onboarding` con wizard de 3 pasos (perfil base, objetivo principal y control de riesgo inicial).
   - Nueva ruta `/dashboard` con KPIs de rendimiento (totales, resueltas, ganadas, perdidas, push, win-rate) obtenidos desde `GET /api/bitacora/apuestas-analizadas`.
