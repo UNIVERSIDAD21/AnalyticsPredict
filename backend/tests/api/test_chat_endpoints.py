@@ -105,6 +105,21 @@ def test_chat_aplica_resumen_contexto_largo(tmp_path: Path):
     assert "se resumieron" in body["reply"].lower()
 
 
+def test_chat_plan_objetivo_rentabilidad(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    access = _token_acceso(client)
+
+    r = client.post(
+        "/api/chat/mensaje",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"mensaje": "quiero foco en rentabilidad", "limite_contexto": 12},
+    )
+    assert r.status_code == 200
+    reply = r.json()["data"]["reply"].lower()
+    assert "plan rentabilidad" in reply
+    assert "48h" in reply
+
+
 def test_chat_provider_external_placeholder(tmp_path: Path):
     client = _crear_cliente(tmp_path, provider_mode="external")
     access = _token_acceso(client)

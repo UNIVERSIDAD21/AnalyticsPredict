@@ -131,6 +131,45 @@ def compactar_ventana_con_resumen(ventana_completa: list[dict], limite: int = 12
     return recientes, f"Se resumieron {recortados} mensajes previos para mantener foco y costo controlado."
 
 
+def _plan_por_objetivo(objetivo: str, resumen_contexto: str = "") -> str:
+    objetivo = (objetivo or "").lower().strip()
+
+    if objetivo == "rentabilidad":
+        plan = (
+            "Plan rentabilidad (48h):\n"
+            "1) Filtra picks con edge mínimo y contexto suficiente.\n"
+            "2) Prioriza mercados con mejor calibración histórica.\n"
+            "3) Limita exposición diaria y evita correlación alta entre picks.\n"
+            "4) Cierre del día: revisa EV esperado vs resultado real."
+        )
+    elif objetivo == "disciplina":
+        plan = (
+            "Plan disciplina (48h):\n"
+            "1) Define stake fijo por operación y no lo rompas.\n"
+            "2) Activa stop-loss diario y stop-win moderado.\n"
+            "3) Registra cada decisión en bitácora antes de ejecutar.\n"
+            "4) Cierre del día: audita si seguiste reglas, no solo PnL."
+        )
+    elif objetivo == "aprendizaje":
+        plan = (
+            "Plan aprendizaje (48h):\n"
+            "1) Selecciona 3 picks y documenta hipótesis previa.\n"
+            "2) Compara hipótesis vs outcome y causas de error.\n"
+            "3) Revisa 2 métricas clave (Brier, win-rate por contexto).\n"
+            "4) Cierra con una lección accionable para la próxima jornada."
+        )
+    else:
+        plan = (
+            "Plan base sugerido:\n"
+            "1) Define objetivo principal (rentabilidad/disciplina/aprendizaje).\n"
+            "2) Define límite de riesgo diario.\n"
+            "3) Ejecuta solo picks con criterios explícitos.\n"
+            "4) Cierra el día con revisión corta y mejoras."
+        )
+
+    return f"{plan}\n{resumen_contexto}".strip()
+
+
 def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict], contexto_negocio: dict | None = None) -> str:
     texto = (mensaje or "").strip()
     lower = texto.lower()
@@ -169,10 +208,19 @@ def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict], contexto_nego
             partes.append(resumen_contexto)
         return " ".join(partes)
 
+    if "rentabilidad" in lower:
+        return _plan_por_objetivo("rentabilidad", resumen_contexto)
+
+    if "disciplina" in lower:
+        return _plan_por_objetivo("disciplina", resumen_contexto)
+
+    if "aprendizaje" in lower:
+        return _plan_por_objetivo("aprendizaje", resumen_contexto)
+
     if any(k in lower for k in ["recomend", "pick", "apuesta", "partido"]):
         base = (
             "Te recomiendo usar un filtro base: edge mínimo, contexto suficiente y límite de exposición por día. "
-            "Puedo convertir eso en una rutina rápida por partido para decidir si entrar o pasar."
+            "Si me dices el objetivo (rentabilidad, disciplina o aprendizaje), te doy plan 48h específico."
         )
         return f"{base} {resumen_contexto}".strip()
 

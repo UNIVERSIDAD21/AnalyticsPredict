@@ -32,6 +32,13 @@
     - `external` → placeholder explícito (`external-placeholder`) para futuro adaptador LLM real.
   - `POST /api/chat/mensaje` ahora reporta `provider` en respuesta para trazabilidad operativa.
   - Tests ampliados para validar modo local y modo external-placeholder.
+- Mejora profesional B5 (calidad de respuesta por objetivo):
+  - `chat_contexto.py` ahora genera planes accionables de 48h por objetivo explícito:
+    - rentabilidad
+    - disciplina
+    - aprendizaje
+  - Respuesta de recomendaciones genéricas ahora pide objetivo para convertirse en plan concreto.
+  - Tests de chat ampliados para validar plan de rentabilidad en formato estructurado.
 
 - Inicio de B4 (notificaciones MVP):
   - Nuevas rutas backend en `api/rutas_notificaciones.py`:
