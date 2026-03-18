@@ -17,6 +17,15 @@ router = APIRouter(prefix="/api/notificaciones", tags=["Notificaciones"])
 TIPOS_SCHEDULER = ("alertas_partidos", "alertas_suscripcion", "resumen_semanal")
 
 
+def _max_intentos_por_tipo(tipo: str) -> int:
+    overrides = {
+        "alertas_partidos": int(os.getenv("NOTIF_MAX_INTENTOS_ALERTAS_PARTIDOS", "3")),
+        "alertas_suscripcion": int(os.getenv("NOTIF_MAX_INTENTOS_ALERTAS_SUSCRIPCION", "4")),
+        "resumen_semanal": int(os.getenv("NOTIF_MAX_INTENTOS_RESUMEN_SEMANAL", "2")),
+    }
+    return max(1, min(8, int(overrides.get(tipo, 3))))
+
+
 def _plantilla_notificacion(tipo: str, usuario_id: str) -> tuple[str, str]:
     if tipo == "alertas_partidos":
         return (
@@ -125,7 +134,7 @@ def encolar_prueba(
         tipo=payload.tipo,
         asunto=asunto,
         mensaje=mensaje,
-        max_intentos=3,
+        max_intentos=_max_intentos_por_tipo(payload.tipo),
     )
     return {"ok": True, "data": {"encolado": True, "job": job}}
 
@@ -196,7 +205,7 @@ def scheduler_encolar(
             tipo=t,
             asunto=asunto,
             mensaje=mensaje,
-            max_intentos=3,
+            max_intentos=_max_intentos_por_tipo(t),
         )
         encoladas.append(job)
 
@@ -239,6 +248,16 @@ def procesar_cola(
             "fallidos": fallidos,
         },
     }
+
+
+@router.get("/metricas-entrega")
+def metricas_entrega(
+    horas: int = Query(24, ge=1, le=168),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+    store: NotificacionesStore = Depends(obtener_notificaciones_store),
+):
+    data = store.resumen_envios(str(usuario.id), horas=horas)
+    return {"ok": True, "data": data}
 
 
 @router.get("/historial")

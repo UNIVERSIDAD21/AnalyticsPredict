@@ -17,6 +17,7 @@ class NotificacionesStore(Protocol):
     def listar_usuarios_con_preferencias(self) -> list[dict]: ...
     def registrar_envio(self, user_id: str, canal: str, tipo: str, estado: str, detalle: str | None = None) -> dict: ...
     def listar_envios(self, user_id: str, limit: int = 20) -> list[dict]: ...
+    def resumen_envios(self, user_id: str, horas: int = 24) -> dict: ...
     def encolar_notificacion(self, user_id: str, email: str, tipo: str, asunto: str, mensaje: str, max_intentos: int = 3) -> dict: ...
     def obtener_pendientes(self, user_id: str | None = None, limit: int = 20) -> list[dict]: ...
     def marcar_procesada(self, queue_id: int) -> None: ...
@@ -175,6 +176,55 @@ class SQLiteNotificacionesStore:
                 (user_id, limit),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def resumen_envios(self, user_id: str, horas: int = 24) -> dict:
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT tipo, estado, COUNT(*) as total
+                FROM notificaciones_envios
+                WHERE user_id=?
+                GROUP BY tipo, estado
+                """,
+                (user_id,),
+            ).fetchall()
+
+        por_tipo: dict[str, dict[str, int]] = {}
+        total_enviados = 0
+        total_fallidos = 0
+        total_omitidos = 0
+        total_reprogramados = 0
+
+        for row in rows:
+            tipo = str(row["tipo"])
+            estado = str(row["estado"])
+            total = int(row["total"] or 0)
+            bucket = por_tipo.setdefault(tipo, {"enviado": 0, "fallido": 0, "omitido": 0, "pendiente": 0})
+            bucket[estado] = bucket.get(estado, 0) + total
+
+            if estado == "enviado":
+                total_enviados += total
+            elif estado == "fallido":
+                total_fallidos += total
+            elif estado == "omitido":
+                total_omitidos += total
+            elif estado == "pendiente":
+                total_reprogramados += total
+
+        total_intentos = total_enviados + total_fallidos
+        tasa_entrega = (total_enviados / total_intentos * 100.0) if total_intentos > 0 else None
+
+        return {
+            "ventana_horas": int(horas),
+            "totales": {
+                "enviados": total_enviados,
+                "fallidos": total_fallidos,
+                "omitidos": total_omitidos,
+                "reprogramados": total_reprogramados,
+            },
+            "tasa_entrega_pct": round(tasa_entrega, 2) if tasa_entrega is not None else None,
+            "por_tipo": por_tipo,
+        }
 
     def encolar_notificacion(self, user_id: str, email: str, tipo: str, asunto: str, mensaje: str, max_intentos: int = 3) -> dict:
         now = datetime.now(timezone.utc).isoformat()

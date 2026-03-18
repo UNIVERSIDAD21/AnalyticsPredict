@@ -27,6 +27,13 @@
   - Nueva integración `frontend/src/servicios/notificaciones.ts`.
   - `PaginaConfiguracion` ahora permite cargar/editar preferencias de notificaciones (toggles), guardar cambios y disparar prueba de envío.
   - Validación frontend ejecutada: `npm run lint` + `npm run build` OK.
+- Endurecimiento operativo B4:
+  - Nuevo endpoint `GET /api/notificaciones/metricas-entrega` (totales por estado, tasa de entrega y desglose por tipo).
+  - Límites de reintentos por tipo configurables vía env:
+    - `NOTIF_MAX_INTENTOS_ALERTAS_PARTIDOS`
+    - `NOTIF_MAX_INTENTOS_ALERTAS_SUSCRIPCION`
+    - `NOTIF_MAX_INTENTOS_RESUMEN_SEMANAL`
+  - Tests de notificaciones ampliados para validar métricas y límites por tipo.
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,

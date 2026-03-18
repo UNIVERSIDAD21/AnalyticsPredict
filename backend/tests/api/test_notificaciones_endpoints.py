@@ -128,3 +128,34 @@ def test_enviar_prueba_respeta_preferencias(monkeypatch, tmp_path: Path):
     r = client.post("/api/notificaciones/enviar-prueba", json={"tipo": "alertas_partidos"})
     assert r.status_code == 200
     assert r.json()["data"]["estado"] == "omitido"
+
+
+def test_metricas_entrega_y_max_intentos_por_tipo(monkeypatch, tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    os.environ["AUTH_SMTP_HOST"] = "smtp.local"
+    monkeypatch.setattr("api.rutas_notificaciones.smtplib.SMTP", _DummySMTP)
+
+    client.put(
+        "/api/notificaciones/preferencias",
+        json={
+            "email_habilitado": True,
+            "alertas_partidos": True,
+            "alertas_suscripcion": True,
+            "resumen_semanal": True,
+        },
+    )
+
+    q = client.post("/api/notificaciones/scheduler/encolar?tipo=resumen_semanal")
+    assert q.status_code == 200
+    job = q.json()["data"]["encoladas"][0]
+    assert int(job["max_intentos"]) == 2
+
+    p = client.post("/api/notificaciones/procesar-cola")
+    assert p.status_code == 200
+
+    m = client.get("/api/notificaciones/metricas-entrega?horas=24")
+    assert m.status_code == 200
+    data = m.json()["data"]
+    assert "totales" in data
+    assert "tasa_entrega_pct" in data
+    assert "por_tipo" in data
