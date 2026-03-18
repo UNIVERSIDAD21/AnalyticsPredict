@@ -56,10 +56,45 @@ export async function guardarPreferenciasNotificaciones(
   }
 }
 
+export interface MetricasEntregaNotificaciones {
+  ventana_horas: number;
+  totales: {
+    enviados: number;
+    fallidos: number;
+    omitidos: number;
+    reprogramados: number;
+  };
+  tasa_entrega_pct: number | null;
+  por_tipo: Record<string, Record<string, number>>;
+}
+
 export async function enviarPruebaNotificacion(tipo: keyof PreferenciasNotificaciones = 'alertas_partidos') {
   try {
     const { data } = await clienteAPI.post('/api/notificaciones/enviar-prueba', { tipo });
     return data?.data;
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+export async function obtenerMetricasEntrega(horas = 24): Promise<MetricasEntregaNotificaciones> {
+  try {
+    const { data } = await clienteAPI.get('/api/notificaciones/metricas-entrega', {
+      params: { horas },
+    });
+    const raw = (data?.data ?? {}) as Record<string, unknown>;
+    const totales = (raw.totales ?? {}) as Record<string, unknown>;
+    return {
+      ventana_horas: Number(raw.ventana_horas ?? horas),
+      totales: {
+        enviados: Number(totales.enviados ?? 0),
+        fallidos: Number(totales.fallidos ?? 0),
+        omitidos: Number(totales.omitidos ?? 0),
+        reprogramados: Number(totales.reprogramados ?? 0),
+      },
+      tasa_entrega_pct: raw.tasa_entrega_pct === null ? null : Number(raw.tasa_entrega_pct ?? 0),
+      por_tipo: (raw.por_tipo as Record<string, Record<string, number>> | undefined) ?? {},
+    };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }

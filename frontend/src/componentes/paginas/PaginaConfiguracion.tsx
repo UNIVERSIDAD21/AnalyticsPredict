@@ -12,7 +12,9 @@ import type { ConfiguracionUsuario, ModoDevig, PerfilRiesgo } from '../../tipos'
 import {
   enviarPruebaNotificacion,
   guardarPreferenciasNotificaciones,
+  obtenerMetricasEntrega,
   obtenerPreferenciasNotificaciones,
+  type MetricasEntregaNotificaciones,
   type PreferenciasNotificaciones,
 } from '../../servicios/notificaciones';
 
@@ -44,6 +46,7 @@ export function PaginaConfiguracion() {
   const [stakeMinimo, setStakeMinimo] = useState(configuracion.stakeMinimo.toString());
   const [cargandoNotificaciones, setCargandoNotificaciones] = useState(true);
   const [guardandoNotificaciones, setGuardandoNotificaciones] = useState(false);
+  const [metricasEntrega, setMetricasEntrega] = useState<MetricasEntregaNotificaciones | null>(null);
   const [prefsNotificaciones, setPrefsNotificaciones] = useState<PreferenciasNotificaciones>({
     email_habilitado: true,
     alertas_partidos: true,
@@ -110,11 +113,24 @@ export function PaginaConfiguracion() {
     };
   }, [bankrollInput, capDiario, capPorApuesta, sinBankroll, stakeMinimo]);
 
+  const recargarMetricasEntrega = async () => {
+    try {
+      const metricas = await obtenerMetricasEntrega(24);
+      setMetricasEntrega(metricas);
+    } catch {
+      setMetricasEntrega(null);
+    }
+  };
+
   useEffect(() => {
     const cargarPreferencias = async () => {
       try {
-        const data = await obtenerPreferenciasNotificaciones();
-        setPrefsNotificaciones(data.preferencias);
+        const [prefs, metricas] = await Promise.all([
+          obtenerPreferenciasNotificaciones(),
+          obtenerMetricasEntrega(24),
+        ]);
+        setPrefsNotificaciones(prefs.preferencias);
+        setMetricasEntrega(metricas);
       } catch (error) {
         agregarToast({
           titulo: 'No se pudieron cargar notificaciones',
@@ -143,6 +159,7 @@ export function PaginaConfiguracion() {
         mensaje: 'Tus preferencias de alertas fueron guardadas.',
         tipo: 'success',
       });
+      await recargarMetricasEntrega();
     } catch (error) {
       agregarToast({
         titulo: 'Error guardando notificaciones',
@@ -162,6 +179,7 @@ export function PaginaConfiguracion() {
         mensaje: `Estado: ${result?.estado ?? 'desconocido'}`,
         tipo: 'success',
       });
+      await recargarMetricasEntrega();
     } catch (error) {
       agregarToast({
         titulo: 'Falló la prueba',
@@ -170,6 +188,20 @@ export function PaginaConfiguracion() {
       });
     }
   };
+
+  const estadoEntrega = useMemo(() => {
+    const tasa = metricasEntrega?.tasa_entrega_pct;
+    if (tasa === null || tasa === undefined) {
+      return { etiqueta: 'Sin datos', color: 'text-texto-terciario border-neon-cyan/20' };
+    }
+    if (tasa >= 90) {
+      return { etiqueta: 'Verde', color: 'text-neon-verde border-neon-verde/40' };
+    }
+    if (tasa >= 70) {
+      return { etiqueta: 'Amarillo', color: 'text-yellow-400 border-yellow-400/40' };
+    }
+    return { etiqueta: 'Rojo', color: 'text-neon-rojo border-neon-rojo/40' };
+  }, [metricasEntrega]);
 
   const guardarConfiguracion = () => {
     if (!esValido) {
@@ -433,6 +465,27 @@ export function PaginaConfiguracion() {
                 </label>
               </div>
             )}
+
+            <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wider text-texto-terciario">Entrega 24h</p>
+                <span className={`text-xs px-2 py-1 rounded border ${estadoEntrega.color}`}>{estadoEntrega.etiqueta}</span>
+              </div>
+              <p className="text-sm text-texto-secundario">
+                Tasa de entrega:{' '}
+                <span className="font-semibold text-texto-principal">
+                  {metricasEntrega?.tasa_entrega_pct === null || metricasEntrega?.tasa_entrega_pct === undefined
+                    ? 'N/D'
+                    : `${metricasEntrega.tasa_entrega_pct.toFixed(1)}%`}
+                </span>
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs text-texto-secundario">
+                <p>Enviados: {metricasEntrega?.totales.enviados ?? 0}</p>
+                <p>Fallidos: {metricasEntrega?.totales.fallidos ?? 0}</p>
+                <p>Omitidos: {metricasEntrega?.totales.omitidos ?? 0}</p>
+                <p>Reprogramados: {metricasEntrega?.totales.reprogramados ?? 0}</p>
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
               <Boton variante="primario" onClick={() => void guardarNotificaciones()} disabled={guardandoNotificaciones || cargandoNotificaciones}>

@@ -34,6 +34,10 @@
     - `NOTIF_MAX_INTENTOS_ALERTAS_SUSCRIPCION`
     - `NOTIF_MAX_INTENTOS_RESUMEN_SEMANAL`
   - Tests de notificaciones ampliados para validar métricas y límites por tipo.
+- UX B4 en frontend refinada:
+  - `PaginaConfiguracion` muestra métricas de entrega (24h) con semáforo de salud (verde/amarillo/rojo), tasa de entrega y totales por estado.
+  - La UI recarga métricas al guardar preferencias y al enviar notificación de prueba.
+  - Servicio frontend extendido con `obtenerMetricasEntrega()` en `frontend/src/servicios/notificaciones.ts`. 
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,
