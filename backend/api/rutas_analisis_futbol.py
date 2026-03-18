@@ -23,6 +23,11 @@ from scipy import stats
 
 from db import obtener_pool
 from servicios.apuestas_analizadas import registrar_apuesta_analizada
+from servicios.b3_estabilizacion_futbol import (
+    combinar_valor_cross_liga,
+    ajustar_probabilidad_por_muestras,
+    nivel_confianza_b3,
+)
 from .schemas_futbol import (
     AnalisisRequest,
     AnalisisResponse,
@@ -907,22 +912,20 @@ def _calcular_probabilidad_over(media: float, std: float, linea: float) -> float
     return 1.0 - stats.norm.cdf(z)
 
 
-def _determinar_confianza(prob: float, partidos_local: int, partidos_visitante: int) -> str:
-    """Determina el nivel de confianza de una recomendación."""
-    # Factores
-    datos_suficientes = partidos_local >= 5 and partidos_visitante >= 5
-    prob_extrema = prob >= 0.75 or prob <= 0.25
+def _determinar_confianza(
+    prob: float,
+    partidos_local: int,
+    partidos_visitante: int,
+    partidos_relevantes: int,
+) -> str:
+    """Determina confianza usando muestra total y muestra relevante (B3)."""
+    n_total = max(0, min(int(partidos_local or 0), int(partidos_visitante or 0)))
+    n_relevante = max(0, int(partidos_relevantes or 0))
 
-    if datos_suficientes and prob_extrema:
-        if prob >= 0.85 or prob <= 0.15:
-            return "MUY_ALTA"
-        return "ALTA"
-    elif datos_suficientes:
-        return "MEDIA"
-    elif prob_extrema:
-        return "MEDIA"
-    else:
-        return "BAJA"
+    confianza = nivel_confianza_b3(prob=prob, n_total=n_total, n_relevante=n_relevante)
+    if confianza == "ALTA" and (prob >= 0.88 or prob <= 0.12):
+        return "MUY_ALTA"
+    return confianza
 
 
 def _generar_predicciones_mercado(
@@ -1173,6 +1176,7 @@ def _generar_recomendaciones(
     mercados: Dict[str, PrediccionMercado],
     partidos_local: int,
     partidos_visitante: int,
+    partidos_relevantes: int,
     umbral_prob: float = 0.55,
 ) -> List[RecomendacionApuesta]:
     """Genera recomendaciones de apuestas basadas en las predicciones."""
@@ -1182,29 +1186,36 @@ def _generar_recomendaciones(
         for linea_str, probs in prediccion.lineas.items():
             linea = float(linea_str)
 
+            prob_over_ajustada = ajustar_probabilidad_por_muestras(
+                probs.over_calibrada, n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes
+            )
+            prob_under_ajustada = ajustar_probabilidad_por_muestras(
+                probs.under_calibrada, n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes
+            )
+
             # Evaluar OVER
-            if probs.over_calibrada >= umbral_prob:
+            if prob_over_ajustada >= umbral_prob:
                 confianza = _determinar_confianza(
-                    probs.over_calibrada, partidos_local, partidos_visitante
+                    prob_over_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
                 recomendaciones.append(RecomendacionApuesta(
                     mercado=prediccion.mercado,
                     lado="OVER",
                     linea=linea,
-                    probabilidad=probs.over_calibrada,
+                    probabilidad=prob_over_ajustada,
                     confianza=confianza,
                 ))
 
             # Evaluar UNDER
-            if probs.under_calibrada >= umbral_prob:
+            if prob_under_ajustada >= umbral_prob:
                 confianza = _determinar_confianza(
-                    probs.under_calibrada, partidos_local, partidos_visitante
+                    prob_under_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
                 recomendaciones.append(RecomendacionApuesta(
                     mercado=prediccion.mercado,
                     lado="UNDER",
                     linea=linea,
-                    probabilidad=probs.under_calibrada,
+                    probabilidad=prob_under_ajustada,
                     confianza=confianza,
                 ))
 
@@ -1348,6 +1359,7 @@ async def analizar_partido(
             pf.competicion_id,
             pf.temporada_id,
             c.nombre as competicion,
+            c.codigo as competicion_codigo,
             pf.fecha_partido,
             el.nombre as equipo_local,
             ev.nombre as equipo_visitante,
@@ -1469,19 +1481,21 @@ async def analizar_partido(
                 vis_corners_global = _obtener_resumen_seguro(stats_visitante_global, "corners_ft")
                 liga_corners = _obtener_resumen_seguro(promedios_liga.get("global", {}), "corners_ft")
 
-                corners_local = _valor_robusto(
+                corners_local = combinar_valor_cross_liga(
                     valor_ctx=local_corners_ctx.get("promedio"),
                     n_ctx=int(local_corners_ctx.get("n") or 0),
                     valor_global=local_corners_global.get("promedio"),
                     n_global=int(local_corners_global.get("n") or 0),
                     valor_liga=liga_corners.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
                 )
-                corners_visitante = _valor_robusto(
+                corners_visitante = combinar_valor_cross_liga(
                     valor_ctx=vis_corners_ctx.get("promedio"),
                     n_ctx=int(vis_corners_ctx.get("n") or 0),
                     valor_global=vis_corners_global.get("promedio"),
                     n_global=int(vis_corners_global.get("n") or 0),
                     valor_liga=liga_corners.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
                 )
                 # Ajuste por forma reciente + ventaja local
                 corners_local = _aplicar_ajuste_forma(
@@ -1511,19 +1525,21 @@ async def analizar_partido(
                 vis_goles_global = _obtener_resumen_seguro(stats_visitante_global, "goles_ft")
                 liga_goles = _obtener_resumen_seguro(promedios_liga.get("global", {}), "goles_ft")
 
-                goles_local = _valor_robusto(
+                goles_local = combinar_valor_cross_liga(
                     valor_ctx=local_goles_ctx.get("promedio"),
                     n_ctx=int(local_goles_ctx.get("n") or 0),
                     valor_global=local_goles_global.get("promedio"),
                     n_global=int(local_goles_global.get("n") or 0),
                     valor_liga=liga_goles.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
                 )
-                goles_visitante = _valor_robusto(
+                goles_visitante = combinar_valor_cross_liga(
                     valor_ctx=vis_goles_ctx.get("promedio"),
                     n_ctx=int(vis_goles_ctx.get("n") or 0),
                     valor_global=vis_goles_global.get("promedio"),
                     n_global=int(vis_goles_global.get("n") or 0),
                     valor_liga=liga_goles.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
                 )
                 goles_local = _aplicar_ajuste_forma(
                     goles_local,
@@ -1552,19 +1568,21 @@ async def analizar_partido(
                 vis_disp_global = _obtener_resumen_seguro(stats_visitante_global, "disparos_ft")
                 liga_disp = _obtener_resumen_seguro(promedios_liga.get("global", {}), "disparos_ft")
 
-                disparos_local = _valor_robusto(
+                disparos_local = combinar_valor_cross_liga(
                     valor_ctx=local_disp_ctx.get("promedio"),
                     n_ctx=int(local_disp_ctx.get("n") or 0),
                     valor_global=local_disp_global.get("promedio"),
                     n_global=int(local_disp_global.get("n") or 0),
                     valor_liga=liga_disp.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
                 )
-                disparos_visitante = _valor_robusto(
+                disparos_visitante = combinar_valor_cross_liga(
                     valor_ctx=vis_disp_ctx.get("promedio"),
                     n_ctx=int(vis_disp_ctx.get("n") or 0),
                     valor_global=vis_disp_global.get("promedio"),
                     n_global=int(vis_disp_global.get("n") or 0),
                     valor_liga=liga_disp.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
                 )
                 disparos_local = _aplicar_ajuste_forma(
                     disparos_local,
@@ -1719,10 +1737,15 @@ async def analizar_partido(
 
                 # 5. Generar recomendaciones
                 todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
+                partidos_relevantes = min(
+                    int(local_corners_ctx.get("n") or 0),
+                    int(vis_corners_ctx.get("n") or 0),
+                )
                 recomendaciones = _generar_recomendaciones(
                     todos_mercados,
                     stats_local["partidos"],
                     stats_visitante["partidos"],
+                    partidos_relevantes,
                 )
 
                 # 5a. Enforce de política de calidad por mercado (bloqueo + modo seguro)

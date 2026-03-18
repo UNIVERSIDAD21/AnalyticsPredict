@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Inicio de B3 (estabilización fútbol + cross-liga v1):
+  - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
+    - combinación de valor cross-liga ponderada por competición,
+    - ajuste de probabilidad por tamaño de muestra total/relevante,
+    - nivel de confianza B3 por cobertura de datos.
+  - Integración en `backend/api/rutas_analisis_futbol.py` para usar combinación cross-liga y confianza/recomendación ajustada por muestra relevante.
+  - Test unitario nuevo: `backend/tests/test_b3_estabilizacion_futbol.py`.
 - Cierre formal de B2 (onboarding + dashboard usuario):
   - Estado de bloque actualizado a `CERRADO` en `docs/arquitectura/ESTADO_PROYECTO.md`.
   - Criterio de cierre: onboarding obligatorio + persistencia backend + telemetría de conversión + KPI real de `completion_rate` y `time_to_value` disponible en API/UI.
