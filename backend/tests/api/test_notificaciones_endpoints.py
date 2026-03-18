@@ -82,6 +82,33 @@ def test_encolar_y_procesar_registra_historial(monkeypatch, tmp_path: Path):
     assert h.json()["data"]["total"] >= 1
 
 
+def test_scheduler_encola_por_tipo(monkeypatch, tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+
+    client.put(
+        "/api/notificaciones/preferencias",
+        json={
+            "email_habilitado": True,
+            "alertas_partidos": True,
+            "alertas_suscripcion": False,
+            "resumen_semanal": True,
+        },
+    )
+
+    q = client.post("/api/notificaciones/scheduler/encolar?tipo=todos")
+    assert q.status_code == 200
+    data = q.json()["data"]
+    assert data["total"] == 2
+    assert len(data["omitidas"]) == 1
+
+    os.environ["AUTH_SMTP_HOST"] = "smtp.local"
+    monkeypatch.setattr("api.rutas_notificaciones.smtplib.SMTP", _DummySMTP)
+
+    p = client.post("/api/notificaciones/procesar-cola")
+    assert p.status_code == 200
+    assert p.json()["data"]["enviados"] >= 1
+
+
 def test_enviar_prueba_respeta_preferencias(monkeypatch, tmp_path: Path):
     client = _crear_cliente(tmp_path)
 

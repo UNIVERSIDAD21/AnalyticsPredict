@@ -14,6 +14,36 @@ from esquemas.notificaciones import PreferenciasNotificacionRequest, EnviarPrueb
 from servicios.notificaciones_store import NotificacionesStore, obtener_notificaciones_store
 
 router = APIRouter(prefix="/api/notificaciones", tags=["Notificaciones"])
+TIPOS_SCHEDULER = ("alertas_partidos", "alertas_suscripcion", "resumen_semanal")
+
+
+def _plantilla_notificacion(tipo: str, usuario_id: str) -> tuple[str, str]:
+    if tipo == "alertas_partidos":
+        return (
+            "[AnalyticsPredict] Partidos relevantes para hoy",
+            (
+                "Detectamos partidos potencialmente relevantes según tus preferencias.\n"
+                "Revisa el dashboard para detalle de mercados y contexto.\n\n"
+                f"Usuario: {usuario_id}\n"
+            ),
+        )
+    if tipo == "alertas_suscripcion":
+        return (
+            "[AnalyticsPredict] Estado de suscripción",
+            (
+                "Actualización de estado de suscripción disponible.\n"
+                "Verifica plan activo y cambios recientes en tu dashboard.\n\n"
+                f"Usuario: {usuario_id}\n"
+            ),
+        )
+
+    return (
+        "[AnalyticsPredict] Resumen semanal",
+        (
+            "Resumen semanal listo: revisa rendimiento, win-rate y acciones recomendadas.\n\n"
+            f"Usuario: {usuario_id}\n"
+        ),
+    )
 
 
 def _enviar_correo(destinatario: str, asunto: str, mensaje: str) -> None:
@@ -133,6 +163,44 @@ def enviar_prueba(
         raise HTTPException(status_code=500, detail=f"No se pudo enviar correo: {exc}") from exc
 
     return {"ok": True, "data": envio}
+
+
+@router.post("/scheduler/encolar")
+def scheduler_encolar(
+    tipo: str = Query("todos", description="alertas_partidos|alertas_suscripcion|resumen_semanal|todos"),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+    store: NotificacionesStore = Depends(obtener_notificaciones_store),
+):
+    if not usuario.email:
+        raise HTTPException(status_code=400, detail="X-Usuario-Email es requerido para scheduler")
+
+    prefs = store.obtener_preferencias(str(usuario.id))["preferencias"]
+
+    tipos = list(TIPOS_SCHEDULER) if tipo == "todos" else [tipo]
+    for t in tipos:
+        if t not in TIPOS_SCHEDULER:
+            raise HTTPException(status_code=400, detail=f"Tipo inválido: {t}")
+
+    encoladas = []
+    omitidas = []
+    for t in tipos:
+        if not prefs.get("email_habilitado", True) or not prefs.get(t, False):
+            envio = store.registrar_envio(str(usuario.id), "email", t, "omitido", "preferencias deshabilitan scheduler")
+            omitidas.append(envio)
+            continue
+
+        asunto, mensaje = _plantilla_notificacion(t, str(usuario.id))
+        job = store.encolar_notificacion(
+            user_id=str(usuario.id),
+            email=usuario.email,
+            tipo=t,
+            asunto=asunto,
+            mensaje=mensaje,
+            max_intentos=3,
+        )
+        encoladas.append(job)
+
+    return {"ok": True, "data": {"encoladas": encoladas, "omitidas": omitidas, "total": len(encoladas)}}
 
 
 @router.post("/procesar-cola")

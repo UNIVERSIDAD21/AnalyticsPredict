@@ -16,6 +16,8 @@
   - Nuevos endpoints:
     - `POST /api/notificaciones/encolar-prueba`
     - `POST /api/notificaciones/procesar-cola`
+    - `POST /api/notificaciones/scheduler/encolar`
+  - Scheduler por tipo de alerta (`alertas_partidos`, `alertas_suscripcion`, `resumen_semanal`) respetando preferencias por usuario.
   - Procesamiento con backoff básico y trazabilidad en historial (`enviado`, `pendiente`, `fallido`, `omitido`).
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:

@@ -14,6 +14,7 @@ from typing import Iterator, Protocol
 class NotificacionesStore(Protocol):
     def obtener_preferencias(self, user_id: str) -> dict: ...
     def guardar_preferencias(self, user_id: str, preferencias: dict) -> dict: ...
+    def listar_usuarios_con_preferencias(self) -> list[dict]: ...
     def registrar_envio(self, user_id: str, canal: str, tipo: str, estado: str, detalle: str | None = None) -> dict: ...
     def listar_envios(self, user_id: str, limit: int = 20) -> list[dict]: ...
     def encolar_notificacion(self, user_id: str, email: str, tipo: str, asunto: str, mensaje: str, max_intentos: int = 3) -> dict: ...
@@ -121,6 +122,24 @@ class SQLiteNotificacionesStore:
                 (user_id, json.dumps(merged, ensure_ascii=False), updated_at),
             )
         return {"preferencias": merged, "updated_at": updated_at}
+
+    def listar_usuarios_con_preferencias(self) -> list[dict]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT user_id, prefs_json, updated_at FROM notificaciones_preferencias"
+            ).fetchall()
+
+        users: list[dict] = []
+        for row in rows:
+            prefs = json.loads(row["prefs_json"])
+            users.append(
+                {
+                    "user_id": row["user_id"],
+                    "preferencias": {**_PREFS_DEFAULT, **prefs},
+                    "updated_at": row["updated_at"],
+                }
+            )
+        return users
 
     def registrar_envio(self, user_id: str, canal: str, tipo: str, estado: str, detalle: str | None = None) -> dict:
         created_at = datetime.now(timezone.utc).isoformat()
