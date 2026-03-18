@@ -144,7 +144,7 @@ def _validar_access_token(token: str, store: AuthStore) -> dict:
 def register(
     payload: RegisterRequest,
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
     existente = store.obtener_usuario_por_email(payload.email)
@@ -161,7 +161,7 @@ def register(
 def login(
     payload: LoginRequest,
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
     user = store.obtener_usuario_por_email(payload.email)
@@ -177,7 +177,7 @@ def login(
 def refresh(
     payload: RefreshRequest,
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
     try:
@@ -204,7 +204,7 @@ def refresh(
 @router.post("/logout")
 def logout(
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     authorization: str | None = Header(default=None),
     store: AuthStore = Depends(obtener_auth_store),
 ):
@@ -222,7 +222,7 @@ def logout(
 def forgot_password(
     payload: ForgotPasswordRequest,
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
     user = store.obtener_usuario_por_email(payload.email)
@@ -257,7 +257,7 @@ def forgot_password(
 def reset_password(
     payload: ResetPasswordRequest,
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
     token_data = store.validar_reset_token(payload.token)
@@ -273,7 +273,7 @@ def reset_password(
 @router.get("/me")
 def me(
     response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     authorization: str | None = Header(default=None),
     store: AuthStore = Depends(obtener_auth_store),
 ):

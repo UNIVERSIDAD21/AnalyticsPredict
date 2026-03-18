@@ -93,3 +93,9 @@
   - `npm run lint` ✅ (sin errores; warnings legacy de hooks)
   - `npm run build` ✅
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py` ✅ (6 passed)
+- A3 (fase 3): contrato v2 pasa a default en Auth API
+  - `backend/api/rutas_auth.py` ahora usa `version=v2` por defecto en endpoints auth.
+  - Legacy queda disponible solo por pedido explícito (`?version=legacy`) con headers de deprecación.
+  - Suite de tests auth actualizada para cubrir ambos flujos (default v2 + legacy explícito).
+- Validaciones A3 fase 3:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (10 passed)
