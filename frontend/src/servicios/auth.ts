@@ -87,9 +87,19 @@ export async function login(email: string, password: string): Promise<RespuestaA
   }
 }
 
-export async function register(email: string, password: string): Promise<RespuestaAuth> {
+export async function register(
+  email: string,
+  password: string,
+  legalVersion: string,
+  acceptedLegal: boolean
+): Promise<RespuestaAuth> {
   try {
-    const { data } = await clienteAPI.post('/api/auth/register?version=v2', { email, password });
+    const { data } = await clienteAPI.post('/api/auth/register?version=v2', {
+      email,
+      password,
+      legal_version: legalVersion,
+      accepted_legal: acceptedLegal,
+    });
     return normalizarAuthRespuesta(data);
   } catch (error) {
     throw new Error(extraerMensajeError(error));

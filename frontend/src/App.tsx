@@ -12,6 +12,7 @@ import {
   AnalisisPartidoFutbol,
   DashboardFutbol,
   PaginaLogin,
+  PaginaLegal,
 } from './componentes/paginas';
 import { useAuth } from './contextos/AuthContext';
 
@@ -38,6 +39,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<PaginaLogin />} />
+        <Route path="/legal/terminos" element={<PaginaLegal tipo="terminos" />} />
+        <Route path="/legal/privacidad" element={<PaginaLegal tipo="privacidad" />} />
+        <Route path="/legal/disclaimer" element={<PaginaLegal tipo="disclaimer" />} />
 
         {/* Rutas principales protegidas */}
         <Route path="/" element={<RutaProtegida><PaginaPrincipal /></RutaProtegida>} />

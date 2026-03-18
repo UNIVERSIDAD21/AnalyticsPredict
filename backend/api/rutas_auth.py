@@ -35,6 +35,7 @@ REFRESH_TTL_SECONDS = int(os.getenv("AUTH_REFRESH_TTL_SECONDS", "2592000"))  # 3
 RESET_TTL_MINUTES = int(os.getenv("AUTH_RESET_TTL_MINUTES", "30"))
 RESET_EMAIL_MODE = os.getenv("AUTH_RESET_EMAIL_MODE", "dev").strip().lower()
 AUTH_SUNSET_DATE = os.getenv("AUTH_LEGACY_SUNSET", "2026-12-31")
+CURRENT_LEGAL_VERSION = os.getenv("LEGAL_CURRENT_VERSION", "2026-03-18")
 AUTH_USAGE_PATH = Path(
     os.getenv(
         "AUTH_CONTRACT_USAGE_PATH",
@@ -163,9 +164,28 @@ def register(
     if existente:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El correo ya está registrado")
 
-    user = store.crear_usuario(payload.email, hash_password(payload.password))
+    if not payload.accepted_legal:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes aceptar términos y privacidad")
+
+    if payload.legal_version != CURRENT_LEGAL_VERSION:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La versión legal vigente es {CURRENT_LEGAL_VERSION}",
+        )
+
+    user = store.crear_usuario(payload.email, hash_password(payload.password), legal_version=payload.legal_version)
     tokens = _emitir_tokens(user["id"], user["email"])
-    payload_legacy = {"ok": True, "user": {"id": user["id"], "email": user["email"]}, **tokens}
+    payload_legacy = {
+        "ok": True,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "legal_accepted": bool(user.get("legal_accepted_version")),
+            "legal_accepted_version": user.get("legal_accepted_version"),
+            "legal_accepted_at": user.get("legal_accepted_at"),
+        },
+        **tokens,
+    }
     return _respuesta_contrato(payload_legacy, version, response, "register")
 
 
@@ -181,7 +201,17 @@ def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
 
     tokens = _emitir_tokens(user["id"], user["email"])
-    payload_legacy = {"ok": True, "user": {"id": user["id"], "email": user["email"]}, **tokens}
+    payload_legacy = {
+        "ok": True,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "legal_accepted": bool(user.get("legal_accepted_version")),
+            "legal_accepted_version": user.get("legal_accepted_version"),
+            "legal_accepted_at": user.get("legal_accepted_at"),
+        },
+        **tokens,
+    }
     return _respuesta_contrato(payload_legacy, version, response, "login")
 
 
@@ -352,6 +382,9 @@ def me(
             "id": user["id"],
             "email": user["email"],
             "created_at": user["created_at"],
+            "legal_accepted": bool(user.get("legal_accepted_version")),
+            "legal_accepted_version": user.get("legal_accepted_version"),
+            "legal_accepted_at": user.get("legal_accepted_at"),
         },
     }
     return _respuesta_contrato(payload_legacy, version, response, "me")

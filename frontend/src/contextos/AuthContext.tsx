@@ -17,7 +17,7 @@ interface AuthContextType {
   cargando: boolean;
   usuario: UsuarioAuth | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, legalVersion: string, acceptedLegal: boolean) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -72,8 +72,8 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
     setUsuario(perfil);
   }, []);
 
-  const register = useCallback(async (email: string, password: string) => {
-    const data = await registerServicio(email, password);
+  const register = useCallback(async (email: string, password: string, legalVersion: string, acceptedLegal: boolean) => {
+    const data = await registerServicio(email, password, legalVersion, acceptedLegal);
     const perfil = data.user ?? (await obtenerPerfil(data.access_token));
     guardarSesionAuth({
       accessToken: data.access_token,

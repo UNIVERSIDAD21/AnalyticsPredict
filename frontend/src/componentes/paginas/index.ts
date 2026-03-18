@@ -18,3 +18,4 @@ export { AnalisisPartidoFutbol } from './AnalisisPartidoFutbol';
 export { BitacoraFutbol } from './BitacoraFutbol';
 export { DashboardFutbol } from './DashboardFutbol';
 export { PaginaLogin } from './PaginaLogin';
+export { PaginaLegal } from './PaginaLegal';

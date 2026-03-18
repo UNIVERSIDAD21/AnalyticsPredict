@@ -11,7 +11,7 @@ from typing import Iterator, Protocol
 
 
 class AuthStore(Protocol):
-    def crear_usuario(self, email: str, password_hash: str) -> dict: ...
+    def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict: ...
     def obtener_usuario_por_email(self, email: str) -> dict | None: ...
     def obtener_usuario_por_id(self, user_id: int) -> dict | None: ...
     def guardar_reset_token(self, user_id: int, token: str, expires_at: str) -> None: ...
@@ -40,6 +40,12 @@ class SQLiteAuthStore:
         finally:
             conn.close()
 
+    def _ensure_column(self, conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        cols = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        names = {row[1] for row in cols}
+        if column not in names:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
     def _inicializar(self) -> None:
         with self._conn() as conn:
             conn.execute(
@@ -48,10 +54,14 @@ class SQLiteAuthStore:
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
                   email TEXT UNIQUE NOT NULL,
                   password_hash TEXT NOT NULL,
-                  created_at TEXT NOT NULL
+                  created_at TEXT NOT NULL,
+                  legal_accepted_version TEXT,
+                  legal_accepted_at TEXT
                 )
                 """
             )
+            self._ensure_column(conn, "auth_users", "legal_accepted_version", "TEXT")
+            self._ensure_column(conn, "auth_users", "legal_accepted_at", "TEXT")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS auth_reset_tokens (
@@ -72,21 +82,31 @@ class SQLiteAuthStore:
                 """
             )
 
-    def crear_usuario(self, email: str, password_hash: str) -> dict:
+    def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict:
         created_at = datetime.now(timezone.utc).isoformat()
         normalized_email = email.lower().strip()
+        legal_accepted_at = created_at if legal_version else None
         with self._conn() as conn:
             cur = conn.execute(
-                "INSERT INTO auth_users(email, password_hash, created_at) VALUES (?, ?, ?)",
-                (normalized_email, password_hash, created_at),
+                """
+                INSERT INTO auth_users(email, password_hash, created_at, legal_accepted_version, legal_accepted_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (normalized_email, password_hash, created_at, legal_version, legal_accepted_at),
             )
             user_id = cur.lastrowid
-        return {"id": user_id, "email": normalized_email, "created_at": created_at}
+        return {
+            "id": user_id,
+            "email": normalized_email,
+            "created_at": created_at,
+            "legal_accepted_version": legal_version,
+            "legal_accepted_at": legal_accepted_at,
+        }
 
     def obtener_usuario_por_email(self, email: str) -> dict | None:
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT id, email, password_hash, created_at FROM auth_users WHERE email=?",
+                "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE email=?",
                 (email.lower().strip(),),
             ).fetchone()
         return dict(row) if row else None
@@ -94,7 +114,7 @@ class SQLiteAuthStore:
     def obtener_usuario_por_id(self, user_id: int) -> dict | None:
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT id, email, password_hash, created_at FROM auth_users WHERE id=?",
+                "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE id=?",
                 (user_id,),
             ).fetchone()
         return dict(row) if row else None
@@ -179,10 +199,14 @@ class PostgresAuthStore:
                   id BIGSERIAL PRIMARY KEY,
                   email TEXT UNIQUE NOT NULL,
                   password_hash TEXT NOT NULL,
-                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  legal_accepted_version TEXT,
+                  legal_accepted_at TIMESTAMPTZ
                 )
                 """
             )
+            cur.execute("ALTER TABLE auth_users ADD COLUMN IF NOT EXISTS legal_accepted_version TEXT")
+            cur.execute("ALTER TABLE auth_users ADD COLUMN IF NOT EXISTS legal_accepted_at TIMESTAMPTZ")
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS auth_reset_tokens (
@@ -202,16 +226,16 @@ class PostgresAuthStore:
                 """
             )
 
-    def crear_usuario(self, email: str, password_hash: str) -> dict:
+    def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict:
         normalized_email = email.lower().strip()
         with self._conn() as (_, cur):
             cur.execute(
                 """
-                INSERT INTO auth_users(email, password_hash)
-                VALUES (%s, %s)
-                RETURNING id, email, password_hash, created_at
+                INSERT INTO auth_users(email, password_hash, legal_accepted_version, legal_accepted_at)
+                VALUES (%s, %s, %s, CASE WHEN %s IS NULL THEN NULL ELSE NOW() END)
+                RETURNING id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at
                 """,
-                (normalized_email, password_hash),
+                (normalized_email, password_hash, legal_version, legal_version),
             )
             row = cur.fetchone()
         return dict(row)
@@ -219,7 +243,7 @@ class PostgresAuthStore:
     def obtener_usuario_por_email(self, email: str) -> dict | None:
         with self._conn() as (_, cur):
             cur.execute(
-                "SELECT id, email, password_hash, created_at FROM auth_users WHERE email=%s",
+                "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE email=%s",
                 (email.lower().strip(),),
             )
             row = cur.fetchone()
@@ -228,7 +252,7 @@ class PostgresAuthStore:
     def obtener_usuario_por_id(self, user_id: int) -> dict | None:
         with self._conn() as (_, cur):
             cur.execute(
-                "SELECT id, email, password_hash, created_at FROM auth_users WHERE id=%s",
+                "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE id=%s",
                 (user_id,),
             )
             row = cur.fetchone()

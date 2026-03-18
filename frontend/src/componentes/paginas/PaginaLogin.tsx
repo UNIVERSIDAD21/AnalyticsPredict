@@ -1,9 +1,10 @@
 import { FormEvent, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contextos/AuthContext';
 import { restablecerPassword, solicitarRecuperacion } from '../../servicios/auth';
 
 type ModoAuth = 'login' | 'register' | 'forgot' | 'reset';
+const LEGAL_VERSION = '2026-03-18';
 
 export function PaginaLogin() {
   const { autenticado, login, register } = useAuth();
@@ -15,6 +16,7 @@ export function PaginaLogin() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [tokenReset, setTokenReset] = useState('');
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -53,9 +55,14 @@ export function PaginaLogin() {
       return;
     }
 
+    if (!acceptedLegal) {
+      setError('Debes aceptar Términos, Privacidad y Disclaimer para continuar.');
+      return;
+    }
+
     setCargando(true);
     try {
-      await register(email, password);
+      await register(email, password, LEGAL_VERSION, acceptedLegal);
       navigate(destino, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar la cuenta');
@@ -176,18 +183,36 @@ export function PaginaLogin() {
             </div>
 
             {modo === 'register' && (
-              <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm text-texto-secundario">Confirmar contraseña</label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  className="w-full px-3 py-2 rounded bg-futurista-negro border border-neon-cyan/20 text-texto-principal"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={8}
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <label htmlFor="confirmPassword" className="text-sm text-texto-secundario">Confirmar contraseña</label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    className="w-full px-3 py-2 rounded bg-futurista-negro border border-neon-cyan/20 text-texto-principal"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={8}
+                  />
+                </div>
+
+                <label className="flex items-start gap-2 text-xs text-texto-secundario">
+                  <input
+                    type="checkbox"
+                    checked={acceptedLegal}
+                    onChange={(e) => setAcceptedLegal(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Acepto los{' '}
+                    <Link to="/legal/terminos" className="text-neon-cyan hover:underline">Términos</Link>,{' '}
+                    <Link to="/legal/privacidad" className="text-neon-cyan hover:underline">Política de Privacidad</Link>{' '}
+                    y <Link to="/legal/disclaimer" className="text-neon-cyan hover:underline">Disclaimer</Link>
+                    {' '}versión {LEGAL_VERSION}.
+                  </span>
+                </label>
+              </>
             )}
 
             <button

@@ -21,13 +21,13 @@ def _crear_cliente(tmp_path: Path) -> TestClient:
 def test_registro_login_y_me_legacy(tmp_path: Path):
     client = _crear_cliente(tmp_path)
 
-    r_reg = client.post("/api/auth/register?version=legacy", json={"email": "test@ap.com", "password": "12345678"})
+    r_reg = client.post("/api/auth/register?version=legacy", json={"email": "test@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     assert r_reg.status_code == 201
     body_reg = r_reg.json()
     assert body_reg["ok"] is True
     assert body_reg["user"]["email"] == "test@ap.com"
 
-    r_login = client.post("/api/auth/login?version=legacy", json={"email": "test@ap.com", "password": "12345678"})
+    r_login = client.post("/api/auth/login?version=legacy", json={"email": "test@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     assert r_login.status_code == 200
     access = r_login.json()["access_token"]
 
@@ -39,8 +39,8 @@ def test_registro_login_y_me_legacy(tmp_path: Path):
 def test_refresh_y_logout_revoca_token_legacy(tmp_path: Path):
     client = _crear_cliente(tmp_path)
 
-    client.post("/api/auth/register?version=legacy", json={"email": "x@ap.com", "password": "12345678"})
-    r_login = client.post("/api/auth/login?version=legacy", json={"email": "x@ap.com", "password": "12345678"})
+    client.post("/api/auth/register?version=legacy", json={"email": "x@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
+    r_login = client.post("/api/auth/login?version=legacy", json={"email": "x@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     login_data = r_login.json()
 
     r_refresh = client.post("/api/auth/refresh?version=legacy", json={"refresh_token": login_data["refresh_token"]})
@@ -57,7 +57,7 @@ def test_refresh_y_logout_revoca_token_legacy(tmp_path: Path):
 def test_forgot_y_reset_password_legacy(tmp_path: Path):
     client = _crear_cliente(tmp_path)
 
-    client.post("/api/auth/register?version=legacy", json={"email": "recover@ap.com", "password": "12345678"})
+    client.post("/api/auth/register?version=legacy", json={"email": "recover@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     r_forgot = client.post("/api/auth/forgot-password?version=legacy", json={"email": "recover@ap.com"})
     assert r_forgot.status_code == 200
     token = r_forgot.json()["reset_token_dev"]
@@ -65,7 +65,7 @@ def test_forgot_y_reset_password_legacy(tmp_path: Path):
     r_reset = client.post("/api/auth/reset-password?version=legacy", json={"token": token, "new_password": "87654321"})
     assert r_reset.status_code == 200
 
-    r_login_old = client.post("/api/auth/login?version=legacy", json={"email": "recover@ap.com", "password": "12345678"})
+    r_login_old = client.post("/api/auth/login?version=legacy", json={"email": "recover@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     assert r_login_old.status_code == 401
 
     r_login_new = client.post("/api/auth/login?version=legacy", json={"email": "recover@ap.com", "password": "87654321"})
@@ -74,7 +74,7 @@ def test_forgot_y_reset_password_legacy(tmp_path: Path):
 
 def test_forgot_password_modo_smtp_envia_correo_y_no_expone_token(tmp_path: Path, monkeypatch):
     client = _crear_cliente(tmp_path)
-    client.post("/api/auth/register?version=legacy", json={"email": "smtp@ap.com", "password": "12345678"})
+    client.post("/api/auth/register?version=legacy", json={"email": "smtp@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
 
     enviado = {"ok": False, "destino": None}
 
@@ -97,9 +97,9 @@ def test_forgot_password_modo_smtp_envia_correo_y_no_expone_token(tmp_path: Path
 
 def test_contrato_v2_en_login(tmp_path: Path):
     client = _crear_cliente(tmp_path)
-    client.post("/api/auth/register", json={"email": "v2@ap.com", "password": "12345678"})
+    client.post("/api/auth/register", json={"email": "v2@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
 
-    resp = client.post("/api/auth/login?version=v2", json={"email": "v2@ap.com", "password": "12345678"})
+    resp = client.post("/api/auth/login?version=v2", json={"email": "v2@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     assert resp.status_code == 200
     body = resp.json()
 
@@ -112,9 +112,9 @@ def test_contrato_v2_en_login(tmp_path: Path):
 
 def test_contrato_default_v2_en_login_no_tiene_deprecacion(tmp_path: Path):
     client = _crear_cliente(tmp_path)
-    client.post("/api/auth/register", json={"email": "legacy@ap.com", "password": "12345678"})
+    client.post("/api/auth/register", json={"email": "legacy@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
 
-    resp = client.post("/api/auth/login", json={"email": "legacy@ap.com", "password": "12345678"})
+    resp = client.post("/api/auth/login", json={"email": "legacy@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     assert resp.status_code == 200
     body = resp.json()
     assert body["meta"]["contract_version"] == "v2"
@@ -123,13 +123,24 @@ def test_contrato_default_v2_en_login_no_tiene_deprecacion(tmp_path: Path):
 
 def test_contrato_legacy_explicito_en_login_tiene_headers_deprecacion(tmp_path: Path):
     client = _crear_cliente(tmp_path)
-    client.post("/api/auth/register", json={"email": "legacy2@ap.com", "password": "12345678"})
+    client.post("/api/auth/register", json={"email": "legacy2@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
 
-    resp = client.post("/api/auth/login?version=legacy", json={"email": "legacy2@ap.com", "password": "12345678"})
+    resp = client.post("/api/auth/login?version=legacy", json={"email": "legacy2@ap.com", "password": "12345678", "accepted_legal": True, "legal_version": "2026-03-18"})
     assert resp.status_code == 200
     assert resp.headers.get("Deprecation") == "true"
     assert resp.headers.get("Sunset")
     assert "successor-version" in (resp.headers.get("Link") or "")
+
+
+def test_register_rechaza_si_no_acepta_legal(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+
+    resp = client.post(
+        "/api/auth/register",
+        json={"email": "nolegal@ap.com", "password": "12345678", "accepted_legal": False, "legal_version": "2026-03-18"},
+    )
+    assert resp.status_code == 400
+    assert "aceptar" in resp.json()["detail"].lower()
 
 
 def test_contract_usage_resume_metricas(tmp_path: Path, monkeypatch):

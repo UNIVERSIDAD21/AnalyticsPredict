@@ -133,3 +133,12 @@
   - Prueba unitaria nueva para contrato/telemetría: `backend/tests/api/test_apuestas_futbol_contract.py`.
 - Se formalizó criterio global de sunset en `docs/arquitectura/ADR-004-sunset-contratos-legacy.md`:
   - retiro de legacy con `<5%` de uso por 7 días corridos + aviso previo de 30 días.
+- Inicio de A4 (legal transversal mínimo):
+  - Backend auth ahora exige aceptación legal explícita en registro (`accepted_legal=true`) y versión vigente (`legal_version=2026-03-18`).
+  - Persistencia por usuario de aceptación legal en `auth_users` (`legal_accepted_version`, `legal_accepted_at`) con compatibilidad SQLite/PostgreSQL.
+  - Frontend agrega páginas legales públicas (`/legal/terminos`, `/legal/privacidad`, `/legal/disclaimer`).
+  - Formulario de registro exige checkbox de aceptación legal con enlaces directos a documentos legales.
+- Validación A4 fase inicial:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅
+  - `npm run lint` ✅ (sin errores, warnings legacy)
+  - `npm run build` ✅

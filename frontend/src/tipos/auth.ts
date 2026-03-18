@@ -2,6 +2,9 @@ export interface UsuarioAuth {
   id: number;
   email: string;
   created_at?: string;
+  legal_accepted?: boolean;
+  legal_accepted_version?: string;
+  legal_accepted_at?: string;
 }
 
 export interface RespuestaAuth {

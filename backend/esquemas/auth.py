@@ -8,6 +8,8 @@ EMAIL_REGEX = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 class RegisterRequest(BaseModel):
     email: str = Field(pattern=EMAIL_REGEX, max_length=254)
     password: str = Field(min_length=8, max_length=128)
+    accepted_legal: bool = Field(default=False)
+    legal_version: str = Field(min_length=3, max_length=32)
 
 
 class LoginRequest(BaseModel):
