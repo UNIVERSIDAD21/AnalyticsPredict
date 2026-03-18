@@ -10,10 +10,11 @@ from api.rutas_auth import router as auth_router
 from api.rutas_chat import router as chat_router
 
 
-def _crear_cliente(tmp_path: Path) -> TestClient:
+def _crear_cliente(tmp_path: Path, provider_mode: str = "local") -> TestClient:
     os.environ["AUTH_DB_PATH"] = str(tmp_path / "auth-chat-test.db")
     os.environ["AUTH_SECRET_KEY"] = "test-secret-key"
     os.environ["CHAT_CONTEXTO_DB_PATH"] = str(tmp_path / "chat-contexto-test.db")
+    os.environ["CHAT_PROVIDER_MODE"] = provider_mode
 
     app = FastAPI()
     app.include_router(auth_router)
@@ -47,6 +48,7 @@ def test_chat_mensaje_e_historial(tmp_path: Path):
     assert r.status_code == 200
     assert r.json()["ok"] is True
     assert "reply" in r.json()["data"]
+    assert r.json()["data"]["provider"] == "local-mock"
 
     h = client.get("/api/chat/historial?limit=20", headers={"Authorization": f"Bearer {access}"})
     assert h.status_code == 200
@@ -101,6 +103,20 @@ def test_chat_aplica_resumen_contexto_largo(tmp_path: Path):
     body = r.json()["data"]
     assert body["summary_applied"] is True
     assert "se resumieron" in body["reply"].lower()
+
+
+def test_chat_provider_external_placeholder(tmp_path: Path):
+    client = _crear_cliente(tmp_path, provider_mode="external")
+    access = _token_acceso(client)
+
+    r = client.post(
+        "/api/chat/mensaje",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"mensaje": "hola", "limite_contexto": 12},
+    )
+    assert r.status_code == 200
+    assert r.json()["data"]["provider"] == "external-placeholder"
+    assert "aún no está configurado" in r.json()["data"]["reply"].lower()
 
 
 def test_chat_reset(tmp_path: Path):

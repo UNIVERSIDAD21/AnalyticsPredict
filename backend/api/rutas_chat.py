@@ -11,9 +11,9 @@ from servicios.auth_store import AuthStore, obtener_auth_store
 from servicios.chat_contexto import (
     ChatContextoStore,
     compactar_ventana_con_resumen,
-    generar_respuesta_local,
     obtener_chat_contexto_store,
 )
+from servicios.chat_provider import ChatProvider, obtener_chat_provider
 from servicios.notificaciones_store import NotificacionesStore, obtener_notificaciones_store
 from servicios.onboarding_store import OnboardingStore, obtener_onboarding_store
 
@@ -54,6 +54,7 @@ def enviar_mensaje_chat(
     chat_store: ChatContextoStore = Depends(obtener_chat_contexto_store),
     notif_store: NotificacionesStore = Depends(obtener_notificaciones_store),
     onboarding_store: OnboardingStore = Depends(obtener_onboarding_store),
+    provider: ChatProvider = Depends(obtener_chat_provider),
 ):
     user = _usuario_actual(authorization, auth_store)
 
@@ -76,7 +77,7 @@ def enviar_mensaje_chat(
     except Exception:
         pass
 
-    respuesta = generar_respuesta_local(payload.mensaje, ventana, contexto_negocio=contexto_negocio)
+    respuesta = provider.responder(payload.mensaje, ventana, contexto_negocio=contexto_negocio)
 
     msg_assistant = chat_store.registrar_mensaje(user_id=user["id"], role="assistant", contenido=respuesta)
 
@@ -86,6 +87,7 @@ def enviar_mensaje_chat(
             "reply": msg_assistant["contenido"],
             "window_size": len(ventana),
             "summary_applied": bool(resumen_contexto),
+            "provider": provider.name,
         },
     }
 

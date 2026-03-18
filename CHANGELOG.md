@@ -25,6 +25,13 @@
   - Nuevo compactador de ventana en `chat_contexto.py` (`compactar_ventana_con_resumen`) para comprimir historial cuando supera el límite configurado.
   - `POST /api/chat/mensaje` ahora responde `summary_applied` y utiliza resumen contextual al generar respuesta.
   - Tests ampliados para validar aplicación de resumen en conversaciones largas.
+- Fase 2 B5 (interfaz desacoplada de proveedor):
+  - Nuevo módulo `backend/servicios/chat_provider.py` con contrato `ChatProvider`.
+  - Modos soportados por env `CHAT_PROVIDER_MODE`:
+    - `local` → motor actual (`local-mock`)
+    - `external` → placeholder explícito (`external-placeholder`) para futuro adaptador LLM real.
+  - `POST /api/chat/mensaje` ahora reporta `provider` en respuesta para trazabilidad operativa.
+  - Tests ampliados para validar modo local y modo external-placeholder.
 
 - Inicio de B4 (notificaciones MVP):
   - Nuevas rutas backend en `api/rutas_notificaciones.py`:
