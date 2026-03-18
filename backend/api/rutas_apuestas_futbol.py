@@ -10,13 +10,16 @@ CORRECCIONES APLICADAS:
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import time
 from datetime import datetime, date
+from pathlib import Path
 from typing import Optional, List, Literal, Dict, Any, Set
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Response
 from psycopg.rows import dict_row
 
 from db import obtener_pool
@@ -51,6 +54,78 @@ MERCADOS_VALIDOS = {
 
 _APUESTAS_COLUMNAS_CACHE: Dict[str, Any] = {"columnas": set(), "timestamp": 0.0}
 _APUESTAS_COLUMNAS_TTL = 300.0
+
+APUESTAS_FUTBOL_SUNSET_DATE = os.getenv("APUESTAS_FUTBOL_LEGACY_SUNSET", "2026-12-31")
+APUESTAS_FUTBOL_USAGE_PATH = Path(
+    os.getenv(
+        "APUESTAS_FUTBOL_CONTRACT_USAGE_PATH",
+        os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "data", "apuestas_futbol_contract_usage.json")
+        ),
+    )
+)
+
+
+def _registrar_uso_contrato(version: str) -> None:
+    """Telemetría simple de uso de contrato (v2 vs legacy)."""
+    try:
+        APUESTAS_FUTBOL_USAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        today = date.today().isoformat()
+        if APUESTAS_FUTBOL_USAGE_PATH.exists():
+            data = json.loads(APUESTAS_FUTBOL_USAGE_PATH.read_text(encoding="utf-8"))
+        else:
+            data = {"by_date": {}}
+
+        by_date = data.setdefault("by_date", {})
+        row = by_date.setdefault(today, {"legacy": 0, "v2": 0})
+        row["legacy" if version == "legacy" else "v2"] += 1
+
+        APUESTAS_FUTBOL_USAGE_PATH.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception:
+        return
+
+
+def _leer_uso_contrato() -> dict:
+    if not APUESTAS_FUTBOL_USAGE_PATH.exists():
+        return {"by_date": {}}
+    try:
+        data = json.loads(APUESTAS_FUTBOL_USAGE_PATH.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("by_date", {}), dict):
+            return data
+    except Exception:
+        pass
+    return {"by_date": {}}
+
+
+def _aplicar_headers_deprecacion(response: Response, endpoint: str) -> None:
+    response.headers["Deprecation"] = "true"
+    response.headers["Sunset"] = APUESTAS_FUTBOL_SUNSET_DATE
+    suffix = f"/{endpoint}" if endpoint else ""
+    response.headers["Link"] = (
+        f'</api/futbol/apuestas{suffix}?version=v2>; rel="successor-version"'
+    )
+
+
+def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, endpoint: str) -> dict:
+    _registrar_uso_contrato(version)
+
+    if version == "legacy":
+        _aplicar_headers_deprecacion(response, endpoint)
+        return payload_legacy
+
+    data = dict(payload_legacy)
+    data.pop("exito", None)
+    return {
+        "ok": True,
+        "data": data,
+        "meta": {
+            "contract_version": "v2",
+            "legacy_supported": True,
+        },
+    }
 
 
 def _obtener_columnas_apuestas(cursor) -> Set[str]:
@@ -873,15 +948,17 @@ async def cancelar_apuesta(
 
 @router.post(
     "/resolver",
-    response_model=ResolucionResponse,
+    response_model=Dict[str, Any],
     summary="Resolver apuestas",
     description="Resuelve apuestas pendientes basándose en resultados de partidos.",
 )
 async def resolver_apuestas(
+    response: Response,
     request: ResolucionRequest = None,
     partido_id: Optional[UUID] = Query(None, description="ID del partido a resolver"),
+    version: Literal["v2", "legacy"] = Query("legacy", description="Versión de contrato de respuesta"),
     usuario: UsuarioActual = Depends(obtener_usuario_actual),
-) -> ResolucionResponse:
+) -> Dict[str, Any]:
     """Resuelve apuestas pendientes."""
     pool = obtener_pool()
 
@@ -904,12 +981,13 @@ async def resolver_apuestas(
                 )
 
                 if not col_estado:
-                    return ResolucionResponse(
-                        exito=True,
-                        resueltas=0,
-                        errores=0,
-                        ganancia_neta=0.0,
-                    )
+                    payload_legacy = {
+                        "exito": True,
+                        "resueltas": 0,
+                        "errores": 0,
+                        "ganancia_neta": 0.0,
+                    }
+                    return _respuesta_contrato(payload_legacy, version, response, "resolver")
 
                 # Obtener apuestas pendientes con datos del partido
                 query = f"""
@@ -1021,18 +1099,63 @@ async def resolver_apuestas(
 
                 conn.commit()
 
-                return ResolucionResponse(
-                    exito=True,
-                    resueltas=resueltas,
-                    ganadas=ganadas,
-                    perdidas=perdidas,
-                    push=push,
-                    errores=errores,
-                    ganancia_neta=round(ganancia_neta, 2),
-                )
+                payload_legacy = {
+                    "exito": True,
+                    "resueltas": resueltas,
+                    "ganadas": ganadas,
+                    "perdidas": perdidas,
+                    "push": push,
+                    "errores": errores,
+                    "ganancia_neta": round(ganancia_neta, 2),
+                }
+                return _respuesta_contrato(payload_legacy, version, response, "resolver")
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error resolviendo apuestas: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get("/contract-usage", summary="Métricas de adopción contrato apuestas fútbol")
+async def obtener_metricas_contrato(days: int = Query(7, ge=1, le=90)) -> dict:
+    data = _leer_uso_contrato()
+    by_date = data.get("by_date", {})
+    fechas = sorted(by_date.keys())[-days:]
+
+    series = []
+    total_v2 = 0
+    total_legacy = 0
+    for fecha in fechas:
+        row = by_date.get(fecha, {})
+        v2 = int(row.get("v2", 0) or 0)
+        legacy = int(row.get("legacy", 0) or 0)
+        total_v2 += v2
+        total_legacy += legacy
+        total = v2 + legacy
+        series.append(
+            {
+                "date": fecha,
+                "v2": v2,
+                "legacy": legacy,
+                "legacy_ratio": round((legacy / total), 4) if total else 0.0,
+            }
+        )
+
+    total = total_v2 + total_legacy
+    return {
+        "ok": True,
+        "data": {
+            "days": days,
+            "series": series,
+            "summary": {
+                "v2": total_v2,
+                "legacy": total_legacy,
+                "legacy_ratio": round((total_legacy / total), 4) if total else 0.0,
+            },
+        },
+        "meta": {
+            "contract_version": "v2",
+            "domain": "futbol_apuestas_resolucion",
+        },
+    }

@@ -126,3 +126,10 @@
   - Pruebas de contrato ampliadas para rutas con `apuesta_id` y endpoint de resultado.
 - Validaciones A3 fase 7:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_bitacora_contract.py backend/tests/test_rutas_bitacora_payload.py backend/tests/test_smoke_api.py` ✅ (6 passed)
+- A3 (fase 8): contrato canónico en resolución de apuestas fútbol
+  - `POST /api/futbol/apuestas/resolver` ahora soporta `?version=v2|legacy`.
+  - En `legacy` se exponen headers de deprecación (`Deprecation`, `Sunset`, `Link`) hacia `version=v2`.
+  - Se agregó telemetría de adopción para el dominio con `GET /api/futbol/apuestas/contract-usage`.
+  - Prueba unitaria nueva para contrato/telemetría: `backend/tests/api/test_apuestas_futbol_contract.py`.
+- Se formalizó criterio global de sunset en `docs/arquitectura/ADR-004-sunset-contratos-legacy.md`:
+  - retiro de legacy con `<5%` de uso por 7 días corridos + aviso previo de 30 días.
