@@ -77,3 +77,11 @@
   - Forgot-password en modo SMTP sin `reset_token_dev`.
   - Correo recibido en MailHog (`http://localhost:18025`), token recuperado, reset exitoso y login con nueva contraseña OK.
   - Bloque A2 marcado como CERRADO en `docs/arquitectura/ESTADO_PROYECTO.md`.
+- Inicio de A3 (contrato canónico + deprecación legacy) sobre Auth API:
+  - `backend/api/rutas_auth.py` ahora soporta `?version=v2|legacy` (default `legacy` para compatibilidad temporal).
+  - Respuesta `v2` normalizada en envelope canónico: `{ ok, data, meta }`.
+  - Respuesta `legacy` mantiene formato previo + headers de deprecación (`Deprecation`, `Sunset`, `Link`).
+  - Telemetría de uso de contrato auth agregada en `backend/data/auth_contract_usage.json`.
+  - Tests nuevos para contrato v2 y deprecación legacy en `backend/tests/api/test_auth_endpoints.py`.
+- Validaciones backend post-A3(auth):
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (9 passed)

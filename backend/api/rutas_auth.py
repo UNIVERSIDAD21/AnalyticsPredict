@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Rutas de autenticación base para Bloque A2."""
+"""Rutas de autenticación con contrato canónico (v2) y legacy."""
 
 from __future__ import annotations
 
+import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
 
 from esquemas.auth import (
     ForgotPasswordRequest,
@@ -16,6 +18,7 @@ from esquemas.auth import (
     RegisterRequest,
     ResetPasswordRequest,
 )
+from servicios.auth_mailer import AuthMailerError, enviar_correo_recuperacion
 from servicios.auth_seguridad import (
     crear_token,
     decodificar_y_validar_token,
@@ -24,7 +27,6 @@ from servicios.auth_seguridad import (
     verificar_password,
 )
 from servicios.auth_store import AuthStore, obtener_auth_store
-from servicios.auth_mailer import AuthMailerError, enviar_correo_recuperacion
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
@@ -32,7 +34,67 @@ ACCESS_TTL_SECONDS = int(os.getenv("AUTH_ACCESS_TTL_SECONDS", "900"))  # 15 min
 REFRESH_TTL_SECONDS = int(os.getenv("AUTH_REFRESH_TTL_SECONDS", "2592000"))  # 30 días
 RESET_TTL_MINUTES = int(os.getenv("AUTH_RESET_TTL_MINUTES", "30"))
 RESET_EMAIL_MODE = os.getenv("AUTH_RESET_EMAIL_MODE", "dev").strip().lower()
+AUTH_SUNSET_DATE = os.getenv("AUTH_LEGACY_SUNSET", "2026-12-31")
+AUTH_USAGE_PATH = Path(
+    os.getenv(
+        "AUTH_CONTRACT_USAGE_PATH",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "auth_contract_usage.json")),
+    )
+)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Helpers de contrato (A3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _registrar_uso_contrato(version: str) -> None:
+    """Telemetría simple de uso de contrato auth (v2 vs legacy)."""
+    try:
+        AUTH_USAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        today = date.today().isoformat()
+        if AUTH_USAGE_PATH.exists():
+            data = json.loads(AUTH_USAGE_PATH.read_text(encoding="utf-8"))
+        else:
+            data = {"by_date": {}}
+
+        by_date = data.setdefault("by_date", {})
+        row = by_date.setdefault(today, {"legacy": 0, "v2": 0})
+        row["legacy" if version == "legacy" else "v2"] += 1
+
+        AUTH_USAGE_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        # No bloquear autenticación por telemetría
+        return
+
+
+def _aplicar_headers_deprecacion(response: Response, endpoint: str) -> None:
+    response.headers["Deprecation"] = "true"
+    response.headers["Sunset"] = AUTH_SUNSET_DATE
+    response.headers["Link"] = f'</api/auth/{endpoint}?version=v2>; rel="successor-version"'
+
+
+def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, endpoint: str) -> dict:
+    _registrar_uso_contrato(version)
+
+    if version == "legacy":
+        _aplicar_headers_deprecacion(response, endpoint)
+        return payload_legacy
+
+    data = dict(payload_legacy)
+    data.pop("ok", None)
+    return {
+        "ok": True,
+        "data": data,
+        "meta": {
+            "contract_version": "v2",
+            "legacy_supported": True,
+        },
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core auth
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _emitir_tokens(user_id: int, email: str) -> dict:
     secreto = obtener_secreto_auth()
@@ -79,28 +141,45 @@ def _validar_access_token(token: str, store: AuthStore) -> dict:
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, store: AuthStore = Depends(obtener_auth_store)):
+def register(
+    payload: RegisterRequest,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     existente = store.obtener_usuario_por_email(payload.email)
     if existente:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El correo ya está registrado")
 
     user = store.crear_usuario(payload.email, hash_password(payload.password))
     tokens = _emitir_tokens(user["id"], user["email"])
-    return {"ok": True, "user": {"id": user["id"], "email": user["email"]}, **tokens}
+    payload_legacy = {"ok": True, "user": {"id": user["id"], "email": user["email"]}, **tokens}
+    return _respuesta_contrato(payload_legacy, version, response, "register")
 
 
 @router.post("/login")
-def login(payload: LoginRequest, store: AuthStore = Depends(obtener_auth_store)):
+def login(
+    payload: LoginRequest,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     user = store.obtener_usuario_por_email(payload.email)
     if not user or not verificar_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
 
     tokens = _emitir_tokens(user["id"], user["email"])
-    return {"ok": True, "user": {"id": user["id"], "email": user["email"]}, **tokens}
+    payload_legacy = {"ok": True, "user": {"id": user["id"], "email": user["email"]}, **tokens}
+    return _respuesta_contrato(payload_legacy, version, response, "login")
 
 
 @router.post("/refresh")
-def refresh(payload: RefreshRequest, store: AuthStore = Depends(obtener_auth_store)):
+def refresh(
+    payload: RefreshRequest,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     try:
         token_data = decodificar_y_validar_token(payload.refresh_token, obtener_secreto_auth())
     except ValueError as exc:
@@ -118,25 +197,38 @@ def refresh(payload: RefreshRequest, store: AuthStore = Depends(obtener_auth_sto
 
     store.revocar_jti(token_data["jti"])
     tokens = _emitir_tokens(user["id"], user["email"])
-    return {"ok": True, **tokens}
+    payload_legacy = {"ok": True, **tokens}
+    return _respuesta_contrato(payload_legacy, version, response, "refresh")
 
 
 @router.post("/logout")
-def logout(authorization: str | None = Header(default=None), store: AuthStore = Depends(obtener_auth_store)):
+def logout(
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    authorization: str | None = Header(default=None),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     token = _extraer_bearer_token(authorization)
     payload = _validar_access_token(token, store)
     jti = payload.get("jti")
     if jti:
         store.revocar_jti(jti)
-    return {"ok": True, "message": "Sesión cerrada"}
+
+    payload_legacy = {"ok": True, "message": "Sesión cerrada"}
+    return _respuesta_contrato(payload_legacy, version, response, "logout")
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPasswordRequest, store: AuthStore = Depends(obtener_auth_store)):
+def forgot_password(
+    payload: ForgotPasswordRequest,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     user = store.obtener_usuario_por_email(payload.email)
     if not user:
-        # Respuesta homogénea para evitar enumeración de usuarios
-        return {"ok": True, "message": "Si el correo existe, recibirá instrucciones"}
+        payload_legacy = {"ok": True, "message": "Si el correo existe, recibirá instrucciones"}
+        return _respuesta_contrato(payload_legacy, version, response, "forgot-password")
 
     token = str(uuid4())
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=RESET_TTL_MINUTES)).isoformat()
@@ -150,32 +242,41 @@ def forgot_password(payload: ForgotPasswordRequest, store: AuthStore = Depends(o
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"No se pudo enviar el correo de recuperación: {exc}",
             ) from exc
-        return {
-            "ok": True,
-            "message": "Si el correo existe, recibirá instrucciones",
-        }
+        payload_legacy = {"ok": True, "message": "Si el correo existe, recibirá instrucciones"}
+        return _respuesta_contrato(payload_legacy, version, response, "forgot-password")
 
-    # Modo dev: expone token para pruebas manuales/locales.
-    return {
+    payload_legacy = {
         "ok": True,
         "message": "Si el correo existe, recibirá instrucciones",
         "reset_token_dev": token,
     }
+    return _respuesta_contrato(payload_legacy, version, response, "forgot-password")
 
 
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, store: AuthStore = Depends(obtener_auth_store)):
+def reset_password(
+    payload: ResetPasswordRequest,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     token_data = store.validar_reset_token(payload.token)
     if not token_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token de recuperación inválido")
 
     store.actualizar_password(token_data["user_id"], hash_password(payload.new_password))
     store.marcar_reset_token_usado(payload.token)
-    return {"ok": True, "message": "Contraseña actualizada"}
+    payload_legacy = {"ok": True, "message": "Contraseña actualizada"}
+    return _respuesta_contrato(payload_legacy, version, response, "reset-password")
 
 
 @router.get("/me")
-def me(authorization: str | None = Header(default=None), store: AuthStore = Depends(obtener_auth_store)):
+def me(
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+    authorization: str | None = Header(default=None),
+    store: AuthStore = Depends(obtener_auth_store),
+):
     token = _extraer_bearer_token(authorization)
     payload = _validar_access_token(token, store)
 
@@ -183,7 +284,7 @@ def me(authorization: str | None = Header(default=None), store: AuthStore = Depe
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
 
-    return {
+    payload_legacy = {
         "ok": True,
         "user": {
             "id": user["id"],
@@ -191,3 +292,4 @@ def me(authorization: str | None = Header(default=None), store: AuthStore = Depe
             "created_at": user["created_at"],
         },
     }
+    return _respuesta_contrato(payload_legacy, version, response, "me")

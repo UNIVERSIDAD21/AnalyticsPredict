@@ -92,3 +92,29 @@ def test_forgot_password_modo_smtp_envia_correo_y_no_expone_token(tmp_path: Path
     assert "reset_token_dev" not in body
     assert enviado["ok"] is True
     assert enviado["destino"] == "smtp@ap.com"
+
+
+def test_contrato_v2_en_login(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    client.post("/api/auth/register", json={"email": "v2@ap.com", "password": "12345678"})
+
+    resp = client.post("/api/auth/login?version=v2", json={"email": "v2@ap.com", "password": "12345678"})
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["ok"] is True
+    assert body["meta"]["contract_version"] == "v2"
+    assert "data" in body
+    assert "access_token" in body["data"]
+    assert resp.headers.get("Deprecation") is None
+
+
+def test_contrato_legacy_en_login_tiene_headers_deprecacion(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    client.post("/api/auth/register", json={"email": "legacy@ap.com", "password": "12345678"})
+
+    resp = client.post("/api/auth/login", json={"email": "legacy@ap.com", "password": "12345678"})
+    assert resp.status_code == 200
+    assert resp.headers.get("Deprecation") == "true"
+    assert resp.headers.get("Sunset")
+    assert "successor-version" in (resp.headers.get("Link") or "")

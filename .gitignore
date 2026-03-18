@@ -29,6 +29,7 @@ backend/datos/*.csv
 backend/datos/*.db
 !backend/datos/modelo_entrenado.npz
 !backend/datos/equipos_nba.json
+backend/data/auth_contract_usage.json
 
 # Logs
 *.log
