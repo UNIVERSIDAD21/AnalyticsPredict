@@ -44,6 +44,12 @@ import {
   obtenerMetricasRendimiento,
   obtenerEstadoModelos,
 } from '../../servicios/futbol';
+import {
+  obtenerObservabilidadHTTP,
+  obtenerSaludBackend,
+  type ObservabilidadHTTPResumen,
+  type SaludBackend,
+} from '../../servicios/observabilidad';
 import type {
   MetricasCalibracionFutbol,
   MetricasRendimientoFutbol,
@@ -379,6 +385,8 @@ export function DashboardFutbol() {
   const [calibracion, setCalibracion] = useState<MetricasCalibracionFutbol[]>([]);
   const [rendimiento, setRendimiento] = useState<MetricasRendimientoFutbol[]>([]);
   const [modelos, setModelos] = useState<EstadoModeloFutbol[]>([]);
+  const [saludBackend, setSaludBackend] = useState<SaludBackend | null>(null);
+  const [observabilidadHTTP, setObservabilidadHTTP] = useState<ObservabilidadHTTPResumen | null>(null);
   const [datosTemporales, setDatosTemporales] = useState<
     { fecha: string; roi: number }[]
   >([]);
@@ -389,15 +397,19 @@ export function DashboardFutbol() {
     setError(null);
 
     try {
-      const [calibracionData, rendimientoData, modelosData] = await Promise.all([
+      const [calibracionData, rendimientoData, modelosData, saludData, observabilidadData] = await Promise.all([
         obtenerMetricasCalibracion(),
         obtenerMetricasRendimiento(),
         obtenerEstadoModelos(),
+        obtenerSaludBackend(),
+        obtenerObservabilidadHTTP(),
       ]);
 
       setCalibracion(calibracionData);
       setRendimiento(rendimientoData);
       setModelos(modelosData);
+      setSaludBackend(saludData);
+      setObservabilidadHTTP(observabilidadData);
       setDatosTemporales(generarDatosTemporales());
     } catch (err) {
       const mensaje =
@@ -581,6 +593,76 @@ export function DashboardFutbol() {
                 }
               />
             </div>
+
+            {/* Observabilidad operativa (A5) */}
+            {saludBackend && observabilidadHTTP && (
+              <Tarjeta className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Activity size={20} className="text-neon-cyan" />
+                  <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-texto-principal">
+                    Salud y Observabilidad HTTP
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <TarjetaMetrica
+                    titulo="Estado API"
+                    valor={saludBackend.estado.toUpperCase()}
+                    subtitulo={saludBackend.servicios.modelo}
+                    icono={<CheckCircle size={18} className="text-neon-cyan" />}
+                    colorValor={
+                      saludBackend.estado === 'saludable'
+                        ? 'text-neon-verde'
+                        : 'text-neon-amarillo'
+                    }
+                  />
+                  <TarjetaMetrica
+                    titulo="HTTP p95"
+                    valor={`${(observabilidadHTTP.http.latency_p95_ms ?? 0).toFixed(2)} ms`}
+                    subtitulo={`req: ${observabilidadHTTP.http.requests_total}`}
+                    icono={<TrendingUp size={18} className="text-neon-magenta" />}
+                    colorValor={
+                      (observabilidadHTTP.http.latency_p95_ms ?? 0) <=
+                      observabilidadHTTP.umbrales.latency_p95_ms
+                        ? 'text-neon-verde'
+                        : 'text-neon-rojo'
+                    }
+                  />
+                  <TarjetaMetrica
+                    titulo="Error rate 5xx"
+                    valor={`${(observabilidadHTTP.http.error_rate * 100).toFixed(2)}%`}
+                    subtitulo={`5xx: ${observabilidadHTTP.http.errors_5xx}`}
+                    icono={<AlertTriangle size={18} className="text-neon-amarillo" />}
+                    colorValor={
+                      observabilidadHTTP.http.error_rate <= observabilidadHTTP.umbrales.error_rate
+                        ? 'text-neon-verde'
+                        : 'text-neon-rojo'
+                    }
+                  />
+                  <TarjetaMetrica
+                    titulo="Alertas"
+                    valor={observabilidadHTTP.alertas.length}
+                    subtitulo={`uptime: ${Math.round(observabilidadHTTP.uptime.segundos)} s`}
+                    icono={<Database size={18} className="text-neon-cyan" />}
+                    colorValor={
+                      observabilidadHTTP.alertas.length === 0
+                        ? 'text-neon-verde'
+                        : 'text-neon-amarillo'
+                    }
+                  />
+                </div>
+
+                {observabilidadHTTP.alertas.length > 0 && (
+                  <div className="rounded-lg border border-neon-amarillo/40 bg-neon-amarillo/10 p-3">
+                    <ul className="space-y-1 text-xs text-neon-amarillo">
+                      {observabilidadHTTP.alertas.map((alerta) => (
+                        <li key={alerta}>• {alerta}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </Tarjeta>
+            )}
 
             {/* ROI por mercado */}
             <Tarjeta className="space-y-4">

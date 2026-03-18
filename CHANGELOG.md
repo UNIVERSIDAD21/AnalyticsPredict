@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Cierre A5 (observabilidad operativa): dashboard de fútbol integra scraping de salud/observabilidad (`/salud` + `/api/interno/observabilidad-http`) con tarjetas de estado backend, p95, error rate y alertas activas.
+- Se añadió servicio frontend `frontend/src/servicios/observabilidad.ts` para centralizar lecturas operativas de salud y observabilidad HTTP.
+- Validación controlada de alertas A5 incorporada con test endpoint `backend/tests/test_observabilidad_http_endpoint.py` (incluye escenario de error-rate > umbral).
 - A5 (observabilidad operativa) en progreso: se añadió instrumentación HTTP mínima en `backend/app.py` con captura de latencia por request + status code, y nuevo endpoint `GET /api/interno/observabilidad-http` para exponer p95, error rate (5xx), uptime y alertas por umbral.
 - Se creó `backend/observabilidad_http.py` como módulo reusable en memoria para métricas HTTP operativas.
 - Se añadieron pruebas `backend/tests/test_observabilidad_http.py` para validar cálculo de p95, error_rate y disparo de alertas.
