@@ -1,0 +1,99 @@
+# -*- coding: utf-8 -*-
+
+import os
+from pathlib import Path
+from uuid import UUID
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from api.dependencias import UsuarioActual, obtener_usuario_actual
+from api.rutas_notificaciones import router as notificaciones_router
+
+
+class _DummySMTP:
+    def __init__(self, *_args, **_kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def starttls(self):
+        return None
+
+    def login(self, *_args):
+        return None
+
+    def send_message(self, *_args):
+        return None
+
+
+def _crear_cliente(tmp_path: Path) -> TestClient:
+    os.environ["NOTIFICACIONES_DB_PATH"] = str(tmp_path / "notificaciones-test.db")
+
+    app = FastAPI()
+    app.include_router(notificaciones_router)
+    app.dependency_overrides[obtener_usuario_actual] = lambda: UsuarioActual(
+        id=UUID("00000000-0000-0000-0000-000000000001"),
+        email="tester@example.com",
+    )
+    return TestClient(app)
+
+
+def test_preferencias_default_y_actualizacion(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+
+    r = client.get("/api/notificaciones/preferencias")
+    assert r.status_code == 200
+    assert r.json()["data"]["preferencias"]["email_habilitado"] is True
+
+    r2 = client.put(
+        "/api/notificaciones/preferencias",
+        json={
+            "email_habilitado": True,
+            "alertas_partidos": False,
+            "alertas_suscripcion": True,
+            "resumen_semanal": True,
+        },
+    )
+    assert r2.status_code == 200
+    assert r2.json()["data"]["preferencias"]["alertas_partidos"] is False
+
+
+def test_enviar_prueba_registra_historial(monkeypatch, tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+
+    os.environ["AUTH_SMTP_HOST"] = "smtp.local"
+    monkeypatch.setattr("api.rutas_notificaciones.smtplib.SMTP", _DummySMTP)
+
+    r = client.post("/api/notificaciones/enviar-prueba", json={"tipo": "alertas_partidos"})
+    assert r.status_code == 200
+    assert r.json()["data"]["estado"] == "enviado"
+
+    h = client.get("/api/notificaciones/historial")
+    assert h.status_code == 200
+    assert h.json()["data"]["total"] >= 1
+
+
+def test_enviar_prueba_respeta_preferencias(monkeypatch, tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+
+    client.put(
+        "/api/notificaciones/preferencias",
+        json={
+            "email_habilitado": False,
+            "alertas_partidos": True,
+            "alertas_suscripcion": True,
+            "resumen_semanal": False,
+        },
+    )
+
+    os.environ["AUTH_SMTP_HOST"] = "smtp.local"
+    monkeypatch.setattr("api.rutas_notificaciones.smtplib.SMTP", _DummySMTP)
+
+    r = client.post("/api/notificaciones/enviar-prueba", json={"tipo": "alertas_partidos"})
+    assert r.status_code == 200
+    assert r.json()["data"]["estado"] == "omitido"

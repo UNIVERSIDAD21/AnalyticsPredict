@@ -1,6 +1,16 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Inicio de B4 (notificaciones MVP):
+  - Nuevas rutas backend en `api/rutas_notificaciones.py`:
+    - `GET /api/notificaciones/preferencias`
+    - `PUT /api/notificaciones/preferencias`
+    - `POST /api/notificaciones/enviar-prueba`
+    - `GET /api/notificaciones/historial`
+  - Nuevo store `backend/servicios/notificaciones_store.py` para preferencias e historial de envíos.
+  - Integración de router en `backend/app.py`.
+  - Nuevo esquema `backend/esquemas/notificaciones.py`.
+  - Tests nuevos: `backend/tests/api/test_notificaciones_endpoints.py`.
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,
