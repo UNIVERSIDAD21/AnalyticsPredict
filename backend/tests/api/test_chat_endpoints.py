@@ -67,6 +67,20 @@ def test_chat_guardrail_sensible(tmp_path: Path):
     assert "no puedo ayudar" in reply
 
 
+def test_chat_incluye_contexto_negocio_en_respuesta_kpi(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    access = _token_acceso(client)
+
+    r = client.post(
+        "/api/chat/mensaje",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"mensaje": "muéstrame kpis y métricas", "limite_contexto": 12},
+    )
+    assert r.status_code == 200
+    reply = r.json()["data"]["reply"].lower()
+    assert "completion onboarding" in reply
+
+
 def test_chat_reset(tmp_path: Path):
     client = _crear_cliente(tmp_path)
     access = _token_acceso(client)

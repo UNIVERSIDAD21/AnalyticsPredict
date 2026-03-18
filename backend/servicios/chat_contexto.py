@@ -113,9 +113,14 @@ def _resumen_contexto(ventana: list[dict]) -> str:
     return f"Se resumieron {recortados} mensajes previos para mantener foco y costo controlado."
 
 
-def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict]) -> str:
+def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict], contexto_negocio: dict | None = None) -> str:
     texto = (mensaje or "").strip()
     lower = texto.lower()
+    contexto_negocio = contexto_negocio or {}
+
+    tasa_entrega = contexto_negocio.get("tasa_entrega_pct")
+    completion_rate = contexto_negocio.get("completion_rate_pct")
+    ttv = contexto_negocio.get("time_to_value_minutes_avg")
 
     if _contiene_advice_sensible(lower):
         return (
@@ -130,10 +135,18 @@ def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict]) -> str:
         )
 
     if any(k in lower for k in ["win rate", "brier", "métrica", "metricas", "kpi"]):
-        return (
+        partes = [
             "Para evaluar calidad, prioriza: 1) tasa de entrega/ejecución, 2) calibración (Brier), "
-            "3) estabilidad por liga y 4) disciplina de stake. Si quieres, te armo checklist de revisión diaria."
-        )
+            "3) estabilidad por liga y 4) disciplina de stake."
+        ]
+        if isinstance(tasa_entrega, (int, float)):
+            partes.append(f"Entrega notificaciones actual: {float(tasa_entrega):.1f}%.")
+        if isinstance(completion_rate, (int, float)):
+            partes.append(f"Completion onboarding: {float(completion_rate):.1f}%.")
+        if isinstance(ttv, (int, float)):
+            partes.append(f"Time-to-value promedio: {float(ttv):.1f} min.")
+        partes.append("Si quieres, te armo checklist de revisión diaria con estos datos.")
+        return " ".join(partes)
 
     if any(k in lower for k in ["recomend", "pick", "apuesta", "partido"]):
         return (
@@ -149,8 +162,8 @@ def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict]) -> str:
     return f"{base} {contexto}".strip()
 
 
-def generar_respuesta_local(mensaje_usuario: str, ventana: list[dict]) -> str:
-    respuesta = _respuesta_mock_inteligente(mensaje_usuario, ventana)
+def generar_respuesta_local(mensaje_usuario: str, ventana: list[dict], contexto_negocio: dict | None = None) -> str:
+    respuesta = _respuesta_mock_inteligente(mensaje_usuario, ventana, contexto_negocio=contexto_negocio)
     return f"{respuesta}\n\n{DISCLAIMER_B5}"
 
 

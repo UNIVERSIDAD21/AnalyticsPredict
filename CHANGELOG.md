@@ -16,6 +16,11 @@
   - Nuevo servicio `frontend/src/servicios/chat.ts` para integrar envío/historial/reset.
   - Ruta protegida `/chat` agregada en `App.tsx` y acceso desde `Encabezado`.
   - Validación frontend ejecutada: `npm run lint` + `npm run build` OK.
+- Continuación B5 (contexto de negocio real en motor local):
+  - `rutas_chat.py` ahora inyecta señales de negocio en tiempo de respuesta (métricas de entrega B4 + KPIs onboarding B2).
+  - `chat_contexto.py` ajusta respuestas de tipo KPI/métricas para incluir contexto operativo real cuando está disponible.
+  - Tests de chat ampliados para validar presencia de contexto de negocio en respuesta de KPI.
+  - Validación backend ejecutada: suite auth+chat+notificaciones+smoke en verde.
 - Inicio de B4 (notificaciones MVP):
   - Nuevas rutas backend en `api/rutas_notificaciones.py`:
     - `GET /api/notificaciones/preferencias`
