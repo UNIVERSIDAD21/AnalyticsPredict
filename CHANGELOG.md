@@ -105,3 +105,10 @@
   - Test añadido para validar resumen de métricas de contrato.
 - Validaciones A3 fase 4:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (11 passed)
+- A3 (fase 5): inicio de contrato canónico v2 en Bitácora
+  - `backend/api/rutas_bitacora.py` agrega `?version=v2|legacy` en endpoints `GET /api/bitacora` y `GET /api/bitacora/resumen`.
+  - Legacy se mantiene por defecto temporal con headers de deprecación (`Deprecation`, `Sunset`, `Link`) para compatibilidad controlada.
+  - Se habilita telemetría de adopción para Bitácora con `GET /api/bitacora/contract-usage?days=7`.
+  - Tests nuevos de contrato en `backend/tests/api/test_bitacora_contract.py`.
+- Validaciones A3 fase 5:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_bitacora_contract.py backend/tests/test_rutas_bitacora_payload.py backend/tests/test_smoke_api.py` ✅ (6 passed)

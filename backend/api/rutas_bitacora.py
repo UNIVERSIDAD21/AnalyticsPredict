@@ -6,10 +6,12 @@ from __future__ import annotations
 from datetime import date, datetime
 import json
 import logging
+import os
+from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field, field_validator
 from psycopg.rows import dict_row
 
@@ -88,6 +90,71 @@ class RespuestaBitacoraUnificada(BaseModel):
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
+
+BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
+BITACORA_USAGE_PATH = Path(
+    os.getenv(
+        "BITACORA_CONTRACT_USAGE_PATH",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "bitacora_contract_usage.json")),
+    )
+)
+
+
+def _registrar_uso_contrato(version: str) -> None:
+    """Telemetría simple de uso de contrato bitácora (v2 vs legacy)."""
+    try:
+        BITACORA_USAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        today = date.today().isoformat()
+        if BITACORA_USAGE_PATH.exists():
+            data = json.loads(BITACORA_USAGE_PATH.read_text(encoding="utf-8"))
+        else:
+            data = {"by_date": {}}
+
+        by_date = data.setdefault("by_date", {})
+        row = by_date.setdefault(today, {"legacy": 0, "v2": 0})
+        row["legacy" if version == "legacy" else "v2"] += 1
+
+        BITACORA_USAGE_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        return
+
+
+def _leer_uso_contrato() -> dict:
+    if not BITACORA_USAGE_PATH.exists():
+        return {"by_date": {}}
+    try:
+        data = json.loads(BITACORA_USAGE_PATH.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("by_date", {}), dict):
+            return data
+    except Exception:
+        pass
+    return {"by_date": {}}
+
+
+def _aplicar_headers_deprecacion(response: Response, endpoint: str) -> None:
+    response.headers["Deprecation"] = "true"
+    response.headers["Sunset"] = BITACORA_SUNSET_DATE
+    suffix = f"/{endpoint}" if endpoint else ""
+    response.headers["Link"] = f'</api/bitacora{suffix}?version=v2>; rel="successor-version"'
+
+
+def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, endpoint: str) -> dict:
+    _registrar_uso_contrato(version)
+
+    if version == "legacy":
+        _aplicar_headers_deprecacion(response, endpoint)
+        return payload_legacy
+
+    data = dict(payload_legacy)
+    data.pop("exito", None)
+    return {
+        "ok": True,
+        "data": data,
+        "meta": {
+            "contract_version": "v2",
+            "legacy_supported": True,
+        },
+    }
 
 
 def _auto_resolver_bitacoras(usuario_id: UUID) -> None:
@@ -315,8 +382,10 @@ async def guardar_apuesta(
     return RespuestaApuesta(exito=True, apuesta=apuesta)
 
 
-@router.get("", summary="Listar apuestas", response_model=RespuestaListaApuestas)
+@router.get("", summary="Listar apuestas")
 async def listar_apuestas(
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
     resultado: Optional[str] = Query(None),
     mercado: Optional[str] = Query(None),
@@ -375,19 +444,22 @@ async def listar_apuestas(
 
     total_paginas = max(1, (total + tamano - 1) // tamano) if total else 0
 
-    return RespuestaListaApuestas(
+    payload_legacy = RespuestaListaApuestas(
         exito=True,
         total=total,
         pagina=pagina,
         total_paginas=total_paginas,
         apuestas=apuestas,
-    )
+    ).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, "")
 
 
-@router.get("/resumen", summary="Resumen de apuestas", response_model=RespuestaResumenApuestas)
+@router.get("/resumen", summary="Resumen de apuestas")
 async def resumen_apuestas(
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
-) -> RespuestaResumenApuestas:
+):
     """Retorna el resumen agregado de apuestas para el usuario (incluye simples y combinadas)."""
     _auto_resolver_bitacoras(usuario_id)
 
@@ -447,7 +519,58 @@ async def resumen_apuestas(
             )
             resumen = cursor.fetchone() or {}
 
-    return RespuestaResumenApuestas(exito=True, resumen=resumen)
+    payload_legacy = RespuestaResumenApuestas(exito=True, resumen=resumen).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, "resumen")
+
+
+@router.get("/contract-usage", summary="Métricas de adopción contrato bitácora")
+async def contract_usage(days: int = Query(default=7, ge=1, le=90)):
+    data = _leer_uso_contrato().get("by_date", {})
+    fechas = sorted(data.keys(), reverse=True)[:days]
+
+    rows = []
+    total_v2 = 0
+    total_legacy = 0
+
+    for fecha in fechas:
+        row = data.get(fecha, {})
+        v2 = int(row.get("v2", 0) or 0)
+        legacy = int(row.get("legacy", 0) or 0)
+        total = v2 + legacy
+        legacy_ratio = (legacy / total) if total > 0 else 0.0
+
+        total_v2 += v2
+        total_legacy += legacy
+        rows.append(
+            {
+                "date": fecha,
+                "v2": v2,
+                "legacy": legacy,
+                "total": total,
+                "legacy_ratio": round(legacy_ratio, 4),
+            }
+        )
+
+    total_calls = total_v2 + total_legacy
+    ratio_global = (total_legacy / total_calls) if total_calls > 0 else 0.0
+
+    return {
+        "ok": True,
+        "data": {
+            "days": days,
+            "rows": rows,
+            "summary": {
+                "v2": total_v2,
+                "legacy": total_legacy,
+                "total": total_calls,
+                "legacy_ratio": round(ratio_global, 4),
+            },
+        },
+        "meta": {
+            "contract_version": "v2",
+            "sunset": BITACORA_SUNSET_DATE,
+        },
+    }
 
 
 @router.get("/unificada", summary="Bitácora unificada", response_model=RespuestaBitacoraUnificada)
