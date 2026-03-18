@@ -27,6 +27,7 @@ import { obtenerCompeticiones, obtenerResumenCalidad1x2 } from '../../servicios/
 import { listarApuestasAnalizadas } from '../../servicios/bitacora';
 import { obtenerFechaISOBogota, obtenerHoyISOBogota } from '../../utilidades';
 import type { Competicion, FiltrosPartidos, PartidoFutbolResumen } from '../../tipos/futbol';
+import type { ApuestaAnalizada } from '../../tipos/bitacora';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -467,7 +468,9 @@ export function PaginaFutbol() {
           });
         }
         if (apuestasAnalizadas) {
-          const finalizadas = (apuestasAnalizadas.items || []).filter((x: any) => x.estado === 'FINALIZADA').length;
+          const finalizadas = (apuestasAnalizadas.items || []).filter(
+            (x: ApuestaAnalizada) => x.estado === 'FINALIZADA'
+          ).length;
           const pendientes = Math.max(0, (apuestasAnalizadas.total || 0) - finalizadas);
           setApuestasAnalizadasResumen({ pendientes, finalizadas });
         }

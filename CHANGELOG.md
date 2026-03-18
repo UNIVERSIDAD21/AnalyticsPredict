@@ -16,3 +16,9 @@
   - `frontend/Dockerfile`
   - `deploy/staging/docker-compose.yml`
   - `deploy/staging/staging.env.example`
+- Ajuste de calidad para CI frontend: se eliminó `any` explícito en `PaginaFutbol.tsx` (`ApuestaAnalizada` tipado).
+- Validaciones locales ejecutadas:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/test_smoke_api.py` ✅ (3 passed)
+  - `npm run lint` ✅ (solo warnings de hooks)
+  - `npm run build` ✅
+- Nota: verificación de `docker compose` pendiente por falta de Docker en este host.
