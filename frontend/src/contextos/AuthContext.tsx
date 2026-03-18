@@ -3,6 +3,7 @@ import {
   limpiarSesionAuth,
   guardarSesionAuth,
   login as loginServicio,
+  register as registerServicio,
   logout as logoutServicio,
   obtenerAccessToken,
   obtenerPerfil,
@@ -16,6 +17,7 @@ interface AuthContextType {
   cargando: boolean;
   usuario: UsuarioAuth | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -70,6 +72,17 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
     setUsuario(perfil);
   }, []);
 
+  const register = useCallback(async (email: string, password: string) => {
+    const data = await registerServicio(email, password);
+    const perfil = data.user ?? (await obtenerPerfil(data.access_token));
+    guardarSesionAuth({
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      user: perfil,
+    });
+    setUsuario(perfil);
+  }, []);
+
   const logout = useCallback(async () => {
     const access = obtenerAccessToken();
     if (access) {
@@ -85,9 +98,10 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
       cargando,
       usuario,
       login,
+      register,
       logout,
     }),
-    [usuario, cargando, login, logout]
+    [usuario, cargando, login, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

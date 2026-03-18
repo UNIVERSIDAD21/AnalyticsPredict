@@ -50,6 +50,39 @@ export async function login(email: string, password: string): Promise<RespuestaA
   }
 }
 
+export async function register(email: string, password: string): Promise<RespuestaAuth> {
+  try {
+    const { data } = await clienteAPI.post<RespuestaAuth>('/api/auth/register', { email, password });
+    return data;
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+export async function solicitarRecuperacion(email: string): Promise<{ message: string; reset_token_dev?: string }> {
+  try {
+    const { data } = await clienteAPI.post<{ ok: boolean; message: string; reset_token_dev?: string }>(
+      '/api/auth/forgot-password',
+      { email }
+    );
+    return { message: data.message, reset_token_dev: data.reset_token_dev };
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+export async function restablecerPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  try {
+    const { data } = await clienteAPI.post<{ ok: boolean; message: string }>('/api/auth/reset-password', {
+      token,
+      new_password: newPassword,
+    });
+    return { message: data.message };
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
 export async function obtenerPerfil(accessToken: string): Promise<UsuarioAuth> {
   try {
     const { data } = await clienteAPI.get<{ ok: boolean; user: UsuarioAuth }>('/api/auth/me', {

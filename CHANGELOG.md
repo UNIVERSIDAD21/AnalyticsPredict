@@ -41,3 +41,11 @@
 - Validaciones frontend ejecutadas:
   - `npm run lint` ✅ (sin errores, warnings legacy de hooks)
   - `npm run build` ✅
+- Continuación A2 (auth UX completa):
+  - `PaginaLogin` ahora soporta login, registro, solicitar recuperación y reset de contraseña.
+  - `AuthContext` expone `register` además de `login/logout`.
+  - `frontend/src/servicios/auth.ts` incluye llamadas a `register`, `forgot-password` y `reset-password`.
+  - Flujo de recuperación usa `reset_token_dev` únicamente para staging/desarrollo (pendiente correo real).
+- Validaciones post-ajuste:
+  - `npm run lint` ✅ (sin errores)
+  - `npm run build` ✅

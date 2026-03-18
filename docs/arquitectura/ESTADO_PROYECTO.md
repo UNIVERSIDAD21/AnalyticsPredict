@@ -15,7 +15,7 @@ A1 → (A2/A3/A4/A5) → A6 → (B1/B2/B3) → (B4/B5/B6) → B7
 | Bloque | Estado | Hecho | Decisiones tomadas | Abierto |
 |---|---|---|---|---|
 | A1 | EN_CURSO | Plan v3 incorporado, ADRs iniciales creados, CI en GitHub Actions creado (`.github/workflows/ci.yml`), base de staging en Docker creada (`deploy/staging/*`), validación local CI realizada (backend smoke 3/3 y frontend lint/build OK) | Staging+CI/CD básico adelantado a A1 | Validar despliegue real de staging con `staging.env` y smoke operativo (pendiente: host actual sin Docker) |
-| A2 | EN_CURSO | Endpoints auth base + UI de login integrada en frontend, contexto de sesión, rutas protegidas y cierre de sesión desde header; tests API auth 3/3 passing y frontend lint/build OK | Tokens firmados con rotación/revocación (`jti`) + guard de rutas por sesión autenticada | Migrar store auth a PostgreSQL y completar flujos de registro/recuperación con envío de correo real |
+| A2 | EN_CURSO | Endpoints auth base + UI completa de auth en frontend (login/registro/recuperación/reset), contexto de sesión, rutas protegidas y cierre de sesión en header; tests API auth 3/3 y frontend lint/build OK | Tokens firmados con rotación/revocación (`jti`) + guard de rutas por sesión autenticada + flujo de recuperación temporal en staging | Migrar store auth a PostgreSQL y conectar recuperación a proveedor de correo real (eliminar `reset_token_dev`) |
 | A3 | PENDIENTE | — | Contrato canónico con legacy temporal medido | Retiro progresivo legacy |
 | A4 | PENDIENTE | — | Legal transversal obligatorio | Persistencia de aceptación legal |
 | A5 | PENDIENTE | — | Métricas mínimas operativas obligatorias | Implementación dashboard/alertas |
