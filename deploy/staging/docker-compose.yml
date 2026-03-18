@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  analytics-backend:
+    build:
+      context: ../../
+      dockerfile: backend/Dockerfile
+    container_name: analytics-backend-staging
+    env_file:
+      - ./staging.env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  analytics-frontend:
+    build:
+      context: ../../
+      dockerfile: frontend/Dockerfile
+    container_name: analytics-frontend-staging
+    depends_on:
+      - analytics-backend
+    ports:
+      - "5173:80"
+    restart: unless-stopped

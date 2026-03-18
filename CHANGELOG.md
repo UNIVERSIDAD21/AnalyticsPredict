@@ -8,3 +8,11 @@
   - `ADR-002-pagos.md` (MercadoPago por foco LATAM + nota Stripe para Europa)
   - `ADR-003-chat-contexto.md` (ventana deslizante N para controlar costo LLM)
 - Se inició limpieza de documentación obsoleta para evitar uso de contexto duplicado.
+- Se agregó CI básico en GitHub Actions (`.github/workflows/ci.yml`) con:
+  - backend smoke tests (`pytest -q tests/test_smoke_api.py`)
+  - frontend lint + build (`npm run lint`, `npm run build`)
+- Se creó base de staging en Docker:
+  - `backend/Dockerfile`
+  - `frontend/Dockerfile`
+  - `deploy/staging/docker-compose.yml`
+  - `deploy/staging/staging.env.example`
