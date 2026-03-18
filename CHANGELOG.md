@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Inicio de B1 (pagos/suscripción): se implementó backend base con `POST /api/pagos/checkout-session`, `POST /api/pagos/webhook/mercadopago` (validación `X-Signature` HMAC-SHA256), `GET /api/pagos/suscripcion/mia` y `GET /api/pagos/feature-gate`.
+- Se añadió persistencia mínima de intents y suscripciones en `backend/servicios/pagos_store.py` (SQLite con `PAGOS_DB_PATH`).
+- Validación ejecutada B1 base: `backend/.venv/bin/pytest -q tests/api/test_pagos_endpoints.py tests/api/test_auth_endpoints.py` ✅ (14 passed).
 - Cierre A6 (Gate Fase A): se creó `scripts/validar_a6_rca.sh` para ejecutar validación integral automatizada de A2/A3/A4/A5 + frontend (lint/build), generando evidencia en `docs/reportes/A6_RC-A_2026-03-18T07-28-30Z.md` con resultado RC-A APROBADO y 0 bloqueantes P0/P1.
 - Cierre A5 (observabilidad operativa): dashboard de fútbol integra scraping de salud/observabilidad (`/salud` + `/api/interno/observabilidad-http`) con tarjetas de estado backend, p95, error rate y alertas activas.
 - Se añadió servicio frontend `frontend/src/servicios/observabilidad.ts` para centralizar lecturas operativas de salud y observabilidad HTTP.
