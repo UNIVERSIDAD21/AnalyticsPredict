@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## 2026-03-18
+- A5 (observabilidad operativa) en progreso: se añadió instrumentación HTTP mínima en `backend/app.py` con captura de latencia por request + status code, y nuevo endpoint `GET /api/interno/observabilidad-http` para exponer p95, error rate (5xx), uptime y alertas por umbral.
+- Se creó `backend/observabilidad_http.py` como módulo reusable en memoria para métricas HTTP operativas.
+- Se añadieron pruebas `backend/tests/test_observabilidad_http.py` para validar cálculo de p95, error_rate y disparo de alertas.
 - Se incorporó al repositorio el plan de ejecución por bloques v3 en `docs/arquitectura/PLAN_EJECUCION_BLOQUES_V3.md`.
 - Se creó `docs/arquitectura/ESTADO_PROYECTO.md` como fuente única de estado operativo por bloque.
 - Se agregaron ADRs iniciales:

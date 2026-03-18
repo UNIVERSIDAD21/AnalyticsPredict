@@ -10,6 +10,7 @@ CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
 
 from contextlib import asynccontextmanager
 from datetime import datetime
+from time import perf_counter
 from uuid import uuid4
 import logging
 import traceback
@@ -41,6 +42,7 @@ from api.rutas_apuestas_futbol import router as router_apuestas_futbol
 from api.rutas_metricas_futbol import router as router_metricas_futbol
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from db import obtener_pool, cerrar_pool
+from observabilidad_http import ObservabilidadHTTP
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # NUEVO: Importar sistema de auto-entrenamiento
@@ -54,6 +56,7 @@ from motor_autoentrenamiento import (
 # Variable global para el gestor
 _gestor_modelo = None
 logger = logging.getLogger(__name__)
+observabilidad_http = ObservabilidadHTTP()
 
 
 def _respuesta_error(request: Request, status_code: int, codigo: str, mensaje: str, detalle=None):
@@ -183,10 +186,18 @@ app.add_middleware(
 
 @app.middleware("http")
 async def middleware_trace_id(request: Request, call_next):
-    """Asigna un trace_id por request y lo retorna en headers."""
+    """Asigna trace_id y captura métricas HTTP operativas mínimas."""
     trace_id = str(uuid4())
     request.state.trace_id = trace_id
+
+    inicio = perf_counter()
     response = await call_next(request)
+    latencia_ms = (perf_counter() - inicio) * 1000.0
+
+    observabilidad_http.registrar(
+        latencia_ms=latencia_ms,
+        status_code=response.status_code,
+    )
     response.headers["X-Trace-Id"] = trace_id
     return response
 
@@ -330,6 +341,25 @@ async def verificar_salud():
             "debug": CONFIGURACION.debug,
         },
     }
+
+
+@app.get(
+    "/api/interno/observabilidad-http",
+    tags=["Interno"],
+    summary="Resumen HTTP operativo mínimo",
+    description=(
+        "Entrega p95 de latencia, error rate 5xx y uptime del proceso. "
+        "Sirve como dashboard técnico mínimo del bloque A5."
+    ),
+)
+async def obtener_observabilidad_http(
+    umbral_p95_ms: float = 800.0,
+    umbral_error_rate: float = 0.05,
+):
+    return observabilidad_http.resumen(
+        umbral_p95_ms=umbral_p95_ms,
+        umbral_error_rate=umbral_error_rate,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
