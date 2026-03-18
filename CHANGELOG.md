@@ -85,3 +85,11 @@
   - Tests nuevos para contrato v2 y deprecación legacy en `backend/tests/api/test_auth_endpoints.py`.
 - Validaciones backend post-A3(auth):
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (9 passed)
+- A3 (fase 2): frontend auth migrado a contrato canónico v2
+  - `frontend/src/servicios/auth.ts` ahora consume `?version=v2` en `login/register/me/refresh/logout/forgot/reset`.
+  - Normalización de respuesta para soportar envelope v2 (`{ok,data,meta}`) con fallback legacy.
+  - `frontend/src/servicios/api.ts` refresco de token actualizado a `/api/auth/refresh?version=v2` y parseo de envelope v2.
+- Validaciones A3 fase 2:
+  - `npm run lint` ✅ (sin errores; warnings legacy de hooks)
+  - `npm run build` ✅
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py` ✅ (6 passed)

@@ -87,13 +87,17 @@ async function intentarRefreshToken(configOriginal?: AxiosRequestConfig): Promis
 
   try {
     const respuestaRefresh = await axios.post(
-      `${URL_BASE}/api/auth/refresh`,
+      `${URL_BASE}/api/auth/refresh?version=v2`,
       { refresh_token: refreshToken },
       { timeout: TIMEOUT }
     );
 
-    const nuevoAccessToken = respuestaRefresh.data?.access_token as string | undefined;
-    const nuevoRefreshToken = respuestaRefresh.data?.refresh_token as string | undefined;
+    const payload = (respuestaRefresh.data?.data ?? respuestaRefresh.data) as {
+      access_token?: string;
+      refresh_token?: string;
+    };
+    const nuevoAccessToken = payload.access_token;
+    const nuevoRefreshToken = payload.refresh_token;
 
     if (!nuevoAccessToken || !nuevoRefreshToken) {
       limpiarTokens();

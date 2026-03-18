@@ -5,6 +5,43 @@ const ACCESS_TOKEN_KEY = 'auth.accessToken';
 const REFRESH_TOKEN_KEY = 'auth.refreshToken';
 const USER_KEY = 'auth.user';
 
+interface EnvelopeV2<T> {
+  ok: boolean;
+  data: T;
+  meta?: Record<string, unknown>;
+}
+
+function esEnvelopeV2<T>(data: unknown): data is EnvelopeV2<T> {
+  return !!data && typeof data === 'object' && 'data' in (data as Record<string, unknown>);
+}
+
+function normalizarAuthRespuesta(payload: unknown): RespuestaAuth {
+  if (esEnvelopeV2<RespuestaAuth>(payload)) {
+    return payload.data;
+  }
+  return payload as RespuestaAuth;
+}
+
+function normalizarMensajeRespuesta(
+  payload: unknown
+): { message: string; reset_token_dev?: string; user?: UsuarioAuth } {
+  if (esEnvelopeV2<{ message?: string; reset_token_dev?: string; user?: UsuarioAuth }>(payload)) {
+    const data = payload.data ?? {};
+    return {
+      message: data.message ?? '',
+      reset_token_dev: data.reset_token_dev,
+      user: data.user,
+    };
+  }
+
+  const raw = (payload ?? {}) as { message?: string; reset_token_dev?: string; user?: UsuarioAuth };
+  return {
+    message: raw.message ?? '',
+    reset_token_dev: raw.reset_token_dev,
+    user: raw.user,
+  };
+}
+
 export function obtenerAccessToken(): string | null {
   return typeof window !== 'undefined' ? window.localStorage.getItem(ACCESS_TOKEN_KEY) : null;
 }
@@ -43,8 +80,8 @@ export function limpiarSesionAuth() {
 
 export async function login(email: string, password: string): Promise<RespuestaAuth> {
   try {
-    const { data } = await clienteAPI.post<RespuestaAuth>('/api/auth/login', { email, password });
-    return data;
+    const { data } = await clienteAPI.post('/api/auth/login?version=v2', { email, password });
+    return normalizarAuthRespuesta(data);
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
@@ -52,8 +89,8 @@ export async function login(email: string, password: string): Promise<RespuestaA
 
 export async function register(email: string, password: string): Promise<RespuestaAuth> {
   try {
-    const { data } = await clienteAPI.post<RespuestaAuth>('/api/auth/register', { email, password });
-    return data;
+    const { data } = await clienteAPI.post('/api/auth/register?version=v2', { email, password });
+    return normalizarAuthRespuesta(data);
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
@@ -61,11 +98,9 @@ export async function register(email: string, password: string): Promise<Respues
 
 export async function solicitarRecuperacion(email: string): Promise<{ message: string; reset_token_dev?: string }> {
   try {
-    const { data } = await clienteAPI.post<{ ok: boolean; message: string; reset_token_dev?: string }>(
-      '/api/auth/forgot-password',
-      { email }
-    );
-    return { message: data.message, reset_token_dev: data.reset_token_dev };
+    const { data } = await clienteAPI.post('/api/auth/forgot-password?version=v2', { email });
+    const normalizado = normalizarMensajeRespuesta(data);
+    return { message: normalizado.message, reset_token_dev: normalizado.reset_token_dev };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
@@ -73,11 +108,12 @@ export async function solicitarRecuperacion(email: string): Promise<{ message: s
 
 export async function restablecerPassword(token: string, newPassword: string): Promise<{ message: string }> {
   try {
-    const { data } = await clienteAPI.post<{ ok: boolean; message: string }>('/api/auth/reset-password', {
+    const { data } = await clienteAPI.post('/api/auth/reset-password?version=v2', {
       token,
       new_password: newPassword,
     });
-    return { message: data.message };
+    const normalizado = normalizarMensajeRespuesta(data);
+    return { message: normalizado.message };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
@@ -85,10 +121,15 @@ export async function restablecerPassword(token: string, newPassword: string): P
 
 export async function obtenerPerfil(accessToken: string): Promise<UsuarioAuth> {
   try {
-    const { data } = await clienteAPI.get<{ ok: boolean; user: UsuarioAuth }>('/api/auth/me', {
+    const { data } = await clienteAPI.get('/api/auth/me?version=v2', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    return data.user;
+
+    if (esEnvelopeV2<{ user: UsuarioAuth }>(data)) {
+      return data.data.user;
+    }
+
+    return (data as { user: UsuarioAuth }).user;
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
@@ -96,7 +137,7 @@ export async function obtenerPerfil(accessToken: string): Promise<UsuarioAuth> {
 
 export async function logout(accessToken: string): Promise<void> {
   try {
-    await clienteAPI.post('/api/auth/logout', null, {
+    await clienteAPI.post('/api/auth/logout?version=v2', null, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   } catch {
