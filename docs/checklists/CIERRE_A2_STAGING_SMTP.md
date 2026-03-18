@@ -37,13 +37,23 @@ AUTH_SECRET_KEY=CAMBIAR_A_UN_SECRETO_FUERTE
 # Recuperación por correo
 AUTH_RESET_EMAIL_MODE=smtp
 AUTH_FRONTEND_URL=http://localhost:15173
-AUTH_SMTP_HOST=smtp.tu-proveedor.com
-AUTH_SMTP_PORT=587
-AUTH_SMTP_USER=usuario_smtp
-AUTH_SMTP_PASSWORD=password_smtp
+# Opción rápida recomendada (local): MailHog en Docker Compose
+AUTH_SMTP_HOST=mailhog
+AUTH_SMTP_PORT=1025
+AUTH_SMTP_USER=
+AUTH_SMTP_PASSWORD=
 AUTH_SMTP_FROM=no-reply@tu-dominio.com
-AUTH_SMTP_STARTTLS=true
+AUTH_SMTP_STARTTLS=false
 AUTH_SMTP_SSL=false
+STAGING_SMTP_UI_PORT=18025
+
+# Opción proveedor externo (si ya tienes credenciales)
+# AUTH_SMTP_HOST=smtp.tu-proveedor.com
+# AUTH_SMTP_PORT=587
+# AUTH_SMTP_USER=usuario_smtp
+# AUTH_SMTP_PASSWORD=password_smtp
+# AUTH_SMTP_STARTTLS=true
+# AUTH_SMTP_SSL=false
 ```
 
 > Nota: usa `AUTH_SMTP_SSL=true` y puerto `465` si tu proveedor lo requiere.

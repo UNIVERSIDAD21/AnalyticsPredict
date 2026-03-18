@@ -68,3 +68,12 @@
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (7 passed)
 - Se añadió checklist operativo de cierre A2 en staging:
   - `docs/checklists/CIERRE_A2_STAGING_SMTP.md` (config env, smoke API, forgot/reset SMTP y criterios de cierre).
+- Ruta rápida de SMTP implementada para staging:
+  - `deploy/staging/docker-compose.yml` incluye servicio `mailhog` (relay SMTP local + bandeja web).
+  - `deploy/staging/staging.env.example` actualizado con configuración rápida MailHog (`AUTH_SMTP_HOST=mailhog`, `AUTH_SMTP_PORT=1025`, `STAGING_SMTP_UI_PORT=18025`).
+  - Checklist A2 actualizado para contemplar opción rápida local sin proveedor externo.
+- Validación E2E en staging desplegado:
+  - Backend saludable en `http://localhost:18000/salud`.
+  - Forgot-password en modo SMTP sin `reset_token_dev`.
+  - Correo recibido en MailHog (`http://localhost:18025`), token recuperado, reset exitoso y login con nueva contraseña OK.
+  - Bloque A2 marcado como CERRADO en `docs/arquitectura/ESTADO_PROYECTO.md`.

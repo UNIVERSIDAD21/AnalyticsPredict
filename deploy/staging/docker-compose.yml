@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   analytics-backend:
     build:
@@ -8,6 +6,8 @@ services:
     container_name: analytics-backend-staging
     env_file:
       - ./staging.env
+    depends_on:
+      - mailhog
     ports:
       - "${STAGING_BACKEND_PORT:-18000}:8000"
     restart: unless-stopped
@@ -23,3 +23,9 @@ services:
       - "${STAGING_FRONTEND_PORT:-15173}:80"
     restart: unless-stopped
 
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: analytics-mailhog-staging
+    ports:
+      - "${STAGING_SMTP_UI_PORT:-18025}:8025"
+    restart: unless-stopped

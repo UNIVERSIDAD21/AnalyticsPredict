@@ -15,7 +15,7 @@ A1 → (A2/A3/A4/A5) → A6 → (B1/B2/B3) → (B4/B5/B6) → B7
 | Bloque | Estado | Hecho | Decisiones tomadas | Abierto |
 |---|---|---|---|---|
 | A1 | EN_CURSO | Plan v3 incorporado, ADRs iniciales creados, CI en GitHub Actions creado (`.github/workflows/ci.yml`), base de staging en Docker creada (`deploy/staging/*`), validación local CI realizada (backend smoke 3/3 y frontend lint/build OK) | Staging+CI/CD básico adelantado a A1 | Validar despliegue real de staging con `staging.env` y smoke operativo (pendiente: host actual sin Docker) |
-| A2 | EN_CURSO | Endpoints auth + UI completa (login/registro/recuperación/reset), guard de rutas, store auth `sqlite|postgres`, y recuperación por correo real vía SMTP (`AUTH_RESET_EMAIL_MODE=smtp`); tests backend auth+smoke 7/7 passing | Flujo de recuperación ya soporta modo productivo (sin exponer token en API) y modo dev controlado (`AUTH_RESET_EMAIL_MODE=dev`) | Configurar credenciales SMTP reales en staging y ejecutar E2E final de auth en entorno desplegado |
+| A2 | CERRADO | E2E ejecutado en staging: register/login/me/refresh/logout/revocación + forgot/reset por SMTP con MailHog local, login con nueva contraseña OK; backend saludable en `:18000` | Base auth en PostgreSQL + flujo SMTP validado extremo a extremo en entorno desplegado | Opcional posterior: reemplazar MailHog por proveedor SMTP externo (SendGrid/Resend/etc.) sin cambios de código |
 | A3 | PENDIENTE | — | Contrato canónico con legacy temporal medido | Retiro progresivo legacy |
 | A4 | PENDIENTE | — | Legal transversal obligatorio | Persistencia de aceptación legal |
 | A5 | PENDIENTE | — | Métricas mínimas operativas obligatorias | Implementación dashboard/alertas |
