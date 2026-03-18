@@ -12,7 +12,11 @@
   - Nuevo endpoint `GET /api/futbol/metricas/b3-estabilidad` con clasificación `estable|warning|critico|insuficiente` por liga.
   - Regla de criticidad: degradación semanal de Brier (abs >= 0.03 y rel >= 15%) con muestra mínima por ventana.
   - Salida incluye `gate_aprobado` para decisión operativa del ciclo.
-  - Test unitario nuevo: `backend/tests/test_b3_estabilidad_metricas.py`. 
+  - Test unitario nuevo: `backend/tests/test_b3_estabilidad_metricas.py`.
+- Automatización de evidencia B3 por ciclo semanal:
+  - Nuevo script `scripts/reporte_b3_estabilidad.sh` que genera reporte en `docs/reportes/B3_ESTABILIDAD_<timestamp>.md`.
+  - Nuevo target de Makefile: `make reporte-b3-estabilidad`.
+  - Primer reporte generado: `docs/reportes/B3_ESTABILIDAD_2026-03-18T12-37-09Z.md`. 
 - Cierre formal de B2 (onboarding + dashboard usuario):
   - Estado de bloque actualizado a `CERRADO` en `docs/arquitectura/ESTADO_PROYECTO.md`.
   - Criterio de cierre: onboarding obligatorio + persistencia backend + telemetría de conversión + KPI real de `completion_rate` y `time_to_value` disponible en API/UI.

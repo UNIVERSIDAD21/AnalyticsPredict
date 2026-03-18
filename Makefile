@@ -1,4 +1,4 @@
-.PHONY: help dev backend frontend calidad-ciclo calidad-ciclo-fast reporte-ejecutivo qa-preflight reporte-semanal-template reporte-semanal-auto export-metricas-csv snapshot-tendencias revision-politica check-modo-estricto cierre-operativo estado-unificado operacion-diaria-full
+.PHONY: help dev backend frontend calidad-ciclo calidad-ciclo-fast reporte-ejecutivo qa-preflight reporte-semanal-template reporte-semanal-auto export-metricas-csv snapshot-tendencias revision-politica check-modo-estricto cierre-operativo estado-unificado operacion-diaria-full reporte-b3-estabilidad
 
 help:
 	@echo "Targets disponibles:"
@@ -10,6 +10,7 @@ help:
 	@echo "  make reporte-ejecutivo    # Genera reporte ejecutivo"
 	@echo "  make qa-preflight         # Validaciones previas"
 	@echo "  make operacion-diaria-full# Pipeline diaria completa"
+	@echo "  make reporte-b3-estabilidad# Reporte semanal B3 por liga"
 
 dev:
 	bash scripts/dev.sh
@@ -58,3 +59,6 @@ estado-unificado:
 
 operacion-diaria-full:
 	bash scripts/operacion_diaria_full.sh
+
+reporte-b3-estabilidad:
+	bash scripts/reporte_b3_estabilidad.sh
