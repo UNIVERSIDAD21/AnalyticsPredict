@@ -6,8 +6,10 @@ import { useAuth } from '../../contextos/AuthContext';
 import {
   obtenerEstadoOnboarding,
   obtenerResumenDashboard,
+  obtenerKpisOnboarding,
   registrarEventoOnboarding,
   type ResumenDashboard,
+  type KpisOnboarding,
 } from '../../servicios/onboarding';
 import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
 
@@ -33,11 +35,20 @@ const planInicial: EstadoPlanUsuario = {
   actualizadoEn: null,
 };
 
+const kpisIniciales: KpisOnboarding = {
+  startedUsers: 0,
+  completedUsers: 0,
+  completionRatePct: 0,
+  timeToValueMinutesAvg: null,
+  ttvSampleSize: 0,
+};
+
 export function PaginaDashboardUsuario() {
   const { usuario } = useAuth();
   const [cargando, setCargando] = useState(true);
   const [resumen, setResumen] = useState<ResumenDashboard>(resumenInicial);
   const [plan, setPlan] = useState<EstadoPlanUsuario>(planInicial);
+  const [kpisOnboarding, setKpisOnboarding] = useState<KpisOnboarding>(kpisIniciales);
   const [error, setError] = useState<string | null>(null);
 
   const estadoOnboarding = useMemo(() => {
@@ -49,12 +60,14 @@ export function PaginaDashboardUsuario() {
     try {
       setError(null);
       setCargando(true);
-      const [resumenData, planData] = await Promise.all([
+      const [resumenData, planData, kpisData] = await Promise.all([
         obtenerResumenDashboard(),
         obtenerEstadoPlan(),
+        obtenerKpisOnboarding(),
       ]);
       setResumen(resumenData);
       setPlan(planData);
+      setKpisOnboarding(kpisData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo cargar el dashboard.');
     } finally {
@@ -150,6 +163,31 @@ export function PaginaDashboardUsuario() {
                 <Kpi label="Ganadas" valor={resumen.ganadas} />
                 <Kpi label="Perdidas" valor={resumen.perdidas} />
                 <Kpi label="Push" valor={resumen.push} />
+              </div>
+            </div>
+
+            <div className="tarjeta p-6">
+              <h3 className="text-lg font-semibold text-texto-principal mb-4">KPIs de activación (reales)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-4">
+                  <p className="text-xs uppercase tracking-wider text-texto-terciario">Completion rate</p>
+                  <p className="text-3xl font-semibold text-neon-cyan mt-1">{kpisOnboarding.completionRatePct.toFixed(1)}%</p>
+                  <p className="text-xs text-texto-secundario mt-1">
+                    {kpisOnboarding.completedUsers} completados de {kpisOnboarding.startedUsers} iniciados
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-neon-verde/20 bg-futurista-oscuro/40 p-4">
+                  <p className="text-xs uppercase tracking-wider text-texto-terciario">Time-to-value promedio</p>
+                  <p className="text-3xl font-semibold text-neon-verde mt-1">
+                    {kpisOnboarding.timeToValueMinutesAvg === null
+                      ? 'N/D'
+                      : `${kpisOnboarding.timeToValueMinutesAvg.toFixed(1)} min`}
+                  </p>
+                  <p className="text-xs text-texto-secundario mt-1">
+                    muestra: {kpisOnboarding.ttvSampleSize} usuario(s)
+                  </p>
+                </div>
               </div>
             </div>
           </>

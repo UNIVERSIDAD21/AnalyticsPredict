@@ -7,7 +7,7 @@
  * - Diseño SVG futurista
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { Tarjeta } from '../atomos';
 
@@ -136,13 +136,13 @@ export function GraficoDistribucion({
   }, [puntosCurva]);
 
   // Funciones de transformación
-  const transformarX = (x: number): number => {
+  const transformarX = useCallback((x: number): number => {
     return PADDING_X + ((x - xMin) / (xMax - xMin)) * areaAncho;
-  };
+  }, [xMin, xMax, areaAncho]);
 
-  const transformarY = (y: number): number => {
+  const transformarY = useCallback((y: number): number => {
     return PADDING_Y + areaAltura - (y / yMax) * areaAltura;
-  };
+  }, [areaAltura, yMax]);
 
   // Generar path de la curva
   const pathCurva = useMemo(() => {
@@ -153,7 +153,7 @@ export function GraficoDistribucion({
         return i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
       })
       .join(' ');
-  }, [puntosCurva]);
+  }, [puntosCurva, transformarX, transformarY]);
 
   // Generar path del área sombreada (over o under)
   const pathArea = useMemo(() => {
@@ -186,7 +186,7 @@ export function GraficoDistribucion({
     }
 
     return areaPath;
-  }, [puntosCurva, linea, lado, xMin, xMax]);
+  }, [puntosCurva, linea, lado, xMin, xMax, transformarX, transformarY]);
 
   // Calcular probabilidades
   const probabilidades = useMemo(() => {
@@ -212,7 +212,7 @@ export function GraficoDistribucion({
     }
 
     return marcas;
-  }, [xMin, xMax]);
+  }, [xMin, xMax, transformarX]);
 
   return (
     <Tarjeta className={clsx('space-y-4', className)}>

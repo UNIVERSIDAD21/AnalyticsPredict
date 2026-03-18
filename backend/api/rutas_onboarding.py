@@ -89,6 +89,19 @@ def guardar_perfil_onboarding(
     }
 
 
+@router.get("/kpis")
+def obtener_kpis_conversion(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    auth_store: AuthStore = Depends(obtener_auth_store),
+    onboarding_store: OnboardingStore = Depends(obtener_onboarding_store),
+):
+    _usuario_actual(authorization, auth_store)
+    return {
+        "ok": True,
+        "data": onboarding_store.obtener_kpis_conversion(),
+    }
+
+
 @router.post("/evento")
 def registrar_evento_conversion(
     payload: OnboardingEventoRequest,

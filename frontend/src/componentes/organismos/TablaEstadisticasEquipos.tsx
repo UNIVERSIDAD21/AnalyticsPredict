@@ -68,7 +68,7 @@ export function TablaEstadisticasEquipos({
   // Ref para la tabla (usado por PaginaPrincipal para scroll)
   const tablaRef = useRef<HTMLTableElement>(null);
 
-  const columnas: Columna[] = [
+  const columnas: Columna[] = useMemo(() => [
     {
       id: 'equipo',
       etiqueta: 'Equipo',
@@ -166,7 +166,7 @@ export function TablaEstadisticasEquipos({
       obtenerValor: (e) => e.visitante.ppg,
       colorear: obtenerColorPPG,
     },
-  ];
+  ], []);
 
   const equiposFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -197,7 +197,7 @@ export function TablaEstadisticasEquipos({
         : String(vb).localeCompare(String(va));
     });
     return ordenados;
-  }, [equiposFiltrados, orden]);
+  }, [equiposFiltrados, orden, columnas]);
 
   const alternarOrden = (columnaId: string) => {
     setOrden((prev) => {

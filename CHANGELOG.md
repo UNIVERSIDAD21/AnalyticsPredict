@@ -18,9 +18,13 @@
   - Nuevo esquema `backend/esquemas/onboarding.py` para perfil y eventos de embudo.
   - Integración en `backend/app.py` y nuevo test `backend/tests/api/test_onboarding_endpoints.py`.
   - Frontend ahora sincroniza estado onboarding contra backend (hidratación en auth) y registra eventos `onboarding_started`, `onboarding_completed`, `dashboard_viewed`.
-- Validaciones B2 (persistencia+conversión):
-  - `backend/.venv/bin/pytest -q backend/tests/api/test_onboarding_endpoints.py backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (17 passed)
-  - `npm run lint` ✅ (sin errores; warnings legacy de hooks existentes)
+- Limpieza frontend (hooks/deps): se corrigieron warnings `react-hooks/exhaustive-deps` en `SelectorPartido`, `FormularioAnalisis`, `GraficoDistribucion` y `TablaEstadisticasEquipos`.
+- KPI real de activación incorporado:
+  - Backend: nuevo `GET /api/onboarding/kpis` (usuarios iniciados/completados, `completion_rate_pct`, `time_to_value_minutes_avg`, tamaño de muestra).
+  - Frontend dashboard: tarjetas con Completion Rate y Time-to-Value promedio basados en datos reales de eventos.
+- Validaciones B2 (persistencia+conversión+KPIs):
+  - `backend/.venv/bin/pytest -q backend/tests/api/test_onboarding_endpoints.py backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (18 passed)
+  - `npm run lint` ✅ (sin errores)
   - `npm run build` ✅
 - Métricas profesionales: `GET /api/metricas/recomendaciones-accion` ahora acepta `max_acciones` (1-50) y normaliza la salida (deduplicación por acción/prioridad/semaforo + orden estable por impacto), evitando planes redundantes en runtime.
 - Validación ejecutada del bloque métricas: `backend/.venv/bin/pytest -q backend/tests/test_rutas_metricas.py backend/tests/api/test_metricas_profesionales_endpoints.py` ✅ (12 passed).

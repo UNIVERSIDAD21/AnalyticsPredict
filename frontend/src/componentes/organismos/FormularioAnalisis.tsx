@@ -226,7 +226,7 @@ export function FormularioAnalisis({
 
       onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, onAnalizar, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id, temporadasSeleccionadas, partidoSeleccionado]
+    [formulario, onAnalizar, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado]
   );
 
   useEffect(() => {

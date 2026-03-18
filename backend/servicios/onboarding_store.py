@@ -15,6 +15,7 @@ class OnboardingStore(Protocol):
     def guardar_onboarding(self, user_id: int, perfil: dict) -> dict: ...
     def obtener_onboarding(self, user_id: int) -> dict | None: ...
     def registrar_evento(self, user_id: int, event_name: str, event_ts: str, metadata: dict | None = None) -> None: ...
+    def obtener_kpis_conversion(self) -> dict: ...
 
 
 class SQLiteOnboardingStore:
@@ -142,6 +143,64 @@ class SQLiteOnboardingStore:
                 ),
             )
 
+    def obtener_kpis_conversion(self) -> dict:
+        with self._conn() as conn:
+            iniciados = conn.execute(
+                "SELECT COUNT(DISTINCT user_id) AS total FROM onboarding_events WHERE event_name='onboarding_started'"
+            ).fetchone()["total"]
+            completados_evento = conn.execute(
+                "SELECT COUNT(DISTINCT user_id) AS total FROM onboarding_events WHERE event_name='onboarding_completed'"
+            ).fetchone()["total"]
+            completados_perfil = conn.execute(
+                "SELECT COUNT(*) AS total FROM onboarding_profiles WHERE completado=1"
+            ).fetchone()["total"]
+
+            completados = max(int(completados_evento or 0), int(completados_perfil or 0))
+            iniciados = int(iniciados or 0)
+            completion_rate = (completados / iniciados * 100.0) if iniciados > 0 else 0.0
+
+            rows = conn.execute(
+                """
+                SELECT user_id, event_name, event_ts
+                FROM onboarding_events
+                WHERE event_name IN ('onboarding_completed', 'dashboard_viewed')
+                ORDER BY user_id, event_ts ASC
+                """
+            ).fetchall()
+
+        por_usuario: dict[int, dict[str, str | None]] = {}
+        for row in rows:
+            uid = int(row["user_id"])
+            data = por_usuario.setdefault(uid, {"onboarding_completed": None, "dashboard_viewed": None})
+            event_name = row["event_name"]
+            if data.get(event_name) is None:
+                data[event_name] = row["event_ts"]
+
+        deltas_min = []
+        for data in por_usuario.values():
+            start = data.get("onboarding_completed")
+            end = data.get("dashboard_viewed")
+            if not start or not end:
+                continue
+            try:
+                dt_start = datetime.fromisoformat(start.replace("Z", "+00:00"))
+                dt_end = datetime.fromisoformat(end.replace("Z", "+00:00"))
+                delta = (dt_end - dt_start).total_seconds() / 60.0
+                if delta >= 0:
+                    deltas_min.append(delta)
+            except Exception:
+                continue
+
+        ttv_avg = sum(deltas_min) / len(deltas_min) if deltas_min else None
+
+        return {
+            "started_users": iniciados,
+            "completed_users": completados,
+            "completion_rate_pct": round(completion_rate, 2),
+            "time_to_value_minutes_avg": round(ttv_avg, 2) if ttv_avg is not None else None,
+            "ttv_sample_size": len(deltas_min),
+        }
+
 
 class PostgresOnboardingStore:
     def __init__(self):
@@ -262,6 +321,58 @@ class PostgresOnboardingStore:
                 """,
                 (user_id, event_name, event_ts, json.dumps(metadata or {}, ensure_ascii=False)),
             )
+
+    def obtener_kpis_conversion(self) -> dict:
+        with self._conn() as (_, cur):
+            cur.execute("SELECT COUNT(DISTINCT user_id) AS total FROM onboarding_events WHERE event_name='onboarding_started'")
+            iniciados = int((cur.fetchone() or {}).get("total", 0) or 0)
+
+            cur.execute("SELECT COUNT(DISTINCT user_id) AS total FROM onboarding_events WHERE event_name='onboarding_completed'")
+            completados_evento = int((cur.fetchone() or {}).get("total", 0) or 0)
+
+            cur.execute("SELECT COUNT(*) AS total FROM onboarding_profiles WHERE completado=TRUE")
+            completados_perfil = int((cur.fetchone() or {}).get("total", 0) or 0)
+
+            completados = max(completados_evento, completados_perfil)
+            completion_rate = (completados / iniciados * 100.0) if iniciados > 0 else 0.0
+
+            cur.execute(
+                """
+                SELECT user_id, event_name, event_ts
+                FROM onboarding_events
+                WHERE event_name IN ('onboarding_completed', 'dashboard_viewed')
+                ORDER BY user_id, event_ts ASC
+                """
+            )
+            rows = cur.fetchall() or []
+
+        por_usuario: dict[int, dict[str, datetime | None]] = {}
+        for row in rows:
+            uid = int(row["user_id"])
+            data = por_usuario.setdefault(uid, {"onboarding_completed": None, "dashboard_viewed": None})
+            event_name = row["event_name"]
+            if data.get(event_name) is None:
+                data[event_name] = row["event_ts"]
+
+        deltas_min = []
+        for data in por_usuario.values():
+            start = data.get("onboarding_completed")
+            end = data.get("dashboard_viewed")
+            if not start or not end:
+                continue
+            delta = (end - start).total_seconds() / 60.0
+            if delta >= 0:
+                deltas_min.append(delta)
+
+        ttv_avg = sum(deltas_min) / len(deltas_min) if deltas_min else None
+
+        return {
+            "started_users": iniciados,
+            "completed_users": completados,
+            "completion_rate_pct": round(completion_rate, 2),
+            "time_to_value_minutes_avg": round(ttv_avg, 2) if ttv_avg is not None else None,
+            "ttv_sample_size": len(deltas_min),
+        }
 
 
 def obtener_onboarding_store() -> OnboardingStore:

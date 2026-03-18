@@ -24,6 +24,14 @@ export interface ResumenDashboard {
   winRate: number;
 }
 
+export interface KpisOnboarding {
+  startedUsers: number;
+  completedUsers: number;
+  completionRatePct: number;
+  timeToValueMinutesAvg: number | null;
+  ttvSampleSize: number;
+}
+
 function claveOnboarding(usuarioId: string) {
   return `b2.onboarding.${usuarioId}`;
 }
@@ -119,6 +127,28 @@ export async function registrarEventoOnboarding(
     });
   } catch {
     // best-effort telemetry
+  }
+}
+
+export async function obtenerKpisOnboarding(): Promise<KpisOnboarding> {
+  try {
+    const { data } = await clienteAPI.get('/api/onboarding/kpis');
+    const raw = (data?.data ?? {}) as Record<string, unknown>;
+    return {
+      startedUsers: Number(raw.started_users ?? 0),
+      completedUsers: Number(raw.completed_users ?? 0),
+      completionRatePct: Number(raw.completion_rate_pct ?? 0),
+      timeToValueMinutesAvg: raw.time_to_value_minutes_avg === null ? null : Number(raw.time_to_value_minutes_avg ?? 0),
+      ttvSampleSize: Number(raw.ttv_sample_size ?? 0),
+    };
+  } catch {
+    return {
+      startedUsers: 0,
+      completedUsers: 0,
+      completionRatePct: 0,
+      timeToValueMinutesAvg: null,
+      ttvSampleSize: 0,
+    };
   }
 }
 

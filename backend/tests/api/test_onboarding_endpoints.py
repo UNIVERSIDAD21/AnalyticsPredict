@@ -87,3 +87,33 @@ def test_registrar_evento_conversion(tmp_path: Path):
     assert body["ok"] is True
     assert body["data"]["recorded"] is True
     assert body["data"]["event_name"] == "dashboard_viewed"
+
+
+def test_obtener_kpis_completion_y_ttv(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    access = _token_acceso(client)
+
+    client.post(
+        "/api/onboarding/evento",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"event_name": "onboarding_started", "event_ts": "2026-03-18T12:00:00+00:00"},
+    )
+    client.post(
+        "/api/onboarding/evento",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"event_name": "onboarding_completed", "event_ts": "2026-03-18T12:05:00+00:00"},
+    )
+    client.post(
+        "/api/onboarding/evento",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"event_name": "dashboard_viewed", "event_ts": "2026-03-18T12:15:00+00:00"},
+    )
+
+    kpis = client.get("/api/onboarding/kpis", headers={"Authorization": f"Bearer {access}"})
+    assert kpis.status_code == 200
+    data = kpis.json()["data"]
+    assert data["started_users"] >= 1
+    assert data["completed_users"] >= 1
+    assert data["completion_rate_pct"] >= 100.0
+    assert data["time_to_value_minutes_avg"] == 10.0
+    assert data["ttv_sample_size"] >= 1

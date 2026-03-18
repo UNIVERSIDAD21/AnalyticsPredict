@@ -12,7 +12,7 @@
  * - Nivel 3: Estado visual claro (REGISTRABLE vs SOLO CÁLCULO)
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Calendar,
   AlertTriangle,
@@ -61,7 +61,7 @@ export function SelectorPartido({
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const [mostrarTooltip, setMostrarTooltip] = useState(false);
 
-  const ordenarYDedupe = (lista: PartidoResumen[]) => {
+  const ordenarYDedupe = useCallback((lista: PartidoResumen[]) => {
     const vistos = new Set<string>();
     const unicos: PartidoResumen[] = [];
 
@@ -91,10 +91,10 @@ export function SelectorPartido({
       }
       return a.equipo_visitante_nombre.localeCompare(b.equipo_visitante_nombre);
     });
-  };
+  }, []);
 
   // Cargar partidos próximos
-  const cargarPartidos = async () => {
+  const cargarPartidos = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -106,11 +106,11 @@ export function SelectorPartido({
     } finally {
       setCargando(false);
     }
-  };
+  }, [diasAdelante, ordenarYDedupe]);
 
   useEffect(() => {
-    cargarPartidos();
-  }, [diasAdelante]);
+    void cargarPartidos();
+  }, [cargarPartidos]);
 
   // Agrupar partidos por fecha
   const partidosPorFecha = useMemo(() => {
