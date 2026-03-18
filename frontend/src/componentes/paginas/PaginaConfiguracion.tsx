@@ -2,13 +2,19 @@
  * PaginaConfiguracion.tsx — Página de configuración de usuario
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Shield, Wallet, SlidersHorizontal } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton } from '../atomos';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useToasts } from '../../contextos/Toasts';
 import type { ConfiguracionUsuario, ModoDevig, PerfilRiesgo } from '../../tipos';
+import {
+  enviarPruebaNotificacion,
+  guardarPreferenciasNotificaciones,
+  obtenerPreferenciasNotificaciones,
+  type PreferenciasNotificaciones,
+} from '../../servicios/notificaciones';
 
 interface ErroresConfiguracion {
   bankroll?: string;
@@ -36,6 +42,14 @@ export function PaginaConfiguracion() {
   const [capPorApuesta, setCapPorApuesta] = useState(configuracion.capPorApuesta.toString());
   const [capDiario, setCapDiario] = useState(configuracion.capDiario.toString());
   const [stakeMinimo, setStakeMinimo] = useState(configuracion.stakeMinimo.toString());
+  const [cargandoNotificaciones, setCargandoNotificaciones] = useState(true);
+  const [guardandoNotificaciones, setGuardandoNotificaciones] = useState(false);
+  const [prefsNotificaciones, setPrefsNotificaciones] = useState<PreferenciasNotificaciones>({
+    email_habilitado: true,
+    alertas_partidos: true,
+    alertas_suscripcion: true,
+    resumen_semanal: false,
+  });
 
   const { errores, valores, esValido } = useMemo(() => {
     const nuevosErrores: ErroresConfiguracion = {};
@@ -95,6 +109,67 @@ export function PaginaConfiguracion() {
       },
     };
   }, [bankrollInput, capDiario, capPorApuesta, sinBankroll, stakeMinimo]);
+
+  useEffect(() => {
+    const cargarPreferencias = async () => {
+      try {
+        const data = await obtenerPreferenciasNotificaciones();
+        setPrefsNotificaciones(data.preferencias);
+      } catch (error) {
+        agregarToast({
+          titulo: 'No se pudieron cargar notificaciones',
+          mensaje: error instanceof Error ? error.message : 'Intenta nuevamente en unos segundos.',
+          tipo: 'error',
+        });
+      } finally {
+        setCargandoNotificaciones(false);
+      }
+    };
+
+    void cargarPreferencias();
+  }, [agregarToast]);
+
+  const actualizarPreferencia = (campo: keyof PreferenciasNotificaciones, valor: boolean) => {
+    setPrefsNotificaciones((prev) => ({ ...prev, [campo]: valor }));
+  };
+
+  const guardarNotificaciones = async () => {
+    try {
+      setGuardandoNotificaciones(true);
+      const data = await guardarPreferenciasNotificaciones(prefsNotificaciones);
+      setPrefsNotificaciones(data.preferencias);
+      agregarToast({
+        titulo: 'Notificaciones actualizadas',
+        mensaje: 'Tus preferencias de alertas fueron guardadas.',
+        tipo: 'success',
+      });
+    } catch (error) {
+      agregarToast({
+        titulo: 'Error guardando notificaciones',
+        mensaje: error instanceof Error ? error.message : 'Intenta de nuevo.',
+        tipo: 'error',
+      });
+    } finally {
+      setGuardandoNotificaciones(false);
+    }
+  };
+
+  const probarNotificaciones = async () => {
+    try {
+      const result = await enviarPruebaNotificacion('alertas_partidos');
+      agregarToast({
+        titulo: 'Prueba enviada',
+        mensaje: `Estado: ${result?.estado ?? 'desconocido'}`,
+        tipo: 'success',
+      });
+    } catch (error) {
+      agregarToast({
+        titulo: 'Falló la prueba',
+        mensaje: error instanceof Error ? error.message : 'No se pudo enviar la prueba.',
+        tipo: 'error',
+      });
+    }
+  };
 
   const guardarConfiguracion = () => {
     if (!esValido) {
@@ -296,6 +371,76 @@ export function PaginaConfiguracion() {
                 />
                 Estimado (permite una cuota, aplica penalización).
               </label>
+            </div>
+          </div>
+
+          {/* Notificaciones */}
+          <div className="tarjeta p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-neon-verde/10 border border-neon-verde/30 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-neon-verde" />
+              </div>
+              <div>
+                <h3 className="text-lg font-futurista text-texto-principal">Notificaciones</h3>
+                <p className="text-xs text-texto-secundario">
+                  Controla alertas por email para partidos, suscripción y resumen semanal.
+                </p>
+              </div>
+            </div>
+
+            {cargandoNotificaciones ? (
+              <p className="text-sm text-texto-secundario">Cargando preferencias…</p>
+            ) : (
+              <div className="space-y-3">
+                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
+                  <span>Email habilitado</span>
+                  <input
+                    type="checkbox"
+                    className="accent-neon-verde"
+                    checked={prefsNotificaciones.email_habilitado}
+                    onChange={(event) => actualizarPreferencia('email_habilitado', event.target.checked)}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
+                  <span>Alertas de partidos</span>
+                  <input
+                    type="checkbox"
+                    className="accent-neon-verde"
+                    checked={prefsNotificaciones.alertas_partidos}
+                    onChange={(event) => actualizarPreferencia('alertas_partidos', event.target.checked)}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
+                  <span>Alertas de suscripción</span>
+                  <input
+                    type="checkbox"
+                    className="accent-neon-verde"
+                    checked={prefsNotificaciones.alertas_suscripcion}
+                    onChange={(event) => actualizarPreferencia('alertas_suscripcion', event.target.checked)}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
+                  <span>Resumen semanal</span>
+                  <input
+                    type="checkbox"
+                    className="accent-neon-verde"
+                    checked={prefsNotificaciones.resumen_semanal}
+                    onChange={(event) => actualizarPreferencia('resumen_semanal', event.target.checked)}
+                  />
+                </label>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Boton variante="primario" onClick={() => void guardarNotificaciones()} disabled={guardandoNotificaciones || cargandoNotificaciones}>
+                {guardandoNotificaciones ? 'Guardando…' : 'Guardar notificaciones'}
+              </Boton>
+              <Boton variante="secundario" onClick={() => void probarNotificaciones()} disabled={cargandoNotificaciones}>
+                Enviar prueba
+              </Boton>
             </div>
           </div>
 

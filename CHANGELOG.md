@@ -23,6 +23,10 @@
   - Nuevo script `scripts/notificaciones_scheduler_tick.sh` para ejecutar `scheduler/encolar` + `procesar-cola` en un solo paso.
   - Nuevo target `make notificaciones-scheduler-tick`.
   - Plantilla de cron en `deploy/staging/cron-notificaciones.example` para ejecución periódica por tipo de alerta.
+- B4 frontend conectado en Configuración:
+  - Nueva integración `frontend/src/servicios/notificaciones.ts`.
+  - `PaginaConfiguracion` ahora permite cargar/editar preferencias de notificaciones (toggles), guardar cambios y disparar prueba de envío.
+  - Validación frontend ejecutada: `npm run lint` + `npm run build` OK.
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,
