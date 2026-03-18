@@ -49,3 +49,11 @@
 - Validaciones post-ajuste:
   - `npm run lint` ✅ (sin errores)
   - `npm run build` ✅
+- Continuación A2 (storage auth listo para staging/prod):
+  - `backend/servicios/auth_store.py` refactorizado con driver configurable `AUTH_STORE_DRIVER`:
+    - `sqlite` para desarrollo local.
+    - `postgres` para staging/producción.
+  - Alta/lectura de usuarios, revocación de tokens y reset tokens soportados en PostgreSQL con creación automática de tablas auth.
+  - Variables nuevas documentadas en `backend/.env.example` y `deploy/staging/staging.env.example` (`AUTH_STORE_DRIVER`, `AUTH_SECRET_KEY`, `AUTH_DB_PATH`).
+- Validaciones backend ejecutadas:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (6 passed)
