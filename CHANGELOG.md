@@ -118,3 +118,11 @@
   - Se reforzaron pruebas de contrato para validar links de migración en `resumen`, `estadisticas` y `metricas`.
 - Validaciones A3 fase 6:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_bitacora_contract.py backend/tests/test_rutas_bitacora_payload.py backend/tests/test_smoke_api.py` ✅ (6 passed)
+- A3 (fase 7): contrato canónico extendido a endpoints operativos de Bitácora
+  - `GET /api/bitacora/{apuesta_id}` ahora soporta `?version=v2|legacy`.
+  - `PATCH /api/bitacora/{apuesta_id}/resultado` ahora soporta `?version=v2|legacy`.
+  - `DELETE /api/bitacora/{apuesta_id}` ahora soporta `?version=v2|legacy`.
+  - En modo legacy se mantienen headers de deprecación (`Deprecation`, `Sunset`, `Link`) con ruta successor precisa por recurso.
+  - Pruebas de contrato ampliadas para rutas con `apuesta_id` y endpoint de resultado.
+- Validaciones A3 fase 7:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_bitacora_contract.py backend/tests/test_rutas_bitacora_payload.py backend/tests/test_smoke_api.py` ✅ (6 passed)

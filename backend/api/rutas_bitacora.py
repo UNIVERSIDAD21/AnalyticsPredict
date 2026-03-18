@@ -693,11 +693,13 @@ async def listar_apuestas_analizadas(limite: int = 200, offset: int = 0):
     return {"exito": True, "total": len(filas), "items": filas}
 
 
-@router.get("/{apuesta_id}", summary="Detalle de apuesta", response_model=RespuestaApuesta)
+@router.get("/{apuesta_id}", summary="Detalle de apuesta")
 async def obtener_apuesta(
     apuesta_id: UUID,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
-) -> RespuestaApuesta:
+):
     """Obtiene una apuesta por ID validando pertenencia."""
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -713,15 +715,18 @@ async def obtener_apuesta(
     if not apuesta:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
 
-    return RespuestaApuesta(exito=True, apuesta=apuesta)
+    payload_legacy = RespuestaApuesta(exito=True, apuesta=apuesta).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, str(apuesta_id))
 
 
-@router.patch("/{apuesta_id}/resultado", summary="Actualizar resultado", response_model=RespuestaApuesta)
+@router.patch("/{apuesta_id}/resultado", summary="Actualizar resultado")
 async def actualizar_resultado(
     apuesta_id: UUID,
     peticion: PeticionActualizarResultado,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
-) -> RespuestaApuesta:
+):
     """Actualiza el resultado de una apuesta pendiente."""
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -754,14 +759,17 @@ async def actualizar_resultado(
             )
             apuesta = cursor.fetchone()
 
-    return RespuestaApuesta(exito=True, apuesta=apuesta)
+    payload_legacy = RespuestaApuesta(exito=True, apuesta=apuesta).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, f"{apuesta_id}/resultado")
 
 
 @router.delete("/{apuesta_id}", summary="Eliminar apuesta")
 async def eliminar_apuesta(
     apuesta_id: UUID,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
-) -> dict:
+):
     """Elimina una apuesta pendiente."""
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
@@ -790,7 +798,8 @@ async def eliminar_apuesta(
                 [str(apuesta_id), str(usuario_id)],
             )
 
-    return {"exito": True, "mensaje": "Apuesta eliminada."}
+    payload_legacy = {"exito": True, "mensaje": "Apuesta eliminada."}
+    return _respuesta_contrato(payload_legacy, version, response, str(apuesta_id))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
