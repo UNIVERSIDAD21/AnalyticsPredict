@@ -66,3 +66,5 @@
   - Test nuevo para modo SMTP en `backend/tests/api/test_auth_endpoints.py`.
 - Validaciones backend post-correo:
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (7 passed)
+- Se añadió checklist operativo de cierre A2 en staging:
+  - `docs/checklists/CIERRE_A2_STAGING_SMTP.md` (config env, smoke API, forgot/reset SMTP y criterios de cierre).
