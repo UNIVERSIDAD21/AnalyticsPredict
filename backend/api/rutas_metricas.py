@@ -1193,6 +1193,34 @@ def _semaforo_por_score(score: int) -> str:
     return "rojo"
 
 
+def _normalizar_acciones(acciones: List[AccionSugerida], max_acciones: int) -> List[AccionSugerida]:
+    """Deduplica acciones repetidas y limita la salida final."""
+    dedupe: Dict[Tuple[str, str, str], AccionSugerida] = {}
+
+    for accion in acciones:
+        key = (accion.prioridad, accion.semaforo, accion.accion)
+        existente = dedupe.get(key)
+        if existente is None:
+            dedupe[key] = accion
+            continue
+
+        if (accion.impacto_score or 0.0) > (existente.impacto_score or 0.0):
+            dedupe[key] = accion
+
+    orden_prioridad = {"P1": 1, "P2": 2, "P3": 3}
+    orden_semaforo = {"rojo": 1, "amarillo": 2, "verde": 3}
+
+    resultado = list(dedupe.values())
+    resultado.sort(
+        key=lambda a: (
+            orden_prioridad[a.prioridad],
+            orden_semaforo[a.semaforo],
+            -(a.impacto_score or 0.0),
+        )
+    )
+    return resultado[:max_acciones]
+
+
 @router.get(
     "/recomendaciones-accion",
     response_model=RecomendacionesAccionResponse,
@@ -1201,6 +1229,7 @@ def _semaforo_por_score(score: int) -> str:
 )
 async def obtener_recomendaciones_accion(
     min_muestras: int = Query(30, ge=10, le=500),
+    max_acciones: int = Query(15, ge=1, le=50),
 ) -> RecomendacionesAccionResponse:
     tablero = await obtener_tablero_salud()
     calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=30)
@@ -1278,16 +1307,7 @@ async def obtener_recomendaciones_accion(
             )
         )
 
-    # Orden profesional: prioridad + severidad + impacto esperado
-    orden_prioridad = {"P1": 1, "P2": 2, "P3": 3}
-    orden_semaforo = {"rojo": 1, "amarillo": 2, "verde": 3}
-    acciones.sort(
-        key=lambda a: (
-            orden_prioridad[a.prioridad],
-            orden_semaforo[a.semaforo],
-            -(a.impacto_score or 0.0),
-        )
-    )
+    acciones = _normalizar_acciones(acciones, max_acciones=max_acciones)
 
     return RecomendacionesAccionResponse(
         exito=True,

@@ -1,7 +1,7 @@
 # Pendientes Operativos
 
 ## Pendiente inmediato (bloqueado por approval/runtime)
-1. Validar runtime de `GET /api/metricas/recomendaciones-accion`.
+1. ✅ Runtime de `GET /api/metricas/recomendaciones-accion` validado vía tests API + contrato (incluye nuevo control `max_acciones` y normalización de acciones).
 2. Ejecutar compilación final de `rutas_metricas.py` tras último bloque.
 3. Correr `make qa-preflight` y `make calidad-ciclo` completo con evidencia en `reports/`.
 

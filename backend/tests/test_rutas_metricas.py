@@ -15,7 +15,11 @@ import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from api.rutas_metricas import router as router_metricas
+from api.rutas_metricas import (
+    AccionSugerida,
+    _normalizar_acciones,
+    router as router_metricas,
+)
 
 
 def _crear_cliente():
@@ -99,3 +103,92 @@ def test_curva_bins_y_excluidos():
     data = response.json()
     assert data["n_excluidos_push"] == 1
     assert sum(bin_info["n"] for bin_info in data["bins"]) == data["n_predicciones_total"]
+
+
+def test_normalizar_acciones_dedup_y_limite():
+    acciones = [
+        AccionSugerida(
+            prioridad="P1",
+            semaforo="rojo",
+            accion="Recalibrar modelo NBA",
+            motivo="Drift alto",
+            impacto_score=9.5,
+        ),
+        AccionSugerida(
+            prioridad="P1",
+            semaforo="rojo",
+            accion="Recalibrar modelo NBA",
+            motivo="Brier alto",
+            impacto_score=12.0,
+        ),
+        AccionSugerida(
+            prioridad="P2",
+            semaforo="amarillo",
+            accion="Monitorear mercado Q1",
+            motivo="Brier en mejora",
+            impacto_score=4.0,
+        ),
+    ]
+
+    salida = _normalizar_acciones(acciones, max_acciones=2)
+
+    assert len(salida) == 2
+    assert salida[0].accion == "Recalibrar modelo NBA"
+    assert salida[0].impacto_score == pytest.approx(12.0)
+
+
+def test_recomendaciones_accion_respeta_max_acciones():
+    client = _crear_cliente()
+
+    tablero = SimpleNamespace(
+        exito=True,
+        score_global=62,
+        deportes=[
+            SimpleNamespace(
+                deporte="NBA",
+                n_total=120,
+                n_resueltas=100,
+                accuracy=0.51,
+                brier=0.31,
+                ece=0.09,
+                drift_semanal_brier=20.0,
+                deriva_pct=20.0,
+                semaforo="rojo",
+            )
+        ],
+        alertas=[],
+        timestamp="2026-03-18T09:00:00",
+    )
+
+    calidad = SimpleNamespace(
+        exito=True,
+        ranking=[
+            SimpleNamespace(
+                deporte="NBA",
+                mercado="Q1",
+                n_resueltas=120,
+                accuracy=0.5,
+                brier=0.30,
+                precision_label="media",
+            ),
+            SimpleNamespace(
+                deporte="NBA",
+                mercado="Q2",
+                n_resueltas=120,
+                accuracy=0.5,
+                brier=0.29,
+                precision_label="media",
+            ),
+        ],
+        recomendaciones=[],
+        timestamp="2026-03-18T09:00:00",
+    )
+
+    with patch("api.rutas_metricas.obtener_tablero_salud", return_value=tablero):
+        with patch("api.rutas_metricas.obtener_calidad_mercados", return_value=calidad):
+            response = client.get("/api/metricas/recomendaciones-accion?min_muestras=10&max_acciones=2")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["exito"] is True
+    assert len(data["acciones"]) == 2

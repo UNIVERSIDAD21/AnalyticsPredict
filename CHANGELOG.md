@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Métricas profesionales: `GET /api/metricas/recomendaciones-accion` ahora acepta `max_acciones` (1-50) y normaliza la salida (deduplicación por acción/prioridad/semaforo + orden estable por impacto), evitando planes redundantes en runtime.
+- Validación ejecutada del bloque métricas: `backend/.venv/bin/pytest -q backend/tests/test_rutas_metricas.py backend/tests/api/test_metricas_profesionales_endpoints.py` ✅ (12 passed).
+- Estado documental actualizado: `docs/PENDIENTES_OPERATIVOS.md` marca como validado el runtime de recomendaciones de acción.
 - Inicio de B1 (pagos/suscripción): se implementó backend base con `POST /api/pagos/checkout-session`, `POST /api/pagos/webhook/mercadopago` (validación `X-Signature` HMAC-SHA256), `GET /api/pagos/suscripcion/mia` y `GET /api/pagos/feature-gate`.
 - Se añadió persistencia mínima de intents y suscripciones en `backend/servicios/pagos_store.py` (SQLite con `PAGOS_DB_PATH`).
 - Validación ejecutada B1 base: `backend/.venv/bin/pytest -q tests/api/test_pagos_endpoints.py tests/api/test_auth_endpoints.py` ✅ (14 passed).
