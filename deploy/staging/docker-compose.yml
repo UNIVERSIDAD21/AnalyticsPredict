@@ -9,7 +9,7 @@ services:
     env_file:
       - ./staging.env
     ports:
-      - "8000:8000"
+      - "${STAGING_BACKEND_PORT:-18000}:8000"
     restart: unless-stopped
 
   analytics-frontend:
@@ -20,5 +20,6 @@ services:
     depends_on:
       - analytics-backend
     ports:
-      - "5173:80"
+      - "${STAGING_FRONTEND_PORT:-15173}:80"
     restart: unless-stopped
+

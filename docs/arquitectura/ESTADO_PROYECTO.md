@@ -15,7 +15,7 @@ A1 → (A2/A3/A4/A5) → A6 → (B1/B2/B3) → (B4/B5/B6) → B7
 | Bloque | Estado | Hecho | Decisiones tomadas | Abierto |
 |---|---|---|---|---|
 | A1 | EN_CURSO | Plan v3 incorporado, ADRs iniciales creados, CI en GitHub Actions creado (`.github/workflows/ci.yml`), base de staging en Docker creada (`deploy/staging/*`), validación local CI realizada (backend smoke 3/3 y frontend lint/build OK) | Staging+CI/CD básico adelantado a A1 | Validar despliegue real de staging con `staging.env` y smoke operativo (pendiente: host actual sin Docker) |
-| A2 | PENDIENTE | — | JWT + refresh + reset password | Implementación endpoints/UI/tests |
+| A2 | EN_CURSO | Endpoints base implementados (`/api/auth/register|login|refresh|logout|forgot-password|reset-password|me`), store SQLite de auth para staging/dev, tests API de auth (3/3 passing) | Tokens firmados con rotación/revocación (`jti`) + reset con expiración; endurecimiento progresivo por fases | Integrar UI de sesión en frontend, proteger rutas de negocio existentes y migrar store a PostgreSQL para producción |
 | A3 | PENDIENTE | — | Contrato canónico con legacy temporal medido | Retiro progresivo legacy |
 | A4 | PENDIENTE | — | Legal transversal obligatorio | Persistencia de aceptación legal |
 | A5 | PENDIENTE | — | Métricas mínimas operativas obligatorias | Implementación dashboard/alertas |

@@ -13,8 +13,10 @@ docker compose up -d --build
 ```
 
 ## 3) Verificar
-- Backend: http://localhost:8000/salud
-- Frontend: http://localhost:5173
+- Backend: http://localhost:18000/salud
+- Frontend: http://localhost:15173
+
+> Puedes cambiar puertos en `staging.env` (`STAGING_BACKEND_PORT`, `STAGING_FRONTEND_PORT`).
 
 ## 4) Apagar
 ```bash

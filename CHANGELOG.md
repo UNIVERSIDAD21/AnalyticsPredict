@@ -22,3 +22,11 @@
   - `npm run lint` ✅ (solo warnings de hooks)
   - `npm run build` ✅
 - Nota: verificación de `docker compose` pendiente por falta de Docker en este host.
+- Se inició bloque A2 con autenticación real base en backend:
+  - Nuevas rutas `backend/api/rutas_auth.py`: `register`, `login`, `refresh`, `logout`, `forgot-password`, `reset-password`, `me`.
+  - Seguridad añadida en `backend/servicios/auth_seguridad.py` (hash PBKDF2-SHA256 y tokens firmados con expiración).
+  - Persistencia inicial de auth en `backend/servicios/auth_store.py` (SQLite staging/dev con revocación de tokens y reset tokens).
+  - Router de auth integrado en `backend/app.py`.
+  - Esquemas Pydantic en `backend/esquemas/auth.py`.
+  - Pruebas API añadidas: `backend/tests/api/test_auth_endpoints.py` ✅ (3 passed).
+- Ajuste en staging Docker: soporte de puertos de frontend/backend parametrizados vía `STAGING_FRONTEND_PORT` y `STAGING_BACKEND_PORT`.

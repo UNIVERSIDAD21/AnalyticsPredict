@@ -7,10 +7,10 @@
 Se requiere auth comercial robusta para monetización y control de acceso por plan.
 
 ## Decisión
-Implementar autenticación basada en JWT:
+Implementar autenticación basada en tokens firmados tipo JWT:
 - Access token corto (15 min)
-- Refresh token (7 días)
-- Hash de password con bcrypt
+- Refresh token largo (30 días) con rotación/revocación por `jti`
+- Hash de password con PBKDF2-SHA256 (+salt)
 - Flujo de recuperación de contraseña con token temporal
 
 ## Consecuencias
