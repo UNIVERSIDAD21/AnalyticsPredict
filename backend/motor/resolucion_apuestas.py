@@ -273,6 +273,32 @@ def resolver_apuestas(
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
+                # Saneamiento preventivo: si alguna apuesta quedó resuelta antes de tiempo,
+                # se devuelve a PENDIENTE para evitar inconsistencias en bitácora.
+                hoy_bogota = datetime.now(ZoneInfo("America/Bogota")).date()
+                revert_params: List[Any] = [hoy_bogota]
+                revert_where = [
+                    "resultado IN ('GANADA','PERDIDA','PUSH')",
+                    "fecha_partido >= %s",
+                ]
+                if usuario_id:
+                    revert_where.append("usuario_id = %s")
+                    revert_params.append(usuario_id)
+
+                cursor.execute(
+                    f"""
+                    UPDATE apuestas
+                    SET
+                        resultado = 'PENDIENTE',
+                        puntos_reales = NULL,
+                        ganancia = 0,
+                        fecha_resolucion = NULL,
+                        actualizado_en = NOW()
+                    WHERE {' AND '.join(revert_where)}
+                    """,
+                    revert_params,
+                )
+
                 cursor.execute(query_select, parametros)
                 filas = cursor.fetchall()
 
