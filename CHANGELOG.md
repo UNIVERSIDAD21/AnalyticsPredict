@@ -1,6 +1,17 @@
 # CHANGELOG
 
 ## 2026-03-18
+- Inicio de B2 (onboarding + dashboard usuario) en frontend:
+  - Nueva ruta `/onboarding` con wizard de 3 pasos (perfil base, objetivo principal y control de riesgo inicial).
+  - Nueva ruta `/dashboard` con KPIs de rendimiento (totales, resueltas, ganadas, perdidas, push, win-rate) obtenidos desde `GET /api/bitacora/apuestas-analizadas`.
+  - Integración de estado de plan en dashboard usando `GET /api/pagos/suscripcion/mia`.
+  - Guard de navegación: rutas principales ahora requieren onboarding completado.
+- Servicios agregados para B2:
+  - `frontend/src/servicios/onboarding.ts`
+  - `frontend/src/servicios/pagos.ts`
+- Validaciones frontend ejecutadas post-B2:
+  - `npm run lint` ✅ (sin errores; warnings legacy de hooks existentes)
+  - `npm run build` ✅
 - Métricas profesionales: `GET /api/metricas/recomendaciones-accion` ahora acepta `max_acciones` (1-50) y normaliza la salida (deduplicación por acción/prioridad/semaforo + orden estable por impacto), evitando planes redundantes en runtime.
 - Validación ejecutada del bloque métricas: `backend/.venv/bin/pytest -q backend/tests/test_rutas_metricas.py backend/tests/api/test_metricas_profesionales_endpoints.py` ✅ (12 passed).
 - Estado documental actualizado: `docs/PENDIENTES_OPERATIVOS.md` marca como validado el runtime de recomendaciones de acción.

@@ -13,8 +13,11 @@ import {
   DashboardFutbol,
   PaginaLogin,
   PaginaLegal,
+  PaginaOnboarding,
+  PaginaDashboardUsuario,
 } from './componentes/paginas';
 import { useAuth } from './contextos/AuthContext';
+import { obtenerEstadoOnboarding } from './servicios/onboarding';
 
 function RutaProtegida({ children }: { children: ReactElement }) {
   const { autenticado, cargando } = useAuth();
@@ -26,6 +29,26 @@ function RutaProtegida({ children }: { children: ReactElement }) {
 
   if (!autenticado) {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return children;
+}
+
+function RutaConOnboarding({ children }: { children: ReactElement }) {
+  const { usuario } = useAuth();
+  const location = useLocation();
+
+  if (!usuario) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (location.pathname === '/onboarding') {
+    return children;
+  }
+
+  const estadoOnboarding = obtenerEstadoOnboarding(String(usuario.id));
+  if (!estadoOnboarding.completado) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return children;
@@ -43,16 +66,19 @@ function App() {
         <Route path="/legal/privacidad" element={<PaginaLegal tipo="privacidad" />} />
         <Route path="/legal/disclaimer" element={<PaginaLegal tipo="disclaimer" />} />
 
+        <Route path="/onboarding" element={<RutaProtegida><PaginaOnboarding /></RutaProtegida>} />
+
         {/* Rutas principales protegidas */}
-        <Route path="/" element={<RutaProtegida><PaginaPrincipal /></RutaProtegida>} />
-        <Route path="/bitacora" element={<RutaProtegida><PaginaBitacora /></RutaProtegida>} />
-        <Route path="/configuracion" element={<RutaProtegida><PaginaConfiguracion /></RutaProtegida>} />
+        <Route path="/" element={<RutaProtegida><RutaConOnboarding><PaginaPrincipal /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/dashboard" element={<RutaProtegida><RutaConOnboarding><PaginaDashboardUsuario /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><PaginaBitacora /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><PaginaConfiguracion /></RutaConOnboarding></RutaProtegida>} />
 
         {/* Rutas del módulo de fútbol protegidas */}
-        <Route path="/futbol" element={<RutaProtegida><PaginaFutbol /></RutaProtegida>} />
-        <Route path="/futbol/partidos/:id" element={<RutaProtegida><AnalisisPartidoFutbol /></RutaProtegida>} />
-        <Route path="/futbol/bitacora" element={<RutaProtegida><PaginaBitacora /></RutaProtegida>} />
-        <Route path="/futbol/dashboard" element={<RutaProtegida><DashboardFutbol /></RutaProtegida>} />
+        <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><PaginaFutbol /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/futbol/partidos/:id" element={<RutaProtegida><RutaConOnboarding><AnalisisPartidoFutbol /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/futbol/bitacora" element={<RutaProtegida><RutaConOnboarding><PaginaBitacora /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/futbol/dashboard" element={<RutaProtegida><RutaConOnboarding><DashboardFutbol /></RutaConOnboarding></RutaProtegida>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
