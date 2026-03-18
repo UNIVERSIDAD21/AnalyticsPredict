@@ -106,11 +106,29 @@ def _contiene_advice_sensible(texto: str) -> bool:
     return any(c in t for c in claves)
 
 
-def _resumen_contexto(ventana: list[dict]) -> str:
-    if len(ventana) <= 12:
-        return ""
-    recortados = len(ventana) - 12
-    return f"Se resumieron {recortados} mensajes previos para mantener foco y costo controlado."
+def compactar_ventana_con_resumen(ventana_completa: list[dict], limite: int = 12) -> tuple[list[dict], str]:
+    limite = max(4, int(limite))
+    if len(ventana_completa) <= limite:
+        return ventana_completa, ""
+
+    antiguos = ventana_completa[:-limite]
+    recientes = ventana_completa[-limite:]
+
+    palabras_clave: list[str] = []
+    for msg in antiguos:
+        texto = str(msg.get("contenido") or "").lower()
+        for k in ["riesgo", "stake", "kpi", "brier", "notificaciones", "onboarding", "partido", "apuesta"]:
+            if k in texto and k not in palabras_clave:
+                palabras_clave.append(k)
+
+    recortados = len(antiguos)
+    if palabras_clave:
+        return (
+            recientes,
+            f"Se resumieron {recortados} mensajes previos. Temas detectados: {', '.join(palabras_clave[:4])}.",
+        )
+
+    return recientes, f"Se resumieron {recortados} mensajes previos para mantener foco y costo controlado."
 
 
 def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict], contexto_negocio: dict | None = None) -> str:
@@ -121,6 +139,7 @@ def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict], contexto_nego
     tasa_entrega = contexto_negocio.get("tasa_entrega_pct")
     completion_rate = contexto_negocio.get("completion_rate_pct")
     ttv = contexto_negocio.get("time_to_value_minutes_avg")
+    resumen_contexto = str(contexto_negocio.get("resumen_contexto") or "").strip()
 
     if _contiene_advice_sensible(lower):
         return (
@@ -146,20 +165,22 @@ def _respuesta_mock_inteligente(mensaje: str, ventana: list[dict], contexto_nego
         if isinstance(ttv, (int, float)):
             partes.append(f"Time-to-value promedio: {float(ttv):.1f} min.")
         partes.append("Si quieres, te armo checklist de revisión diaria con estos datos.")
+        if resumen_contexto:
+            partes.append(resumen_contexto)
         return " ".join(partes)
 
     if any(k in lower for k in ["recomend", "pick", "apuesta", "partido"]):
-        return (
+        base = (
             "Te recomiendo usar un filtro base: edge mínimo, contexto suficiente y límite de exposición por día. "
             "Puedo convertir eso en una rutina rápida por partido para decidir si entrar o pasar."
         )
+        return f"{base} {resumen_contexto}".strip()
 
-    contexto = _resumen_contexto(ventana)
     base = (
         "Entendido. Tomo tu contexto y te propongo un siguiente paso accionable: "
         "define objetivo del bloque (rentabilidad, disciplina o aprendizaje), límite de riesgo y criterio de salida."
     )
-    return f"{base} {contexto}".strip()
+    return f"{base} {resumen_contexto}".strip()
 
 
 def generar_respuesta_local(mensaje_usuario: str, ventana: list[dict], contexto_negocio: dict | None = None) -> str:

@@ -21,6 +21,11 @@
   - `chat_contexto.py` ajusta respuestas de tipo KPI/métricas para incluir contexto operativo real cuando está disponible.
   - Tests de chat ampliados para validar presencia de contexto de negocio en respuesta de KPI.
   - Validación backend ejecutada: suite auth+chat+notificaciones+smoke en verde.
+- Continuación B5 (resumen automático de contexto largo):
+  - Nuevo compactador de ventana en `chat_contexto.py` (`compactar_ventana_con_resumen`) para comprimir historial cuando supera el límite configurado.
+  - `POST /api/chat/mensaje` ahora responde `summary_applied` y utiliza resumen contextual al generar respuesta.
+  - Tests ampliados para validar aplicación de resumen en conversaciones largas.
+
 - Inicio de B4 (notificaciones MVP):
   - Nuevas rutas backend en `api/rutas_notificaciones.py`:
     - `GET /api/notificaciones/preferencias`

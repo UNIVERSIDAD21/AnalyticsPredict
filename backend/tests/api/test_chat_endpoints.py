@@ -81,6 +81,28 @@ def test_chat_incluye_contexto_negocio_en_respuesta_kpi(tmp_path: Path):
     assert "completion onboarding" in reply
 
 
+def test_chat_aplica_resumen_contexto_largo(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    access = _token_acceso(client)
+
+    for i in range(18):
+        client.post(
+            "/api/chat/mensaje",
+            headers={"Authorization": f"Bearer {access}"},
+            json={"mensaje": f"mensaje previo {i} sobre kpi y riesgo", "limite_contexto": 12},
+        )
+
+    r = client.post(
+        "/api/chat/mensaje",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"mensaje": "dame una recomendación", "limite_contexto": 8},
+    )
+    assert r.status_code == 200
+    body = r.json()["data"]
+    assert body["summary_applied"] is True
+    assert "se resumieron" in body["reply"].lower()
+
+
 def test_chat_reset(tmp_path: Path):
     client = _crear_cliente(tmp_path)
     access = _token_acceso(client)

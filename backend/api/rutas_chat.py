@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from esquemas.chat import ChatMensajeRequest, ChatResetRequest
 from servicios.auth_seguridad import decodificar_y_validar_token, obtener_secreto_auth
 from servicios.auth_store import AuthStore, obtener_auth_store
-from servicios.chat_contexto import ChatContextoStore, generar_respuesta_local, obtener_chat_contexto_store
+from servicios.chat_contexto import (
+    ChatContextoStore,
+    compactar_ventana_con_resumen,
+    generar_respuesta_local,
+    obtener_chat_contexto_store,
+)
 from servicios.notificaciones_store import NotificacionesStore, obtener_notificaciones_store
 from servicios.onboarding_store import OnboardingStore, obtener_onboarding_store
 
@@ -54,9 +59,10 @@ def enviar_mensaje_chat(
 
     chat_store.registrar_mensaje(user_id=user["id"], role="user", contenido=payload.mensaje)
 
-    ventana = chat_store.obtener_ventana(user_id=user["id"], limit=payload.limite_contexto)
+    ventana_completa = chat_store.obtener_ventana(user_id=user["id"], limit=max(60, payload.limite_contexto * 5))
+    ventana, resumen_contexto = compactar_ventana_con_resumen(ventana_completa, limite=payload.limite_contexto)
 
-    contexto_negocio = {}
+    contexto_negocio = {"resumen_contexto": resumen_contexto}
     try:
         metricas_entrega = notif_store.resumen_envios(str(user["id"]), horas=24)
         contexto_negocio["tasa_entrega_pct"] = metricas_entrega.get("tasa_entrega_pct")
@@ -79,6 +85,7 @@ def enviar_mensaje_chat(
         "data": {
             "reply": msg_assistant["contenido"],
             "window_size": len(ventana),
+            "summary_applied": bool(resumen_contexto),
         },
     }
 
