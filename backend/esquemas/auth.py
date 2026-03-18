@@ -17,6 +17,11 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
 
 
+class AcceptLegalRequest(BaseModel):
+    accepted_legal: bool = Field(default=False)
+    legal_version: str = Field(min_length=3, max_length=32)
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 

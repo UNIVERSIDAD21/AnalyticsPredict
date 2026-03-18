@@ -142,3 +142,10 @@
   - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅
   - `npm run lint` ✅ (sin errores, warnings legacy)
   - `npm run build` ✅
+- A4 (fase 2): regularización legal para usuarios existentes
+  - Nuevo endpoint autenticado `POST /api/auth/accept-legal?version=v2|legacy`.
+  - Permite registrar aceptación de versión legal vigente para cuentas legacy y persiste `legal_accepted_version` + `legal_accepted_at`.
+  - `backend/servicios/auth_store.py` incorpora `actualizar_aceptacion_legal` para SQLite/PostgreSQL.
+  - Test añadido: `test_accept_legal_actualiza_version_del_usuario`.
+- Validación A4 fase 2:
+  - `backend/.venv/bin/python -m pytest -q backend/tests/api/test_auth_endpoints.py backend/tests/test_smoke_api.py` ✅ (13 passed)

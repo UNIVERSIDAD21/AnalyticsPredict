@@ -14,6 +14,7 @@ class AuthStore(Protocol):
     def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict: ...
     def obtener_usuario_por_email(self, email: str) -> dict | None: ...
     def obtener_usuario_por_id(self, user_id: int) -> dict | None: ...
+    def actualizar_aceptacion_legal(self, user_id: int, legal_version: str) -> None: ...
     def guardar_reset_token(self, user_id: int, token: str, expires_at: str) -> None: ...
     def validar_reset_token(self, token: str) -> dict | None: ...
     def marcar_reset_token_usado(self, token: str) -> None: ...
@@ -118,6 +119,17 @@ class SQLiteAuthStore:
                 (user_id,),
             ).fetchone()
         return dict(row) if row else None
+
+    def actualizar_aceptacion_legal(self, user_id: int, legal_version: str) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                """
+                UPDATE auth_users
+                SET legal_accepted_version=?, legal_accepted_at=?
+                WHERE id=?
+                """,
+                (legal_version, datetime.now(timezone.utc).isoformat(), user_id),
+            )
 
     def guardar_reset_token(self, user_id: int, token: str, expires_at: str) -> None:
         with self._conn() as conn:
@@ -257,6 +269,17 @@ class PostgresAuthStore:
             )
             row = cur.fetchone()
         return dict(row) if row else None
+
+    def actualizar_aceptacion_legal(self, user_id: int, legal_version: str) -> None:
+        with self._conn() as (_, cur):
+            cur.execute(
+                """
+                UPDATE auth_users
+                SET legal_accepted_version=%s, legal_accepted_at=NOW()
+                WHERE id=%s
+                """,
+                (legal_version, user_id),
+            )
 
     def guardar_reset_token(self, user_id: int, token: str, expires_at: str) -> None:
         with self._conn() as (_, cur):

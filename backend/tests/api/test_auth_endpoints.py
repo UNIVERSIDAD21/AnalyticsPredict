@@ -143,6 +143,34 @@ def test_register_rechaza_si_no_acepta_legal(tmp_path: Path):
     assert "aceptar" in resp.json()["detail"].lower()
 
 
+def test_accept_legal_actualiza_version_del_usuario(tmp_path: Path, monkeypatch):
+    client = _crear_cliente(tmp_path)
+    monkeypatch.setattr(rutas_auth, "CURRENT_LEGAL_VERSION", "2026-04-01")
+
+    reg = client.post(
+        "/api/auth/register",
+        json={
+            "email": "legal@ap.com",
+            "password": "12345678",
+            "accepted_legal": True,
+            "legal_version": "2026-04-01",
+        },
+    )
+    assert reg.status_code == 201
+    access = reg.json()["data"]["access_token"]
+
+    aceptar = client.post(
+        "/api/auth/accept-legal",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"accepted_legal": True, "legal_version": "2026-04-01"},
+    )
+    assert aceptar.status_code == 200
+    body = aceptar.json()
+    assert body["ok"] is True
+    assert body["data"]["user"]["legal_accepted_version"] == "2026-04-01"
+    assert body["data"]["user"]["legal_accepted_at"] is not None
+
+
 def test_contract_usage_resume_metricas(tmp_path: Path, monkeypatch):
     client = _crear_cliente(tmp_path)
 

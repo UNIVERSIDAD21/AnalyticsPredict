@@ -12,6 +12,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
 
 from esquemas.auth import (
+    AcceptLegalRequest,
     ForgotPasswordRequest,
     LoginRequest,
     RefreshRequest,
@@ -310,6 +311,46 @@ def reset_password(
     store.marcar_reset_token_usado(payload.token)
     payload_legacy = {"ok": True, "message": "Contraseña actualizada"}
     return _respuesta_contrato(payload_legacy, version, response, "reset-password")
+
+
+@router.post("/accept-legal")
+def accept_legal(
+    payload: AcceptLegalRequest,
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
+    authorization: str | None = Header(default=None),
+    store: AuthStore = Depends(obtener_auth_store),
+):
+    token = _extraer_bearer_token(authorization)
+    token_payload = _validar_access_token(token, store)
+
+    if not payload.accepted_legal:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes aceptar términos y privacidad")
+
+    if payload.legal_version != CURRENT_LEGAL_VERSION:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La versión legal vigente es {CURRENT_LEGAL_VERSION}",
+        )
+
+    user_id = int(token_payload["sub"])
+    store.actualizar_aceptacion_legal(user_id, payload.legal_version)
+    user = store.obtener_usuario_por_id(user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+
+    payload_legacy = {
+        "ok": True,
+        "message": "Aceptación legal actualizada",
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "legal_accepted": bool(user.get("legal_accepted_version")),
+            "legal_accepted_version": user.get("legal_accepted_version"),
+            "legal_accepted_at": user.get("legal_accepted_at"),
+        },
+    }
+    return _respuesta_contrato(payload_legacy, version, response, "accept-legal")
 
 
 @router.get("/contract-usage")
