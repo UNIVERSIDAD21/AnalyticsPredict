@@ -875,7 +875,6 @@ async def resolver_apuestas_pendientes(
 @router.get(
     "/estadisticas",
     summary="Estadísticas de apuestas",
-    response_model=RespuestaEstadisticas,
     description="""
     Obtiene estadísticas completas de las apuestas del usuario.
 
@@ -888,8 +887,10 @@ async def resolver_apuestas_pendientes(
     """,
 )
 async def obtener_estadisticas(
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
-) -> RespuestaEstadisticas:
+):
     """Obtiene estadísticas de apuestas del usuario."""
     _auto_resolver_bitacoras(usuario_id)
 
@@ -899,11 +900,12 @@ async def obtener_estadisticas(
             usuario_id=str(usuario_id)
         )
 
-        return RespuestaEstadisticas(
+        payload_legacy = RespuestaEstadisticas(
             exito=True,
             estadisticas=estadisticas,
             pendientes_por_mercado=pendientes_por_mercado,
-        )
+        ).model_dump(mode="json")
+        return _respuesta_contrato(payload_legacy, version, response, "estadisticas")
 
     except Exception as e:
         logger.exception("Error obteniendo estadísticas para usuario=%s", usuario_id)
@@ -974,7 +976,6 @@ class RespuestaMetricasBitacora(BaseModel):
 @router.get(
     "/metricas",
     summary="Métricas calculadas desde bitácora",
-    response_model=RespuestaMetricasBitacora,
     description="""
     Calcula métricas de rendimiento directamente desde la bitácora de apuestas.
 
@@ -994,6 +995,8 @@ class RespuestaMetricasBitacora(BaseModel):
     """,
 )
 async def obtener_metricas_bitacora(
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
     desde: Optional[date] = Query(None, description="Fecha inicio"),
     hasta: Optional[date] = Query(None, description="Fecha fin"),
@@ -1187,7 +1190,7 @@ async def obtener_metricas_bitacora(
                         )
                     )
 
-        return RespuestaMetricasBitacora(
+        payload_legacy = RespuestaMetricasBitacora(
             exito=True,
             periodo={
                 "desde": desde.isoformat() if desde else "sin_limite",
@@ -1198,7 +1201,8 @@ async def obtener_metricas_bitacora(
             por_confianza=por_confianza,
             por_mes=por_mes,
             advertencias=advertencias,
-        )
+        ).model_dump(mode="json")
+        return _respuesta_contrato(payload_legacy, version, response, "metricas")
 
     except Exception as e:
         logger.exception("Error calculando métricas de bitácora para usuario=%s", usuario_id)

@@ -29,9 +29,21 @@ def test_respuesta_contrato_bitacora_v2_y_legacy(tmp_path, monkeypatch):
     assert response_legacy.headers["Deprecation"] == "true"
     assert "version=v2" in response_legacy.headers["Link"]
 
+    response_stats = Response()
+    rutas_bitacora._respuesta_contrato(payload_legacy, "legacy", response_stats, "estadisticas")
+    assert "/api/bitacora/estadisticas?version=v2" in response_stats.headers["Link"]
+
+    response_metrics = Response()
+    rutas_bitacora._respuesta_contrato(payload_legacy, "legacy", response_metrics, "metricas")
+    assert "/api/bitacora/metricas?version=v2" in response_metrics.headers["Link"]
+
+    import json
+
     raw = usage_path.read_text(encoding="utf-8")
-    assert '"v2": 1' in raw
-    assert '"legacy": 1' in raw
+    data = json.loads(raw)
+    today_row = next(iter(data["by_date"].values()))
+    assert today_row["v2"] >= 1
+    assert today_row["legacy"] >= 1
 
 
 def test_leer_uso_contrato_bitacora_vacio(tmp_path, monkeypatch):
