@@ -1,0 +1,29 @@
+# Cron ejemplo para B4 (staging)
+# Ajusta rutas/variables según tu host.
+
+# Cada 30 min: alertas de partidos
+*/30 * * * * cd /home/borlty/.openclaw/workspace/repos/AnalyticsPredict && \
+  API_BASE_URL=http://127.0.0.1:18000 \
+  USUARIO_ID=00000000-0000-0000-0000-000000000001 \
+  USUARIO_EMAIL=operador@example.com \
+  TIPO=alertas_partidos \
+  MAX_ITEMS=100 \
+  bash scripts/notificaciones_scheduler_tick.sh >> logs/notificaciones_scheduler.log 2>&1
+
+# Diario 09:00: alertas de suscripción
+0 9 * * * cd /home/borlty/.openclaw/workspace/repos/AnalyticsPredict && \
+  API_BASE_URL=http://127.0.0.1:18000 \
+  USUARIO_ID=00000000-0000-0000-0000-000000000001 \
+  USUARIO_EMAIL=operador@example.com \
+  TIPO=alertas_suscripcion \
+  MAX_ITEMS=100 \
+  bash scripts/notificaciones_scheduler_tick.sh >> logs/notificaciones_scheduler.log 2>&1
+
+# Lunes 08:00: resumen semanal
+0 8 * * 1 cd /home/borlty/.openclaw/workspace/repos/AnalyticsPredict && \
+  API_BASE_URL=http://127.0.0.1:18000 \
+  USUARIO_ID=00000000-0000-0000-0000-000000000001 \
+  USUARIO_EMAIL=operador@example.com \
+  TIPO=resumen_semanal \
+  MAX_ITEMS=100 \
+  bash scripts/notificaciones_scheduler_tick.sh >> logs/notificaciones_scheduler.log 2>&1

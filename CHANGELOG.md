@@ -19,6 +19,10 @@
     - `POST /api/notificaciones/scheduler/encolar`
   - Scheduler por tipo de alerta (`alertas_partidos`, `alertas_suscripcion`, `resumen_semanal`) respetando preferencias por usuario.
   - Procesamiento con backoff básico y trazabilidad en historial (`enviado`, `pendiente`, `fallido`, `omitido`).
+- Automatización operativa B4 (sin disparo manual):
+  - Nuevo script `scripts/notificaciones_scheduler_tick.sh` para ejecutar `scheduler/encolar` + `procesar-cola` en un solo paso.
+  - Nuevo target `make notificaciones-scheduler-tick`.
+  - Plantilla de cron en `deploy/staging/cron-notificaciones.example` para ejecución periódica por tipo de alerta.
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,
