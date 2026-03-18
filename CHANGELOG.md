@@ -37,7 +37,11 @@
 - UX B4 en frontend refinada:
   - `PaginaConfiguracion` muestra métricas de entrega (24h) con semáforo de salud (verde/amarillo/rojo), tasa de entrega y totales por estado.
   - La UI recarga métricas al guardar preferencias y al enviar notificación de prueba.
-  - Servicio frontend extendido con `obtenerMetricasEntrega()` en `frontend/src/servicios/notificaciones.ts`. 
+  - Servicio frontend extendido con `obtenerMetricasEntrega()` en `frontend/src/servicios/notificaciones.ts`.
+- Criterio formal de cierre B4 definido y evidenciado:
+  - Reporte creado: `docs/reportes/B4_SLO_CICLO_2026-03-18T13-30-08Z.md`.
+  - SLO de cierre establecido (tasa de entrega, ratio fallidos, reprogramados y contrato API).
+  - Estado B4 actualizado para pasar a cierre tras 1 ciclo operativo real que cumpla SLO.
 - Inicio de B3 (estabilización fútbol + cross-liga v1):
   - Nuevo módulo `backend/servicios/b3_estabilizacion_futbol.py` con:
     - combinación de valor cross-liga ponderada por competición,
