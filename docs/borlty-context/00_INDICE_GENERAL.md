@@ -1,49 +1,27 @@
-# Índice General — Contexto Persistente para Borlty
+# Índice General — Contexto Activo para Borlty
 
-Este directorio contiene la memoria estratégica y técnica del proyecto AnalyticsPredict / DataAnalytics.
+Este índice apunta solo a la documentación **vigente** para operar el proyecto sin ruido.
 
-Su propósito es que Borlty tenga siempre visible, dentro del proyecto, una fuente de verdad sobre:
+## Punto de entrada obligatorio
+1. `docs/FUENTE_DE_VERDAD_ACTUAL.md`
 
-- qué es el sistema
-- qué valor real ya genera
-- cuál es su estado actual
-- qué problemas son críticos
-- qué bloques de trabajo deben ejecutarse
-- qué no debe tocar sin auditar
-- cómo debe evolucionar el sistema como plataforma analítica
+## Núcleo de gobierno vigente
+2. `docs/arquitectura/ESTADO_PROYECTO.md`
+3. `docs/arquitectura/PLAN_EJECUCION_BLOQUES_V3.md`
+4. `docs/arquitectura/ADR-001-auth.md`
+5. `docs/arquitectura/ADR-002-pagos.md`
+6. `docs/arquitectura/ADR-003-chat-contexto.md`
+7. `docs/arquitectura/ADR-004-sunset-contratos-legacy.md`
 
-## Principio rector
+## Contexto activo de trabajo (resumido)
+8. `docs/borlty-context/01_QUICK_START_BORLTY.md`
+9. `docs/borlty-context/02_CONTEXTO_ESTRATEGICO_Y_OBJETIVO.md`
+10. `docs/borlty-context/03_ESTADO_ACTUAL_Y_BASELINES.md`
+11. `docs/borlty-context/10_REGLAS_ENTREGABLES_Y_CRITERIOS.md`
 
-Este proyecto NO debe tratarse como:
+## Dónde está la evidencia histórica
+- `docs/borlty-deliverables/` → entregables, auditorías, reportes, cierres de bloque.
+- `docs/archive/` → histórico obsoleto/reemplazado.
 
-- una simple app de apuestas
-- un dashboard aislado
-- un predictor estadístico suelto
-- un experimento de machine learning sin gobierno
-
-Este proyecto debe entenderse y evolucionarse como una:
-
-**Plataforma de Analítica de Datos Deportivos, Inteligencia Predictiva y Soporte a la Toma de Decisiones.**
-
-## Orden recomendado de lectura
-
-1. `01_QUICK_START_BORLTY.md`
-2. `02_CONTEXTO_ESTRATEGICO_Y_OBJETIVO.md`
-3. `03_ESTADO_ACTUAL_Y_BASELINES.md`
-4. `04_BLOQUE_AUDITORIA_Y_DIAGNOSTICO.md`
-5. `05_BLOQUE_ESTABILIZACION_CRITICA.md`
-6. `06_BLOQUE_CAPA_ANALITICA_Y_KPIS.md`
-7. `07_BLOQUE_CALIDAD_DE_DATOS_Y_EXPLICABILIDAD.md`
-8. `08_BLOQUE_GOBIERNO_DE_MODELOS_Y_DOMINIOS.md`
-9. `09_BLOQUE_EXPANSIONES_FUTURAS.md`
-10. `10_REGLAS_ENTREGABLES_Y_CRITERIOS.md`
-
-## Regla permanente
-
-Toda cifra, baseline, prioridad o insight documentado aquí debe tomarse como:
-
-- contexto operativo valioso
-- baseline de trabajo
-- hipótesis priorizada
-
-pero debe verificarse en auditoría técnica antes de convertirse en verdad estructural definitiva del sistema.
+## Regla operativa
+Si un documento no está en las rutas activas anteriores, no debe gobernar decisiones sin validación explícita contra `FUENTE_DE_VERDAD_ACTUAL` y `ESTADO_PROYECTO`.
