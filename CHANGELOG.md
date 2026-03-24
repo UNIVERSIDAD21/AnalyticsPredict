@@ -18,6 +18,13 @@
 - Documentación operativa C1 agregada:
   - `docs/operacion/FLUJO_REAL_PAGOS_C1.md`
   - `docs/operacion/C1_MATRIZ_ESTADOS_Y_FALLOS.md`
+- C2 ejecutado (hardening y persistencia):
+  - matriz formal de persistencias launch-critical y decisiones por componente,
+  - estrategia de persistencia productiva con aceptación temporal mitigada de SQLite,
+  - scripts operativos de backup/restore + test real de restore,
+  - runbook operativo con rollback y política mínima de secretos,
+  - observabilidad mínima de componentes críticos (`GET /api/operacion/c2/health-critical`),
+  - evidencia de restore test en `docs/reportes/C2_BACKUP_RESTORE_TEST_2026-03-24.md`.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):
