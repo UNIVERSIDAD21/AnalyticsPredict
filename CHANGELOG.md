@@ -9,11 +9,12 @@
 - Riesgo de persistencias temporales formalizado para inventario/decisión en C2.
 - Fuente de verdad y estado del proyecto actualizados para reflejar secuencia C0–C7.
 - `PLAN_EJECUCION_BLOQUES_V3.md` marcado como histórico/superado para decisiones de go-live.
-- C1 ejecutado (pagos productivos equivalentes trazables):
+- C1 ejecutado en capa técnica (pagos productivos equivalentes trazables), pendiente validación manual real para cierre total:
   - idempotencia de webhook por evento (`payment_events`),
   - matriz formal de estados de pago/suscripción/gate,
   - feature-gating consistente por suscripción,
-  - evidencia E2E reproducible del primer pago equivalente (`docs/reportes/C1_E2E_PRIMER_PAGO_VALIDACION_EQUIVALENTE_2026-03-24.md`, 6/6 tests).
+  - evidencia E2E reproducible del primer pago equivalente (`docs/reportes/C1_E2E_PRIMER_PAGO_VALIDACION_EQUIVALENTE_2026-03-24.md`, 6/6 tests),
+  - template oficial de cierre manual (`docs/reportes/C1_CIERRE_MANUAL_MERCADOPAGO_TEMPLATE.md`).
 - Documentación operativa C1 agregada:
   - `docs/operacion/FLUJO_REAL_PAGOS_C1.md`
   - `docs/operacion/C1_MATRIZ_ESTADOS_Y_FALLOS.md`
