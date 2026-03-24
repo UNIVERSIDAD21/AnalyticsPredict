@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-24 (C5)
+Última actualización: 2026-03-24 (C6)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -23,7 +23,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - C3: CERRADO
 - C4: CERRADO
 - C5: CERRADO
-- C6: PENDIENTE
+- C6: CERRADO
 - C7: PENDIENTE
 
 ## Estado por bloque

@@ -42,6 +42,11 @@
   - `DashboardFutbol` migrado de serie simulada a consumo backend real,
   - contrato canónico de fútbol documentado,
   - checklist de madurez y criterios de promoción comercial de fútbol agregados.
+- C6 ejecutado (centro analítico multideporte v1):
+  - nueva vista unificada `/centro-analitico` con shell común, selector de deporte y KPIs base compartidos,
+  - navegación común reforzada en encabezado (acceso directo a Centro),
+  - madurez visible por deporte (NBA maduro, fútbol beta/lab) sin falsa equivalencia comercial,
+  - contrato base de métricas comunes y documentación de inventario/madurez/reportes de C6.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):

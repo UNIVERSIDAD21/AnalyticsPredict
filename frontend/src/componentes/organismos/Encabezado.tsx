@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Activity, Zap, Settings, BarChart3, LogOut, MessageSquare } from 'lucide-react';
+import { Activity, Zap, Settings, BarChart3, LogOut, MessageSquare, Layers3 } from 'lucide-react';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
@@ -54,6 +54,7 @@ export function Encabezado() {
   // Determinar si estamos en el dashboard
   const enDashboard = rutaActual === '/futbol/dashboard';
   const enChat = rutaActual === '/chat';
+  const enCentroAnalitico = rutaActual === '/centro-analitico';
 
   // Título dinámico según el deporte
   const titulo = esFutbol ? 'FÚTBOL ANALYZER' : 'NBA ANALYZER';
@@ -113,6 +114,18 @@ export function Encabezado() {
                 onClick={() => navegar(rutaAnalisis)}
               >
                 {esFutbol ? 'Partidos' : 'Análisis'}
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border flex items-center gap-1.5 ${
+                  enCentroAnalitico
+                    ? 'border-neon-cyan text-neon-cyan'
+                    : 'border-neon-cyan/20 text-texto-secundario'
+                }`}
+                onClick={() => navegar('/centro-analitico')}
+              >
+                <Layers3 className="w-3.5 h-3.5" />
+                Centro
               </button>
               <button
                 type="button"

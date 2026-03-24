@@ -16,6 +16,7 @@ import {
   PaginaOnboarding,
   PaginaDashboardUsuario,
   PaginaChat,
+  PaginaCentroAnalitico,
 } from './componentes/paginas';
 import { useAuth } from './contextos/AuthContext';
 import { obtenerEstadoOnboarding } from './servicios/onboarding';
@@ -72,6 +73,7 @@ function App() {
         {/* Rutas principales protegidas */}
         <Route path="/" element={<RutaProtegida><RutaConOnboarding><PaginaPrincipal /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/dashboard" element={<RutaProtegida><RutaConOnboarding><PaginaDashboardUsuario /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/centro-analitico" element={<RutaProtegida><RutaConOnboarding><PaginaCentroAnalitico /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><PaginaBitacora /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><PaginaConfiguracion /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/chat" element={<RutaProtegida><RutaConOnboarding><PaginaChat /></RutaConOnboarding></RutaProtegida>} />
