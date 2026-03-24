@@ -30,6 +30,13 @@
   - matriz de cobertura legal/comercial por flujo premium,
   - checklist de validación legal-operativa previo a go-live,
   - revisión de consistencia entre UI, backend y documentación legal/comercial.
+- C4 ejecutado (activación y entrada de valor):
+  - inventario formal del flujo actual visitante -> registro -> onboarding -> dashboard/premium,
+  - matriz de capacidades por tipo de usuario (visitante/registrado/suscrito),
+  - definición de puntos de valor inicial antes del muro total,
+  - KPIs de activación orientados a valor real (TTV, activación útil, valor entendido),
+  - revisión de copy alineada a narrativa profesional (sin hype de rentabilidad),
+  - comunicación explícita de NBA frente principal y fútbol en laboratorio controlado.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):
