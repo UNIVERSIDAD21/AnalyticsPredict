@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Rutas B1: checkout + webhook firmado + feature gating por suscripción."""
+"""Rutas C1: checkout + webhook idempotente + feature gating por suscripción."""
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
 from uuid import uuid4
 
@@ -17,12 +18,13 @@ from servicios.pagos_store import PagosStore, obtener_pagos_store
 
 router = APIRouter(prefix="/api/pagos", tags=["Pagos"])
 
+
 def _webhook_secret() -> str:
     return os.getenv("MERCADOPAGO_WEBHOOK_SECRET", "dev-webhook-secret")
 
 
 def _checkout_base_url() -> str:
-    return os.getenv("MERCADOPAGO_CHECKOUT_BASE_URL", "https://sandbox.mercadopago.com/checkout/v1")
+    return os.getenv("MERCADOPAGO_CHECKOUT_BASE_URL", "https://www.mercadopago.com.co/checkout/v1")
 
 
 def _extraer_bearer_token(authorization: str | None) -> str:
@@ -102,6 +104,13 @@ async def webhook_mercadopago(
 
     evento = MercadoPagoWebhookEvent.model_validate_json(payload_raw)
 
+    is_new_event = pagos_store.registrar_evento_webhook(
+        external_reference=evento.external_reference,
+        payment_id=evento.payment_id,
+        status=evento.status,
+        payload_json=payload_raw.decode("utf-8", errors="ignore"),
+    )
+
     intent = pagos_store.marcar_pago(
         external_reference=evento.external_reference,
         payment_id=evento.payment_id,
@@ -110,21 +119,21 @@ async def webhook_mercadopago(
     if not intent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="external_reference no registrado")
 
-    subscription = None
-    if evento.status.lower() == "approved":
-        subscription = pagos_store.activar_suscripcion(
-            user_id=intent["user_id"],
-            plan_id=evento.plan_id or intent["plan_id"],
-            payment_id=evento.payment_id,
-        )
+    subscription = pagos_store.actualizar_estado_suscripcion_por_evento(
+        user_id=intent["user_id"],
+        plan_id=evento.plan_id or intent["plan_id"],
+        payment_status=evento.status,
+        payment_id=evento.payment_id,
+    )
 
     return {
         "ok": True,
         "data": {
             "external_reference": evento.external_reference,
             "payment_id": evento.payment_id,
-            "status": evento.status,
+            "status": evento.status.lower(),
             "subscription": subscription,
+            "event_idempotent": not is_new_event,
         },
     }
 
@@ -137,10 +146,11 @@ async def ver_mi_suscripcion(
 ):
     user = _usuario_actual(authorization, auth_store)
     suscripcion = pagos_store.obtener_suscripcion(user["id"])
+    active = bool(suscripcion and suscripcion.get("status") == "active")
     return {
         "ok": True,
         "data": {
-            "active": bool(suscripcion and suscripcion.get("status") == "active"),
+            "active": active,
             "subscription": suscripcion,
         },
     }
@@ -155,13 +165,41 @@ async def feature_gate(
 ):
     user = _usuario_actual(authorization, auth_store)
     suscripcion = pagos_store.obtener_suscripcion(user["id"])
-    habilitado = bool(suscripcion and suscripcion.get("status") == "active")
+    status_sub = (suscripcion or {}).get("status", "inactive")
+
+    habilitado = status_sub == "active"
+    reason = "active_subscription" if habilitado else "subscription_required"
 
     return {
         "ok": True,
         "data": {
             "feature": feature,
             "enabled": habilitado,
-            "reason": "active_subscription" if habilitado else "subscription_required",
+            "reason": reason,
+            "subscription_status": status_sub,
+        },
+    }
+
+
+@router.get("/matriz-estados")
+async def matriz_estados_pago():
+    """Matriz operativa de estados de C1 para soporte y trazabilidad."""
+    return {
+        "ok": True,
+        "data": {
+            "payment_status_to_subscription": {
+                "approved": "active",
+                "pending": "past_due",
+                "in_process": "past_due",
+                "rejected": "inactive",
+                "cancelled": "inactive",
+                "refunded": "inactive",
+                "charged_back": "inactive",
+            },
+            "feature_gate": {
+                "active": "enabled",
+                "past_due": "disabled",
+                "inactive": "disabled",
+            },
         },
     }

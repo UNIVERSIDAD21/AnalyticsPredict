@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Store mínimo para checkout/webhooks/suscripción (B1)."""
+"""Store de pagos/suscripciones con idempotencia de webhook y trazabilidad."""
 
 from __future__ import annotations
 
@@ -8,6 +8,9 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Iterator
+
+
+TERMINAL_PAYMENT_STATUSES = {"approved", "rejected", "cancelled", "refunded", "charged_back"}
 
 
 class PagosStore:
@@ -53,7 +56,21 @@ class PagosStore:
                   status TEXT NOT NULL,
                   activated_at TEXT NOT NULL,
                   expires_at TEXT NOT NULL,
-                  source_payment_id TEXT
+                  source_payment_id TEXT,
+                  updated_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS payment_events (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  external_reference TEXT NOT NULL,
+                  payment_id TEXT NOT NULL,
+                  status TEXT NOT NULL,
+                  payload_json TEXT,
+                  processed_at TEXT NOT NULL,
+                  UNIQUE(external_reference, payment_id, status)
                 )
                 """
             )
@@ -74,15 +91,47 @@ class PagosStore:
             "status": "pending",
         }
 
+    def registrar_evento_webhook(
+        self,
+        *,
+        external_reference: str,
+        payment_id: str,
+        status: str,
+        payload_json: str | None,
+    ) -> bool:
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO payment_events(external_reference, payment_id, status, payload_json, processed_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (external_reference, payment_id, status.lower(), payload_json, now),
+                )
+            return True
+        except sqlite3.IntegrityError:
+            return False
+
     def marcar_pago(self, *, external_reference: str, payment_id: str, status: str) -> dict | None:
         now = datetime.now(timezone.utc).isoformat()
+        status = status.lower().strip()
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT external_reference, user_id, plan_id, amount_cents, currency, status FROM payment_intents WHERE external_reference=?",
+                "SELECT external_reference, user_id, plan_id, amount_cents, currency, status, payment_id FROM payment_intents WHERE external_reference=?",
                 (external_reference,),
             ).fetchone()
             if not row:
                 return None
+
+            current_status = (row["status"] or "").lower()
+            current_payment_id = row["payment_id"]
+
+            if current_status in TERMINAL_PAYMENT_STATUSES and current_payment_id == payment_id:
+                data = dict(row)
+                data["idempotent"] = True
+                return data
+
             conn.execute(
                 """
                 UPDATE payment_intents
@@ -91,27 +140,31 @@ class PagosStore:
                 """,
                 (payment_id, status, now, external_reference),
             )
+
         data = dict(row)
         data["status"] = status
         data["payment_id"] = payment_id
+        data["idempotent"] = False
         return data
 
     def activar_suscripcion(self, *, user_id: int, plan_id: str, payment_id: str, duracion_dias: int = 30) -> dict:
         activated_at = datetime.now(timezone.utc)
         expires_at = activated_at + timedelta(days=duracion_dias)
+        now = activated_at.isoformat()
         with self._conn() as conn:
             conn.execute(
                 """
-                INSERT INTO subscriptions(user_id, plan_id, status, activated_at, expires_at, source_payment_id)
-                VALUES (?, ?, 'active', ?, ?, ?)
+                INSERT INTO subscriptions(user_id, plan_id, status, activated_at, expires_at, source_payment_id, updated_at)
+                VALUES (?, ?, 'active', ?, ?, ?, ?)
                 ON CONFLICT(user_id) DO UPDATE SET
                   plan_id=excluded.plan_id,
                   status='active',
                   activated_at=excluded.activated_at,
                   expires_at=excluded.expires_at,
-                  source_payment_id=excluded.source_payment_id
+                  source_payment_id=excluded.source_payment_id,
+                  updated_at=excluded.updated_at
                 """,
-                (user_id, plan_id, activated_at.isoformat(), expires_at.isoformat(), payment_id),
+                (user_id, plan_id, activated_at.isoformat(), expires_at.isoformat(), payment_id, now),
             )
         return {
             "user_id": user_id,
@@ -120,17 +173,68 @@ class PagosStore:
             "activated_at": activated_at.isoformat(),
             "expires_at": expires_at.isoformat(),
             "source_payment_id": payment_id,
+            "updated_at": now,
         }
 
-    def obtener_suscripcion(self, user_id: int) -> dict | None:
+    def actualizar_estado_suscripcion_por_evento(self, *, user_id: int, plan_id: str, payment_status: str, payment_id: str) -> dict:
+        status = payment_status.lower().strip()
+        now = datetime.now(timezone.utc).isoformat()
+
+        if status == "approved":
+            return self.activar_suscripcion(user_id=user_id, plan_id=plan_id, payment_id=payment_id)
+
+        mapped = "past_due" if status in {"in_process", "pending"} else "inactive"
+
         with self._conn() as conn:
             row = conn.execute(
                 "SELECT user_id, plan_id, status, activated_at, expires_at, source_payment_id FROM subscriptions WHERE user_id=?",
                 (user_id,),
             ).fetchone()
+
+            if row:
+                conn.execute(
+                    """
+                    UPDATE subscriptions
+                    SET status=?, source_payment_id=?, updated_at=?
+                    WHERE user_id=?
+                    """,
+                    (mapped, payment_id, now, user_id),
+                )
+                base = dict(row)
+                base["status"] = mapped
+                base["source_payment_id"] = payment_id
+                base["updated_at"] = now
+                return base
+
+            activated_at = now
+            expires_at = now
+            conn.execute(
+                """
+                INSERT INTO subscriptions(user_id, plan_id, status, activated_at, expires_at, source_payment_id, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (user_id, plan_id, mapped, activated_at, expires_at, payment_id, now),
+            )
+            return {
+                "user_id": user_id,
+                "plan_id": plan_id,
+                "status": mapped,
+                "activated_at": activated_at,
+                "expires_at": expires_at,
+                "source_payment_id": payment_id,
+                "updated_at": now,
+            }
+
+    def obtener_suscripcion(self, user_id: int) -> dict | None:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT user_id, plan_id, status, activated_at, expires_at, source_payment_id, updated_at FROM subscriptions WHERE user_id=?",
+                (user_id,),
+            ).fetchone()
         if not row:
             return None
         return dict(row)
+
 
 
 def obtener_pagos_store() -> PagosStore:

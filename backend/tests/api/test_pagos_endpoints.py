@@ -39,6 +39,12 @@ def _auth_header(client: TestClient, email: str = "pay@ap.com") -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+def _firmar(payload: dict) -> tuple[bytes, str]:
+    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    firma = hmac.new(b"mp-secret-test", raw, hashlib.sha256).hexdigest()
+    return raw, firma
+
+
 def test_checkout_crea_intento_pendiente(tmp_path: Path):
     client = _crear_cliente(tmp_path)
     headers = _auth_header(client)
@@ -92,8 +98,7 @@ def test_webhook_approved_activa_suscripcion_y_feature_gate(tmp_path: Path):
         "plan_id": "pro_mensual",
         "amount_cents": 49900,
     }
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    firma = hmac.new(b"mp-secret-test", raw, hashlib.sha256).hexdigest()
+    raw, firma = _firmar(payload)
 
     webhook = client.post(
         "/api/pagos/webhook/mercadopago",
@@ -103,6 +108,7 @@ def test_webhook_approved_activa_suscripcion_y_feature_gate(tmp_path: Path):
     assert webhook.status_code == 200
     assert webhook.json()["data"]["status"] == "approved"
     assert webhook.json()["data"]["subscription"]["status"] == "active"
+    assert webhook.json()["data"]["event_idempotent"] is False
 
     suscripcion = client.get("/api/pagos/suscripcion/mia", headers=headers)
     assert suscripcion.status_code == 200
@@ -112,3 +118,85 @@ def test_webhook_approved_activa_suscripcion_y_feature_gate(tmp_path: Path):
     assert gate.status_code == 200
     assert gate.json()["data"]["enabled"] is True
     assert gate.json()["data"]["reason"] == "active_subscription"
+
+
+def test_webhook_idempotente_no_duplica_efecto(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    headers = _auth_header(client, email="idempotente@ap.com")
+
+    checkout = client.post(
+        "/api/pagos/checkout-session",
+        headers=headers,
+        json={"plan_id": "pro_mensual", "amount_cents": 49900, "currency": "COP"},
+    )
+    external_reference = checkout.json()["data"]["external_reference"]
+
+    payload = {
+        "event": "payment.updated",
+        "payment_id": "mp_repeat",
+        "external_reference": external_reference,
+        "status": "approved",
+        "plan_id": "pro_mensual",
+        "amount_cents": 49900,
+    }
+    raw, firma = _firmar(payload)
+
+    first = client.post(
+        "/api/pagos/webhook/mercadopago",
+        headers={"X-Signature": firma, "Content-Type": "application/json"},
+        content=raw,
+    )
+    second = client.post(
+        "/api/pagos/webhook/mercadopago",
+        headers={"X-Signature": firma, "Content-Type": "application/json"},
+        content=raw,
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["data"]["event_idempotent"] is False
+    assert second.json()["data"]["event_idempotent"] is True
+
+
+def test_payment_rejected_desactiva_feature_gate(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    headers = _auth_header(client, email="rechazo@ap.com")
+
+    checkout = client.post(
+        "/api/pagos/checkout-session",
+        headers=headers,
+        json={"plan_id": "pro_mensual", "amount_cents": 49900, "currency": "COP"},
+    )
+    external_reference = checkout.json()["data"]["external_reference"]
+
+    payload = {
+        "event": "payment.updated",
+        "payment_id": "mp_reject",
+        "external_reference": external_reference,
+        "status": "rejected",
+        "plan_id": "pro_mensual",
+        "amount_cents": 49900,
+    }
+    raw, firma = _firmar(payload)
+
+    webhook = client.post(
+        "/api/pagos/webhook/mercadopago",
+        headers={"X-Signature": firma, "Content-Type": "application/json"},
+        content=raw,
+    )
+
+    assert webhook.status_code == 200
+    assert webhook.json()["data"]["subscription"]["status"] == "inactive"
+
+    gate = client.get("/api/pagos/feature-gate?feature=predicciones_premium", headers=headers)
+    assert gate.status_code == 200
+    assert gate.json()["data"]["enabled"] is False
+    assert gate.json()["data"]["subscription_status"] == "inactive"
+
+
+def test_matriz_estados_disponible(tmp_path: Path):
+    client = _crear_cliente(tmp_path)
+    r = client.get("/api/pagos/matriz-estados")
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert data["payment_status_to_subscription"]["approved"] == "active"
