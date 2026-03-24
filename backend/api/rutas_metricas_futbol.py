@@ -394,6 +394,74 @@ async def obtener_metricas_rendimiento(
 
 
 @router.get(
+    "/roi-temporal",
+    summary="Serie temporal de ROI acumulado (30 días)",
+    description="Retorna ROI acumulado diario para el usuario autenticado, sin datos mock.",
+)
+async def obtener_roi_temporal(
+    dias: int = Query(30, ge=7, le=90),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> dict:
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                if not _tabla_existe(cursor, "apuestas_futbol"):
+                    return {"exito": True, "dias": dias, "serie": []}
+
+                columna_estado = _resolver_columna_estado_apuestas(cursor)
+                ganancia_col = _resolver_columna_ganancia_apuestas(cursor)
+                if not columna_estado or not ganancia_col:
+                    return {"exito": True, "dias": dias, "serie": []}
+
+                query = f"""
+                    WITH serie_dias AS (
+                        SELECT (CURRENT_DATE - offs)::date AS fecha
+                        FROM generate_series(0, %s - 1) AS offs
+                    ),
+                    delta_diario AS (
+                        SELECT
+                            DATE(fecha_creacion) AS fecha,
+                            SUM(COALESCE({ganancia_col}, 0)) AS delta_ganancia,
+                            SUM(COALESCE(stake, 0)) AS delta_stake
+                        FROM apuestas_futbol
+                        WHERE usuario_id = %s
+                          AND {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
+                          AND fecha_creacion >= (CURRENT_DATE - (%s - 1) * INTERVAL '1 day')
+                        GROUP BY DATE(fecha_creacion)
+                    )
+                    SELECT
+                        s.fecha,
+                        SUM(COALESCE(d.delta_ganancia, 0)) OVER (ORDER BY s.fecha) AS ganancia_acumulada,
+                        SUM(COALESCE(d.delta_stake, 0)) OVER (ORDER BY s.fecha) AS stake_acumulado
+                    FROM serie_dias s
+                    LEFT JOIN delta_diario d ON d.fecha = s.fecha
+                    ORDER BY s.fecha ASC
+                """
+                cursor.execute(query, [dias, str(usuario.id), dias])
+                filas = cursor.fetchall()
+
+                serie = []
+                for fila in filas:
+                    stake_acum = float(fila["stake_acumulado"] or 0)
+                    ganancia_acum = float(fila["ganancia_acumulada"] or 0)
+                    roi_pct = (ganancia_acum / stake_acum * 100.0) if stake_acum > 0 else 0.0
+                    serie.append(
+                        {
+                            "fecha": fila["fecha"].isoformat(),
+                            "roi": round(roi_pct, 4),
+                            "stake_acumulado": round(stake_acum, 2),
+                            "ganancia_acumulada": round(ganancia_acum, 2),
+                        }
+                    )
+
+                return {"exito": True, "dias": dias, "serie": serie}
+    except Exception as e:
+        logger.error("Error obteniendo ROI temporal: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get(
     "/modelos",
     response_model=EstadoModelos,
     summary="Estado de modelos",

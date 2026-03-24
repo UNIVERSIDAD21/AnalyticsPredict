@@ -9,6 +9,7 @@ import type {
   EstadoModeloFutbol,
   ResumenSistema,
   TipoMercadoFutbol,
+  PuntoROITemporalFutbol,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -208,6 +209,27 @@ export async function obtenerResumenCalidad1x2(): Promise<ResumenCalidad1x2Futbo
       push: Number(r.push || 0),
       hitRateSinPush: Number(r.hit_rate_sin_push || 0),
     };
+  } catch (error) {
+    throw new Error(extraerMensajeError(error));
+  }
+}
+
+export async function obtenerRoiTemporal(
+  dias = 30
+): Promise<PuntoROITemporalFutbol[]> {
+  try {
+    const respuesta = await clienteAPI.get('/api/futbol/metricas/roi-temporal', {
+      params: { dias },
+    });
+    const serie = respuesta.data?.serie || [];
+    if (!Array.isArray(serie)) return [];
+
+    return serie.map((p) => ({
+      fecha: String(p.fecha || ''),
+      roi: Number(p.roi || 0),
+      stakeAcumulado: Number(p.stake_acumulado || 0),
+      gananciaAcumulada: Number(p.ganancia_acumulada || 0),
+    }));
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }

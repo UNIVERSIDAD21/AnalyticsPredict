@@ -37,6 +37,11 @@
   - KPIs de activación orientados a valor real (TTV, activación útil, valor entendido),
   - revisión de copy alineada a narrativa profesional (sin hype de rentabilidad),
   - comunicación explícita de NBA frente principal y fútbol en laboratorio controlado.
+- C5 ejecutado (paridad operativa de fútbol):
+  - endpoint canónico `GET /api/futbol/metricas/roi-temporal` para serie real de ROI acumulado,
+  - `DashboardFutbol` migrado de serie simulada a consumo backend real,
+  - contrato canónico de fútbol documentado,
+  - checklist de madurez y criterios de promoción comercial de fútbol agregados.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):

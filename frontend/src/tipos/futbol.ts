@@ -452,6 +452,13 @@ export interface EstadoModeloFutbol {
   nEquipos: number;
 }
 
+export interface PuntoROITemporalFutbol {
+  fecha: string;
+  roi: number;
+  stakeAcumulado: number;
+  gananciaAcumulada: number;
+}
+
 /**
  * Resumen del sistema
  */

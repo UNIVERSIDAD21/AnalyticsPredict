@@ -43,6 +43,7 @@ import {
   obtenerMetricasCalibracion,
   obtenerMetricasRendimiento,
   obtenerEstadoModelos,
+  obtenerRoiTemporal,
 } from '../../servicios/futbol';
 import {
   obtenerObservabilidadHTTP,
@@ -55,6 +56,7 @@ import type {
   MetricasRendimientoFutbol,
   EstadoModeloFutbol,
   CategoriaMercado,
+  PuntoROITemporalFutbol,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -81,24 +83,9 @@ function formatearPorcentaje(valor: number): string {
   return `${signo}${(valor * 100).toFixed(1)}%`;
 }
 
-// Datos mock para el grafico temporal (en produccion vendrian del backend)
-function generarDatosTemporales(): { fecha: string; roi: number }[] {
-  const datos = [];
-  let roiAcumulado = 0;
-  const hoy = new Date();
-
-  for (let i = 29; i >= 0; i--) {
-    const fecha = new Date(hoy);
-    fecha.setDate(fecha.getDate() - i);
-    // Simular variacion diaria
-    const variacion = (Math.random() - 0.45) * 0.03;
-    roiAcumulado += variacion;
-    datos.push({
-      fecha: fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-      roi: roiAcumulado * 100,
-    });
-  }
-  return datos;
+function formatearEtiquetaDia(fechaISO: string): string {
+  const fecha = new Date(fechaISO);
+  return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -338,6 +325,7 @@ function GraficoTemporal({ datos }: PropsGraficoTemporal) {
               tickLine={false}
               axisLine={false}
               interval="preserveStartEnd"
+              tickFormatter={formatearEtiquetaDia}
             />
             <YAxis
               stroke="rgba(156, 163, 175, 0.5)"
@@ -355,6 +343,7 @@ function GraficoTemporal({ datos }: PropsGraficoTemporal) {
               }}
               labelStyle={{ color: '#9ca3af', fontSize: 12 }}
               itemStyle={{ color: esPositivo ? '#10b981' : '#ef4444' }}
+              labelFormatter={(value) => formatearEtiquetaDia(String(value))}
               formatter={(value: number) => [`${value.toFixed(2)}%`, 'ROI']}
             />
             <Area
@@ -387,9 +376,7 @@ export function DashboardFutbol() {
   const [modelos, setModelos] = useState<EstadoModeloFutbol[]>([]);
   const [saludBackend, setSaludBackend] = useState<SaludBackend | null>(null);
   const [observabilidadHTTP, setObservabilidadHTTP] = useState<ObservabilidadHTTPResumen | null>(null);
-  const [datosTemporales, setDatosTemporales] = useState<
-    { fecha: string; roi: number }[]
-  >([]);
+  const [datosTemporales, setDatosTemporales] = useState<PuntoROITemporalFutbol[]>([]);
 
   // Cargar datos
   const cargarDatos = useCallback(async () => {
@@ -397,12 +384,13 @@ export function DashboardFutbol() {
     setError(null);
 
     try {
-      const [calibracionData, rendimientoData, modelosData, saludData, observabilidadData] = await Promise.all([
+      const [calibracionData, rendimientoData, modelosData, saludData, observabilidadData, roiTemporal] = await Promise.all([
         obtenerMetricasCalibracion(),
         obtenerMetricasRendimiento(),
         obtenerEstadoModelos(),
         obtenerSaludBackend(),
         obtenerObservabilidadHTTP(),
+        obtenerRoiTemporal(30),
       ]);
 
       setCalibracion(calibracionData);
@@ -410,7 +398,7 @@ export function DashboardFutbol() {
       setModelos(modelosData);
       setSaludBackend(saludData);
       setObservabilidadHTTP(observabilidadData);
-      setDatosTemporales(generarDatosTemporales());
+      setDatosTemporales(roiTemporal);
     } catch (err) {
       const mensaje =
         err instanceof Error ? err.message : 'Error al cargar metricas';

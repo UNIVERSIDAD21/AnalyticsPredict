@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-24 (C1)
+Última actualización: 2026-03-24 (C5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -15,6 +15,16 @@ C5 → C6
 
 ## Nota de transición
 El esquema A/B queda como histórico de ejecución previa. Para decisiones de lanzamiento comercial rige la secuencia C0–C7 y ADR-005.
+
+## Estado rápido C0–C7 (go-live comercial)
+- C0: CERRADO
+- C1: EN_CURSO (pendiente validación manual final de MP)
+- C2: CERRADO
+- C3: CERRADO
+- C4: CERRADO
+- C5: CERRADO
+- C6: PENDIENTE
+- C7: PENDIENTE
 
 ## Estado por bloque
 
