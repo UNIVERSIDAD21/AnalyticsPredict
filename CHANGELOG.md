@@ -47,6 +47,10 @@
   - navegación común reforzada en encabezado (acceso directo a Centro),
   - madurez visible por deporte (NBA maduro, fútbol beta/lab) sin falsa equivalencia comercial,
   - contrato base de métricas comunes y documentación de inventario/madurez/reportes de C6.
+- Preflight de C7 formalizado sin ejecutar C7:
+  - C1 se mantiene EN_CURSO y bloqueado por dependencia de dominio/URL pública para validación manual real de MP,
+  - C7 permanece bloqueado hasta cierre manual evidenciado de C1,
+  - nueva ruta de auditoría C0–C7 en `docs/auditoria/RUTA_AUDITORIA_C0_C7.md`.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):

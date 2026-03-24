@@ -18,13 +18,18 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 
 ## Estado rápido C0–C7 (go-live comercial)
 - C0: CERRADO
-- C1: EN_CURSO (pendiente validación manual final de MP)
+- C1: EN_CURSO (pendiente validación manual final de MP; bloqueado hasta contar con dominio/URL pública para webhook real en entorno de lanzamiento)
 - C2: CERRADO
 - C3: CERRADO
 - C4: CERRADO
 - C5: CERRADO
 - C6: CERRADO
 - C7: PENDIENTE
+
+## Preflight C7 (condición de apertura)
+- C7 NO se abre hasta cierre manual real de C1 por el dueño.
+- Bloqueo actual C1: falta dominio/URL pública final para validar webhook real de MercadoPago extremo a extremo.
+- Al desbloquear infraestructura (dominio + callback pública), ejecutar cierre manual C1 con evidencia y recién después abrir C7.
 
 ## Estado por bloque
 
