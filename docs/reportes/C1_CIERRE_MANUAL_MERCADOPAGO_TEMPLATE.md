@@ -12,7 +12,25 @@ Este template solo debe completarse cuando:
 - la capa técnica de C1 ya esté implementada en el repo,
 - el backend esté desplegado en una URL pública segura,
 - las credenciales reales de MercadoPago estén configuradas,
-- y exista intención de ejecutar una validación manual real o equivalente homologada.
+- y exista intención de ejecutar validación manual (homologada o real).
+
+## Tipos de validación manual (definición oficial)
+1. **Validación manual homologada**
+   - Ejecución manual en entorno homologado/sandbox oficial.
+   - Sirve para prevalidar operación manual y checklist humano.
+   - **No habilita por sí sola el cierre total de C1 ni apertura de C7.**
+
+2. **Validación manual real**
+   - Ejecución manual con cobro real en entorno final de lanzamiento.
+   - Es la única validación manual que habilita cierre total de C1.
+   - **Solo esta habilita apertura de C7.**
+
+## Regla de gobierno C1/C7 (sin ambigüedad)
+- Validación equivalente reproducible (pytest): valida readiness técnico.
+- Validación manual homologada: valida readiness operativo manual (prevalidación).
+- Validación manual real: valida readiness comercial real.
+- C1 se considera CERRADO únicamente con validación manual real evidenciada.
+- C7 solo puede abrirse después de C1=CERRADO por validación manual real.
 
 ## 1. Datos del entorno usado
 - URL pública del backend:

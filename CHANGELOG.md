@@ -51,6 +51,10 @@
   - C1 se mantiene EN_CURSO y bloqueado por dependencia de dominio/URL pública para validación manual real de MP,
   - C7 permanece bloqueado hasta cierre manual evidenciado de C1,
   - nueva ruta de auditoría C0–C7 en `docs/auditoria/RUTA_AUDITORIA_C0_C7.md`.
+- Clarificación documental C1/C7 para eliminar ambigüedad:
+  - diferencia explícita entre validación equivalente reproducible, validación manual homologada y validación manual real,
+  - regla formal: solo validación manual real habilita C1=CERRADO y apertura de C7,
+  - normalización de nomenclatura C0–C7 (comercial) vs B1–B7 (histórico técnico) en `ESTADO_PROYECTO.md`.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):

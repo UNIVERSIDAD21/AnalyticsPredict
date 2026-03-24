@@ -8,8 +8,9 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 ## Qué documento manda
 1. `docs/FUENTE_DE_VERDAD_ACTUAL.md` (este archivo)
 2. `docs/arquitectura/ESTADO_PROYECTO.md` (estado formal por bloques)
-3. `docs/arquitectura/PLAN_EJECUCION_BLOQUES_V3.md` (plan y orden estratégico)
-4. `docs/borlty-context/` (contexto activo mínimo)
+3. `docs/arquitectura/PLAN_BLOQUES_C0_C7_LANZAMIENTO_PROFESIONAL.md` (plan estratégico vigente)
+4. `docs/work_orders/c0_c7/00_INDICE_WORK_ORDERS_C0_C7.md` (órdenes operativas por bloque)
+5. `docs/borlty-context/` (contexto activo mínimo)
 
 ## Prioridades activas
 - Ejecutar en repo según bloque activo definido por Jefe.

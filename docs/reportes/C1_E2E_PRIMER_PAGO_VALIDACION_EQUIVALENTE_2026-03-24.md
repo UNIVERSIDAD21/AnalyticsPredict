@@ -28,4 +28,12 @@ backend/.venv/bin/pytest -q backend/tests/api/test_pagos_endpoints.py
   - endpoint de matriz de estados
 
 ## Conclusión
-C1 queda validado de forma trazable y reproducible como equivalente de pago real en entorno controlado, sin maquillar sandbox como producción final. La preparación de endurecimiento de persistencia queda para C2 (según ADR-005).
+Esta evidencia deja **validado el readiness técnico equivalente** de C1 en entorno controlado y reproducible, sin maquillar sandbox como producción final.
+
+**Límite explícito de esta evidencia:**
+- No sustituye validación manual homologada.
+- No sustituye validación manual real.
+- No habilita cierre total de C1 por sí sola.
+- No habilita apertura de C7 por sí sola.
+
+La preparación de endurecimiento de persistencia queda para C2 (según ADR-005).

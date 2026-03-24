@@ -31,6 +31,16 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloqueo actual C1: falta dominio/URL pública final para validar webhook real de MercadoPago extremo a extremo.
 - Al desbloquear infraestructura (dominio + callback pública), ejecutar cierre manual C1 con evidencia y recién después abrir C7.
 
+## Regla documental de validación C1 (normalizada)
+- **Validación equivalente reproducible** (tests/pytest): readiness técnico.
+- **Validación manual homologada** (sandbox/homologación oficial): prevalidación manual.
+- **Validación manual real** (cobro real en entorno final): única que habilita C1=CERRADO y apertura de C7.
+
+## Nota de nomenclatura C vs B (para reducir confusión)
+- C0–C7 gobierna la ruta comercial de lanzamiento.
+- B1–B7 conserva trazabilidad histórica de implementación por capacidades.
+- En pagos, la correspondencia vigente es: **C1 (bloque comercial) ⇄ B1 (implementación técnica de pagos)**.
+
 ## Estado por bloque
 
 | Bloque | Estado | Hecho | Decisiones tomadas | Abierto |
