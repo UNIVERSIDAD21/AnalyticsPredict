@@ -1,7 +1,12 @@
 # Plan de Ejecución por Bloques v3 (Ingeniería Ejecutable)
 
-Estado: ACTIVO
-Última actualización: 2026-03-18
+> Documento histórico de referencia técnica.
+> Para decisiones de lanzamiento comercial vigente usar:
+> - `docs/arquitectura/PLAN_BLOQUES_C0_C7_LANZAMIENTO_PROFESIONAL.md`
+> - `docs/arquitectura/ADR-005-alcance-comercial-minimo-c0.md`
+
+Estado: SUPERADO (reemplazado para go-live por plan C0–C7)
+Última actualización: 2026-03-24
 
 ## Camino crítico
 A1 → (A2/A3/A4/A5 en paralelo) → A6 → (B1/B2/B3 en paralelo) → (B4/B5/B6 en paralelo parcial) → B7

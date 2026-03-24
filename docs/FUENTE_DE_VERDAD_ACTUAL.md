@@ -16,6 +16,13 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 - Mantener contrato, calidad y trazabilidad antes de expansión comercial.
 - Actualizar siempre estado y changelog al cerrar bloques.
 
+## Estrategia comercial vigente (C0)
+- Camino principal de caja: `C0 -> C1 -> C2 -> C3 -> C4 -> C7`.
+- Camino paralelo controlado: `C5 -> C6` (no bloquea primer peso).
+- NBA = frente comercial principal.
+- Fútbol = beta/laboratorio hasta cumplir criterios de promoción.
+- No se posiciona el producto como app masiva de picks ni promesa de ganancias fáciles.
+
 ## Qué está en laboratorio
 - Líneas no cerradas por criterios formales en `ESTADO_PROYECTO`.
 - Funcionalidades con evidencia parcial en `docs/borlty-deliverables/` (reportes, pruebas de ciclo, validaciones puntuales).

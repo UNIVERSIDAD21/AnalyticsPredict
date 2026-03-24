@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-03-24
+- C0 ejecutado: realineación formal de go-live comercial.
+- Nueva ADR `docs/arquitectura/ADR-005-alcance-comercial-minimo-c0.md` con decisión explícita de alcance mínimo:
+  - bloqueantes de caja: C1, C2, C3, C4, C7
+  - paralelo no bloqueante: C5, C6
+- Contradicción formal resuelta entre dependencia histórica de B7 y estrategia actual (B3/B4/B5 no bloquean primer peso).
+- Riesgo de persistencias temporales formalizado para inventario/decisión en C2.
+- Fuente de verdad y estado del proyecto actualizados para reflejar secuencia C0–C7.
+- `PLAN_EJECUCION_BLOQUES_V3.md` marcado como histórico/superado para decisiones de go-live.
+
 ## 2026-03-18
 - Inicio de B5 (chat contextual):
   - Nuevo módulo `backend/servicios/chat_contexto.py` con persistencia de mensajes (SQLite), ventana deslizante y motor local/mock inteligente.

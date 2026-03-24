@@ -1,14 +1,20 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-18
+Última actualización: 2026-03-24
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
 Llegar a lanzamiento comercial mínimo viable con capacidad de cobrar el primer peso y operar con trazabilidad.
 
-## Camino crítico vigente
-A1 → (A2/A3/A4/A5) → A6 → (B1/B2/B3) → (B4/B5/B6) → B7
+## Camino crítico vigente (realineado por C0)
+C0 → C1 → C2 → C3 → C4 → C7
+
+## Camino paralelo controlado (no bloqueante de primer peso)
+C5 → C6
+
+## Nota de transición
+El esquema A/B queda como histórico de ejecución previa. Para decisiones de lanzamiento comercial rige la secuencia C0–C7 y ADR-005.
 
 ## Estado por bloque
 
