@@ -25,6 +25,11 @@
   - runbook operativo con rollback y política mínima de secretos,
   - observabilidad mínima de componentes críticos (`GET /api/operacion/c2/health-critical`),
   - evidencia de restore test en `docs/reportes/C2_BACKUP_RESTORE_TEST_2026-03-24.md`.
+- C3 ejecutado (cumplimiento comercial mínimo):
+  - documento rector comercial mínimo por flujos premium,
+  - matriz de cobertura legal/comercial por flujo premium,
+  - checklist de validación legal-operativa previo a go-live,
+  - revisión de consistencia entre UI, backend y documentación legal/comercial.
 
 ## 2026-03-18
 - Inicio de B5 (chat contextual):
