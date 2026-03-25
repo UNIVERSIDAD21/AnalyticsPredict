@@ -3,14 +3,22 @@ import { MessageSquare, RotateCcw, Send } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton } from '../atomos';
 import { useToasts } from '../../contextos/Toasts';
+import { useAuth } from '../../contextos/AuthContext';
 import { enviarMensajeChat, obtenerHistorialChat, resetChat, type ChatItem } from '../../servicios/chat';
+import {
+  consumirMensajeChatFreemium,
+  obtenerEstadoFreemium,
+  type EstadoFreemium,
+} from '../../servicios/freemium';
 
 export function PaginaChat() {
   const { agregarToast } = useToasts();
+  const { usuario } = useAuth();
   const [historial, setHistorial] = useState<ChatItem[]>([]);
   const [mensaje, setMensaje] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [cargando, setCargando] = useState(true);
+  const [freemium, setFreemium] = useState<EstadoFreemium | null>(null);
 
   const recargarHistorial = useCallback(async () => {
     try {
@@ -28,18 +36,33 @@ export function PaginaChat() {
   useEffect(() => {
     const init = async () => {
       await recargarHistorial();
+      const estadoFreemium = await obtenerEstadoFreemium(usuario?.id ? String(usuario.id) : null);
+      setFreemium(estadoFreemium);
       setCargando(false);
     };
     void init();
-  }, [recargarHistorial]);
+  }, [recargarHistorial, usuario?.id]);
 
   const onEnviar = async () => {
     if (!mensaje.trim() || enviando) return;
+
+    if (freemium && freemium.tier !== 'PREMIUM' && freemium.restantesHoy <= 0) {
+      agregarToast({
+        titulo: 'Límite diario alcanzado',
+        mensaje: 'Llegaste al límite diario del plan base/invitado. Para continuar hoy, necesitas plan premium.',
+        tipo: 'warning',
+      });
+      return;
+    }
+
     try {
       setEnviando(true);
       await enviarMensajeChat(mensaje.trim(), 12);
       setMensaje('');
       await recargarHistorial();
+      if (freemium && freemium.tier !== 'PREMIUM') {
+        setFreemium(consumirMensajeChatFreemium(freemium));
+      }
     } catch (error) {
       agregarToast({
         titulo: 'No se pudo enviar',
@@ -84,8 +107,19 @@ export function PaginaChat() {
           </Boton>
         </div>
 
-        <div className="tarjeta p-4 text-xs text-texto-secundario border border-neon-cyan/20">
-          ⚠️ Este asistente ofrece información orientativa y educativa. No garantiza resultados ni constituye asesoría financiera profesional.
+        <div className="tarjeta p-4 text-xs text-texto-secundario border border-neon-cyan/20 space-y-2">
+          <p>⚠️ Este asistente ofrece información orientativa y educativa. No garantiza resultados ni constituye asesoría financiera profesional.</p>
+          {freemium && (
+            <p>
+              Plan: <strong>{freemium.tier}</strong> · Mensajes hoy: <strong>{freemium.usadosHoy}/{freemium.limiteMensajesChatDia}</strong>
+              {freemium.tier !== 'PREMIUM' && (
+                <>
+                  {' '}· Restantes: <strong>{freemium.restantesHoy}</strong>
+                </>
+              )}
+              {' '}· Trazabilidad: <code>{freemium.identificadorTrazable}</code>
+            </p>
+          )}
         </div>
 
         <div className="tarjeta p-4 min-h-[420px] max-h-[520px] overflow-y-auto space-y-3">
@@ -121,7 +155,16 @@ export function PaginaChat() {
               className="flex-1 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20 text-texto-principal focus:outline-none focus:border-neon-cyan"
               placeholder="Escribe tu mensaje..."
             />
-            <Boton variante="primario" iconoInicio={<Send size={16} />} onClick={() => void onEnviar()} disabled={enviando || !mensaje.trim()}>
+            <Boton
+              variante="primario"
+              iconoInicio={<Send size={16} />}
+              onClick={() => void onEnviar()}
+              disabled={
+                enviando ||
+                !mensaje.trim() ||
+                !!(freemium && freemium.tier !== 'PREMIUM' && freemium.restantesHoy <= 0)
+              }
+            >
               {enviando ? 'Enviando...' : 'Enviar'}
             </Boton>
           </div>

@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-03-25
+- Se crea el plan público de negocio por prioridades P1–P9 en `docs/comercial/publico/` con índice y criterios por ola (P1/P2/P3 → P4/P6/P8 → P7/P9).
+- Se alinea la fuente de verdad para incluir el plan público como referencia activa:
+  - `docs/FUENTE_DE_VERDAD_ACTUAL.md`
+  - `docs/arquitectura/ESTADO_PROYECTO.md`
+  - `docs/auditoria/RUTA_AUDITORIA_C0_C7.md`
+- Ejecución funcional inicial de P2 (freemium/límites/trazabilidad) en Chat:
+  - nuevo servicio `frontend/src/servicios/freemium.ts` con identidad trazable `usr_<id>`/`inv_<id>` y control de consumo diario,
+  - `PaginaChat` muestra plan, consumo del día, restantes y trazabilidad,
+  - límite operativo en plan base/invitado para mensajería diaria (con bloqueo al alcanzar cupo), premium sin límite práctico.
+
 ## 2026-03-24
 - C0 ejecutado: realineación formal de go-live comercial.
 - Nueva ADR `docs/arquitectura/ADR-005-alcance-comercial-minimo-c0.md` con decisión explícita de alcance mínimo:

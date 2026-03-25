@@ -1,11 +1,17 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-24 (C6)
+Última actualización: 2026-03-25 (Plan público P1–P9, ola 1 en ejecución)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
 Llegar a lanzamiento comercial mínimo viable con capacidad de cobrar el primer peso y operar con trazabilidad.
+
+## Prioridad comercial complementaria (vigente)
+Se activa ejecución por olas del plan público P1–P9:
+- Ola 1: P1 Credibilidad, P2 Freemium/límites, P3 Propuesta de valor.
+- Ola 2: P4 Fútbol sin maquillaje, P6 Visibilidad inteligencia, P8 Premium.
+- Ola 3: P7 Mejora de motor/modelo, P9 UX y rendimiento.
 
 ## Camino crítico vigente (realineado por C0)
 C0 → C1 → C2 → C3 → C4 → C7

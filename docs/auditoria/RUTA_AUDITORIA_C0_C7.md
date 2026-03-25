@@ -8,6 +8,7 @@ Estado general: Pre-lanzamiento comercial, con C1 aún EN_CURSO por validación 
 2. `CHANGELOG.md`
 3. `docs/arquitectura/ADR-005-alcance-comercial-minimo-c0.md`
 4. `docs/arquitectura/PLAN_BLOQUES_C0_C7_LANZAMIENTO_PROFESIONAL.md`
+5. `docs/comercial/publico/00_INDICE_PLAN_PUBLICO_NEGOCIO.md` (prioridades P1–P9 por olas)
 
 ## 2) Work orders oficiales
 - `docs/work_orders/c0_c7/00_INDICE_WORK_ORDERS_C0_C7.md`
