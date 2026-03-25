@@ -96,7 +96,7 @@ export function PaginaDashboardUsuario() {
             <Boton variante="secundario" iconoInicio={<RefreshCw size={16} />} onClick={() => void recargar()}>
               Recargar
             </Boton>
-            <Boton variante="primario" onClick={() => navegar('/')}>
+            <Boton variante="primario" onClick={() => navegar('/app')}>
               Ir al análisis
             </Boton>
           </div>

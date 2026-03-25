@@ -25,7 +25,7 @@ export function PaginaLogin() {
     return <Navigate to="/" replace />;
   }
 
-  const destino = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/';
+  const destino = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app';
 
   const limpiarMensajes = () => {
     setError(null);
@@ -126,7 +126,12 @@ export function PaginaLogin() {
     <div className="min-h-screen bg-futurista-negro flex items-center justify-center p-4">
       <div className="w-full max-w-md rounded-xl border border-neon-cyan/20 bg-futurista-oscuro/60 p-6 space-y-4">
         <h1 className="text-2xl font-bold text-neon-cyan">{titulo}</h1>
-        <p className="text-texto-secundario text-sm">Accede para usar AnalyticsPredict.</p>
+        <p className="text-texto-secundario text-sm">Accede para usar AnalyticsPredict con trazabilidad personal y gestión completa.</p>
+        <p className="text-xs text-texto-terciario">
+          ¿Aún no quieres registrarte? Puedes explorar el
+          {' '}<Link to="/centro-analitico" className="text-neon-cyan hover:underline">centro analítico en modo visitante</Link>
+          {' '}con acceso limitado y sin funciones premium.
+        </p>
 
         <div className="grid grid-cols-2 gap-2">
           <button

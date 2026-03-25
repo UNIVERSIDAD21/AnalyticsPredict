@@ -37,14 +37,14 @@ export function Encabezado() {
   const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
 
   // Determinar rutas según el deporte activo
-  const rutaAnalisis = esFutbol ? '/futbol' : '/';
+  const rutaAnalisis = esFutbol ? '/futbol' : (usuario ? '/app' : '/');
   const rutaBitacora = esFutbol ? '/futbol/bitacora' : '/bitacora';
   const rutaDashboard = esFutbol ? '/futbol/dashboard' : null;
 
   // Determinar si estamos en la ruta de análisis
   const enAnalisis = esFutbol
     ? rutaActual === '/futbol' || rutaActual.startsWith('/futbol/partidos/')
-    : rutaActual === '/';
+    : rutaActual === '/app' || rutaActual === '/';
 
   // Determinar si estamos en la ruta de bitácora
   const enBitacora = esFutbol
@@ -201,18 +201,29 @@ export function Encabezado() {
               <span className="hidden md:inline">Config</span>
             </button>
 
-            <button
-              type="button"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border border-neon-cyan/20 text-texto-secundario hover:border-neon-magenta hover:text-neon-magenta"
-              onClick={() => {
-                void logout();
-                navegar('/login');
-              }}
-              title={usuario?.email || 'Cerrar sesión'}
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden md:inline">Salir</span>
-            </button>
+            {usuario ? (
+              <button
+                type="button"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border border-neon-cyan/20 text-texto-secundario hover:border-neon-magenta hover:text-neon-magenta"
+                onClick={() => {
+                  void logout();
+                  navegar('/login');
+                }}
+                title={usuario?.email || 'Cerrar sesión'}
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden md:inline">Salir</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border border-neon-cyan text-neon-cyan"
+                onClick={() => navegar('/login')}
+              >
+                <span className="hidden md:inline">Entrar / Crear cuenta</span>
+                <span className="md:hidden">Entrar</span>
+              </button>
+            )}
 
           </div>
         </div>

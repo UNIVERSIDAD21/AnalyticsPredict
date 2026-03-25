@@ -4,7 +4,9 @@ import { Encabezado } from '../organismos';
 import { Boton, Tarjeta } from '../atomos';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
 import { useDeporte } from '../../contextos/DeporteContext';
+import { useAuth } from '../../contextos/AuthContext';
 import { listarApuestasAnalizadas } from '../../servicios/bitacora';
+import { registrarIngresoCentro } from '../../servicios/visitante';
 import type { ApuestaAnalizada } from '../../tipos/bitacora';
 
 const navegar = (ruta: string) => {
@@ -32,6 +34,7 @@ function calcularKpis(items: ApuestaAnalizada[]): KPIBase {
 
 export function PaginaCentroAnalitico() {
   const { deporteActivo, esNBA, esFutbol } = useDeporte();
+  const { autenticado } = useAuth();
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [kpisNBA, setKpisNBA] = useState<KPIBase>({ apuestasTotales: 0, resueltas: 0, ganadas: 0, winRate: 0 });
@@ -42,6 +45,14 @@ export function PaginaCentroAnalitico() {
       try {
         setCargando(true);
         setError(null);
+
+        if (!autenticado) {
+          registrarIngresoCentro();
+          setKpisNBA({ apuestasTotales: 120, resueltas: 90, ganadas: 52, winRate: 57.8 });
+          setKpisFutbol({ apuestasTotales: 48, resueltas: 31, ganadas: 16, winRate: 51.6 });
+          return;
+        }
+
         const data = await listarApuestasAnalizadas({ page_size: 500 });
         const items = data.items || [];
         setKpisNBA(calcularKpis(items.filter((i) => i.deporte === 'baloncesto')));
@@ -54,7 +65,7 @@ export function PaginaCentroAnalitico() {
     };
 
     void cargar();
-  }, []);
+  }, [autenticado]);
 
   const kpisActivos = useMemo(() => (esFutbol ? kpisFutbol : kpisNBA), [esFutbol, kpisFutbol, kpisNBA]);
 
@@ -80,6 +91,13 @@ export function PaginaCentroAnalitico() {
           </div>
           <SelectorDeporte tamaño="md" />
         </section>
+
+        {!autenticado && (
+          <Tarjeta className="border border-neon-amarillo/40 text-texto-secundario p-4">
+            Modo visitante activo: puedes ver métricas demostrativas y madurez por deporte.
+            El análisis operativo, guardado personal y bitácora completa requieren cuenta.
+          </Tarjeta>
+        )}
 
         {error && (
           <Tarjeta className="border border-neon-rojo/40 text-neon-rojo p-4">
@@ -142,12 +160,25 @@ export function PaginaCentroAnalitico() {
               El centro unifica entrada y métricas base. El análisis profundo permanece por dominio para evitar mezclar lógicas incompatibles.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Boton variante="secundario" onClick={() => navegar(esNBA ? '/' : '/futbol')}>
-                Ir a análisis específico
-              </Boton>
-              <Boton variante="primario" onClick={() => navegar(esNBA ? '/bitacora' : '/futbol/bitacora')}>
-                Ir a bitácora específica
-              </Boton>
+              {autenticado ? (
+                <>
+                  <Boton variante="secundario" onClick={() => navegar(esNBA ? '/app' : '/futbol')}>
+                    Ir a análisis específico
+                  </Boton>
+                  <Boton variante="primario" onClick={() => navegar(esNBA ? '/bitacora' : '/futbol/bitacora')}>
+                    Ir a bitácora específica
+                  </Boton>
+                </>
+              ) : (
+                <>
+                  <Boton variante="secundario" onClick={() => navegar('/login')}>
+                    Crear cuenta para análisis completo
+                  </Boton>
+                  <Boton variante="primario" onClick={() => navegar('/login')}>
+                    Iniciar sesión para bitácora personal
+                  </Boton>
+                </>
+              )}
             </div>
           </Tarjeta>
         </section>

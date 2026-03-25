@@ -6,10 +6,13 @@
   - `docs/FUENTE_DE_VERDAD_ACTUAL.md`
   - `docs/arquitectura/ESTADO_PROYECTO.md`
   - `docs/auditoria/RUTA_AUDITORIA_C0_C7.md`
-- Ejecución funcional inicial de P2 (freemium/límites/trazabilidad) en Chat:
-  - nuevo servicio `frontend/src/servicios/freemium.ts` con identidad trazable `usr_<id>`/`inv_<id>` y control de consumo diario,
-  - `PaginaChat` muestra plan, consumo del día, restantes y trazabilidad,
-  - límite operativo en plan base/invitado para mensajería diaria (con bloqueo al alcanzar cupo), premium sin límite práctico.
+- Ejecución funcional de Ola 1 en superficies principales de producto (sin tocar IA):
+  - flujo público habilitado: `/` como landing de valor y `/centro-analitico` en modo visitante controlado,
+  - nueva capa de identidad visitante trazable local (`frontend/src/servicios/visitante.ts`) con métricas de entrada (landing/centro),
+  - punto de bloqueo explícito: visitante no accede a análisis operativo (`/app`), bitácora ni funciones personales sin login,
+  - `PaginaLogin` refuerza propuesta de valor y ruta de exploración visitante limitada,
+  - `PaginaPrincipal` incorpora banner de credibilidad (sin promesas de ganancias fáciles, NBA maduro / fútbol beta-lab).
+- Nota: el ajuste previo de límites en Chat queda como hardening secundario; el eje freemium de Ola 1 se mueve al frente principal público.
 
 ## 2026-03-24
 - C0 ejecutado: realineación formal de go-live comercial.

@@ -303,6 +303,14 @@ export function PaginaPrincipal() {
 
       {/* Contenido principal - Full height */}
       <main className="flex-1 contenedor py-6 lg:py-8">
+        <div className="mb-6 tarjeta p-4 border border-neon-cyan/20">
+          <p className="text-xs uppercase tracking-wider text-neon-cyan">Marco de uso responsable</p>
+          <p className="text-sm text-texto-secundario mt-2">
+            AnalyticsPredict prioriza disciplina operativa y trazabilidad de decisiones. No promete ganancias fáciles.
+            NBA es el frente comercial más maduro; fútbol se mantiene en beta/laboratorio hasta cumplir criterios de promoción.
+          </p>
+        </div>
+
         {/* Tabs */}
         <div className="mb-6 flex items-center gap-3">
           <button
