@@ -28,6 +28,11 @@
   - alerta accionable de onboarding pendiente,
   - atajos operativos (análisis, bitácora, centro analítico) para reducir fricción y TTV (Ola 3 UX).
   - guía operativa sugerida basada en baseline 1X2 (traducción práctica de señal técnica para control de exposición).
+  - KPIs de rendimiento cliente (DOM Ready / Load Event / Transferencia) para seguimiento técnico visible en producto.
+- Cierre formal de Ola 2:
+  - umbrales de promoción fútbol por competición documentados en P4,
+  - matriz funcional consolidada visitante/registrado/premium en P8,
+  - estado de proyecto actualizado a Ola 2 cerrada.
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.

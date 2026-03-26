@@ -13,6 +13,7 @@ import {
 } from '../../servicios/onboarding';
 import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
 import { obtenerResumenCalidad1x2, type ResumenCalidad1x2Futbol } from '../../servicios/futbol/metricas';
+import { capturarRendimientoCliente, leerRendimientoCliente, type ResumenRendimientoCliente } from '../../servicios/performance';
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta) return;
@@ -61,6 +62,7 @@ export function PaginaDashboardUsuario() {
   const [kpisOnboarding, setKpisOnboarding] = useState<KpisOnboarding>(kpisIniciales);
   const [calidad1x2, setCalidad1x2] = useState<ResumenCalidad1x2Futbol>(calidadInicial);
   const [error, setError] = useState<string | null>(null);
+  const [perfCliente, setPerfCliente] = useState<ResumenRendimientoCliente | null>(leerRendimientoCliente());
 
   const estadoOnboarding = useMemo(() => {
     if (!usuario?.id) return null;
@@ -124,6 +126,8 @@ export function PaginaDashboardUsuario() {
   useEffect(() => {
     void recargar();
     void registrarEventoOnboarding('dashboard_viewed');
+    const perf = capturarRendimientoCliente();
+    if (perf) setPerfCliente(perf);
   }, []);
 
   return (
@@ -242,6 +246,15 @@ export function PaginaDashboardUsuario() {
             </div>
 
             <div className="tarjeta p-6">
+              <h3 className="text-lg font-semibold text-texto-principal mb-4">Rendimiento cliente (Ola 3)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <KpiTexto label="DOM Ready" valor={perfCliente?.domContentLoadedMs ? `${perfCliente.domContentLoadedMs} ms` : 'N/D'} />
+                <KpiTexto label="Load Event" valor={perfCliente?.loadEventMs ? `${perfCliente.loadEventMs} ms` : 'N/D'} />
+                <KpiTexto label="Transferencia" valor={perfCliente?.transferKb ? `${perfCliente.transferKb} KB` : 'N/D'} />
+              </div>
+            </div>
+
+            <div className="tarjeta p-6">
               <h3 className="text-lg font-semibold text-texto-principal mb-4">KPIs de activación (reales)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-4">
@@ -341,6 +354,15 @@ function Kpi({ label, valor }: { label: string; valor: number }) {
     <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3">
       <p className="text-xs uppercase tracking-wider text-texto-terciario">{label}</p>
       <p className="text-2xl font-semibold text-texto-principal mt-1">{valor}</p>
+    </div>
+  );
+}
+
+function KpiTexto({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3">
+      <p className="text-xs uppercase tracking-wider text-texto-terciario">{label}</p>
+      <p className="text-xl font-semibold text-texto-principal mt-1">{valor}</p>
     </div>
   );
 }

@@ -63,3 +63,16 @@ Definir el producto premium como una experiencia más seria y útil, no simpleme
 ## Avance de ejecución (2026-03-26)
 - Comparativa visible visitante/registrado/premium en landing pública.
 - Premium definido como profundidad operativa superior, no solo desbloqueo de uso.
+
+## Matriz funcional consolidada (actual)
+- Visitante:
+  - landing + centro analítico público,
+  - sin bitácora ni personalización.
+- Registrado:
+  - análisis operativo completo,
+  - bitácora y continuidad base,
+  - configuración y onboarding.
+- Premium:
+  - seguimiento operativo ampliado,
+  - lectura extendida de riesgo y señal,
+  - prioridad en capas analíticas avanzadas.

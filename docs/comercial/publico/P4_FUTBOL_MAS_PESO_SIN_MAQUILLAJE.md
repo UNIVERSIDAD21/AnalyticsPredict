@@ -65,3 +65,12 @@ No igualar visual o comercialmente a fútbol con NBA hasta que fútbol cumpla cr
 ## Avance de ejecución (2026-03-26)
 - Centro analítico muestra madurez de fútbol por competición (estable / en validación / lab).
 - Se incrementa visibilidad de fútbol sin igualarlo a NBA de forma artificial.
+
+## Umbrales operativos de promoción por competición
+- LAB → EN VALIDACIÓN:
+  - mínimo 30 apuestas finalizadas en ventana reciente,
+  - trazabilidad de datos completa en panel.
+- EN VALIDACIÓN → ESTABLE:
+  - mínimo 80 finalizadas,
+  - hitRateSinPush >= 53% en ventana reciente,
+  - sin alerta crítica de calibración activa.
