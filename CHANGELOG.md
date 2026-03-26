@@ -7,6 +7,10 @@
   - madurez de fútbol por competición (estable / en validación / lab),
   - mayor visibilidad de inteligencia operativa,
   - definición funcional inicial de premium como capa de profundidad (no solo desbloqueo).
+- `PaginaDashboardUsuario` reforzada para Ola 2:
+  - bloque explícito de ruta fútbol sin maquillaje,
+  - bloque de evolución premium con CTA de suscripción/gestión de plan,
+  - continuidad entre valor público y valor para usuario registrado.
 - Documentación comercial pública actualizada con avance de ejecución en P1/P2/P3/P4/P6/P8.
 - `ESTADO_PROYECTO.md` actualizado para reflejar Ola 1 cerrada y Ola 2 en ejecución.
 

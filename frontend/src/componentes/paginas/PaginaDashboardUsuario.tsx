@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, CheckCircle2, CircleDollarSign, RefreshCw } from 'lucide-react';
+import { BarChart3, CheckCircle2, CircleDollarSign, RefreshCw, Radar, Crown } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton, Spinner } from '../atomos';
 import { useAuth } from '../../contextos/AuthContext';
@@ -187,6 +187,44 @@ export function PaginaDashboardUsuario() {
                   <p className="text-xs text-texto-secundario mt-1">
                     muestra: {kpisOnboarding.ttvSampleSize} usuario(s)
                   </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="tarjeta p-6 space-y-3 border border-neon-amarillo/30">
+                <div className="flex items-center gap-2 text-neon-amarillo">
+                  <Radar className="w-4 h-4" />
+                  <h3 className="text-sm uppercase tracking-wider">Ruta fútbol sin maquillaje</h3>
+                </div>
+                <ul className="text-sm text-texto-secundario space-y-1">
+                  <li>• Premier League y LaLiga: seguimiento estable.</li>
+                  <li>• Serie A: validación de calibración en curso.</li>
+                  <li>• Ligue 1: laboratorio, sin paridad comercial con NBA.</li>
+                </ul>
+                <p className="text-xs text-texto-terciario">
+                  Regla vigente: fútbol gana peso por evidencia real, no por copy promocional.
+                </p>
+              </div>
+
+              <div className="tarjeta p-6 space-y-3 border border-neon-magenta/30">
+                <div className="flex items-center gap-2 text-neon-magenta">
+                  <Crown className="w-4 h-4" />
+                  <h3 className="text-sm uppercase tracking-wider">Evolución de plan</h3>
+                </div>
+                <p className="text-sm text-texto-secundario">
+                  El plan premium se define como profundidad operativa: mejor seguimiento, más capas analíticas y continuidad de decisiones.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {!plan.activo ? (
+                    <Boton variante="primario" onClick={() => navegar('/configuracion')}>
+                      Ver opciones de suscripción
+                    </Boton>
+                  ) : (
+                    <Boton variante="secundario" onClick={() => navegar('/configuracion')}>
+                      Gestionar plan activo
+                    </Boton>
+                  )}
                 </div>
               </div>
             </div>
