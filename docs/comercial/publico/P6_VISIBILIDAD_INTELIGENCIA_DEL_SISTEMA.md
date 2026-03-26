@@ -63,3 +63,4 @@ Traducir mejor la inteligencia ya existente del sistema a elementos visibles, en
 ## Avance de ejecución (2026-03-26)
 - Enriquecido centro analítico con señal de madurez, KPIs compartidos y capas de lectura por deporte/competición.
 - Se refuerza explicación de por qué y cuándo una señal es más confiable.
+- Se añade bloque de "confianza operativa" en centro analítico (nivel + criterio basado en muestra y win rate) para mejorar interpretabilidad en tiempo real.

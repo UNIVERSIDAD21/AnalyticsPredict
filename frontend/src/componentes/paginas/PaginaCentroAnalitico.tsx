@@ -81,6 +81,22 @@ export function PaginaCentroAnalitico() {
     { liga: 'Ligue 1', estado: 'LAB', nota: 'Señal útil pero aún irregular' },
   ] as const;
 
+  const confianzaOperativa = useMemo(() => {
+    const muestra = kpisActivos.resueltas;
+    const wr = kpisActivos.winRate;
+
+    if (muestra < 30) {
+      return { nivel: 'BAJA', color: 'text-neon-amarillo', detalle: 'Muestra reducida, usar stake conservador.' } as const;
+    }
+    if (wr >= 56) {
+      return { nivel: 'ALTA', color: 'text-neon-verde', detalle: 'Señal consistente con muestra suficiente.' } as const;
+    }
+    if (wr >= 51) {
+      return { nivel: 'MEDIA', color: 'text-neon-cyan', detalle: 'Señal útil, mantener control de exposición.' } as const;
+    }
+    return { nivel: 'CAUTELOSA', color: 'text-neon-amarillo', detalle: 'Priorizar validación y reducir riesgo.' } as const;
+  }, [kpisActivos]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Encabezado />
@@ -140,6 +156,18 @@ export function PaginaCentroAnalitico() {
         </section>
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Tarjeta className="p-5 space-y-3 border border-neon-cyan/25">
+            <div className="flex items-center gap-2 text-neon-cyan">
+              <Activity className="w-4 h-4" />
+              <p className="text-xs uppercase tracking-wider">Confianza operativa actual</p>
+            </div>
+            <p className={`text-2xl font-semibold ${confianzaOperativa.color}`}>{confianzaOperativa.nivel}</p>
+            <p className="text-sm text-texto-secundario">{confianzaOperativa.detalle}</p>
+            <p className="text-xs text-texto-terciario">
+              Basado en muestra resuelta ({kpisActivos.resueltas}) y win rate actual ({kpisActivos.winRate.toFixed(1)}%).
+            </p>
+          </Tarjeta>
+
           <Tarjeta className="p-5 space-y-3 border border-neon-cyan/25">
             <div className="flex items-center gap-2 text-neon-cyan">
               <ShieldAlert className="w-4 h-4" />
