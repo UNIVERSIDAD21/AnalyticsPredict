@@ -197,11 +197,41 @@ export interface ResumenCalidad1x2Futbol {
   hitRateSinPush: number;
 }
 
-export async function obtenerResumenCalidad1x2(): Promise<ResumenCalidad1x2Futbol> {
+const CACHE_KEY_RESUMEN_1X2 = 'futbol.metricas.resumenCalidad1x2';
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function leerCacheResumen1x2(): ResumenCalidad1x2Futbol | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.sessionStorage.getItem(CACHE_KEY_RESUMEN_1X2);
+  if (!raw) return null;
+
   try {
+    const parsed = JSON.parse(raw) as { ts: number; data: ResumenCalidad1x2Futbol };
+    if (!parsed?.ts || Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function guardarCacheResumen1x2(data: ResumenCalidad1x2Futbol): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(
+    CACHE_KEY_RESUMEN_1X2,
+    JSON.stringify({ ts: Date.now(), data })
+  );
+}
+
+export async function obtenerResumenCalidad1x2(forceRefresh = false): Promise<ResumenCalidad1x2Futbol> {
+  try {
+    if (!forceRefresh) {
+      const cached = leerCacheResumen1x2();
+      if (cached) return cached;
+    }
+
     const respuesta = await clienteAPI.get('/api/futbol/metricas/resumen-calidad-1x2');
     const r = respuesta.data?.resumen || {};
-    return {
+    const parsed: ResumenCalidad1x2Futbol = {
       total: Number(r.total || 0),
       finalizadas: Number(r.finalizadas || 0),
       ganadas: Number(r.ganadas || 0),
@@ -209,6 +239,8 @@ export async function obtenerResumenCalidad1x2(): Promise<ResumenCalidad1x2Futbo
       push: Number(r.push || 0),
       hitRateSinPush: Number(r.hit_rate_sin_push || 0),
     };
+    guardarCacheResumen1x2(parsed);
+    return parsed;
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }

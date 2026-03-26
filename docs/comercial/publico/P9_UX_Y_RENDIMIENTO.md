@@ -64,3 +64,4 @@ Reducir fricción, mejorar claridad de uso y optimizar la percepción de velocid
 - Ola 3 iniciada con mejora de rendimiento en front mediante carga diferida de rutas pesadas (code-splitting en App).
 - Objetivo inmediato: reducir costo inicial de carga y mejorar TTI percibido en rutas críticas.
 - Se aplica lazy-load en componentes pesados dentro de `PaginaPrincipal` para acelerar carga inicial de la pestaña de análisis.
+- Se agrega caché de corta vida (sessionStorage, 5 min) para resumen técnico 1X2 en dashboard, reduciendo latencia percibida en recargas repetidas sin sacrificar opción de refresh forzado.

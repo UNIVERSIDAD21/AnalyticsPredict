@@ -20,6 +20,8 @@
   - premium como profundidad funcional.
 - `PaginaDashboardUsuario` reforzada para inicio de P7:
   - baseline técnico 1X2 visible (`hitRateSinPush`, finalizadas) como referencia para futuras mejoras de modelo/motor.
+  - recarga forzada disponible para evitar lecturas obsoletas durante revisión técnica.
+- `frontend/src/servicios/futbol/metricas.ts` incorpora caché de 5 min (sessionStorage) para `obtenerResumenCalidad1x2`, reduciendo costo/latencia en navegación repetida (Ola 3 rendimiento).
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.

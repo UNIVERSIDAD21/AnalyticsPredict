@@ -67,7 +67,7 @@ export function PaginaDashboardUsuario() {
     return obtenerEstadoOnboarding(String(usuario.id));
   }, [usuario?.id]);
 
-  const recargar = async () => {
+  const recargar = async (forceRefresh = false) => {
     try {
       setError(null);
       setCargando(true);
@@ -75,7 +75,7 @@ export function PaginaDashboardUsuario() {
         obtenerResumenDashboard(),
         obtenerEstadoPlan(),
         obtenerKpisOnboarding(),
-        obtenerResumenCalidad1x2(),
+        obtenerResumenCalidad1x2(forceRefresh),
       ]);
       setResumen(resumenData);
       setPlan(planData);
@@ -106,7 +106,7 @@ export function PaginaDashboardUsuario() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Boton variante="secundario" iconoInicio={<RefreshCw size={16} />} onClick={() => void recargar()}>
+            <Boton variante="secundario" iconoInicio={<RefreshCw size={16} />} onClick={() => void recargar(true)}>
               Recargar
             </Boton>
             <Boton variante="primario" onClick={() => navegar('/app')}>
