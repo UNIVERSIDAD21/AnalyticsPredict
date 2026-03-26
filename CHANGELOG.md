@@ -41,6 +41,10 @@
 - Inicio de ejecución de A1 real:
   - runbook operativo detallado en `docs/roadmap_inmediato/01_A1_STAGING_SMOKE_REAL.md`,
   - script reproducible `scripts/a1_smoke_staging.sh` que genera reporte automático en `docs/reportes/`.
+- Inicio operativo de B3 y B4:
+  - `scripts/b3_ciclo_semanal.sh` para evidencia semanal de estabilidad por liga,
+  - `scripts/b4_ciclo_24h_reporte.sh` para reporte de ciclo 24h de notificaciones,
+  - runbooks actualizados en `docs/roadmap_inmediato/02_B3_CIERRE_FORMAL.md` y `03_B4_CIERRE_24H_SLO.md`.
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.
