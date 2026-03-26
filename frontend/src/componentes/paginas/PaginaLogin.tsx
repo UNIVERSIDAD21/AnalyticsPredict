@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Crown, Radar, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../contextos/AuthContext';
 import { restablecerPassword, solicitarRecuperacion } from '../../servicios/auth';
 
@@ -132,6 +133,15 @@ export function PaginaLogin() {
           {' '}<Link to="/centro-analitico" className="text-neon-cyan hover:underline">centro analítico en modo visitante</Link>
           {' '}con acceso limitado y sin funciones premium.
         </p>
+
+        <div className="rounded-lg border border-neon-cyan/20 bg-futurista-negro/40 p-3 space-y-2 text-xs">
+          <p className="flex items-center gap-2 text-neon-cyan uppercase tracking-wider"><ShieldCheck className="w-4 h-4" /> Credibilidad operativa</p>
+          <p className="text-texto-secundario">Sin narrativa de “ganar fácil”. NBA es frente principal; fútbol crece por evidencia y madurez.</p>
+          <p className="flex items-center gap-2 text-neon-amarillo uppercase tracking-wider"><Radar className="w-4 h-4" /> Fútbol sin maquillaje</p>
+          <p className="text-texto-secundario">Estados por competición: estable, en validación o laboratorio.</p>
+          <p className="flex items-center gap-2 text-neon-magenta uppercase tracking-wider"><Crown className="w-4 h-4" /> Premium</p>
+          <p className="text-texto-secundario">Premium = profundidad de seguimiento y análisis extendido, no solo desbloqueo.</p>
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <button

@@ -14,6 +14,10 @@
 - `PaginaConfiguracion` reforzada para Ola 2:
   - bloque de gobernanza de madurez fútbol por estados,
   - bloque de estado de plan con narrativa premium orientada a profundidad de producto.
+- `PaginaLogin` reforzada con señal comercial/operativa de Ola 2:
+  - credibilidad anti-humo,
+  - fútbol sin maquillaje por madurez,
+  - premium como profundidad funcional.
 - Documentación comercial pública actualizada con avance de ejecución en P1/P2/P3/P4/P6/P8.
 - `ESTADO_PROYECTO.md` actualizado para reflejar Ola 1 cerrada y Ola 2 en ejecución.
 
