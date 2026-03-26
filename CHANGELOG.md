@@ -52,6 +52,9 @@
 - Optimización adicional de frontend (Ola 3):
   - extracción lazy del gráfico ROI de `DashboardFutbol` a `GraficoRoiTemporalFutbol` para reducir costo inicial del dashboard.
   - impacto medido: `DashboardFutbol` de ~412.41 kB a ~28.51 kB (el costo pesado queda en chunk lazy separado).
+- Inicio operativo de sunset legacy (A3 post-cierre):
+  - script `scripts/a3_monitoreo_legacy.sh` para seguimiento diario de tasa legacy,
+  - runbook actualizado en `docs/roadmap_inmediato/07_A3_SUNSET_LEGACY_REAL.md`.
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.
