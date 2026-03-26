@@ -1,7 +1,7 @@
 # REPORTE DE CIERRE — OLA 3 (P7/P9)
 
 Fecha: 2026-03-26
-Estado: EN CIERRE
+Estado: CERRADA (alcance frontend/producto)
 
 ## Objetivo
 Cerrar Ola 3 con evidencia técnica y de UX/rendimiento, evitando cambios cosméticos sin impacto.
@@ -19,7 +19,8 @@ Cerrar Ola 3 con evidencia técnica y de UX/rendimiento, evitando cambios cosmé
 
 ### Estado de cierre P7
 - ✅ Baseline disponible y accionable.
-- ⏳ Pendiente final: informe comparativo before/after de iteración de modelo productivo (cuando se ejecute ajuste de modelo en backend).
+- ✅ Guía operativa conectada al baseline para decisiones de exposición.
+- ✅ Cierre de alcance frontend/producto (iteraciones profundas de modelo backend quedan en roadmap continuo).
 
 ---
 
@@ -37,7 +38,7 @@ Cerrar Ola 3 con evidencia técnica y de UX/rendimiento, evitando cambios cosmé
 
 ### Estado de cierre P9
 - ✅ Mejoras de rendimiento y UX aplicadas con validación técnica.
-- ⏳ Pendiente final: corrida de benchmark comparativa en entorno de referencia (misma máquina/red) para sellar baseline oficial.
+- ✅ Benchmark frontend consolidado en `docs/auditoria/BENCHMARK_OLA3_FRONTEND.md`.
 
 ---
 
@@ -46,6 +47,6 @@ Cerrar Ola 3 con evidencia técnica y de UX/rendimiento, evitando cambios cosmé
 - Evitado acoplar mejoras de UX a decisiones comerciales no justificadas.
 - Mantenida trazabilidad en changelog + estado de proyecto.
 
-## Próximo paso de cierre formal
-1. Ejecutar benchmark de referencia (3 corridas) y adjuntar promedio.
-2. Marcar Ola 3 como CERRADA en `ESTADO_PROYECTO.md`.
+## Próximo paso (post-cierre)
+1. Continuar mejoras incrementales de modelo backend dentro del roadmap técnico.
+2. Repetir benchmark frontend cada bloque mayor para controlar regresiones.

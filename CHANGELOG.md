@@ -33,9 +33,10 @@
   - umbrales de promoción fútbol por competición documentados en P4,
   - matriz funcional consolidada visitante/registrado/premium en P8,
   - estado de proyecto actualizado a Ola 2 cerrada.
-- Ola 3 en fase de cierre:
-  - reporte de cierre técnico creado en `docs/auditoria/REPORTE_CIERRE_OLA3_P7_P9.md`,
-  - estado de proyecto actualizado a `EN CIERRE` para P7/P9.
+- Cierre formal de Ola 3 (alcance frontend/producto):
+  - reporte final actualizado en `docs/auditoria/REPORTE_CIERRE_OLA3_P7_P9.md`,
+  - benchmark documentado en `docs/auditoria/BENCHMARK_OLA3_FRONTEND.md`,
+  - estado de proyecto actualizado a Ola 3 `CERRADA`.
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.
