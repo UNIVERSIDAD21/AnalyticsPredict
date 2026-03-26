@@ -3,6 +3,7 @@ set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8000}"
 AUTH_TOKEN="${AUTH_TOKEN:-}"
+USER_ID="${USER_ID:-}"
 TS="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 OUT_DIR="docs/reportes"
 OUT_FILE="${OUT_DIR}/B3_CICLO_SEMANAL_${TS}.md"
@@ -12,7 +13,10 @@ mkdir -p "$OUT_DIR"
 
 HDR=()
 if [[ -n "$AUTH_TOKEN" ]]; then
-  HDR=(-H "Authorization: Bearer ${AUTH_TOKEN}")
+  HDR+=(-H "Authorization: Bearer ${AUTH_TOKEN}")
+fi
+if [[ -n "$USER_ID" ]]; then
+  HDR+=(-H "X-Usuario-Id: ${USER_ID}")
 fi
 
 code=$(curl -sS "${HDR[@]}" -o "$TMP_JSON" -w "%{http_code}" "${BASE_URL}/api/futbol/metricas/b3-estabilidad" || true)
@@ -22,20 +26,23 @@ if [[ "$code" != "200" ]]; then
   exit 1
 fi
 
-criticos=$(python - << 'PY'
+read -r criticos ligas_evaluadas <<< "$(python3 - "$TMP_JSON" << 'PY'
 import json,sys
 p=sys.argv[1]
 with open(p,'r',encoding='utf-8') as f:
     d=json.load(f)
 ligas=d.get('ligas') or d.get('items') or []
-c=0
+crit=0
 for l in ligas:
     estado=(l.get('estado') or '').upper()
     if 'CRIT' in estado:
-        c+=1
-print(c)
+        crit+=1
+evals=d.get('ligas_evaluadas')
+if evals is None:
+    evals=len(ligas)
+print(f"{crit} {evals}")
 PY
-"$TMP_JSON")
+)"
 
 cat > "$OUT_FILE" <<EOF
 # B3 — Ciclo semanal de estabilidad
@@ -54,7 +61,15 @@ $(cat "$TMP_JSON")
 \`\`\`
 
 ## Veredicto de ciclo
-$(if [[ "$criticos" == "0" ]]; then echo '- ✅ Ciclo apto (sin críticos).'; else echo '- ⚠️ Ciclo con críticos (no apto para cierre B3).'; fi)
+$(
+if [[ "${ligas_evaluadas}" == "0" ]]; then
+  echo '- ⚠️ Ciclo sin muestra evaluable (no computa para cierre formal B3).'
+elif [[ "$criticos" == "0" ]]; then
+  echo '- ✅ Ciclo apto (sin críticos).'
+else
+  echo '- ⚠️ Ciclo con críticos (no apto para cierre B3).'
+fi
+)
 EOF
 
 echo "Reporte generado: $OUT_FILE"

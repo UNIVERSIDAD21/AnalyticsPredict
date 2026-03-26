@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-03-26
+- Cierre formal de A1 (staging + smoke real): despliegue ejecutado en host con Docker y evidencia en `docs/reportes/A1_SMOKE_STAGING_2026-03-26T14:12:43Z.md`.
+- Corrección del script de smoke A1: se reemplaza verificación de `GET /api/pagos/feature-gate` (ahora requiere query+auth) por `GET /api/pagos/matriz-estados` para mantener smoke reproducible sin sesión.
+- Endurecimiento de scripts operativos B3/B4 para ejecución real:
+  - `scripts/b3_ciclo_semanal.sh` ahora soporta `X-Usuario-Id`, usa `python3` portable y marca explícitamente ciclos sin muestra como no computables para cierre formal.
+  - `scripts/b4_ciclo_24h_reporte.sh` ahora soporta `X-Usuario-Id` y usa `limit=100` (tope válido del endpoint historial).
+- Evidencia operativa nueva generada:
+  - `docs/reportes/B3_CICLO_SEMANAL_2026-03-26T14-16-17Z.md`
+  - `docs/reportes/B4_CICLO_24H_2026-03-26T14-16-17Z.md`
+  - `docs/reportes/B6_PREFLIGHT_2026-03-26T14-14-04Z.md` (hallazgos: faltan `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` en staging.env).
 - Cierre operativo de Ola 1 (P1/P2/P3) y arranque de Ola 2 (P4/P6/P8) en superficies públicas principales.
 - `PaginaPublicaProducto` reforzada con tabla comparativa visitante/registrado/premium para definir mejor el valor por nivel de acceso.
 - `PaginaCentroAnalitico` enriquecida con:

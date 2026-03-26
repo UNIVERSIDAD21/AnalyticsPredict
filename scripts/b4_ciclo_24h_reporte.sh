@@ -3,6 +3,7 @@ set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8000}"
 AUTH_TOKEN="${AUTH_TOKEN:-}"
+USER_ID="${USER_ID:-}"
 TS="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 OUT_DIR="docs/reportes"
 OUT_FILE="${OUT_DIR}/B4_CICLO_24H_${TS}.md"
@@ -13,11 +14,14 @@ mkdir -p "$OUT_DIR"
 
 HDR=()
 if [[ -n "$AUTH_TOKEN" ]]; then
-  HDR=(-H "Authorization: Bearer ${AUTH_TOKEN}")
+  HDR+=(-H "Authorization: Bearer ${AUTH_TOKEN}")
+fi
+if [[ -n "$USER_ID" ]]; then
+  HDR+=(-H "X-Usuario-Id: ${USER_ID}")
 fi
 
 code_m=$(curl -sS "${HDR[@]}" -o "$TMP_MET" -w "%{http_code}" "${BASE_URL}/api/notificaciones/metricas-entrega?horas=24" || true)
-code_h=$(curl -sS "${HDR[@]}" -o "$TMP_HIS" -w "%{http_code}" "${BASE_URL}/api/notificaciones/historial?limit=200" || true)
+code_h=$(curl -sS "${HDR[@]}" -o "$TMP_HIS" -w "%{http_code}" "${BASE_URL}/api/notificaciones/historial?limit=100" || true)
 
 if [[ "$code_m" != "200" || "$code_h" != "200" ]]; then
   echo "Error obteniendo datos B4 (metricas:$code_m historial:$code_h)"
@@ -32,7 +36,7 @@ Base URL: ${BASE_URL}
 
 ## Fuentes
 - /api/notificaciones/metricas-entrega?horas=24
-- /api/notificaciones/historial?limit=200
+- /api/notificaciones/historial?limit=100
 
 ## Métricas 24h
 \`\`\`json

@@ -37,7 +37,7 @@ Base URL: ${BASE_URL}
 EOF
 
 check_status "/salud" "200"
-check_status "/api/pagos/feature-gate" "200"
+check_status "/api/pagos/matriz-estados" "200"
 check_status "/api/onboarding/estado" "401"
 
 cat >> "$OUT_FILE" <<EOF
