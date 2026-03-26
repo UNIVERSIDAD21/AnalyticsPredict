@@ -27,6 +27,7 @@
 - `PaginaDashboardUsuario` añade:
   - alerta accionable de onboarding pendiente,
   - atajos operativos (análisis, bitácora, centro analítico) para reducir fricción y TTV (Ola 3 UX).
+  - guía operativa sugerida basada en baseline 1X2 (traducción práctica de señal técnica para control de exposición).
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.

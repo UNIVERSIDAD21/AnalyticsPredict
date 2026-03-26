@@ -67,6 +67,39 @@ export function PaginaDashboardUsuario() {
     return obtenerEstadoOnboarding(String(usuario.id));
   }, [usuario?.id]);
 
+  const recomendacionOperativa = useMemo(() => {
+    if (calidad1x2.finalizadas < 30) {
+      return {
+        etiqueta: 'Muestra insuficiente',
+        color: 'text-neon-amarillo',
+        acciones: [
+          'Reducir stake por operación hasta consolidar muestra.',
+          'Priorizar mercados con señal histórica más consistente.',
+        ],
+      } as const;
+    }
+
+    if (calidad1x2.hitRateSinPush >= 0.56) {
+      return {
+        etiqueta: 'Ventana favorable',
+        color: 'text-neon-verde',
+        acciones: [
+          'Mantener disciplina de entrada y cap por apuesta.',
+          'Escalar solo en mercados con mejor trazabilidad.',
+        ],
+      } as const;
+    }
+
+    return {
+      etiqueta: 'Modo cauteloso',
+      color: 'text-neon-amarillo',
+      acciones: [
+        'Bajar exposición y validar supuestos antes de aumentar volumen.',
+        'Enfocar decisiones en señales con menor varianza reciente.',
+      ],
+    } as const;
+  }, [calidad1x2.finalizadas, calidad1x2.hitRateSinPush]);
+
   const recargar = async (forceRefresh = false) => {
     try {
       setError(null);
@@ -261,6 +294,18 @@ export function PaginaDashboardUsuario() {
                 <p className="text-xs text-texto-terciario">
                   Este baseline se usa como referencia para validar mejoras de modelo/motor antes de promover cambios.
                 </p>
+              </div>
+
+              <div className="tarjeta p-6 space-y-3 border border-neon-verde/30">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm uppercase tracking-wider text-neon-verde">Guía operativa sugerida</h3>
+                  <span className={`text-xs font-semibold ${recomendacionOperativa.color}`}>{recomendacionOperativa.etiqueta}</span>
+                </div>
+                <ul className="text-sm text-texto-secundario space-y-1">
+                  {recomendacionOperativa.acciones.map((a) => (
+                    <li key={a}>• {a}</li>
+                  ))}
+                </ul>
               </div>
 
               <div className="tarjeta p-6 space-y-3 border border-neon-magenta/30">

@@ -65,3 +65,4 @@ Elevar la calidad técnica del motor de predicción y su capacidad de explicaci�
 - Se define línea base: comparar calidad por deporte/competición con métricas reproducibles antes de promover cambios de modelo.
 - Siguiente tramo operativo: reportes comparativos antes/después por calibración, drift y robustez de señal.
 - Se incorpora baseline técnico 1X2 en dashboard con soporte de consulta cacheada para observación continua de señal durante iteraciones de modelo.
+- Se agrega guía operativa sugerida derivada del baseline (muestra + hitRate), para traducir señal técnica en decisiones de exposición más disciplinadas.
