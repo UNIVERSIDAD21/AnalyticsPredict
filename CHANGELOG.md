@@ -45,6 +45,10 @@
   - `scripts/b3_ciclo_semanal.sh` para evidencia semanal de estabilidad por liga,
   - `scripts/b4_ciclo_24h_reporte.sh` para reporte de ciclo 24h de notificaciones,
   - runbooks actualizados en `docs/roadmap_inmediato/02_B3_CIERRE_FORMAL.md` y `03_B4_CIERRE_24H_SLO.md`.
+- Inicio operativo de B6 hardening:
+  - `scripts/b6_preflight_hardening.sh` con verificación de secretos/artefactos,
+  - runbook y checklist en `docs/operacion/B6_*`,
+  - primer reporte generado: `docs/reportes/B6_PREFLIGHT_2026-03-26T02-51-48Z.md`.
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.
