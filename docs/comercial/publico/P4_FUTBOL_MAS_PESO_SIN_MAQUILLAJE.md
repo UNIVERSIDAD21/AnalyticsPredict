@@ -61,3 +61,7 @@ No igualar visual o comercialmente a fútbol con NBA hasta que fútbol cumpla cr
 - interacción por liga/competición,
 - distribución de recomendaciones por calidad,
 - mejora de percepción del módulo fútbol en pruebas de usuario.
+
+## Avance de ejecución (2026-03-26)
+- Centro analítico muestra madurez de fútbol por competición (estable / en validación / lab).
+- Se incrementa visibilidad de fútbol sin igualarlo a NBA de forma artificial.

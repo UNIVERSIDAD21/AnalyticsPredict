@@ -61,3 +61,7 @@ Hacer que el valor del producto se entienda rápido, con claridad y sin humo: ev
 - interacción con demo/caso guiado,
 - clics hacia registro desde contenido público,
 - rebote en landing/entrada pública.
+
+## Avance de ejecución (2026-03-26)
+- Mensaje público orientado a disciplina, trazabilidad y control de riesgo.
+- CTA principal prioriza comprensión de valor antes de paywall.

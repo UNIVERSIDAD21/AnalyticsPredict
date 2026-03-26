@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-25 (Plan público P1–P9, ola 1 en ejecución)
+Última actualización: 2026-03-26 (Ola 1 cerrada + Ola 2 en ejecución)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -12,6 +12,11 @@ Se activa ejecución por olas del plan público P1–P9:
 - Ola 1: P1 Credibilidad, P2 Freemium/límites, P3 Propuesta de valor.
 - Ola 2: P4 Fútbol sin maquillaje, P6 Visibilidad inteligencia, P8 Premium.
 - Ola 3: P7 Mejora de motor/modelo, P9 UX y rendimiento.
+
+## Estado plan público P1–P9 (producto/comercial)
+- Ola 1 (P1/P2/P3): CERRADA en front principal (landing + centro analítico + acceso visitante limitado).
+- Ola 2 (P4/P6/P8): EN_EJECUCIÓN con avances visibles en madurez fútbol por competición, visibilidad de inteligencia y definición de premium en UI pública.
+- Ola 3 (P7/P9): PENDIENTE.
 
 ## Camino crítico vigente (realineado por C0)
 C0 → C1 → C2 → C3 → C4 → C7

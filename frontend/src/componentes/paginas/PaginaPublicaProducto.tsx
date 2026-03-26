@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, ShieldCheck, Target, Activity } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Target, Activity, Crown, UserCheck, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { registrarVistaLanding, type MetricasVisitante } from '../../servicios/visitante';
 
@@ -43,6 +43,38 @@ export function PaginaPublicaProducto() {
           <div className="tarjeta p-5">
             <div className="flex items-center gap-2 text-neon-magenta"><Activity className="w-4 h-4" /> Freemium serio</div>
             <p className="text-sm text-texto-secundario mt-2">Visitante puede explorar superficies públicas. Análisis operativo y guardado personal requieren cuenta.</p>
+          </div>
+        </section>
+
+        <section className="tarjeta p-5 space-y-4 border border-neon-cyan/20">
+          <div className="flex items-center gap-2 text-neon-cyan text-xs uppercase tracking-wider">
+            <Eye className="w-4 h-4" /> Qué puedes hacer según tu nivel
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div className="rounded-lg border border-neon-cyan/20 p-4 bg-futurista-oscuro/40">
+              <p className="flex items-center gap-2 font-semibold text-texto-principal"><Eye className="w-4 h-4 text-neon-cyan" /> Visitante</p>
+              <ul className="mt-2 text-texto-secundario space-y-1">
+                <li>• Ver landing y centro analítico público</li>
+                <li>• Revisar madurez por deporte</li>
+                <li>• Sin bitácora ni configuración personal</li>
+              </ul>
+            </div>
+            <div className="rounded-lg border border-neon-verde/20 p-4 bg-futurista-oscuro/40">
+              <p className="flex items-center gap-2 font-semibold text-texto-principal"><UserCheck className="w-4 h-4 text-neon-verde" /> Registrado</p>
+              <ul className="mt-2 text-texto-secundario space-y-1">
+                <li>• Acceso a análisis operativo completo</li>
+                <li>• Bitácora y continuidad personal</li>
+                <li>• Onboarding y configuración base</li>
+              </ul>
+            </div>
+            <div className="rounded-lg border border-neon-magenta/20 p-4 bg-futurista-oscuro/40">
+              <p className="flex items-center gap-2 font-semibold text-texto-principal"><Crown className="w-4 h-4 text-neon-magenta" /> Premium</p>
+              <ul className="mt-2 text-texto-secundario space-y-1">
+                <li>• Mayor profundidad y seguimiento</li>
+                <li>• Capas extendidas de lectura operativa</li>
+                <li>• Prioridad de herramientas avanzadas</li>
+              </ul>
+            </div>
           </div>
         </section>
 

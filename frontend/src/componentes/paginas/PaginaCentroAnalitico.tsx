@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, CheckCircle2, Clock3, Layers3, ShieldAlert, Target } from 'lucide-react';
+import { Activity, CheckCircle2, Clock3, Layers3, ShieldAlert, Target, Radar, Crown } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton, Tarjeta } from '../atomos';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
@@ -73,6 +73,13 @@ export function PaginaCentroAnalitico() {
   const descripcionMadurez = esNBA
     ? 'NBA es frente comercial principal y módulo más maduro.'
     : 'Fútbol sigue en beta/laboratorio: operativo, pero sin paridad comercial con NBA.';
+
+  const madurezFutbolPorCompetencia = [
+    { liga: 'Premier League', estado: 'ESTABLE', nota: 'Cobertura y señal consistente' },
+    { liga: 'LaLiga', estado: 'ESTABLE', nota: 'Buen volumen y continuidad' },
+    { liga: 'Serie A', estado: 'EN VALIDACIÓN', nota: 'Ajuste de calibración en curso' },
+    { liga: 'Ligue 1', estado: 'LAB', nota: 'Señal útil pero aún irregular' },
+  ] as const;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -206,6 +213,43 @@ export function PaginaCentroAnalitico() {
               <li>• Tableros y flujos profundos de análisis.</li>
               <li>• Señal comercial y madurez operacional actual.</li>
             </ul>
+          </Tarjeta>
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Tarjeta className="p-5 space-y-3 border border-neon-amarillo/30">
+            <div className="flex items-center gap-2 text-neon-amarillo">
+              <Radar className="w-4 h-4" />
+              <h3 className="text-sm uppercase tracking-wider">Madurez fútbol por competición</h3>
+            </div>
+            <div className="space-y-2">
+              {madurezFutbolPorCompetencia.map((c) => (
+                <div key={c.liga} className="flex items-center justify-between gap-3 rounded-lg border border-neon-cyan/10 p-3">
+                  <div>
+                    <p className="text-sm font-semibold text-texto-principal">{c.liga}</p>
+                    <p className="text-xs text-texto-secundario">{c.nota}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${c.estado === 'ESTABLE' ? 'bg-neon-verde/20 text-neon-verde' : c.estado === 'EN VALIDACIÓN' ? 'bg-neon-amarillo/20 text-neon-amarillo' : 'bg-neon-magenta/20 text-neon-magenta'}`}>
+                    {c.estado}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Tarjeta>
+
+          <Tarjeta className="p-5 space-y-3 border border-neon-magenta/30">
+            <div className="flex items-center gap-2 text-neon-magenta">
+              <Crown className="w-4 h-4" />
+              <h3 className="text-sm uppercase tracking-wider">Capa premium (definición)</h3>
+            </div>
+            <ul className="text-sm text-texto-secundario space-y-1">
+              <li>• Profundidad analítica extendida (no solo desbloqueo).</li>
+              <li>• Seguimiento operativo y continuidad avanzada.</li>
+              <li>• Lectura de riesgo comparativa por mercado/deporte.</li>
+            </ul>
+            <Boton variante="secundario" onClick={() => navegar('/login')}>
+              Ver ruta premium al iniciar sesión
+            </Boton>
           </Tarjeta>
         </section>
       </main>

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-03-26
+- Cierre operativo de Ola 1 (P1/P2/P3) y arranque de Ola 2 (P4/P6/P8) en superficies públicas principales.
+- `PaginaPublicaProducto` reforzada con tabla comparativa visitante/registrado/premium para definir mejor el valor por nivel de acceso.
+- `PaginaCentroAnalitico` enriquecida con:
+  - madurez de fútbol por competición (estable / en validación / lab),
+  - mayor visibilidad de inteligencia operativa,
+  - definición funcional inicial de premium como capa de profundidad (no solo desbloqueo).
+- Documentación comercial pública actualizada con avance de ejecución en P1/P2/P3/P4/P6/P8.
+- `ESTADO_PROYECTO.md` actualizado para reflejar Ola 1 cerrada y Ola 2 en ejecución.
+
 ## 2026-03-25
 - Se crea el plan público de negocio por prioridades P1–P9 en `docs/comercial/publico/` con índice y criterios por ola (P1/P2/P3 → P4/P6/P8 → P7/P9).
 - Se alinea la fuente de verdad para incluir el plan público como referencia activa:

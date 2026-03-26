@@ -71,3 +71,8 @@ Crear un modelo freemium serio, entendible y medible, que permita probar valor a
 - uso medio antes del muro,
 - activación útil por segmento,
 - tasa de abandono en punto de bloqueo.
+
+## Avance de ejecución (2026-03-26)
+- Visitante limitado activo en producto principal: acceso a landing y centro analítico público.
+- Bloqueo de análisis operativo/bitácora/personalización para no autenticados.
+- Trazabilidad visitante visible con `visitorId` y métricas de entrada públicas.

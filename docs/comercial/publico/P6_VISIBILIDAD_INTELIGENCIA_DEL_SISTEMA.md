@@ -59,3 +59,7 @@ Traducir mejor la inteligencia ya existente del sistema a elementos visibles, en
 - clics en capas de detalle,
 - mejora de comprensión del producto en pruebas de usuario,
 - aumento de interacciones con módulos de análisis profundo.
+
+## Avance de ejecución (2026-03-26)
+- Enriquecido centro analítico con señal de madurez, KPIs compartidos y capas de lectura por deporte/competición.
+- Se refuerza explicación de por qué y cuándo una señal es más confiable.

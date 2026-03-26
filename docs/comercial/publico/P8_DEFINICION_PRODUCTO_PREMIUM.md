@@ -59,3 +59,7 @@ Definir el producto premium como una experiencia más seria y útil, no simpleme
 - uso de funciones premium,
 - retención de suscritos,
 - cancelación temprana y motivos.
+
+## Avance de ejecución (2026-03-26)
+- Comparativa visible visitante/registrado/premium en landing pública.
+- Premium definido como profundidad operativa superior, no solo desbloqueo de uso.

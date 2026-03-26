@@ -57,3 +57,7 @@ Eliminar las incoherencias visibles que dañan confianza antes de seguir expandi
 - reducción de dudas funcionales sobre live,
 - menor rebote en pantallas de análisis,
 - menor tasa de abandono en primer uso por confusión.
+
+## Avance de ejecución (2026-03-26)
+- Landing pública y centro analítico reforzados con narrativa anti-humo y madurez explícita por deporte.
+- Se mantiene regla comercial: NBA frente principal, fútbol en beta/lab hasta subir evidencia.
