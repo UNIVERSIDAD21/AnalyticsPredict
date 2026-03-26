@@ -17,6 +17,7 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 - Mantener contrato, calidad y trazabilidad antes de expansión comercial.
 - Actualizar siempre estado y changelog al cerrar bloques.
 - Prioridades públicas de negocio vigentes en `docs/comercial/publico/00_INDICE_PLAN_PUBLICO_NEGOCIO.md` (Olas P1/P2/P3 → P4/P6/P8 → P7/P9).
+- Panel operativo permanente para ejecución inmediata: `docs/roadmap_inmediato/00_INDICE_EJECUCION_INMEDIATA.md`.
 
 ## Estrategia comercial vigente (C0)
 - Camino principal de caja: `C0 -> C1 -> C2 -> C3 -> C4 -> C7`.

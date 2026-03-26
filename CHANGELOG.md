@@ -37,6 +37,7 @@
   - reporte final actualizado en `docs/auditoria/REPORTE_CIERRE_OLA3_P7_P9.md`,
   - benchmark documentado en `docs/auditoria/BENCHMARK_OLA3_FRONTEND.md`,
   - estado de proyecto actualizado a Ola 3 `CERRADA`.
+- Se crea panel operativo permanente de ejecución inmediata en `docs/roadmap_inmediato/` con índice y 8 bloques priorizados (A1/B3/B4/B6/P7/P9/A3/B5).
 - Inicio de Ola 3 (P7/P9):
   - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
   - `PaginaPrincipal` optimizada con carga diferida de componentes pesados de estadísticas (`TablaEstadisticasEquipos`, `HistorialEquipo`) para reducir costo inicial cuando el usuario entra por la pestaña de análisis.

@@ -76,3 +76,4 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 2. Registrar entrada breve en `CHANGELOG.md`.
 3. Actualizar estado ADR (`PROPUESTO/ACEPTADO/SUPERADO`).
 4. Eliminar/archivar documentación obsoleta para evitar contexto viejo.
+5. Mantener sincronizado el panel de ejecución inmediata en `docs/roadmap_inmediato/00_INDICE_EJECUCION_INMEDIATA.md`.
