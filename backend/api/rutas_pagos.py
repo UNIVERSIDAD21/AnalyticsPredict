@@ -7,11 +7,12 @@ import hashlib
 import hmac
 import json
 import os
+from urllib.request import Request as UrlRequest, urlopen
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 
-from esquemas.pagos import CheckoutRequest, MercadoPagoWebhookEvent
+from esquemas.pagos import CheckoutRequest
 from servicios.auth_seguridad import decodificar_y_validar_token, obtener_secreto_auth
 from servicios.auth_store import AuthStore, obtener_auth_store
 from servicios.pagos_store import PagosStore, obtener_pagos_store
@@ -20,7 +21,12 @@ router = APIRouter(prefix="/api/pagos", tags=["Pagos"])
 
 
 def _webhook_secret() -> str:
-    return os.getenv("MERCADOPAGO_WEBHOOK_SECRET", "dev-webhook-secret")
+    return os.getenv("MERCADOPAGO_WEBHOOK_SECRET", "").strip()
+
+
+def _mercadopago_access_token() -> str:
+    token = os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADOPAGO_ACCESS_TOKEN")
+    return (token or "").strip()
 
 
 def _checkout_base_url() -> str:
@@ -56,11 +62,79 @@ def _usuario_actual(
     return user
 
 
-def _firma_valida(payload_raw: bytes, firma: str | None) -> bool:
+def _parsear_x_signature(firma: str | None) -> tuple[str, str]:
     if not firma:
+        return "", ""
+    partes = [p.strip() for p in firma.split(",") if "=" in p]
+    data = {}
+    for parte in partes:
+        k, v = parte.split("=", 1)
+        data[k.strip().lower()] = v.strip()
+    return data.get("ts", ""), data.get("v1", "")
+
+
+def _firma_valida_mercadopago(
+    *,
+    data_id: str,
+    x_request_id: str | None,
+    x_signature: str | None,
+) -> bool:
+    secret = _webhook_secret()
+    if not secret:
         return False
-    digest = hmac.new(_webhook_secret().encode("utf-8"), payload_raw, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(digest, firma.strip())
+
+    ts, firma_recibida = _parsear_x_signature(x_signature)
+    if not ts or not firma_recibida:
+        return False
+
+    manifest = f"id:{data_id.lower()};request-id:{(x_request_id or '').strip()};ts:{ts};"
+    digest = hmac.new(secret.encode("utf-8"), manifest.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(digest, firma_recibida)
+
+
+def _mapear_estado_mp(payment_status: str | None, payment_status_detail: str | None) -> str:
+    status_mp = (payment_status or "").lower().strip()
+    detail = (payment_status_detail or "").lower().strip()
+
+    if status_mp in {"approved", "authorized"}:
+        return "approved"
+    if status_mp in {"pending", "in_process"}:
+        return status_mp
+    if status_mp in {"cancelled", "refunded", "charged_back", "rejected"}:
+        return status_mp
+
+    if "accredited" in detail:
+        return "approved"
+
+    return "pending"
+
+
+def _fetch_payment(payment_id: str) -> dict:
+    token = _mercadopago_access_token()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="MP_ACCESS_TOKEN no configurado",
+        )
+
+    req = UrlRequest(
+        url=f"https://api.mercadopago.com/v1/payments/{payment_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+
+    try:
+        with urlopen(req, timeout=10) as response:
+            body = response.read().decode("utf-8")
+            return json.loads(body)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"No se pudo consultar pago en Mercado Pago: {exc}",
+        ) from exc
 
 
 @router.post("/checkout-session")
@@ -96,42 +170,73 @@ async def crear_checkout_session(
 async def webhook_mercadopago(
     request: Request,
     x_signature: str | None = Header(default=None, alias="X-Signature"),
+    x_request_id: str | None = Header(default=None, alias="X-Request-Id"),
     pagos_store: PagosStore = Depends(obtener_pagos_store),
 ):
-    payload_raw = await request.body()
-    if not _firma_valida(payload_raw, x_signature):
+    body = await request.json()
+    data = body.get("data") or {}
+    payment_id = str(data.get("id") or "").strip()
+    topic = (body.get("type") or request.query_params.get("type") or "").lower().strip()
+
+    if not payment_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Webhook sin data.id")
+
+    if topic and topic not in {"payment"}:
+        return {
+            "ok": True,
+            "data": {
+                "ignored": True,
+                "reason": f"topic_no_soportado:{topic}",
+            },
+        }
+
+    if not _firma_valida_mercadopago(data_id=payment_id, x_request_id=x_request_id, x_signature=x_signature):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Firma inválida")
 
-    evento = MercadoPagoWebhookEvent.model_validate_json(payload_raw)
+    pago = _fetch_payment(payment_id)
+    external_reference = str(pago.get("external_reference") or "").strip()
+    if not external_reference:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Pago sin external_reference")
+
+    estado = _mapear_estado_mp(pago.get("status"), pago.get("status_detail"))
+    plan_id = str((pago.get("metadata") or {}).get("plan_id") or "").strip() or None
+
+    payload_json = json.dumps(
+        {
+            "webhook": body,
+            "payment": pago,
+        },
+        ensure_ascii=False,
+    )
 
     is_new_event = pagos_store.registrar_evento_webhook(
-        external_reference=evento.external_reference,
-        payment_id=evento.payment_id,
-        status=evento.status,
-        payload_json=payload_raw.decode("utf-8", errors="ignore"),
+        external_reference=external_reference,
+        payment_id=payment_id,
+        status=estado,
+        payload_json=payload_json,
     )
 
     intent = pagos_store.marcar_pago(
-        external_reference=evento.external_reference,
-        payment_id=evento.payment_id,
-        status=evento.status,
+        external_reference=external_reference,
+        payment_id=payment_id,
+        status=estado,
     )
     if not intent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="external_reference no registrado")
 
     subscription = pagos_store.actualizar_estado_suscripcion_por_evento(
-        user_id=intent["user_id"],
-        plan_id=evento.plan_id or intent["plan_id"],
-        payment_status=evento.status,
-        payment_id=evento.payment_id,
+        user_id=int(intent["user_id"]),
+        plan_id=plan_id or intent["plan_id"],
+        payment_status=estado,
+        payment_id=payment_id,
     )
 
     return {
         "ok": True,
         "data": {
-            "external_reference": evento.external_reference,
-            "payment_id": evento.payment_id,
-            "status": evento.status.lower(),
+            "external_reference": external_reference,
+            "payment_id": payment_id,
+            "status": estado,
             "subscription": subscription,
             "event_idempotent": not is_new_event,
         },

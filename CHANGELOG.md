@@ -1,6 +1,17 @@
 # CHANGELOG
 
 ## 2026-03-26
+- C1/B1 pagos endurecido para evento real de Mercado Pago:
+  - `POST /api/pagos/webhook/mercadopago` ahora valida firma real de MP (`X-Signature` con `ts/v1` + `X-Request-Id` + `data.id`) en lugar de HMAC del payload interno.
+  - Webhook ahora consulta `GET https://api.mercadopago.com/v1/payments/{id}` para obtener estado efectivo y `external_reference` antes de persistir/activar.
+  - Idempotencia mantenida por `(external_reference, payment_id, status)`.
+- Persistencia de pagos preparada para producción en PostgreSQL/Neon:
+  - `backend/servicios/pagos_store.py` agrega driver `postgres` (`PAGOS_STORE_DRIVER=postgres`) con tablas `payment_intents`, `subscriptions`, `payment_events` en Postgres.
+  - Se conserva driver `sqlite` para desarrollo local.
+- Mapeo operativo de estados MP reforzado para gate de suscripción:
+  - `approved/authorized -> active`,
+  - `pending/in_process -> past_due`,
+  - `rejected/cancelled/refunded/charged_back -> inactive`.
 - Cierre formal de A1 (staging + smoke real): despliegue ejecutado en host con Docker y evidencia en `docs/reportes/A1_SMOKE_STAGING_2026-03-26T14:12:43Z.md`.
 - Corrección del script de smoke A1: se reemplaza verificación de `GET /api/pagos/feature-gate` (ahora requiere query+auth) por `GET /api/pagos/matriz-estados` para mantener smoke reproducible sin sesión.
 - Endurecimiento de scripts operativos B3/B4 para ejecución real:

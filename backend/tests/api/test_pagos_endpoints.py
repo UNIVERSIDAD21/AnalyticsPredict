@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import hmac
-import json
 import os
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+import api.rutas_pagos as rutas_pagos
 from api.rutas_auth import router as router_auth
 from api.rutas_pagos import router as router_pagos
 
@@ -39,10 +39,10 @@ def _auth_header(client: TestClient, email: str = "pay@ap.com") -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-def _firmar(payload: dict) -> tuple[bytes, str]:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    firma = hmac.new(b"mp-secret-test", raw, hashlib.sha256).hexdigest()
-    return raw, firma
+def _firmar_mp(*, payment_id: str, request_id: str = "req-test-1", ts: str = "1700000000") -> tuple[str, str]:
+    manifest = f"id:{payment_id.lower()};request-id:{request_id};ts:{ts};"
+    firma = hmac.new(b"mp-secret-test", manifest.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"ts={ts},v1={firma}", request_id
 
 
 def test_checkout_crea_intento_pendiente(tmp_path: Path):
@@ -65,16 +65,10 @@ def test_checkout_crea_intento_pendiente(tmp_path: Path):
 def test_webhook_rechaza_firma_invalida(tmp_path: Path):
     client = _crear_cliente(tmp_path)
 
-    payload = {
-        "event": "payment.updated",
-        "payment_id": "123",
-        "external_reference": "sub_1_xxx",
-        "status": "approved",
-    }
     r = client.post(
         "/api/pagos/webhook/mercadopago",
-        headers={"X-Signature": "firma-invalida"},
-        json=payload,
+        headers={"X-Signature": "firma-invalida", "X-Request-Id": "req-1"},
+        json={"type": "payment", "data": {"id": "123"}},
     )
     assert r.status_code == 401
 
@@ -90,20 +84,20 @@ def test_webhook_approved_activa_suscripcion_y_feature_gate(tmp_path: Path):
     )
     external_reference = checkout.json()["data"]["external_reference"]
 
-    payload = {
-        "event": "payment.updated",
-        "payment_id": "mp_789",
+    rutas_pagos._fetch_payment = lambda payment_id: {
+        "id": payment_id,
         "external_reference": external_reference,
         "status": "approved",
-        "plan_id": "pro_mensual",
-        "amount_cents": 49900,
+        "status_detail": "accredited",
+        "metadata": {"plan_id": "pro_mensual"},
     }
-    raw, firma = _firmar(payload)
+
+    x_signature, x_request_id = _firmar_mp(payment_id="mp_789")
 
     webhook = client.post(
         "/api/pagos/webhook/mercadopago",
-        headers={"X-Signature": firma, "Content-Type": "application/json"},
-        content=raw,
+        headers={"X-Signature": x_signature, "X-Request-Id": x_request_id},
+        json={"type": "payment", "data": {"id": "mp_789"}},
     )
     assert webhook.status_code == 200
     assert webhook.json()["data"]["status"] == "approved"
@@ -131,25 +125,25 @@ def test_webhook_idempotente_no_duplica_efecto(tmp_path: Path):
     )
     external_reference = checkout.json()["data"]["external_reference"]
 
-    payload = {
-        "event": "payment.updated",
-        "payment_id": "mp_repeat",
+    rutas_pagos._fetch_payment = lambda payment_id: {
+        "id": payment_id,
         "external_reference": external_reference,
         "status": "approved",
-        "plan_id": "pro_mensual",
-        "amount_cents": 49900,
+        "status_detail": "accredited",
+        "metadata": {"plan_id": "pro_mensual"},
     }
-    raw, firma = _firmar(payload)
+
+    x_signature, x_request_id = _firmar_mp(payment_id="mp_repeat")
 
     first = client.post(
         "/api/pagos/webhook/mercadopago",
-        headers={"X-Signature": firma, "Content-Type": "application/json"},
-        content=raw,
+        headers={"X-Signature": x_signature, "X-Request-Id": x_request_id},
+        json={"type": "payment", "data": {"id": "mp_repeat"}},
     )
     second = client.post(
         "/api/pagos/webhook/mercadopago",
-        headers={"X-Signature": firma, "Content-Type": "application/json"},
-        content=raw,
+        headers={"X-Signature": x_signature, "X-Request-Id": x_request_id},
+        json={"type": "payment", "data": {"id": "mp_repeat"}},
     )
 
     assert first.status_code == 200
@@ -169,20 +163,20 @@ def test_payment_rejected_desactiva_feature_gate(tmp_path: Path):
     )
     external_reference = checkout.json()["data"]["external_reference"]
 
-    payload = {
-        "event": "payment.updated",
-        "payment_id": "mp_reject",
+    rutas_pagos._fetch_payment = lambda payment_id: {
+        "id": payment_id,
         "external_reference": external_reference,
         "status": "rejected",
-        "plan_id": "pro_mensual",
-        "amount_cents": 49900,
+        "status_detail": "cc_rejected_insufficient_amount",
+        "metadata": {"plan_id": "pro_mensual"},
     }
-    raw, firma = _firmar(payload)
+
+    x_signature, x_request_id = _firmar_mp(payment_id="mp_reject")
 
     webhook = client.post(
         "/api/pagos/webhook/mercadopago",
-        headers={"X-Signature": firma, "Content-Type": "application/json"},
-        content=raw,
+        headers={"X-Signature": x_signature, "X-Request-Id": x_request_id},
+        json={"type": "payment", "data": {"id": "mp_reject"}},
     )
 
     assert webhook.status_code == 200
