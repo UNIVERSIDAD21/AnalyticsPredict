@@ -179,6 +179,35 @@ export function PaginaDashboardUsuario() {
               </div>
             </div>
 
+            <div className="tarjeta p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-texto-principal">Atajos operativos</h3>
+              {!estadoOnboarding?.completado && (
+                <div className="rounded-lg border border-neon-amarillo/30 bg-futurista-oscuro/40 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-neon-amarillo">Onboarding pendiente</p>
+                    <p className="text-xs text-texto-secundario">Completar onboarding reduce fricción y mejora consistencia de análisis.</p>
+                  </div>
+                  <Boton variante="primario" onClick={() => navegar('/onboarding')}>
+                    Completar onboarding
+                  </Boton>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button type="button" onClick={() => navegar('/app')} className="rounded-lg border border-neon-cyan/20 p-4 text-left hover:border-neon-cyan transition-colors">
+                  <p className="text-sm font-semibold text-texto-principal">Ir a análisis</p>
+                  <p className="text-xs text-texto-secundario mt-1">Abrir flujo principal de decisión.</p>
+                </button>
+                <button type="button" onClick={() => navegar('/bitacora')} className="rounded-lg border border-neon-verde/20 p-4 text-left hover:border-neon-verde transition-colors">
+                  <p className="text-sm font-semibold text-texto-principal">Bitácora</p>
+                  <p className="text-xs text-texto-secundario mt-1">Revisar ejecuciones y resultados.</p>
+                </button>
+                <button type="button" onClick={() => navegar('/centro-analitico')} className="rounded-lg border border-neon-magenta/20 p-4 text-left hover:border-neon-magenta transition-colors">
+                  <p className="text-sm font-semibold text-texto-principal">Centro analítico</p>
+                  <p className="text-xs text-texto-secundario mt-1">Ver madurez y lectura multideporte.</p>
+                </button>
+              </div>
+            </div>
+
             <div className="tarjeta p-6">
               <h3 className="text-lg font-semibold text-texto-principal mb-4">KPIs de activación (reales)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -65,3 +65,4 @@ Reducir fricción, mejorar claridad de uso y optimizar la percepción de velocid
 - Objetivo inmediato: reducir costo inicial de carga y mejorar TTI percibido en rutas críticas.
 - Se aplica lazy-load en componentes pesados dentro de `PaginaPrincipal` para acelerar carga inicial de la pestaña de análisis.
 - Se agrega caché de corta vida (sessionStorage, 5 min) para resumen técnico 1X2 en dashboard, reduciendo latencia percibida en recargas repetidas sin sacrificar opción de refresh forzado.
+- Dashboard usuario incorpora atajos operativos y alerta de onboarding pendiente para reducir tiempo de llegada a valor (TTV) y fricción de navegación.
