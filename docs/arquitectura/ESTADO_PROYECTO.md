@@ -40,7 +40,8 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 ## Preflight C7 (condición de apertura)
 - C7 NO se abre hasta cierre manual real de C1 por el dueño.
 - Bloqueo actual C1: falta dominio/URL pública final para validar webhook real de MercadoPago extremo a extremo.
-- Al desbloquear infraestructura (dominio + callback pública), ejecutar cierre manual C1 con evidencia y recién después abrir C7.
+- Al desbloquear infraestructura (dominio + callback pública estable), ejecutar cierre manual C1 con evidencia y recién después abrir C7.
+- Nota de gobierno: ninguna mejora de olas P1–P9 reemplaza este prerequisito comercial.
 
 ## Regla documental de validación C1 (normalizada)
 - **Validación equivalente reproducible** (tests/pytest): readiness técnico.

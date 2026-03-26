@@ -66,8 +66,9 @@ Estado general: Pre-lanzamiento comercial, con C1 aún EN_CURSO por validación 
 
 ## 5) Estado de readiness para C7
 - C7 sigue bloqueado por C1.
-- C1 requiere validación manual real de MP en entorno con dominio/URL pública.
+- C1 requiere validación manual real de MP en entorno con dominio/URL pública final y callback estable.
 - Sin ese cierre manual no procede gate comercial final.
+- Nota para auditoría: mejoras de UI/UX, Ola 1/2/3 o validaciones equivalentes no reemplazan este requisito de cierre comercial real.
 
 ## 6) Trazabilidad Git
 - Revisar historial en `main` con commits de C0..C6.

@@ -25,6 +25,10 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 - Fútbol = beta/laboratorio hasta cumplir criterios de promoción.
 - No se posiciona el producto como app masiva de picks ni promesa de ganancias fáciles.
 
+## Bloqueo comercial explícito (auditoría)
+- C1 permanece **EN_CURSO** hasta ejecutar validación manual real de MercadoPago con dominio/URL pública final y callback estable.
+- C7 permanece **PENDIENTE** y no se abre hasta cierre manual real de C1 (no aplica cierre por validación equivalente únicamente).
+
 ## Qué está en laboratorio
 - Líneas no cerradas por criterios formales en `ESTADO_PROYECTO`.
 - Funcionalidades con evidencia parcial en `docs/borlty-deliverables/` (reportes, pruebas de ciclo, validaciones puntuales).
