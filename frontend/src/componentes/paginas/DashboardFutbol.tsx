@@ -379,7 +379,7 @@ export function DashboardFutbol() {
   const [datosTemporales, setDatosTemporales] = useState<PuntoROITemporalFutbol[]>([]);
 
   // Cargar datos
-  const cargarDatos = useCallback(async () => {
+  const cargarDatos = useCallback(async (forceRefresh = false) => {
     setCargando(true);
     setError(null);
 
@@ -388,8 +388,8 @@ export function DashboardFutbol() {
         obtenerMetricasCalibracion(),
         obtenerMetricasRendimiento(),
         obtenerEstadoModelos(),
-        obtenerSaludBackend(),
-        obtenerObservabilidadHTTP(),
+        obtenerSaludBackend(forceRefresh),
+        obtenerObservabilidadHTTP(undefined, forceRefresh),
         obtenerRoiTemporal(30),
       ]);
 
@@ -509,7 +509,7 @@ export function DashboardFutbol() {
           <Boton
             variante="secundario"
             iconoInicio={<RefreshCw size={16} />}
-            onClick={cargarDatos}
+            onClick={() => void cargarDatos(true)}
             cargando={cargando}
           >
             Actualizar
@@ -521,7 +521,7 @@ export function DashboardFutbol() {
           <MensajeError
             titulo="Error al cargar metricas"
             mensaje={error}
-            onCerrar={cargarDatos}
+            onCerrar={() => void cargarDatos(true)}
           />
         )}
 

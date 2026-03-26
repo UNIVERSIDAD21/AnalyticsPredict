@@ -22,6 +22,7 @@
   - baseline técnico 1X2 visible (`hitRateSinPush`, finalizadas) como referencia para futuras mejoras de modelo/motor.
   - recarga forzada disponible para evitar lecturas obsoletas durante revisión técnica.
 - `frontend/src/servicios/futbol/metricas.ts` incorpora caché de 5 min (sessionStorage) para `obtenerResumenCalidad1x2`, reduciendo costo/latencia en navegación repetida (Ola 3 rendimiento).
+- `frontend/src/servicios/observabilidad.ts` incorpora caché corta (60s) para salud backend y observabilidad HTTP, con bypass por refresh forzado en dashboard fútbol.
 - `PaginaCentroAnalitico` añade bloque de "confianza operativa" con nivel interpretativo basado en muestra resuelta y win rate (mejora de visibilidad de inteligencia, P6).
 - `PaginaDashboardUsuario` añade:
   - alerta accionable de onboarding pendiente,
