@@ -18,6 +18,9 @@
   - credibilidad anti-humo,
   - fútbol sin maquillaje por madurez,
   - premium como profundidad funcional.
+- Inicio de Ola 3 (P7/P9):
+  - `frontend/src/App.tsx` migrado a carga diferida de módulos pesados (`React.lazy` + `Suspense`) para mejorar rendimiento percibido y preparar optimización de bundle.
+  - actualización de estado y avances en documentos `P7_MEJORA_MODELO_Y_MOTOR.md` y `P9_UX_Y_RENDIMIENTO.md`.
 - Documentación comercial pública actualizada con avance de ejecución en P1/P2/P3/P4/P6/P8.
 - `ESTADO_PROYECTO.md` actualizado para reflejar Ola 1 cerrada y Ola 2 en ejecución.
 

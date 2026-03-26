@@ -2,25 +2,26 @@
  * App.tsx — Componente raíz de la aplicación
  */
 
-import type { ReactElement } from 'react';
+import { lazy, Suspense, type ReactElement } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
-  PaginaBitacora,
-  PaginaPrincipal,
-  PaginaConfiguracion,
-  PaginaFutbol,
-  AnalisisPartidoFutbol,
-  DashboardFutbol,
   PaginaLogin,
   PaginaLegal,
   PaginaOnboarding,
-  PaginaDashboardUsuario,
-  PaginaChat,
   PaginaCentroAnalitico,
   PaginaPublicaProducto,
 } from './componentes/paginas';
 import { useAuth } from './contextos/AuthContext';
 import { obtenerEstadoOnboarding } from './servicios/onboarding';
+
+const PaginaPrincipal = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaPrincipal')).PaginaPrincipal }));
+const PaginaDashboardUsuario = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaDashboardUsuario')).PaginaDashboardUsuario }));
+const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBitacora')).PaginaBitacora }));
+const PaginaConfiguracion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaConfiguracion')).PaginaConfiguracion }));
+const PaginaChat = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaChat')).PaginaChat }));
+const PaginaFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaFutbol')).PaginaFutbol }));
+const AnalisisPartidoFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/AnalisisPartidoFutbol')).AnalisisPartidoFutbol }));
+const DashboardFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/DashboardFutbol')).DashboardFutbol }));
 
 function RutaProtegida({ children }: { children: ReactElement }) {
   const { autenticado, cargando } = useAuth();
@@ -57,13 +58,22 @@ function RutaConOnboarding({ children }: { children: ReactElement }) {
   return children;
 }
 
+function CargandoRuta() {
+  return (
+    <div className="min-h-screen flex items-center justify-center text-texto-secundario">
+      Cargando módulo...
+    </div>
+  );
+}
+
 /**
  * Componente principal de la aplicación
  */
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={<CargandoRuta />}>
+        <Routes>
         <Route path="/login" element={<PaginaLogin />} />
         <Route path="/legal/terminos" element={<PaginaLegal tipo="terminos" />} />
         <Route path="/legal/privacidad" element={<PaginaLegal tipo="privacidad" />} />
@@ -90,7 +100,8 @@ function App() {
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

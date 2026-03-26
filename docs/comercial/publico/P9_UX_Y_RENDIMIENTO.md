@@ -59,3 +59,7 @@ Reducir fricción, mejorar claridad de uso y optimizar la percepción de velocid
 - tiempo hasta primera interacción útil,
 - abandono por ruta,
 - percepción de claridad en pruebas de usuario.
+
+## Avance de ejecución (2026-03-26)
+- Ola 3 iniciada con mejora de rendimiento en front mediante carga diferida de rutas pesadas (code-splitting en App).
+- Objetivo inmediato: reducir costo inicial de carga y mejorar TTI percibido en rutas críticas.

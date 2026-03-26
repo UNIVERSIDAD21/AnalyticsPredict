@@ -59,3 +59,8 @@ Elevar la calidad técnica del motor de predicción y su capacidad de explicaci�
 - estabilidad de recomendaciones,
 - mejora en mercados clave,
 - reducción de inconsistencias entre módulo live y pre-partido.
+
+## Avance de ejecución (2026-03-26)
+- Ola 3 iniciada con foco en preparación de medición técnica sin romper frente comercial.
+- Se define línea base: comparar calidad por deporte/competición con métricas reproducibles antes de promover cambios de modelo.
+- Siguiente tramo operativo: reportes comparativos antes/después por calibración, drift y robustez de señal.

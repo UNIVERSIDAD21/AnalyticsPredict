@@ -16,7 +16,7 @@ Se activa ejecución por olas del plan público P1–P9:
 ## Estado plan público P1–P9 (producto/comercial)
 - Ola 1 (P1/P2/P3): CERRADA en front principal (landing + centro analítico + acceso visitante limitado).
 - Ola 2 (P4/P6/P8): EN_EJECUCIÓN avanzada con implementación en landing, centro analítico, dashboard y configuración; pendiente cierre formal de criterio de done transversal.
-- Ola 3 (P7/P9): PENDIENTE.
+- Ola 3 (P7/P9): INICIADA con mejoras de rendimiento frontend y baseline técnico para evolución de modelo.
 
 ## Camino crítico vigente (realineado por C0)
 C0 → C1 → C2 → C3 → C4 → C7
