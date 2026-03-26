@@ -10,8 +10,13 @@ Alcance: UX + rendimiento en frontend (P9) y observabilidad operativa para P7.
 ## Resultados de build (última corrida)
 - `PaginaPrincipal`: **159.60 kB** (gzip 36.50 kB)
 - `PaginaDashboardUsuario`: **13.13 kB** (gzip 3.76 kB)
-- `DashboardFutbol`: **412.41 kB** (gzip 112.00 kB)
-- `index`: **274.47 kB** (gzip 86.41 kB)
+- `DashboardFutbol`: **28.51 kB** (gzip 6.38 kB)
+- `GraficoRoiTemporalFutbol` (lazy): **384.56 kB** (gzip 106.31 kB)
+- `index`: **274.47 kB** (gzip 86.40 kB)
+
+## Variación relevante
+- `DashboardFutbol` baja de **412.41 kB** a **28.51 kB** moviendo gráfico ROI a chunk lazy dedicado.
+- Carga inicial del dashboard mejora; costo pesado de charts pasa a carga bajo demanda.
 
 ## Mejoras aplicadas durante Ola 3
 1. Carga diferida por rutas (`React.lazy` + `Suspense`) en `App.tsx`.

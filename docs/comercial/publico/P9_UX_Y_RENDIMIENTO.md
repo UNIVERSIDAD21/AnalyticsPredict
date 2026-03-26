@@ -67,3 +67,5 @@ Reducir fricción, mejorar claridad de uso y optimizar la percepción de velocid
 - Se agrega caché de corta vida (sessionStorage, 5 min) para resumen técnico 1X2 en dashboard, reduciendo latencia percibida en recargas repetidas sin sacrificar opción de refresh forzado.
 - Se añade caché corta (sessionStorage, 60s) para salud backend y observabilidad HTTP en dashboard fútbol, con recarga forzada para revisión operativa.
 - Dashboard usuario incorpora atajos operativos y alerta de onboarding pendiente para reducir tiempo de llegada a valor (TTV) y fricción de navegación.
+- DashboardFutbol: gráfico ROI extraído a módulo lazy (`GraficoRoiTemporalFutbol`) para bajar peso inicial del dashboard y cargar Recharts bajo demanda.
+- Resultado medido: chunk de `DashboardFutbol` reducido de ~412.41 kB a ~28.51 kB (con chunk lazy específico para gráfico).
