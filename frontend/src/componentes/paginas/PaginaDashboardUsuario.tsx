@@ -12,6 +12,7 @@ import {
   type KpisOnboarding,
 } from '../../servicios/onboarding';
 import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
+import { obtenerResumenCalidad1x2, type ResumenCalidad1x2Futbol } from '../../servicios/futbol/metricas';
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta) return;
@@ -43,12 +44,22 @@ const kpisIniciales: KpisOnboarding = {
   ttvSampleSize: 0,
 };
 
+const calidadInicial: ResumenCalidad1x2Futbol = {
+  total: 0,
+  finalizadas: 0,
+  ganadas: 0,
+  perdidas: 0,
+  push: 0,
+  hitRateSinPush: 0,
+};
+
 export function PaginaDashboardUsuario() {
   const { usuario } = useAuth();
   const [cargando, setCargando] = useState(true);
   const [resumen, setResumen] = useState<ResumenDashboard>(resumenInicial);
   const [plan, setPlan] = useState<EstadoPlanUsuario>(planInicial);
   const [kpisOnboarding, setKpisOnboarding] = useState<KpisOnboarding>(kpisIniciales);
+  const [calidad1x2, setCalidad1x2] = useState<ResumenCalidad1x2Futbol>(calidadInicial);
   const [error, setError] = useState<string | null>(null);
 
   const estadoOnboarding = useMemo(() => {
@@ -60,14 +71,16 @@ export function PaginaDashboardUsuario() {
     try {
       setError(null);
       setCargando(true);
-      const [resumenData, planData, kpisData] = await Promise.all([
+      const [resumenData, planData, kpisData, calidadData] = await Promise.all([
         obtenerResumenDashboard(),
         obtenerEstadoPlan(),
         obtenerKpisOnboarding(),
+        obtenerResumenCalidad1x2(),
       ]);
       setResumen(resumenData);
       setPlan(planData);
       setKpisOnboarding(kpisData);
+      setCalidad1x2(calidadData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo cargar el dashboard.');
     } finally {
@@ -204,6 +217,20 @@ export function PaginaDashboardUsuario() {
                 </ul>
                 <p className="text-xs text-texto-terciario">
                   Regla vigente: fútbol gana peso por evidencia real, no por copy promocional.
+                </p>
+              </div>
+
+              <div className="tarjeta p-6 space-y-3 border border-neon-cyan/30">
+                <div className="flex items-center gap-2 text-neon-cyan">
+                  <BarChart3 className="w-4 h-4" />
+                  <h3 className="text-sm uppercase tracking-wider">Baseline técnico 1X2 (Ola 3)</h3>
+                </div>
+                <p className="text-sm text-texto-secundario">
+                  Hit rate sin push: <span className="font-semibold text-texto-principal">{(calidad1x2.hitRateSinPush * 100).toFixed(1)}%</span>
+                  {' '}sobre {calidad1x2.finalizadas} apuestas finalizadas.
+                </p>
+                <p className="text-xs text-texto-terciario">
+                  Este baseline se usa como referencia para validar mejoras de modelo/motor antes de promover cambios.
                 </p>
               </div>
 
