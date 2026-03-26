@@ -4,13 +4,11 @@
 
 import { lazy, Suspense, type ReactElement } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import {
-  PaginaLogin,
-  PaginaLegal,
-  PaginaOnboarding,
-  PaginaCentroAnalitico,
-  PaginaPublicaProducto,
-} from './componentes/paginas';
+import { PaginaLogin } from './componentes/paginas/PaginaLogin';
+import { PaginaLegal } from './componentes/paginas/PaginaLegal';
+import { PaginaOnboarding } from './componentes/paginas/PaginaOnboarding';
+import { PaginaCentroAnalitico } from './componentes/paginas/PaginaCentroAnalitico';
+import { PaginaPublicaProducto } from './componentes/paginas/PaginaPublicaProducto';
 import { useAuth } from './contextos/AuthContext';
 import { obtenerEstadoOnboarding } from './servicios/onboarding';
 

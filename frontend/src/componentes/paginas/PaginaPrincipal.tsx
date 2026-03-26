@@ -3,15 +3,13 @@
  * PaginaPrincipal.tsx — Página principal con layout futurista full-screen
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Encabezado,
   CreadorCombinada,
   FormularioAnalisis,
   FormularioGuardarApuesta,
-  HistorialEquipo,
   ResultadoAnalisis,
-  TablaEstadisticasEquipos,
 } from '../organismos';
 import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
@@ -20,6 +18,13 @@ import { Activity, TrendingUp, Target, BarChart3, ArrowLeft } from 'lucide-react
 import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
+
+const TablaEstadisticasEquipos = lazy(async () => ({
+  default: (await import('../organismos/TablaEstadisticasEquipos')).TablaEstadisticasEquipos,
+}));
+const HistorialEquipo = lazy(async () => ({
+  default: (await import('../organismos/HistorialEquipo')).HistorialEquipo,
+}));
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE ESTADO VACÍO
@@ -459,26 +464,34 @@ export function PaginaPrincipal() {
               </div>
             )}
             {estadoEstadisticas === 'exito' && (
-              <div className="space-y-6">
-                <TablaEstadisticasEquipos
-                  equipos={estadisticasEquipos}
-                  equiposCatalogo={equipos}
-                  fechaActualizacion={fechaActualizacion}
-                  temporadasDisponibles={temporadasDisponibles}
-                  temporadaActual={temporadaActual}
-                  onCambiarTemporada={cambiarTemporada}
-                  onSeleccionarEquipo={(equipoId) => setEquipoHistorialId(equipoId)}
-                  equipoResaltadoId={equipoHistorialId ?? undefined}
-                />
-                {equipoHistorialId && (
-                  <div ref={historialRef}>
-                    <HistorialEquipo
-                      equipoId={equipoHistorialId}
-                      onCerrar={() => setEquipoHistorialId(null)}
-                    />
+              <Suspense
+                fallback={(
+                  <div className="tarjeta flex items-center justify-center min-h-[220px]">
+                    <Spinner tamano="md" texto="Cargando módulo de estadísticas..." centrado />
                   </div>
                 )}
-              </div>
+              >
+                <div className="space-y-6">
+                  <TablaEstadisticasEquipos
+                    equipos={estadisticasEquipos}
+                    equiposCatalogo={equipos}
+                    fechaActualizacion={fechaActualizacion}
+                    temporadasDisponibles={temporadasDisponibles}
+                    temporadaActual={temporadaActual}
+                    onCambiarTemporada={cambiarTemporada}
+                    onSeleccionarEquipo={(equipoId) => setEquipoHistorialId(equipoId)}
+                    equipoResaltadoId={equipoHistorialId ?? undefined}
+                  />
+                  {equipoHistorialId && (
+                    <div ref={historialRef}>
+                      <HistorialEquipo
+                        equipoId={equipoHistorialId}
+                        onCerrar={() => setEquipoHistorialId(null)}
+                      />
+                    </div>
+                  )}
+                </div>
+              </Suspense>
             )}
           </div>
         )}

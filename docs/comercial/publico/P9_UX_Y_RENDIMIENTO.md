@@ -63,3 +63,4 @@ Reducir fricción, mejorar claridad de uso y optimizar la percepción de velocid
 ## Avance de ejecución (2026-03-26)
 - Ola 3 iniciada con mejora de rendimiento en front mediante carga diferida de rutas pesadas (code-splitting en App).
 - Objetivo inmediato: reducir costo inicial de carga y mejorar TTI percibido en rutas críticas.
+- Se aplica lazy-load en componentes pesados dentro de `PaginaPrincipal` para acelerar carga inicial de la pestaña de análisis.
