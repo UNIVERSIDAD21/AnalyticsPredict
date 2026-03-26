@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Shield, Wallet, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Shield, Wallet, SlidersHorizontal, Crown, Radar } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton } from '../atomos';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
@@ -17,6 +17,7 @@ import {
   type MetricasEntregaNotificaciones,
   type PreferenciasNotificaciones,
 } from '../../servicios/notificaciones';
+import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
 
 interface ErroresConfiguracion {
   bankroll?: string;
@@ -52,6 +53,12 @@ export function PaginaConfiguracion() {
     alertas_partidos: true,
     alertas_suscripcion: true,
     resumen_semanal: false,
+  });
+  const [estadoPlan, setEstadoPlan] = useState<EstadoPlanUsuario>({
+    activo: false,
+    planId: null,
+    estado: null,
+    actualizadoEn: null,
   });
 
   const { errores, valores, esValido } = useMemo(() => {
@@ -125,12 +132,14 @@ export function PaginaConfiguracion() {
   useEffect(() => {
     const cargarPreferencias = async () => {
       try {
-        const [prefs, metricas] = await Promise.all([
+        const [prefs, metricas, plan] = await Promise.all([
           obtenerPreferenciasNotificaciones(),
           obtenerMetricasEntrega(24),
+          obtenerEstadoPlan(),
         ]);
         setPrefsNotificaciones(prefs.preferencias);
         setMetricasEntrega(metricas);
+        setEstadoPlan(plan);
       } catch (error) {
         agregarToast({
           titulo: 'No se pudieron cargar notificaciones',
@@ -260,6 +269,38 @@ export function PaginaConfiguracion() {
           <Boton variante="secundario" iconoInicio={<ArrowLeft size={16} />} onClick={() => navegar('/')}>
             Volver al análisis
           </Boton>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="tarjeta p-6 space-y-3 border border-neon-amarillo/30">
+            <div className="flex items-center gap-2 text-neon-amarillo">
+              <Radar className="w-4 h-4" />
+              <h3 className="text-sm uppercase tracking-wider">Contexto fútbol (gobernanza)</h3>
+            </div>
+            <p className="text-sm text-texto-secundario">
+              Fútbol incrementa peso por evidencia por competición. No se promociona con paridad comercial respecto a NBA hasta cumplir madurez.
+            </p>
+            <ul className="text-xs text-texto-terciario space-y-1">
+              <li>• ESTABLE: despliegue normal de señal.</li>
+              <li>• EN VALIDACIÓN: seguimiento y calibración activa.</li>
+              <li>• LAB: uso controlado, sin promesa comercial fuerte.</li>
+            </ul>
+          </div>
+
+          <div className="tarjeta p-6 space-y-3 border border-neon-magenta/30">
+            <div className="flex items-center gap-2 text-neon-magenta">
+              <Crown className="w-4 h-4" />
+              <h3 className="text-sm uppercase tracking-wider">Estado de plan y capa premium</h3>
+            </div>
+            <p className="text-sm text-texto-secundario">
+              Premium se define como profundidad operativa superior (seguimiento y análisis extendido), no solo eliminación de límites.
+            </p>
+            <div className="text-xs text-texto-terciario space-y-1">
+              <p>Estado actual: <span className="text-texto-principal font-semibold">{estadoPlan.activo ? 'Activo' : 'Base'}</span></p>
+              <p>Plan: <span className="text-texto-principal font-semibold">{estadoPlan.planId ?? 'N/A'}</span></p>
+              <p>Actualizado: <span className="text-texto-principal font-semibold">{estadoPlan.actualizadoEn ?? 'N/A'}</span></p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

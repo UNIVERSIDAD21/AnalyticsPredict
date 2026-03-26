@@ -11,6 +11,9 @@
   - bloque explícito de ruta fútbol sin maquillaje,
   - bloque de evolución premium con CTA de suscripción/gestión de plan,
   - continuidad entre valor público y valor para usuario registrado.
+- `PaginaConfiguracion` reforzada para Ola 2:
+  - bloque de gobernanza de madurez fútbol por estados,
+  - bloque de estado de plan con narrativa premium orientada a profundidad de producto.
 - Documentación comercial pública actualizada con avance de ejecución en P1/P2/P3/P4/P6/P8.
 - `ESTADO_PROYECTO.md` actualizado para reflejar Ola 1 cerrada y Ola 2 en ejecución.
 
