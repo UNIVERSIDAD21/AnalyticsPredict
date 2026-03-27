@@ -31,7 +31,10 @@
   - Nuevo hook `frontend/src/hooks/useGateNavigation.ts` centraliza navegación con gate + redirección + toast de contexto.
   - `frontend/src/servicios/accessPolicy.ts` agrega `obtenerGateCopy(...)` con mensajes funcionales por capacidad y estado (visitante/base).
   - `Encabezado` y `PaginaCentroAnalitico` migran a gate reutilizable para eliminar lógica duplicada y estandarizar copy de bloqueo.
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de Fase A/B y arranque de Fase C.
+- Extensión de Fase C a dashboard:
+  - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` integra `useGateNavigation` para atajos de análisis/bitácora y CTA principal "Ir al análisis".
+  - Se consolida experiencia de gating consistente (mismo flujo de mensaje + redirección) en superficies clave.
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración y extensión de Fase C.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

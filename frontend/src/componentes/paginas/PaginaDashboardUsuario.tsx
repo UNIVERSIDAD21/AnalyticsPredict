@@ -3,6 +3,8 @@ import { BarChart3, CheckCircle2, CircleDollarSign, RefreshCw, Radar, Crown } fr
 import { Encabezado } from '../organismos';
 import { Boton, Spinner } from '../atomos';
 import { useAuth } from '../../contextos/AuthContext';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 import {
   obtenerEstadoOnboarding,
   obtenerResumenDashboard,
@@ -56,6 +58,8 @@ const calidadInicial: ResumenCalidad1x2Futbol = {
 
 export function PaginaDashboardUsuario() {
   const { usuario } = useAuth();
+  const { can } = useAccessPolicy();
+  const { navegarConGate } = useGateNavigation(navegar);
   const [cargando, setCargando] = useState(true);
   const [resumen, setResumen] = useState<ResumenDashboard>(resumenInicial);
   const [plan, setPlan] = useState<EstadoPlanUsuario>(planInicial);
@@ -146,7 +150,7 @@ export function PaginaDashboardUsuario() {
             <Boton variante="secundario" iconoInicio={<RefreshCw size={16} />} onClick={() => void recargar(true)}>
               Recargar
             </Boton>
-            <Boton variante="primario" onClick={() => navegar('/app')}>
+            <Boton variante="primario" onClick={() => navegarConGate('/app', 'analisis.nba.base')}>
               Ir al análisis
             </Boton>
           </div>
@@ -230,11 +234,11 @@ export function PaginaDashboardUsuario() {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button type="button" onClick={() => navegar('/app')} className="rounded-lg border border-neon-cyan/20 p-4 text-left hover:border-neon-cyan transition-colors">
+                <button type="button" onClick={() => navegarConGate('/app', 'analisis.nba.base')} className="rounded-lg border border-neon-cyan/20 p-4 text-left hover:border-neon-cyan transition-colors">
                   <p className="text-sm font-semibold text-texto-principal">Ir a análisis</p>
                   <p className="text-xs text-texto-secundario mt-1">Abrir flujo principal de decisión.</p>
                 </button>
-                <button type="button" onClick={() => navegar('/bitacora')} className="rounded-lg border border-neon-verde/20 p-4 text-left hover:border-neon-verde transition-colors">
+                <button type="button" onClick={() => navegarConGate('/bitacora', 'bitacora.personal')} className="rounded-lg border border-neon-verde/20 p-4 text-left hover:border-neon-verde transition-colors">
                   <p className="text-sm font-semibold text-texto-principal">Bitácora</p>
                   <p className="text-xs text-texto-secundario mt-1">Revisar ejecuciones y resultados.</p>
                 </button>
