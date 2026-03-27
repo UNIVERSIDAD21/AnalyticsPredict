@@ -73,7 +73,8 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 
 ## Ejecución roadmap de acceso por tiers (2026-03-27)
 - Se inicia Fase A de centralización de acceso en frontend con política única por capacidades (`accessPolicy`) y contexto dedicado (`AccessPolicyContext`).
-- Rutas principales ya validan capacidad con `RutaConCapacidad` además de auth/onboarding, dejando la base lista para gates por acción de fases siguientes.
+- Rutas principales ya validan capacidad con `RutaConCapacidad` además de auth/onboarding.
+- Se extiende enforcement a acciones UI clave con `navegarConGate(...)` en encabezado y centro analítico (análisis/bitácora/dashboard/configuración/capa premium).
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
 
 ## Reglas permanentes de documentación

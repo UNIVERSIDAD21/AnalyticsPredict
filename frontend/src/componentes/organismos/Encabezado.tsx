@@ -8,6 +8,8 @@ import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
 import { useAuth } from '../../contextos/AuthContext';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import type { Capability } from '../../servicios/accessPolicy';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
@@ -21,6 +23,7 @@ export function Encabezado() {
   const { configuracion } = useConfiguracionUsuario();
   const { esFutbol } = useDeporte();
   const { usuario, logout } = useAuth();
+  const { can } = useAccessPolicy();
 
   useEffect(() => {
     const manejarRuta = () => setRutaActual(window.location.pathname);
@@ -32,6 +35,25 @@ export function Encabezado() {
     if (window.location.pathname === ruta) return;
     window.history.pushState({}, '', ruta);
     window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const navegarConGate = (ruta: string, capability?: Capability) => {
+    if (!capability) {
+      navegar(ruta);
+      return;
+    }
+
+    if (can(capability)) {
+      navegar(ruta);
+      return;
+    }
+
+    if (!usuario) {
+      navegar('/login');
+      return;
+    }
+
+    navegar('/dashboard');
   };
 
   const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
@@ -110,7 +132,7 @@ export function Encabezado() {
                     ? `border-${colorPrimario} text-${colorPrimario}`
                     : 'border-neon-cyan/20 text-texto-secundario'
                 }`}
-                onClick={() => navegar(rutaAnalisis)}
+                onClick={() => navegarConGate(rutaAnalisis, esFutbol ? 'futbol.base' : 'analisis.nba.base')}
               >
                 {esFutbol ? 'Partidos' : 'Análisis'}
               </button>
@@ -133,7 +155,7 @@ export function Encabezado() {
                     ? 'border-neon-magenta text-neon-magenta'
                     : 'border-neon-cyan/20 text-texto-secundario'
                 }`}
-                onClick={() => navegar(rutaBitacora)}
+                onClick={() => navegarConGate(rutaBitacora, 'bitacora.personal')}
               >
                 Bitácora
               </button>
@@ -145,7 +167,7 @@ export function Encabezado() {
                       ? 'border-neon-azul text-neon-azul'
                       : 'border-neon-cyan/20 text-texto-secundario'
                   }`}
-                  onClick={() => navegar(rutaDashboard)}
+                  onClick={() => navegarConGate(rutaDashboard, 'dashboard.personal')}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
                   Dashboard
@@ -182,7 +204,7 @@ export function Encabezado() {
                   ? 'border-neon-cyan text-neon-cyan'
                   : 'border-neon-cyan/20 text-texto-secundario'
               }`}
-              onClick={() => navegar('/configuracion')}
+              onClick={() => navegarConGate('/configuracion', 'configuracion.base')}
             >
               <Settings className="w-4 h-4" />
               <span className="hidden md:inline">Config</span>

@@ -19,7 +19,10 @@
   - Nuevo contexto `frontend/src/contextos/AccessPolicyContext.tsx` para resolver tier desde sesión + estado de plan.
   - `frontend/src/main.tsx` integra `ProveedorAccessPolicy`.
   - `frontend/src/App.tsx` migra rutas principales a validación por capacidad (`RutaConCapacidad`) además de auth/onboarding.
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de policy central.
+- Extensión de Fase A hacia acciones UI (gates por acción):
+  - `frontend/src/componentes/organismos/Encabezado.tsx` aplica `navegarConGate(...)` para análisis/bitácora/dashboard/configuración con redirección por capacidad (login para invitado, dashboard para base sin capacidad).
+  - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` aplica gates por capacidad en CTAs de análisis/bitácora/capa premium.
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de policy central y gates de acción.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

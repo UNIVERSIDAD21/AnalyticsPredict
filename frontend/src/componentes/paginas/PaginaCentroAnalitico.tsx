@@ -5,6 +5,8 @@ import { Boton, Tarjeta } from '../atomos';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { useAuth } from '../../contextos/AuthContext';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import type { Capability } from '../../servicios/accessPolicy';
 import { listarApuestasAnalizadas } from '../../servicios/bitacora';
 import { registrarIngresoCentro } from '../../servicios/visitante';
 import type { ApuestaAnalizada } from '../../tipos/bitacora';
@@ -35,6 +37,7 @@ function calcularKpis(items: ApuestaAnalizada[]): KPIBase {
 export function PaginaCentroAnalitico() {
   const { deporteActivo, esNBA, esFutbol } = useDeporte();
   const { autenticado } = useAuth();
+  const { can } = useAccessPolicy();
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [kpisNBA, setKpisNBA] = useState<KPIBase>({ apuestasTotales: 0, resueltas: 0, ganadas: 0, winRate: 0 });
@@ -73,6 +76,20 @@ export function PaginaCentroAnalitico() {
   const descripcionMadurez = esNBA
     ? 'NBA es frente comercial principal y módulo más maduro.'
     : 'Fútbol sigue en beta/laboratorio: operativo, pero sin paridad comercial con NBA.';
+
+  const navegarConGate = (ruta: string, capability: Capability) => {
+    if (can(capability)) {
+      navegar(ruta);
+      return;
+    }
+
+    if (!autenticado) {
+      navegar('/login');
+      return;
+    }
+
+    navegar('/dashboard');
+  };
 
   const madurezFutbolPorCompetencia = [
     { liga: 'Premier League', estado: 'ESTABLE', nota: 'Cobertura y señal consistente' },
@@ -197,10 +214,10 @@ export function PaginaCentroAnalitico() {
             <div className="flex flex-wrap gap-2">
               {autenticado ? (
                 <>
-                  <Boton variante="secundario" onClick={() => navegar(esNBA ? '/app' : '/futbol')}>
+                  <Boton variante="secundario" onClick={() => navegarConGate(esNBA ? '/app' : '/futbol', esNBA ? 'analisis.nba.base' : 'futbol.base')}>
                     Ir a análisis específico
                   </Boton>
-                  <Boton variante="primario" onClick={() => navegar(esNBA ? '/bitacora' : '/futbol/bitacora')}>
+                  <Boton variante="primario" onClick={() => navegarConGate(esNBA ? '/bitacora' : '/futbol/bitacora', 'bitacora.personal')}>
                     Ir a bitácora específica
                   </Boton>
                 </>
@@ -275,8 +292,11 @@ export function PaginaCentroAnalitico() {
               <li>• Seguimiento operativo y continuidad avanzada.</li>
               <li>• Lectura de riesgo comparativa por mercado/deporte.</li>
             </ul>
-            <Boton variante="secundario" onClick={() => navegar('/login')}>
-              Ver ruta premium al iniciar sesión
+            <Boton
+              variante="secundario"
+              onClick={() => navegarConGate('/dashboard', 'premium.depth')}
+            >
+              {can('premium.depth') ? 'Abrir capa premium' : 'Ver capa premium (requiere plan premium)'}
             </Boton>
           </Tarjeta>
         </section>
