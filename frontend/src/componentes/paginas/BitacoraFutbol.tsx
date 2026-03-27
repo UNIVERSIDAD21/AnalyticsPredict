@@ -38,6 +38,7 @@ import { Boton, Spinner, Tarjeta } from '../atomos';
 import { useBitacoraFutbol } from '../../hooks';
 import { cancelarApuesta } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 import type {
   ApuestaFutbol,
   EstadoApuesta,
@@ -525,6 +526,7 @@ function EstadoVacio({ mensaje }: { mensaje: string }) {
  */
 export function BitacoraFutbol() {
   const { agregarToast } = useToasts();
+  const { navegarConGate } = useGateNavigation(navegar);
 
   // Estado de filtros locales
   const [filtrosLocales, setFiltrosLocales] = useState({
@@ -635,7 +637,7 @@ export function BitacoraFutbol() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => navegar('/futbol')}
+              onClick={() => navegarConGate('/futbol', 'futbol.base')}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg
                          border border-neon-cyan/30 bg-futurista-oscuro/50
                          text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50

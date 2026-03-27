@@ -335,11 +335,11 @@ export function PaginaDashboardUsuario() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {!plan.activo ? (
-                    <Boton variante="primario" onClick={() => navegar('/configuracion')}>
+                    <Boton variante="primario" onClick={() => navegarConGate('/configuracion', 'configuracion.base')}>
                       Ver opciones de suscripción
                     </Boton>
                   ) : (
-                    <Boton variante="secundario" onClick={() => navegar('/configuracion')}>
+                    <Boton variante="secundario" onClick={() => navegarConGate('/configuracion', 'configuracion.base')}>
                       Gestionar plan activo
                     </Boton>
                   )}

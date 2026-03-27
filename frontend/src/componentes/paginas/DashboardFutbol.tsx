@@ -41,6 +41,7 @@ import {
   obtenerEstadoModelos,
   obtenerRoiTemporal,
 } from '../../servicios/futbol';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 import {
   obtenerObservabilidadHTTP,
   obtenerSaludBackend,
@@ -264,6 +265,8 @@ function TarjetaModelo({ modelo }: PropsTarjetaModelo) {
  * Dashboard de metricas del modulo de futbol
  */
 export function DashboardFutbol() {
+  const { navegarConGate } = useGateNavigation(navegar);
+
   // Estados
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -381,7 +384,7 @@ export function DashboardFutbol() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => navegar('/futbol')}
+              onClick={() => navegarConGate('/futbol', 'futbol.base')}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg
                          border border-neon-cyan/30 bg-futurista-oscuro/50
                          text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50

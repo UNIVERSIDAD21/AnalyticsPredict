@@ -18,6 +18,7 @@ import { Activity, TrendingUp, Target, BarChart3, ArrowLeft } from 'lucide-react
 import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 
 const TablaEstadisticasEquipos = lazy(async () => ({
   default: (await import('../organismos/TablaEstadisticasEquipos')).TablaEstadisticasEquipos,
@@ -187,6 +188,7 @@ export function PaginaPrincipal() {
     window.history.pushState({}, '', ruta);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
+  const { navegarConGate } = useGateNavigation(navegar);
 
   const obtenerAdvertenciasCriticas = (lista: string[]) => {
     const mapeo: Record<string, string> = {
@@ -417,7 +419,7 @@ export function PaginaPrincipal() {
                       setMostrarGuardar(true);
                       setErrorGuardar(null);
                     }}
-                    onConfigurarBankroll={() => navegar('/configuracion')}
+                    onConfigurarBankroll={() => navegarConGate('/configuracion', 'configuracion.base')}
                     onNavegarlEquipo={navegarAEstadisticasEquipo}
                   />
                 </div>

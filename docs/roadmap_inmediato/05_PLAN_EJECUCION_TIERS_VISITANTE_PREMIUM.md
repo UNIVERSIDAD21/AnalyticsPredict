@@ -2,7 +2,7 @@
 
 Fecha: 2026-03-27
 Estado: ACTIVO (fase de implementación)
-Avance actual: Fase A establecida, Fase B iniciada (`/` como shell visitante real) y Fase C iniciada (gating reutilizable por acción con copy centralizado)
+Avance actual: Fase A establecida, Fase B iniciada (`/` como shell visitante real) y Fase C en expansión (gating reutilizable por acción con copy centralizado en encabezado, centro, dashboard y módulos operativos clave)
 Referencia funcional base: `docs/roadmap_inmediato/inputs_producto/ACCESO_POR_TIER_MODO_VISITANTE_Y_CAPA_PREMIUM.md`
 
 ---

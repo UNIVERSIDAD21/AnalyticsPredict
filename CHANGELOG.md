@@ -34,7 +34,12 @@
 - Extensión de Fase C a dashboard:
   - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` integra `useGateNavigation` para atajos de análisis/bitácora y CTA principal "Ir al análisis".
   - Se consolida experiencia de gating consistente (mismo flujo de mensaje + redirección) en superficies clave.
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración y extensión de Fase C.
+- Extensión adicional de Fase C en superficies operativas:
+  - `frontend/src/componentes/paginas/BitacoraFutbol.tsx` aplica gate reutilizable en navegación de retorno a módulo fútbol.
+  - `frontend/src/componentes/paginas/DashboardFutbol.tsx` aplica gate reutilizable en navegación de retorno a módulo fútbol.
+  - `frontend/src/componentes/paginas/PaginaPrincipal.tsx` aplica gate reutilizable en CTA de configuración de bankroll (`configuracion.base`).
+  - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` unifica CTA de suscripción/gestión de plan hacia configuración mediante gate.
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras extensión adicional de Fase C.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:
