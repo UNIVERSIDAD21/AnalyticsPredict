@@ -27,7 +27,11 @@
   - `frontend/src/App.tsx`: `/centro-analitico` redirige a `/` para evitar doble entrypoint.
   - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx`: se absorbe bloque de introducción tipo landing dentro del shell visitante (mensaje de valor + resumen visitante/base/premium + CTAs de cuenta).
   - `frontend/src/componentes/organismos/Encabezado.tsx`: ajuste de estado activo para que `/` se trate como centro analítico (no análisis profundo).
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de Fase A + inicio de Fase B.
+- Inicio de Fase C (gating reutilizable por acción):
+  - Nuevo hook `frontend/src/hooks/useGateNavigation.ts` centraliza navegación con gate + redirección + toast de contexto.
+  - `frontend/src/servicios/accessPolicy.ts` agrega `obtenerGateCopy(...)` con mensajes funcionales por capacidad y estado (visitante/base).
+  - `Encabezado` y `PaginaCentroAnalitico` migran a gate reutilizable para eliminar lógica duplicada y estandarizar copy de bloqueo.
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de Fase A/B y arranque de Fase C.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

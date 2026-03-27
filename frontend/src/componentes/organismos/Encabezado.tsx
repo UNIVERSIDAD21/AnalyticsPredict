@@ -8,8 +8,7 @@ import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
 import { useAuth } from '../../contextos/AuthContext';
-import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
-import type { Capability } from '../../servicios/accessPolicy';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
@@ -23,7 +22,6 @@ export function Encabezado() {
   const { configuracion } = useConfiguracionUsuario();
   const { esFutbol } = useDeporte();
   const { usuario, logout } = useAuth();
-  const { can } = useAccessPolicy();
 
   useEffect(() => {
     const manejarRuta = () => setRutaActual(window.location.pathname);
@@ -37,24 +35,7 @@ export function Encabezado() {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
-  const navegarConGate = (ruta: string, capability?: Capability) => {
-    if (!capability) {
-      navegar(ruta);
-      return;
-    }
-
-    if (can(capability)) {
-      navegar(ruta);
-      return;
-    }
-
-    if (!usuario) {
-      navegar('/login');
-      return;
-    }
-
-    navegar('/dashboard');
-  };
+  const { navegarConGate } = useGateNavigation(navegar);
 
   const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
 

@@ -17,6 +17,11 @@ export interface AccessPolicy {
   capabilities: Record<Capability, boolean>;
 }
 
+export interface GateCopy {
+  titulo: string;
+  mensaje: string;
+}
+
 const CHAT_ENABLED = false;
 
 function buildCapabilities(tier: TierProducto): Record<Capability, boolean> {
@@ -45,4 +50,54 @@ export function construirAccessPolicy(tier: TierProducto): AccessPolicy {
 
 export function puedeAcceder(policy: AccessPolicy, capability: Capability): boolean {
   return !!policy.capabilities[capability];
+}
+
+export function obtenerGateCopy(capability: Capability, autenticado: boolean): GateCopy {
+  if (!autenticado) {
+    switch (capability) {
+      case 'analisis.nba.base':
+      case 'futbol.base':
+        return {
+          titulo: 'Cuenta requerida para análisis operativo',
+          mensaje: 'Crea tu cuenta para continuar este análisis con trazabilidad personal.',
+        };
+      case 'bitacora.personal':
+        return {
+          titulo: 'Bitácora personal bloqueada para visitante',
+          mensaje: 'Regístrate para guardar y revisar tus decisiones en tu bitácora.',
+        };
+      case 'dashboard.personal':
+        return {
+          titulo: 'Dashboard personal requiere cuenta',
+          mensaje: 'Inicia sesión para desbloquear tu panel operativo personal.',
+        };
+      case 'configuracion.base':
+        return {
+          titulo: 'Configuración disponible con cuenta',
+          mensaje: 'Esta capa es personal y requiere cuenta para guardar preferencias.',
+        };
+      case 'premium.depth':
+        return {
+          titulo: 'Capa premium',
+          mensaje: 'Inicia sesión para ver opciones de plan y desbloquear profundidad premium.',
+        };
+      default:
+        return {
+          titulo: 'Acceso restringido',
+          mensaje: 'Inicia sesión para continuar.',
+        };
+    }
+  }
+
+  if (capability === 'premium.depth') {
+    return {
+      titulo: 'Función premium',
+      mensaje: 'Tu plan actual es base. Esta capa requiere suscripción premium.',
+    };
+  }
+
+  return {
+    titulo: 'Acceso no disponible',
+    mensaje: 'Esta sección no está disponible para tu nivel actual.',
+  };
 }

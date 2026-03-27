@@ -76,6 +76,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Rutas principales ya validan capacidad con `RutaConCapacidad` además de auth/onboarding.
 - Se extiende enforcement a acciones UI clave con `navegarConGate(...)` en encabezado y centro analítico (análisis/bitácora/dashboard/configuración/capa premium).
 - Se inicia Fase B de arquitectura de entrada: `/` pasa a ser shell visitante real (`PaginaCentroAnalitico`) y `/centro-analitico` redirige a `/` para consolidar un único entrypoint público.
+- Se inicia Fase C en frontend: gating por acción reutilizable con copy centralizado (`useGateNavigation` + `obtenerGateCopy`) aplicado en encabezado y centro analítico.
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
 
 ## Reglas permanentes de documentación
