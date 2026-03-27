@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-03-27
+- Decisión de producto: chat queda fuera de alcance en la fase actual y debe permanecer oculto en UI hasta nueva instrucción.
+- Frontend ajustado para retirar chat de navegación:
+  - `frontend/src/componentes/organismos/Encabezado.tsx` elimina botón/entrada de Chat.
+  - `frontend/src/App.tsx` elimina carga de `PaginaChat` y redirige `/chat` hacia `/dashboard`.
+- Documento de tiers actualizado para reflejar chat como **fase futura** y no disponible hoy:
+  - `docs/roadmap_inmediato/inputs_producto/ACCESO_POR_TIER_MODO_VISITANTE_Y_CAPA_PREMIUM.md`.
+- Estado de proyecto actualizado en B5 para dejar explícito: backend preservado, UI oculta y reactivación sujeta a instrucción explícita.
+
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:
   - `POST /api/pagos/webhook/mercadopago` ahora valida firma real de MP (`X-Signature` con `ts/v1` + `X-Request-Id` + `data.id`) en lugar de HMAC del payload interno.

@@ -4,6 +4,8 @@
 ## Documento para implementación y alineación con Borlty
 ## Fecha: 2026-03-27
 
+> Actualización operativa (2026-03-27): el módulo Chat queda fuera de alcance de implementación inmediata. Debe permanecer inactivo y oculto en UI hasta nueva instrucción.
+
 ---
 
 ## 0. Propósito de este documento
@@ -293,11 +295,10 @@ Debe ver producto real, pero controlado.
 - Ver qué significa “maduro”, “beta”, “lab”.
 - Ver que premium es profundidad, no humo.
 
-### Chat público controlado (si se activa en esta fase)
-- Puede usar chat en modo muy limitado.
-- Debe existir un límite diario pequeño.
-- Debe verse claramente que es modo invitado.
-- Debe bloquearse antes de volverse costoso.
+### Chat público (estado actual)
+- No disponible en esta fase.
+- Debe permanecer oculto en la UI pública.
+- Se retoma en fase futura cuando exista alcance explícito.
 
 ## Qué NO puede hacer el visitante
 
@@ -345,9 +346,9 @@ Debe ver producto real, pero controlado.
 - permitir demo controlada: **sí, solo si está precomputada o muy limitada**
 
 ### Chat público
-- recomendado: **5 mensajes/día**
-- si el costo o riesgo es alto, puede postergarse
-- pero si se habilita, debe ser claramente “chat invitado”
+- disponible: **no (fase futura)**
+- límite diario: **0 mensajes/día mientras esté inactivo**
+- la UI no debe mostrar CTA ni entrada al chat
 
 ## Qué debe gatillar el registro
 El visitante debe ver el login solo cuando intente algo de alto interés, por ejemplo:
@@ -356,7 +357,6 @@ El visitante debe ver el login solo cuando intente algo de alto interés, por ej
 - entrar a bitácora,
 - entrar a dashboard,
 - usar configuración,
-- continuar una conversación más allá del límite invitado,
 - ver la capa extendida de un análisis.
 
 ## Mensaje correcto de gate para visitante
@@ -447,11 +447,10 @@ Si no puede hacer eso, el plan base está roto.
 - notificaciones base,
 - preferencias simples.
 
-### Chat contextual base
-- acceder al chat autenticado.
-- usar historial conversacional base.
-- consumir cupo diario del plan base.
-- reiniciar contexto.
+### Chat contextual base (estado actual)
+- no disponible en esta fase.
+- debe permanecer oculto en UI para usuario base.
+- la capacidad de chat se define para fase futura.
 
 ### Notificaciones
 - gestionar email habilitado,
@@ -467,7 +466,6 @@ No se le debe quitar lo esencial, pero sí reservarle al premium:
 - comparativas avanzadas,
 - mayor profundidad histórica,
 - alertas inteligentes avanzadas,
-- mayor capacidad diaria del chat,
 - herramientas especiales,
 - resúmenes premium,
 - futuras exportaciones o automatizaciones avanzadas.
@@ -481,10 +479,11 @@ No se le debe quitar lo esencial, pero sí reservarle al premium:
 - bitácora personal: **sí**
 - configuración: **sí**
 - onboarding: **sí**
-- chat contextual: **sí**
+- chat contextual: **no (fase futura)**
 
 ### Chat base
-- recomendado y ya coherente con el proyecto: **20 mensajes/día**
+- disponible: **no (fase futura)**
+- límite actual: **0 mensajes/día**
 
 ### Bitácora
 - acceso completo a la bitácora propia: **sí**
@@ -551,11 +550,9 @@ Eso significa que premium debe aportar:
 - vistas avanzadas por deporte/mercado,
 - mayor lectura de consistencia y calidad.
 
-### Chat premium
-- cupo diario muy amplio o prácticamente ilimitado,
-- prioridad funcional,
-- continuidad más extensa,
-- acceso a prompts/contexto más ricos dentro del producto.
+### Chat premium (futuro)
+- capacidad extendida cuando el módulo se reactive.
+- no debe aparecer en UI mientras el chat esté inactivo.
 
 ### Bitácora premium
 - filtros avanzados,
@@ -592,7 +589,8 @@ La suscripción no debe romper la honestidad del producto.
 ## Límite exacto recomendado para premium
 
 ### Chat
-- **9999/día** o “sin límite práctico”
+- **no disponible en fase actual**
+- objetivo futuro premium: **sin límite práctico**
 
 ### Capas extendidas
 - **sí**
@@ -636,7 +634,7 @@ La suscripción no debe romper la honestidad del producto.
 | Configuración de bankroll/riesgo | No | Sí | Sí |
 | Notificaciones base | No | Sí | Sí |
 | Notificaciones avanzadas | No | No | Sí |
-| Chat contextual | Limitado muy corto | Sí, limitado diario | Sí, muy amplio |
+| Chat contextual | No (fase futura) | No (fase futura) | No (fase futura) |
 | Comparativas avanzadas | No | No | Sí |
 | Lectura extendida de análisis | No | Parcial o base | Sí |
 | Exportaciones futuras | No | No | Sí |
@@ -655,7 +653,6 @@ Esta frontera debe activarse cuando el visitante intenta una acción que ya impl
 - entrar a bitácora,
 - entrar a dashboard,
 - entrar a configuración,
-- usar más chat del permitido,
 - abrir una capa privada/personal.
 
 ### Gatiladores incorrectos
@@ -671,7 +668,6 @@ Esta frontera debe aparecer cuando el usuario ya encontró valor y empieza a nec
 
 ### Gatiladores correctos
 - querer más contexto comparativo,
-- querer más capacidad en chat,
 - querer más lectura histórica,
 - querer más profundidad de análisis,
 - querer filtros o paneles avanzados,
@@ -703,7 +699,6 @@ Esta frontera debe aparecer cuando el usuario ya encontró valor y empieza a nec
 - `/app`
 - `/bitacora`
 - `/configuracion`
-- `/chat`
 - `/futbol`
 - `/futbol/partidos/:id`
 - `/futbol/dashboard`
@@ -785,7 +780,6 @@ Se puede conservar:
 - identificador invitado,
 - conteo de vistas,
 - conteo de ingresos,
-- consumo de chat invitado,
 - eventos públicos.
 
 Pero eso no debe confundirse con cuenta real.
@@ -804,7 +798,7 @@ El plan base debe ser el corazón del onboarding y activación.
 - dashboard real,
 - configuración real,
 - análisis real,
-- chat útil.
+- capacidades de chat definidas para fase futura (sin UI activa hoy).
 
 ### No debe depender de premium para:
 - analizar,
@@ -834,7 +828,7 @@ Premium debe ser una evolución del uso serio del producto.
 - paneles más potentes,
 - más lectura histórica,
 - más herramientas de comparación,
-- más capacidad en chat y alertas.
+- más capacidad en alertas y contexto operativo.
 
 ## 14.3. Regla de copy para premium
 Nunca vender premium como:
@@ -919,7 +913,7 @@ Para que Borlty no improvise, se recomiendan estos límites iniciales.
 - acceso al shell público: **sí**
 - acceso a centro analítico público: **sí**
 - análisis demo visibles: **máximo 2 a 4 bloques/snapshots**
-- chat invitado: **5 mensajes/día**
+- chat invitado: **no disponible (fase futura)**
 - bitácora: **no**
 - dashboard personal: **no**
 - configuración: **no**
@@ -932,7 +926,7 @@ Para que Borlty no improvise, se recomiendan estos límites iniciales.
 - dashboard personal: **sí**
 - configuración: **sí**
 - onboarding: **sí**
-- chat contextual: **20 mensajes/día**
+- chat contextual: **no disponible (fase futura)**
 - capa extendida premium: **no**
 - comparativas avanzadas: **no**
 - alertas avanzadas: **no**
@@ -942,7 +936,7 @@ Para que Borlty no improvise, se recomiendan estos límites iniciales.
 - capas extendidas: **sí**
 - dashboard profundo: **sí**
 - bitácora avanzada: **sí**
-- chat: **9999/día** o sin límite práctico
+- chat: **no disponible (fase futura)**
 - alertas avanzadas: **sí**
 - comparativas enriquecidas: **sí**
 - exportes premium futuros: **sí**
@@ -1038,7 +1032,7 @@ Borlty no puede dar por terminado esto si no cumple lo siguiente:
 - Puede guardar en bitácora.
 - Puede tener dashboard.
 - Puede configurar.
-- Puede usar chat base.
+- Chat queda fuera de alcance en fase actual (sin UI).
 
 ### 21.4. Premium
 - Tiene capacidades superiores reales.

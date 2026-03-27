@@ -16,7 +16,6 @@ const PaginaPrincipal = lazy(async () => ({ default: (await import('./componente
 const PaginaDashboardUsuario = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaDashboardUsuario')).PaginaDashboardUsuario }));
 const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBitacora')).PaginaBitacora }));
 const PaginaConfiguracion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaConfiguracion')).PaginaConfiguracion }));
-const PaginaChat = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaChat')).PaginaChat }));
 const PaginaFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaFutbol')).PaginaFutbol }));
 const AnalisisPartidoFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/AnalisisPartidoFutbol')).AnalisisPartidoFutbol }));
 const DashboardFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/DashboardFutbol')).DashboardFutbol }));
@@ -88,7 +87,7 @@ function App() {
         <Route path="/dashboard" element={<RutaProtegida><RutaConOnboarding><PaginaDashboardUsuario /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><PaginaBitacora /></RutaConOnboarding></RutaProtegida>} />
         <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><PaginaConfiguracion /></RutaConOnboarding></RutaProtegida>} />
-        <Route path="/chat" element={<RutaProtegida><RutaConOnboarding><PaginaChat /></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/chat" element={<Navigate to="/dashboard" replace />} />
 
         {/* Rutas del módulo de fútbol protegidas */}
         <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><PaginaFutbol /></RutaConOnboarding></RutaProtegida>} />
