@@ -8,6 +8,12 @@
 - Documento de tiers actualizado para reflejar chat como **fase futura** y no disponible hoy:
   - `docs/roadmap_inmediato/inputs_producto/ACCESO_POR_TIER_MODO_VISITANTE_Y_CAPA_PREMIUM.md`.
 - Estado de proyecto actualizado en B5 para dejar explícito: backend preservado, UI oculta y reactivación sujeta a instrucción explícita.
+- Backend endurecido para evitar uso manual de chat:
+  - `backend/app.py` introduce flag `CHAT_ENABLED` (default `false`) y no registra router `/api/chat/*` cuando está deshabilitado.
+  - `GET /salud` expone `configuracion.chat_enabled` para trazabilidad operativa.
+  - Variables de entorno actualizadas: `backend/.env.example` y `deploy/staging/staging.env.example` con `CHAT_ENABLED=false`.
+- Nuevo plan de ejecución del rediseño por tiers:
+  - `docs/roadmap_inmediato/05_PLAN_EJECUCION_TIERS_VISITANTE_PREMIUM.md`.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

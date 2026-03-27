@@ -13,6 +13,7 @@ from datetime import datetime
 from time import perf_counter
 from uuid import uuid4
 import logging
+import os
 import traceback
 
 from fastapi import FastAPI, Request
@@ -61,6 +62,18 @@ from motor_autoentrenamiento import (
 _gestor_modelo = None
 logger = logging.getLogger(__name__)
 observabilidad_http = ObservabilidadHTTP()
+
+
+def _flag_env_bool(nombre: str, default: bool) -> bool:
+    raw = os.getenv(nombre)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _chat_habilitado() -> bool:
+    # Decisión operativa actual: chat oculto por defecto hasta instrucción explícita.
+    return _flag_env_bool("CHAT_ENABLED", default=False)
 
 
 def _respuesta_error(request: Request, status_code: int, codigo: str, mensaje: str, detalle=None):
@@ -285,7 +298,8 @@ app.include_router(router_auth)
 app.include_router(router_pagos)
 app.include_router(router_onboarding)
 app.include_router(router_notificaciones)
-app.include_router(router_chat)
+if _chat_habilitado():
+    app.include_router(router_chat)
 
 # Routers de Fútbol
 app.include_router(router_competiciones_futbol)
@@ -347,6 +361,7 @@ async def verificar_salud():
         "configuracion": {
             "entorno": CONFIGURACION.entorno,
             "debug": CONFIGURACION.debug,
+            "chat_enabled": _chat_habilitado(),
         },
     }
 
