@@ -14,6 +14,12 @@
   - Variables de entorno actualizadas: `backend/.env.example` y `deploy/staging/staging.env.example` con `CHAT_ENABLED=false`.
 - Nuevo plan de ejecución del rediseño por tiers:
   - `docs/roadmap_inmediato/05_PLAN_EJECUCION_TIERS_VISITANTE_PREMIUM.md`.
+- Inicio de Fase A (policy central de acceso) en frontend:
+  - Nuevo servicio `frontend/src/servicios/accessPolicy.ts` con catálogo de capacidades por tier (`INVITADO|BASE|PREMIUM`) y control explícito de `chat.contextual` deshabilitado.
+  - Nuevo contexto `frontend/src/contextos/AccessPolicyContext.tsx` para resolver tier desde sesión + estado de plan.
+  - `frontend/src/main.tsx` integra `ProveedorAccessPolicy`.
+  - `frontend/src/App.tsx` migra rutas principales a validación por capacidad (`RutaConCapacidad`) además de auth/onboarding.
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de policy central.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

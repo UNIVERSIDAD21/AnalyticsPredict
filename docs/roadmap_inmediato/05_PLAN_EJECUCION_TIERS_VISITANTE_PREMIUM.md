@@ -2,6 +2,7 @@
 
 Fecha: 2026-03-27
 Estado: ACTIVO (fase de implementación)
+Avance actual: Fase A iniciada (policy central frontend + enforcement inicial por capacidad en rutas)
 Referencia funcional base: `docs/roadmap_inmediato/inputs_producto/ACCESO_POR_TIER_MODO_VISITANTE_Y_CAPA_PREMIUM.md`
 
 ---

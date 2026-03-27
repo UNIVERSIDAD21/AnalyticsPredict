@@ -10,6 +10,7 @@ import { ToastsProvider } from './contextos/Toasts';
 import { ProveedorConfiguracionUsuario } from './contextos/ConfiguracionUsuario';
 import { ProveedorDeporte } from './contextos/DeporteContext';
 import { ProveedorAuth } from './contextos/AuthContext';
+import { ProveedorAccessPolicy } from './contextos/AccessPolicyContext';
 
 // Obtener elemento raíz
 const contenedorRaiz = document.getElementById('root');
@@ -24,9 +25,11 @@ createRoot(contenedorRaiz).render(
     <ToastsProvider>
       <ProveedorConfiguracionUsuario>
         <ProveedorAuth>
-          <ProveedorDeporte>
-            <App />
-          </ProveedorDeporte>
+          <ProveedorAccessPolicy>
+            <ProveedorDeporte>
+              <App />
+            </ProveedorDeporte>
+          </ProveedorAccessPolicy>
         </ProveedorAuth>
       </ProveedorConfiguracionUsuario>
     </ToastsProvider>

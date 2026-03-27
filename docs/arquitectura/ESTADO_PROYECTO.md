@@ -71,6 +71,11 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 | B6 | EN_CURSO | Preflight de hardening ejecutado con evidencia en `docs/reportes/B6_PREFLIGHT_2026-03-26T14-14-04Z.md`; artefactos operativos presentes y hallazgos de secretos faltantes (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`) en `deploy/staging/staging.env`. | Hardening productivo ya está en ejecución con checklist reproducible y criterios mínimos de secretos/operación | Completar secretos faltantes, repetir preflight en verde y continuar con runbook de hardening productivo |
 | B7 | PENDIENTE | — | Gate final de salida comercial | E2E primer peso |
 
+## Ejecución roadmap de acceso por tiers (2026-03-27)
+- Se inicia Fase A de centralización de acceso en frontend con política única por capacidades (`accessPolicy`) y contexto dedicado (`AccessPolicyContext`).
+- Rutas principales ya validan capacidad con `RutaConCapacidad` además de auth/onboarding, dejando la base lista para gates por acción de fases siguientes.
+- Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
+
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
 2. Registrar entrada breve en `CHANGELOG.md`.
