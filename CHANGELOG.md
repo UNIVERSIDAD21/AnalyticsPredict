@@ -22,7 +22,12 @@
 - Extensión de Fase A hacia acciones UI (gates por acción):
   - `frontend/src/componentes/organismos/Encabezado.tsx` aplica `navegarConGate(...)` para análisis/bitácora/dashboard/configuración con redirección por capacidad (login para invitado, dashboard para base sin capacidad).
   - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` aplica gates por capacidad en CTAs de análisis/bitácora/capa premium.
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de policy central y gates de acción.
+- Inicio de Fase B (entrada principal como shell visitante):
+  - `frontend/src/App.tsx`: `/` ahora carga directamente `PaginaCentroAnalitico` como entrada pública real del sistema.
+  - `frontend/src/App.tsx`: `/centro-analitico` redirige a `/` para evitar doble entrypoint.
+  - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx`: se absorbe bloque de introducción tipo landing dentro del shell visitante (mensaje de valor + resumen visitante/base/premium + CTAs de cuenta).
+  - `frontend/src/componentes/organismos/Encabezado.tsx`: ajuste de estado activo para que `/` se trate como centro analítico (no análisis profundo).
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras integración de Fase A + inicio de Fase B.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

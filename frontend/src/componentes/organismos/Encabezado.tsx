@@ -66,7 +66,7 @@ export function Encabezado() {
   // Determinar si estamos en la ruta de análisis
   const enAnalisis = esFutbol
     ? rutaActual === '/futbol' || rutaActual.startsWith('/futbol/partidos/')
-    : rutaActual === '/app' || rutaActual === '/';
+    : rutaActual === '/app';
 
   // Determinar si estamos en la ruta de bitácora
   const enBitacora = esFutbol
@@ -75,7 +75,7 @@ export function Encabezado() {
 
   // Determinar si estamos en el dashboard
   const enDashboard = rutaActual === '/futbol/dashboard';
-  const enCentroAnalitico = rutaActual === '/centro-analitico';
+  const enCentroAnalitico = rutaActual === '/centro-analitico' || rutaActual === '/';
 
   // Título dinámico según el deporte
   const titulo = esFutbol ? 'FÚTBOL ANALYZER' : 'NBA ANALYZER';

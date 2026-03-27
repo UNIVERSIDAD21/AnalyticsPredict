@@ -133,9 +133,37 @@ export function PaginaCentroAnalitico() {
         </section>
 
         {!autenticado && (
-          <Tarjeta className="border border-neon-amarillo/40 text-texto-secundario p-4">
-            Modo visitante activo: puedes ver métricas demostrativas y madurez por deporte.
-            El análisis operativo, guardado personal y bitácora completa requieren cuenta.
+          <Tarjeta className="border border-neon-cyan/25 p-5 space-y-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-neon-cyan">Modo visitante del sistema</p>
+            <h3 className="text-xl lg:text-2xl font-futurista text-texto-principal">
+              Entra al producto real sin login. Explora primero, decide después.
+            </h3>
+            <p className="text-sm text-texto-secundario">
+              Aquí puedes entender madurez por deporte, revisar señales públicas y evaluar el método.
+              El análisis operativo profundo y la continuidad personal se desbloquean al crear cuenta.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-lg border border-neon-cyan/20 p-3 bg-futurista-oscuro/40">
+                <p className="font-semibold text-texto-principal">Visitante</p>
+                <p className="text-texto-secundario mt-1">Explora centro público, gobernanza y snapshots.</p>
+              </div>
+              <div className="rounded-lg border border-neon-verde/20 p-3 bg-futurista-oscuro/40">
+                <p className="font-semibold text-texto-principal">Registrado base</p>
+                <p className="text-texto-secundario mt-1">Activa análisis completo, bitácora, dashboard y configuración.</p>
+              </div>
+              <div className="rounded-lg border border-neon-magenta/20 p-3 bg-futurista-oscuro/40">
+                <p className="font-semibold text-texto-principal">Premium</p>
+                <p className="text-texto-secundario mt-1">Añade profundidad, contexto comparativo y capacidades avanzadas.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Boton variante="secundario" onClick={() => navegar('/login')}>
+                Crear cuenta
+              </Boton>
+              <Boton variante="primario" onClick={() => navegar('/login')}>
+                Iniciar sesión
+              </Boton>
+            </div>
           </Tarjeta>
         )}
 

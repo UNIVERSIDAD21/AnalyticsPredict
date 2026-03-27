@@ -75,6 +75,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Se inicia Fase A de centralización de acceso en frontend con política única por capacidades (`accessPolicy`) y contexto dedicado (`AccessPolicyContext`).
 - Rutas principales ya validan capacidad con `RutaConCapacidad` además de auth/onboarding.
 - Se extiende enforcement a acciones UI clave con `navegarConGate(...)` en encabezado y centro analítico (análisis/bitácora/dashboard/configuración/capa premium).
+- Se inicia Fase B de arquitectura de entrada: `/` pasa a ser shell visitante real (`PaginaCentroAnalitico`) y `/centro-analitico` redirige a `/` para consolidar un único entrypoint público.
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
 
 ## Reglas permanentes de documentación
