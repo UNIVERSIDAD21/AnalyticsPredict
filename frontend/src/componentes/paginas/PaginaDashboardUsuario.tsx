@@ -15,6 +15,7 @@ import {
 } from '../../servicios/onboarding';
 import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
 import { obtenerResumenCalidad1x2, type ResumenCalidad1x2Futbol } from '../../servicios/futbol/metricas';
+import { obtenerCapasPremiumDepth } from '../../servicios/premium';
 import { capturarRendimientoCliente, leerRendimientoCliente, type ResumenRendimientoCliente } from '../../servicios/performance';
 
 const navegar = (ruta: string) => {
@@ -67,6 +68,7 @@ export function PaginaDashboardUsuario() {
   const [calidad1x2, setCalidad1x2] = useState<ResumenCalidad1x2Futbol>(calidadInicial);
   const [error, setError] = useState<string | null>(null);
   const [perfCliente, setPerfCliente] = useState<ResumenRendimientoCliente | null>(leerRendimientoCliente());
+  const [capasPremium, setCapasPremium] = useState<string[]>([]);
 
   const estadoOnboarding = useMemo(() => {
     if (!usuario?.id) return null;
@@ -120,6 +122,17 @@ export function PaginaDashboardUsuario() {
       setPlan(planData);
       setKpisOnboarding(kpisData);
       setCalidad1x2(calidadData);
+
+      if (planData.activo) {
+        try {
+          const depth = await obtenerCapasPremiumDepth();
+          setCapasPremium(depth.depth_layers ?? []);
+        } catch {
+          setCapasPremium([]);
+        }
+      } else {
+        setCapasPremium([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo cargar el dashboard.');
     } finally {
@@ -338,9 +351,13 @@ export function PaginaDashboardUsuario() {
                   <div className="rounded-lg border border-neon-magenta/25 bg-futurista-oscuro/40 p-3">
                     <p className="text-xs uppercase tracking-wider text-neon-magenta">Capas premium activas</p>
                     <ul className="mt-2 text-sm text-texto-secundario space-y-1">
-                      <li>• Lectura comparativa extendida por mercado.</li>
-                      <li>• Mayor contexto histórico para decisiones.</li>
-                      <li>• Prioridad en paneles de profundidad operativa.</li>
+                      {(capasPremium.length > 0 ? capasPremium : [
+                        'comparativas_multi_mercado',
+                        'contexto_historico_extendido',
+                        'priorizacion_operativa_avanzada',
+                      ]).map((capa) => (
+                        <li key={capa}>• {capa.replace(/_/g, ' ')}</li>
+                      ))}
                     </ul>
                   </div>
                 ) : (

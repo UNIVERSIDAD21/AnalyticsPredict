@@ -47,7 +47,15 @@
   - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` agrega bloque condicional de "Capas premium activas" para PREMIUM y teaser claro para BASE.
   - CTA de upgrade ahora usa gate `premium.depth` (flujo explícito de frontera base → premium).
   - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` refuerza copy diferencial BASE vs PREMIUM sin bloquear flujo esencial.
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras cierre de Fase C e implementación de Fase D.
+- Cierre de Fase E (hardening de acceso):
+  - Backend incorpora política central de tiers en `backend/servicios/access_tiers.py`.
+  - Nuevo router premium `backend/api/rutas_premium.py` con enforcement server-side:
+    - `GET /api/premium/capas-depth` (requiere premium activo, 403 para base)
+    - `GET /api/premium/estado-tier`.
+  - `backend/app.py` integra `router_premium`.
+  - Frontend consume señal premium real con `frontend/src/servicios/premium.ts` y `PaginaDashboardUsuario`.
+  - Reporte de auditoría de bypass: `docs/reportes/FASE_E_HARDENING_ACCESO_2026-03-28.md`.
+- Validación técnica: `python3 -m py_compile` (backend), `npm run lint` y `npm run build` (frontend) OK tras cierre de Fase C+D+E.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:
