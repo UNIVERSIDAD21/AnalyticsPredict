@@ -11,6 +11,7 @@ import { ProveedorConfiguracionUsuario } from './contextos/ConfiguracionUsuario'
 import { ProveedorDeporte } from './contextos/DeporteContext';
 import { ProveedorAuth } from './contextos/AuthContext';
 import { ProveedorAccessPolicy } from './contextos/AccessPolicyContext';
+import { ProveedorGatePrompt } from './contextos/GatePromptContext';
 
 // Obtener elemento raíz
 const contenedorRaiz = document.getElementById('root');
@@ -26,9 +27,11 @@ createRoot(contenedorRaiz).render(
       <ProveedorConfiguracionUsuario>
         <ProveedorAuth>
           <ProveedorAccessPolicy>
-            <ProveedorDeporte>
-              <App />
-            </ProveedorDeporte>
+            <ProveedorGatePrompt>
+              <ProveedorDeporte>
+                <App />
+              </ProveedorDeporte>
+            </ProveedorGatePrompt>
           </ProveedorAccessPolicy>
         </ProveedorAuth>
       </ProveedorConfiguracionUsuario>

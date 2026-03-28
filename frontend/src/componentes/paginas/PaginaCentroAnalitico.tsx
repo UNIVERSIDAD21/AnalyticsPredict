@@ -307,6 +307,15 @@ export function PaginaCentroAnalitico() {
               <li>• Seguimiento operativo y continuidad avanzada.</li>
               <li>• Lectura de riesgo comparativa por mercado/deporte.</li>
             </ul>
+            {can('premium.depth') ? (
+              <div className="rounded-lg border border-neon-magenta/25 bg-futurista-oscuro/40 p-3 text-sm text-texto-secundario">
+                Capa premium activa en tu cuenta: puedes ir a configuración para gestionar el plan y mantener acceso extendido.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3 text-sm text-texto-secundario">
+                Estás viendo capa base. Premium desbloquea profundidad adicional sin quitar funciones esenciales del plan base.
+              </div>
+            )}
             <Boton
               variante="secundario"
               onClick={() => navegarConGate('/dashboard', 'premium.depth')}

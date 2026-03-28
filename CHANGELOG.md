@@ -39,7 +39,15 @@
   - `frontend/src/componentes/paginas/DashboardFutbol.tsx` aplica gate reutilizable en navegación de retorno a módulo fútbol.
   - `frontend/src/componentes/paginas/PaginaPrincipal.tsx` aplica gate reutilizable en CTA de configuración de bankroll (`configuracion.base`).
   - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` unifica CTA de suscripción/gestión de plan hacia configuración mediante gate.
-- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras extensión adicional de Fase C.
+- Cierre funcional de Fase C con componente visual único de gate:
+  - Nuevo `frontend/src/contextos/GatePromptContext.tsx` renderiza modal/panel global para bloqueos por tier con CTA contextual.
+  - `frontend/src/hooks/useGateNavigation.ts` migra de toast a gate modal reutilizable con acciones diferenciadas visitante/base/premium.
+  - `frontend/src/main.tsx` integra `ProveedorGatePrompt` para disponibilidad global del gate visual.
+- Ejecución de Fase D (separación Base vs Premium por profundidad):
+  - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` agrega bloque condicional de "Capas premium activas" para PREMIUM y teaser claro para BASE.
+  - CTA de upgrade ahora usa gate `premium.depth` (flujo explícito de frontera base → premium).
+  - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` refuerza copy diferencial BASE vs PREMIUM sin bloquear flujo esencial.
+- Validación técnica: `npm run lint` y `npm run build` en frontend OK tras cierre de Fase C e implementación de Fase D.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

@@ -333,9 +333,27 @@ export function PaginaDashboardUsuario() {
                 <p className="text-sm text-texto-secundario">
                   El plan premium se define como profundidad operativa: mejor seguimiento, más capas analíticas y continuidad de decisiones.
                 </p>
+
+                {can('premium.depth') ? (
+                  <div className="rounded-lg border border-neon-magenta/25 bg-futurista-oscuro/40 p-3">
+                    <p className="text-xs uppercase tracking-wider text-neon-magenta">Capas premium activas</p>
+                    <ul className="mt-2 text-sm text-texto-secundario space-y-1">
+                      <li>• Lectura comparativa extendida por mercado.</li>
+                      <li>• Mayor contexto histórico para decisiones.</li>
+                      <li>• Prioridad en paneles de profundidad operativa.</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3">
+                    <p className="text-sm text-texto-secundario">
+                      Estás en plan base: el flujo operativo completo está activo, pero la capa extendida requiere premium.
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   {!plan.activo ? (
-                    <Boton variante="primario" onClick={() => navegarConGate('/configuracion', 'configuracion.base')}>
+                    <Boton variante="primario" onClick={() => navegarConGate('/configuracion', 'premium.depth')}>
                       Ver opciones de suscripción
                     </Boton>
                   ) : (
