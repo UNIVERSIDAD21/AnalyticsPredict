@@ -20,6 +20,7 @@ const PaginaConfiguracion = lazy(async () => ({ default: (await import('./compon
 const PaginaFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaFutbol')).PaginaFutbol }));
 const AnalisisPartidoFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/AnalisisPartidoFutbol')).AnalisisPartidoFutbol }));
 const DashboardFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/DashboardFutbol')).DashboardFutbol }));
+const BitacoraFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/BitacoraFutbol')).BitacoraFutbol }));
 
 function RutaProtegida({ children }: { children: ReactElement }) {
   const { autenticado, cargando } = useAuth();
@@ -115,7 +116,7 @@ function App() {
         {/* Rutas del módulo de fútbol protegidas */}
         <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="futbol.base"><PaginaFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/futbol/partidos/:id" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="futbol.base"><AnalisisPartidoFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
-        <Route path="/futbol/bitacora" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="bitacora.personal"><PaginaBitacora /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/futbol/bitacora" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="bitacora.personal"><BitacoraFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/futbol/dashboard" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="dashboard.personal"><DashboardFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
 
         {/* Fallback */}

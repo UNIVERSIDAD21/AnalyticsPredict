@@ -38,6 +38,8 @@ from api.rutas_onboarding import router as router_onboarding
 from api.rutas_notificaciones import router as router_notificaciones
 from api.rutas_chat import router as router_chat
 from api.rutas_premium import router as router_premium
+from api.rutas_access import router as router_access
+from api.rutas_product_analytics import router as router_product_analytics
 
 # Routers de Fútbol
 from api.rutas_competiciones_futbol import router as router_competiciones_futbol
@@ -300,6 +302,8 @@ app.include_router(router_pagos)
 app.include_router(router_onboarding)
 app.include_router(router_notificaciones)
 app.include_router(router_premium)
+app.include_router(router_access)
+app.include_router(router_product_analytics)
 if _chat_habilitado():
     app.include_router(router_chat)
 

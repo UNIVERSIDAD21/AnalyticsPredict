@@ -60,7 +60,12 @@
   - `useGateNavigation` registra eventos `gate_allowed` y `gate_blocked`.
   - `PaginaCentroAnalitico` registra `public_center_view` con contexto de tier/deporte.
   - Checklist de aceptación final en `docs/reportes/FASE_F_ACEPTACION_FINAL_TIERS_2026-03-28.md`.
-- Validación técnica: `python3 -m py_compile` (backend), `npm run lint` y `npm run build` (frontend) OK tras cierre de Fase C+D+E+F.
+- Hardening adicional post-auditoría (cobertura de pendientes detectados):
+  - Backend agrega `backend/api/rutas_access.py` con `GET /api/access/capability-check` para verificación server-side de capability↔tier.
+  - Backend agrega `backend/api/rutas_product_analytics.py` para ingesta de eventos (`POST /api/product-analytics/events`) y se integra en `app.py`.
+  - Frontend `productAnalytics.ts` ahora hace envío best-effort a backend (además de buffer local) para evitar telemetría solo local.
+  - Corrección de coherencia funcional: `App.tsx` enruta `/futbol/bitacora` a `BitacoraFutbol` (antes apuntaba a bitácora general).
+- Validación técnica: `python3 -m py_compile` (backend), `npm run lint` y `npm run build` (frontend) OK tras cierre y hardening adicional.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

@@ -32,5 +32,10 @@ Estado: CERRADO
 - `npm run lint` ✅
 - `npm run build` ✅
 
+## Addendum post-validación profunda
+- Se añadió verificación backend de capabilities (`GET /api/access/capability-check`) para reforzar auditoría de bypass.
+- La instrumentación de producto ahora persiste también en backend (`POST /api/product-analytics/events`) además de buffer local.
+- Se corrigió consistencia de rutas: `/futbol/bitacora` usa `BitacoraFutbol`.
+
 ## Conclusión
-Fase F se considera cerrada: el flujo por tiers quedó operacional, medible y documentado de extremo a extremo para las fases A→F del roadmap actual.
+Fase F se considera cerrada: el flujo por tiers quedó operacional, medible y documentado de extremo a extremo para las fases A→F del roadmap actual, incluyendo hardening complementario posterior a la auditoría.

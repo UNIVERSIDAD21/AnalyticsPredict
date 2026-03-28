@@ -1,3 +1,5 @@
+import { clienteAPI } from './api';
+
 interface EventoProducto {
   nombre: string;
   timestamp: string;
@@ -34,4 +36,14 @@ export function registrarEventoProducto(nombre: string, payload?: Record<string,
   const eventos = leerEventos();
   eventos.push(evento);
   guardarEventos(eventos);
+
+  void clienteAPI.post('/api/product-analytics/events', {
+    name: nombre,
+    payload: {
+      ...payload,
+      ts_client: evento.timestamp,
+    },
+  }).catch(() => {
+    // Best-effort: no romper UX por fallas de telemetría.
+  });
 }
