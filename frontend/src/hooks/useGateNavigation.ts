@@ -2,6 +2,7 @@ import { useAccessPolicy } from '../contextos/AccessPolicyContext';
 import { useAuth } from '../contextos/AuthContext';
 import { useGatePrompt } from '../contextos/GatePromptContext';
 import { obtenerGateCopy, type Capability } from '../servicios/accessPolicy';
+import { registrarEventoProducto } from '../servicios/productAnalytics';
 
 export function useGateNavigation(navegar: (ruta: string) => void) {
   const { can } = useAccessPolicy();
@@ -10,12 +11,19 @@ export function useGateNavigation(navegar: (ruta: string) => void) {
 
   const navegarConGate = (ruta: string, capability: Capability) => {
     if (can(capability)) {
+      registrarEventoProducto('gate_allowed', { capability, ruta });
       navegar(ruta);
       return;
     }
 
     const autenticado = !!usuario;
     const copy = obtenerGateCopy(capability, autenticado);
+
+    registrarEventoProducto('gate_blocked', {
+      capability,
+      ruta,
+      autenticado,
+    });
 
     if (!autenticado) {
       abrirGatePrompt({

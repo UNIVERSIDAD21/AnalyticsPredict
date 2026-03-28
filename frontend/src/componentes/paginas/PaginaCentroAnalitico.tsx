@@ -9,6 +9,7 @@ import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
 import { listarApuestasAnalizadas } from '../../servicios/bitacora';
 import { registrarIngresoCentro } from '../../servicios/visitante';
+import { registrarEventoProducto } from '../../servicios/productAnalytics';
 import type { ApuestaAnalizada } from '../../tipos/bitacora';
 
 const navegar = (ruta: string) => {
@@ -45,6 +46,12 @@ export function PaginaCentroAnalitico() {
   const [kpisFutbol, setKpisFutbol] = useState<KPIBase>({ apuestasTotales: 0, resueltas: 0, ganadas: 0, winRate: 0 });
 
   useEffect(() => {
+    registrarEventoProducto('public_center_view', {
+      autenticado,
+      deporteActivo,
+      tierHint: can('premium.depth') ? 'PREMIUM' : (autenticado ? 'BASE' : 'INVITADO'),
+    });
+
     const cargar = async () => {
       try {
         setCargando(true);
@@ -69,7 +76,7 @@ export function PaginaCentroAnalitico() {
     };
 
     void cargar();
-  }, [autenticado]);
+  }, [autenticado, deporteActivo, can]);
 
   const kpisActivos = useMemo(() => (esFutbol ? kpisFutbol : kpisNBA), [esFutbol, kpisFutbol, kpisNBA]);
 

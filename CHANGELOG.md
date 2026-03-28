@@ -55,7 +55,12 @@
   - `backend/app.py` integra `router_premium`.
   - Frontend consume señal premium real con `frontend/src/servicios/premium.ts` y `PaginaDashboardUsuario`.
   - Reporte de auditoría de bypass: `docs/reportes/FASE_E_HARDENING_ACCESO_2026-03-28.md`.
-- Validación técnica: `python3 -m py_compile` (backend), `npm run lint` y `npm run build` (frontend) OK tras cierre de Fase C+D+E.
+- Cierre de Fase F (aceptación final):
+  - Instrumentación de eventos de producto en frontend con `frontend/src/servicios/productAnalytics.ts`.
+  - `useGateNavigation` registra eventos `gate_allowed` y `gate_blocked`.
+  - `PaginaCentroAnalitico` registra `public_center_view` con contexto de tier/deporte.
+  - Checklist de aceptación final en `docs/reportes/FASE_F_ACEPTACION_FINAL_TIERS_2026-03-28.md`.
+- Validación técnica: `python3 -m py_compile` (backend), `npm run lint` y `npm run build` (frontend) OK tras cierre de Fase C+D+E+F.
 
 ## 2026-03-26
 - C1/B1 pagos endurecido para evento real de Mercado Pago:

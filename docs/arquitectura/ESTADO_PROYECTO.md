@@ -79,6 +79,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Fase C cerrada funcionalmente en frontend: gating por acción reutilizable con copy centralizado y componente visual único (`GatePromptContext`) aplicado en encabezado, centro analítico, dashboard de usuario y superficies operativas de fútbol/NBA (BitácoraFutbol, DashboardFutbol, PaginaPrincipal en CTA de configuración).
 - Fase D ejecutada en frontend (separación Base vs Premium): dashboard y centro analítico muestran diferenciación funcional explícita de capa premium por profundidad, manteniendo flujo base completo sin mutilación.
 - Fase E cerrada: hardening de acceso con política backend central (`servicios/access_tiers.py`) + router premium (`/api/premium/capas-depth`) con enforcement server-side de suscripción activa.
+- Fase F cerrada: copy final por tier + instrumentación de eventos de producto (`public_center_view`, `gate_allowed`, `gate_blocked`) + checklist de aceptación final documentado.
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
 
 ## Reglas permanentes de documentación
