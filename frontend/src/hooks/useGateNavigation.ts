@@ -1,11 +1,11 @@
 import { useAccessPolicy } from '../contextos/AccessPolicyContext';
 import { useAuth } from '../contextos/AuthContext';
 import { useGatePrompt } from '../contextos/GatePromptContext';
-import { obtenerGateCopy, type Capability } from '../servicios/accessPolicy';
+import { obtenerGateConfig, type Capability } from '../servicios/accessPolicy';
 import { registrarEventoProducto } from '../servicios/productAnalytics';
 
 export function useGateNavigation(navegar: (ruta: string) => void) {
-  const { can } = useAccessPolicy();
+  const { can, policy } = useAccessPolicy();
   const { usuario } = useAuth();
   const { abrirGatePrompt } = useGatePrompt();
 
@@ -17,37 +17,25 @@ export function useGateNavigation(navegar: (ruta: string) => void) {
     }
 
     const autenticado = !!usuario;
-    const copy = obtenerGateCopy(capability, autenticado);
+    const gate = obtenerGateConfig(policy, capability, autenticado);
 
     registrarEventoProducto('gate_blocked', {
       capability,
       ruta,
       autenticado,
+      gateType: gate.tipoGate,
     });
 
-    if (!autenticado) {
-      abrirGatePrompt({
-        titulo: copy.titulo,
-        mensaje: copy.mensaje,
-        accionPrincipalLabel: 'Crear cuenta',
-        accionSecundariaLabel: 'Iniciar sesión',
-        onAccionPrincipal: () => navegar('/login'),
-        onAccionSecundaria: () => navegar('/login'),
-      });
-      return;
-    }
-
-    const primaryLabel = capability === 'premium.depth'
-      ? 'Ver opciones premium'
-      : 'Ir a dashboard';
+    const destinoSecundario = gate.destinoSecundario;
 
     abrirGatePrompt({
-      titulo: copy.titulo,
-      mensaje: copy.mensaje,
-      accionPrincipalLabel: primaryLabel,
-      accionSecundariaLabel: 'Quedarme aquí',
-      onAccionPrincipal: () => navegar(capability === 'premium.depth' ? '/configuracion' : '/dashboard'),
-      onAccionSecundaria: () => {},
+      tipoGate: gate.tipoGate,
+      titulo: gate.copy.titulo,
+      mensaje: gate.copy.mensaje,
+      accionPrincipalLabel: gate.ctaPrincipal,
+      accionSecundariaLabel: gate.ctaSecundaria,
+      onAccionPrincipal: () => navegar(gate.destinoPrincipal),
+      onAccionSecundaria: destinoSecundario ? () => navegar(destinoSecundario) : undefined,
     });
   };
 

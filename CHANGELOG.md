@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 2 (gates UX y visibilidad progresiva) alineado al contrato funcional `docs/roadmap_inmediato/06_ESPECIFICACION_FUNCIONAL_TIERS_VISITANTE_BASE_PREMIUM.md`:
+  - `frontend/src/servicios/accessPolicy.ts` incorpora catálogo de copy permitido Base/Premium y nuevo `obtenerGateConfig(...)` para centralizar tipo de gate, CTA y destinos.
+  - `frontend/src/contextos/GatePromptContext.tsx` diferencia visual/semánticamente `BASE_REQUIRED` vs `PREMIUM_REQUIRED` vs `DISABLED`.
+  - `frontend/src/hooks/useGateNavigation.ts` elimina decisión manual de CTA/rutas y consume configuración central, enviando además `gateType` en evento `gate_blocked`.
+  - Evidencia de cierre: `docs/reportes/FASE_2_GATES_UX_VISIBILIDAD_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 1 (policy central de capabilities/tier) alineado al contrato funcional `docs/roadmap_inmediato/06_ESPECIFICACION_FUNCIONAL_TIERS_VISITANTE_BASE_PREMIUM.md`:
   - Nuevo módulo backend `backend/servicios/access_policy.py` como fuente única de capabilities, tier mínimo y tipos de gate (`BASE_REQUIRED`, `PREMIUM_REQUIRED`, `DISABLED`).
   - `backend/servicios/access_tiers.py` agrega `exigir_capability(...)` con 403 tipado y `exigir_premium(...)` delega en capability `premium.depth`.

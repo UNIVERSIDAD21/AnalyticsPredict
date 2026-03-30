@@ -29,6 +29,29 @@ export interface GateCopy {
   mensaje: string;
 }
 
+export interface GateConfig {
+  tipoGate: TipoGate;
+  copy: GateCopy;
+  ctaPrincipal: string;
+  ctaSecundaria?: string;
+  destinoPrincipal: string;
+  destinoSecundario?: string;
+}
+
+export const COPY_PERMITIDO_BASE = [
+  'Crea tu cuenta',
+  'Esta función requiere cuenta',
+  'Regístrate para desbloquear esta función',
+  'Crea tu cuenta para continuar',
+] as const;
+
+export const COPY_PERMITIDO_PREMIUM = [
+  'Activa Premium',
+  'Compra mensualidad',
+  'Mejora tu plan',
+  'Desbloquea esta capa premium',
+] as const;
+
 const CAPABILITY_META: Record<Capability, CapabilityMeta> = {
   'public.shell': { tierMinimo: 'INVITADO', disabled: false },
   'public.center': { tierMinimo: 'INVITADO', disabled: false },
@@ -103,46 +126,83 @@ export function obtenerGateCopy(capability: Capability, autenticado: boolean): G
       case 'analisis.nba.base':
       case 'futbol.base':
         return {
-          titulo: 'Cuenta requerida para análisis operativo',
+          titulo: 'Esta función requiere cuenta',
           mensaje: 'Crea tu cuenta para continuar este análisis con trazabilidad personal.',
         };
       case 'bitacora.personal':
         return {
-          titulo: 'Bitácora personal bloqueada para visitante',
-          mensaje: 'Regístrate para guardar y revisar tus decisiones en tu bitácora.',
+          titulo: 'Regístrate para desbloquear esta función',
+          mensaje: 'Crea tu cuenta para guardar y revisar tus decisiones en tu bitácora personal.',
         };
       case 'dashboard.personal':
         return {
-          titulo: 'Dashboard personal requiere cuenta',
-          mensaje: 'Inicia sesión para desbloquear tu panel operativo personal.',
+          titulo: 'Crea tu cuenta para continuar',
+          mensaje: 'Desbloquea tu dashboard personal para operar con continuidad real.',
         };
       case 'configuracion.base':
         return {
-          titulo: 'Configuración disponible con cuenta',
-          mensaje: 'Esta capa es personal y requiere cuenta para guardar preferencias.',
+          titulo: 'Esta función requiere cuenta',
+          mensaje: 'Crea tu cuenta para guardar bankroll, riesgo y configuración personal.',
         };
       case 'premium.depth':
         return {
-          titulo: 'Capa premium',
-          mensaje: 'Inicia sesión para ver opciones de plan y desbloquear profundidad premium.',
+          titulo: 'Capa premium visible desde modo visitante',
+          mensaje: 'Primero crea tu cuenta para pasar a Base; luego podrás activar Premium para mayor profundidad.',
         };
       default:
         return {
-          titulo: 'Acceso restringido',
-          mensaje: 'Inicia sesión para continuar.',
+          titulo: 'Esta función requiere cuenta',
+          mensaje: 'Crea tu cuenta para continuar.',
         };
     }
   }
 
   if (capability === 'premium.depth') {
     return {
-      titulo: 'Función premium',
-      mensaje: 'Tu plan actual es base. Esta capa requiere suscripción premium.',
+      titulo: 'Activa Premium',
+      mensaje: 'Desbloquea esta capa premium para acceder a comparativas avanzadas y contexto histórico extendido.',
     };
   }
 
   return {
     titulo: 'Acceso no disponible',
     mensaje: 'Esta sección no está disponible para tu nivel actual.',
+  };
+}
+
+export function obtenerGateConfig(policy: AccessPolicy, capability: Capability, autenticado: boolean): GateConfig {
+  const tipoGate = obtenerTipoGate(policy, capability) ?? 'DISABLED';
+  const copy = obtenerGateCopy(capability, autenticado);
+
+  if (tipoGate === 'BASE_REQUIRED') {
+    return {
+      tipoGate,
+      copy,
+      ctaPrincipal: 'Crea tu cuenta',
+      ctaSecundaria: 'Iniciar sesión',
+      destinoPrincipal: '/login',
+      destinoSecundario: '/login',
+    };
+  }
+
+  if (tipoGate === 'PREMIUM_REQUIRED') {
+    return {
+      tipoGate,
+      copy,
+      ctaPrincipal: 'Activa Premium',
+      ctaSecundaria: 'Mejora tu plan',
+      destinoPrincipal: '/configuracion',
+      destinoSecundario: '/configuracion',
+    };
+  }
+
+  return {
+    tipoGate: 'DISABLED',
+    copy: {
+      titulo: 'Capacidad fuera de alcance',
+      mensaje: 'Esta función no está disponible en la fase actual del producto.',
+    },
+    ctaPrincipal: 'Entendido',
+    destinoPrincipal: '/',
   };
 }
