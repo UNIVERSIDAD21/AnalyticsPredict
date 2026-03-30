@@ -2,17 +2,14 @@
  * Encabezado.tsx — Header futurista de la aplicación
  */
 
-import { useEffect, useState } from 'react';
-import { Activity, Zap, Settings, BarChart3, LogOut, Layers3 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Activity, Zap, Settings, BarChart3, LogOut, Layers3, Crown, UserRound } from 'lucide-react';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
 import { useAuth } from '../../contextos/AuthContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
-
-// ══════════════════════════════════════════════════════════════
-// COMPONENTE
-// ══════════════════════════════════════════════════════════════
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 
 /**
  * Encabezado principal con estética futurista
@@ -22,6 +19,7 @@ export function Encabezado() {
   const { configuracion } = useConfiguracionUsuario();
   const { esFutbol } = useDeporte();
   const { usuario, logout } = useAuth();
+  const { tier, can } = useAccessPolicy();
 
   useEffect(() => {
     const manejarRuta = () => setRutaActual(window.location.pathname);
@@ -39,48 +37,57 @@ export function Encabezado() {
 
   const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
 
-  // Determinar rutas según el deporte activo
-  const rutaAnalisis = esFutbol ? '/futbol' : (usuario ? '/app' : '/');
+  const rutaAnalisis = esFutbol ? '/futbol' : '/app';
   const rutaBitacora = esFutbol ? '/futbol/bitacora' : '/bitacora';
-  const rutaDashboard = esFutbol ? '/futbol/dashboard' : null;
-  const rutaAccionProtegidaPrincipal = esFutbol ? '/futbol' : '/app';
-  const capacidadAccionProtegidaPrincipal = esFutbol ? 'futbol.base' : 'analisis.nba.base';
+  const rutaDashboard = esFutbol ? '/futbol/dashboard' : '/dashboard';
+  const capacidadAnalisis = esFutbol ? 'futbol.base' : 'analisis.nba.base';
 
-  // Determinar si estamos en la ruta de análisis
   const enAnalisis = esFutbol
     ? rutaActual === '/futbol' || rutaActual.startsWith('/futbol/partidos/')
     : rutaActual === '/app';
 
-  // Determinar si estamos en la ruta de bitácora
-  const enBitacora = esFutbol
-    ? rutaActual === '/futbol/bitacora'
-    : rutaActual === '/bitacora';
-
-  // Determinar si estamos en el dashboard
-  const enDashboard = rutaActual === '/futbol/dashboard';
+  const enBitacora = esFutbol ? rutaActual === '/futbol/bitacora' : rutaActual === '/bitacora';
+  const enDashboard = esFutbol ? rutaActual === '/futbol/dashboard' : rutaActual === '/dashboard';
   const enCentroAnalitico = rutaActual === '/centro-analitico' || rutaActual === '/';
 
-  // Título dinámico según el deporte
   const titulo = esFutbol ? 'FÚTBOL ANALYZER' : 'NBA ANALYZER';
   const colorPrimario = esFutbol ? 'neon-verde' : 'neon-cyan';
 
+  const estadoTier = useMemo(() => {
+    if (tier === 'PREMIUM') {
+      return {
+        etiqueta: 'Premium activo',
+        className: 'border-neon-magenta/40 text-neon-magenta',
+        icono: Crown,
+      };
+    }
+
+    if (tier === 'BASE') {
+      return {
+        etiqueta: 'Cuenta base',
+        className: 'border-neon-verde/40 text-neon-verde',
+        icono: UserRound,
+      };
+    }
+
+    return {
+      etiqueta: 'Modo visitante',
+      className: 'border-neon-cyan/40 text-neon-cyan',
+      icono: Layers3,
+    };
+  }, [tier]);
+
+  const IconoTier = estadoTier.icono;
+
   return (
     <header className="relative overflow-hidden border-b border-neon-cyan/20">
-      {/* Fondo con efecto */}
       <div className="absolute inset-0 bg-gradient-to-r from-futurista-negro via-futurista-oscuro to-futurista-negro" />
-
-      {/* Línea decorativa superior */}
       <div className={`absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-${colorPrimario} to-transparent`} />
-
-      {/* Grid pattern sutil */}
       <div className="absolute inset-0 grid-pattern opacity-30" />
 
-      {/* Contenido */}
       <div className="relative contenedor py-5">
         <div className="flex items-center justify-between gap-4">
-          {/* Logo y Título */}
           <div className="flex items-center gap-4">
-            {/* Logo con glow */}
             <div className="relative">
               <div className={`absolute inset-0 bg-${colorPrimario}/20 blur-xl rounded-full`} />
               <div className={`relative w-14 h-14 rounded-xl flex items-center justify-center border border-${colorPrimario}/30 bg-futurista-oscuro/80`}>
@@ -88,7 +95,6 @@ export function Encabezado() {
               </div>
             </div>
 
-            {/* Título */}
             <div>
               <h1 className={`text-2xl md:text-3xl font-futurista font-bold tracking-wider text-texto-principal ${esFutbol ? 'texto-glow-verde' : 'texto-glow-cyan'}`}>
                 {titulo}
@@ -103,10 +109,8 @@ export function Encabezado() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Selector de Deporte */}
             <SelectorDeporte tamaño="sm" className="hidden sm:flex" />
 
-            {/* Navegación */}
             <div className="hidden md:flex items-center gap-2">
               <button
                 type="button"
@@ -115,10 +119,11 @@ export function Encabezado() {
                     ? `border-${colorPrimario} text-${colorPrimario}`
                     : 'border-neon-cyan/20 text-texto-secundario'
                 }`}
-                onClick={() => navegarConGate(rutaAnalisis, esFutbol ? 'futbol.base' : 'analisis.nba.base')}
+                onClick={() => navegarConGate(rutaAnalisis, capacidadAnalisis)}
               >
                 {esFutbol ? 'Partidos' : 'Análisis'}
               </button>
+
               <button
                 type="button"
                 className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border flex items-center gap-1.5 ${
@@ -126,11 +131,12 @@ export function Encabezado() {
                     ? 'border-neon-cyan text-neon-cyan'
                     : 'border-neon-cyan/20 text-texto-secundario'
                 }`}
-                onClick={() => navegar('/centro-analitico')}
+                onClick={() => navegar('/')}
               >
                 <Layers3 className="w-3.5 h-3.5" />
                 Centro
               </button>
+
               <button
                 type="button"
                 className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border ${
@@ -142,20 +148,24 @@ export function Encabezado() {
               >
                 Bitácora
               </button>
-              {rutaDashboard && (
-                <button
-                  type="button"
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border flex items-center gap-1.5 ${
-                    enDashboard
-                      ? 'border-neon-azul text-neon-azul'
-                      : 'border-neon-cyan/20 text-texto-secundario'
-                  }`}
-                  onClick={() => navegarConGate(rutaDashboard, 'dashboard.personal')}
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  Dashboard
-                </button>
-              )}
+
+              <button
+                type="button"
+                className={`px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border flex items-center gap-1.5 ${
+                  enDashboard
+                    ? 'border-neon-azul text-neon-azul'
+                    : 'border-neon-cyan/20 text-texto-secundario'
+                }`}
+                onClick={() => navegarConGate(rutaDashboard, 'dashboard.personal')}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Dashboard
+              </button>
+            </div>
+
+            <div className={`hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg border ${estadoTier.className}`}>
+              <IconoTier className="w-3.5 h-3.5" />
+              <span className="text-xs uppercase tracking-widest font-semibold">{estadoTier.etiqueta}</span>
             </div>
 
             <div
@@ -164,17 +174,9 @@ export function Encabezado() {
                   ? 'border-neon-verde/40 text-neon-verde'
                   : 'border-advertencia-500/40 text-advertencia-500'
               }`}
-              title={
-                bankrollConfigurado
-                  ? 'Bankroll configurado'
-                  : 'Modo demo: configura tu bankroll'
-              }
+              title={bankrollConfigurado ? 'Bankroll configurado' : 'Modo demo: configura tu bankroll'}
             >
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  bankrollConfigurado ? 'bg-neon-verde' : 'bg-advertencia-500'
-                }`}
-              />
+              <div className={`w-2 h-2 rounded-full ${bankrollConfigurado ? 'bg-neon-verde' : 'bg-advertencia-500'}`} />
               <span className="text-xs uppercase tracking-widest font-mono">
                 {bankrollConfigurado ? 'Bankroll ✓' : 'Demo'}
               </span>
@@ -210,18 +212,16 @@ export function Encabezado() {
               <button
                 type="button"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border border-neon-cyan text-neon-cyan"
-                onClick={() => navegarConGate(rutaAccionProtegidaPrincipal, capacidadAccionProtegidaPrincipal)}
+                onClick={() => navegarConGate(rutaAnalisis, capacidadAnalisis)}
               >
                 <span className="hidden md:inline">Desbloquear con cuenta</span>
                 <span className="md:hidden">Desbloquear</span>
               </button>
             )}
-
           </div>
         </div>
       </div>
 
-      {/* Línea decorativa inferior */}
       <div className={`absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-${colorPrimario}/50 to-transparent`} />
     </header>
   );

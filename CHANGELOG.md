@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 3 (header + navegación global tier-aware) alineado al contrato funcional `docs/roadmap_inmediato/06_ESPECIFICACION_FUNCIONAL_TIERS_VISITANTE_BASE_PREMIUM.md`:
+  - `frontend/src/componentes/organismos/Encabezado.tsx` ahora responde al tier real (`INVITADO|BASE|PREMIUM`) con indicador de estado de cuenta visible.
+  - Corrección de rutas y estado activo de dashboard por deporte (NBA `/dashboard`, Fútbol `/futbol/dashboard`).
+  - Navegación al centro público consolidada en `/`.
+  - CTA visitante del header se mantiene por gate contextual de acción protegida, evitando rebote agresivo a login.
+  - Evidencia de cierre: `docs/reportes/FASE_3_HEADER_NAVEGACION_TIER_AWARE_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 2 (gates UX y visibilidad progresiva) alineado al contrato funcional `docs/roadmap_inmediato/06_ESPECIFICACION_FUNCIONAL_TIERS_VISITANTE_BASE_PREMIUM.md`:
   - `frontend/src/servicios/accessPolicy.ts` incorpora catálogo de copy permitido Base/Premium y nuevo `obtenerGateConfig(...)` para centralizar tipo de gate, CTA y destinos.
   - `frontend/src/contextos/GatePromptContext.tsx` diferencia visual/semánticamente `BASE_REQUIRED` vs `PREMIUM_REQUIRED` vs `DISABLED`.

@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-30 (cierre Fase 2 de gates UX y visibilidad progresiva por tier)
+Última actualización: 2026-03-30 (cierre Fase 3 de header y navegación global tier-aware)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -84,7 +84,8 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
 - Ajuste de consistencia en runtime (2026-03-30): `/chat` deja de existir como ruta operativa y redirige a `/`; los CTAs de visitante en `PaginaCentroAnalitico` y `Encabezado` ahora invocan gates por acción protegida (`useGateNavigation`) en lugar de mandar directo a `/login`, reforzando que el login aparece por intento de acción protegida y no por entrada al sistema.
 - Fase 1 cerrada (2026-03-30): policy central capabilities/tier unificada FE/BE. Backend incorpora `servicios/access_policy.py` como fuente única de capabilities, tipificación de gates (`BASE_REQUIRED`/`PREMIUM_REQUIRED`/`DISABLED`), refactor de `rutas_access` con `required_tier`+`gate` y endpoint `GET /api/access/policy`; frontend alinea `accessPolicy.ts` al mismo modelo. Evidencia: `docs/reportes/FASE_1_POLICY_CAPABILITIES_TIERS_2026-03-30.md`.
-- Fase 2 cerrada (2026-03-30): gates UX reutilizables y diferenciación visual/semántica entre bloqueo Base y Premium. Frontend centraliza copy/CTA por tipo de gate en `accessPolicy.ts`, adapta modal global `GatePromptContext` a `tipoGate` y estandariza navegación bloqueada desde `useGateNavigation` con analítica `gateType`. Evidencia: `docs/reportes/FASE_2_GATES_UX_VISIBILIDAD_2026-03-30.md`. 
+- Fase 2 cerrada (2026-03-30): gates UX reutilizables y diferenciación visual/semántica entre bloqueo Base y Premium. Frontend centraliza copy/CTA por tipo de gate en `accessPolicy.ts`, adapta modal global `GatePromptContext` a `tipoGate` y estandariza navegación bloqueada desde `useGateNavigation` con analítica `gateType`. Evidencia: `docs/reportes/FASE_2_GATES_UX_VISIBILIDAD_2026-03-30.md`.
+- Fase 3 cerrada (2026-03-30): header y navegación global tier-aware en `Encabezado.tsx`, incorporando estado de cuenta visible (Visitante/Base/Premium), navegación dashboard correcta para NBA y Fútbol, acceso central al shell público en `/` y mantenimiento de CTA visitante con gate contextual por acción protegida. Evidencia: `docs/reportes/FASE_3_HEADER_NAVEGACION_TIER_AWARE_2026-03-30.md`. 
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
