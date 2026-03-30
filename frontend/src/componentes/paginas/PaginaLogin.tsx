@@ -130,7 +130,7 @@ export function PaginaLogin() {
         <p className="text-texto-secundario text-sm">Accede para usar AnalyticsPredict con trazabilidad personal y gestión completa.</p>
         <p className="text-xs text-texto-terciario">
           ¿Aún no quieres registrarte? Puedes explorar el
-          {' '}<Link to="/centro-analitico" className="text-neon-cyan hover:underline">centro analítico en modo visitante</Link>
+          {' '}<Link to="/" className="text-neon-cyan hover:underline">centro analítico en modo visitante</Link>
           {' '}con acceso limitado y sin funciones premium.
         </p>
 

@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 4 (implementación por vistas contra matriz funcional del doc 06):
+  - Se valida cumplimiento funcional por vista para `/`, `/app`, `/dashboard`, `/bitacora`, `/configuracion`, `/futbol`, `/futbol/partidos/:id`, `/futbol/bitacora`, `/futbol/dashboard`, `/login` y `/onboarding`.
+  - `frontend/src/componentes/paginas/PaginaLogin.tsx` alinea link de exploración pública al shell visitante oficial `/`.
+  - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` alinea atajo “Centro analítico” a `/`.
+  - Evidencia de cierre: `docs/reportes/FASE_4_MATRIZ_VISTAS_TIERS_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 3 (header + navegación global tier-aware) alineado al contrato funcional `docs/roadmap_inmediato/06_ESPECIFICACION_FUNCIONAL_TIERS_VISITANTE_BASE_PREMIUM.md`:
   - `frontend/src/componentes/organismos/Encabezado.tsx` ahora responde al tier real (`INVITADO|BASE|PREMIUM`) con indicador de estado de cuenta visible.
   - Corrección de rutas y estado activo de dashboard por deporte (NBA `/dashboard`, Fútbol `/futbol/dashboard`).

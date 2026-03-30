@@ -255,7 +255,7 @@ export function PaginaDashboardUsuario() {
                   <p className="text-sm font-semibold text-texto-principal">Bitácora</p>
                   <p className="text-xs text-texto-secundario mt-1">Revisar ejecuciones y resultados.</p>
                 </button>
-                <button type="button" onClick={() => navegar('/centro-analitico')} className="rounded-lg border border-neon-magenta/20 p-4 text-left hover:border-neon-magenta transition-colors">
+                <button type="button" onClick={() => navegar('/')} className="rounded-lg border border-neon-magenta/20 p-4 text-left hover:border-neon-magenta transition-colors">
                   <p className="text-sm font-semibold text-texto-principal">Centro analítico</p>
                   <p className="text-xs text-texto-secundario mt-1">Ver madurez y lectura multideporte.</p>
                 </button>
