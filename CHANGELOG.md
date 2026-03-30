@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-03-30
+- Ajuste de consistencia con el plan de tiers visitante/premium en runtime:
+  - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` cambia CTAs de visitante para usar gates por acción (`useGateNavigation`) en vez de navegar directo a `/login`.
+  - `frontend/src/componentes/organismos/Encabezado.tsx` reemplaza CTA de invitado por acción protegida con gate (`analisis.nba.base` / `futbol.base`) en lugar de envío directo a login.
+  - `frontend/src/App.tsx` consolida chat fuera de alcance redirigiendo `/chat` a `/` (sin ruta operativa de chat).
+  - `frontend/src/componentes/paginas/index.ts` elimina export de `PaginaChat` para evitar exposición accidental en navegación de páginas.
+- Estado documental actualizado en `docs/arquitectura/ESTADO_PROYECTO.md` con la corrección de enforcement visitante/gates.
+- Validación técnica ejecutada: `npm --prefix frontend run lint` y `npm --prefix frontend run build` en verde.
+
 ## 2026-03-27
 - Decisión de producto: chat queda fuera de alcance en la fase actual y debe permanecer oculto en UI hasta nueva instrucción.
 - Frontend ajustado para retirar chat de navegación:

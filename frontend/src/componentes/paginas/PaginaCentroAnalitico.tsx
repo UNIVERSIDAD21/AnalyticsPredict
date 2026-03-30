@@ -151,11 +151,17 @@ export function PaginaCentroAnalitico() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Boton variante="secundario" onClick={() => navegar('/login')}>
-                Crear cuenta
+              <Boton
+                variante="secundario"
+                onClick={() => navegarConGate(esNBA ? '/app' : '/futbol', esNBA ? 'analisis.nba.base' : 'futbol.base')}
+              >
+                Abrir análisis completo
               </Boton>
-              <Boton variante="primario" onClick={() => navegar('/login')}>
-                Iniciar sesión
+              <Boton
+                variante="primario"
+                onClick={() => navegarConGate(esNBA ? '/bitacora' : '/futbol/bitacora', 'bitacora.personal')}
+              >
+                Guardar en bitácora personal
               </Boton>
             </div>
           </Tarjeta>
@@ -245,11 +251,17 @@ export function PaginaCentroAnalitico() {
                 </>
               ) : (
                 <>
-                  <Boton variante="secundario" onClick={() => navegar('/login')}>
-                    Crear cuenta para análisis completo
+                  <Boton
+                    variante="secundario"
+                    onClick={() => navegarConGate(esNBA ? '/app' : '/futbol', esNBA ? 'analisis.nba.base' : 'futbol.base')}
+                  >
+                    Intentar análisis completo
                   </Boton>
-                  <Boton variante="primario" onClick={() => navegar('/login')}>
-                    Iniciar sesión para bitácora personal
+                  <Boton
+                    variante="primario"
+                    onClick={() => navegarConGate(esNBA ? '/bitacora' : '/futbol/bitacora', 'bitacora.personal')}
+                  >
+                    Intentar bitácora personal
                   </Boton>
                 </>
               )}

@@ -21,6 +21,5 @@ export { PaginaLogin } from './PaginaLogin';
 export { PaginaLegal } from './PaginaLegal';
 export { PaginaOnboarding } from './PaginaOnboarding';
 export { PaginaDashboardUsuario } from './PaginaDashboardUsuario';
-export { PaginaChat } from './PaginaChat';
 export { PaginaCentroAnalitico } from './PaginaCentroAnalitico';
 export { PaginaPublicaProducto } from './PaginaPublicaProducto';

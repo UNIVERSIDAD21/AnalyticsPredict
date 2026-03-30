@@ -111,7 +111,7 @@ function App() {
         <Route path="/dashboard" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="dashboard.personal"><PaginaDashboardUsuario /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="bitacora.personal"><PaginaBitacora /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="configuracion.base"><PaginaConfiguracion /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
-        <Route path="/chat" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="chat.contextual"><Navigate to="/dashboard" replace /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
+        <Route path="/chat" element={<Navigate to="/" replace />} />
 
         {/* Rutas del módulo de fútbol protegidas */}
         <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="futbol.base"><PaginaFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />

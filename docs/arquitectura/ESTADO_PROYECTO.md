@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-26 (Ola 1 cerrada + Ola 2 en ejecución)
+Última actualización: 2026-03-30 (ajuste de enforcement visitante/gates y chat fuera de alcance reafirmado)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -82,6 +82,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Fase F cerrada: copy final por tier + instrumentación de eventos de producto (`public_center_view`, `gate_allowed`, `gate_blocked`) + checklist de aceptación final documentado.
 - Hardening complementario posterior a auditoría: capability-check backend (`/api/access/capability-check`), ingesta server-side de analytics de producto (`/api/product-analytics/events`) y corrección de ruta fútbol bitácora (`/futbol/bitacora` → `BitacoraFutbol`).
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
+- Ajuste de consistencia en runtime (2026-03-30): `/chat` deja de existir como ruta operativa y redirige a `/`; los CTAs de visitante en `PaginaCentroAnalitico` y `Encabezado` ahora invocan gates por acción protegida (`useGateNavigation`) en lugar de mandar directo a `/login`, reforzando que el login aparece por intento de acción protegida y no por entrada al sistema.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

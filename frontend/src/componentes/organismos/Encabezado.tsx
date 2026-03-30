@@ -43,6 +43,8 @@ export function Encabezado() {
   const rutaAnalisis = esFutbol ? '/futbol' : (usuario ? '/app' : '/');
   const rutaBitacora = esFutbol ? '/futbol/bitacora' : '/bitacora';
   const rutaDashboard = esFutbol ? '/futbol/dashboard' : null;
+  const rutaAccionProtegidaPrincipal = esFutbol ? '/futbol' : '/app';
+  const capacidadAccionProtegidaPrincipal = esFutbol ? 'futbol.base' : 'analisis.nba.base';
 
   // Determinar si estamos en la ruta de análisis
   const enAnalisis = esFutbol
@@ -208,10 +210,10 @@ export function Encabezado() {
               <button
                 type="button"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest border border-neon-cyan text-neon-cyan"
-                onClick={() => navegar('/login')}
+                onClick={() => navegarConGate(rutaAccionProtegidaPrincipal, capacidadAccionProtegidaPrincipal)}
               >
-                <span className="hidden md:inline">Entrar / Crear cuenta</span>
-                <span className="md:hidden">Entrar</span>
+                <span className="hidden md:inline">Desbloquear con cuenta</span>
+                <span className="md:hidden">Desbloquear</span>
               </button>
             )}
 
