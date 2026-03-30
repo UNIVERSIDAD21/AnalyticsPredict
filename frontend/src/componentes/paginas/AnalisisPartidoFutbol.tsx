@@ -27,7 +27,7 @@ import {
   PanelHistorialEquipoFutbol,
   ModalGuardarApuestaFutbol,
 } from '../organismos';
-import { MensajeError } from '../moleculas';
+import { MensajeError, PanelDepthPremium } from '../moleculas';
 import { Boton, Spinner, Tarjeta } from '../atomos';
 import {
   obtenerPartido,
@@ -47,6 +47,8 @@ import type {
   NivelConfianza,
   UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -223,6 +225,9 @@ function HeaderPartido({ partido }: PropsHeaderPartido) {
  * Pagina de analisis detallado de un partido de futbol
  */
 export function AnalisisPartidoFutbol() {
+  const { can } = useAccessPolicy();
+  const { navegarConGate } = useGateNavigation(navegar);
+
   // Obtener ID del partido de la URL
   const partidoId = extraerPartidoIdDeURL();
 
@@ -502,6 +507,18 @@ export function AnalisisPartidoFutbol() {
 
         {/* Header del partido */}
         {partido && !cargandoPartido && <HeaderPartido partido={partido} />}
+
+        <PanelDepthPremium
+          titulo="Depth premium en análisis de partido"
+          descripcion="La profundidad premium se activa sobre este análisis para ampliar comparativas, histórico y priorización operativa."
+          bullets={[
+            'comparativas_multi_mercado sobre corners, goles y disparos',
+            'contexto_historico_extendido en H2H e historiales',
+            'priorizacion_operativa_avanzada para decidir ejecución',
+          ]}
+          activo={can('premium.depth')}
+          onAbrirDepth={() => navegarConGate('/configuracion', 'premium.depth')}
+        />
 
         {/* Estado de carga del contexto */}
         {cargandoContexto && (

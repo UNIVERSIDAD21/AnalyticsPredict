@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Encabezado, ListaPartidosFutbol } from '../organismos';
-import { SelectorCompeticion, MensajeError } from '../moleculas';
+import { SelectorCompeticion, MensajeError, PanelDepthPremium } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { usePartidosFutbol } from '../../hooks';
 import { obtenerCompeticiones, obtenerResumenCalidad1x2 } from '../../servicios/futbol';
@@ -28,6 +28,8 @@ import { listarApuestasAnalizadas } from '../../servicios/bitacora';
 import { obtenerFechaISOBogota, obtenerHoyISOBogota } from '../../utilidades';
 import type { Competicion, FiltrosPartidos, PartidoFutbolResumen } from '../../tipos/futbol';
 import type { ApuestaAnalizada } from '../../tipos/bitacora';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import { useGateNavigation } from '../../hooks/useGateNavigation';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -393,6 +395,9 @@ function SidebarFiltros({
  * Pagina principal del modulo de futbol con lista de partidos proximos
  */
 export function PaginaFutbol() {
+  const { can } = useAccessPolicy();
+  const { navegarConGate } = useGateNavigation(navegar);
+
   // Estado de filtros
   const [competicionSeleccionada, setCompeticionSeleccionada] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -672,6 +677,20 @@ export function PaginaFutbol() {
             subtitulo={resumenCalidad1x2 ? `G/P/Pu: ${resumenCalidad1x2.ganadas}/${resumenCalidad1x2.perdidas}/${resumenCalidad1x2.push}` : 'sin datos'}
             icono={<TrendingUp size={20} className="text-neon-verde" />}
             color="verde"
+          />
+        </div>
+
+        <div className="mb-6">
+          <PanelDepthPremium
+            titulo="Depth premium Fútbol"
+            descripcion="La capa premium vive dentro del flujo fútbol actual para ampliar contexto por competición sin romper el plan base."
+            bullets={[
+              'comparativas_multi_mercado por partido y competición',
+              'contexto_historico_extendido para lectura de rachas y señales',
+              'priorizacion_operativa_avanzada para seleccionar ejecuciones',
+            ]}
+            activo={can('premium.depth')}
+            onAbrirDepth={() => navegarConGate('/configuracion', 'premium.depth')}
           />
         </div>
 

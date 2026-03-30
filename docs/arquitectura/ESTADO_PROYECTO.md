@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-30 (cierre Fase 4 de implementación por vistas y matriz funcional)
+Última actualización: 2026-03-30 (cierre Fase 5 de depth layers premium dentro de módulos existentes)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -86,7 +86,8 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Fase 1 cerrada (2026-03-30): policy central capabilities/tier unificada FE/BE. Backend incorpora `servicios/access_policy.py` como fuente única de capabilities, tipificación de gates (`BASE_REQUIRED`/`PREMIUM_REQUIRED`/`DISABLED`), refactor de `rutas_access` con `required_tier`+`gate` y endpoint `GET /api/access/policy`; frontend alinea `accessPolicy.ts` al mismo modelo. Evidencia: `docs/reportes/FASE_1_POLICY_CAPABILITIES_TIERS_2026-03-30.md`.
 - Fase 2 cerrada (2026-03-30): gates UX reutilizables y diferenciación visual/semántica entre bloqueo Base y Premium. Frontend centraliza copy/CTA por tipo de gate en `accessPolicy.ts`, adapta modal global `GatePromptContext` a `tipoGate` y estandariza navegación bloqueada desde `useGateNavigation` con analítica `gateType`. Evidencia: `docs/reportes/FASE_2_GATES_UX_VISIBILIDAD_2026-03-30.md`.
 - Fase 3 cerrada (2026-03-30): header y navegación global tier-aware en `Encabezado.tsx`, incorporando estado de cuenta visible (Visitante/Base/Premium), navegación dashboard correcta para NBA y Fútbol, acceso central al shell público en `/` y mantenimiento de CTA visitante con gate contextual por acción protegida. Evidencia: `docs/reportes/FASE_3_HEADER_NAVEGACION_TIER_AWARE_2026-03-30.md`.
-- Fase 4 cerrada (2026-03-30): implementación validada por vista contra matriz funcional del doc 06 (`/`, `/app`, `/dashboard`, `/bitacora`, `/configuracion`, `/futbol`, `/futbol/partidos/:id`, `/futbol/bitacora`, `/futbol/dashboard`, `/login`, `/onboarding`). Se consolida consistencia de shell público en `/` (links ajustados en login y dashboard). Evidencia: `docs/reportes/FASE_4_MATRIZ_VISTAS_TIERS_2026-03-30.md`. 
+- Fase 4 cerrada (2026-03-30): implementación validada por vista contra matriz funcional del doc 06 (`/`, `/app`, `/dashboard`, `/bitacora`, `/configuracion`, `/futbol`, `/futbol/partidos/:id`, `/futbol/bitacora`, `/futbol/dashboard`, `/login`, `/onboarding`). Se consolida consistencia de shell público en `/` (links ajustados en login y dashboard). Evidencia: `docs/reportes/FASE_4_MATRIZ_VISTAS_TIERS_2026-03-30.md`.
+- Fase 5 cerrada (2026-03-30): depth layers premium materializadas dentro de módulos existentes (NBA/Fútbol) con componente reutilizable `PanelDepthPremium`, sin crear rutas premium paralelas y manteniendo plan base completo. Integrado en `/app`, `/futbol` y `/futbol/partidos/:id` con gate `premium.depth`. Evidencia: `docs/reportes/FASE_5_DEPTH_LAYERS_PREMIUM_2026-03-30.md`. 
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

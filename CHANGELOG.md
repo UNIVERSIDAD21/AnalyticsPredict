@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 5 (depth layers premium dentro de módulos existentes):
+  - Nuevo componente reusable `frontend/src/componentes/moleculas/PanelDepthPremium.tsx` (y export en `moleculas/index.ts`) para expresar la capa depth premium con los tres bloques oficiales: comparativas multi-mercado, contexto histórico extendido y priorización operativa avanzada.
+  - Integración de depth premium en `frontend/src/componentes/paginas/PaginaPrincipal.tsx` (NBA), `frontend/src/componentes/paginas/PaginaFutbol.tsx` (módulo fútbol) y `frontend/src/componentes/paginas/AnalisisPartidoFutbol.tsx` (análisis de partido).
+  - CTA de depth alineado a gate `premium.depth` sin crear rutas premium separadas.
+  - Evidencia de cierre: `docs/reportes/FASE_5_DEPTH_LAYERS_PREMIUM_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 4 (implementación por vistas contra matriz funcional del doc 06):
   - Se valida cumplimiento funcional por vista para `/`, `/app`, `/dashboard`, `/bitacora`, `/configuracion`, `/futbol`, `/futbol/partidos/:id`, `/futbol/bitacora`, `/futbol/dashboard`, `/login` y `/onboarding`.
   - `frontend/src/componentes/paginas/PaginaLogin.tsx` alinea link de exploración pública al shell visitante oficial `/`.

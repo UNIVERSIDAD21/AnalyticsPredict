@@ -11,7 +11,7 @@ import {
   FormularioGuardarApuesta,
   ResultadoAnalisis,
 } from '../organismos';
-import { MensajeError, ProgresoAnalisis } from '../moleculas';
+import { MensajeError, PanelDepthPremium, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { Activity, TrendingUp, Target, BarChart3, ArrowLeft } from 'lucide-react';
@@ -19,6 +19,7 @@ import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../ti
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 
 const TablaEstadisticasEquipos = lazy(async () => ({
   default: (await import('../organismos/TablaEstadisticasEquipos')).TablaEstadisticasEquipos,
@@ -189,6 +190,7 @@ export function PaginaPrincipal() {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
   const { navegarConGate } = useGateNavigation(navegar);
+  const { can } = useAccessPolicy();
 
   const obtenerAdvertenciasCriticas = (lista: string[]) => {
     const mapeo: Record<string, string> = {
@@ -316,6 +318,20 @@ export function PaginaPrincipal() {
             AnalyticsPredict prioriza disciplina operativa y trazabilidad de decisiones. No promete ganancias fáciles.
             NBA es el frente comercial más maduro; fútbol se mantiene en beta/laboratorio hasta cumplir criterios de promoción.
           </p>
+        </div>
+
+        <div className="mb-6">
+          <PanelDepthPremium
+            titulo="Depth premium NBA"
+            descripcion="Premium se implementa dentro del módulo NBA: no reemplaza Base, lo profundiza con más contexto operativo."
+            bullets={[
+              'comparativas_multi_mercado en resultados y lectura de valor',
+              'contexto_historico_extendido sobre desempeño y varianza',
+              'priorizacion_operativa_avanzada para ejecución disciplinada',
+            ]}
+            activo={can('premium.depth')}
+            onAbrirDepth={() => navegarConGate('/configuracion', 'premium.depth')}
+          />
         </div>
 
         {/* Tabs */}
