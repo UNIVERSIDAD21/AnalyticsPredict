@@ -1,6 +1,16 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 1 (policy central de capabilities/tier) alineado al contrato funcional `docs/roadmap_inmediato/06_ESPECIFICACION_FUNCIONAL_TIERS_VISITANTE_BASE_PREMIUM.md`:
+  - Nuevo módulo backend `backend/servicios/access_policy.py` como fuente única de capabilities, tier mínimo y tipos de gate (`BASE_REQUIRED`, `PREMIUM_REQUIRED`, `DISABLED`).
+  - `backend/servicios/access_tiers.py` agrega `exigir_capability(...)` con 403 tipado y `exigir_premium(...)` delega en capability `premium.depth`.
+  - `backend/api/rutas_access.py` deja lógica duplicada, usa evaluación central y expone `GET /api/access/policy` + `GET /api/access/capability-check` con `required_tier` y `gate`.
+  - `frontend/src/servicios/accessPolicy.ts` migra a catálogo único `CAPABILITY_META` con resolución central de habilitación por tier y tipo de gate.
+  - Evidencia de cierre: `docs/reportes/FASE_1_POLICY_CAPABILITIES_TIERS_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `python3 -m py_compile backend/servicios/access_policy.py backend/servicios/access_tiers.py backend/api/rutas_access.py backend/api/rutas_premium.py`
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Ajuste de consistencia con el plan de tiers visitante/premium en runtime:
   - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` cambia CTAs de visitante para usar gates por acción (`useGateNavigation`) en vez de navegar directo a `/login`.
   - `frontend/src/componentes/organismos/Encabezado.tsx` reemplaza CTA de invitado por acción protegida con gate (`analisis.nba.base` / `futbol.base`) en lugar de envío directo a login.

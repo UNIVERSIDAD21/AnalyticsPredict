@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from servicios.auth_store import AuthStore
 from servicios.auth_seguridad import decodificar_y_validar_token, obtener_secreto_auth
 from servicios.pagos_store import PagosStore
+from servicios.access_policy import evaluar_capability, TipoGate
 
 Tier = str  # INVITADO | BASE | PREMIUM
 
@@ -45,9 +46,41 @@ def resolver_tier(user_id: int, pagos_store: PagosStore) -> Tier:
 
 
 def exigir_premium(user_id: int, pagos_store: PagosStore) -> None:
+    exigir_capability(user_id, "premium.depth", pagos_store)
+
+
+def exigir_capability(user_id: int, capability: str, pagos_store: PagosStore) -> None:
     tier = resolver_tier(user_id, pagos_store)
-    if tier != "PREMIUM":
+    resultado = evaluar_capability(capability, tier)
+
+    if resultado.enabled:
+        return
+
+    if resultado.gate == TipoGate.BASE_REQUIRED:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Esta capacidad requiere suscripción premium activa",
+            detail={
+                "code": "BASE_REQUIRED",
+                "capability": capability,
+                "message": "Esta capacidad requiere cuenta activa.",
+            },
         )
+
+    if resultado.gate == TipoGate.PREMIUM_REQUIRED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "PREMIUM_REQUIRED",
+                "capability": capability,
+                "message": "Esta capacidad requiere suscripción premium activa.",
+            },
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "code": "CAPABILITY_DISABLED",
+            "capability": capability,
+            "message": "Esta capacidad está deshabilitada en la fase actual.",
+        },
+    )

@@ -12,6 +12,13 @@ export type Capability =
   | 'premium.depth'
   | 'chat.contextual';
 
+export type TipoGate = 'BASE_REQUIRED' | 'PREMIUM_REQUIRED' | 'DISABLED';
+
+export interface CapabilityMeta {
+  tierMinimo: TierProducto | null;
+  disabled: boolean;
+}
+
 export interface AccessPolicy {
   tier: TierProducto;
   capabilities: Record<Capability, boolean>;
@@ -22,23 +29,57 @@ export interface GateCopy {
   mensaje: string;
 }
 
-const CHAT_ENABLED = false;
+const CAPABILITY_META: Record<Capability, CapabilityMeta> = {
+  'public.shell': { tierMinimo: 'INVITADO', disabled: false },
+  'public.center': { tierMinimo: 'INVITADO', disabled: false },
+  'public.governance': { tierMinimo: 'INVITADO', disabled: false },
+  'dashboard.personal': { tierMinimo: 'BASE', disabled: false },
+  'bitacora.personal': { tierMinimo: 'BASE', disabled: false },
+  'configuracion.base': { tierMinimo: 'BASE', disabled: false },
+  'analisis.nba.base': { tierMinimo: 'BASE', disabled: false },
+  'futbol.base': { tierMinimo: 'BASE', disabled: false },
+  'premium.depth': { tierMinimo: 'PREMIUM', disabled: false },
+  'chat.contextual': { tierMinimo: null, disabled: true },
+};
+
+const RANK_TIER: Record<TierProducto, number> = {
+  INVITADO: 0,
+  BASE: 1,
+  PREMIUM: 2,
+};
+
+function estaHabilitada(capability: Capability, tier: TierProducto): boolean {
+  const meta = CAPABILITY_META[capability];
+  if (!meta || meta.disabled || !meta.tierMinimo) return false;
+  return RANK_TIER[tier] >= RANK_TIER[meta.tierMinimo];
+}
+
+function resolverTipoGate(capability: Capability, tier: TierProducto): TipoGate | null {
+  const meta = CAPABILITY_META[capability];
+  if (!meta || meta.disabled || !meta.tierMinimo) return 'DISABLED';
+  if (estaHabilitada(capability, tier)) return null;
+  if (meta.tierMinimo === 'BASE') return 'BASE_REQUIRED';
+  if (meta.tierMinimo === 'PREMIUM') return 'PREMIUM_REQUIRED';
+  return 'DISABLED';
+}
 
 function buildCapabilities(tier: TierProducto): Record<Capability, boolean> {
-  const base: Record<Capability, boolean> = {
-    'public.shell': true,
-    'public.center': true,
-    'public.governance': true,
-    'dashboard.personal': tier !== 'INVITADO',
-    'bitacora.personal': tier !== 'INVITADO',
-    'configuracion.base': tier !== 'INVITADO',
-    'analisis.nba.base': tier !== 'INVITADO',
-    'futbol.base': tier !== 'INVITADO',
-    'premium.depth': tier === 'PREMIUM',
-    'chat.contextual': CHAT_ENABLED && tier !== 'INVITADO',
+  return {
+    'public.shell': estaHabilitada('public.shell', tier),
+    'public.center': estaHabilitada('public.center', tier),
+    'public.governance': estaHabilitada('public.governance', tier),
+    'dashboard.personal': estaHabilitada('dashboard.personal', tier),
+    'bitacora.personal': estaHabilitada('bitacora.personal', tier),
+    'configuracion.base': estaHabilitada('configuracion.base', tier),
+    'analisis.nba.base': estaHabilitada('analisis.nba.base', tier),
+    'futbol.base': estaHabilitada('futbol.base', tier),
+    'premium.depth': estaHabilitada('premium.depth', tier),
+    'chat.contextual': estaHabilitada('chat.contextual', tier),
   };
+}
 
-  return base;
+export function obtenerCapabilityMeta(capability: Capability): CapabilityMeta {
+  return CAPABILITY_META[capability];
 }
 
 export function construirAccessPolicy(tier: TierProducto): AccessPolicy {
@@ -50,6 +91,10 @@ export function construirAccessPolicy(tier: TierProducto): AccessPolicy {
 
 export function puedeAcceder(policy: AccessPolicy, capability: Capability): boolean {
   return !!policy.capabilities[capability];
+}
+
+export function obtenerTipoGate(policy: AccessPolicy, capability: Capability): TipoGate | null {
+  return resolverTipoGate(capability, policy.tier);
 }
 
 export function obtenerGateCopy(capability: Capability, autenticado: boolean): GateCopy {

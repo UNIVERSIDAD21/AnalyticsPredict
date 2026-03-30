@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-30 (ajuste de enforcement visitante/gates y chat fuera de alcance reafirmado)
+Última actualización: 2026-03-30 (cierre Fase 1 de policy central capabilities/tier + enforcement tipado)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -83,6 +83,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Hardening complementario posterior a auditoría: capability-check backend (`/api/access/capability-check`), ingesta server-side de analytics de producto (`/api/product-analytics/events`) y corrección de ruta fútbol bitácora (`/futbol/bitacora` → `BitacoraFutbol`).
 - Chat permanece fuera de alcance: UI oculta + backend deshabilitado por `CHAT_ENABLED=false`.
 - Ajuste de consistencia en runtime (2026-03-30): `/chat` deja de existir como ruta operativa y redirige a `/`; los CTAs de visitante en `PaginaCentroAnalitico` y `Encabezado` ahora invocan gates por acción protegida (`useGateNavigation`) en lugar de mandar directo a `/login`, reforzando que el login aparece por intento de acción protegida y no por entrada al sistema.
+- Fase 1 cerrada (2026-03-30): policy central capabilities/tier unificada FE/BE. Backend incorpora `servicios/access_policy.py` como fuente única de capabilities, tipificación de gates (`BASE_REQUIRED`/`PREMIUM_REQUIRED`/`DISABLED`), refactor de `rutas_access` con `required_tier`+`gate` y endpoint `GET /api/access/policy`; frontend alinea `accessPolicy.ts` al mismo modelo. Evidencia: `docs/reportes/FASE_1_POLICY_CAPABILITIES_TIERS_2026-03-30.md`. 
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
