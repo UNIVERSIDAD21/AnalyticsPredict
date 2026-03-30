@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 8 (hardening + QA contractual final):
+  - Nuevo test unitario `backend/tests/test_access_policy_tiers.py` para validar reglas de acceso por tier/capability y estado fuera de alcance de `chat.contextual`.
+  - Validación backend de consistencia ejecutada con `python3 -m py_compile ...` y assertions runtime de policy con `PYTHONPATH=backend`.
+  - Cierre documental de QA contractual final en `docs/reportes/FASE_8_HARDENING_QA_FINAL_2026-03-30.md`.
+  - Nota de entorno: `pytest` no disponible en esta VM (`command not found`), por lo que se dejó prueba unitaria agregada y validación runtime equivalente ejecutada.
+- Validación técnica de cierre de fase en verde:
+  - `python3 -m py_compile backend/servicios/access_policy.py backend/servicios/access_tiers.py backend/api/rutas_access.py backend/api/rutas_premium.py backend/api/rutas_product_analytics.py`
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 7 (embudo y analítica de conversión):
   - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` agrega evento normalizado `public_center_viewed` (manteniendo compatibilidad con `public_center_view`).
   - `frontend/src/componentes/paginas/PaginaOnboarding.tsx` integra `onboarding_started` y `onboarding_completed` en product analytics con metadata de destino.

@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-30 (cierre Fase 7 de embudo y analítica de conversión)
+Última actualización: 2026-03-30 (cierre Fase 8 de hardening y QA contractual final)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -89,7 +89,8 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Fase 4 cerrada (2026-03-30): implementación validada por vista contra matriz funcional del doc 06 (`/`, `/app`, `/dashboard`, `/bitacora`, `/configuracion`, `/futbol`, `/futbol/partidos/:id`, `/futbol/bitacora`, `/futbol/dashboard`, `/login`, `/onboarding`). Se consolida consistencia de shell público en `/` (links ajustados en login y dashboard). Evidencia: `docs/reportes/FASE_4_MATRIZ_VISTAS_TIERS_2026-03-30.md`.
 - Fase 5 cerrada (2026-03-30): depth layers premium materializadas dentro de módulos existentes (NBA/Fútbol) con componente reutilizable `PanelDepthPremium`, sin crear rutas premium paralelas y manteniendo plan base completo. Integrado en `/app`, `/futbol` y `/futbol/partidos/:id` con gate `premium.depth`. Evidencia: `docs/reportes/FASE_5_DEPTH_LAYERS_PREMIUM_2026-03-30.md`.
 - Fase 6 cerrada (2026-03-30): subestado Base por onboarding implementado end-to-end. `RutaConOnboarding` preserva destino original al redirigir a `/onboarding`, y `PaginaOnboarding` retorna a la ruta intentada tras completar activación (o `/dashboard` por defecto), mostrando contexto cuando el flujo fue bloqueado por onboarding incompleto. Evidencia: `docs/reportes/FASE_6_ONBOARDING_SUBESTADOS_BASE_2026-03-30.md`.
-- Fase 7 cerrada (2026-03-30): embudo de conversión instrumentado con eventos de producto para explorar→base→onboarding→premium (`public_center_viewed`, `gate_blocked`, `gate_allowed`, `onboarding_started`, `onboarding_completed`, `premium_layer_interaction`, `premium_activation_intent`) y trazabilidad por módulo (`nba`, `futbol`, `futbol_partido`). Evidencia: `docs/reportes/FASE_7_EMBUDO_ANALITICA_CONVERSION_2026-03-30.md`. 
+- Fase 7 cerrada (2026-03-30): embudo de conversión instrumentado con eventos de producto para explorar→base→onboarding→premium (`public_center_viewed`, `gate_blocked`, `gate_allowed`, `onboarding_started`, `onboarding_completed`, `premium_layer_interaction`, `premium_activation_intent`) y trazabilidad por módulo (`nba`, `futbol`, `futbol_partido`). Evidencia: `docs/reportes/FASE_7_EMBUDO_ANALITICA_CONVERSION_2026-03-30.md`.
+- Fase 8 cerrada (2026-03-30): hardening + QA contractual final con prueba unitaria de policy (`backend/tests/test_access_policy_tiers.py`), validación de consistencia backend (`py_compile` + assertions runtime) y cierre de checklist contractual del doc 06 (tiers, gates, Base utilizable, Premium por profundidad, chat fuera de alcance). Evidencia: `docs/reportes/FASE_8_HARDENING_QA_FINAL_2026-03-30.md`. 
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
