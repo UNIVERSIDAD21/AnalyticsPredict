@@ -158,7 +158,7 @@
   - `approved/authorized -> active`,
   - `pending/in_process -> past_due`,
   - `rejected/cancelled/refunded/charged_back -> inactive`.
-- Cierre formal de A1 (staging + smoke real): despliegue ejecutado en host con Docker y evidencia en `docs/reportes/A1_SMOKE_STAGING_2026-03-26T14:12:43Z.md`.
+- Cierre formal de A1 (staging + smoke real): despliegue ejecutado en host con Docker y evidencia en `docs/reportes/A1_SMOKE_STAGING_2026-03-26T14-12-43Z.md`.
 - Corrección del script de smoke A1: se reemplaza verificación de `GET /api/pagos/feature-gate` (ahora requiere query+auth) por `GET /api/pagos/matriz-estados` para mantener smoke reproducible sin sesión.
 - Endurecimiento de scripts operativos B3/B4 para ejecución real:
   - `scripts/b3_ciclo_semanal.sh` ahora soporta `X-Usuario-Id`, usa `python3` portable y marca explícitamente ciclos sin muestra como no computables para cierre formal.
