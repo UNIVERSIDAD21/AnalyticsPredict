@@ -682,6 +682,7 @@ export function PaginaFutbol() {
 
         <div className="mb-6">
           <PanelDepthPremium
+            modulo="futbol"
             titulo="Depth premium Fútbol"
             descripcion="La capa premium vive dentro del flujo fútbol actual para ampliar contexto por competición sin romper el plan base."
             bullets={[

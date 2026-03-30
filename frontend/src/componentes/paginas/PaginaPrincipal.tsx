@@ -322,6 +322,7 @@ export function PaginaPrincipal() {
 
         <div className="mb-6">
           <PanelDepthPremium
+            modulo="nba"
             titulo="Depth premium NBA"
             descripcion="Premium se implementa dentro del módulo NBA: no reemplaza Base, lo profundiza con más contexto operativo."
             bullets={[

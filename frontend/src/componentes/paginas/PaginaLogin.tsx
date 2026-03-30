@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Crown, Radar, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../contextos/AuthContext';
 import { restablecerPassword, solicitarRecuperacion } from '../../servicios/auth';
+import { registrarEventoProducto } from '../../servicios/productAnalytics';
 
 type ModoAuth = 'login' | 'register' | 'forgot' | 'reset';
 const LEGAL_VERSION = '2026-03-18';
@@ -39,6 +40,7 @@ export function PaginaLogin() {
     setCargando(true);
     try {
       await login(email, password);
+      registrarEventoProducto('base_consumption_started', { via: 'login', destino });
       navigate(destino, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');
@@ -64,6 +66,7 @@ export function PaginaLogin() {
     setCargando(true);
     try {
       await register(email, password, LEGAL_VERSION, acceptedLegal);
+      registrarEventoProducto('base_consumption_started', { via: 'register', destino });
       navigate(destino, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar la cuenta');

@@ -1,6 +1,17 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 7 (embudo y analítica de conversión):
+  - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` agrega evento normalizado `public_center_viewed` (manteniendo compatibilidad con `public_center_view`).
+  - `frontend/src/componentes/paginas/PaginaOnboarding.tsx` integra `onboarding_started` y `onboarding_completed` en product analytics con metadata de destino.
+  - `frontend/src/componentes/paginas/PaginaLogin.tsx` registra `base_consumption_started` en login/registro exitoso.
+  - `frontend/src/componentes/moleculas/PanelDepthPremium.tsx` registra `premium_layer_interaction` (view/click_cta) por módulo y estado premium.
+  - `frontend/src/hooks/useGateNavigation.ts` registra `premium_activation_intent` al interactuar con capability `premium.depth`.
+  - Integraciones por módulo en `PaginaPrincipal`, `PaginaFutbol` y `AnalisisPartidoFutbol` para atribución de conversión (`nba|futbol|futbol_partido`).
+  - Evidencia de cierre: `docs/reportes/FASE_7_EMBUDO_ANALITICA_CONVERSION_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 6 (subestados Base por onboarding) alineado al contrato funcional del doc 06:
   - `frontend/src/App.tsx`: `RutaConOnboarding` redirige a `/onboarding` preservando `from` para continuidad del flujo.
   - `frontend/src/componentes/paginas/PaginaOnboarding.tsx`: onboarding usa `useLocation/useNavigate`, muestra contexto de retorno y al finalizar vuelve al destino intentado (fallback `/dashboard`).

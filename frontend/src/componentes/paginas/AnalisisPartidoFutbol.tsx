@@ -509,6 +509,7 @@ export function AnalisisPartidoFutbol() {
         {partido && !cargandoPartido && <HeaderPartido partido={partido} />}
 
         <PanelDepthPremium
+          modulo="futbol_partido"
           titulo="Depth premium en análisis de partido"
           descripcion="La profundidad premium se activa sobre este análisis para ampliar comparativas, histórico y priorización operativa."
           bullets={[

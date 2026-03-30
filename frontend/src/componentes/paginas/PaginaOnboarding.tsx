@@ -9,6 +9,7 @@ import {
   registrarEventoOnboarding,
   type PerfilOnboarding,
 } from '../../servicios/onboarding';
+import { registrarEventoProducto } from '../../servicios/productAnalytics';
 import { useToasts } from '../../contextos/Toasts';
 
 
@@ -36,14 +37,18 @@ export function PaginaOnboarding() {
   }, [paso, perfil.nombre]);
 
   useEffect(() => {
-    void registrarEventoOnboarding('onboarding_started', { paso_inicial: 1 });
-  }, []);
+    const payload = { paso_inicial: 1, destino: destinoPostOnboarding };
+    void registrarEventoOnboarding('onboarding_started', payload);
+    registrarEventoProducto('onboarding_started', payload);
+  }, [destinoPostOnboarding]);
 
   const finalizar = async () => {
     if (!usuario?.id) return;
 
     await guardarEstadoOnboarding(String(usuario.id), perfil);
-    await registrarEventoOnboarding('onboarding_completed', { objetivo: perfil.objetivoPrincipal });
+    const payloadFin = { objetivo: perfil.objetivoPrincipal, destino: destinoPostOnboarding };
+    await registrarEventoOnboarding('onboarding_completed', payloadFin);
+    registrarEventoProducto('onboarding_completed', payloadFin);
 
     agregarToast({
       titulo: 'Onboarding completado',

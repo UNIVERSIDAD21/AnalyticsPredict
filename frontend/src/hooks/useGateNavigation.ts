@@ -10,6 +10,14 @@ export function useGateNavigation(navegar: (ruta: string) => void) {
   const { abrirGatePrompt } = useGatePrompt();
 
   const navegarConGate = (ruta: string, capability: Capability) => {
+    if (capability === 'premium.depth') {
+      registrarEventoProducto('premium_activation_intent', {
+        ruta,
+        autenticado: !!usuario,
+        tier: policy.tier,
+      });
+    }
+
     if (can(capability)) {
       registrarEventoProducto('gate_allowed', { capability, ruta });
       navegar(ruta);

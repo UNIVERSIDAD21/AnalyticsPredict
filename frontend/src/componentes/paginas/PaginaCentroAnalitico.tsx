@@ -46,11 +46,14 @@ export function PaginaCentroAnalitico() {
   const [kpisFutbol, setKpisFutbol] = useState<KPIBase>({ apuestasTotales: 0, resueltas: 0, ganadas: 0, winRate: 0 });
 
   useEffect(() => {
-    registrarEventoProducto('public_center_view', {
+    const payloadCentro = {
       autenticado,
       deporteActivo,
       tierHint: can('premium.depth') ? 'PREMIUM' : (autenticado ? 'BASE' : 'INVITADO'),
-    });
+    };
+
+    registrarEventoProducto('public_center_view', payloadCentro);
+    registrarEventoProducto('public_center_viewed', payloadCentro);
 
     const cargar = async () => {
       try {

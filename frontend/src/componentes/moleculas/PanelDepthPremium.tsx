@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { Crown, Layers3 } from 'lucide-react';
 import { Boton, Tarjeta } from '../atomos';
+import { registrarEventoProducto } from '../../servicios/productAnalytics';
 
 interface PanelDepthPremiumProps {
+  modulo: 'nba' | 'futbol' | 'futbol_partido';
   titulo: string;
   descripcion: string;
   bullets: string[];
@@ -10,12 +13,20 @@ interface PanelDepthPremiumProps {
 }
 
 export function PanelDepthPremium({
+  modulo,
   titulo,
   descripcion,
   bullets,
   activo,
   onAbrirDepth,
 }: PanelDepthPremiumProps) {
+  useEffect(() => {
+    registrarEventoProducto('premium_layer_interaction', {
+      modulo,
+      interaction: 'view',
+      premiumActive: activo,
+    });
+  }, [modulo, activo]);
   return (
     <Tarjeta className="p-5 space-y-3 border border-neon-magenta/30">
       <div className="flex items-center gap-2 text-neon-magenta">
@@ -37,7 +48,18 @@ export function PanelDepthPremium({
           : 'Plan base activo: flujo operativo completo disponible. Premium añade profundidad adicional dentro de este mismo módulo.'}
       </div>
 
-      <Boton variante="secundario" onClick={onAbrirDepth} iconoInicio={<Layers3 className="w-4 h-4" />}>
+      <Boton
+        variante="secundario"
+        onClick={() => {
+          registrarEventoProducto('premium_layer_interaction', {
+            modulo,
+            interaction: 'click_cta',
+            premiumActive: activo,
+          });
+          onAbrirDepth();
+        }}
+        iconoInicio={<Layers3 className="w-4 h-4" />}
+      >
         {activo ? 'Abrir depth premium' : 'Desbloquear capa premium'}
       </Boton>
     </Tarjeta>
