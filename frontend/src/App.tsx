@@ -51,7 +51,7 @@ function RutaConOnboarding({ children }: { children: ReactElement }) {
 
   const estadoOnboarding = obtenerEstadoOnboarding(String(usuario.id));
   if (!estadoOnboarding.completado) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/onboarding" replace state={{ from: location }} />;
   }
 
   return children;

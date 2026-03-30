@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ## 2026-03-30
+- Cierre de Fase 6 (subestados Base por onboarding) alineado al contrato funcional del doc 06:
+  - `frontend/src/App.tsx`: `RutaConOnboarding` redirige a `/onboarding` preservando `from` para continuidad del flujo.
+  - `frontend/src/componentes/paginas/PaginaOnboarding.tsx`: onboarding usa `useLocation/useNavigate`, muestra contexto de retorno y al finalizar vuelve al destino intentado (fallback `/dashboard`).
+  - Evidencia de cierre: `docs/reportes/FASE_6_ONBOARDING_SUBESTADOS_BASE_2026-03-30.md`.
+- Validación técnica de cierre de fase en verde:
+  - `npm --prefix frontend run lint`
+  - `npm --prefix frontend run build`
 - Cierre de Fase 5 (depth layers premium dentro de módulos existentes):
   - Nuevo componente reusable `frontend/src/componentes/moleculas/PanelDepthPremium.tsx` (y export en `moleculas/index.ts`) para expresar la capa depth premium con los tres bloques oficiales: comparativas multi-mercado, contexto histórico extendido y priorización operativa avanzada.
   - Integración de depth premium en `frontend/src/componentes/paginas/PaginaPrincipal.tsx` (NBA), `frontend/src/componentes/paginas/PaginaFutbol.tsx` (módulo fútbol) y `frontend/src/componentes/paginas/AnalisisPartidoFutbol.tsx` (análisis de partido).

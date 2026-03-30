@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Compass, Rocket, ShieldCheck } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton } from '../atomos';
@@ -10,15 +11,14 @@ import {
 } from '../../servicios/onboarding';
 import { useToasts } from '../../contextos/Toasts';
 
-const navegar = (ruta: string) => {
-  if (window.location.pathname === ruta) return;
-  window.history.pushState({}, '', ruta);
-  window.dispatchEvent(new PopStateEvent('popstate'));
-};
 
 export function PaginaOnboarding() {
   const { usuario } = useAuth();
   const { agregarToast } = useToasts();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const destinoPostOnboarding = ((location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard');
 
   const [paso, setPaso] = useState(1);
   const [perfil, setPerfil] = useState<PerfilOnboarding>({
@@ -47,10 +47,10 @@ export function PaginaOnboarding() {
 
     agregarToast({
       titulo: 'Onboarding completado',
-      mensaje: 'Tu dashboard personalizado ya está listo.',
+      mensaje: 'Tu perfil base quedó activo y ya puedes operar sin fricción.',
       tipo: 'success',
     });
-    navegar('/dashboard');
+    navigate(destinoPostOnboarding, { replace: true });
   };
 
   return (
@@ -72,6 +72,12 @@ export function PaginaOnboarding() {
           <div className="h-2 rounded-full bg-futurista-oscuro/80 border border-neon-cyan/20 overflow-hidden">
             <div className="h-full bg-neon-cyan" style={{ width: `${(paso / 3) * 100}%` }} />
           </div>
+
+          {destinoPostOnboarding !== '/dashboard' && (
+            <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3 text-sm text-texto-secundario">
+              Terminando este onboarding te llevamos directo a <strong className="text-texto-principal">{destinoPostOnboarding}</strong> para continuar donde te quedaste.
+            </div>
+          )}
 
           {paso === 1 && (
             <section className="space-y-4">
