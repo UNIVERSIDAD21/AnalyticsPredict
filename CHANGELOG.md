@@ -10,6 +10,12 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Persistencia reforzada de registro/login en tabla de negocio `usuarios`:
+  - `backend/servicios/auth_store.py` ahora crea/mantiene espejo en `usuarios` al registrar usuario (email, nombre, password_hash, timestamps, rol, activo).
+  - En PostgreSQL se crea `usuarios` (si no existe) con esquema de negocio; en SQLite se crea tabla equivalente de compatibilidad.
+  - `actualizar_password` sincroniza hash tanto en `auth_users` como en `usuarios`.
+  - `obtener_usuario_por_email` en PostgreSQL incluye fallback de compatibilidad: si existe en `usuarios` pero no en `auth_users`, crea registro sombra en `auth_users` para no romper flujo auth actual.
+
 - Reescritura completa del módulo de autenticación (Auth v2 canónico):
   - `backend/api/rutas_auth.py` reimplementado de cero para registro/login/refresh/logout/me/forgot/reset/accept-legal con flujo directo, validación explícita y trazas de diagnóstico de store activo.
   - Se mantiene contrato de respuesta `v2` (`{ ok, data, meta }`) para compatibilidad con frontend actual.

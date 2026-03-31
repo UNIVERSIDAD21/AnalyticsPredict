@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Iterator, Protocol
@@ -74,6 +75,28 @@ class SQLiteAuthStore:
                 )
                 """
             )
+            # Mirror operativo solicitado: tabla usuarios (sqlite compat).
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS usuarios (
+                  id TEXT PRIMARY KEY,
+                  email TEXT UNIQUE NOT NULL,
+                  nombre TEXT NOT NULL,
+                  password_hash TEXT NOT NULL,
+                  fecha_creacion TEXT NOT NULL,
+                  fecha_ultima_sesion TEXT,
+                  activo INTEGER NOT NULL DEFAULT 1,
+                  rol TEXT NOT NULL DEFAULT 'usuario',
+                  preferencias TEXT NOT NULL DEFAULT '{}',
+                  bankroll_inicial REAL NOT NULL DEFAULT 0,
+                  creado_en TEXT NOT NULL,
+                  actualizado_en TEXT NOT NULL,
+                  perfil_riesgo_default TEXT NOT NULL DEFAULT 'CONSERVADOR',
+                  config_sizing TEXT NOT NULL DEFAULT '{"cap_diario": 0.10, "stake_minimo": 5.0, "cap_por_apuesta": 0.02, "fraccion_kelly_medio": 0.25, "fraccion_kelly_agresivo": 0.5, "fraccion_kelly_conservador": 0.125}',
+                  bankroll_actual REAL
+                )
+                """
+            )
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS auth_revoked_tokens (
@@ -96,6 +119,19 @@ class SQLiteAuthStore:
                 (normalized_email, password_hash, created_at, legal_version, legal_accepted_at),
             )
             user_id = cur.lastrowid
+
+            nombre = normalized_email.split('@')[0][:100] or 'usuario'
+            conn.execute(
+                """
+                INSERT INTO usuarios(id, email, nombre, password_hash, fecha_creacion, creado_en, actualizado_en)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(email) DO UPDATE SET
+                  nombre=excluded.nombre,
+                  password_hash=excluded.password_hash,
+                  actualizado_en=excluded.actualizado_en
+                """,
+                (str(uuid.uuid4()), normalized_email, nombre, password_hash, created_at, created_at, created_at),
+            )
         return {
             "id": user_id,
             "email": normalized_email,
@@ -164,6 +200,12 @@ class SQLiteAuthStore:
                 "UPDATE auth_users SET password_hash=? WHERE id=?",
                 (password_hash, user_id),
             )
+            row = conn.execute("SELECT email FROM auth_users WHERE id=?", (user_id,)).fetchone()
+            if row:
+                conn.execute(
+                    "UPDATE usuarios SET password_hash=?, actualizado_en=? WHERE lower(email)=lower(?)",
+                    (password_hash, datetime.now(timezone.utc).isoformat(), row[0]),
+                )
 
     def revocar_jti(self, jti: str) -> None:
         with self._conn() as conn:
@@ -237,6 +279,29 @@ class PostgresAuthStore:
                 )
                 """
             )
+            # Mirror operativo solicitado: tabla usuarios con esquema de negocio.
+            cur.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS usuarios (
+                  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                  email VARCHAR(255) UNIQUE NOT NULL,
+                  nombre VARCHAR(100) NOT NULL,
+                  password_hash VARCHAR(255) NOT NULL,
+                  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+                  fecha_ultima_sesion TIMESTAMPTZ,
+                  activo BOOLEAN DEFAULT TRUE,
+                  rol VARCHAR(20) DEFAULT 'usuario',
+                  preferencias JSONB DEFAULT '{}'::jsonb,
+                  bankroll_inicial NUMERIC(10,2) DEFAULT 0,
+                  creado_en TIMESTAMPTZ DEFAULT NOW(),
+                  actualizado_en TIMESTAMPTZ DEFAULT NOW(),
+                  perfil_riesgo_default VARCHAR(20) DEFAULT 'CONSERVADOR',
+                  config_sizing JSONB DEFAULT '{"cap_diario": 0.10, "stake_minimo": 5.0, "cap_por_apuesta": 0.02, "fraccion_kelly_medio": 0.25, "fraccion_kelly_agresivo": 0.5, "fraccion_kelly_conservador": 0.125}'::jsonb,
+                  bankroll_actual NUMERIC(10,2)
+                )
+                """
+            )
 
     def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict:
         normalized_email = email.lower().strip()
@@ -250,16 +315,53 @@ class PostgresAuthStore:
                 (normalized_email, password_hash, legal_version, legal_version),
             )
             row = cur.fetchone()
+
+            nombre = (normalized_email.split('@')[0] or 'usuario')[:100]
+            cur.execute(
+                """
+                INSERT INTO usuarios(email, nombre, password_hash, fecha_creacion, creado_en, actualizado_en, activo, rol)
+                VALUES (%s, %s, %s, NOW(), NOW(), NOW(), TRUE, 'usuario')
+                ON CONFLICT(email) DO UPDATE SET
+                  nombre=EXCLUDED.nombre,
+                  password_hash=EXCLUDED.password_hash,
+                  actualizado_en=NOW(),
+                  activo=TRUE
+                """,
+                (normalized_email, nombre, password_hash),
+            )
         return dict(row)
 
     def obtener_usuario_por_email(self, email: str) -> dict | None:
+        normalized_email = email.lower().strip()
         with self._conn() as (_, cur):
             cur.execute(
                 "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE email=%s",
-                (email.lower().strip(),),
+                (normalized_email,),
             )
             row = cur.fetchone()
-        return dict(row) if row else None
+            if row:
+                return dict(row)
+
+            # Fallback: si existe en tabla usuarios pero no en auth_users, crear sombra compatible.
+            cur.execute(
+                "SELECT email, password_hash, fecha_creacion FROM usuarios WHERE lower(email)=lower(%s) LIMIT 1",
+                (normalized_email,),
+            )
+            legacy = cur.fetchone()
+            if not legacy:
+                return None
+
+            cur.execute(
+                """
+                INSERT INTO auth_users(email, password_hash, created_at, legal_accepted_version, legal_accepted_at)
+                VALUES (%s, %s, COALESCE(%s, NOW()), %s, NOW())
+                ON CONFLICT(email) DO UPDATE SET password_hash=EXCLUDED.password_hash
+                RETURNING id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at
+                """,
+                (legacy["email"], legacy["password_hash"], legacy["fecha_creacion"], os.getenv("LEGAL_CURRENT_VERSION", "2026-03-18")),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
 
     def obtener_usuario_por_id(self, user_id: int) -> dict | None:
         with self._conn() as (_, cur):
@@ -317,6 +419,16 @@ class PostgresAuthStore:
     def actualizar_password(self, user_id: int, password_hash: str) -> None:
         with self._conn() as (_, cur):
             cur.execute("UPDATE auth_users SET password_hash=%s WHERE id=%s", (password_hash, user_id))
+            cur.execute(
+                """
+                UPDATE usuarios u
+                SET password_hash=%s,
+                    actualizado_en=NOW()
+                FROM auth_users a
+                WHERE a.id=%s AND lower(u.email)=lower(a.email)
+                """,
+                (password_hash, user_id),
+            )
 
     def revocar_jti(self, jti: str) -> None:
         with self._conn() as (_, cur):

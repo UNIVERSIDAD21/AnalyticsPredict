@@ -101,6 +101,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Hardening de sesión (2026-03-31): manejo explícito de sesión inválida tras 401/refresh fallido en frontend para cortar cascadas de llamadas protegidas y evitar ruido recurrente en dashboard.
 - Hardening de consistencia de infraestructura de datos (2026-03-31): `pagos_store` y `onboarding_store` ahora heredan driver/path de auth cuando no hay configuración explícita, reduciendo riesgo de operar con stores distintos en runtime (causa frecuente de inconsistencia entre usuarios autenticados y estado de suscripción/onboarding).
 - Reescritura Auth v2 (2026-03-31): capa de autenticación backend (`rutas_auth`) reconstruida para flujo canónico único con normalización de correo, emisión/refresh de tokens, recuperación, aceptación legal y endpoint `me`, manteniendo compatibilidad de contrato con frontend y mejor trazabilidad de store activo.
+- Persistencia de negocio de autenticación (2026-03-31): registro/auth sincroniza datos también en tabla `usuarios` (correo + password_hash + metadatos base), manteniendo compatibilidad con `auth_users` para no romper contratos actuales mientras se completa transición total.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
