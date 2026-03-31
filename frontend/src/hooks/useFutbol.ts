@@ -8,7 +8,6 @@
 // Re-exportar hooks individuales
 export { usePartidosFutbol } from './usePartidosFutbol';
 export { useAnalisisFutbol } from './useAnalisisFutbol';
-export { useBitacoraFutbol } from './useBitacoraFutbol';
 
 // Re-exportar tipos para conveniencia
 export type {

@@ -14,5 +14,4 @@ export { useCombinadas } from './useCombinadas';
 // Hooks de fútbol
 export { usePartidosFutbol } from './usePartidosFutbol';
 export { useAnalisisFutbol } from './useAnalisisFutbol';
-export { useBitacoraFutbol } from './useBitacoraFutbol';
 export * from './useFutbol';
