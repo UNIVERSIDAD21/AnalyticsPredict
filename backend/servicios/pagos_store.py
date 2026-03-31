@@ -39,6 +39,12 @@ class SQLitePagosStore:
         finally:
             conn.close()
 
+    def _ensure_column(self, conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        cols = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        names = {row[1] for row in cols}
+        if column not in names:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
     def _inicializar(self) -> None:
         with self._conn() as conn:
             conn.execute(
@@ -69,6 +75,9 @@ class SQLitePagosStore:
                 )
                 """
             )
+            # Migraciones livianas para instalaciones SQLite antiguas.
+            self._ensure_column(conn, "subscriptions", "source_payment_id", "TEXT")
+            self._ensure_column(conn, "subscriptions", "updated_at", "TEXT")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS payment_events (
