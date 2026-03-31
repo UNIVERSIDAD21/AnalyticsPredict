@@ -98,6 +98,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 2 de bitácora única (2026-03-31): `/api/bitacora/unificada` consolida lectura real de `apuestas` + `apuestas_futbol` + `apuestas_combinadas` con filtros por deporte/mercado/confianza; `/api/bitacora/resumen` incorpora agregados globales y segmentados por deporte/mercado. Se publica contrato y estrategia de transición en `docs/arquitectura/ARQUITECTURA_BITACORA_UNICA_TRANSICION.md`.
 - Bloque 3 de dashboard único (2026-03-31): el seguimiento personal se concentra en `/dashboard` con segmentación por deporte desde la bitácora única (agregado `por_deporte`), manteniendo separados los flujos operativos de análisis NBA/Fútbol.
 - Bloque 4 de limpieza (2026-03-31): se eliminan componentes/hooks legacy de bitácora/dashboard fútbol que mantenían duplicidad estructural; la transición queda soportada solo por redirecciones de rutas legacy hacia las herramientas canónicas globales.
+- Hardening de sesión (2026-03-31): manejo explícito de sesión inválida tras 401/refresh fallido en frontend para cortar cascadas de llamadas protegidas y evitar ruido recurrente en dashboard.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

@@ -29,6 +29,14 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<UsuarioAuth | null>(null);
 
   useEffect(() => {
+    const onSesionInvalida = () => {
+      limpiarSesionAuth();
+      setUsuario(null);
+      setCargando(false);
+    };
+
+    window.addEventListener('auth:session-invalidated', onSesionInvalida as EventListener);
+
     const inicializar = async () => {
       const access = obtenerAccessToken();
       const refresh = obtenerRefreshToken();
@@ -62,6 +70,10 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
     };
 
     void inicializar();
+
+    return () => {
+      window.removeEventListener('auth:session-invalidated', onSesionInvalida as EventListener);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

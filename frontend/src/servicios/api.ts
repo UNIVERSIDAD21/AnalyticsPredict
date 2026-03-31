@@ -99,6 +99,8 @@ function limpiarTokens() {
   window.localStorage.removeItem('auth.accessToken');
   window.localStorage.removeItem('auth.refreshToken');
   window.localStorage.removeItem('auth.user');
+  window.localStorage.removeItem('usuarioId');
+  window.dispatchEvent(new CustomEvent('auth:session-invalidated'));
 }
 
 // ══════════════════════════════════════════════════════════════

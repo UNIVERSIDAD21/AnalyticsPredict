@@ -10,6 +10,10 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Corrección de sesión/401 en dashboard y servicios protegidos:
+  - `frontend/src/servicios/api.ts`: cuando falla refresh/token inválido, ahora se invalida sesión de forma explícita y se emite evento global `auth:session-invalidated` (también limpia `usuarioId`) para evitar ciclos de llamadas 401.
+  - `frontend/src/contextos/AuthContext.tsx`: se suscribe al evento de sesión inválida, limpia estado auth y fuerza salida de rutas protegidas de manera consistente.
+
 - Bloque 4 (limpieza y cierre de deuda UX/arquitectura):
   - Eliminados artefactos de UI legacy que duplicaban herramientas compartidas:
     - `frontend/src/componentes/paginas/BitacoraFutbol.tsx`
