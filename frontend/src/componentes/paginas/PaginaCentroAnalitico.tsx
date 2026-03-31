@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Activity, CheckCircle2, Clock3, Layers3, ShieldAlert, Target, Radar, Crown } from 'lucide-react';
+import { useEffect } from 'react';
+import { Crown, Layers3, LineChart, NotebookPen, Settings2, ShieldCheck, Sparkles, Target } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton, Tarjeta } from '../atomos';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
@@ -7,10 +7,8 @@ import { useDeporte } from '../../contextos/DeporteContext';
 import { useAuth } from '../../contextos/AuthContext';
 import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
-import { listarApuestasAnalizadas } from '../../servicios/bitacora';
 import { registrarIngresoCentro } from '../../servicios/visitante';
 import { registrarEventoProducto } from '../../servicios/productAnalytics';
-import type { ApuestaAnalizada } from '../../tipos/bitacora';
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta) return;
@@ -18,32 +16,11 @@ const navegar = (ruta: string) => {
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
-type EstadoMadurez = 'MADURO' | 'BETA_LAB';
-
-interface KPIBase {
-  apuestasTotales: number;
-  resueltas: number;
-  ganadas: number;
-  winRate: number;
-}
-
-function calcularKpis(items: ApuestaAnalizada[]): KPIBase {
-  const totales = items.length;
-  const resueltas = items.filter((i) => i.estado?.toUpperCase() === 'RESUELTA');
-  const ganadas = resueltas.filter((i) => i.resultado_outcome === 'GANADA').length;
-  const winRate = resueltas.length > 0 ? (ganadas / resueltas.length) * 100 : 0;
-  return { apuestasTotales: totales, resueltas: resueltas.length, ganadas, winRate };
-}
-
 export function PaginaCentroAnalitico() {
-  const { deporteActivo, esNBA, esFutbol } = useDeporte();
+  const { deporteActivo, esNBA } = useDeporte();
   const { autenticado } = useAuth();
   const { can } = useAccessPolicy();
   const { navegarConGate } = useGateNavigation(navegar);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [kpisNBA, setKpisNBA] = useState<KPIBase>({ apuestasTotales: 0, resueltas: 0, ganadas: 0, winRate: 0 });
-  const [kpisFutbol, setKpisFutbol] = useState<KPIBase>({ apuestasTotales: 0, resueltas: 0, ganadas: 0, winRate: 0 });
 
   useEffect(() => {
     const payloadCentro = {
@@ -55,295 +32,151 @@ export function PaginaCentroAnalitico() {
     registrarEventoProducto('public_center_view', payloadCentro);
     registrarEventoProducto('public_center_viewed', payloadCentro);
 
-    const cargar = async () => {
-      try {
-        setCargando(true);
-        setError(null);
-
-        if (!autenticado) {
-          registrarIngresoCentro();
-          setKpisNBA({ apuestasTotales: 120, resueltas: 90, ganadas: 52, winRate: 57.8 });
-          setKpisFutbol({ apuestasTotales: 48, resueltas: 31, ganadas: 16, winRate: 51.6 });
-          return;
-        }
-
-        const data = await listarApuestasAnalizadas({ page_size: 500 });
-        const items = data.items || [];
-        setKpisNBA(calcularKpis(items.filter((i) => i.deporte === 'baloncesto')));
-        setKpisFutbol(calcularKpis(items.filter((i) => i.deporte === 'futbol')));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'No se pudieron cargar métricas base.');
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    void cargar();
+    if (!autenticado) {
+      registrarIngresoCentro();
+    }
   }, [autenticado, deporteActivo, can]);
 
-  const kpisActivos = useMemo(() => (esFutbol ? kpisFutbol : kpisNBA), [esFutbol, kpisFutbol, kpisNBA]);
-
-  const estadoMadurez: EstadoMadurez = esNBA ? 'MADURO' : 'BETA_LAB';
-  const descripcionMadurez = esNBA
-    ? 'NBA es frente comercial principal y módulo más maduro.'
-    : 'Fútbol sigue en beta/laboratorio: operativo, pero sin paridad comercial con NBA.';
-
-  const madurezFutbolPorCompetencia = [
-    { liga: 'Premier League', estado: 'ESTABLE', nota: 'Cobertura y señal consistente' },
-    { liga: 'LaLiga', estado: 'ESTABLE', nota: 'Buen volumen y continuidad' },
-    { liga: 'Serie A', estado: 'EN VALIDACIÓN', nota: 'Ajuste de calibración en curso' },
-    { liga: 'Ligue 1', estado: 'LAB', nota: 'Señal útil pero aún irregular' },
-  ] as const;
-
-  const confianzaOperativa = useMemo(() => {
-    const muestra = kpisActivos.resueltas;
-    const wr = kpisActivos.winRate;
-
-    if (muestra < 30) {
-      return { nivel: 'BAJA', color: 'text-neon-amarillo', detalle: 'Muestra reducida, usar stake conservador.' } as const;
-    }
-    if (wr >= 56) {
-      return { nivel: 'ALTA', color: 'text-neon-verde', detalle: 'Señal consistente con muestra suficiente.' } as const;
-    }
-    if (wr >= 51) {
-      return { nivel: 'MEDIA', color: 'text-neon-cyan', detalle: 'Señal útil, mantener control de exposición.' } as const;
-    }
-    return { nivel: 'CAUTELOSA', color: 'text-neon-amarillo', detalle: 'Priorizar validación y reducir riesgo.' } as const;
-  }, [kpisActivos]);
+  const rutaAnalisisPrincipal = esNBA ? '/app' : '/futbol';
 
   return (
     <div className="min-h-screen flex flex-col">
       <Encabezado />
 
       <main className="flex-1 contenedor py-6 lg:py-8 space-y-6">
-        <section className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-futurista text-texto-principal flex items-center gap-2">
-              <Layers3 className="w-5 h-5 text-neon-cyan" />
-              Centro Analítico Multideporte
-            </h2>
-            <p className="text-sm text-texto-secundario">
-              Shell unificado con KPIs base compartidos y madurez visible por deporte.
-            </p>
+        <section className="border border-neon-cyan/25 rounded-xl p-6 lg:p-8 bg-futurista-oscuro/40 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-neon-cyan">Centro analítico</p>
+            <SelectorDeporte tamaño="md" />
           </div>
-          <SelectorDeporte tamaño="md" />
+
+          <h1 className="text-3xl lg:text-4xl font-futurista text-texto-principal leading-tight">
+            Analiza partidos con trazabilidad, contexto y profundidad operativa.
+          </h1>
+
+          <p className="text-sm lg:text-base text-texto-secundario max-w-3xl">
+            AnalyticsPredict está diseñado para personas que toman decisiones con criterio.
+            Explora el sistema, entiende su estructura y avanza por la progresión visitante → base → premium
+            según el nivel de profundidad que necesites.
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            <Boton variante="primario" onClick={() => navegarConGate(rutaAnalisisPrincipal, esNBA ? 'analisis.nba.base' : 'futbol.base')}>
+              Explorar análisis
+            </Boton>
+            <Boton variante="secundario" onClick={() => navegar('/login')}>
+              Crear cuenta
+            </Boton>
+          </div>
         </section>
 
-        {!autenticado && (
-          <Tarjeta className="border border-neon-cyan/25 p-5 space-y-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-neon-cyan">Modo visitante del sistema</p>
-            <h3 className="text-xl lg:text-2xl font-futurista text-texto-principal">
-              Entra al producto real sin login. Explora primero, decide después.
-            </h3>
-            <p className="text-sm text-texto-secundario">
-              Aquí puedes entender madurez por deporte, revisar señales públicas y evaluar el método.
-              El análisis operativo profundo y la continuidad personal se desbloquean al crear cuenta.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div className="rounded-lg border border-neon-cyan/20 p-3 bg-futurista-oscuro/40">
-                <p className="font-semibold text-texto-principal">Visitante</p>
-                <p className="text-texto-secundario mt-1">Explora centro público, gobernanza y snapshots.</p>
-              </div>
-              <div className="rounded-lg border border-neon-verde/20 p-3 bg-futurista-oscuro/40">
-                <p className="font-semibold text-texto-principal">Registrado base</p>
-                <p className="text-texto-secundario mt-1">Activa análisis completo, bitácora, dashboard y configuración.</p>
-              </div>
-              <div className="rounded-lg border border-neon-magenta/20 p-3 bg-futurista-oscuro/40">
-                <p className="font-semibold text-texto-principal">Premium</p>
-                <p className="text-texto-secundario mt-1">Añade profundidad, contexto comparativo y capacidades avanzadas.</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Boton
-                variante="secundario"
-                onClick={() => navegarConGate(esNBA ? '/app' : '/futbol', esNBA ? 'analisis.nba.base' : 'futbol.base')}
-              >
-                Abrir análisis completo
-              </Boton>
-              <Boton
-                variante="primario"
-                onClick={() => navegarConGate(esNBA ? '/bitacora' : '/futbol/bitacora', 'bitacora.personal')}
-              >
-                Guardar en bitácora personal
-              </Boton>
-            </div>
-          </Tarjeta>
-        )}
-
-        {error && (
-          <Tarjeta className="border border-neon-rojo/40 text-neon-rojo p-4">
-            {error}
-          </Tarjeta>
-        )}
-
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Tarjeta className="p-4">
-            <p className="text-xs uppercase tracking-wider text-texto-terciario">Apuestas totales</p>
-            <p className="text-3xl font-semibold text-texto-principal mt-1">
-              {cargando ? '…' : kpisActivos.apuestasTotales}
-            </p>
-          </Tarjeta>
-          <Tarjeta className="p-4">
-            <p className="text-xs uppercase tracking-wider text-texto-terciario">Resueltas</p>
-            <p className="text-3xl font-semibold text-texto-principal mt-1">
-              {cargando ? '…' : kpisActivos.resueltas}
-            </p>
-          </Tarjeta>
-          <Tarjeta className="p-4">
-            <p className="text-xs uppercase tracking-wider text-texto-terciario">Ganadas</p>
-            <p className="text-3xl font-semibold text-texto-principal mt-1">
-              {cargando ? '…' : kpisActivos.ganadas}
-            </p>
-          </Tarjeta>
-          <Tarjeta className="p-4">
-            <p className="text-xs uppercase tracking-wider text-texto-terciario">Win rate</p>
-            <p className="text-3xl font-semibold text-texto-principal mt-1">
-              {cargando ? '…' : `${kpisActivos.winRate.toFixed(1)}%`}
-            </p>
-          </Tarjeta>
+        <section className="space-y-3">
+          <h2 className="text-xl font-futurista text-texto-principal">Qué puedes hacer en el sistema</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Tarjeta className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-neon-cyan"><Target className="w-4 h-4" /> Análisis de partidos</div>
+              <p className="text-sm text-texto-secundario">Evalúa escenarios con una lectura estructurada para operar con mayor claridad.</p>
+              <p className="text-xs text-texto-terciario">Tier: Base</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-neon-cyan"><NotebookPen className="w-4 h-4" /> Bitácora personal</div>
+              <p className="text-sm text-texto-secundario">Guarda tus decisiones y mantén continuidad real de tu proceso operativo.</p>
+              <p className="text-xs text-texto-terciario">Tier: Base</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-neon-cyan"><LineChart className="w-4 h-4" /> Dashboard personal</div>
+              <p className="text-sm text-texto-secundario">Sigue tu evolución y revisa tu desempeño desde un panel de seguimiento.</p>
+              <p className="text-xs text-texto-terciario">Tier: Base</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-neon-cyan"><Layers3 className="w-4 h-4" /> Comparar lecturas</div>
+              <p className="text-sm text-texto-secundario">Contrasta enfoques entre módulos y contextos para enriquecer decisiones.</p>
+              <p className="text-xs text-texto-terciario">Tier: Base / Premium</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-neon-cyan"><Settings2 className="w-4 h-4" /> Configuración operativa</div>
+              <p className="text-sm text-texto-secundario">Ajusta preferencias del sistema y adapta el entorno a tu método de trabajo.</p>
+              <p className="text-xs text-texto-terciario">Tier: Base</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2 border border-neon-magenta/30">
+              <div className="flex items-center gap-2 text-neon-magenta"><Sparkles className="w-4 h-4" /> Profundidad avanzada</div>
+              <p className="text-sm text-texto-secundario">Activa una capa superior para operar con comparativas y contexto extendido.</p>
+              <p className="text-xs text-texto-terciario">Tier: Premium</p>
+            </Tarjeta>
+          </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Tarjeta className="p-5 space-y-3 border border-neon-cyan/25">
-            <div className="flex items-center gap-2 text-neon-cyan">
-              <Activity className="w-4 h-4" />
-              <p className="text-xs uppercase tracking-wider">Confianza operativa actual</p>
-            </div>
-            <p className={`text-2xl font-semibold ${confianzaOperativa.color}`}>{confianzaOperativa.nivel}</p>
-            <p className="text-sm text-texto-secundario">{confianzaOperativa.detalle}</p>
-            <p className="text-xs text-texto-terciario">
-              Basado en muestra resuelta ({kpisActivos.resueltas}) y win rate actual ({kpisActivos.winRate.toFixed(1)}%).
-            </p>
-          </Tarjeta>
+        <section className="space-y-3">
+          <h2 className="text-xl font-futurista text-texto-principal">Progresión de cuenta</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Tarjeta className="p-4 space-y-2 border border-neon-cyan/20">
+              <p className="text-xs uppercase tracking-wider text-neon-cyan">Visitante</p>
+              <p className="text-sm text-texto-secundario">Explora el sistema, entiende la estructura y valida si encaja contigo.</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2 border border-neon-verde/20">
+              <p className="text-xs uppercase tracking-wider text-neon-verde">Base</p>
+              <p className="text-sm text-texto-secundario">Accede al análisis, bitácora, dashboard y configuración para operar con continuidad.</p>
+            </Tarjeta>
+            <Tarjeta className="p-4 space-y-2 border border-neon-magenta/20">
+              <p className="text-xs uppercase tracking-wider text-neon-magenta">Premium</p>
+              <p className="text-sm text-texto-secundario">Suma comparativas avanzadas, contexto histórico extendido y priorización operativa.</p>
+            </Tarjeta>
+          </div>
+        </section>
 
-          <Tarjeta className="p-5 space-y-3 border border-neon-cyan/25">
-            <div className="flex items-center gap-2 text-neon-cyan">
-              <ShieldAlert className="w-4 h-4" />
-              <p className="text-xs uppercase tracking-wider">Madurez visible por deporte</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {estadoMadurez === 'MADURO' ? (
-                <CheckCircle2 className="w-5 h-5 text-neon-verde" />
-              ) : (
-                <Clock3 className="w-5 h-5 text-neon-amarillo" />
-              )}
-              <p className="text-lg font-semibold text-texto-principal">
-                {esNBA ? 'NBA: MADURO' : 'Fútbol: BETA / LAB'}
-              </p>
-            </div>
-            <p className="text-sm text-texto-secundario">{descripcionMadurez}</p>
-          </Tarjeta>
-
-          <Tarjeta className="p-5 space-y-3 border border-neon-cyan/25">
-            <div className="flex items-center gap-2 text-neon-magenta">
-              <Activity className="w-4 h-4" />
-              <p className="text-xs uppercase tracking-wider">Navegación común con paneles específicos</p>
-            </div>
-            <p className="text-sm text-texto-secundario">
-              El centro unifica entrada y métricas base. El análisis profundo permanece por dominio para evitar mezclar lógicas incompatibles.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {autenticado ? (
-                <>
-                  <Boton variante="secundario" onClick={() => navegarConGate(esNBA ? '/app' : '/futbol', esNBA ? 'analisis.nba.base' : 'futbol.base')}>
-                    Ir a análisis específico
-                  </Boton>
-                  <Boton variante="primario" onClick={() => navegarConGate(esNBA ? '/bitacora' : '/futbol/bitacora', 'bitacora.personal')}>
-                    Ir a bitácora específica
-                  </Boton>
-                </>
-              ) : (
-                <>
-                  <Boton
-                    variante="secundario"
-                    onClick={() => navegarConGate(esNBA ? '/app' : '/futbol', esNBA ? 'analisis.nba.base' : 'futbol.base')}
-                  >
-                    Intentar análisis completo
-                  </Boton>
-                  <Boton
-                    variante="primario"
-                    onClick={() => navegarConGate(esNBA ? '/bitacora' : '/futbol/bitacora', 'bitacora.personal')}
-                  >
-                    Intentar bitácora personal
-                  </Boton>
-                </>
-              )}
-            </div>
-          </Tarjeta>
+        <section className="space-y-3">
+          <h2 className="text-xl font-futurista text-texto-principal">Cómo se organiza el producto</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 text-sm">
+            {[
+              ['Centro analítico', 'Explorar y entender el sistema'],
+              ['Análisis', 'Operar con lectura estructurada'],
+              ['Bitácora', 'Registrar decisiones y contexto'],
+              ['Dashboard', 'Seguir desempeño personal'],
+              ['Configuración', 'Ajustar tu entorno operativo'],
+            ].map(([titulo, descripcion]) => (
+              <Tarjeta key={titulo} className="p-4 space-y-1">
+                <p className="font-semibold text-texto-principal">{titulo}</p>
+                <p className="text-texto-secundario">{descripcion}</p>
+              </Tarjeta>
+            ))}
+          </div>
         </section>
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Tarjeta className="p-5 space-y-3">
-            <div className="flex items-center gap-2 text-neon-cyan">
-              <Target className="w-4 h-4" />
-              <h3 className="text-sm uppercase tracking-wider">Qué comparten NBA y fútbol</h3>
-            </div>
-            <ul className="text-sm text-texto-secundario space-y-1">
-              <li>• Ciclo de apuesta analizada y resolución.</li>
-              <li>• KPIs base (totales, resueltas, ganadas, win rate).</li>
-              <li>• Trazabilidad operativa y navegación común.</li>
-            </ul>
-          </Tarjeta>
-
-          <Tarjeta className="p-5 space-y-3">
-            <div className="flex items-center gap-2 text-neon-verde">
-              <Layers3 className="w-4 h-4" />
-              <h3 className="text-sm uppercase tracking-wider">Qué se mantiene específico por deporte</h3>
-            </div>
-            <ul className="text-sm text-texto-secundario space-y-1">
-              <li>• Modelos/mercados/semántica analítica.</li>
-              <li>• Tableros y flujos profundos de análisis.</li>
-              <li>• Señal comercial y madurez operacional actual.</li>
-            </ul>
-          </Tarjeta>
-        </section>
-
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Tarjeta className="p-5 space-y-3 border border-neon-amarillo/30">
-            <div className="flex items-center gap-2 text-neon-amarillo">
-              <Radar className="w-4 h-4" />
-              <h3 className="text-sm uppercase tracking-wider">Madurez fútbol por competición</h3>
-            </div>
-            <div className="space-y-2">
-              {madurezFutbolPorCompetencia.map((c) => (
-                <div key={c.liga} className="flex items-center justify-between gap-3 rounded-lg border border-neon-cyan/10 p-3">
-                  <div>
-                    <p className="text-sm font-semibold text-texto-principal">{c.liga}</p>
-                    <p className="text-xs text-texto-secundario">{c.nota}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${c.estado === 'ESTABLE' ? 'bg-neon-verde/20 text-neon-verde' : c.estado === 'EN VALIDACIÓN' ? 'bg-neon-amarillo/20 text-neon-amarillo' : 'bg-neon-magenta/20 text-neon-magenta'}`}>
-                    {c.estado}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Tarjeta>
-
           <Tarjeta className="p-5 space-y-3 border border-neon-magenta/30">
             <div className="flex items-center gap-2 text-neon-magenta">
               <Crown className="w-4 h-4" />
-              <h3 className="text-sm uppercase tracking-wider">Capa premium (definición)</h3>
+              <h3 className="text-sm uppercase tracking-wider">Capa Premium</h3>
             </div>
+            <p className="text-sm text-texto-secundario">
+              Premium no reemplaza el producto base: lo lleva a un nivel de profundidad superior.
+            </p>
             <ul className="text-sm text-texto-secundario space-y-1">
-              <li>• Profundidad analítica extendida (no solo desbloqueo).</li>
-              <li>• Seguimiento operativo y continuidad avanzada.</li>
-              <li>• Lectura de riesgo comparativa por mercado/deporte.</li>
+              <li>• Comparativas multi-mercado.</li>
+              <li>• Contexto histórico extendido.</li>
+              <li>• Priorización operativa avanzada.</li>
             </ul>
-            {can('premium.depth') ? (
-              <div className="rounded-lg border border-neon-magenta/25 bg-futurista-oscuro/40 p-3 text-sm text-texto-secundario">
-                Capa premium activa en tu cuenta: puedes ir a configuración para gestionar el plan y mantener acceso extendido.
-              </div>
-            ) : (
-              <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3 text-sm text-texto-secundario">
-                Estás viendo capa base. Premium desbloquea profundidad adicional sin quitar funciones esenciales del plan base.
-              </div>
-            )}
-            <Boton
-              variante="secundario"
-              onClick={() => navegarConGate('/dashboard', 'premium.depth')}
-            >
-              {can('premium.depth') ? 'Abrir capa premium' : 'Ver capa premium (requiere plan premium)'}
+            <Boton variante="secundario" onClick={() => navegarConGate('/dashboard', 'premium.depth')}>
+              {can('premium.depth') ? 'Abrir capa Premium' : 'Activa Premium'}
             </Boton>
+          </Tarjeta>
+
+          <Tarjeta className="p-5 space-y-3 border border-neon-cyan/25">
+            <div className="flex items-center gap-2 text-neon-cyan">
+              <ShieldCheck className="w-4 h-4" />
+              <h3 className="text-sm uppercase tracking-wider">Siguiente paso</h3>
+            </div>
+            <p className="text-sm text-texto-secundario">
+              Empieza explorando el sistema y activa tu cuenta cuando quieras continuidad personal.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Boton variante="primario" onClick={() => navegar('/login')}>
+                Crear cuenta
+              </Boton>
+              <Boton variante="secundario" onClick={() => navegarConGate(rutaAnalisisPrincipal, esNBA ? 'analisis.nba.base' : 'futbol.base')}>
+                Ver cómo funciona
+              </Boton>
+            </div>
           </Tarjeta>
         </section>
       </main>

@@ -102,16 +102,16 @@ function App() {
 
         <Route path="/onboarding" element={<RutaProtegida><PaginaOnboarding /></RutaProtegida>} />
 
-        {/* Entry points */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/centro-analitico" element={<PaginaCentroAnalitico />} />
+        {/* Entry points públicos */}
+        <Route path="/" element={<PaginaCentroAnalitico />} />
+        <Route path="/centro-analitico" element={<Navigate to="/" replace />} />
 
         {/* Rutas principales protegidas */}
         <Route path="/app" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="analisis.nba.base"><PaginaPrincipal /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/dashboard" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="dashboard.personal"><PaginaDashboardUsuario /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="bitacora.personal"><PaginaBitacora /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="configuracion.base"><PaginaConfiguracion /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
-        <Route path="/chat" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/chat" element={<Navigate to="/" replace />} />
 
         {/* Rutas del módulo de fútbol protegidas */}
         <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="futbol.base"><PaginaFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
@@ -120,7 +120,7 @@ function App() {
         <Route path="/futbol/dashboard" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="dashboard.personal"><DashboardFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

@@ -1,10 +1,19 @@
 # CHANGELOG
 
 ## 2026-03-31
-- Ajuste de entrypoint principal por instrucción de producto:
-  - `frontend/src/App.tsx`: `/` deja de mostrar shell visitante y ahora redirige de forma directa a `/dashboard`.
-  - `frontend/src/App.tsx`: `/centro-analitico` pasa a ser la ruta explícita para la experiencia visitante.
-  - `frontend/src/App.tsx`: rutas de rebote (`/chat` y fallback `*`) se alinean a `/dashboard` para evitar volver al shell visitante por defecto.
+- Reestructura completa de la home pública `/` (Doc 06):
+  - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` se rediseña para enfoque producto/conversión Visitante → Base → Premium.
+  - Se elimina el enfoque de dashboard público (KPIs personales, win rate, confianza operativa y madurez por competición) y se reemplaza por narrativa de valor:
+    - Hero principal con propuesta de valor + CTA principal/secundaria.
+    - Bloque de capacidades reales del sistema (análisis, bitácora, dashboard, configuración y profundidad avanzada).
+    - Bloque de progresión por tiers (Visitante/Base/Premium).
+    - Bloque de organización de módulos del producto.
+    - Bloque Premium alineado a profundidad (comparativas multi-mercado, contexto histórico extendido, priorización operativa).
+    - CTA final de cierre de home.
+- Alineación de rutas de entrada:
+  - `frontend/src/App.tsx`: `/` se mantiene como home pública del producto.
+  - `frontend/src/App.tsx`: `/centro-analitico` redirige a `/`.
+  - `frontend/src/App.tsx`: rutas de rebote (`/chat` y fallback `*`) vuelven a `/` para consistencia con Doc 06.
 - Validación técnica ejecutada en frontend:
   - `npm run lint`
   - `npm run build`

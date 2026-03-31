@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-31 (ajuste de entrypoint principal a dashboard por decisión de producto)
+Última actualización: 2026-03-31 (home pública `/` reestructurada a enfoque producto/progresión según Doc 06)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -91,7 +91,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Fase 6 cerrada (2026-03-30): subestado Base por onboarding implementado end-to-end. `RutaConOnboarding` preserva destino original al redirigir a `/onboarding`, y `PaginaOnboarding` retorna a la ruta intentada tras completar activación (o `/dashboard` por defecto), mostrando contexto cuando el flujo fue bloqueado por onboarding incompleto. Evidencia: `docs/reportes/FASE_6_ONBOARDING_SUBESTADOS_BASE_2026-03-30.md`.
 - Fase 7 cerrada (2026-03-30): embudo de conversión instrumentado con eventos de producto para explorar→base→onboarding→premium (`public_center_viewed`, `gate_blocked`, `gate_allowed`, `onboarding_started`, `onboarding_completed`, `premium_layer_interaction`, `premium_activation_intent`) y trazabilidad por módulo (`nba`, `futbol`, `futbol_partido`). Evidencia: `docs/reportes/FASE_7_EMBUDO_ANALITICA_CONVERSION_2026-03-30.md`.
 - Fase 8 cerrada (2026-03-30): hardening + QA contractual final con prueba unitaria de policy (`backend/tests/test_access_policy_tiers.py`), validación de consistencia backend (`py_compile` + assertions runtime) y cierre de checklist contractual del doc 06 (tiers, gates, Base utilizable, Premium por profundidad, chat fuera de alcance). Evidencia: `docs/reportes/FASE_8_HARDENING_QA_FINAL_2026-03-30.md`.
-- Ajuste post-fases (2026-03-31): el entrypoint `/` deja de actuar como shell visitante y redirige directamente a `/dashboard`; la experiencia visitante queda explícitamente en `/centro-analitico`.
+- Ajuste post-fases (2026-03-31): se confirma `/` como home pública de producto (sin métricas de rendimiento personal), enfocada en propuesta de valor y progresión Visitante→Base→Premium; `/centro-analitico` queda como alias redirigido a `/`.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
