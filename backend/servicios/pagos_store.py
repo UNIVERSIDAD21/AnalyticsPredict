@@ -446,10 +446,24 @@ class PostgresPagosStore:
 
 
 def obtener_pagos_store() -> PagosStore:
-    driver = os.getenv("PAGOS_STORE_DRIVER", "sqlite").strip().lower()
+    driver_raw = os.getenv("PAGOS_STORE_DRIVER")
+    if driver_raw and driver_raw.strip():
+        driver = driver_raw.strip().lower()
+    else:
+        # Si pagos no está definido, heredar driver de auth para evitar stores desalineados.
+        driver = os.getenv("AUTH_STORE_DRIVER", "sqlite").strip().lower()
 
     if driver == "postgres":
         return PostgresPagosStore()
 
-    path = os.getenv("PAGOS_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "pagos.db")))
+    default_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "pagos.db"))
+    path = os.getenv("PAGOS_DB_PATH")
+    if not path:
+        # Si auth define path sqlite y pagos no, reutilizar directorio para mantener coherencia.
+        auth_path = os.getenv("AUTH_DB_PATH")
+        if auth_path:
+            auth_dir = os.path.dirname(os.path.abspath(auth_path))
+            path = os.path.join(auth_dir, "pagos.db")
+        else:
+            path = default_path
     return SQLitePagosStore(path)

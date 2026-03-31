@@ -376,10 +376,23 @@ class PostgresOnboardingStore:
 
 
 def obtener_onboarding_store() -> OnboardingStore:
-    driver = os.getenv("ONBOARDING_STORE_DRIVER", "sqlite").strip().lower()
+    driver_raw = os.getenv("ONBOARDING_STORE_DRIVER")
+    if driver_raw and driver_raw.strip():
+        driver = driver_raw.strip().lower()
+    else:
+        # Si onboarding no está definido, heredar driver de auth para evitar desalineación.
+        driver = os.getenv("AUTH_STORE_DRIVER", "sqlite").strip().lower()
 
     if driver == "postgres":
         return PostgresOnboardingStore()
 
-    db_path = os.getenv("ONBOARDING_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "onboarding.db")))
+    default_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "onboarding.db"))
+    db_path = os.getenv("ONBOARDING_DB_PATH")
+    if not db_path:
+        auth_path = os.getenv("AUTH_DB_PATH")
+        if auth_path:
+            auth_dir = os.path.dirname(os.path.abspath(auth_path))
+            db_path = os.path.join(auth_dir, "onboarding.db")
+        else:
+            db_path = default_path
     return SQLiteOnboardingStore(db_path)

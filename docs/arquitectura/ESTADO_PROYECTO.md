@@ -99,6 +99,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 3 de dashboard único (2026-03-31): el seguimiento personal se concentra en `/dashboard` con segmentación por deporte desde la bitácora única (agregado `por_deporte`), manteniendo separados los flujos operativos de análisis NBA/Fútbol.
 - Bloque 4 de limpieza (2026-03-31): se eliminan componentes/hooks legacy de bitácora/dashboard fútbol que mantenían duplicidad estructural; la transición queda soportada solo por redirecciones de rutas legacy hacia las herramientas canónicas globales.
 - Hardening de sesión (2026-03-31): manejo explícito de sesión inválida tras 401/refresh fallido en frontend para cortar cascadas de llamadas protegidas y evitar ruido recurrente en dashboard.
+- Hardening de consistencia de infraestructura de datos (2026-03-31): `pagos_store` y `onboarding_store` ahora heredan driver/path de auth cuando no hay configuración explícita, reduciendo riesgo de operar con stores distintos en runtime (causa frecuente de inconsistencia entre usuarios autenticados y estado de suscripción/onboarding).
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

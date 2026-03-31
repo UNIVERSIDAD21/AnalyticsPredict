@@ -10,6 +10,11 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Hardening de consistencia de stores (auth/pagos/onboarding):
+  - `backend/servicios/pagos_store.py`: si `PAGOS_STORE_DRIVER` no está definido, ahora hereda `AUTH_STORE_DRIVER`; para sqlite, si `PAGOS_DB_PATH` no está definido y sí existe `AUTH_DB_PATH`, reutiliza su directorio para ubicar `pagos.db` y evitar desalineación de datos entre autenticación y suscripción.
+  - `backend/servicios/onboarding_store.py`: si `ONBOARDING_STORE_DRIVER` no está definido, ahora hereda `AUTH_STORE_DRIVER`; para sqlite, si `ONBOARDING_DB_PATH` no está definido y sí existe `AUTH_DB_PATH`, reutiliza su directorio para `onboarding.db`.
+  - Objetivo: prevenir escenarios donde login funciona contra un store y pagos/onboarding consultan otro distinto (síntoma típico: usuarios/suscripciones "desaparecidas").
+
 - Corrección de sesión/401 en dashboard y servicios protegidos:
   - `frontend/src/servicios/api.ts`: cuando falla refresh/token inválido, ahora se invalida sesión de forma explícita y se emite evento global `auth:session-invalidated` (también limpia `usuarioId`) para evitar ciclos de llamadas 401.
   - `frontend/src/contextos/AuthContext.tsx`: se suscribe al evento de sesión inválida, limpia estado auth y fuerza salida de rutas protegidas de manera consistente.
