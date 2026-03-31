@@ -38,16 +38,16 @@ export function Encabezado() {
   const bankrollConfigurado = configuracion.bankroll !== null && configuracion.bankroll > 0;
 
   const rutaAnalisis = esFutbol ? '/futbol' : '/app';
-  const rutaBitacora = esFutbol ? '/futbol/bitacora' : '/bitacora';
-  const rutaDashboard = esFutbol ? '/futbol/dashboard' : '/dashboard';
+  const rutaBitacora = '/bitacora';
+  const rutaDashboard = '/dashboard';
   const capacidadAnalisis = esFutbol ? 'futbol.base' : 'analisis.nba.base';
 
   const enAnalisis = esFutbol
     ? rutaActual === '/futbol' || rutaActual.startsWith('/futbol/partidos/')
     : rutaActual === '/app';
 
-  const enBitacora = esFutbol ? rutaActual === '/futbol/bitacora' : rutaActual === '/bitacora';
-  const enDashboard = esFutbol ? rutaActual === '/futbol/dashboard' : rutaActual === '/dashboard';
+  const enBitacora = rutaActual === '/bitacora' || rutaActual === '/futbol/bitacora';
+  const enDashboard = rutaActual === '/dashboard' || rutaActual === '/futbol/dashboard';
   const enCentroAnalitico = rutaActual === '/centro-analitico' || rutaActual === '/';
 
   const titulo = esFutbol ? 'FÚTBOL ANALYZER' : 'NBA ANALYZER';

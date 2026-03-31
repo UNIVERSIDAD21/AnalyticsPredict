@@ -647,7 +647,7 @@ export function PaginaFutbol() {
             <Boton
               variante="primario"
               iconoInicio={<Activity size={16} />}
-              onClick={() => navegar('/futbol/dashboard')}
+              onClick={() => navegar('/dashboard')}
             >
               <span className="hidden sm:inline">Dashboard</span>
             </Boton>
