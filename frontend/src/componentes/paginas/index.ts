@@ -16,7 +16,7 @@ export { PaginaHistorialPredicciones } from './PaginaHistorialPredicciones';
 export { PaginaFutbol } from './PaginaFutbol';
 export { AnalisisPartidoFutbol } from './AnalisisPartidoFutbol';
 export { BitacoraFutbol } from './BitacoraFutbol';
-export { DashboardFutbol } from './DashboardFutbol';
+// DashboardFutbol deprecado: dashboard canónico único en `/dashboard`.
 export { PaginaLogin } from './PaginaLogin';
 export { PaginaLegal } from './PaginaLegal';
 export { PaginaOnboarding } from './PaginaOnboarding';

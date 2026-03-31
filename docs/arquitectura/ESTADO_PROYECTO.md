@@ -96,6 +96,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Corrección de aislamiento multiusuario en bitácora (2026-03-31): frontend deja de usar ID compartido de desarrollo como identidad efectiva en sesiones autenticadas; `X-Usuario-Id` pasa a derivarse de forma estable por `auth.user.id`, evitando que usuarios distintos vean la misma bitácora.
 - Bloque 1 de unificación UX (2026-03-31): dashboard y bitácora pasan a rutas globales únicas (`/dashboard`, `/bitacora`) desde toda la plataforma; rutas fútbol homólogas quedan en modo redirección para transición.
 - Bloque 2 de bitácora única (2026-03-31): `/api/bitacora/unificada` consolida lectura real de `apuestas` + `apuestas_futbol` + `apuestas_combinadas` con filtros por deporte/mercado/confianza; `/api/bitacora/resumen` incorpora agregados globales y segmentados por deporte/mercado. Se publica contrato y estrategia de transición en `docs/arquitectura/ARQUITECTURA_BITACORA_UNICA_TRANSICION.md`.
+- Bloque 3 de dashboard único (2026-03-31): el seguimiento personal se concentra en `/dashboard` con segmentación por deporte desde la bitácora única (agregado `por_deporte`), manteniendo separados los flujos operativos de análisis NBA/Fútbol.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

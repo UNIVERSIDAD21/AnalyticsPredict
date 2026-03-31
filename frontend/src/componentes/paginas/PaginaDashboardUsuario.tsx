@@ -14,6 +14,7 @@ import {
   type KpisOnboarding,
 } from '../../servicios/onboarding';
 import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
+import { obtenerResumenApuestas } from '../../servicios/bitacora';
 import { obtenerResumenCalidad1x2, type ResumenCalidad1x2Futbol } from '../../servicios/futbol/metricas';
 import { obtenerCapasPremiumDepth } from '../../servicios/premium';
 import { capturarRendimientoCliente, leerRendimientoCliente, type ResumenRendimientoCliente } from '../../servicios/performance';
@@ -57,6 +58,16 @@ const calidadInicial: ResumenCalidad1x2Futbol = {
   hitRateSinPush: 0,
 };
 
+interface ResumenPorDeporte {
+  deporte: string;
+  total: number;
+  pendientes: number;
+  ganadas: number;
+  perdidas: number;
+  winrate: number;
+  roi: number;
+}
+
 export function PaginaDashboardUsuario() {
   const { usuario } = useAuth();
   const { can } = useAccessPolicy();
@@ -69,6 +80,7 @@ export function PaginaDashboardUsuario() {
   const [error, setError] = useState<string | null>(null);
   const [perfCliente, setPerfCliente] = useState<ResumenRendimientoCliente | null>(leerRendimientoCliente());
   const [capasPremium, setCapasPremium] = useState<string[]>([]);
+  const [resumenPorDeporte, setResumenPorDeporte] = useState<ResumenPorDeporte[]>([]);
 
   const estadoOnboarding = useMemo(() => {
     if (!usuario?.id) return null;
@@ -113,11 +125,12 @@ export function PaginaDashboardUsuario() {
       setError(null);
       setCargando(true);
 
-      const [resumenRes, planRes, kpisRes, calidadRes] = await Promise.allSettled([
+      const [resumenRes, planRes, kpisRes, calidadRes, resumenBitacoraRes] = await Promise.allSettled([
         obtenerResumenDashboard(),
         obtenerEstadoPlan(),
         obtenerKpisOnboarding(),
         obtenerResumenCalidad1x2(forceRefresh),
+        obtenerResumenApuestas(),
       ]);
 
       const resumenData = resumenRes.status === 'fulfilled' ? resumenRes.value : resumenInicial;
@@ -129,6 +142,13 @@ export function PaginaDashboardUsuario() {
       setPlan(planData);
       setKpisOnboarding(kpisData);
       setCalidad1x2(calidadData);
+
+      if (resumenBitacoraRes.status === 'fulfilled') {
+        const resumenBitacora = (resumenBitacoraRes.value?.resumen ?? {}) as { por_deporte?: ResumenPorDeporte[] };
+        setResumenPorDeporte(Array.isArray(resumenBitacora.por_deporte) ? resumenBitacora.por_deporte : []);
+      } else {
+        setResumenPorDeporte([]);
+      }
 
       // Solo mostrar error global si falló el core del dashboard.
       if (resumenRes.status === 'rejected') {
@@ -243,6 +263,27 @@ export function PaginaDashboardUsuario() {
                 <Kpi label="Perdidas" valor={resumen.perdidas} />
                 <Kpi label="Push" valor={resumen.push} />
               </div>
+            </div>
+
+            <div className="tarjeta p-6">
+              <h3 className="text-lg font-semibold text-texto-principal mb-4">Segmentación por deporte (bitácora única)</h3>
+              {resumenPorDeporte.length === 0 ? (
+                <p className="text-sm text-texto-secundario">Aún no hay datos segmentados por deporte.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {resumenPorDeporte.map((row) => (
+                    <div key={row.deporte} className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-4">
+                      <p className="text-xs uppercase tracking-wider text-texto-terciario">{row.deporte}</p>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-texto-secundario">Total: <span className="text-texto-principal font-semibold">{row.total}</span></span>
+                        <span className="text-texto-secundario">Pendientes: <span className="text-texto-principal font-semibold">{row.pendientes}</span></span>
+                        <span className="text-texto-secundario">Win rate: <span className="text-texto-principal font-semibold">{Number(row.winrate ?? 0).toFixed(1)}%</span></span>
+                        <span className="text-texto-secundario">ROI: <span className="text-texto-principal font-semibold">{Number(row.roi ?? 0).toFixed(1)}%</span></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="tarjeta p-6 space-y-4">

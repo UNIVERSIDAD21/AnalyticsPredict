@@ -10,6 +10,11 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Bloque 3 (dashboard único de plataforma):
+  - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx` incorpora segmentación por deporte usando bitácora única (`por_deporte`) para consolidar seguimiento en una sola pantalla personal.
+  - Dashboard mantiene una sola ruta canónica (`/dashboard`) y centraliza lectura de estado cross-deporte sin mezclar flujos de análisis.
+  - `frontend/src/componentes/paginas/index.ts`: se depreca export público de `DashboardFutbol` para reforzar dashboard único.
+
 - Bloque 1 (unificación de plataforma en navegación):
   - `frontend/src/App.tsx`: rutas legacy de UX `/futbol/bitacora` y `/futbol/dashboard` ahora redirigen a `/bitacora` y `/dashboard`.
   - `frontend/src/componentes/organismos/Encabezado.tsx`: navegación de Bitácora y Dashboard pasa a rutas globales (sin bifurcar por deporte).
