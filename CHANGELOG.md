@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-03-31
+- Ajuste de entrypoint principal por instrucción de producto:
+  - `frontend/src/App.tsx`: `/` deja de mostrar shell visitante y ahora redirige de forma directa a `/dashboard`.
+  - `frontend/src/App.tsx`: `/centro-analitico` pasa a ser la ruta explícita para la experiencia visitante.
+  - `frontend/src/App.tsx`: rutas de rebote (`/chat` y fallback `*`) se alinean a `/dashboard` para evitar volver al shell visitante por defecto.
+- Validación técnica ejecutada en frontend:
+  - `npm run lint`
+  - `npm run build`
+
 ## 2026-03-30
 - Cierre de Fase 8 (hardening + QA contractual final):
   - Nuevo test unitario `backend/tests/test_access_policy_tiers.py` para validar reglas de acceso por tier/capability y estado fuera de alcance de `chat.contextual`.
