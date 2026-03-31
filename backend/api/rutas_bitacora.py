@@ -277,8 +277,10 @@ def _construir_where(
     hasta: Optional[date],
     busqueda: Optional[str],
 ) -> tuple[str, List[object]]:
-    condiciones = ["usuario_id = %s"]
-    parametros: List[object] = [str(usuario_id)]
+    _ = usuario_id
+    # Visibilidad global solicitada: sin aislamiento por usuario en lecturas.
+    condiciones: List[str] = []
+    parametros: List[object] = []
 
     if resultado:
         condiciones.append("resultado = %s")
@@ -300,7 +302,7 @@ def _construir_where(
         termino = f"%{busqueda}%"
         parametros.extend([termino, termino])
 
-    where_sql = " AND ".join(condiciones)
+    where_sql = " AND ".join(condiciones) if condiciones else "TRUE"
     return where_sql, parametros
 
 
@@ -491,19 +493,16 @@ async def resumen_apuestas(
                     WITH apuestas_unificadas AS (
                         SELECT usuario_id, 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
                         FROM apuestas
-                        WHERE usuario_id = %s
                         UNION ALL
                         SELECT usuario_id, 'futbol'::text AS deporte, mercado, stake, ganancia, resultado
                         FROM apuestas_futbol
-                        WHERE usuario_id = %s
                         UNION ALL
                         SELECT usuario_id, 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
                         FROM apuestas_combinadas
-                        WHERE usuario_id = %s
                     ),
                     resumen_global AS (
                         SELECT
-                            %s::uuid AS usuario_id,
+                            NULL::uuid AS usuario_id,
                             COUNT(*) AS total_apuestas,
                             COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
                             COUNT(*) FILTER (WHERE resultado <> 'PENDIENTE') AS cerradas,
@@ -598,7 +597,7 @@ async def resumen_apuestas(
                         (SELECT COALESCE(json_agg(pd ORDER BY pd.deporte), '[]'::json) FROM por_deporte pd) AS por_deporte,
                         (SELECT COALESCE(json_agg(pm ORDER BY pm.total DESC), '[]'::json) FROM por_mercado pm) AS por_mercado
                     """,
-                    [str(usuario_id), str(usuario_id), str(usuario_id), str(usuario_id)],
+                    [],
                 )
                 fila_resumen = cursor.fetchone() or {}
                 resumen = fila_resumen.get("resumen_global") or {}
@@ -607,7 +606,7 @@ async def resumen_apuestas(
     except Exception:
         logger.exception("Fallo resumen de bitácora; devolviendo resumen en cero de contingencia")
         resumen = {
-            "usuario_id": str(usuario_id),
+            "usuario_id": None,
             "total_apuestas": 0,
             "pendientes": 0,
             "cerradas": 0,
@@ -697,8 +696,8 @@ async def listar_bitacora_unificada(
     """Lista la bitácora unificada de apuestas simples y combinadas."""
     _auto_resolver_bitacoras(usuario_id)
 
-    condiciones = ["usuario_id = %s"]
-    parametros: List[object] = [str(usuario_id)]
+    condiciones: List[str] = []
+    parametros: List[object] = []
 
     if resultado:
         condiciones.append("resultado = %s")
@@ -726,7 +725,7 @@ async def listar_bitacora_unificada(
         termino = f"%{busqueda}%"
         parametros.extend([termino, termino])
 
-    where_sql = " AND ".join(condiciones)
+    where_sql = " AND ".join(condiciones) if condiciones else "TRUE"
 
     if orden == "antiguo":
         orden_sql = "COALESCE(fecha_partido, creado_en::date) ASC, creado_en ASC"
@@ -1251,9 +1250,9 @@ async def obtener_metricas_bitacora(
 
     advertencias: List[str] = []
 
-    # Construir filtros base
-    condiciones = ["usuario_id = %s", "resultado IN ('GANADA', 'PERDIDA', 'PUSH')"]
-    parametros: List[object] = [str(usuario_id)]
+    # Construir filtros base (visibilidad global)
+    condiciones = ["resultado IN ('GANADA', 'PERDIDA', 'PUSH')"]
+    parametros: List[object] = []
 
     if desde:
         condiciones.append("fecha_partido >= %s")

@@ -10,6 +10,10 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Bitácora global compartida entre cuentas (ajuste solicitado):
+  - `backend/api/rutas_bitacora.py`: endpoints de lectura agregada (`/api/bitacora/unificada`, `/api/bitacora/resumen`, métricas) pasan a visibilidad global (sin filtro por `usuario_id`).
+  - Impacto: cualquier usuario autenticado verá el mismo pool de apuestas y resúmenes consolidados.
+
 - Persistencia reforzada de registro/login en tabla de negocio `usuarios`:
   - `backend/servicios/auth_store.py` ahora crea/mantiene espejo en `usuarios` al registrar usuario (email, nombre, password_hash, timestamps, rol, activo).
   - En PostgreSQL se crea `usuarios` (si no existe) con esquema de negocio; en SQLite se crea tabla equivalente de compatibilidad.
