@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -37,6 +38,15 @@ RESET_TTL_MINUTES = int(os.getenv("AUTH_RESET_TTL_MINUTES", "30"))
 RESET_EMAIL_MODE = os.getenv("AUTH_RESET_EMAIL_MODE", "dev").strip().lower()
 AUTH_SUNSET_DATE = os.getenv("AUTH_LEGACY_SUNSET", "2026-12-31")
 CURRENT_LEGAL_VERSION = os.getenv("LEGAL_CURRENT_VERSION", "2026-03-18")
+logger = logging.getLogger(__name__)
+
+
+def _describir_store_auth(store: AuthStore) -> str:
+    driver = "postgres" if "Postgres" in type(store).__name__ else "sqlite"
+    db_path = getattr(store, "db_path", None)
+    return f"driver={driver} store={type(store).__name__} db_path={db_path}"
+
+
 AUTH_USAGE_PATH = Path(
     os.getenv(
         "AUTH_CONTRACT_USAGE_PATH",
@@ -178,6 +188,8 @@ def register(
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
+    logger.info("AUTH_REGISTER intento email=%s %s", payload.email, _describir_store_auth(store))
+
     existente = store.obtener_usuario_por_email(payload.email)
     if existente:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El correo ya está registrado")
@@ -192,6 +204,7 @@ def register(
         )
 
     user = store.crear_usuario(payload.email, hash_password(payload.password), legal_version=payload.legal_version)
+    logger.info("AUTH_REGISTER creado user_id=%s email_guardado=%s %s", user.get("id"), user.get("email"), _describir_store_auth(store))
     tokens = _emitir_tokens(user["id"], user["email"])
     payload_legacy = {
         "ok": True,
@@ -214,11 +227,14 @@ def login(
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     store: AuthStore = Depends(obtener_auth_store),
 ):
+    logger.info("AUTH_LOGIN intento email=%s %s", payload.email, _describir_store_auth(store))
+
     user = store.obtener_usuario_por_email(payload.email)
     if not user or not verificar_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
 
     _validar_aceptacion_legal_vigente(user)
+    logger.info("AUTH_LOGIN ok user_id=%s email_guardado=%s %s", user.get("id"), user.get("email"), _describir_store_auth(store))
 
     tokens = _emitir_tokens(user["id"], user["email"])
     payload_legacy = {

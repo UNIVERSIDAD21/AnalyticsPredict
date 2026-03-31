@@ -10,6 +10,13 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Diagnóstico reforzado de autenticación para detectar desalineación de stores:
+  - `backend/api/rutas_auth.py` ahora registra en logs de `register/login`:
+    - email recibido,
+    - store activo (`SQLiteAuthStore`/`PostgresAuthStore`),
+    - `db_path` cuando aplica.
+  - Objetivo: identificar en runtime si el alta/login está entrando a una base distinta de la que se inspecciona manualmente.
+
 - Hardening de consistencia de stores (auth/pagos/onboarding):
   - `backend/servicios/pagos_store.py`: si `PAGOS_STORE_DRIVER` no está definido, ahora hereda `AUTH_STORE_DRIVER`; para sqlite, si `PAGOS_DB_PATH` no está definido y sí existe `AUTH_DB_PATH`, reutiliza su directorio para ubicar `pagos.db` y evitar desalineación de datos entre autenticación y suscripción.
   - `backend/servicios/onboarding_store.py`: si `ONBOARDING_STORE_DRIVER` no está definido, ahora hereda `AUTH_STORE_DRIVER`; para sqlite, si `ONBOARDING_DB_PATH` no está definido y sí existe `AUTH_DB_PATH`, reutiliza su directorio para `onboarding.db`.
