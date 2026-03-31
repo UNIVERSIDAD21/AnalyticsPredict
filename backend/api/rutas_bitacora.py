@@ -7,6 +7,7 @@ from datetime import date, datetime
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
@@ -93,6 +94,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 
 BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
+BITACORA_AUTO_RESOLVE_INTERVAL_SEC = int(os.getenv("BITACORA_AUTO_RESOLVE_INTERVAL_SEC", "300"))
+BITACORA_AUTO_RESOLVE_LIMIT = int(os.getenv("BITACORA_AUTO_RESOLVE_LIMIT", "800"))
+_AUTO_RESOLVE_LAST_RUN_BY_USER: dict[str, float] = {}
+_AUTO_RESOLVE_LAST_RUN_ANALIZADAS: float = 0.0
+
 BITACORA_USAGE_PATH = Path(
     os.getenv(
         "BITACORA_CONTRACT_USAGE_PATH",
@@ -159,16 +165,28 @@ def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, 
 
 
 def _auto_resolver_bitacoras(usuario_id: UUID) -> None:
-    """Actualiza automáticamente apuestas/analizados ya finalizados."""
-    try:
-        resolver_apuestas(usuario_id=str(usuario_id), limite=5000)
-    except Exception:
-        logger.exception("Auto-resolución de apuestas falló para usuario=%s", usuario_id)
+    """Actualiza automáticamente apuestas/analizados ya finalizados con throttling.
 
-    try:
-        resolver_apuestas_analizadas()
-    except Exception:
-        logger.exception("Auto-resolución de análisis falló")
+    Evita recalcular en cada request de lectura para no degradar UX (timeouts en bitácora).
+    """
+    global _AUTO_RESOLVE_LAST_RUN_ANALIZADAS
+
+    ahora = time.time()
+    usuario_key = str(usuario_id)
+    ultimo_usuario = _AUTO_RESOLVE_LAST_RUN_BY_USER.get(usuario_key, 0.0)
+    if (ahora - ultimo_usuario) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
+        try:
+            resolver_apuestas(usuario_id=usuario_key, limite=BITACORA_AUTO_RESOLVE_LIMIT)
+            _AUTO_RESOLVE_LAST_RUN_BY_USER[usuario_key] = ahora
+        except Exception:
+            logger.exception("Auto-resolución de apuestas falló para usuario=%s", usuario_id)
+
+    if (ahora - _AUTO_RESOLVE_LAST_RUN_ANALIZADAS) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
+        try:
+            resolver_apuestas_analizadas()
+            _AUTO_RESOLVE_LAST_RUN_ANALIZADAS = ahora
+        except Exception:
+            logger.exception("Auto-resolución de análisis falló")
 
 
 def _serializar_jsonb(valor: object | None) -> object | None:
