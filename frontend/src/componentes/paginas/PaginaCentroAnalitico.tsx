@@ -47,7 +47,14 @@ export function PaginaCentroAnalitico() {
         <section className="border border-neon-cyan/25 rounded-xl p-6 lg:p-8 bg-futurista-oscuro/40 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs uppercase tracking-[0.2em] text-neon-cyan">Centro analítico</p>
-            <SelectorDeporte tamaño="md" />
+            <SelectorDeporte
+              tamaño="md"
+              onChangeDeporte={(deporte) => {
+                const rutaDestino = deporte === 'NBA' ? '/app' : '/futbol';
+                const cap = deporte === 'NBA' ? 'analisis.nba.base' : 'futbol.base';
+                navegarConGate(rutaDestino, cap);
+              }}
+            />
           </div>
 
           <h1 className="text-3xl lg:text-4xl font-futurista text-texto-principal leading-tight">

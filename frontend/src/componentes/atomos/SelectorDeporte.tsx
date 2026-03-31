@@ -13,6 +13,8 @@ interface SelectorDeporteProps {
   className?: string;
   /** Tamaño del selector */
   tamaño?: 'sm' | 'md' | 'lg';
+  /** Callback opcional al cambiar deporte */
+  onChangeDeporte?: (deporte: Deporte) => void;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -66,6 +68,7 @@ const TAMAÑOS = {
 export function SelectorDeporte({
   className = '',
   tamaño = 'md',
+  onChangeDeporte,
 }: SelectorDeporteProps) {
   const { deporteActivo, cambiarDeporte } = useDeporte();
   const estilosTamaño = TAMAÑOS[tamaño];
@@ -87,7 +90,10 @@ export function SelectorDeporte({
           <button
             key={deporte}
             type="button"
-            onClick={() => cambiarDeporte(deporte)}
+            onClick={() => {
+              cambiarDeporte(deporte);
+              onChangeDeporte?.(deporte);
+            }}
             className={`
               flex items-center rounded-full font-semibold uppercase tracking-wider
               transition-all duration-300 ease-out

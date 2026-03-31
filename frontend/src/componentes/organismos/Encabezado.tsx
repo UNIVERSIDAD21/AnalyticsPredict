@@ -109,7 +109,15 @@ export function Encabezado() {
           </div>
 
           <div className="flex items-center gap-3">
-            <SelectorDeporte tamaño="sm" className="hidden sm:flex" />
+            <SelectorDeporte
+              tamaño="sm"
+              className="hidden sm:flex"
+              onChangeDeporte={(deporte) => {
+                const rutaDestino = deporte === 'NBA' ? '/app' : '/futbol';
+                const cap = deporte === 'NBA' ? 'analisis.nba.base' : 'futbol.base';
+                navegarConGate(rutaDestino, cap);
+              }}
+            />
 
             <div className="hidden md:flex items-center gap-2">
               <button
