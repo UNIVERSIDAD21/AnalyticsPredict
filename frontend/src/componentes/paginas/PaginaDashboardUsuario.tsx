@@ -112,16 +112,28 @@ export function PaginaDashboardUsuario() {
     try {
       setError(null);
       setCargando(true);
-      const [resumenData, planData, kpisData, calidadData] = await Promise.all([
+
+      const [resumenRes, planRes, kpisRes, calidadRes] = await Promise.allSettled([
         obtenerResumenDashboard(),
         obtenerEstadoPlan(),
         obtenerKpisOnboarding(),
         obtenerResumenCalidad1x2(forceRefresh),
       ]);
+
+      const resumenData = resumenRes.status === 'fulfilled' ? resumenRes.value : resumenInicial;
+      const planData = planRes.status === 'fulfilled' ? planRes.value : planInicial;
+      const kpisData = kpisRes.status === 'fulfilled' ? kpisRes.value : kpisIniciales;
+      const calidadData = calidadRes.status === 'fulfilled' ? calidadRes.value : calidadInicial;
+
       setResumen(resumenData);
       setPlan(planData);
       setKpisOnboarding(kpisData);
       setCalidad1x2(calidadData);
+
+      // Solo mostrar error global si falló el core del dashboard.
+      if (resumenRes.status === 'rejected') {
+        setError(resumenRes.reason instanceof Error ? resumenRes.reason.message : 'No se pudo cargar el resumen principal del dashboard.');
+      }
 
       if (planData.activo) {
         try {

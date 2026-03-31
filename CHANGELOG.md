@@ -2,6 +2,7 @@
 
 ## 2026-03-31
 - Correcciones operativas post-validación en entorno local:
+  - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx`: carga resiliente con `Promise.allSettled` para evitar caída completa del dashboard cuando falla el endpoint de plan/suscripción; ante fallo parcial mantiene estado base y renderiza el resto del panel.
   - `backend/motor/recalibracion.py`: fix SQL para filtros opcionales de `modelo_version_id` (`::int`) evitando error PostgreSQL `could not determine data type of parameter` al recalibrar sin versión explícita.
   - `backend/motor/recalibracion.py`: robustez numérica en Platt scaling (sigmoid estable) para evitar `OverflowError: math range error` durante entrenamiento.
   - `backend/motor/recalibracion.py`: fix de compatibilidad UUID en búsqueda de calibrador existente (evita error `'UUID' object has no attribute 'replace'`).
