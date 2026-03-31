@@ -10,6 +10,11 @@
     - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
   - Frontend bitácora unificada:
     - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Reescritura completa del módulo de autenticación (Auth v2 canónico):
+  - `backend/api/rutas_auth.py` reimplementado de cero para registro/login/refresh/logout/me/forgot/reset/accept-legal con flujo directo, validación explícita y trazas de diagnóstico de store activo.
+  - Se mantiene contrato de respuesta `v2` (`{ ok, data, meta }`) para compatibilidad con frontend actual.
+  - Normalización estricta de email (`strip().lower()`) en registro/login/recuperación para evitar inconsistencias.
+
 - Fix de compatibilidad SQLite en suscripciones (error `no such column: updated_at`):
   - `backend/servicios/pagos_store.py` agrega migración liviana al iniciar `SQLitePagosStore` para crear columnas faltantes en instalaciones antiguas:
     - `subscriptions.source_payment_id`
