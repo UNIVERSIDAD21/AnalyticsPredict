@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ## 2026-03-31
+- Correcciones operativas post-validación en entorno local:
+  - `backend/motor/recalibracion.py`: fix SQL para filtros opcionales de `modelo_version_id` (`::int`) evitando error PostgreSQL `could not determine data type of parameter` al recalibrar sin versión explícita.
+  - `backend/motor/recalibracion.py`: robustez numérica en Platt scaling (sigmoid estable) para evitar `OverflowError: math range error` durante entrenamiento.
+  - `backend/motor/recalibracion.py`: fix de compatibilidad UUID en búsqueda de calibrador existente (evita error `'UUID' object has no attribute 'replace'`).
+  - Calibración ejecutada sobre datos reales (`origen=API_USUARIO`) para `Q1`, `Q2`, `Q3`, `Q4` y `COMPLETO`; quedan 5 calibradores activos (`platt`).
+  - Verificación CORS endpoint pagos desde frontend local (`localhost:5173` y `127.0.0.1:5173`) con respuesta incluyendo `Access-Control-Allow-Origin`.
+
 - Reestructura completa de la home pública `/` (Doc 06):
   - `frontend/src/componentes/paginas/PaginaCentroAnalitico.tsx` se rediseña para enfoque producto/conversión Visitante → Base → Premium.
   - Se elimina el enfoque de dashboard público (KPIs personales, win rate, confianza operativa y madurez por competición) y se reemplaza por narrativa de valor:

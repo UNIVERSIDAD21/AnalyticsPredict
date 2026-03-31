@@ -46,7 +46,7 @@ def sugerir_recalibracion(
           AND origen = %s
           AND periodo_fin = %s
           AND resuelta = false
-          AND (%s IS NULL OR modelo_version_id = %s)
+          AND (%s::int IS NULL OR modelo_version_id = %s::int)
     """
     params = [mercado, origen, periodo_fin, modelo_version_id, modelo_version_id]
 
@@ -287,7 +287,7 @@ def _cargar_datos_entrenamiento(
           AND fecha_partido < %s
           AND p_raw IS NOT NULL
           AND outcome_binario IS NOT NULL
-          AND (%s IS NULL OR modelo_version_id = %s)
+          AND (%s::int IS NULL OR modelo_version_id = %s::int)
     """
     params = [mercado, origen, cutoff_datos, modelo_version_id, modelo_version_id]
 
@@ -325,7 +325,10 @@ def _buscar_calibrador_existente(
             cursor.execute(consulta, params)
             fila = cursor.fetchone()
 
-    return UUID(fila[0]) if fila else None
+    if not fila:
+        return None
+    valor = fila[0]
+    return valor if isinstance(valor, UUID) else UUID(str(valor))
 
 
 def _insertar_calibrador(
@@ -415,7 +418,7 @@ def _ajustar_platt(probabilidades: list[float], resultados: list[bool]) -> tuple
         h_ab = 0.0
         for x, y in zip(x_vals, y_vals):
             z = a * x + b
-            p = 1.0 / (1.0 + math.exp(-z))
+            p = _sigmoid(z)
             diff = p - y
             grad_a += diff * x
             grad_b += diff
@@ -444,7 +447,16 @@ def _ajustar_platt(probabilidades: list[float], resultados: list[bool]) -> tuple
 def _aplicar_platt(p: float, a: float, b: float) -> float:
     p = _clip(p, 1e-6, 1 - 1e-6)
     x = _logit(p)
-    return 1.0 / (1.0 + math.exp(-(a * x + b)))
+    return _sigmoid(a * x + b)
+
+
+def _sigmoid(z: float) -> float:
+    # Versión numéricamente estable para evitar overflow en exp() con |z| alto.
+    if z >= 0:
+        ez = math.exp(-z)
+        return 1.0 / (1.0 + ez)
+    ez = math.exp(z)
+    return ez / (1.0 + ez)
 
 
 def _logit(p: float) -> float:

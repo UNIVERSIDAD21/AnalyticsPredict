@@ -198,6 +198,9 @@ de Over/Under para mercados por cuarto y juego completo.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CONFIGURACION.origenes_cors,
+    # Hardening local DX: aceptar localhost/127.0.0.1 en cualquier puerto
+    # para evitar bloqueos CORS intermitentes por cambio de host/puerto en frontend.
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
