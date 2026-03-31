@@ -41,12 +41,35 @@ function esUuidValido(valor: string | null | undefined): valor is string {
  * Obtiene un UUID de usuario válido para headers de backend.
  * Si hay valores legacy no-UUID (ej: IDs numéricos), aplica fallback seguro.
  */
+function construirUsuarioUuidDeterministico(userId: number | string): string {
+  const soloDigitos = String(userId).replace(/\D/g, '');
+  const bloque = soloDigitos.slice(-12).padStart(12, '0');
+  return `11111111-1111-4111-8111-${bloque}`;
+}
+
 function obtenerUsuarioId(): string | null {
   const idEnv = (import.meta.env.VITE_USUARIO_ID as string | undefined)?.trim();
   const idStorage = typeof window !== 'undefined' ? window.localStorage.getItem('usuarioId')?.trim() : null;
 
   if (esUuidValido(idStorage)) {
     return idStorage;
+  }
+
+  // Compatibilidad: si la sesión guardó auth.user.id numérico, derivar UUID estable por usuario.
+  if (typeof window !== 'undefined') {
+    try {
+      const userRaw = window.localStorage.getItem('auth.user');
+      if (userRaw) {
+        const user = JSON.parse(userRaw) as { id?: number | string };
+        if (user?.id !== undefined && user?.id !== null) {
+          const derivado = construirUsuarioUuidDeterministico(user.id);
+          window.localStorage.setItem('usuarioId', derivado);
+          return derivado;
+        }
+      }
+    } catch {
+      // noop
+    }
   }
 
   if (esUuidValido(idEnv)) {

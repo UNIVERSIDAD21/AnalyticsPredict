@@ -3,6 +3,9 @@
 ## 2026-03-31
 - Correcciones operativas post-validación en entorno local:
   - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx`: carga resiliente con `Promise.allSettled` para evitar caída completa del dashboard cuando falla el endpoint de plan/suscripción; ante fallo parcial mantiene estado base y renderiza el resto del panel.
+  - Corrección de aislamiento de bitácora por usuario autenticado:
+    - `frontend/src/servicios/auth.ts`: al guardar sesión, `usuarioId` ahora se persiste como UUID determinístico derivado de `auth.user.id` (evita colisión con UUID de desarrollo compartido).
+    - `frontend/src/servicios/api.ts`: si `usuarioId` no existe/no es UUID, deriva automáticamente UUID estable desde `auth.user.id` y lo guarda; evita fallback continuo al mismo `USUARIO_DESARROLLO` para múltiples cuentas.
   - `backend/motor/recalibracion.py`: fix SQL para filtros opcionales de `modelo_version_id` (`::int`) evitando error PostgreSQL `could not determine data type of parameter` al recalibrar sin versión explícita.
   - `backend/motor/recalibracion.py`: robustez numérica en Platt scaling (sigmoid estable) para evitar `OverflowError: math range error` durante entrenamiento.
   - `backend/motor/recalibracion.py`: fix de compatibilidad UUID en búsqueda de calibrador existente (evita error `'UUID' object has no attribute 'replace'`).

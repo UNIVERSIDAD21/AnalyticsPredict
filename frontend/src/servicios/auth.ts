@@ -61,13 +61,20 @@ export function obtenerUsuarioAuth(): UsuarioAuth | null {
   }
 }
 
+function construirUsuarioUuidDeterministico(userId: number | string): string {
+  const soloDigitos = String(userId).replace(/\D/g, '');
+  const bloque = soloDigitos.slice(-12).padStart(12, '0');
+  // UUID estable por usuario auth (distinto del UUID de desarrollo por defecto).
+  return `11111111-1111-4111-8111-${bloque}`;
+}
+
 export function guardarSesionAuth(data: { accessToken: string; refreshToken: string; user?: UsuarioAuth | null }) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
   window.localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
   if (data.user) {
     window.localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-    window.localStorage.setItem('usuarioId', String(data.user.id));
+    window.localStorage.setItem('usuarioId', construirUsuarioUuidDeterministico(data.user.id));
   }
 }
 
