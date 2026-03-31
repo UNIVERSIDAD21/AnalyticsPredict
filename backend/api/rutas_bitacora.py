@@ -39,6 +39,7 @@ class RegistroBitacoraUnificada(BaseModel):
     """Registro unificado de bitácora (singles + combinadas)."""
 
     id: UUID
+    deporte: Optional[str] = None
     tipo_apuesta: str
     resultado: str
     stake: float
@@ -465,59 +466,125 @@ async def resumen_apuestas(
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
-            # Consulta unificada que combina apuestas simples y combinadas
+            # Consulta unificada que combina apuestas NBA/base, fútbol y combinadas.
             cursor.execute(
                 """
                 WITH apuestas_unificadas AS (
-                    SELECT
-                        usuario_id,
-                        stake,
-                        ganancia,
-                        resultado
+                    SELECT usuario_id, 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
                     FROM apuestas
                     WHERE usuario_id = %s
                     UNION ALL
-                    SELECT
-                        usuario_id,
-                        stake,
-                        ganancia,
-                        resultado
+                    SELECT usuario_id, 'futbol'::text AS deporte, mercado, stake, ganancia, resultado
+                    FROM apuestas_futbol
+                    WHERE usuario_id = %s
+                    UNION ALL
+                    SELECT usuario_id, 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
                     FROM apuestas_combinadas
                     WHERE usuario_id = %s
+                ),
+                resumen_global AS (
+                    SELECT
+                        %s::uuid AS usuario_id,
+                        COUNT(*) AS total_apuestas,
+                        COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
+                        COUNT(*) FILTER (WHERE resultado <> 'PENDIENTE') AS cerradas,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
+                        COUNT(*) FILTER (WHERE resultado = 'ANULADA') AS anuladas,
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        CASE
+                            WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
+                            THEN ROUND(
+                                100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
+                                COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
+                                2
+                            )
+                            ELSE 0
+                        END AS winrate,
+                        CASE
+                            WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
+                            THEN ROUND(
+                                100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
+                                COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
+                                2
+                            )
+                            ELSE 0
+                        END AS roi
+                    FROM apuestas_unificadas
+                ),
+                por_deporte AS (
+                    SELECT
+                        deporte,
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        CASE
+                            WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
+                            THEN ROUND(
+                                100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
+                                COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
+                                2
+                            )
+                            ELSE 0
+                        END AS winrate,
+                        CASE
+                            WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
+                            THEN ROUND(
+                                100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
+                                COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
+                                2
+                            )
+                            ELSE 0
+                        END AS roi
+                    FROM apuestas_unificadas
+                    GROUP BY deporte
+                ),
+                por_mercado AS (
+                    SELECT
+                        mercado,
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                        COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        CASE
+                            WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
+                            THEN ROUND(
+                                100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
+                                COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
+                                2
+                            )
+                            ELSE 0
+                        END AS winrate,
+                        CASE
+                            WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
+                            THEN ROUND(
+                                100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
+                                COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
+                                2
+                            )
+                            ELSE 0
+                        END AS roi
+                    FROM apuestas_unificadas
+                    WHERE mercado IS NOT NULL
+                    GROUP BY mercado
                 )
                 SELECT
-                    %s::uuid AS usuario_id,
-                    COUNT(*) AS total_apuestas,
-                    COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
-                    COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
-                    COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
-                    COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
-                    COUNT(*) FILTER (WHERE resultado = 'ANULADA') AS anuladas,
-                    COALESCE(SUM(stake), 0) AS stake_total,
-                    COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                    CASE
-                        WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
-                        THEN ROUND(
-                            100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
-                            COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
-                            2
-                        )
-                        ELSE 0
-                    END AS winrate,
-                    CASE
-                        WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
-                        THEN ROUND(
-                            100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
-                            COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
-                            2
-                        )
-                        ELSE 0
-                    END AS roi
-                FROM apuestas_unificadas
+                    (SELECT row_to_json(rg) FROM resumen_global rg) AS resumen_global,
+                    (SELECT COALESCE(json_agg(pd ORDER BY pd.deporte), '[]'::json) FROM por_deporte pd) AS por_deporte,
+                    (SELECT COALESCE(json_agg(pm ORDER BY pm.total DESC), '[]'::json) FROM por_mercado pm) AS por_mercado
                 """,
-                [str(usuario_id), str(usuario_id), str(usuario_id)],
+                [str(usuario_id), str(usuario_id), str(usuario_id), str(usuario_id)],
             )
-            resumen = cursor.fetchone() or {}
+            fila_resumen = cursor.fetchone() or {}
+            resumen = fila_resumen.get("resumen_global") or {}
+            resumen["por_deporte"] = fila_resumen.get("por_deporte") or []
+            resumen["por_mercado"] = fila_resumen.get("por_mercado") or []
 
     payload_legacy = RespuestaResumenApuestas(exito=True, resumen=resumen).model_dump(mode="json")
     return _respuesta_contrato(payload_legacy, version, response, "resumen")
@@ -579,7 +646,10 @@ async def listar_bitacora_unificada(
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     usuario_id: UUID = Depends(obtener_usuario_id),
     resultado: Optional[str] = Query(None),
+    deporte: Optional[str] = Query(None),
     tipo_apuesta: Optional[str] = Query(None),
+    mercado: Optional[str] = Query(None),
+    confianza: Optional[str] = Query(None),
     desde: Optional[date] = Query(None),
     hasta: Optional[date] = Query(None),
     busqueda: Optional[str] = Query(None),
@@ -596,41 +666,150 @@ async def listar_bitacora_unificada(
     if resultado:
         condiciones.append("resultado = %s")
         parametros.append(resultado)
+    if deporte:
+        condiciones.append("deporte = %s")
+        parametros.append(deporte)
     if tipo_apuesta:
         condiciones.append("tipo_apuesta = %s")
         parametros.append(tipo_apuesta)
+    if mercado:
+        condiciones.append("mercado = %s")
+        parametros.append(mercado)
+    if confianza:
+        condiciones.append("confianza_sistema = %s")
+        parametros.append(confianza)
     if desde:
-        condiciones.append("fecha_partido >= %s")
+        condiciones.append("COALESCE(fecha_partido, creado_en::date) >= %s")
         parametros.append(desde)
     if hasta:
-        condiciones.append("fecha_partido <= %s")
+        condiciones.append("COALESCE(fecha_partido, creado_en::date) <= %s")
         parametros.append(hasta)
     if busqueda:
-        condiciones.append("(equipo_local ILIKE %s OR equipo_visitante ILIKE %s)")
+        condiciones.append("(COALESCE(equipo_local,'') ILIKE %s OR COALESCE(equipo_visitante,'') ILIKE %s)")
         termino = f"%{busqueda}%"
         parametros.extend([termino, termino])
 
     where_sql = " AND ".join(condiciones)
 
     if orden == "antiguo":
-        orden_sql = "creado_en ASC"
+        orden_sql = "COALESCE(fecha_partido, creado_en::date) ASC, creado_en ASC"
     else:
-        orden_sql = "creado_en DESC"
+        orden_sql = "COALESCE(fecha_partido, creado_en::date) DESC, creado_en DESC"
 
     offset = (pagina - 1) * tamano
+
+    bitacora_cte = """
+        WITH bitacora_global AS (
+            SELECT
+                a.id,
+                'baloncesto'::text AS deporte,
+                'SIMPLE'::text AS tipo_apuesta,
+                a.resultado,
+                a.stake,
+                a.ganancia,
+                a.cuota,
+                NULL::numeric AS cuota_total,
+                NULL::int AS n_selecciones,
+                NULL::int AS selecciones_ganadas,
+                NULL::int AS selecciones_perdidas,
+                NULL::int AS selecciones_push,
+                NULL::int AS selecciones_pendientes,
+                NULL::boolean AS tiene_mismo_partido,
+                NULL::jsonb AS advertencias,
+                a.equipo_local,
+                a.equipo_visitante,
+                a.fecha_partido,
+                a.mercado,
+                a.lado,
+                a.linea,
+                a.probabilidad_sistema,
+                a.confianza_sistema,
+                a.valor_esperado,
+                a.creado_en,
+                a.actualizado_en,
+                a.usuario_id
+            FROM apuestas a
+            UNION ALL
+            SELECT
+                f.id,
+                'futbol'::text AS deporte,
+                'SIMPLE'::text AS tipo_apuesta,
+                f.resultado,
+                f.stake,
+                f.ganancia,
+                f.cuota,
+                NULL::numeric AS cuota_total,
+                NULL::int AS n_selecciones,
+                NULL::int AS selecciones_ganadas,
+                NULL::int AS selecciones_perdidas,
+                NULL::int AS selecciones_push,
+                NULL::int AS selecciones_pendientes,
+                NULL::boolean AS tiene_mismo_partido,
+                NULL::jsonb AS advertencias,
+                f.equipo_local,
+                f.equipo_visitante,
+                f.fecha_partido,
+                f.mercado,
+                f.lado,
+                f.linea,
+                f.probabilidad_sistema,
+                f.confianza_sistema,
+                f.valor_esperado,
+                f.creado_en,
+                f.actualizado_en,
+                f.usuario_id
+            FROM apuestas_futbol f
+            UNION ALL
+            SELECT
+                c.id,
+                'baloncesto'::text AS deporte,
+                'COMBINADA'::text AS tipo_apuesta,
+                c.resultado,
+                c.stake,
+                c.ganancia,
+                NULL::numeric AS cuota,
+                c.cuota_total,
+                c.n_selecciones,
+                c.selecciones_ganadas,
+                c.selecciones_perdidas,
+                c.selecciones_push,
+                c.selecciones_pendientes,
+                c.tiene_mismo_partido,
+                c.advertencias,
+                NULL::text AS equipo_local,
+                NULL::text AS equipo_visitante,
+                NULL::date AS fecha_partido,
+                NULL::text AS mercado,
+                NULL::text AS lado,
+                NULL::numeric AS linea,
+                c.probabilidad_ajustada AS probabilidad_sistema,
+                c.confianza_sistema,
+                c.valor_esperado,
+                c.creado_en,
+                c.actualizado_en,
+                c.usuario_id
+            FROM apuestas_combinadas c
+        )
+    """
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
-                f"SELECT COUNT(*) AS total FROM vista_bitacora_unificada WHERE {where_sql}",
+                f"""
+                {bitacora_cte}
+                SELECT COUNT(*) AS total
+                FROM bitacora_global
+                WHERE {where_sql}
+                """,
                 parametros,
             )
             total = cursor.fetchone()["total"]
 
             cursor.execute(
                 f"""
+                {bitacora_cte}
                 SELECT *
-                FROM vista_bitacora_unificada
+                FROM bitacora_global
                 WHERE {where_sql}
                 ORDER BY {orden_sql}
                 LIMIT %s OFFSET %s

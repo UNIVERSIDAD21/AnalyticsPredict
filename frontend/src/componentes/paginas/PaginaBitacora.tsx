@@ -18,6 +18,7 @@ export function PaginaBitacora() {
   const [busquedaInput, setBusquedaInput] = useState('');
   const [filtros, setFiltros] = useState({
     resultado: '',
+    deporte: '',
     mercado: '',
     confianza: '',
     orden: 'reciente',
@@ -45,6 +46,7 @@ export function PaginaBitacora() {
     ...filtros,
     busqueda: filtros.busqueda || undefined,
     resultado: filtros.resultado || undefined,
+    deporte: filtros.deporte || undefined,
     mercado: filtros.mercado || undefined,
     confianza: filtros.confianza || undefined,
     desde: filtros.desde || undefined,
@@ -81,6 +83,7 @@ export function PaginaBitacora() {
   const limpiarFiltros = () => {
     setFiltros({
       resultado: '',
+      deporte: '',
       mercado: '',
       confianza: '',
       orden: 'reciente',
@@ -213,6 +216,7 @@ export function PaginaBitacora() {
 
         <FiltrosApuestas
           resultado={filtros.resultado}
+          deporte={filtros.deporte}
           mercado={filtros.mercado}
           confianza={filtros.confianza}
           orden={filtros.orden}

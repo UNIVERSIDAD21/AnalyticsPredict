@@ -8,6 +8,7 @@ import { RegistroBitacoraUnificada } from '../tipos';
 
 export interface FiltrosBitacora {
   resultado?: string;
+  deporte?: string;
   mercado?: string;
   confianza?: string;
   desde?: string;

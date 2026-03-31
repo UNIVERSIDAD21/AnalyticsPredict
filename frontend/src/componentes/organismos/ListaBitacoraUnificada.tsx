@@ -203,6 +203,9 @@ export function ListaBitacoraUnificada({
               >
                 Fecha <IconoOrden columna="fecha" />
               </th>
+              <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-texto-terciario">
+                Dep
+              </th>
               <th className="px-3 py-3 pr-1 text-left text-xs font-semibold uppercase tracking-wider text-texto-terciario">
                 Partido
               </th>
@@ -267,6 +270,11 @@ export function ListaBitacoraUnificada({
                   <tr className={`transition-colors ${estiloEstado.fila}`}>
                     <td className="px-3 py-2.5 text-sm text-texto-secundario whitespace-nowrap">
                       {formatearFechaCorta(fechaRegistro)}
+                    </td>
+                    <td className="px-2 py-2.5 text-center">
+                      <span className={`text-[10px] uppercase tracking-wider ${apuesta.deporte === 'futbol' ? 'text-neon-verde' : 'text-neon-cyan'}`}>
+                        {apuesta.deporte === 'futbol' ? 'FUT' : 'NBA'}
+                      </span>
                     </td>
                     <td className="px-3 py-2.5 pr-1">
                       {esCombinada ? (

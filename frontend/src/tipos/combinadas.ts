@@ -93,6 +93,7 @@ export type TipoApuesta = 'SIMPLE' | 'COMBINADA';
 
 export interface RegistroBitacoraUnificada {
   id: string;
+  deporte?: 'baloncesto' | 'futbol' | string | null;
   tipo_apuesta: TipoApuesta;
   resultado: ResultadoApuesta | ResultadoCombinada;
   stake: number;

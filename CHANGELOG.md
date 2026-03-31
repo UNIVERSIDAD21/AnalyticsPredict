@@ -1,6 +1,20 @@
 # CHANGELOG
 
 ## 2026-03-31
+- Bloque 2 (arquitectura de bitácora única con transición controlada):
+  - Se define documento canónico de transición: `docs/arquitectura/ARQUITECTURA_BITACORA_UNICA_TRANSICION.md` (fuente de verdad de lectura, contrato final, convivencia legacy y plan de migración).
+  - `backend/api/rutas_bitacora.py`:
+    - `/api/bitacora/unificada` deja de depender de `vista_bitacora_unificada` y pasa a consolidar en una sola lectura `apuestas` + `apuestas_futbol` + `apuestas_combinadas`.
+    - Se agregan filtros canónicos: `deporte`, `mercado`, `confianza`, además de resultado/tipo/fecha/búsqueda.
+    - Se extiende el contrato de registro con campo `deporte`.
+    - `/api/bitacora/resumen` ahora incluye agregado global + por deporte + por mercado, incluyendo fútbol en el consolidado.
+  - Frontend bitácora unificada:
+    - `PaginaBitacora`, `useBitacora`, `FiltrosApuestas`, `ListaBitacoraUnificada`, `tipos/combinadas` actualizados para soportar filtro y visualización por deporte.
+- Bloque 1 (unificación de plataforma en navegación):
+  - `frontend/src/App.tsx`: rutas legacy de UX `/futbol/bitacora` y `/futbol/dashboard` ahora redirigen a `/bitacora` y `/dashboard`.
+  - `frontend/src/componentes/organismos/Encabezado.tsx`: navegación de Bitácora y Dashboard pasa a rutas globales (sin bifurcar por deporte).
+  - `frontend/src/componentes/paginas/PaginaFutbol.tsx`: acceso de dashboard apunta a `/dashboard` global.
+
 - Correcciones operativas post-validación en entorno local:
   - `frontend/src/componentes/paginas/PaginaDashboardUsuario.tsx`: carga resiliente con `Promise.allSettled` para evitar caída completa del dashboard cuando falla el endpoint de plan/suscripción; ante fallo parcial mantiene estado base y renderiza el resto del panel.
   - Corrección de aislamiento de bitácora por usuario autenticado:

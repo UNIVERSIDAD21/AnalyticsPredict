@@ -7,6 +7,7 @@ import { Boton } from '../atomos';
 
 interface PropsFiltrosApuestas {
   resultado: string;
+  deporte: string;
   mercado: string;
   confianza: string;
   orden: string;
@@ -26,12 +27,22 @@ const opcionesResultado = [
   { valor: 'ANULADA', etiqueta: 'Anulada' },
 ];
 
+const opcionesDeporte = [
+  { valor: 'baloncesto', etiqueta: 'Baloncesto' },
+  { valor: 'futbol', etiqueta: 'Fútbol' },
+];
+
 const opcionesMercado = [
-  { valor: 'Q1', etiqueta: 'Q1' },
-  { valor: 'Q2', etiqueta: 'Q2' },
-  { valor: 'Q3', etiqueta: 'Q3' },
-  { valor: 'Q4', etiqueta: 'Q4' },
-  { valor: 'COMPLETO', etiqueta: 'Completo' },
+  { valor: 'Q1', etiqueta: 'Q1 (NBA)' },
+  { valor: 'Q2', etiqueta: 'Q2 (NBA)' },
+  { valor: 'Q3', etiqueta: 'Q3 (NBA)' },
+  { valor: 'Q4', etiqueta: 'Q4 (NBA)' },
+  { valor: 'COMPLETO', etiqueta: 'Completo (NBA)' },
+  { valor: 'GOLES_FT', etiqueta: 'Goles FT (Fútbol)' },
+  { valor: 'GOLES_1T', etiqueta: 'Goles 1T (Fútbol)' },
+  { valor: 'GOLES_2T', etiqueta: 'Goles 2T (Fútbol)' },
+  { valor: 'CORNERS_FT', etiqueta: 'Corners FT (Fútbol)' },
+  { valor: 'DISPAROS_FT', etiqueta: 'Disparos FT (Fútbol)' },
 ];
 
 const opcionesConfianza = [
@@ -52,6 +63,7 @@ const opcionesTipo = [
 
 export function FiltrosApuestas({
   resultado,
+  deporte,
   mercado,
   confianza,
   orden,
@@ -77,6 +89,13 @@ export function FiltrosApuestas({
           placeholder="Todos"
           value={resultado}
           onChange={(event) => onChange('resultado', event.target.value)}
+        />
+        <Select
+          etiqueta="Deporte"
+          opciones={opcionesDeporte}
+          placeholder="Todos"
+          value={deporte}
+          onChange={(event) => onChange('deporte', event.target.value)}
         />
         <Select
           etiqueta="Mercado"
