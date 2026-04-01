@@ -481,6 +481,12 @@ def _registrar_bitacora_analisis_nba(
                 "mercado_peticion": peticion.mercado,
                 "candidato": candidato.como_diccionario() if hasattr(candidato, "como_diccionario") else {},
             }
+            confianza_candidato = getattr(candidato, "nivel_confianza", None)
+            if confianza_candidato is None:
+                confianza_candidato = getattr(resultado, "nivel_confianza", None)
+            if hasattr(confianza_candidato, "value"):
+                confianza_candidato = confianza_candidato.value
+
             registrar_apuesta_analizada(
                 deporte="baloncesto",
                 partido_id=partido_id,
@@ -488,7 +494,7 @@ def _registrar_bitacora_analisis_nba(
                 lado=str(candidato.lado.value),
                 linea=float(candidato.linea),
                 probabilidad_sistema=float(candidato.probabilidad),
-                confianza=(candidato.sizing.confianza.value if getattr(candidato, "sizing", None) else None),
+                confianza=confianza_candidato,
                 payload_json=json.dumps(payload, ensure_ascii=False),
             )
         return
