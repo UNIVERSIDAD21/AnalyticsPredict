@@ -6,7 +6,8 @@
  * Si no hay calibrador, muestra advertencia informativa.
  */
 
-import { Activity, AlertTriangle, HelpCircle, ArrowRight } from 'lucide-react';
+import { Activity, AlertTriangle, HelpCircle, ArrowRight, Lock, Crown } from 'lucide-react';
+import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -52,6 +53,37 @@ function obtenerNombreCalibrador(calibrador: string | null): string {
   return nombres[calibrador.toLowerCase()] || calibrador;
 }
 
+function construirExplicacionProfesional(
+  pRaw: number | null,
+  pCalibrada: number | null,
+  calibradorUsado: string | null
+): { resumen: string; tecnico: string; lecturaRiesgo: string } {
+  if (pRaw === null || pCalibrada === null || !isFinite(pRaw) || !isFinite(pCalibrada)) {
+    return {
+      resumen: 'No hay suficientes datos para justificar técnicamente un ajuste de calibración en este evento.',
+      tecnico: 'Sin probabilidad calibrada válida no se puede calcular gap de calibración ni evaluar sesgo histórico del modelo.',
+      lecturaRiesgo: 'Operativamente se debe interpretar con cautela: usar probabilidad raw implica mayor incertidumbre de confiabilidad.',
+    };
+  }
+
+  const deltaPts = (pCalibrada - pRaw) * 100;
+  const absDelta = Math.abs(deltaPts);
+  const direccion = deltaPts < 0 ? 'a la baja' : deltaPts > 0 ? 'al alza' : 'sin cambio';
+  const metodo = obtenerNombreCalibrador(calibradorUsado);
+
+  const severidad = absDelta >= 4
+    ? 'ajuste fuerte'
+    : absDelta >= 2
+      ? 'ajuste moderado'
+      : 'ajuste fino';
+
+  return {
+    resumen: `El calibrador aplicó un ${severidad} (${direccion}) de ${absDelta.toFixed(2)} pts sobre la probabilidad del modelo para alinear la confianza con evidencia histórica comparable.`,
+    tecnico: `Método activo: ${metodo}. Se transformó P(raw)=${(pRaw * 100).toFixed(2)}% a P(calibrada)=${(pCalibrada * 100).toFixed(2)}%. Este ajuste corrige sesgo de sobre/sub-confianza observado en validación histórica del mercado.`,
+    lecturaRiesgo: `Para decisión operativa, la referencia correcta es la probabilidad calibrada. Un ajuste ${direccion} indica que la certeza inicial del modelo era más optimista/pesimista que el comportamiento real histórico.`,
+  };
+}
+
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE
 // ══════════════════════════════════════════════════════════════
@@ -64,10 +96,48 @@ export function SeccionCalibracion({
   pCalibrada,
   calibradorUsado,
 }: PropsSeccionCalibracion) {
+  const { can } = useAccessPolicy();
+  const tienePremium = can('premium.depth');
   const tieneCalibrador =
     pCalibrada !== null &&
     (calibradorUsado === null || calibradorUsado.toLowerCase() !== 'none');
   const delta = calcularDelta(pRaw, pCalibrada);
+  const explicacion = construirExplicacionProfesional(pRaw, pCalibrada, calibradorUsado);
+
+  const bloqueExplicacion = (
+    <div className="mt-4 pt-4 border-t border-neon-cyan/10">
+      <div className="flex items-center gap-2 mb-3">
+        <Crown className="w-4 h-4 text-neon-magenta" />
+        <span className="text-xs font-bold uppercase tracking-wider text-neon-magenta">
+          Explicación Técnica del Ajuste
+        </span>
+      </div>
+
+      {tienePremium ? (
+        <div className="space-y-2 text-xs text-texto-secundario leading-relaxed">
+          <p>{explicacion.resumen}</p>
+          <p>{explicacion.tecnico}</p>
+          <p>{explicacion.lecturaRiesgo}</p>
+        </div>
+      ) : (
+        <div className="relative rounded-lg border border-neon-magenta/30 bg-neon-magenta/5 p-3 overflow-hidden">
+          <div className="space-y-2 text-xs text-texto-secundario/60 blur-[2px] select-none pointer-events-none">
+            <p>{explicacion.resumen}</p>
+            <p>{explicacion.tecnico}</p>
+            <p>{explicacion.lecturaRiesgo}</p>
+          </div>
+          <div className="absolute inset-0 bg-futurista-oscuro/40 flex items-center justify-center">
+            <div className="px-3 py-2 rounded-lg border border-neon-magenta/40 bg-futurista-oscuro/90 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-neon-magenta" />
+              <span className="text-xs font-semibold text-neon-magenta">
+                Explicación premium bloqueada en plan base
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   // Sin calibrador activo
   if (!tieneCalibrador) {
@@ -95,6 +165,8 @@ export function SeccionCalibracion({
             </p>
           </div>
         </div>
+
+        {bloqueExplicacion}
       </div>
     );
   }
@@ -166,6 +238,8 @@ export function SeccionCalibracion({
           {obtenerNombreCalibrador(calibradorUsado)}
         </span>
       </div>
+
+      {bloqueExplicacion}
     </div>
   );
 }
