@@ -306,6 +306,33 @@ def _construir_where(
     return where_sql, parametros
 
 
+def _asegurar_usuario_para_fk(usuario_id: UUID) -> None:
+    """Garantiza que exista fila en usuarios para cumplir FK de apuestas.usuario_id."""
+    usuario_txt = str(usuario_id)
+    email_placeholder = f"usuario_{usuario_txt}@local.analyticspredict"
+
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO usuarios (
+                    id,
+                    email,
+                    nombre,
+                    password_hash,
+                    fecha_creacion,
+                    creado_en,
+                    actualizado_en,
+                    activo,
+                    rol
+                )
+                VALUES (%s, %s, %s, %s, NOW(), NOW(), NOW(), TRUE, 'usuario')
+                ON CONFLICT (id) DO NOTHING
+                """,
+                [usuario_txt, email_placeholder, "usuario", "NO_LOGIN_PLACEHOLDER"],
+            )
+
+
 @router.post("", summary="Guardar apuesta", response_model=RespuestaApuesta)
 async def guardar_apuesta(
     peticion: PeticionCrearApuesta,
@@ -313,6 +340,7 @@ async def guardar_apuesta(
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
     datos_apuesta = _construir_payload_apuesta(peticion, usuario_id)
+    _asegurar_usuario_para_fk(usuario_id)
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:

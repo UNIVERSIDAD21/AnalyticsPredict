@@ -39,8 +39,21 @@ class ProductAnalyticsStore:
             conn.commit()
 
 
+def _resolver_ruta_store(path_env: str | None, nombre_archivo_default: str) -> str:
+    base_backend = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if path_env and path_env.strip():
+        candidata = path_env.strip()
+        if not os.path.isabs(candidata):
+            normalizada = candidata.replace("\\", "/")
+            if normalizada.startswith("backend/"):
+                candidata = normalizada[len("backend/"):]
+            return os.path.abspath(os.path.join(base_backend, candidata))
+        return candidata
+    return os.path.join(base_backend, "data", nombre_archivo_default)
+
+
 def _store() -> ProductAnalyticsStore:
-    path = os.getenv("PRODUCT_ANALYTICS_DB_PATH", "backend/data/product_analytics.db")
+    path = _resolver_ruta_store(os.getenv("PRODUCT_ANALYTICS_DB_PATH"), "product_analytics.db")
     return ProductAnalyticsStore(path)
 
 

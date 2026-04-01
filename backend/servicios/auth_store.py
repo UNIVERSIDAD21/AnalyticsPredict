@@ -448,12 +448,25 @@ class PostgresAuthStore:
         return row is not None
 
 
+def _resolver_ruta_store(path_env: str | None, nombre_archivo_default: str) -> str:
+    """Resuelve rutas de archivos sqlite evitando duplicar backend/backend/data."""
+    base_backend = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if path_env and path_env.strip():
+        candidata = path_env.strip()
+        if not os.path.isabs(candidata):
+            normalizada = candidata.replace("\\", "/")
+            if normalizada.startswith("backend/"):
+                candidata = normalizada[len("backend/"):]
+            return os.path.abspath(os.path.join(base_backend, candidata))
+        return candidata
+    return os.path.join(base_backend, "data", nombre_archivo_default)
+
+
 def obtener_auth_store() -> AuthStore:
     driver = os.getenv("AUTH_STORE_DRIVER", "sqlite").strip().lower()
 
     if driver == "postgres":
         return PostgresAuthStore()
 
-    db_path = os.getenv("AUTH_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "data", "auth.db"))
-    db_path = os.path.abspath(db_path)
+    db_path = _resolver_ruta_store(os.getenv("AUTH_DB_PATH"), "auth.db")
     return SQLiteAuthStore(db_path)

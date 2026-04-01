@@ -375,6 +375,20 @@ class PostgresOnboardingStore:
         }
 
 
+def _resolver_ruta_store(path_env: str | None, nombre_archivo_default: str) -> str:
+    """Resuelve rutas sqlite relativas al backend para evitar backend/backend/data."""
+    base_backend = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if path_env and path_env.strip():
+        candidata = path_env.strip()
+        if not os.path.isabs(candidata):
+            normalizada = candidata.replace("\\", "/")
+            if normalizada.startswith("backend/"):
+                candidata = normalizada[len("backend/"):]
+            return os.path.abspath(os.path.join(base_backend, candidata))
+        return candidata
+    return os.path.join(base_backend, "data", nombre_archivo_default)
+
+
 def obtener_onboarding_store() -> OnboardingStore:
     driver_raw = os.getenv("ONBOARDING_STORE_DRIVER")
     if driver_raw and driver_raw.strip():
@@ -386,13 +400,11 @@ def obtener_onboarding_store() -> OnboardingStore:
     if driver == "postgres":
         return PostgresOnboardingStore()
 
-    default_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "onboarding.db"))
     db_path = os.getenv("ONBOARDING_DB_PATH")
     if not db_path:
-        auth_path = os.getenv("AUTH_DB_PATH")
-        if auth_path:
-            auth_dir = os.path.dirname(os.path.abspath(auth_path))
-            db_path = os.path.join(auth_dir, "onboarding.db")
-        else:
-            db_path = default_path
+        auth_path = _resolver_ruta_store(os.getenv("AUTH_DB_PATH"), "auth.db")
+        auth_dir = os.path.dirname(auth_path)
+        db_path = os.path.join(auth_dir, "onboarding.db")
+    else:
+        db_path = _resolver_ruta_store(db_path, "onboarding.db")
     return SQLiteOnboardingStore(db_path)

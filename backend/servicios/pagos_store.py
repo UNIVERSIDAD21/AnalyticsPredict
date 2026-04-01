@@ -454,6 +454,20 @@ class PostgresPagosStore:
         return dict(row) if row else None
 
 
+def _resolver_ruta_store(path_env: str | None, nombre_archivo_default: str) -> str:
+    """Resuelve rutas sqlite relativas al backend para evitar backend/backend/data."""
+    base_backend = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if path_env and path_env.strip():
+        candidata = path_env.strip()
+        if not os.path.isabs(candidata):
+            normalizada = candidata.replace("\\", "/")
+            if normalizada.startswith("backend/"):
+                candidata = normalizada[len("backend/"):]
+            return os.path.abspath(os.path.join(base_backend, candidata))
+        return candidata
+    return os.path.join(base_backend, "data", nombre_archivo_default)
+
+
 def obtener_pagos_store() -> PagosStore:
     driver_raw = os.getenv("PAGOS_STORE_DRIVER")
     if driver_raw and driver_raw.strip():
@@ -465,14 +479,12 @@ def obtener_pagos_store() -> PagosStore:
     if driver == "postgres":
         return PostgresPagosStore()
 
-    default_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "pagos.db"))
     path = os.getenv("PAGOS_DB_PATH")
     if not path:
         # Si auth define path sqlite y pagos no, reutilizar directorio para mantener coherencia.
-        auth_path = os.getenv("AUTH_DB_PATH")
-        if auth_path:
-            auth_dir = os.path.dirname(os.path.abspath(auth_path))
-            path = os.path.join(auth_dir, "pagos.db")
-        else:
-            path = default_path
+        auth_path = _resolver_ruta_store(os.getenv("AUTH_DB_PATH"), "auth.db")
+        auth_dir = os.path.dirname(auth_path)
+        path = os.path.join(auth_dir, "pagos.db")
+    else:
+        path = _resolver_ruta_store(path, "pagos.db")
     return SQLitePagosStore(path)
