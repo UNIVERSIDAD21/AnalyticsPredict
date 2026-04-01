@@ -494,7 +494,7 @@ async def resumen_apuestas(
                         SELECT usuario_id, 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
                         FROM apuestas
                         UNION ALL
-                        SELECT usuario_id, 'futbol'::text AS deporte, mercado, stake, ganancia, resultado
+                        SELECT usuario_id, 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia, resultado
                         FROM apuestas_futbol
                         UNION ALL
                         SELECT usuario_id, 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
