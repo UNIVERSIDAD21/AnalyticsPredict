@@ -811,7 +811,7 @@ async def listar_bitacora_unificada(
                 c.selecciones_push,
                 c.selecciones_pendientes,
                 c.tiene_mismo_partido,
-                c.advertencias,
+                to_jsonb(c.advertencias) AS advertencias,
                 NULL::text AS equipo_local,
                 NULL::text AS equipo_visitante,
                 NULL::date AS fecha_partido,
