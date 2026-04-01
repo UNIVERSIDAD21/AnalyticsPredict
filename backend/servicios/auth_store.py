@@ -14,12 +14,12 @@ from typing import Iterator, Protocol
 class AuthStore(Protocol):
     def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict: ...
     def obtener_usuario_por_email(self, email: str) -> dict | None: ...
-    def obtener_usuario_por_id(self, user_id: int) -> dict | None: ...
-    def actualizar_aceptacion_legal(self, user_id: int, legal_version: str) -> None: ...
-    def guardar_reset_token(self, user_id: int, token: str, expires_at: str) -> None: ...
+    def obtener_usuario_por_id(self, user_id: str | int) -> dict | None: ...
+    def actualizar_aceptacion_legal(self, user_id: str | int, legal_version: str) -> None: ...
+    def guardar_reset_token(self, user_id: str | int, token: str, expires_at: str) -> None: ...
     def validar_reset_token(self, token: str) -> dict | None: ...
     def marcar_reset_token_usado(self, token: str) -> None: ...
-    def actualizar_password(self, user_id: int, password_hash: str) -> None: ...
+    def actualizar_password(self, user_id: str | int, password_hash: str) -> None: ...
     def revocar_jti(self, jti: str) -> None: ...
     def token_revocado(self, jti: str) -> bool: ...
 
@@ -279,6 +279,16 @@ class PostgresAuthStore:
                 )
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS auth_reset_tokens_v2 (
+                  token TEXT PRIMARY KEY,
+                  user_id UUID NOT NULL,
+                  expires_at TIMESTAMPTZ NOT NULL,
+                  used BOOLEAN NOT NULL DEFAULT FALSE
+                )
+                """
+            )
             # Mirror operativo solicitado: tabla usuarios con esquema de negocio.
             cur.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
             cur.execute(
@@ -305,18 +315,8 @@ class PostgresAuthStore:
 
     def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict:
         normalized_email = email.lower().strip()
+        nombre = (normalized_email.split('@')[0] or 'usuario')[:100]
         with self._conn() as (_, cur):
-            cur.execute(
-                """
-                INSERT INTO auth_users(email, password_hash, legal_accepted_version, legal_accepted_at)
-                VALUES (%s, %s, %s, CASE WHEN %s IS NULL THEN NULL ELSE NOW() END)
-                RETURNING id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at
-                """,
-                (normalized_email, password_hash, legal_version, legal_version),
-            )
-            row = cur.fetchone()
-
-            nombre = (normalized_email.split('@')[0] or 'usuario')[:100]
             cur.execute(
                 """
                 INSERT INTO usuarios(email, nombre, password_hash, fecha_creacion, creado_en, actualizado_en, activo, rol)
@@ -326,77 +326,75 @@ class PostgresAuthStore:
                   password_hash=EXCLUDED.password_hash,
                   actualizado_en=NOW(),
                   activo=TRUE
+                RETURNING id, email, password_hash, creado_en AS created_at
                 """,
                 (normalized_email, nombre, password_hash),
             )
-        return dict(row)
+            row = cur.fetchone()
+        data = dict(row)
+        data["legal_accepted_version"] = legal_version
+        data["legal_accepted_at"] = datetime.now(timezone.utc) if legal_version else None
+        return data
 
     def obtener_usuario_por_email(self, email: str) -> dict | None:
         normalized_email = email.lower().strip()
         with self._conn() as (_, cur):
             cur.execute(
-                "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE email=%s",
-                (normalized_email,),
-            )
-            row = cur.fetchone()
-            if row:
-                return dict(row)
-
-            # Fallback: si existe en tabla usuarios pero no en auth_users, crear sombra compatible.
-            cur.execute(
-                "SELECT email, password_hash, fecha_creacion FROM usuarios WHERE lower(email)=lower(%s) LIMIT 1",
-                (normalized_email,),
-            )
-            legacy = cur.fetchone()
-            if not legacy:
-                return None
-
-            cur.execute(
                 """
-                INSERT INTO auth_users(email, password_hash, created_at, legal_accepted_version, legal_accepted_at)
-                VALUES (%s, %s, COALESCE(%s, NOW()), %s, NOW())
-                ON CONFLICT(email) DO UPDATE SET password_hash=EXCLUDED.password_hash
-                RETURNING id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at
+                SELECT
+                    id,
+                    email,
+                    password_hash,
+                    creado_en AS created_at,
+                    NULL::text AS legal_accepted_version,
+                    NULL::timestamptz AS legal_accepted_at
+                FROM usuarios
+                WHERE lower(email)=lower(%s)
+                LIMIT 1
                 """,
-                (legacy["email"], legacy["password_hash"], legacy["fecha_creacion"], os.getenv("LEGAL_CURRENT_VERSION", "2026-03-18")),
+                (normalized_email,),
             )
             row = cur.fetchone()
             return dict(row) if row else None
 
-    def obtener_usuario_por_id(self, user_id: int) -> dict | None:
+    def obtener_usuario_por_id(self, user_id: str | int) -> dict | None:
         with self._conn() as (_, cur):
             cur.execute(
-                "SELECT id, email, password_hash, created_at, legal_accepted_version, legal_accepted_at FROM auth_users WHERE id=%s",
-                (user_id,),
+                """
+                SELECT
+                    id,
+                    email,
+                    password_hash,
+                    creado_en AS created_at,
+                    NULL::text AS legal_accepted_version,
+                    NULL::timestamptz AS legal_accepted_at
+                FROM usuarios
+                WHERE id=%s
+                LIMIT 1
+                """,
+                (str(user_id),),
             )
             row = cur.fetchone()
         return dict(row) if row else None
 
-    def actualizar_aceptacion_legal(self, user_id: int, legal_version: str) -> None:
-        with self._conn() as (_, cur):
-            cur.execute(
-                """
-                UPDATE auth_users
-                SET legal_accepted_version=%s, legal_accepted_at=NOW()
-                WHERE id=%s
-                """,
-                (legal_version, user_id),
-            )
+    def actualizar_aceptacion_legal(self, user_id: str | int, legal_version: str) -> None:
+        # En modo usuarios-only no persistimos legal en auth_users.
+        _ = user_id, legal_version
 
-    def guardar_reset_token(self, user_id: int, token: str, expires_at: str) -> None:
+    def guardar_reset_token(self, user_id: str | int, token: str, expires_at: str) -> None:
         with self._conn() as (_, cur):
             cur.execute(
                 """
-                INSERT INTO auth_reset_tokens(token, user_id, expires_at, used)
+                INSERT INTO auth_reset_tokens_v2(token, user_id, expires_at, used)
                 VALUES (%s, %s, %s, FALSE)
                 """,
-                (token, user_id, expires_at),
+                (token, str(user_id), expires_at),
             )
 
     def validar_reset_token(self, token: str) -> dict | None:
         with self._conn() as (_, cur):
             cur.execute(
-                "SELECT token, user_id, expires_at, used FROM auth_reset_tokens WHERE token=%s",
+                "SELECT token, user_id, expires_at, used FROM auth_reset_tokens_v2 WHERE token=%s",
                 (token,),
             )
             row = cur.fetchone()
@@ -414,20 +412,18 @@ class PostgresAuthStore:
 
     def marcar_reset_token_usado(self, token: str) -> None:
         with self._conn() as (_, cur):
-            cur.execute("UPDATE auth_reset_tokens SET used=TRUE WHERE token=%s", (token,))
+            cur.execute("UPDATE auth_reset_tokens_v2 SET used=TRUE WHERE token=%s", (token,))
 
-    def actualizar_password(self, user_id: int, password_hash: str) -> None:
+    def actualizar_password(self, user_id: str | int, password_hash: str) -> None:
         with self._conn() as (_, cur):
-            cur.execute("UPDATE auth_users SET password_hash=%s WHERE id=%s", (password_hash, user_id))
             cur.execute(
                 """
-                UPDATE usuarios u
+                UPDATE usuarios
                 SET password_hash=%s,
                     actualizado_en=NOW()
-                FROM auth_users a
-                WHERE a.id=%s AND lower(u.email)=lower(a.email)
+                WHERE id=%s
                 """,
-                (password_hash, user_id),
+                (password_hash, str(user_id)),
             )
 
     def revocar_jti(self, jti: str) -> None:
@@ -463,7 +459,12 @@ def _resolver_ruta_store(path_env: str | None, nombre_archivo_default: str) -> s
 
 
 def obtener_auth_store() -> AuthStore:
-    driver = os.getenv("AUTH_STORE_DRIVER", "sqlite").strip().lower()
+    driver_raw = os.getenv("AUTH_STORE_DRIVER")
+    if driver_raw and driver_raw.strip():
+        driver = driver_raw.strip().lower()
+    else:
+        # Si hay DATABASE_URL y no se fijó driver, usar postgres por defecto.
+        driver = "postgres" if os.getenv("DATABASE_URL") else "sqlite"
 
     if driver == "postgres":
         return PostgresAuthStore()

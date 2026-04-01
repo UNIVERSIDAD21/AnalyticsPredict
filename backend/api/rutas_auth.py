@@ -55,7 +55,7 @@ def _ok(data: dict) -> dict:
     }
 
 
-def _emitir_tokens(user_id: int, email: str) -> dict:
+def _emitir_tokens(user_id: str | int, email: str) -> dict:
     secreto = obtener_secreto_auth()
     access_jti = str(uuid4())
     refresh_jti = str(uuid4())
@@ -118,7 +118,12 @@ def _validar_access_token(token: str, store: AuthStore) -> dict:
 
 
 def _validar_aceptacion_legal_vigente(user: dict) -> None:
+    # Modo usuarios-only: si el store no devuelve campos legales, no bloquear login.
+    if "legal_accepted_version" not in user:
+        return
     legal_version = (user.get("legal_accepted_version") or "").strip()
+    if not legal_version:
+        return
     if legal_version == CURRENT_LEGAL_VERSION:
         return
     raise HTTPException(
@@ -231,7 +236,7 @@ def refresh(
     if store.token_revocado(token_data.get("jti", "")):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revocado")
 
-    user = store.obtener_usuario_por_id(int(token_data["sub"]))
+    user = store.obtener_usuario_por_id(token_data["sub"])
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inválido")
 
@@ -323,7 +328,7 @@ def accept_legal(
 
     token = _extraer_bearer_token(authorization)
     token_data = _validar_access_token(token, store)
-    user_id = int(token_data["sub"])
+    user_id = token_data["sub"]
 
     store.actualizar_aceptacion_legal(user_id, payload.legal_version)
     user = store.obtener_usuario_por_id(user_id)
@@ -361,7 +366,7 @@ def me(
     token = _extraer_bearer_token(authorization)
     payload = _validar_access_token(token, store)
 
-    user = store.obtener_usuario_por_id(int(payload["sub"]))
+    user = store.obtener_usuario_por_id(payload["sub"])
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inválido")
 
