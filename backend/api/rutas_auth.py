@@ -60,13 +60,14 @@ def _emitir_tokens(user_id: str | int, email: str) -> dict:
     access_jti = str(uuid4())
     refresh_jti = str(uuid4())
 
+    user_sub = str(user_id)
     access_token = crear_token(
-        {"sub": user_id, "email": email, "typ": "access", "jti": access_jti},
+        {"sub": user_sub, "email": email, "typ": "access", "jti": access_jti},
         secreto,
         ACCESS_TTL_SECONDS,
     )
     refresh_token = crear_token(
-        {"sub": user_id, "email": email, "typ": "refresh", "jti": refresh_jti},
+        {"sub": user_sub, "email": email, "typ": "refresh", "jti": refresh_jti},
         secreto,
         REFRESH_TTL_SECONDS,
     )
