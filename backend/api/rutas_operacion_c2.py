@@ -9,6 +9,9 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
+from db import obtener_pool
+from servicios.auth_store import obtener_auth_store
+
 router = APIRouter(prefix="/api/operacion", tags=["Operacion-C2"])
 
 
@@ -42,6 +45,44 @@ def _db_info(path_env: str, default_path: str, checks: dict[str, str]) -> dict:
         info["error"] = str(exc)
 
     return info
+
+
+@router.get("/c2/health-auth")
+def health_auth_store():
+    """Diagnóstico explícito del driver auth y su fuente de verdad."""
+    store = obtener_auth_store()
+    driver = "postgres" if "Postgres" in type(store).__name__ else "sqlite"
+
+    info: dict[str, object] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "driver": driver,
+        "store_class": type(store).__name__,
+        "expected_source_table": "usuarios",
+        "database_url_present": bool(os.getenv("DATABASE_URL")),
+        "auth_store_driver_env": os.getenv("AUTH_STORE_DRIVER"),
+    }
+
+    if driver == "sqlite":
+        info["warning"] = "Auth está usando SQLite. Si quieres Postgres, define AUTH_STORE_DRIVER=postgres o DATABASE_URL."
+        info["db_path"] = getattr(store, "db_path", None)
+        return {"ok": True, "data": info}
+
+    # Verificación operativa en Postgres
+    try:
+        with obtener_pool().connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM usuarios")
+                usuarios_count = cur.fetchone()[0]
+                cur.execute("SELECT to_regclass('public.auth_users')")
+                auth_users_table = cur.fetchone()[0]
+        info["usuarios_count"] = usuarios_count
+        info["auth_users_table_exists"] = bool(auth_users_table)
+        info["status"] = "ok"
+    except Exception as exc:  # pragma: no cover
+        info["status"] = "error"
+        info["error"] = str(exc)
+
+    return {"ok": True, "data": info}
 
 
 @router.get("/c2/health-critical")
