@@ -7,7 +7,6 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { PaginaLogin } from './componentes/paginas/PaginaLogin';
 import { PaginaLegal } from './componentes/paginas/PaginaLegal';
 import { PaginaOnboarding } from './componentes/paginas/PaginaOnboarding';
-import { PaginaCentroAnalitico } from './componentes/paginas/PaginaCentroAnalitico';
 import { useAuth } from './contextos/AuthContext';
 import { useAccessPolicy } from './contextos/AccessPolicyContext';
 import type { Capability } from './servicios/accessPolicy';
@@ -100,9 +99,9 @@ function App() {
 
         <Route path="/onboarding" element={<RutaProtegida><PaginaOnboarding /></RutaProtegida>} />
 
-        {/* Entry points públicos */}
-        <Route path="/" element={<PaginaCentroAnalitico />} />
-        <Route path="/centro-analitico" element={<Navigate to="/" replace />} />
+        {/* Entry points */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/centro-analitico" element={<Navigate to="/dashboard" replace />} />
 
         {/* Rutas principales protegidas */}
         <Route path="/app" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="analisis.nba.base"><PaginaPrincipal /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />

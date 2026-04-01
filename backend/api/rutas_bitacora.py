@@ -278,7 +278,7 @@ def _construir_where(
     busqueda: Optional[str],
 ) -> tuple[str, List[object]]:
     _ = usuario_id
-    # Visibilidad global solicitada: sin aislamiento por usuario en lecturas.
+    # Bitácora compartida: lectura global sin filtro por usuario.
     condiciones: List[str] = []
     parametros: List[object] = []
 
@@ -1250,7 +1250,7 @@ async def obtener_metricas_bitacora(
 
     advertencias: List[str] = []
 
-    # Construir filtros base (visibilidad global)
+    # Construir filtros base (global compartido)
     condiciones = ["resultado IN ('GANADA', 'PERDIDA', 'PUSH')"]
     parametros: List[object] = []
 
