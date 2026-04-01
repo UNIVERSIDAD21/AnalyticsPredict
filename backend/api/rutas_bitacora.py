@@ -702,10 +702,12 @@ async def listar_bitacora_unificada(
     if resultado:
         condiciones.append("resultado = %s")
         parametros.append(resultado)
-    if deporte and deporte.lower() not in {"baloncesto", "nba"}:
-        condiciones.append("1=0")
-    if tipo_apuesta and tipo_apuesta.upper() != "SIMPLE":
-        condiciones.append("1=0")
+    if deporte:
+        condiciones.append("deporte = %s")
+        parametros.append(deporte.lower())
+    if tipo_apuesta:
+        condiciones.append("tipo_apuesta = %s")
+        parametros.append(tipo_apuesta.upper())
     if mercado:
         condiciones.append("mercado = %s")
         parametros.append(mercado)
@@ -732,46 +734,119 @@ async def listar_bitacora_unificada(
 
     offset = (pagina - 1) * tamano
 
+    bitacora_cte = """
+        WITH bitacora_global AS (
+            SELECT
+                a.id,
+                'baloncesto'::text AS deporte,
+                'SIMPLE'::text AS tipo_apuesta,
+                a.resultado,
+                a.stake,
+                a.ganancia,
+                a.cuota,
+                NULL::numeric AS cuota_total,
+                NULL::int AS n_selecciones,
+                NULL::int AS selecciones_ganadas,
+                NULL::int AS selecciones_perdidas,
+                NULL::int AS selecciones_push,
+                NULL::int AS selecciones_pendientes,
+                NULL::boolean AS tiene_mismo_partido,
+                NULL::jsonb AS advertencias,
+                a.equipo_local,
+                a.equipo_visitante,
+                a.fecha_partido,
+                a.mercado,
+                a.lado,
+                a.linea,
+                a.probabilidad_sistema,
+                a.confianza_sistema,
+                a.valor_esperado,
+                a.creado_en,
+                a.actualizado_en,
+                a.usuario_id
+            FROM apuestas a
+            UNION ALL
+            SELECT
+                f.id,
+                'futbol'::text AS deporte,
+                'SIMPLE'::text AS tipo_apuesta,
+                f.resultado,
+                f.stake,
+                f.ganancia,
+                f.cuota,
+                NULL::numeric AS cuota_total,
+                NULL::int AS n_selecciones,
+                NULL::int AS selecciones_ganadas,
+                NULL::int AS selecciones_perdidas,
+                NULL::int AS selecciones_push,
+                NULL::int AS selecciones_pendientes,
+                NULL::boolean AS tiene_mismo_partido,
+                NULL::jsonb AS advertencias,
+                f.equipo_local,
+                f.equipo_visitante,
+                f.fecha_partido,
+                f.mercado::text AS mercado,
+                f.lado,
+                f.linea,
+                f.probabilidad_sistema,
+                f.confianza_sistema,
+                f.valor_esperado,
+                f.creado_en,
+                f.actualizado_en,
+                f.usuario_id
+            FROM apuestas_futbol f
+            UNION ALL
+            SELECT
+                c.id,
+                'baloncesto'::text AS deporte,
+                'COMBINADA'::text AS tipo_apuesta,
+                c.resultado,
+                c.stake,
+                c.ganancia,
+                NULL::numeric AS cuota,
+                c.cuota_total,
+                c.n_selecciones,
+                c.selecciones_ganadas,
+                c.selecciones_perdidas,
+                c.selecciones_push,
+                c.selecciones_pendientes,
+                c.tiene_mismo_partido,
+                c.advertencias,
+                NULL::text AS equipo_local,
+                NULL::text AS equipo_visitante,
+                NULL::date AS fecha_partido,
+                NULL::text AS mercado,
+                NULL::text AS lado,
+                NULL::numeric AS linea,
+                c.probabilidad_ajustada AS probabilidad_sistema,
+                c.confianza_sistema,
+                c.valor_esperado,
+                c.creado_en,
+                c.actualizado_en,
+                c.usuario_id
+            FROM apuestas_combinadas c
+        )
+    """
+
     try:
         with obtener_pool().connection() as conexion:
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
-                    f"SELECT COUNT(*) AS total FROM apuestas WHERE {where_sql}",
+                    f"""
+                    {bitacora_cte}
+                    SELECT COUNT(*) AS total
+                    FROM bitacora_global
+                    WHERE {where_sql}
+                    """,
                     parametros,
                 )
                 total = cursor.fetchone()["total"]
 
                 cursor.execute(
                     f"""
-                    SELECT
-                        id,
-                        'baloncesto'::text AS deporte,
-                        'SIMPLE'::text AS tipo_apuesta,
-                        resultado,
-                        stake,
-                        ganancia,
-                        cuota,
-                        NULL::numeric AS cuota_total,
-                        NULL::int AS n_selecciones,
-                        NULL::int AS selecciones_ganadas,
-                        NULL::int AS selecciones_perdidas,
-                        NULL::int AS selecciones_push,
-                        NULL::int AS selecciones_pendientes,
-                        NULL::boolean AS tiene_mismo_partido,
-                        NULL::jsonb AS advertencias,
-                        equipo_local,
-                        equipo_visitante,
-                        fecha_partido,
-                        mercado,
-                        lado,
-                        linea,
-                        probabilidad_sistema,
-                        confianza_sistema,
-                        valor_esperado,
-                        creado_en,
-                        actualizado_en,
-                        usuario_id
-                    FROM apuestas
+                    {bitacora_cte}
+                    SELECT *
+                    FROM bitacora_global
                     WHERE {where_sql}
                     ORDER BY {orden_sql}
                     LIMIT %s OFFSET %s
@@ -780,7 +855,19 @@ async def listar_bitacora_unificada(
                 )
                 registros = cursor.fetchall()
 
+                combinada_ids = [registro["id"] for registro in registros if registro["tipo_apuesta"] == "COMBINADA"]
                 selecciones_por_combinada: dict = {}
+                if combinada_ids:
+                    cursor.execute(
+                        """
+                        SELECT * FROM selecciones_combinada
+                        WHERE combinada_id = ANY(%s)
+                        ORDER BY combinada_id, orden ASC
+                        """,
+                        (combinada_ids,),
+                    )
+                    for fila in cursor.fetchall():
+                        selecciones_por_combinada.setdefault(fila["combinada_id"], []).append(fila)
     except Exception:
         logger.exception("Fallo bitácora unificada; devolviendo respuesta vacía de contingencia")
         total = 0
