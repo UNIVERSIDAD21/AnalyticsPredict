@@ -327,8 +327,8 @@ def _buscar_calibrador_existente(
 
     if not fila:
         return None
-    valor = fila[0]
-    return valor if isinstance(valor, UUID) else UUID(str(valor))
+    valor_id = fila[0]
+    return valor_id if isinstance(valor_id, UUID) else UUID(str(valor_id))
 
 
 def _insertar_calibrador(

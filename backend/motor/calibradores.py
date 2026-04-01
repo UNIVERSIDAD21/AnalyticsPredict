@@ -79,7 +79,8 @@ def obtener_calibrador_activo(
         )
 
     fila = filas[0]
-    calibrador_id = UUID(fila[0])
+    valor_id = fila[0]
+    calibrador_id = valor_id if isinstance(valor_id, UUID) else UUID(str(valor_id))
     cutoff_datos = fila[3]
     origen_datos = fila[4]
     parametros = _parsear_parametros(fila[5])
