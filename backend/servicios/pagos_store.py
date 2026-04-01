@@ -14,11 +14,11 @@ TERMINAL_PAYMENT_STATUSES = {"approved", "rejected", "cancelled", "refunded", "c
 
 
 class PagosStore(Protocol):
-    def crear_checkout(self, *, user_id: int, plan_id: str, amount_cents: int, currency: str, external_reference: str) -> dict: ...
+    def crear_checkout(self, *, user_id: str | int, plan_id: str, amount_cents: int, currency: str, external_reference: str) -> dict: ...
     def registrar_evento_webhook(self, *, external_reference: str, payment_id: str, status: str, payload_json: str | None) -> bool: ...
     def marcar_pago(self, *, external_reference: str, payment_id: str, status: str) -> dict | None: ...
-    def actualizar_estado_suscripcion_por_evento(self, *, user_id: int, plan_id: str, payment_status: str, payment_id: str) -> dict: ...
-    def obtener_suscripcion(self, user_id: int) -> dict | None: ...
+    def actualizar_estado_suscripcion_por_evento(self, *, user_id: str | int, plan_id: str, payment_status: str, payment_id: str) -> dict: ...
+    def obtener_suscripcion(self, user_id: str | int) -> dict | None: ...
 
 
 class SQLitePagosStore:
@@ -51,7 +51,7 @@ class SQLitePagosStore:
                 """
                 CREATE TABLE IF NOT EXISTS payment_intents (
                   external_reference TEXT PRIMARY KEY,
-                  user_id INTEGER NOT NULL,
+                  user_id TEXT NOT NULL,
                   plan_id TEXT NOT NULL,
                   amount_cents INTEGER NOT NULL,
                   currency TEXT NOT NULL,
@@ -65,7 +65,7 @@ class SQLitePagosStore:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS subscriptions (
-                  user_id INTEGER PRIMARY KEY,
+                  user_id TEXT PRIMARY KEY,
                   plan_id TEXT NOT NULL,
                   status TEXT NOT NULL,
                   activated_at TEXT NOT NULL,
@@ -92,7 +92,8 @@ class SQLitePagosStore:
                 """
             )
 
-    def crear_checkout(self, *, user_id: int, plan_id: str, amount_cents: int, currency: str, external_reference: str) -> dict:
+    def crear_checkout(self, *, user_id: str | int, plan_id: str, amount_cents: int, currency: str, external_reference: str) -> dict:
+        user_id = str(user_id)
         now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
             conn.execute(
@@ -164,7 +165,8 @@ class SQLitePagosStore:
         data["idempotent"] = False
         return data
 
-    def activar_suscripcion(self, *, user_id: int, plan_id: str, payment_id: str, duracion_dias: int = 30) -> dict:
+    def activar_suscripcion(self, *, user_id: str | int, plan_id: str, payment_id: str, duracion_dias: int = 30) -> dict:
+        user_id = str(user_id)
         activated_at = datetime.now(timezone.utc)
         expires_at = activated_at + timedelta(days=duracion_dias)
         now = activated_at.isoformat()
@@ -193,7 +195,8 @@ class SQLitePagosStore:
             "updated_at": now,
         }
 
-    def actualizar_estado_suscripcion_por_evento(self, *, user_id: int, plan_id: str, payment_status: str, payment_id: str) -> dict:
+    def actualizar_estado_suscripcion_por_evento(self, *, user_id: str | int, plan_id: str, payment_status: str, payment_id: str) -> dict:
+        user_id = str(user_id)
         status = payment_status.lower().strip()
         now = datetime.now(timezone.utc).isoformat()
 
@@ -242,7 +245,8 @@ class SQLitePagosStore:
                 "updated_at": now,
             }
 
-    def obtener_suscripcion(self, user_id: int) -> dict | None:
+    def obtener_suscripcion(self, user_id: str | int) -> dict | None:
+        user_id = str(user_id)
         with self._conn() as conn:
             row = conn.execute(
                 "SELECT user_id, plan_id, status, activated_at, expires_at, source_payment_id, updated_at FROM subscriptions WHERE user_id=?",
@@ -284,7 +288,7 @@ class PostgresPagosStore:
                 """
                 CREATE TABLE IF NOT EXISTS payment_intents (
                   external_reference TEXT PRIMARY KEY,
-                  user_id BIGINT NOT NULL,
+                  user_id TEXT NOT NULL,
                   plan_id TEXT NOT NULL,
                   amount_cents BIGINT NOT NULL,
                   currency TEXT NOT NULL,
@@ -298,7 +302,7 @@ class PostgresPagosStore:
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS subscriptions (
-                  user_id BIGINT PRIMARY KEY,
+                  user_id TEXT PRIMARY KEY,
                   plan_id TEXT NOT NULL,
                   status TEXT NOT NULL,
                   activated_at TIMESTAMPTZ NOT NULL,
@@ -321,8 +325,29 @@ class PostgresPagosStore:
                 )
                 """
             )
+            # Migración defensiva: user_id antes era BIGINT, ahora UUID/TEXT.
+            cur.execute(
+                """
+                DO $$
+                BEGIN
+                  IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='payment_intents' AND column_name='user_id' AND data_type <> 'text'
+                  ) THEN
+                    ALTER TABLE payment_intents ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+                  END IF;
+                  IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='subscriptions' AND column_name='user_id' AND data_type <> 'text'
+                  ) THEN
+                    ALTER TABLE subscriptions ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+                  END IF;
+                END $$;
+                """
+            )
 
-    def crear_checkout(self, *, user_id: int, plan_id: str, amount_cents: int, currency: str, external_reference: str) -> dict:
+    def crear_checkout(self, *, user_id: str | int, plan_id: str, amount_cents: int, currency: str, external_reference: str) -> dict:
+        user_id = str(user_id)
         with self._conn() as (_, cur):
             cur.execute(
                 """
@@ -394,7 +419,8 @@ class PostgresPagosStore:
         data["idempotent"] = False
         return data
 
-    def activar_suscripcion(self, *, user_id: int, plan_id: str, payment_id: str, duracion_dias: int = 30) -> dict:
+    def activar_suscripcion(self, *, user_id: str | int, plan_id: str, payment_id: str, duracion_dias: int = 30) -> dict:
+        user_id = str(user_id)
         activated_at = datetime.now(timezone.utc)
         expires_at = activated_at + timedelta(days=duracion_dias)
         with self._conn() as (_, cur):
@@ -416,7 +442,8 @@ class PostgresPagosStore:
             row = cur.fetchone()
         return dict(row)
 
-    def actualizar_estado_suscripcion_por_evento(self, *, user_id: int, plan_id: str, payment_status: str, payment_id: str) -> dict:
+    def actualizar_estado_suscripcion_por_evento(self, *, user_id: str | int, plan_id: str, payment_status: str, payment_id: str) -> dict:
+        user_id = str(user_id)
         status = payment_status.lower().strip()
 
         if status == "approved":
@@ -440,7 +467,8 @@ class PostgresPagosStore:
             row = cur.fetchone()
         return dict(row)
 
-    def obtener_suscripcion(self, user_id: int) -> dict | None:
+    def obtener_suscripcion(self, user_id: str | int) -> dict | None:
+        user_id = str(user_id)
         with self._conn() as (_, cur):
             cur.execute(
                 """
@@ -473,8 +501,18 @@ def obtener_pagos_store() -> PagosStore:
     if driver_raw and driver_raw.strip():
         driver = driver_raw.strip().lower()
     else:
-        # Si pagos no está definido, heredar driver de auth para evitar stores desalineados.
-        driver = os.getenv("AUTH_STORE_DRIVER", "sqlite").strip().lower()
+        auth_driver = os.getenv("AUTH_STORE_DRIVER")
+        if auth_driver and auth_driver.strip():
+            driver = auth_driver.strip().lower()
+        else:
+            database_url = os.getenv("DATABASE_URL")
+            if not database_url:
+                try:
+                    from db import obtener_database_url
+                    database_url = obtener_database_url()
+                except Exception:
+                    database_url = None
+            driver = "postgres" if database_url else "sqlite"
 
     if driver == "postgres":
         return PostgresPagosStore()

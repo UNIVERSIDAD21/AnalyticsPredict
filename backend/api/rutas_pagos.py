@@ -225,7 +225,7 @@ async def webhook_mercadopago(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="external_reference no registrado")
 
     subscription = pagos_store.actualizar_estado_suscripcion_por_evento(
-        user_id=int(intent["user_id"]),
+        user_id=intent["user_id"],
         plan_id=plan_id or intent["plan_id"],
         payment_status=estado,
         payment_id=payment_id,
