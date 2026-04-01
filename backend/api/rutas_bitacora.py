@@ -825,6 +825,42 @@ async def listar_bitacora_unificada(
                 c.actualizado_en,
                 c.usuario_id
             FROM apuestas_combinadas c
+            UNION ALL
+            SELECT
+                (
+                  substr(md5('aa-' || aa.id::text),1,8) || '-' ||
+                  substr(md5('aa-' || aa.id::text),9,4) || '-' ||
+                  substr(md5('aa-' || aa.id::text),13,4) || '-' ||
+                  substr(md5('aa-' || aa.id::text),17,4) || '-' ||
+                  substr(md5('aa-' || aa.id::text),21,12)
+                )::uuid AS id,
+                aa.deporte,
+                'ANALISIS'::text AS tipo_apuesta,
+                COALESCE(aa.resultado_outcome, aa.estado, 'PENDIENTE') AS resultado,
+                0::numeric AS stake,
+                0::numeric AS ganancia,
+                NULL::numeric AS cuota,
+                NULL::numeric AS cuota_total,
+                NULL::int AS n_selecciones,
+                NULL::int AS selecciones_ganadas,
+                NULL::int AS selecciones_perdidas,
+                NULL::int AS selecciones_push,
+                NULL::int AS selecciones_pendientes,
+                NULL::boolean AS tiene_mismo_partido,
+                NULL::jsonb AS advertencias,
+                NULL::text AS equipo_local,
+                NULL::text AS equipo_visitante,
+                NULL::date AS fecha_partido,
+                aa.mercado,
+                aa.lado,
+                aa.linea,
+                aa.probabilidad_sistema,
+                aa.confianza,
+                NULL::numeric AS valor_esperado,
+                aa.creado_en,
+                aa.actualizado_en,
+                NULL::uuid AS usuario_id
+            FROM apuestas_analizadas aa
         )
     """
 
