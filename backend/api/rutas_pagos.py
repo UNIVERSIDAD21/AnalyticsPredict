@@ -145,10 +145,11 @@ async def crear_checkout_session(
     pagos_store: PagosStore = Depends(obtener_pagos_store),
 ):
     user = _usuario_actual(authorization, auth_store)
-    external_reference = f"sub_{user['id']}_{uuid4().hex[:12]}"
+    user_id = str(user["id"])
+    external_reference = f"sub_{user_id}_{uuid4().hex[:12]}"
 
     pagos_store.crear_checkout(
-        user_id=user["id"],
+        user_id=user_id,
         plan_id=payload.plan_id,
         amount_cents=payload.amount_cents,
         currency=payload.currency,
@@ -250,7 +251,7 @@ async def ver_mi_suscripcion(
     pagos_store: PagosStore = Depends(obtener_pagos_store),
 ):
     user = _usuario_actual(authorization, auth_store)
-    suscripcion = pagos_store.obtener_suscripcion(user["id"])
+    suscripcion = pagos_store.obtener_suscripcion(str(user["id"]))
     active = bool(suscripcion and suscripcion.get("status") == "active")
     return {
         "ok": True,
@@ -269,7 +270,7 @@ async def feature_gate(
     pagos_store: PagosStore = Depends(obtener_pagos_store),
 ):
     user = _usuario_actual(authorization, auth_store)
-    suscripcion = pagos_store.obtener_suscripcion(user["id"])
+    suscripcion = pagos_store.obtener_suscripcion(str(user["id"]))
     status_sub = (suscripcion or {}).get("status", "inactive")
 
     habilitado = status_sub == "active"
