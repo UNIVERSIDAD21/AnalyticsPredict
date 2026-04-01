@@ -440,6 +440,18 @@ class PostgresPagosStore:
                 (user_id, plan_id, activated_at, expires_at, payment_id),
             )
             row = cur.fetchone()
+            cur.execute(
+                """
+                UPDATE usuarios
+                SET tier_actual='PREMIUM',
+                    premium_activo=TRUE,
+                    premium_expira_en=%s,
+                    premium_actualizado_en=NOW(),
+                    actualizado_en=NOW()
+                WHERE id=%s
+                """,
+                (expires_at, user_id),
+            )
         return dict(row)
 
     def actualizar_estado_suscripcion_por_evento(self, *, user_id: str | int, plan_id: str, payment_status: str, payment_id: str) -> dict:
@@ -465,6 +477,17 @@ class PostgresPagosStore:
                 (user_id, plan_id, mapped, payment_id),
             )
             row = cur.fetchone()
+            cur.execute(
+                """
+                UPDATE usuarios
+                SET tier_actual='BASE',
+                    premium_activo=FALSE,
+                    premium_actualizado_en=NOW(),
+                    actualizado_en=NOW()
+                WHERE id=%s
+                """,
+                (user_id,),
+            )
         return dict(row)
 
     def obtener_suscripcion(self, user_id: str | int) -> dict | None:

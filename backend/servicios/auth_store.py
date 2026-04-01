@@ -312,6 +312,10 @@ class PostgresAuthStore:
                 )
                 """
             )
+            cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tier_actual TEXT NOT NULL DEFAULT 'BASE'")
+            cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS premium_activo BOOLEAN NOT NULL DEFAULT FALSE")
+            cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS premium_expira_en TIMESTAMPTZ")
+            cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS premium_actualizado_en TIMESTAMPTZ")
 
     def crear_usuario(self, email: str, password_hash: str, legal_version: str | None = None) -> dict:
         normalized_email = email.lower().strip()
