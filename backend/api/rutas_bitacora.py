@@ -789,7 +789,7 @@ async def listar_bitacora_unificada(
                 f.lado,
                 f.linea,
                 f.probabilidad_sistema,
-                f.confianza_sistema,
+                f.confianza_sistema::text AS confianza_sistema,
                 f.valor_esperado,
                 f.creado_en,
                 f.actualizado_en,
