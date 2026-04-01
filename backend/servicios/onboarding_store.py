@@ -12,9 +12,9 @@ from typing import Iterator, Protocol
 
 
 class OnboardingStore(Protocol):
-    def guardar_onboarding(self, user_id: int, perfil: dict) -> dict: ...
-    def obtener_onboarding(self, user_id: int) -> dict | None: ...
-    def registrar_evento(self, user_id: int, event_name: str, event_ts: str, metadata: dict | None = None) -> None: ...
+    def guardar_onboarding(self, user_id: str | int, perfil: dict) -> dict: ...
+    def obtener_onboarding(self, user_id: str | int) -> dict | None: ...
+    def registrar_evento(self, user_id: str | int, event_name: str, event_ts: str, metadata: dict | None = None) -> None: ...
     def obtener_kpis_conversion(self) -> dict: ...
 
 
@@ -41,7 +41,7 @@ class SQLiteOnboardingStore:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS onboarding_profiles (
-                  user_id INTEGER PRIMARY KEY,
+                  user_id TEXT PRIMARY KEY,
                   nombre TEXT NOT NULL,
                   objetivo_principal TEXT NOT NULL,
                   deporte_preferido TEXT NOT NULL,
@@ -56,7 +56,7 @@ class SQLiteOnboardingStore:
                 """
                 CREATE TABLE IF NOT EXISTS onboarding_events (
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER NOT NULL,
+                  user_id TEXT NOT NULL,
                   event_name TEXT NOT NULL,
                   event_ts TEXT NOT NULL,
                   metadata_json TEXT,
@@ -65,7 +65,8 @@ class SQLiteOnboardingStore:
                 """
             )
 
-    def guardar_onboarding(self, user_id: int, perfil: dict) -> dict:
+    def guardar_onboarding(self, user_id: str | int, perfil: dict) -> dict:
+        user_id = str(user_id)
         updated_at = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
             conn.execute(
@@ -100,7 +101,8 @@ class SQLiteOnboardingStore:
             "perfil": perfil,
         }
 
-    def obtener_onboarding(self, user_id: int) -> dict | None:
+    def obtener_onboarding(self, user_id: str | int) -> dict | None:
+        user_id = str(user_id)
         with self._conn() as conn:
             row = conn.execute(
                 """
@@ -127,7 +129,8 @@ class SQLiteOnboardingStore:
             },
         }
 
-    def registrar_evento(self, user_id: int, event_name: str, event_ts: str, metadata: dict | None = None) -> None:
+    def registrar_evento(self, user_id: str | int, event_name: str, event_ts: str, metadata: dict | None = None) -> None:
+        user_id = str(user_id)
         with self._conn() as conn:
             conn.execute(
                 """
@@ -168,9 +171,9 @@ class SQLiteOnboardingStore:
                 """
             ).fetchall()
 
-        por_usuario: dict[int, dict[str, str | None]] = {}
+        por_usuario: dict[str, dict[str, str | None]] = {}
         for row in rows:
-            uid = int(row["user_id"])
+            uid = str(row["user_id"])
             data = por_usuario.setdefault(uid, {"onboarding_completed": None, "dashboard_viewed": None})
             event_name = row["event_name"]
             if data.get(event_name) is None:
@@ -232,7 +235,7 @@ class PostgresOnboardingStore:
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS onboarding_profiles (
-                  user_id BIGINT PRIMARY KEY,
+                  user_id TEXT PRIMARY KEY,
                   nombre TEXT NOT NULL,
                   objetivo_principal TEXT NOT NULL,
                   deporte_preferido TEXT NOT NULL,
@@ -247,7 +250,7 @@ class PostgresOnboardingStore:
                 """
                 CREATE TABLE IF NOT EXISTS onboarding_events (
                   id BIGSERIAL PRIMARY KEY,
-                  user_id BIGINT NOT NULL,
+                  user_id TEXT NOT NULL,
                   event_name TEXT NOT NULL,
                   event_ts TIMESTAMPTZ NOT NULL,
                   metadata_json JSONB,
@@ -255,8 +258,29 @@ class PostgresOnboardingStore:
                 )
                 """
             )
+            # Migración defensiva: versiones antiguas usaban BIGINT y ahora usamos UUID/TEXT.
+            cur.execute(
+                """
+                DO $$
+                BEGIN
+                  IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='onboarding_profiles' AND column_name='user_id' AND data_type <> 'text'
+                  ) THEN
+                    ALTER TABLE onboarding_profiles ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+                  END IF;
+                  IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='onboarding_events' AND column_name='user_id' AND data_type <> 'text'
+                  ) THEN
+                    ALTER TABLE onboarding_events ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+                  END IF;
+                END $$;
+                """
+            )
 
-    def guardar_onboarding(self, user_id: int, perfil: dict) -> dict:
+    def guardar_onboarding(self, user_id: str | int, perfil: dict) -> dict:
+        user_id = str(user_id)
         with self._conn() as (_, cur):
             cur.execute(
                 """
@@ -284,7 +308,8 @@ class PostgresOnboardingStore:
             )
         return self.obtener_onboarding(user_id) or {"completado": True, "updated_at": None, "perfil": perfil}
 
-    def obtener_onboarding(self, user_id: int) -> dict | None:
+    def obtener_onboarding(self, user_id: str | int) -> dict | None:
+        user_id = str(user_id)
         with self._conn() as (_, cur):
             cur.execute(
                 """
@@ -312,7 +337,8 @@ class PostgresOnboardingStore:
             },
         }
 
-    def registrar_evento(self, user_id: int, event_name: str, event_ts: str, metadata: dict | None = None) -> None:
+    def registrar_evento(self, user_id: str | int, event_name: str, event_ts: str, metadata: dict | None = None) -> None:
+        user_id = str(user_id)
         with self._conn() as (_, cur):
             cur.execute(
                 """
@@ -346,9 +372,9 @@ class PostgresOnboardingStore:
             )
             rows = cur.fetchall() or []
 
-        por_usuario: dict[int, dict[str, datetime | None]] = {}
+        por_usuario: dict[str, dict[str, datetime | None]] = {}
         for row in rows:
-            uid = int(row["user_id"])
+            uid = str(row["user_id"])
             data = por_usuario.setdefault(uid, {"onboarding_completed": None, "dashboard_viewed": None})
             event_name = row["event_name"]
             if data.get(event_name) is None:
@@ -394,8 +420,18 @@ def obtener_onboarding_store() -> OnboardingStore:
     if driver_raw and driver_raw.strip():
         driver = driver_raw.strip().lower()
     else:
-        # Si onboarding no está definido, heredar driver de auth para evitar desalineación.
-        driver = os.getenv("AUTH_STORE_DRIVER", "sqlite").strip().lower()
+        auth_driver = os.getenv("AUTH_STORE_DRIVER")
+        if auth_driver and auth_driver.strip():
+            driver = auth_driver.strip().lower()
+        else:
+            database_url = os.getenv("DATABASE_URL")
+            if not database_url:
+                try:
+                    from db import obtener_database_url
+                    database_url = obtener_database_url()
+                except Exception:
+                    database_url = None
+            driver = "postgres" if database_url else "sqlite"
 
     if driver == "postgres":
         return PostgresOnboardingStore()

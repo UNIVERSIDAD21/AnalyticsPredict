@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+
+from db import obtener_pool
 
 from esquemas.onboarding import OnboardingEventoRequest, OnboardingPerfilRequest
 from servicios.auth_seguridad import decodificar_y_validar_token, obtener_secreto_auth
@@ -21,6 +24,40 @@ def _extraer_bearer_token(authorization: str | None) -> str:
     return authorization.split(" ", 1)[1].strip()
 
 
+def _actualizar_usuario_desde_onboarding(user_id: str, perfil: dict) -> None:
+    """Persiste perfil de onboarding en tabla usuarios (fuente principal)."""
+    with obtener_pool().connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE usuarios
+                SET nombre = %s,
+                    bankroll_inicial = COALESCE(%s, bankroll_inicial),
+                    bankroll_actual = COALESCE(%s, bankroll_actual),
+                    preferencias = COALESCE(preferencias, '{}'::jsonb) || %s::jsonb,
+                    actualizado_en = NOW()
+                WHERE id = %s
+                """,
+                [
+                    perfil["nombre"],
+                    perfil.get("bankroll_referencial"),
+                    perfil.get("bankroll_referencial"),
+                    json.dumps(
+                        {
+                            "onboarding": {
+                                "objetivo_principal": perfil["objetivo_principal"],
+                                "deporte_preferido": perfil["deporte_preferido"],
+                                "frecuencia": perfil["frecuencia"],
+                                "completado": True,
+                            }
+                        },
+                        ensure_ascii=False,
+                    ),
+                    user_id,
+                ],
+            )
+
+
 def _usuario_actual(authorization: str | None, auth_store: AuthStore) -> dict:
     token = _extraer_bearer_token(authorization)
     try:
@@ -34,7 +71,7 @@ def _usuario_actual(authorization: str | None, auth_store: AuthStore) -> dict:
     if auth_store.token_revocado(payload.get("jti", "")):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revocado")
 
-    user = auth_store.obtener_usuario_por_id(int(payload["sub"]))
+    user = auth_store.obtener_usuario_por_id(payload["sub"])
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inválido")
 
@@ -74,7 +111,9 @@ def guardar_perfil_onboarding(
     onboarding_store: OnboardingStore = Depends(obtener_onboarding_store),
 ):
     user = _usuario_actual(authorization, auth_store)
-    estado = onboarding_store.guardar_onboarding(user["id"], payload.model_dump())
+    perfil = payload.model_dump()
+    _actualizar_usuario_desde_onboarding(str(user["id"]), perfil)
+    estado = onboarding_store.guardar_onboarding(user["id"], perfil)
 
     onboarding_store.registrar_evento(
         user_id=user["id"],
