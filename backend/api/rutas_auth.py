@@ -78,6 +78,24 @@ def _emitir_tokens(user_id: int, email: str) -> dict:
     }
 
 
+def _obtener_app_user_id_por_email(email: str) -> str | None:
+    try:
+        from psycopg.rows import dict_row
+        from db import obtener_pool
+
+        with obtener_pool().connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    "SELECT id FROM usuarios WHERE lower(email) = lower(%s) LIMIT 1",
+                    [email],
+                )
+                row = cursor.fetchone()
+                return str(row["id"]) if row and row.get("id") else None
+    except Exception:
+        logger.exception("No se pudo resolver app_user_id por email=%s", email)
+        return None
+
+
 def _extraer_bearer_token(authorization: str | None) -> str:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token Bearer requerido")
@@ -143,11 +161,13 @@ def register(
     logger.info("AUTH_REGISTER creado user_id=%s email_guardado=%s %s", user.get("id"), user.get("email"), _store_info(store))
 
     tokens = _emitir_tokens(user["id"], user["email"])
+    app_user_id = _obtener_app_user_id_por_email(user["email"])
     return _ok(
         {
             "user": {
                 "id": user["id"],
                 "email": user["email"],
+                "app_user_id": app_user_id,
                 "legal_accepted": bool(user.get("legal_accepted_version")),
                 "legal_accepted_version": user.get("legal_accepted_version"),
                 "legal_accepted_at": user.get("legal_accepted_at"),
@@ -176,11 +196,13 @@ def login(
     logger.info("AUTH_LOGIN ok user_id=%s email_guardado=%s %s", user.get("id"), user.get("email"), _store_info(store))
 
     tokens = _emitir_tokens(user["id"], user["email"])
+    app_user_id = _obtener_app_user_id_por_email(user["email"])
     return _ok(
         {
             "user": {
                 "id": user["id"],
                 "email": user["email"],
+                "app_user_id": app_user_id,
                 "legal_accepted": bool(user.get("legal_accepted_version")),
                 "legal_accepted_version": user.get("legal_accepted_version"),
                 "legal_accepted_at": user.get("legal_accepted_at"),
