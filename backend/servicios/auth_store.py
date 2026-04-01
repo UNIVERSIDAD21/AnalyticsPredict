@@ -464,7 +464,14 @@ def obtener_auth_store() -> AuthStore:
         driver = driver_raw.strip().lower()
     else:
         # Si hay DATABASE_URL y no se fijó driver, usar postgres por defecto.
-        driver = "postgres" if os.getenv("DATABASE_URL") else "sqlite"
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            try:
+                from db import obtener_database_url
+                database_url = obtener_database_url()
+            except Exception:
+                database_url = None
+        driver = "postgres" if database_url else "sqlite"
 
     if driver == "postgres":
         return PostgresAuthStore()

@@ -12,7 +12,12 @@ from dotenv import load_dotenv
 from psycopg_pool import ConnectionPool
 
 # Cargar variables de entorno desde .env
+# 1) intento estándar (cwd/parents)
 load_dotenv()
+# 2) fallback robusto: backend/.env relativo a este archivo
+_ENV_BACKEND = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(_ENV_BACKEND):
+    load_dotenv(_ENV_BACKEND, override=False)
 
 _pool: Optional[ConnectionPool] = None
 
