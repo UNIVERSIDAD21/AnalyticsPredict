@@ -55,7 +55,7 @@ def _usuario_actual(
     if auth_store.token_revocado(payload.get("jti", "")):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revocado")
 
-    user = auth_store.obtener_usuario_por_id(int(payload["sub"]))
+    user = auth_store.obtener_usuario_por_id(payload["sub"])
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inválido")
 
