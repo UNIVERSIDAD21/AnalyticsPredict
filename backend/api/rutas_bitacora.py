@@ -494,7 +494,7 @@ async def resumen_apuestas(
                         SELECT usuario_id, 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
                         FROM apuestas
                         UNION ALL
-                        SELECT usuario_id, 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia, resultado
+                        SELECT usuario_id, 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia, resultado::text AS resultado
                         FROM apuestas_futbol
                         UNION ALL
                         SELECT usuario_id, 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
@@ -770,7 +770,7 @@ async def listar_bitacora_unificada(
                 f.id,
                 'futbol'::text AS deporte,
                 'SIMPLE'::text AS tipo_apuesta,
-                f.resultado,
+                f.resultado::text AS resultado,
                 f.stake,
                 f.ganancia,
                 f.cuota,
