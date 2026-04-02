@@ -254,6 +254,62 @@ def _prediccion_ganador_desde_mercados_ml(
         return None
 
 
+def _ensamblar_mercados(
+    mercados_ml: Dict[str, PrediccionMercado],
+    mercados_heur: Dict[str, PrediccionMercado],
+    peso_ml: float = 0.65,
+) -> Dict[str, PrediccionMercado]:
+    """Ensamble simple ML + heurístico para un conjunto de mercados."""
+    peso_ml = float(max(0.0, min(1.0, peso_ml)))
+    peso_heur = 1.0 - peso_ml
+    resultado: Dict[str, PrediccionMercado] = {}
+
+    for clave, heur in (mercados_heur or {}).items():
+        ml = (mercados_ml or {}).get(clave)
+        if ml is None:
+            resultado[clave] = heur
+            continue
+
+        media = (peso_ml * float(ml.media)) + (peso_heur * float(heur.media))
+        std = (peso_ml * float(ml.std)) + (peso_heur * float(heur.std))
+
+        lineas_union = set((ml.lineas or {}).keys()) | set((heur.lineas or {}).keys())
+        lineas_blend: Dict[str, ProbabilidadLinea] = {}
+        for linea in lineas_union:
+            l_ml = (ml.lineas or {}).get(linea)
+            l_h = (heur.lineas or {}).get(linea)
+            if l_ml and l_h:
+                over_raw = (peso_ml * float(l_ml.over_raw)) + (peso_heur * float(l_h.over_raw))
+                over_cal = (peso_ml * float(l_ml.over_calibrada)) + (peso_heur * float(l_h.over_calibrada))
+                under_raw = 1.0 - over_raw
+                under_cal = 1.0 - over_cal
+                razones = (l_ml.razones or []) + (l_h.razones or []) if (l_ml.razones or l_h.razones) else None
+                lineas_blend[linea] = ProbabilidadLinea(
+                    over_raw=round(max(0.001, min(0.999, over_raw)), 4),
+                    over_calibrada=round(max(0.001, min(0.999, over_cal)), 4),
+                    under_raw=round(max(0.001, min(0.999, under_raw)), 4),
+                    under_calibrada=round(max(0.001, min(0.999, under_cal)), 4),
+                    razones=razones,
+                )
+            elif l_ml:
+                lineas_blend[linea] = l_ml
+            elif l_h:
+                lineas_blend[linea] = l_h
+
+        resultado[clave] = PrediccionMercado(
+            mercado=heur.mercado,
+            media=round(float(media), 2),
+            std=round(float(std), 2),
+            lineas=lineas_blend,
+        )
+
+    for clave, ml in (mercados_ml or {}).items():
+        if clave not in resultado:
+            resultado[clave] = ml
+
+    return resultado
+
+
 def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, float]:
     """Obtiene estadísticas de equipo con cache."""
     ahora = time.time()
@@ -1675,6 +1731,13 @@ async def analizar_partido(
                 lineas_goles = request.lineas_goles or [1.5, 2.5, 3.5]
                 lineas_disparos = request.lineas_disparos or [22.5, 24.5, 26.5]
 
+                mercados_corners_ml: Dict[str, PrediccionMercado] = {}
+                mercados_goles_ml: Dict[str, PrediccionMercado] = {}
+                mercados_disparos_ml: Dict[str, PrediccionMercado] = {}
+                recomendaciones_ml: List[RecomendacionApuesta] = []
+                prediccion_ganador_ml: Optional[ProbabilidadesGanadorFutbol] = None
+                modelo_version_ml: Optional[str] = None
+
                 if MOTOR_DISPONIBLE:
                     predictor_ml = _obtener_predictor_futbol_ml(pool)
                     if predictor_ml is not None and predictor_ml.modelos_entrenados:
@@ -1695,56 +1758,25 @@ async def analizar_partido(
                                 for k, v in (pred_ml.mercados_disparos or {}).items()
                             }
 
-                            if mercados_corners_ml or mercados_goles_ml or mercados_disparos_ml:
-                                cursor.execute(
-                                    "SELECT COUNT(*) FROM calibradores_futbol WHERE activo = true"
-                                )
-                                calibradores_activos = int((cursor.fetchone() or {}).get("count", 0))
+                            recomendaciones_ml = _recomendaciones_ml_a_api(
+                                pred_ml.recomendaciones,
+                                getattr(pred_ml.nivel_confianza, "value", pred_ml.nivel_confianza),
+                            )
+                            prediccion_ganador_ml = _prediccion_ganador_desde_mercados_ml(
+                                pred_ml.mercados_goles or {}
+                            )
+                            modelo_version_ml = pred_ml.version_modelo or "ml_predictor"
 
-                                recomendaciones_ml = _recomendaciones_ml_a_api(
-                                    pred_ml.recomendaciones,
-                                    getattr(pred_ml.nivel_confianza, "value", pred_ml.nivel_confianza),
-                                )
-
-                                prediccion_ganador = _prediccion_ganador_desde_mercados_ml(
-                                    pred_ml.mercados_goles or {}
-                                )
-
-                                partido_resumen_ml = PartidoResumen(
-                                    id=partido["id"],
-                                    competicion=partido["competicion"],
-                                    fecha_partido=partido["fecha_partido"],
-                                    equipo_local=partido["equipo_local"],
-                                    equipo_visitante=partido["equipo_visitante"],
-                                    estado=partido["estado"],
-                                    jornada=partido["jornada"],
-                                )
-
-                                duracion = time.time() - inicio
-                                logger.info(
-                                    "Análisis fútbol resuelto por PredictorFutbol ML en %.2fs (partido_id=%s)",
-                                    duracion,
-                                    request.partido_id,
-                                )
-
-                                return AnalisisResponse(
-                                    exito=True,
-                                    partido=partido_resumen_ml,
-                                    timestamp_analisis=datetime.now(),
-                                    mercados_corners=mercados_corners_ml,
-                                    mercados_goles=mercados_goles_ml,
-                                    mercados_disparos=mercados_disparos_ml,
-                                    recomendaciones=recomendaciones_ml,
-                                    modelo_version=pred_ml.version_modelo or "ml_predictor",
-                                    calibradores_activos=calibradores_activos,
-                                    prediccion_ganador=prediccion_ganador,
-                                )
+                            logger.info(
+                                "Señal ML de fútbol disponible para ensemble (partido_id=%s)",
+                                request.partido_id,
+                            )
                         except Exception:
                             logger.exception(
-                                "Fallo flujo ML principal en /api/futbol/analizar; se activa fallback heurístico"
+                                "Fallo flujo ML principal en /api/futbol/analizar; se mantiene heurístico"
                             )
 
-                # 3. Fallback heurístico actual (se mantiene por compatibilidad)
+                # 3. Fallback heurístico actual (base para ensemble)
                 equipo_local_id = str(partido["equipo_local_id"])
                 equipo_visitante_id = str(partido["equipo_visitante_id"])
 
@@ -2270,7 +2302,13 @@ async def analizar_partido(
                     promedios_liga,
                 )
 
-                # 5. Generar recomendaciones
+                # 5. Ensemble ML + heurístico (P5)
+                if mercados_corners_ml or mercados_goles_ml or mercados_disparos_ml:
+                    mercados_corners = _ensamblar_mercados(mercados_corners_ml, mercados_corners, peso_ml=0.65)
+                    mercados_goles = _ensamblar_mercados(mercados_goles_ml, mercados_goles, peso_ml=0.65)
+                    mercados_disparos = _ensamblar_mercados(mercados_disparos_ml, mercados_disparos, peso_ml=0.65)
+
+                # 5b. Generar recomendaciones
                 todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
                 partidos_relevantes = min(
                     int(local_corners_ctx.get("n") or 0),
@@ -2282,6 +2320,12 @@ async def analizar_partido(
                     stats_visitante["partidos"],
                     partidos_relevantes,
                 )
+
+                # Mezclar recomendaciones heurísticas con señal ML (si existe)
+                if recomendaciones_ml:
+                    recomendaciones.extend(recomendaciones_ml)
+                    recomendaciones.sort(key=lambda x: float(x.probabilidad), reverse=True)
+                    recomendaciones = recomendaciones[:10]
 
                 # 5a. Enforce de política de calidad por mercado (bloqueo + modo seguro)
                 estado_mercados = _obtener_estado_mercados_futbol(
@@ -2351,6 +2395,17 @@ async def analizar_partido(
                 )
 
                 prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_dixon_coles(goles_local, goles_visitante)
+                if prediccion_ganador_ml is not None:
+                    prob_local = 0.65 * float(prediccion_ganador_ml.prob_local) + 0.35 * float(prob_local)
+                    prob_empate = 0.65 * float(prediccion_ganador_ml.prob_empate) + 0.35 * float(prob_empate)
+                    prob_visitante = 0.65 * float(prediccion_ganador_ml.prob_visitante) + 0.35 * float(prob_visitante)
+                    total_1x2 = prob_local + prob_empate + prob_visitante
+                    if total_1x2 > 0:
+                        prob_local, prob_empate, prob_visitante = (
+                            prob_local / total_1x2,
+                            prob_empate / total_1x2,
+                            prob_visitante / total_1x2,
+                        )
                 ganador_probable = "LOCAL" if prob_local >= prob_empate and prob_local >= prob_visitante else ("VISITANTE" if prob_visitante >= prob_empate else "EMPATE")
                 diferencial_xg = goles_local - goles_visitante
                 razones_1x2 = [
@@ -2423,7 +2478,7 @@ async def analizar_partido(
                     mercados_goles=mercados_goles,
                     mercados_disparos=mercados_disparos,
                     recomendaciones=recomendaciones,
-                    modelo_version="1.0.0",
+                    modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
                     calibradores_activos=calibradores_activos,
                     prediccion_ganador=ProbabilidadesGanadorFutbol(
                         prob_local=prob_local,
