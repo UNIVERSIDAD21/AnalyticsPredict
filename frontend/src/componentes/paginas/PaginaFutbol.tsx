@@ -1,47 +1,36 @@
 /**
- * PaginaFutbol.tsx — Pagina principal del modulo de futbol
+ * PaginaFutbol.tsx — módulo fútbol alineado al canon NBA.
  *
- * Muestra partidos proximos agrupados por fecha con filtros,
- * resumen rapido y navegacion a analisis.
+ * Regla de producto: mismo flujo/base visual de NBA; solo cambia el contenido del dominio.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  Target,
-  TrendingUp,
-  Trophy,
-  Filter,
-  RefreshCw,
-  Activity,
-  X,
-} from 'lucide-react';
-import { clsx } from 'clsx';
-import { Encabezado, ListaPartidosFutbol } from '../organismos';
-import { SelectorCompeticion, MensajeError, PanelDepthPremium } from '../moleculas';
+import { Activity, BarChart3, RefreshCw, Trophy } from 'lucide-react';
+import { Encabezado, FormularioAnalisis } from '../organismos';
+import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
+import { MensajeError, PanelDepthPremium, ProgresoAnalisis } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
+import { Spinner } from '../atomos/Spinner';
 import { usePartidosFutbol } from '../../hooks';
-import { obtenerCompeticiones, obtenerResumenCalidad1x2 } from '../../servicios/futbol';
-import { listarApuestasAnalizadas } from '../../servicios/bitacora';
-import { obtenerFechaISOBogota, obtenerHoyISOBogota } from '../../utilidades';
-import type { Competicion, FiltrosPartidos, PartidoFutbolResumen } from '../../tipos/futbol';
-import type { ApuestaAnalizada } from '../../tipos/bitacora';
+import { analizarPartido, obtenerH2HPartidos, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
-
-// ══════════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════════
+import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
+import type {
+  AnalisisFutbolResponse,
+  PartidoFutbolEstadistico,
+  PartidoFutbolResumen,
+  UbicacionHistorialEquipo,
+} from '../../tipos/futbol';
+import type { Equipo, PeticionAnalisis } from '../../tipos';
+import { PanelH2HFutbol } from '../organismos/PanelH2HFutbol';
+import { PanelHistorialEquipoFutbol } from '../organismos/PanelHistorialEquipoFutbol';
 
 const navegar = (ruta: string) => {
-  if (window.location.pathname === ruta) return;
+  if (window.location.pathname === ruta && window.location.search === '') return;
   window.history.pushState({}, '', ruta);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
-
-const obtenerFechaPartidoISO = (valor: string): string => obtenerFechaISOBogota(valor);
 
 function formatearFechaHoraCorta(fechaISO: string): string {
   const fecha = new Date(fechaISO);
@@ -53,705 +42,308 @@ function formatearFechaHoraCorta(fechaISO: string): string {
   });
 }
 
-interface PropsPanelSeleccionPartido {
-  partidos: PartidoFutbolResumen[];
-  partidoSeleccionadoId: string;
-  onSeleccionarPartido: (partidoId: string) => void;
-  onAnalizarPartido: () => void;
-  cargando: boolean;
-}
-
-function PanelSeleccionPartido({
-  partidos,
-  partidoSeleccionadoId,
-  onSeleccionarPartido,
-  onAnalizarPartido,
-  cargando,
-}: PropsPanelSeleccionPartido) {
-  const partidoSeleccionado = useMemo(
-    () => partidos.find((partido) => partido.id === partidoSeleccionadoId) ?? null,
-    [partidoSeleccionadoId, partidos]
-  );
-
+function EstadoVacioFutbol() {
   return (
-    <Tarjeta className="mb-6 border border-neon-cyan/25">
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 items-end">
-        <div className="space-y-3">
-          <div>
-            <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan">
-              Seleccionar partido para analizar
-            </h3>
-            <p className="text-xs text-texto-secundario mt-1">
-              Flujo directo: eliges un partido y vas al análisis, como en NBA.
-            </p>
-          </div>
-
-          <label className="flex flex-col gap-2 text-sm text-texto-secundario">
-            Partido
-            <select
-              value={partidoSeleccionadoId}
-              onChange={(event) => onSeleccionarPartido(event.target.value)}
-              disabled={cargando || partidos.length === 0}
-              className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
-            >
-              <option value="">Selecciona un partido...</option>
-              {partidos.map((partido) => (
-                <option key={partido.id} value={partido.id}>
-                  {partido.equipoLocalNombre} vs {partido.equipoVisitanteNombre} ·{' '}
-                  {formatearFechaHoraCorta(partido.fechaPartido)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="space-y-3">
-          <div className="rounded-lg border border-neon-cyan/20 bg-futurista-negro/40 p-3 min-h-[92px]">
-            {partidoSeleccionado ? (
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-texto-principal">
-                  {partidoSeleccionado.equipoLocalNombre} vs {partidoSeleccionado.equipoVisitanteNombre}
-                </p>
-                <p className="text-xs text-texto-secundario">
-                  {partidoSeleccionado.competicionNombre}
-                </p>
-                <p className="text-xs text-neon-cyan">
-                  {formatearFechaHoraCorta(partidoSeleccionado.fechaPartido)}
-                </p>
-              </div>
-            ) : (
-              <p className="text-xs text-texto-terciario">
-                Selecciona un partido para habilitar el análisis.
-              </p>
-            )}
-          </div>
-
-          <Boton
-            variante="primario"
-            anchoCompleto
-            onClick={onAnalizarPartido}
-            disabled={!partidoSeleccionadoId}
-          >
-            Analizar partido
-          </Boton>
+    <div className="h-full flex flex-col items-center justify-center text-center p-8">
+      <div className="relative mb-8">
+        <div className="absolute inset-0 bg-neon-cyan/10 blur-3xl rounded-full animate-pulse" />
+        <div className="relative w-32 h-32 rounded-2xl border border-neon-cyan/20 bg-futurista-oscuro/50 flex items-center justify-center">
+          <BarChart3 className="w-16 h-16 text-neon-cyan/50" />
         </div>
       </div>
-    </Tarjeta>
-  );
-}
 
-// ══════════════════════════════════════════════════════════════
-// COMPONENTE SKELETON
-// ══════════════════════════════════════════════════════════════
+      <h3 className="text-2xl font-futurista text-texto-principal mb-3 tracking-wider">ESPERANDO ANÁLISIS</h3>
+      <p className="text-texto-secundario max-w-md mb-8">
+        Selecciona un partido de fútbol y ejecuta el análisis en el mismo flujo operativo de NBA.
+      </p>
 
-function SkeletonTarjetaResumen() {
-  return (
-    <div className="tarjeta p-4 animate-pulse">
-      <div className="h-3 bg-neon-cyan/20 rounded w-20 mb-3" />
-      <div className="h-8 bg-neon-cyan/30 rounded w-16 mb-1" />
-      <div className="h-3 bg-neon-cyan/10 rounded w-24" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl">
+        <div className="p-4 rounded-lg border border-neon-cyan/10 bg-futurista-oscuro/30">
+          <Activity className="w-6 h-6 text-neon-cyan mb-2 mx-auto" />
+          <p className="text-xs text-texto-secundario uppercase tracking-wider">Flujo canónico</p>
+        </div>
+        <div className="p-4 rounded-lg border border-neon-verde/10 bg-futurista-oscuro/30">
+          <Trophy className="w-6 h-6 text-neon-verde mb-2 mx-auto" />
+          <p className="text-xs text-texto-secundario uppercase tracking-wider">Mercados fútbol</p>
+        </div>
+        <div className="p-4 rounded-lg border border-neon-magenta/10 bg-futurista-oscuro/30">
+          <BarChart3 className="w-6 h-6 text-neon-magenta mb-2 mx-auto" />
+          <p className="text-xs text-texto-secundario uppercase tracking-wider">Resultados unificados</p>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════
-// COMPONENTE TARJETA RESUMEN
-// ══════════════════════════════════════════════════════════════
-
-interface PropsTarjetaResumen {
-  titulo: string;
-  valor: string | number;
-  subtitulo?: string;
-  icono: React.ReactNode;
-  color: 'cyan' | 'verde' | 'magenta' | 'amarillo';
-  loading?: boolean;
-}
-
-function TarjetaResumen({
-  titulo,
-  valor,
-  subtitulo,
-  icono,
-  color,
-  loading = false,
-}: PropsTarjetaResumen) {
-  const colores = {
-    cyan: {
-      bg: 'bg-neon-cyan/10',
-      border: 'border-neon-cyan/30',
-      text: 'text-neon-cyan',
-      glow: 'shadow-glow-cyan/20',
-    },
-    verde: {
-      bg: 'bg-neon-verde/10',
-      border: 'border-neon-verde/30',
-      text: 'text-neon-verde',
-      glow: 'shadow-glow-verde/20',
-    },
-    magenta: {
-      bg: 'bg-neon-magenta/10',
-      border: 'border-neon-magenta/30',
-      text: 'text-neon-magenta',
-      glow: 'shadow-glow-magenta/20',
-    },
-    amarillo: {
-      bg: 'bg-neon-amarillo/10',
-      border: 'border-neon-amarillo/30',
-      text: 'text-neon-amarillo',
-      glow: 'shadow-glow-amarillo/20',
-    },
-  };
-
-  const estilos = colores[color];
-
-  if (loading) {
-    return <SkeletonTarjetaResumen />;
-  }
-
-  return (
-    <Tarjeta
-      className={clsx(
-        'relative overflow-hidden border',
-        estilos.border,
-        estilos.glow
-      )}
-      padding="sm"
-    >
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-30" />
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-texto-terciario uppercase tracking-widest mb-1">
-            {titulo}
-          </p>
-          <p className={clsx('text-2xl font-mono font-bold', estilos.text)}>
-            {valor}
-          </p>
-          {subtitulo && (
-            <p className="text-xs text-texto-secundario mt-1">{subtitulo}</p>
-          )}
-        </div>
-        <div className={clsx('p-2 rounded-lg', estilos.bg)}>{icono}</div>
-      </div>
-    </Tarjeta>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// COMPONENTE SIDEBAR FILTROS
-// ══════════════════════════════════════════════════════════════
-
-interface PropsSidebarFiltros {
-  competiciones: Competicion[];
-  competicionSeleccionada: string;
-  onCambiarCompeticion: (id: string) => void;
-  fechaDesde: string;
-  fechaHasta: string;
-  onCambiarFechaDesde: (fecha: string) => void;
-  onCambiarFechaHasta: (fecha: string) => void;
-  onLimpiar: () => void;
-  cargando?: boolean;
-  visible: boolean;
-  onCerrar: () => void;
-}
-
-function SidebarFiltros({
-  competiciones,
-  competicionSeleccionada,
-  onCambiarCompeticion,
-  fechaDesde,
-  fechaHasta,
-  onCambiarFechaDesde,
-  onCambiarFechaHasta,
-  onLimpiar,
-  cargando = false,
-  visible,
-  onCerrar,
-}: PropsSidebarFiltros) {
-  const hayFiltrosActivos = competicionSeleccionada || fechaDesde || fechaHasta;
-
-  return (
-    <>
-      {/* Overlay para mobile */}
-      {visible && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onCerrar}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={clsx(
-          'fixed lg:static inset-y-0 left-0 z-50 lg:z-auto',
-          'w-80 lg:w-72 xl:w-80',
-          'bg-futurista-oscuro lg:bg-transparent',
-          'border-r lg:border-r-0 border-neon-cyan/20',
-          'transition-transform duration-300 lg:transform-none',
-          visible ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        )}
-      >
-        <div className="h-full lg:h-auto p-4 lg:p-0 overflow-y-auto lg:overflow-visible">
-          {/* Header mobile */}
-          <div className="flex items-center justify-between mb-6 lg:hidden">
-            <h3 className="text-lg font-futurista font-bold text-texto-principal">
-              Filtros
-            </h3>
-            <button
-              onClick={onCerrar}
-              className="p-2 rounded-lg text-texto-secundario hover:text-texto-principal"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <Tarjeta className="space-y-6 lg:sticky lg:top-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter size={18} className="text-neon-cyan" />
-                <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-texto-principal">
-                  Filtros
-                </h3>
-              </div>
-              {hayFiltrosActivos && (
-                <button
-                  onClick={onLimpiar}
-                  className="text-xs text-neon-cyan hover:text-neon-cyan/80 font-medium"
-                >
-                  Limpiar
-                </button>
-              )}
-            </div>
-
-            {/* Competicion */}
-            <SelectorCompeticion
-              competiciones={competiciones}
-              valor={competicionSeleccionada}
-              onChange={onCambiarCompeticion}
-              etiqueta="Competicion"
-              placeholder="Todas las competiciones"
-              deshabilitado={cargando}
-            />
-
-            {/* Rango de fechas */}
-            <div className="space-y-4">
-              <label className="etiqueta flex items-center gap-2">
-                <Calendar size={14} className="text-neon-magenta" />
-                Rango de fechas
-              </label>
-
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs text-texto-terciario">Desde</label>
-                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20">
-                    <Calendar className="w-4 h-4 text-neon-cyan" />
-                    <input
-                      type="date"
-                      value={fechaDesde}
-                      onChange={(e) => onCambiarFechaDesde(e.target.value)}
-                      disabled={cargando}
-                      className="bg-transparent text-sm text-texto-principal focus:outline-none flex-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs text-texto-terciario">Hasta</label>
-                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20">
-                    <Calendar className="w-4 h-4 text-neon-cyan" />
-                    <input
-                      type="date"
-                      value={fechaHasta}
-                      onChange={(e) => onCambiarFechaHasta(e.target.value)}
-                      disabled={cargando}
-                      className="bg-transparent text-sm text-texto-principal focus:outline-none flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Indicador de filtros activos */}
-            {hayFiltrosActivos && (
-              <div className="p-3 rounded-lg bg-neon-cyan/5 border border-neon-cyan/20">
-                <div className="flex items-center gap-2 text-xs text-neon-cyan">
-                  <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />
-                  <span>Filtros aplicados</span>
-                </div>
-              </div>
-            )}
-          </Tarjeta>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// COMPONENTE PRINCIPAL
-// ══════════════════════════════════════════════════════════════
-
-/**
- * Pagina principal del modulo de futbol con lista de partidos proximos
- */
 export function PaginaFutbol() {
   const { can } = useAccessPolicy();
   const { navegarConGate } = useGateNavigation(navegar);
 
-  // Estado de filtros
-  const [competicionSeleccionada, setCompeticionSeleccionada] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [partidosHoyPersistidos, setPartidosHoyPersistidos] = useState<PartidoFutbolResumen[]>([]);
-  const diaPersistidoRef = useRef<string>(obtenerHoyISOBogota());
+  const [analisis, setAnalisis] = useState<AnalisisFutbolResponse | null>(null);
+  const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
+  const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
 
-  // Estado de competiciones
-  const [competiciones, setCompeticiones] = useState<Competicion[]>([]);
-  const [cargandoCompeticiones, setCargandoCompeticiones] = useState(true);
-  const [resumenCalidad1x2, setResumenCalidad1x2] = useState<{ hitRateSinPush: number; ganadas: number; perdidas: number; push: number } | null>(null);
-  const [apuestasAnalizadasResumen, setApuestasAnalizadasResumen] = useState<{ pendientes: number; finalizadas: number } | null>(null);
+  const [h2hPartidos, setH2hPartidos] = useState<PartidoFutbolEstadistico[]>([]);
+  const [historialLocal, setHistorialLocal] = useState<PartidoFutbolEstadistico[]>([]);
+  const [historialVisitante, setHistorialVisitante] = useState<PartidoFutbolEstadistico[]>([]);
+  const [limiteH2h, setLimiteH2h] = useState(10);
+  const [limiteLocal, setLimiteLocal] = useState(10);
+  const [limiteVisitante, setLimiteVisitante] = useState(10);
+  const [ubicacionLocal, setUbicacionLocal] = useState<UbicacionHistorialEquipo>('todos');
+  const [ubicacionVisitante, setUbicacionVisitante] = useState<UbicacionHistorialEquipo>('todos');
+  const [cargandoContexto, setCargandoContexto] = useState(false);
+  const [errorContexto, setErrorContexto] = useState<string | null>(null);
 
-  // Filtros memorizados
-  const filtros = useMemo<FiltrosPartidos>(() => {
-    const f: FiltrosPartidos = {};
-    if (competicionSeleccionada) f.competicion = competicionSeleccionada;
-    if (!fechaDesde && !fechaHasta) {
-      f.dias = 7; // Default: proximos 7 dias
-    }
-    return f;
-  }, [competicionSeleccionada, fechaDesde, fechaHasta]);
+  const historialCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
+  const h2hCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
 
-  const filtrosHoy = useMemo<FiltrosPartidos>(() => {
-    const f: FiltrosPartidos = {};
-    if (competicionSeleccionada) f.competicion = competicionSeleccionada;
-    return f;
-  }, [competicionSeleccionada]);
-
-  // Hook de partidos
-  const {
-    partidos,
-    cargando: cargandoPartidos,
-    error,
-    recargar,
-    setFiltros,
-  } = usePartidosFutbol({
+  const { partidos, cargando: cargandoPartidos, error: errorPartidos, recargar } = usePartidosFutbol({
     tipo: 'proximos',
-    filtrosIniciales: filtros,
+    filtrosIniciales: { dias: 7 },
     cargarAlMontar: true,
   });
 
-  const {
-    partidos: partidosHoy,
-    cargando: cargandoHoy,
-    error: errorHoy,
-    recargar: recargarHoy,
-    setFiltros: setFiltrosHoy,
-  } = usePartidosFutbol({
-    tipo: 'hoy',
-    filtrosIniciales: filtrosHoy,
-    cargarAlMontar: true,
-  });
+  const partidoSeleccionado = useMemo(
+    () => partidos.find((p) => p.id === partidoSeleccionadoId) ?? null,
+    [partidoSeleccionadoId, partidos]
+  );
 
-  // Cargar competiciones al montar
   useEffect(() => {
-    const cargar = async () => {
-      try {
-        const [data, resumen, apuestasAnalizadas] = await Promise.all([
-          obtenerCompeticiones(),
-          obtenerResumenCalidad1x2().catch(() => null),
-          listarApuestasAnalizadas({ limite: 200 }).catch(() => null),
-        ]);
-        setCompeticiones(data);
-        if (resumen) {
-          setResumenCalidad1x2({
-            hitRateSinPush: resumen.hitRateSinPush,
-            ganadas: resumen.ganadas,
-            perdidas: resumen.perdidas,
-            push: resumen.push,
-          });
-        }
-        if (apuestasAnalizadas) {
-          const finalizadas = (apuestasAnalizadas.items || []).filter(
-            (x: ApuestaAnalizada) => x.estado === 'FINALIZADA'
-          ).length;
-          const pendientes = Math.max(0, (apuestasAnalizadas.total || 0) - finalizadas);
-          setApuestasAnalizadasResumen({ pendientes, finalizadas });
-        }
-      } catch (err) {
-        console.error('Error cargando competiciones:', err);
-      } finally {
-        setCargandoCompeticiones(false);
-      }
-    };
-    void cargar();
-  }, []);
-
-  // Actualizar filtros cuando cambien
-  useEffect(() => {
-    setFiltros(filtros);
-    setFiltrosHoy(filtrosHoy);
-  }, [filtros, filtrosHoy, setFiltros, setFiltrosHoy]);
-
-  // Reiniciar snapshot de "hoy" cuando cambia la competicion.
-  useEffect(() => {
-    setPartidosHoyPersistidos([]);
-    diaPersistidoRef.current = obtenerHoyISOBogota();
-  }, [competicionSeleccionada]);
-
-  // Mantener un snapshot de todos los partidos de hoy hasta cambio de dia.
-  useEffect(() => {
-    const hoy = obtenerHoyISOBogota();
-
-    if (diaPersistidoRef.current !== hoy) {
-      diaPersistidoRef.current = hoy;
-      setPartidosHoyPersistidos([]);
-    }
-
-    const candidatosHoy = [...partidos, ...partidosHoy].filter(
-      (p) => obtenerFechaPartidoISO(p.fechaPartido) === hoy
-    );
-
-    if (candidatosHoy.length === 0) {
+    const qs = new URLSearchParams(window.location.search);
+    const porQuery = qs.get('partidoId');
+    if (porQuery && partidos.some((p) => p.id === porQuery)) {
+      setPartidoSeleccionadoId(porQuery);
       return;
     }
+    if (!partidoSeleccionadoId && partidos.length > 0) {
+      setPartidoSeleccionadoId(partidos[0].id);
+    }
+  }, [partidoSeleccionadoId, partidos]);
 
-    setPartidosHoyPersistidos((anteriores) => {
-      const mapa = new Map<string, PartidoFutbolResumen>();
+  const equiposAnalisis: Equipo[] = useMemo(() => {
+    if (!partidoSeleccionado) return [];
+    return [
+      {
+        id: String(partidoSeleccionado.equipoLocal),
+        nombre: partidoSeleccionado.equipoLocalNombre,
+        nombre_corto: partidoSeleccionado.equipoLocalNombre,
+        abreviatura: partidoSeleccionado.equipoLocalNombre.slice(0, 3).toUpperCase(),
+      },
+      {
+        id: String(partidoSeleccionado.equipoVisitante),
+        nombre: partidoSeleccionado.equipoVisitanteNombre,
+        nombre_corto: partidoSeleccionado.equipoVisitanteNombre,
+        abreviatura: partidoSeleccionado.equipoVisitanteNombre.slice(0, 3).toUpperCase(),
+      },
+    ];
+  }, [partidoSeleccionado]);
 
-      anteriores.forEach((partido) => {
-        mapa.set(partido.id, partido);
+  const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
+    const localId = String(partido.equipoLocal);
+    const visitanteId = String(partido.equipoVisitante);
+    if (!localId || !visitanteId) return;
+
+    const keyH2h = `${localId}|${visitanteId}|${limiteH2h}`;
+    const keyLocal = `${localId}|${limiteLocal}|${ubicacionLocal}`;
+    const keyVisit = `${visitanteId}|${limiteVisitante}|${ubicacionVisitante}`;
+
+    try {
+      setCargandoContexto(true);
+      setErrorContexto(null);
+
+      const h2h = h2hCacheRef.current.get(keyH2h) || await obtenerH2HPartidos(localId, visitanteId, limiteH2h);
+      const local = historialCacheRef.current.get(keyLocal) || await obtenerPartidosEquipoDetalle(localId, limiteLocal, ubicacionLocal);
+      const visit = historialCacheRef.current.get(keyVisit) || await obtenerPartidosEquipoDetalle(visitanteId, limiteVisitante, ubicacionVisitante);
+
+      h2hCacheRef.current.set(keyH2h, h2h);
+      historialCacheRef.current.set(keyLocal, local);
+      historialCacheRef.current.set(keyVisit, visit);
+
+      setH2hPartidos(h2h);
+      setHistorialLocal(local);
+      setHistorialVisitante(visit);
+    } catch (error) {
+      setErrorContexto(error instanceof Error ? error.message : 'No se pudo cargar el contexto del partido');
+    } finally {
+      setCargandoContexto(false);
+    }
+  }, [limiteH2h, limiteLocal, limiteVisitante, ubicacionLocal, ubicacionVisitante]);
+
+  useEffect(() => {
+    if (!partidoSeleccionado) return;
+    void cargarContexto(partidoSeleccionado);
+  }, [partidoSeleccionado, cargarContexto]);
+
+  const ejecutarAnalisis = useCallback(async (_peticion: PeticionAnalisis) => {
+    if (!partidoSeleccionadoId) return;
+    try {
+      setCargandoAnalisis(true);
+      setErrorAnalisis(null);
+      const data = await analizarPartido({
+        partidoId: partidoSeleccionadoId,
+        h2hLimite: limiteH2h,
       });
-      candidatosHoy.forEach((partido) => {
-        mapa.set(partido.id, partido);
-      });
-
-      return Array.from(mapa.values()).sort(
-        (a, b) => new Date(a.fechaPartido).getTime() - new Date(b.fechaPartido).getTime()
-      );
-    });
-  }, [partidos, partidosHoy]);
-
-  const partidosParaMostrar = useMemo<PartidoFutbolResumen[]>(() => {
-    const hoy = obtenerHoyISOBogota();
-    const partidosNoHoy = partidos.filter((p) => obtenerFechaPartidoISO(p.fechaPartido) !== hoy);
-    const mapa = new Map<string, PartidoFutbolResumen>();
-
-    [...partidosNoHoy, ...partidosHoyPersistidos].forEach((partido) => {
-      mapa.set(partido.id, partido);
-    });
-
-    return Array.from(mapa.values()).sort(
-      (a, b) => new Date(a.fechaPartido).getTime() - new Date(b.fechaPartido).getTime()
-    );
-  }, [partidos, partidosHoyPersistidos]);
-
-  useEffect(() => {
-    if (partidoSeleccionadoId && partidosParaMostrar.some((p) => p.id === partidoSeleccionadoId)) {
-      return;
+      setAnalisis(data);
+    } catch (error) {
+      setErrorAnalisis(error instanceof Error ? error.message : 'No se pudo completar el análisis de fútbol');
+    } finally {
+      setCargandoAnalisis(false);
     }
-
-    if (partidosParaMostrar.length > 0) {
-      setPartidoSeleccionadoId(partidosParaMostrar[0].id);
-      return;
-    }
-
-    setPartidoSeleccionadoId('');
-  }, [partidoSeleccionadoId, partidosParaMostrar]);
+  }, [partidoSeleccionadoId, limiteH2h]);
 
   const recargarTodo = useCallback(() => {
+    historialCacheRef.current.clear();
+    h2hCacheRef.current.clear();
     recargar();
-    recargarHoy();
-  }, [recargar, recargarHoy]);
-
-  // Calcular estadisticas rapidas
-  const estadisticasRapidas = useMemo(() => {
-    const hoy = obtenerHoyISOBogota();
-    const partidosHoy = partidosParaMostrar.filter(
-      (p) => obtenerFechaPartidoISO(p.fechaPartido) === hoy
-    ).length;
-
-    // Estos valores serian de un servicio real
-    return {
-      partidosHoy,
-    };
-  }, [partidosParaMostrar]);
-
-  // Handlers
-  const limpiarFiltros = useCallback(() => {
-    setCompeticionSeleccionada('');
-    setFechaDesde('');
-    setFechaHasta('');
-  }, []);
-
-  const irAAnalisis = useCallback((partidoId: string) => {
-    navegar(`/futbol/partidos/${partidoId}`);
-  }, []);
-
-  const analizarPartidoSeleccionado = useCallback(() => {
-    if (!partidoSeleccionadoId) return;
-    irAAnalisis(partidoSeleccionadoId);
-  }, [irAAnalisis, partidoSeleccionadoId]);
+    if (partidoSeleccionado) {
+      void cargarContexto(partidoSeleccionado);
+    }
+  }, [cargarContexto, partidoSeleccionado, recargar]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Encabezado />
 
       <main className="flex-1 contenedor py-6 lg:py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => navegar('/')}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg
-                         border border-neon-cyan/30 bg-futurista-oscuro/50
-                         text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50
-                         transition-all duration-200 text-sm font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Inicio</span>
-            </button>
-
-            <div>
-              <h1 className="text-2xl font-futurista font-bold text-texto-principal tracking-wider flex items-center gap-3">
-                <Trophy className="w-6 h-6 text-neon-cyan" />
-                FUTBOL
-              </h1>
-              <p className="text-sm text-texto-secundario">
-                Partidos proximos y analisis
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Toggle filtros mobile */}
-            <button
-              onClick={() => setSidebarVisible(true)}
-              className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg border border-neon-cyan/30 text-texto-secundario hover:text-texto-principal"
-            >
-              <Filter size={16} />
-              <span>Filtros</span>
-            </button>
-
-            <Boton
-              variante="secundario"
-              iconoInicio={<RefreshCw size={16} />}
-              onClick={recargarTodo}
-              cargando={cargandoPartidos || cargandoHoy}
-            >
-              <span className="hidden sm:inline">Actualizar</span>
-            </Boton>
-
-            <Boton
-              variante="primario"
-              iconoInicio={<Activity size={16} />}
-              onClick={() => navegar('/dashboard')}
-            >
-              <span className="hidden sm:inline">Dashboard</span>
-            </Boton>
-          </div>
-        </div>
-
-        {/* Tarjetas de resumen rapido */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <TarjetaResumen
-            titulo="Partidos Hoy"
-            valor={estadisticasRapidas.partidosHoy}
-            subtitulo="totales del dia"
-            icono={<Clock size={20} className="text-neon-cyan" />}
-            color="cyan"
-            loading={cargandoPartidos || cargandoHoy}
-          />
-          <TarjetaResumen
-            titulo="Apuestas Analizadas"
-            valor={apuestasAnalizadasResumen?.pendientes ?? 0}
-            subtitulo={apuestasAnalizadasResumen ? `finalizadas: ${apuestasAnalizadasResumen.finalizadas}` : 'sin datos'}
-            icono={<Target size={20} className="text-neon-magenta" />}
-            color="magenta"
-          />
-          <TarjetaResumen
-            titulo="Hit Rate 1X2"
-            valor={`${(resumenCalidad1x2?.hitRateSinPush ?? 0).toFixed(1)}%`}
-            subtitulo={resumenCalidad1x2 ? `G/P/Pu: ${resumenCalidad1x2.ganadas}/${resumenCalidad1x2.perdidas}/${resumenCalidad1x2.push}` : 'sin datos'}
-            icono={<TrendingUp size={20} className="text-neon-verde" />}
-            color="verde"
-          />
-        </div>
-
         <div className="mb-6">
           <PanelDepthPremium
             modulo="futbol"
             titulo="Depth premium Fútbol"
-            descripcion="La capa premium vive dentro del flujo fútbol actual para ampliar contexto por competición sin romper el plan base."
+            descripcion="Mismo contrato operativo visual que NBA; fútbol solo ajusta datos y mercados del dominio."
             bullets={[
-              'comparativas_multi_mercado por partido y competición',
-              'contexto_historico_extendido para lectura de rachas y señales',
-              'priorizacion_operativa_avanzada para seleccionar ejecuciones',
+              'comparativas_multi_mercado por partido',
+              'contexto_historico_extendido de H2H e historial',
+              'priorizacion_operativa_avanzada sobre recomendaciones',
             ]}
             activo={can('premium.depth')}
             onAbrirDepth={() => navegarConGate('/configuracion', 'premium.depth')}
           />
         </div>
 
-        {/* Error */}
-        {(error || errorHoy) && (
+        {(errorPartidos || errorContexto) && (
           <div className="mb-6">
             <MensajeError
-              titulo="Error al cargar partidos"
-              mensaje={error || errorHoy || 'Error desconocido'}
+              titulo="Error de carga"
+              mensaje={errorPartidos || errorContexto || 'No se pudieron cargar los datos'}
               onCerrar={recargarTodo}
             />
           </div>
         )}
 
-        <PanelSeleccionPartido
-          partidos={partidosParaMostrar}
-          partidoSeleccionadoId={partidoSeleccionadoId}
-          onSeleccionarPartido={setPartidoSeleccionadoId}
-          onAnalizarPartido={analizarPartidoSeleccionado}
-          cargando={cargandoPartidos || cargandoHoy}
-        />
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
+          <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
+            <div className="lg:sticky lg:top-6 space-y-4">
+              <Tarjeta className="border border-neon-cyan/20">
+                <label className="flex flex-col gap-2 text-sm text-texto-secundario">
+                  Partido
+                  <select
+                    value={partidoSeleccionadoId}
+                    onChange={(event) => {
+                      setPartidoSeleccionadoId(event.target.value);
+                      setAnalisis(null);
+                    }}
+                    disabled={cargandoPartidos || partidos.length === 0}
+                    className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+                  >
+                    <option value="">Selecciona un partido...</option>
+                    {partidos.map((partido) => (
+                      <option key={partido.id} value={partido.id}>
+                        {partido.equipoLocalNombre} vs {partido.equipoVisitanteNombre} · {formatearFechaHoraCorta(partido.fechaPartido)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="mt-3">
+                  <Boton variante="secundario" anchoCompleto iconoInicio={<RefreshCw size={16} />} onClick={recargarTodo}>
+                    Actualizar datos
+                  </Boton>
+                </div>
+              </Tarjeta>
 
-        {/* Layout principal */}
-        <div className="flex gap-6">
-          {/* Sidebar de filtros */}
-          <SidebarFiltros
-            competiciones={competiciones}
-            competicionSeleccionada={competicionSeleccionada}
-            onCambiarCompeticion={setCompeticionSeleccionada}
-            fechaDesde={fechaDesde}
-            fechaHasta={fechaHasta}
-            onCambiarFechaDesde={setFechaDesde}
-            onCambiarFechaHasta={setFechaHasta}
-            onLimpiar={limpiarFiltros}
-            cargando={cargandoPartidos || cargandoCompeticiones}
-            visible={sidebarVisible}
-            onCerrar={() => setSidebarVisible(false)}
-          />
+              <FormularioAnalisis
+                equipos={equiposAnalisis}
+                estadisticas={[]}
+                onAnalizar={ejecutarAnalisis}
+                cargando={cargandoAnalisis}
+                cargandoEquipos={cargandoPartidos}
+              />
+            </div>
+          </div>
 
-          {/* Contenido principal */}
-          <div className="flex-1 min-w-0">
-            <ListaPartidosFutbol
-              partidos={partidosParaMostrar}
-              cargando={cargandoPartidos || cargandoHoy}
-              onAnalizar={irAAnalisis}
-            />
+          <div className="flex-1 min-w-0" id="resultado-analisis">
+            {cargandoAnalisis && <ProgresoAnalisis />}
+
+            {errorAnalisis && !cargandoAnalisis && (
+              <MensajeError
+                titulo="Error en el análisis"
+                mensaje={errorAnalisis}
+                onCerrar={() => setErrorAnalisis(null)}
+              />
+            )}
+
+            {analisis && !cargandoAnalisis && (
+              <div className="space-y-4">
+                <ResultadoAnalisis
+                  resultado={adaptarAnalisisFutbolAResultadoAnalisis(analisis)}
+                  advertencias={[]}
+                  seleccionUsuario={analisis.recomendaciones?.[0]
+                    ? { lado: analisis.recomendaciones[0].lado, linea: analisis.recomendaciones[0].linea }
+                    : null}
+                  equipoLocalId={partidoSeleccionado?.equipoLocal}
+                  equipoVisitanteId={partidoSeleccionado?.equipoVisitante}
+                />
+
+                {cargandoContexto ? (
+                  <Tarjeta className="flex items-center justify-center py-12">
+                    <Spinner tamano="lg" texto="Cargando contexto del partido..." centrado />
+                  </Tarjeta>
+                ) : (
+                  <>
+                    <PanelH2HFutbol partidos={h2hPartidos} limite={limiteH2h} onCambiarLimite={setLimiteH2h} />
+                    {partidoSeleccionado && (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <PanelHistorialEquipoFutbol
+                          equipoId={String(partidoSeleccionado.equipoLocal)}
+                          equipoNombre={partidoSeleccionado.equipoLocalNombre}
+                          partidos={historialLocal}
+                          limite={limiteLocal}
+                          onCambiarLimite={setLimiteLocal}
+                          ubicacion={ubicacionLocal}
+                          onCambiarUbicacion={setUbicacionLocal}
+                        />
+                        <PanelHistorialEquipoFutbol
+                          equipoId={String(partidoSeleccionado.equipoVisitante)}
+                          equipoNombre={partidoSeleccionado.equipoVisitanteNombre}
+                          partidos={historialVisitante}
+                          limite={limiteVisitante}
+                          onCambiarLimite={setLimiteVisitante}
+                          ubicacion={ubicacionVisitante}
+                          onCambiarUbicacion={setUbicacionVisitante}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {!analisis && !cargandoAnalisis && (
+              <div className="tarjeta h-full min-h-[500px]">
+                <EstadoVacioFutbol />
+              </div>
+            )}
           </div>
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-neon-cyan/10 bg-futurista-negro/80 backdrop-blur-sm">
         <div className="contenedor py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
             <p className="text-texto-terciario text-xs uppercase tracking-wider">
-              Modulo de Futbol — Sistema de Analisis de Corners, Goles y Disparos
+              Football Analyzer — Flujo base canónico NBA
             </p>
-            <p className="text-texto-terciario/60 text-xs">
-              Los analisis son orientativos. Apuesta responsablemente.
-            </p>
+            <p className="text-texto-terciario/60 text-xs">Las predicciones son orientativas. Apuesta responsablemente.</p>
           </div>
         </div>
       </footer>
