@@ -146,7 +146,9 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   const cuotaPrincipal = cuotaValida(recObjetivo?.cuota) ?? cuotaValida(recObjetivo?.cuotaOver) ?? cuotaValida(recObjetivo?.cuotaUnder);
   const pMktRaw = cuotaPrincipal ? (1 / cuotaPrincipal) : null;
   const pMktFair = numeroSeguro(recObjetivo?.devigPMktFair, pMktRaw ?? 0);
-  const scoreValido = Number.isFinite(recObjetivo?.score ?? NaN) ? Number(recObjetivo?.score) : null;
+  const scoreValido = cuotaPrincipal && Number.isFinite(recObjetivo?.score ?? NaN)
+    ? Number(recObjetivo?.score)
+    : null;
 
   const mejorApuestaDetalle = recObjetivo ? {
     mercado: recObjetivo.mercado,
