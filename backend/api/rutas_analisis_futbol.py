@@ -199,14 +199,26 @@ def _recomendaciones_ml_a_api(
             lado = str(rec.get("tipo", "OVER")).upper()
             if lado not in {"OVER", "UNDER"}:
                 lado = "OVER"
+            p_cal = float(rec.get("probabilidad_modelo", 0.5))
+            p_raw = float(rec.get("p_raw", p_cal))
+            edge_real = rec.get("edge_real")
+            score = rec.get("score")
+            sizing = rec.get("sizing")
             recomendaciones.append(
                 RecomendacionApuesta(
                     mercado=str(rec.get("mercado", "")),
                     lado=lado,
                     linea=float(rec.get("linea", 0.0)),
-                    probabilidad=float(rec.get("probabilidad_modelo", 0.5)),
+                    probabilidad=p_cal,
                     confianza=confianza_api,
-                    valor_esperado=None,
+                    valor_esperado=rec.get("valor_esperado"),
+                    p_raw=p_raw,
+                    p_calibrada=p_cal,
+                    modelo_version_id=str(rec.get("modelo_version_id")) if rec.get("modelo_version_id") else None,
+                    calibrador_id=str(rec.get("calibrador_id")) if rec.get("calibrador_id") else None,
+                    edge_real=float(edge_real) if edge_real is not None else None,
+                    score=float(score) if score is not None else None,
+                    sizing=float(sizing) if sizing is not None else None,
                 )
             )
         except Exception:
@@ -1503,6 +1515,7 @@ def _generar_recomendaciones(
     partidos_visitante: int,
     partidos_relevantes: int,
     umbral_prob: float = 0.55,
+    modelo_version_id: Optional[str] = None,
 ) -> List[RecomendacionApuesta]:
     """Genera recomendaciones de apuestas basadas en las predicciones."""
     recomendaciones = []
@@ -1523,12 +1536,23 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_over_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
+                edge_over = float(prob_over_ajustada - 0.5)
+                score_over = float(max(0.0, min(100.0, edge_over * 200.0)))
+                sizing_over = float(max(0.0, min(0.05, edge_over * 0.20)))
                 recomendaciones.append(RecomendacionApuesta(
                     mercado=prediccion.mercado,
                     lado="OVER",
                     linea=linea,
                     probabilidad=prob_over_ajustada,
                     confianza=confianza,
+                    valor_esperado=None,
+                    p_raw=float(probs.over_raw),
+                    p_calibrada=float(probs.over_calibrada),
+                    modelo_version_id=modelo_version_id,
+                    calibrador_id=None,
+                    edge_real=edge_over,
+                    score=score_over,
+                    sizing=sizing_over,
                 ))
 
             # Evaluar UNDER
@@ -1536,12 +1560,23 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_under_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
+                edge_under = float(prob_under_ajustada - 0.5)
+                score_under = float(max(0.0, min(100.0, edge_under * 200.0)))
+                sizing_under = float(max(0.0, min(0.05, edge_under * 0.20)))
                 recomendaciones.append(RecomendacionApuesta(
                     mercado=prediccion.mercado,
                     lado="UNDER",
                     linea=linea,
                     probabilidad=prob_under_ajustada,
                     confianza=confianza,
+                    valor_esperado=None,
+                    p_raw=float(probs.under_raw),
+                    p_calibrada=float(probs.under_calibrada),
+                    modelo_version_id=modelo_version_id,
+                    calibrador_id=None,
+                    edge_real=edge_under,
+                    score=score_under,
+                    sizing=sizing_under,
                 ))
 
     # Ordenar por probabilidad descendente
@@ -2319,6 +2354,7 @@ async def analizar_partido(
                     stats_local["partidos"],
                     stats_visitante["partidos"],
                     partidos_relevantes,
+                    modelo_version_id=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
                 )
 
                 # Mezclar recomendaciones heurísticas con señal ML (si existe)

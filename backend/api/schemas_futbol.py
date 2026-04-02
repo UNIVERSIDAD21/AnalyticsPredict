@@ -229,6 +229,15 @@ class RecomendacionApuesta(BaseModel):
     confianza: Literal["MUY_ALTA", "ALTA", "MEDIA", "BAJA", "MUY_BAJA"]
     valor_esperado: Optional[float] = None
 
+    # Contrato unificado estilo NBA (P6)
+    p_raw: Optional[float] = Field(default=None, ge=0, le=1)
+    p_calibrada: Optional[float] = Field(default=None, ge=0, le=1)
+    modelo_version_id: Optional[str] = None
+    calibrador_id: Optional[str] = None
+    edge_real: Optional[float] = None
+    score: Optional[float] = None
+    sizing: Optional[float] = None
+
 
 
 
