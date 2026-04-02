@@ -60,6 +60,8 @@ CACHE_TTL = 3600
 
 # Instancia singleton del predictor ML de fútbol (P1)
 _predictor_futbol_ml: Optional["PredictorFutbol"] = None
+# Instancia singleton del gestor de calibradores (P2)
+_gestor_calibradores_futbol: Optional["GestorCalibradores"] = None
 
 
 def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
@@ -77,6 +79,23 @@ def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
             _predictor_futbol_ml = None
 
     return _predictor_futbol_ml
+
+
+def _obtener_gestor_calibradores_futbol(pool) -> Optional["GestorCalibradores"]:
+    """Obtiene/crea el gestor de calibradores de fútbol para calibrar probabilidades operativas."""
+    global _gestor_calibradores_futbol
+    if not MOTOR_DISPONIBLE:
+        return None
+
+    if _gestor_calibradores_futbol is None:
+        try:
+            _gestor_calibradores_futbol = GestorCalibradores(pool=pool)
+            logger.info("GestorCalibradores inicializado para /api/futbol/analizar")
+        except Exception:
+            logger.exception("No se pudo inicializar GestorCalibradores de fútbol")
+            _gestor_calibradores_futbol = None
+
+    return _gestor_calibradores_futbol
 
 
 def _inferir_lineas_desde_probabilidades(
@@ -104,24 +123,53 @@ def _inferir_lineas_desde_probabilidades(
 def _convertir_mercado_ml_a_schema(
     prediccion_ml,
     lineas_default: List[float],
+    gestor_calibradores: Optional["GestorCalibradores"] = None,
 ) -> PrediccionMercado:
     """Convierte PrediccionMercado del motor_futbol al schema API actual."""
     lineas: Dict[str, ProbabilidadLinea] = {}
     probabilidades = getattr(prediccion_ml, "probabilidades", {}) or {}
+    mercado_txt = str(getattr(prediccion_ml.mercado, "value", prediccion_ml.mercado))
+
+    tipo_mercado: Optional["TipoMercadoFutbol"] = None
+    if gestor_calibradores is not None:
+        try:
+            tipo_mercado = TipoMercadoFutbol(mercado_txt)
+        except Exception:
+            tipo_mercado = None
 
     for linea in _inferir_lineas_desde_probabilidades(probabilidades, lineas_default):
-        prob_over = float(probabilidades.get(f"over_{linea}", 0.5))
-        prob_under = float(probabilidades.get(f"under_{linea}", 1.0 - prob_over))
+        prob_over_raw = float(probabilidades.get(f"over_{linea}", 0.5))
+        prob_under_raw = float(probabilidades.get(f"under_{linea}", 1.0 - prob_over_raw))
+
+        prob_over_cal = prob_over_raw
+        prob_under_cal = prob_under_raw
+
+        if gestor_calibradores is not None and tipo_mercado is not None:
+            try:
+                prob_over_cal = float(
+                    gestor_calibradores.calibrar_probabilidad(tipo_mercado, prob_over_raw)
+                )
+                prob_over_cal = float(max(0.0, min(1.0, prob_over_cal)))
+                prob_under_cal = 1.0 - prob_over_cal
+            except Exception:
+                logger.exception(
+                    "No se pudo calibrar probabilidad de fútbol (mercado=%s linea=%s)",
+                    mercado_txt,
+                    linea,
+                )
+                prob_over_cal = prob_over_raw
+                prob_under_cal = prob_under_raw
+
         lineas[str(linea)] = ProbabilidadLinea(
-            over_raw=round(prob_over, 4),
-            over_calibrada=round(prob_over, 4),
-            under_raw=round(prob_under, 4),
-            under_calibrada=round(prob_under, 4),
+            over_raw=round(prob_over_raw, 4),
+            over_calibrada=round(prob_over_cal, 4),
+            under_raw=round(prob_under_raw, 4),
+            under_calibrada=round(prob_under_cal, 4),
             razones=None,
         )
 
     return PrediccionMercado(
-        mercado=str(getattr(prediccion_ml.mercado, "value", prediccion_ml.mercado)),
+        mercado=mercado_txt,
         media=round(float(prediccion_ml.media), 2),
         std=round(float(prediccion_ml.std), 2),
         lineas=lineas,
@@ -1558,17 +1606,18 @@ async def analizar_partido(
                     if predictor_ml is not None and predictor_ml.modelos_entrenados:
                         try:
                             pred_ml = predictor_ml.predecir_partido(request.partido_id)
+                            gestor_calibradores = _obtener_gestor_calibradores_futbol(pool)
 
                             mercados_corners_ml = {
-                                k: _convertir_mercado_ml_a_schema(v, lineas_corners)
+                                k: _convertir_mercado_ml_a_schema(v, lineas_corners, gestor_calibradores)
                                 for k, v in (pred_ml.mercados_corners or {}).items()
                             }
                             mercados_goles_ml = {
-                                k: _convertir_mercado_ml_a_schema(v, lineas_goles)
+                                k: _convertir_mercado_ml_a_schema(v, lineas_goles, gestor_calibradores)
                                 for k, v in (pred_ml.mercados_goles or {}).items()
                             }
                             mercados_disparos_ml = {
-                                k: _convertir_mercado_ml_a_schema(v, lineas_disparos)
+                                k: _convertir_mercado_ml_a_schema(v, lineas_disparos, gestor_calibradores)
                                 for k, v in (pred_ml.mercados_disparos or {}).items()
                             }
 
