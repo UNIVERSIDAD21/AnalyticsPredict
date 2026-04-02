@@ -65,6 +65,7 @@ function obtenerConfigMetodo(metodo: MetodoDeVig) {
         colorIcono: 'text-neon-amarillo',
       };
     case 'no_aplicado':
+    default:
       return {
         icono: XCircle,
         titulo: 'SIN DE-VIG',
