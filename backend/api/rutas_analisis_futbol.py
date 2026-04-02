@@ -1874,7 +1874,7 @@ async def analizar_partido(
                     default_std=4.0,
                 )
 
-                # 4. Generar predicciones para cada mercado
+                # 4. Generar predicciones para cada mercado (P3: sin porcentajes fijos)
                 lineas_corners = request.lineas_corners or [8.5, 9.5, 10.5, 11.5]
                 lineas_goles = request.lineas_goles or [1.5, 2.5, 3.5]
                 lineas_disparos = request.lineas_disparos or [22.5, 24.5, 26.5]
@@ -1885,34 +1885,226 @@ async def analizar_partido(
                 )
                 calibradores_activos = cursor.fetchone()["count"]
 
+                # Corners por tiempo/modelo explícito
+                local_corners_1t_ctx = _obtener_resumen_seguro(stats_local_home, "corners_1t")
+                local_corners_2t_ctx = _obtener_resumen_seguro(stats_local_home, "corners_2t")
+                vis_corners_1t_ctx = _obtener_resumen_seguro(stats_visitante_away, "corners_1t")
+                vis_corners_2t_ctx = _obtener_resumen_seguro(stats_visitante_away, "corners_2t")
+                local_corners_1t_global = _obtener_resumen_seguro(stats_local_global, "corners_1t")
+                local_corners_2t_global = _obtener_resumen_seguro(stats_local_global, "corners_2t")
+                vis_corners_1t_global = _obtener_resumen_seguro(stats_visitante_global, "corners_1t")
+                vis_corners_2t_global = _obtener_resumen_seguro(stats_visitante_global, "corners_2t")
+                liga_corners_1t = _obtener_resumen_seguro(promedios_liga.get("global", {}), "corners_1t")
+                liga_corners_2t = _obtener_resumen_seguro(promedios_liga.get("global", {}), "corners_2t")
+
+                corners_local_1t = combinar_valor_cross_liga(
+                    valor_ctx=local_corners_1t_ctx.get("promedio"),
+                    n_ctx=int(local_corners_1t_ctx.get("n") or 0),
+                    valor_global=local_corners_1t_global.get("promedio"),
+                    n_global=int(local_corners_1t_global.get("n") or 0),
+                    valor_liga=liga_corners_1t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                corners_local_2t = combinar_valor_cross_liga(
+                    valor_ctx=local_corners_2t_ctx.get("promedio"),
+                    n_ctx=int(local_corners_2t_ctx.get("n") or 0),
+                    valor_global=local_corners_2t_global.get("promedio"),
+                    n_global=int(local_corners_2t_global.get("n") or 0),
+                    valor_liga=liga_corners_2t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                corners_visitante_1t = combinar_valor_cross_liga(
+                    valor_ctx=vis_corners_1t_ctx.get("promedio"),
+                    n_ctx=int(vis_corners_1t_ctx.get("n") or 0),
+                    valor_global=vis_corners_1t_global.get("promedio"),
+                    n_global=int(vis_corners_1t_global.get("n") or 0),
+                    valor_liga=liga_corners_1t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                corners_visitante_2t = combinar_valor_cross_liga(
+                    valor_ctx=vis_corners_2t_ctx.get("promedio"),
+                    n_ctx=int(vis_corners_2t_ctx.get("n") or 0),
+                    valor_global=vis_corners_2t_global.get("promedio"),
+                    n_global=int(vis_corners_2t_global.get("n") or 0),
+                    valor_liga=liga_corners_2t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+
+                corners_1t_total = corners_local_1t + corners_visitante_1t
+                corners_2t_total = corners_local_2t + corners_visitante_2t
+                corners_local_ft = corners_local_1t + corners_local_2t
+                corners_visitante_ft = corners_visitante_1t + corners_visitante_2t
+
+                corners_1t_std = _std_robusta(
+                    std_ctx=local_corners_1t_ctx.get("std") or vis_corners_1t_ctx.get("std"),
+                    std_global=local_corners_1t_global.get("std") or vis_corners_1t_global.get("std"),
+                    default_std=1.8,
+                )
+                corners_2t_std = _std_robusta(
+                    std_ctx=local_corners_2t_ctx.get("std") or vis_corners_2t_ctx.get("std"),
+                    std_global=local_corners_2t_global.get("std") or vis_corners_2t_global.get("std"),
+                    default_std=1.8,
+                )
+                corners_local_ft_std = _std_robusta(
+                    std_ctx=local_corners_ctx.get("std"),
+                    std_global=local_corners_global.get("std"),
+                    default_std=2.0,
+                )
+                corners_visitante_ft_std = _std_robusta(
+                    std_ctx=vis_corners_ctx.get("std"),
+                    std_global=vis_corners_global.get("std"),
+                    default_std=2.0,
+                )
+
+                # Goles por tiempo/modelo explícito
+                local_goles_1t_ctx = _obtener_resumen_seguro(stats_local_home, "goles_1t")
+                local_goles_2t_ctx = _obtener_resumen_seguro(stats_local_home, "goles_2t")
+                vis_goles_1t_ctx = _obtener_resumen_seguro(stats_visitante_away, "goles_1t")
+                vis_goles_2t_ctx = _obtener_resumen_seguro(stats_visitante_away, "goles_2t")
+                local_goles_1t_global = _obtener_resumen_seguro(stats_local_global, "goles_1t")
+                local_goles_2t_global = _obtener_resumen_seguro(stats_local_global, "goles_2t")
+                vis_goles_1t_global = _obtener_resumen_seguro(stats_visitante_global, "goles_1t")
+                vis_goles_2t_global = _obtener_resumen_seguro(stats_visitante_global, "goles_2t")
+                liga_goles_1t = _obtener_resumen_seguro(promedios_liga.get("global", {}), "goles_1t")
+                liga_goles_2t = _obtener_resumen_seguro(promedios_liga.get("global", {}), "goles_2t")
+
+                goles_local_1t = combinar_valor_cross_liga(
+                    valor_ctx=local_goles_1t_ctx.get("promedio"),
+                    n_ctx=int(local_goles_1t_ctx.get("n") or 0),
+                    valor_global=local_goles_1t_global.get("promedio"),
+                    n_global=int(local_goles_1t_global.get("n") or 0),
+                    valor_liga=liga_goles_1t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                goles_local_2t = combinar_valor_cross_liga(
+                    valor_ctx=local_goles_2t_ctx.get("promedio"),
+                    n_ctx=int(local_goles_2t_ctx.get("n") or 0),
+                    valor_global=local_goles_2t_global.get("promedio"),
+                    n_global=int(local_goles_2t_global.get("n") or 0),
+                    valor_liga=liga_goles_2t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                goles_visitante_1t = combinar_valor_cross_liga(
+                    valor_ctx=vis_goles_1t_ctx.get("promedio"),
+                    n_ctx=int(vis_goles_1t_ctx.get("n") or 0),
+                    valor_global=vis_goles_1t_global.get("promedio"),
+                    n_global=int(vis_goles_1t_global.get("n") or 0),
+                    valor_liga=liga_goles_1t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                goles_visitante_2t = combinar_valor_cross_liga(
+                    valor_ctx=vis_goles_2t_ctx.get("promedio"),
+                    n_ctx=int(vis_goles_2t_ctx.get("n") or 0),
+                    valor_global=vis_goles_2t_global.get("promedio"),
+                    n_global=int(vis_goles_2t_global.get("n") or 0),
+                    valor_liga=liga_goles_2t.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+
+                goles_1t_total = goles_local_1t + goles_visitante_1t
+                goles_2t_total = goles_local_2t + goles_visitante_2t
+                goles_local_ft = goles_local_1t + goles_local_2t
+                goles_visitante_ft = goles_visitante_1t + goles_visitante_2t
+
+                goles_1t_std = _std_robusta(
+                    std_ctx=local_goles_1t_ctx.get("std") or vis_goles_1t_ctx.get("std"),
+                    std_global=local_goles_1t_global.get("std") or vis_goles_1t_global.get("std"),
+                    default_std=0.8,
+                )
+                goles_2t_std = _std_robusta(
+                    std_ctx=local_goles_2t_ctx.get("std") or vis_goles_2t_ctx.get("std"),
+                    std_global=local_goles_2t_global.get("std") or vis_goles_2t_global.get("std"),
+                    default_std=0.9,
+                )
+                goles_local_ft_std = _std_robusta(
+                    std_ctx=local_goles_ctx.get("std"),
+                    std_global=local_goles_global.get("std"),
+                    default_std=1.0,
+                )
+                goles_visitante_ft_std = _std_robusta(
+                    std_ctx=vis_goles_ctx.get("std"),
+                    std_global=vis_goles_global.get("std"),
+                    default_std=1.0,
+                )
+
+                # Disparos a puerta explícitos (sin ratio fijo)
+                local_disp_arco_ctx = _obtener_resumen_seguro(stats_local_home, "disparos_arco_ft")
+                vis_disp_arco_ctx = _obtener_resumen_seguro(stats_visitante_away, "disparos_arco_ft")
+                local_disp_arco_global = _obtener_resumen_seguro(stats_local_global, "disparos_arco_ft")
+                vis_disp_arco_global = _obtener_resumen_seguro(stats_visitante_global, "disparos_arco_ft")
+                liga_disp_arco = _obtener_resumen_seguro(promedios_liga.get("global", {}), "disparos_arco_ft")
+
+                disparos_arco_local = combinar_valor_cross_liga(
+                    valor_ctx=local_disp_arco_ctx.get("promedio"),
+                    n_ctx=int(local_disp_arco_ctx.get("n") or 0),
+                    valor_global=local_disp_arco_global.get("promedio"),
+                    n_global=int(local_disp_arco_global.get("n") or 0),
+                    valor_liga=liga_disp_arco.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                disparos_arco_visitante = combinar_valor_cross_liga(
+                    valor_ctx=vis_disp_arco_ctx.get("promedio"),
+                    n_ctx=int(vis_disp_arco_ctx.get("n") or 0),
+                    valor_global=vis_disp_arco_global.get("promedio"),
+                    n_global=int(vis_disp_arco_global.get("n") or 0),
+                    valor_liga=liga_disp_arco.get("promedio"),
+                    codigo_competicion=partido.get("competicion_codigo"),
+                )
+                disparos_arco_total = disparos_arco_local + disparos_arco_visitante
+                disparos_arco_std = _std_robusta(
+                    std_ctx=local_disp_arco_ctx.get("std") or vis_disp_arco_ctx.get("std"),
+                    std_global=local_disp_arco_global.get("std") or vis_disp_arco_global.get("std"),
+                    default_std=2.2,
+                )
+                disparos_local_std = _std_robusta(
+                    std_ctx=local_disp_ctx.get("std"),
+                    std_global=local_disp_global.get("std"),
+                    default_std=3.2,
+                )
+                disparos_visitante_std = _std_robusta(
+                    std_ctx=vis_disp_ctx.get("std"),
+                    std_global=vis_disp_global.get("std"),
+                    default_std=3.2,
+                )
+                disparos_arco_local_std = _std_robusta(
+                    std_ctx=local_disp_arco_ctx.get("std"),
+                    std_global=local_disp_arco_global.get("std"),
+                    default_std=1.8,
+                )
+                disparos_arco_visitante_std = _std_robusta(
+                    std_ctx=vis_disp_arco_ctx.get("std"),
+                    std_global=vis_disp_arco_global.get("std"),
+                    default_std=1.8,
+                )
+
                 # Mercados de Corners
                 mercados_corners = {
                     "CORNERS_FT": _generar_predicciones_mercado(
                         "CORNERS_FT", corners_total, corners_std, lineas_corners
                     ),
                     "CORNERS_1T": _generar_predicciones_mercado(
-                        "CORNERS_1T", corners_total * 0.45, corners_std * 0.7, lineas_corners
+                        "CORNERS_1T", corners_1t_total, corners_1t_std, lineas_corners
                     ),
                     "CORNERS_2T": _generar_predicciones_mercado(
-                        "CORNERS_2T", corners_total * 0.55, corners_std * 0.7, lineas_corners
+                        "CORNERS_2T", corners_2t_total, corners_2t_std, lineas_corners
                     ),
                     "CORNERS_LOCAL_FT": _generar_predicciones_mercado(
-                        "CORNERS_LOCAL_FT", corners_local, corners_std * 0.6, lineas_corners
+                        "CORNERS_LOCAL_FT", corners_local_ft, corners_local_ft_std, lineas_corners
                     ),
                     "CORNERS_LOCAL_1T": _generar_predicciones_mercado(
-                        "CORNERS_LOCAL_1T", corners_local * 0.45, corners_std * 0.5, lineas_corners
+                        "CORNERS_LOCAL_1T", corners_local_1t, corners_1t_std, lineas_corners
                     ),
                     "CORNERS_LOCAL_2T": _generar_predicciones_mercado(
-                        "CORNERS_LOCAL_2T", corners_local * 0.55, corners_std * 0.5, lineas_corners
+                        "CORNERS_LOCAL_2T", corners_local_2t, corners_2t_std, lineas_corners
                     ),
                     "CORNERS_VISITANTE_FT": _generar_predicciones_mercado(
-                        "CORNERS_VISITANTE_FT", corners_visitante, corners_std * 0.6, lineas_corners
+                        "CORNERS_VISITANTE_FT", corners_visitante_ft, corners_visitante_ft_std, lineas_corners
                     ),
                     "CORNERS_VISITANTE_1T": _generar_predicciones_mercado(
-                        "CORNERS_VISITANTE_1T", corners_visitante * 0.45, corners_std * 0.5, lineas_corners
+                        "CORNERS_VISITANTE_1T", corners_visitante_1t, corners_1t_std, lineas_corners
                     ),
                     "CORNERS_VISITANTE_2T": _generar_predicciones_mercado(
-                        "CORNERS_VISITANTE_2T", corners_visitante * 0.55, corners_std * 0.5, lineas_corners
+                        "CORNERS_VISITANTE_2T", corners_visitante_2t, corners_2t_std, lineas_corners
                     ),
                 }
 
@@ -1922,28 +2114,28 @@ async def analizar_partido(
                         "GOLES_FT", goles_total, goles_std, lineas_goles
                     ),
                     "GOLES_1T": _generar_predicciones_mercado(
-                        "GOLES_1T", goles_total * 0.40, goles_std * 0.7, lineas_goles
+                        "GOLES_1T", goles_1t_total, goles_1t_std, lineas_goles
                     ),
                     "GOLES_2T": _generar_predicciones_mercado(
-                        "GOLES_2T", goles_total * 0.60, goles_std * 0.7, lineas_goles
+                        "GOLES_2T", goles_2t_total, goles_2t_std, lineas_goles
                     ),
                     "GOLES_LOCAL_FT": _generar_predicciones_mercado(
-                        "GOLES_LOCAL_FT", goles_local, goles_std * 0.6, lineas_goles
+                        "GOLES_LOCAL_FT", goles_local_ft, goles_local_ft_std, lineas_goles
                     ),
                     "GOLES_LOCAL_1T": _generar_predicciones_mercado(
-                        "GOLES_LOCAL_1T", goles_local * 0.40, goles_std * 0.5, lineas_goles
+                        "GOLES_LOCAL_1T", goles_local_1t, goles_1t_std, lineas_goles
                     ),
                     "GOLES_LOCAL_2T": _generar_predicciones_mercado(
-                        "GOLES_LOCAL_2T", goles_local * 0.60, goles_std * 0.5, lineas_goles
+                        "GOLES_LOCAL_2T", goles_local_2t, goles_2t_std, lineas_goles
                     ),
                     "GOLES_VISITANTE_FT": _generar_predicciones_mercado(
-                        "GOLES_VISITANTE_FT", goles_visitante, goles_std * 0.6, lineas_goles
+                        "GOLES_VISITANTE_FT", goles_visitante_ft, goles_visitante_ft_std, lineas_goles
                     ),
                     "GOLES_VISITANTE_1T": _generar_predicciones_mercado(
-                        "GOLES_VISITANTE_1T", goles_visitante * 0.40, goles_std * 0.5, lineas_goles
+                        "GOLES_VISITANTE_1T", goles_visitante_1t, goles_1t_std, lineas_goles
                     ),
                     "GOLES_VISITANTE_2T": _generar_predicciones_mercado(
-                        "GOLES_VISITANTE_2T", goles_visitante * 0.60, goles_std * 0.5, lineas_goles
+                        "GOLES_VISITANTE_2T", goles_visitante_2t, goles_2t_std, lineas_goles
                     ),
                 }
 
@@ -1953,19 +2145,19 @@ async def analizar_partido(
                         "DISPAROS_FT", disparos_total, disparos_std, lineas_disparos
                     ),
                     "DISPAROS_ARCO_FT": _generar_predicciones_mercado(
-                        "DISPAROS_ARCO_FT", disparos_total * 0.35, disparos_std * 0.6, lineas_disparos
+                        "DISPAROS_ARCO_FT", disparos_arco_total, disparos_arco_std, lineas_disparos
                     ),
                     "DISPAROS_LOCAL_FT": _generar_predicciones_mercado(
-                        "DISPAROS_LOCAL_FT", disparos_local, disparos_std * 0.6, lineas_disparos
+                        "DISPAROS_LOCAL_FT", disparos_local, disparos_local_std, lineas_disparos
                     ),
                     "DISPAROS_LOCAL_ARCO_FT": _generar_predicciones_mercado(
-                        "DISPAROS_LOCAL_ARCO_FT", disparos_local * 0.35, disparos_std * 0.5, lineas_disparos
+                        "DISPAROS_LOCAL_ARCO_FT", disparos_arco_local, disparos_arco_local_std, lineas_disparos
                     ),
                     "DISPAROS_VISITANTE_FT": _generar_predicciones_mercado(
-                        "DISPAROS_VISITANTE_FT", disparos_visitante, disparos_std * 0.6, lineas_disparos
+                        "DISPAROS_VISITANTE_FT", disparos_visitante, disparos_visitante_std, lineas_disparos
                     ),
                     "DISPAROS_VISITANTE_ARCO_FT": _generar_predicciones_mercado(
-                        "DISPAROS_VISITANTE_ARCO_FT", disparos_visitante * 0.35, disparos_std * 0.5, lineas_disparos
+                        "DISPAROS_VISITANTE_ARCO_FT", disparos_arco_visitante, disparos_arco_visitante_std, lineas_disparos
                     ),
                 }
 
