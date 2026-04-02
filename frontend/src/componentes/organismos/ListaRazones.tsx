@@ -11,22 +11,23 @@ import { RazonPrediccion } from '../../tipos';
 // ══════════════════════════════════════════════════════════════
 
 interface PropsListaRazones {
-  /** Lista de razones */
   razones: RazonPrediccion[];
+  deporte?: 'baloncesto' | 'futbol';
 }
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 
-function obtenerExplicacionRazon(razon: RazonPrediccion): string | null {
+function obtenerExplicacionRazon(razon: RazonPrediccion, deporte: 'baloncesto' | 'futbol'): string | null {
+  const unidad = deporte === 'futbol' ? 'métrica' : 'puntos';
   switch (razon.factor) {
     case 'total_estimado':
-      return 'Es la suma de puntos que el modelo espera entre ambos equipos.';
+      return `Es la suma de ${unidad} que el modelo espera entre ambos equipos.`;
     case 'ataque_equipo':
       return 'Indica cuántos puntos se estima que anotará el equipo según sus datos recientes.';
     case 'ataque_rival':
-      return 'Indica cuántos puntos se estima que anotará el rival según sus datos recientes.';
+      return `Indica cuánta ${unidad} se estima para el rival según sus datos recientes.`;
     case 'prediccion_sistema':
       return 'Es el total de puntos que calcula el sistema con los datos disponibles; se compara con la línea si existe.';
     case 'resumen_neto':
@@ -38,9 +39,9 @@ function obtenerExplicacionRazon(razon: RazonPrediccion): string | null {
     case 'h2h_tendencia':
       return 'Se considera lo que pasó en enfrentamientos directos recientes para ajustar el total.';
     case 'forma_ofensiva_equipo':
-      return 'Compara los puntos recientes del equipo con su promedio de temporada para ajustar la predicción.';
+      return `Compara la ${unidad} reciente del equipo con su promedio de temporada para ajustar la predicción.`;
     case 'forma_ofensiva_rival':
-      return 'Compara los puntos recientes del rival con su promedio de temporada para ajustar la predicción.';
+      return `Compara la ${unidad} reciente del rival con su promedio de temporada para ajustar la predicción.`;
     default:
       return 'Este factor ajusta la predicción según información contextual del partido.';
   }
@@ -50,10 +51,10 @@ function obtenerExplicacionRazon(razon: RazonPrediccion): string | null {
 // COMPONENTE INTERNO
 // ══════════════════════════════════════════════════════════════
 
-function ItemRazon({ razon }: { razon: RazonPrediccion }) {
+function ItemRazon({ razon, deporte }: { razon: RazonPrediccion; deporte: 'baloncesto' | 'futbol' }) {
   const esSube = razon.direccion === 'sube';
   const Icono = esSube ? ArrowUp : ArrowDown;
-  const explicacion = obtenerExplicacionRazon(razon);
+  const explicacion = obtenerExplicacionRazon(razon, deporte);
 
   return (
     <li className="flex items-start gap-3 py-3 border-b border-neon-cyan/10 last:border-0">
@@ -83,7 +84,7 @@ function ItemRazon({ razon }: { razon: RazonPrediccion }) {
             {razon.factor}
           </span>
           <span className={`text-xs font-mono font-semibold ${esSube ? 'text-neon-verde' : 'text-neon-rojo'}`}>
-            {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} pts
+            {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} {deporte === 'futbol' ? 'u' : 'pts'}
           </span>
         </div>
       </div>
@@ -98,7 +99,7 @@ function ItemRazon({ razon }: { razon: RazonPrediccion }) {
 /**
  * Muestra las razones que justifican la predicción
  */
-export function ListaRazones({ razones }: PropsListaRazones) {
+export function ListaRazones({ razones, deporte = 'baloncesto' }: PropsListaRazones) {
   if (razones.length === 0) {
     return null;
   }
@@ -118,9 +119,10 @@ export function ListaRazones({ razones }: PropsListaRazones) {
       {/* Lista de razones */}
       <ul>
         {razones.map((razon, indice) => (
-          <ItemRazon key={`${razon.factor}-${indice}`} razon={razon} />
+          <ItemRazon key={`${razon.factor}-${indice}`} razon={razon} deporte={deporte} />
         ))}
       </ul>
     </Tarjeta>
   );
 }
+

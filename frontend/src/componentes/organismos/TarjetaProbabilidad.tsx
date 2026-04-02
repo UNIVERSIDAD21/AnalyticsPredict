@@ -11,18 +11,13 @@ import { LadoApuesta } from '../../tipos';
 // ══════════════════════════════════════════════════════════════
 
 interface PropsTarjetaProbabilidad {
-  /** Línea analizada */
   linea: number;
-  /** Probabilidad de Over (0-1) */
   probabilidadOver: number;
-  /** Probabilidad de Under (0-1) */
   probabilidadUnder: number;
-  /** Media total predicha */
   mediaTotal: number;
-  /** Desviación estándar */
   desviacion: number;
-  /** Lado seleccionado por el usuario */
   seleccionUsuario?: LadoApuesta;
+  unidadLabel?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -47,6 +42,7 @@ export function TarjetaProbabilidad({
   mediaTotal,
   desviacion,
   seleccionUsuario,
+  unidadLabel = 'puntos',
 }: PropsTarjetaProbabilidad) {
   const esOverFavorito = probabilidadOver > probabilidadUnder;
   const porcentajeOver = probabilidadOver * 100;
@@ -61,7 +57,7 @@ export function TarjetaProbabilidad({
         <div className="text-5xl font-futurista font-bold text-neon-cyan mt-2 texto-glow-cyan">
           {linea.toFixed(1)}
         </div>
-        <span className="text-sm text-texto-terciario">puntos</span>
+        <span className="text-sm text-texto-terciario">{unidadLabel}</span>
       </div>
 
       {/* Barra de probabilidad futurista */}
@@ -150,7 +146,7 @@ export function TarjetaProbabilidad({
               Media Predicha
             </div>
             <div className="text-xl font-mono font-semibold text-neon-cyan">
-              {mediaTotal.toFixed(1)} <span className="text-xs text-texto-secundario">pts</span>
+              {mediaTotal.toFixed(1)} <span className="text-xs text-texto-secundario">{unidadLabel}</span>
             </div>
           </div>
           <div className="p-3 rounded-lg bg-futurista-oscuro/30">
@@ -158,7 +154,7 @@ export function TarjetaProbabilidad({
               Desviación
             </div>
             <div className="text-xl font-mono font-semibold text-neon-magenta">
-              ±{desviacion.toFixed(1)} <span className="text-xs text-texto-secundario">pts</span>
+              ±{desviacion.toFixed(1)} <span className="text-xs text-texto-secundario">{unidadLabel}</span>
             </div>
           </div>
         </div>

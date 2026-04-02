@@ -162,6 +162,12 @@ export function PaginaFutbol() {
     []
   );
 
+  const unidadLineaLabel = useMemo(() => {
+    if (categoriaMercadoFutbol === 'CORNERS') return 'corners';
+    if (categoriaMercadoFutbol === 'GOLES') return 'goles';
+    return 'tiros a puerta';
+  }, [categoriaMercadoFutbol]);
+
   const resolverMercadoObjetivo = useCallback((periodo: Mercado): TipoMercadoFutbol => {
     const periodoTag = periodo === 'Q1' ? '1T' : (periodo === 'Q2' ? '2T' : 'FT');
     if (categoriaMercadoFutbol === 'CORNERS') {
@@ -396,6 +402,7 @@ export function PaginaFutbol() {
                 partidosDisponibles={partidosSelector}
                 opcionesMercado={opcionesMercadoFutbol}
                 textoAyudaMercado="Selecciona si quieres analizar primer tiempo, segundo tiempo o juego completo."
+                unidadLineaLabel={unidadLineaLabel}
               />
               <Boton variante="secundario" anchoCompleto onClick={recargarTodo}>
                 Actualizar datos

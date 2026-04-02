@@ -10,20 +10,15 @@ import { LadoApuesta } from '../../tipos';
 // ══════════════════════════════════════════════════════════════
 
 interface PropsInputLinea {
-  /** Valor actual de la línea */
   valor: string;
-  /** Callback cuando cambia el valor */
   onChange: (valor: string) => void;
-  /** Lado de apuesta seleccionado */
   ladoApuesta?: LadoApuesta;
-  /** Callback cuando cambia el lado */
   onLadoChange?: (lado: LadoApuesta) => void;
-  /** Mensaje de error */
   error?: string;
-  /** Deshabilitado */
   deshabilitado?: boolean;
-  /** Es para juego completo (cambia el placeholder) */
   esJuegoCompleto?: boolean;
+  unidadLabel?: string;
+  periodoLabel?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -41,6 +36,8 @@ export function InputLinea({
   error,
   deshabilitado = false,
   esJuegoCompleto = false,
+  unidadLabel = 'puntos',
+  periodoLabel,
 }: PropsInputLinea) {
   const placeholder = esJuegoCompleto ? 'Ej: 225.5' : 'Ej: 55.5';
 
@@ -114,8 +111,8 @@ export function InputLinea({
 
       {/* Texto de ayuda */}
       <p className="texto-ayuda text-center">
-        {ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {valor || '...'} puntos
-        {esJuegoCompleto ? ' en el juego completo' : ' en el cuarto'}
+        {ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {valor || '...'} {unidadLabel}
+        {periodoLabel ? ` en ${periodoLabel}` : (esJuegoCompleto ? ' en el juego completo' : ' en el periodo')}
       </p>
 
       {/* Error */}

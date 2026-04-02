@@ -58,6 +58,8 @@ interface PropsFormularioAnalisis {
   opcionesMercado?: OpcionMercadoCustom[];
   /** Texto de ayuda en selector de mercado */
   textoAyudaMercado?: string;
+  /** Unidad semántica del módulo (p.ej. goles/corners/disparos) */
+  unidadLineaLabel?: string;
 }
 
 interface EstadoFormulario {
@@ -96,6 +98,7 @@ export function FormularioAnalisis({
   partidosDisponibles,
   opcionesMercado,
   textoAyudaMercado,
+  unidadLineaLabel,
 }: PropsFormularioAnalisis) {
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
@@ -409,6 +412,8 @@ export function FormularioAnalisis({
             onLadoChange={(lado) => actualizarCampo('ladoApuesta', lado)}
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
+            unidadLabel={unidadLineaLabel ?? 'puntos'}
+            periodoLabel={formulario.mercado === 'Q1' ? 'primer tiempo' : (formulario.mercado === 'Q2' ? 'segundo tiempo' : (formulario.mercado === 'COMPLETO' ? 'juego completo' : undefined))}
           />
 
           {/* Temporadas */}
@@ -498,8 +503,8 @@ export function FormularioAnalisis({
             </p>
             <p className={`text-sm font-semibold ${formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
               }`}>
-              {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} puntos
-              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? 'Juego Completo' : formulario.mercado}`}
+              {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} {unidadLineaLabel ?? 'puntos'}
+              {formulario.mercado && ` en ${formulario.mercado === 'Q1' ? 'Primer tiempo' : (formulario.mercado === 'Q2' ? 'Segundo tiempo' : (formulario.mercado === 'COMPLETO' ? 'Juego completo' : formulario.mercado))}`}
             </p>
           </div>
         )}

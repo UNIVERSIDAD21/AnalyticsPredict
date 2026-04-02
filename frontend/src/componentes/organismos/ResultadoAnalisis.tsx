@@ -145,6 +145,7 @@ export function ResultadoAnalisis({
   const probabilidadOver = resultado.probabilidad_over ?? 0;
   const probabilidadUnder = resultado.probabilidad_under ?? 0;
   const linea = resultado.linea_analizada ?? 0;
+  const unidadAnalisis = esFutbol ? 'unidades' : 'puntos';
 
   // Obtener media y desviación
   let mediaTotal = 0;
@@ -153,6 +154,13 @@ export function ResultadoAnalisis({
     ? resultado.prediccion_juego_completo
     : (mercado ? resultado.predicciones[mercado] : null);
   const etiquetaGanador = mercado === 'COMPLETO' ? 'Ganador del partido' : (esFutbol ? 'Ganador estimado' : 'Ganador del cuarto');
+  const etiquetaPeriodo = mercado === 'Q1'
+    ? 'Primer tiempo'
+    : mercado === 'Q2'
+      ? 'Segundo tiempo'
+      : mercado === 'COMPLETO'
+        ? 'Juego completo'
+        : mercado;
   const nombreGanador = prediccionGanador?.ganador_probable === 'equipo'
     ? resultado.equipo_nombre_completo
     : resultado.rival_nombre_completo;
@@ -204,7 +212,7 @@ export function ResultadoAnalisis({
           </div>
           <div className="mt-2 inline-block px-4 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30">
             <span className="text-sm text-neon-cyan font-mono">
-              {mercado === 'COMPLETO' ? 'JUEGO COMPLETO' : (esFutbol ? `PERÍODO ${mercado}` : `CUARTO ${mercado}`)}
+              {esFutbol ? etiquetaPeriodo.toUpperCase() : (mercado === 'COMPLETO' ? 'JUEGO COMPLETO' : `CUARTO ${mercado}`)}
             </span>
           </div>
         </div>
@@ -294,6 +302,7 @@ export function ResultadoAnalisis({
           mediaTotal={mediaTotal}
           desviacion={desviacion}
           seleccionUsuario={seleccionUsuario?.lado}
+          unidadLabel={unidadAnalisis}
         />
       )}
 
@@ -462,7 +471,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           12. RAZONES
           ═══════════════════════════════════════════════════════════ */}
-      <ListaRazones razones={resultado.razones} />
+      <ListaRazones razones={resultado.razones} deporte={esFutbol ? 'futbol' : 'baloncesto'} />
 
       {/* ═══════════════════════════════════════════════════════════
           13. GUARDAR EN BITÁCORA
