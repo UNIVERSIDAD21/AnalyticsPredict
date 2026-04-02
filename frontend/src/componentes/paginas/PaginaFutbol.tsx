@@ -6,25 +6,25 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, BarChart3, Trophy } from 'lucide-react';
-import { Encabezado, FormularioAnalisis } from '../organismos';
+import { CreadorCombinada, Encabezado, FormularioAnalisis, ModalGuardarApuestaFutbol } from '../organismos';
 import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, PanelDepthPremium, ProgresoAnalisis } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { usePartidosFutbol } from '../../hooks';
-import { analizarPartido, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
+import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import { useToasts } from '../../contextos/Toasts';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
 import type {
   AnalisisFutbolResponse,
   PartidoFutbolEstadistico,
   PartidoFutbolResumen,
+  TipoMercadoFutbol,
   UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
-import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis } from '../../tipos';
-import { PanelH2HFutbol } from '../organismos/PanelH2HFutbol';
-import { PanelHistorialEquipoFutbol } from '../organismos/PanelHistorialEquipoFutbol';
+import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta && window.location.search === '') return;
@@ -68,12 +68,15 @@ function EstadoVacioFutbol() {
 export function PaginaFutbol() {
   const { can } = useAccessPolicy();
   const { navegarConGate } = useGateNavigation(navegar);
+  const { agregarToast } = useToasts();
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
   const [categoriaMercadoFutbol, setCategoriaMercadoFutbol] = useState<'CORNERS' | 'GOLES' | 'TIROS_A_PUERTA'>('CORNERS');
   const [analisis, setAnalisis] = useState<AnalisisFutbolResponse | null>(null);
   const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
+  const [mostrarGuardar, setMostrarGuardar] = useState(false);
+  const [guardandoApuesta, setGuardandoApuesta] = useState(false);
 
   const [h2hPartidos, setH2hPartidos] = useState<PartidoFutbolEstadistico[]>([]);
   const [historialLocal, setHistorialLocal] = useState<PartidoFutbolEstadistico[]>([]);
@@ -85,6 +88,8 @@ export function PaginaFutbol() {
   const [ubicacionVisitante, setUbicacionVisitante] = useState<UbicacionHistorialEquipo>('todos');
   const [cargandoContexto, setCargandoContexto] = useState(false);
   const [errorContexto, setErrorContexto] = useState<string | null>(null);
+  const [equipoLocalIdReal, setEquipoLocalIdReal] = useState<string>('');
+  const [equipoVisitanteIdReal, setEquipoVisitanteIdReal] = useState<string>('');
 
   const historialCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
   const h2hCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
@@ -156,6 +161,29 @@ export function PaginaFutbol() {
     []
   );
 
+  const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
+    if (!analisis || !partidoSeleccionado) return null;
+    const rec = analisis.recomendaciones?.[0];
+    if (!rec) return null;
+
+    return {
+      partido_id: partidoSeleccionado.id,
+      equipo_local: partidoSeleccionado.equipoLocalNombre,
+      equipo_visitante: partidoSeleccionado.equipoVisitanteNombre,
+      fecha_partido: partidoSeleccionado.fechaPartido,
+      mercado: 'COMPLETO',
+      lado: rec.lado,
+      linea: rec.linea,
+      cuota: 1.9,
+      probabilidad_sistema: rec.probabilidad,
+      prediccion_media: analisis.mercadosGoles[rec.mercado]?.media ?? null,
+      prediccion_desviacion: analisis.mercadosGoles[rec.mercado]?.std ?? null,
+      confianza_sistema: 'MEDIA',
+      valor_esperado_individual: rec.valorEsperado ?? null,
+      razones: [{ razon: rec.razon }],
+    };
+  }, [analisis, partidoSeleccionado]);
+
   const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
     try {
       setCargandoContexto(true);
@@ -169,9 +197,14 @@ export function PaginaFutbol() {
         setH2hPartidos([]);
         setHistorialLocal([]);
         setHistorialVisitante([]);
+        setEquipoLocalIdReal('');
+        setEquipoVisitanteIdReal('');
         setErrorContexto('No se pudo resolver el ID real de los equipos para H2H/historial.');
         return;
       }
+
+      setEquipoLocalIdReal(localId);
+      setEquipoVisitanteIdReal(visitanteId);
 
       const keyH2h = `${localId}|${visitanteId}|${limiteH2h}`;
       const keyLocal = `${localId}|${limiteLocal}|${ubicacionLocal}`;
@@ -234,6 +267,29 @@ export function PaginaFutbol() {
       void cargarContexto(partidoSeleccionado);
     }
   }, [cargarContexto, partidoSeleccionado, recargar]);
+
+  const guardarApuesta = useCallback(async (stake: number) => {
+    if (!analisis?.recomendaciones?.[0] || !partidoSeleccionado) return;
+    const rec = analisis.recomendaciones[0];
+    try {
+      setGuardandoApuesta(true);
+      await crearApuesta({
+        partidoId: partidoSeleccionado.id,
+        mercado: rec.mercado as TipoMercadoFutbol,
+        lado: rec.lado,
+        linea: rec.linea,
+        cuota: 1.9,
+        stake,
+        notas: 'Guardado desde flujo unificado fútbol',
+      });
+      setMostrarGuardar(false);
+      agregarToast({ titulo: 'Apuesta guardada', mensaje: 'Se registró en bitácora.', tipo: 'success' });
+    } catch (error) {
+      agregarToast({ titulo: 'Error al guardar', mensaje: error instanceof Error ? error.message : 'No se pudo guardar', tipo: 'error' });
+    } finally {
+      setGuardandoApuesta(false);
+    }
+  }, [agregarToast, analisis, partidoSeleccionado]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -313,46 +369,27 @@ export function PaginaFutbol() {
             {analisis && !cargandoAnalisis && (
               <div className="space-y-4">
                 <ResultadoAnalisis
-                  resultado={adaptarAnalisisFutbolAResultadoAnalisis(analisis)}
+                  resultado={adaptarAnalisisFutbolAResultadoAnalisis(analisis, { h2h: h2hPartidos, historialLocal, historialVisitante })}
                   advertencias={[]}
                   seleccionUsuario={analisis.recomendaciones?.[0]
                     ? { lado: analisis.recomendaciones[0].lado, linea: analisis.recomendaciones[0].linea }
                     : null}
-                  equipoLocalId={partidoSeleccionado?.equipoLocal}
-                  equipoVisitanteId={partidoSeleccionado?.equipoVisitante}
+                  equipoLocalId={equipoLocalIdReal || undefined}
+                  equipoVisitanteId={equipoVisitanteIdReal || undefined}
+                  onGuardar={() => setMostrarGuardar(true)}
                 />
 
-                {cargandoContexto ? (
+                {cargandoContexto && (
                   <Tarjeta className="flex items-center justify-center py-12">
                     <Spinner tamano="lg" texto="Cargando contexto del partido..." centrado />
                   </Tarjeta>
-                ) : (
-                  <>
-                    <PanelH2HFutbol partidos={h2hPartidos} limite={limiteH2h} onCambiarLimite={setLimiteH2h} />
-                    {partidoSeleccionado && (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <PanelHistorialEquipoFutbol
-                          equipoId={String(partidoSeleccionado.equipoLocal)}
-                          equipoNombre={partidoSeleccionado.equipoLocalNombre}
-                          partidos={historialLocal}
-                          limite={limiteLocal}
-                          onCambiarLimite={setLimiteLocal}
-                          ubicacion={ubicacionLocal}
-                          onCambiarUbicacion={setUbicacionLocal}
-                        />
-                        <PanelHistorialEquipoFutbol
-                          equipoId={String(partidoSeleccionado.equipoVisitante)}
-                          equipoNombre={partidoSeleccionado.equipoVisitanteNombre}
-                          partidos={historialVisitante}
-                          limite={limiteVisitante}
-                          onCambiarLimite={setLimiteVisitante}
-                          ubicacion={ubicacionVisitante}
-                          onCambiarUbicacion={setUbicacionVisitante}
-                        />
-                      </div>
-                    )}
-                  </>
                 )}
+              </div>
+            )}
+
+            {analisis && !cargandoAnalisis && (
+              <div className="mt-4">
+                <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
               </div>
             )}
 
@@ -364,6 +401,28 @@ export function PaginaFutbol() {
           </div>
         </div>
       </main>
+
+      {analisis?.recomendaciones?.[0] && partidoSeleccionado && (
+        <ModalGuardarApuestaFutbol
+          mostrar={mostrarGuardar}
+          onCerrar={() => setMostrarGuardar(false)}
+          onGuardar={guardarApuesta}
+          cargando={guardandoApuesta}
+          partidoInfo={{
+            equipoLocal: partidoSeleccionado.equipoLocalNombre,
+            equipoVisitante: partidoSeleccionado.equipoVisitanteNombre,
+            fecha: partidoSeleccionado.fechaPartido,
+          }}
+          recomendacion={{
+            mercado: analisis.recomendaciones[0].mercado as TipoMercadoFutbol,
+            lado: analisis.recomendaciones[0].lado,
+            linea: analisis.recomendaciones[0].linea,
+            cuota: 1.9,
+            probabilidad: analisis.recomendaciones[0].probabilidad,
+            confianza: analisis.recomendaciones[0].confianza,
+          }}
+        />
+      )}
 
       <footer className="border-t border-neon-cyan/10 bg-futurista-negro/80 backdrop-blur-sm">
         <div className="contenedor py-4">

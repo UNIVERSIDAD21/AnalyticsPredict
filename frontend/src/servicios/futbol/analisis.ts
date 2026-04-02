@@ -169,6 +169,8 @@ export async function analizarPartido(
     const mercadosDisparos = data.mercados_disparos || data.mercadosDisparos || {};
     const recomendaciones = data.recomendaciones || [];
 
+    const pg = data.prediccion_ganador || data.prediccionGanador;
+
     return {
       exito: Boolean(data.exito ?? true),
       partido: transformarPartidoResumen(data.partido || {}),
@@ -183,6 +185,18 @@ export async function analizarPartido(
         : [],
       modeloVersion: String(data.modelo_version || data.modeloVersion || '1.0.0'),
       calibradoresActivos: Number(data.calibradores_activos || data.calibradoresActivos || 0),
+      prediccionGanador: pg && typeof pg === 'object'
+        ? {
+            probLocal: Number((pg as Record<string, unknown>).prob_local ?? (pg as Record<string, unknown>).probLocal ?? 0),
+            probEmpate: Number((pg as Record<string, unknown>).prob_empate ?? (pg as Record<string, unknown>).probEmpate ?? 0),
+            probVisitante: Number((pg as Record<string, unknown>).prob_visitante ?? (pg as Record<string, unknown>).probVisitante ?? 0),
+            ganadorProbable: String((pg as Record<string, unknown>).ganador_probable ?? (pg as Record<string, unknown>).ganadorProbable ?? 'LOCAL') as 'LOCAL' | 'EMPATE' | 'VISITANTE',
+            marcadorProbable: String((pg as Record<string, unknown>).marcador_probable ?? (pg as Record<string, unknown>).marcadorProbable ?? ''),
+            razones: Array.isArray((pg as Record<string, unknown>).razones)
+              ? ((pg as Record<string, unknown>).razones as string[])
+              : [],
+          }
+        : undefined,
     };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
