@@ -25,8 +25,8 @@ import {
   PanelH2HFutbol,
   PanelHistorialEquipoFutbol,
   ModalGuardarApuestaFutbol,
-  ResultadoAnalisis,
 } from '../organismos';
+import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, PanelDepthPremium } from '../moleculas';
 import { Boton, Spinner, Tarjeta } from '../atomos';
 import {
@@ -495,31 +495,56 @@ export function AnalisisPartidoFutbol() {
       <Encabezado />
 
       <main className="flex-1 contenedor py-6 lg:py-8 space-y-6">
-        {/* Header con navegacion */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => navegar('/futbol')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
-                       border border-neon-cyan/30 bg-futurista-oscuro/50
-                       text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50
-                       transition-all duration-200 text-sm font-medium self-start"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Volver a partidos</span>
-          </button>
-
-          <div className="flex items-center gap-3">
-            <Boton
-              variante="secundario"
-              tamano="sm"
-              iconoInicio={<RefreshCw size={16} />}
-              onClick={handleActualizarContexto}
-              cargando={cargandoContexto}
+        {/* Header con navegación + selector visual de deporte */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={() => navegar('/futbol')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                         border border-neon-cyan/30 bg-futurista-oscuro/50
+                         text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50
+                         transition-all duration-200 text-sm font-medium self-start"
             >
-              Actualizar datos
-            </Boton>
+              <ArrowLeft className="w-4 h-4" />
+              <span>Volver a partidos</span>
+            </button>
+
+            <div className="flex items-center gap-2 rounded-xl border border-neon-cyan/20 bg-futurista-negro/50 p-1">
+              <button
+                type="button"
+                onClick={() => navegar('/app')}
+                className="px-3 py-1.5 rounded-md text-xs font-semibold text-texto-secundario hover:text-texto-principal hover:bg-futurista-oscuro/70"
+              >
+                Baloncesto
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded-md text-xs font-semibold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40"
+              >
+                Fútbol
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Boton
+                variante="secundario"
+                tamano="sm"
+                iconoInicio={<RefreshCw size={16} />}
+                onClick={handleActualizarContexto}
+                cargando={cargandoContexto}
+              >
+                Actualizar datos
+              </Boton>
+            </div>
           </div>
+
+          <Tarjeta className="border border-neon-magenta/25 bg-gradient-to-r from-neon-cyan/5 via-transparent to-neon-magenta/5">
+            <p className="text-xs uppercase tracking-wider text-neon-cyan font-semibold">Análisis unificado</p>
+            <p className="text-sm text-texto-secundario mt-1">
+              Esta vista usa la misma estructura visual detallada de NBA para mostrar el análisis de fútbol.
+            </p>
+          </Tarjeta>
         </div>
 
         {/* Error de partido */}
