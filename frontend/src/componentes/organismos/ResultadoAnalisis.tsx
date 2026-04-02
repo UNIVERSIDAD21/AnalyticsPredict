@@ -138,6 +138,7 @@ export function ResultadoAnalisis({
   onNavegarlEquipo,
 }: PropsResultadoAnalisis) {
   const mercado = resultado.metadata?.mercado as string;
+  const esFutbol = resultado.metadata?.deporte === 'futbol';
   const configConfianza = obtenerConfigConfianza(resultado.nivel_confianza);
 
   // Obtener datos de probabilidad según el mercado
@@ -151,7 +152,7 @@ export function ResultadoAnalisis({
   const prediccionGanador = mercado === 'COMPLETO'
     ? resultado.prediccion_juego_completo
     : (mercado ? resultado.predicciones[mercado] : null);
-  const etiquetaGanador = mercado === 'COMPLETO' ? 'Ganador del partido' : 'Ganador del cuarto';
+  const etiquetaGanador = mercado === 'COMPLETO' ? 'Ganador del partido' : (esFutbol ? 'Ganador estimado' : 'Ganador del cuarto');
   const nombreGanador = prediccionGanador?.ganador_probable === 'equipo'
     ? resultado.equipo_nombre_completo
     : resultado.rival_nombre_completo;
@@ -203,7 +204,7 @@ export function ResultadoAnalisis({
           </div>
           <div className="mt-2 inline-block px-4 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30">
             <span className="text-sm text-neon-cyan font-mono">
-              {mercado === 'COMPLETO' ? 'JUEGO COMPLETO' : `CUARTO ${mercado}`}
+              {mercado === 'COMPLETO' ? 'JUEGO COMPLETO' : (esFutbol ? `PERÍODO ${mercado}` : `CUARTO ${mercado}`)}
             </span>
           </div>
         </div>

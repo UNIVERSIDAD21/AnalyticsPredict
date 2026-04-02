@@ -1812,8 +1812,12 @@ def _modo_estricto_futbol_activo(cursor, minimo_predicciones: int = 100) -> bool
             """
         )
         row = cursor.fetchone()
-        total = int(row[0] or 0)
-        resueltas = int(row[1] or 0)
+        if isinstance(row, dict):
+            total = int(row.get("total") or 0)
+            resueltas = int(row.get("resueltas") or 0)
+        else:
+            total = int(row[0] or 0)
+            resueltas = int(row[1] or 0)
         return total >= minimo_predicciones and resueltas == 0
     except Exception:
         logger.exception("No se pudo evaluar modo estricto de fútbol")
@@ -2032,11 +2036,12 @@ def _registrar_predicciones_futbol(
             %s::mercado_futbol, %s, %s, %s, %s,
             %s, %s, %s, %s, %s, %s, %s
         )
+        ON CONFLICT DO NOTHING
         """,
         filas,
     )
 
-    return len(filas)
+    return cursor.rowcount if cursor.rowcount is not None and cursor.rowcount >= 0 else len(filas)
 
 
 @router.post(
@@ -2746,6 +2751,24 @@ async def analizar_partido(
                         len(recomendaciones),
                     )
 
+                # Priorizar selección explícita del usuario (contrato canónico)
+                if request.mercado_objetivo:
+                    mercado_obj = str(request.mercado_objetivo).upper()
+                    lado_obj = str(request.lado_objetivo).upper() if request.lado_objetivo else None
+                    linea_obj = float(request.linea_objetivo) if request.linea_objetivo is not None else None
+
+                    def _score_objetivo(rec):
+                        score = 0
+                        if str(rec.mercado).upper() == mercado_obj:
+                            score += 100
+                        if lado_obj and str(rec.lado).upper() == lado_obj:
+                            score += 30
+                        if linea_obj is not None and abs(float(rec.linea) - linea_obj) < 1e-9:
+                            score += 20
+                        return score
+
+                    recomendaciones.sort(key=lambda r: (_score_objetivo(r), float(r.score or r.probabilidad)), reverse=True)
+
                 # 5a-bis. Gate global de modo estricto (fútbol)
                 if _modo_estricto_futbol_activo(cursor):
                     recomendaciones = []
@@ -2913,6 +2936,9 @@ async def analizar_partido(
                         marcador_probable=marcador_probable,
                         razones=razones_1x2,
                     ),
+                    mercado_objetivo=request.mercado_objetivo,
+                    lado_objetivo=request.lado_objetivo,
+                    linea_objetivo=request.linea_objetivo,
                 )
 
     except HTTPException:

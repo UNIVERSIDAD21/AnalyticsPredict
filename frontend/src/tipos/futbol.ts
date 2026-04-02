@@ -259,6 +259,20 @@ export interface RecomendacionApuesta {
   confianza: NivelConfianza;
   valorEsperado?: number;
   razon: string;
+  pRaw?: number;
+  pCalibrada?: number;
+  edgeReal?: number;
+  score?: number;
+  sizing?: number;
+  cuota?: number;
+  cuotaOver?: number;
+  cuotaUnder?: number;
+  devigMetodo?: string;
+  devigOverround?: number;
+  devigPMktFair?: number;
+  advertencias?: string[];
+  fuente?: string;
+  metadataEnsemble?: Record<string, unknown>;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -274,6 +288,10 @@ export interface AnalisisFutbolRequest {
   lineasGoles?: number[]; // Default: [1.5, 2.5, 3.5]
   lineasDisparos?: number[]; // Default: [22.5, 24.5, 26.5]
   h2hLimite?: number;
+  mercadoObjetivo?: TipoMercadoFutbol;
+  ladoObjetivo?: 'OVER' | 'UNDER';
+  lineaObjetivo?: number;
+  cuotasPorLinea?: Record<string, { cuota_over?: number; cuota_under?: number }>;
 }
 
 
@@ -304,6 +322,9 @@ export interface AnalisisFutbolResponse {
   modeloVersion: string;
   calibradoresActivos: number;
   prediccionGanador?: PrediccionGanadorFutbol;
+  mercadoObjetivo?: TipoMercadoFutbol;
+  ladoObjetivo?: 'OVER' | 'UNDER';
+  lineaObjetivo?: number;
 }
 
 // ══════════════════════════════════════════════════════════════

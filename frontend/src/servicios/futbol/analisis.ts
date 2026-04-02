@@ -111,6 +111,22 @@ function transformarRecomendacion(
     confianza: (data.confianza as NivelConfianza) || 'MEDIA',
     valorEsperado: data.valor_esperado !== undefined ? Number(data.valor_esperado) : undefined,
     razon: String(data.razon || ''),
+    pRaw: data.p_raw !== undefined ? Number(data.p_raw) : undefined,
+    pCalibrada: data.p_calibrada !== undefined ? Number(data.p_calibrada) : undefined,
+    edgeReal: data.edge_real !== undefined ? Number(data.edge_real) : undefined,
+    score: data.score !== undefined ? Number(data.score) : undefined,
+    sizing: data.sizing !== undefined ? Number(data.sizing) : undefined,
+    cuota: data.cuota !== undefined ? Number(data.cuota) : undefined,
+    cuotaOver: data.cuota_over !== undefined ? Number(data.cuota_over) : undefined,
+    cuotaUnder: data.cuota_under !== undefined ? Number(data.cuota_under) : undefined,
+    devigMetodo: data.devig_metodo !== undefined ? String(data.devig_metodo) : undefined,
+    devigOverround: data.devig_overround !== undefined ? Number(data.devig_overround) : undefined,
+    devigPMktFair: data.devig_p_mkt_fair !== undefined ? Number(data.devig_p_mkt_fair) : undefined,
+    advertencias: Array.isArray(data.advertencias) ? data.advertencias as string[] : undefined,
+    fuente: data.fuente !== undefined ? String(data.fuente) : undefined,
+    metadataEnsemble: (data.metadata_ensemble && typeof data.metadata_ensemble === 'object')
+      ? data.metadata_ensemble as Record<string, unknown>
+      : undefined,
   };
 }
 
@@ -159,6 +175,18 @@ export async function analizarPartido(
     if (request.h2hLimite !== undefined) {
       body.h2h_limite = request.h2hLimite;
     }
+    if (request.mercadoObjetivo) {
+      body.mercado_objetivo = request.mercadoObjetivo;
+    }
+    if (request.ladoObjetivo) {
+      body.lado_objetivo = request.ladoObjetivo;
+    }
+    if (request.lineaObjetivo !== undefined) {
+      body.linea_objetivo = request.lineaObjetivo;
+    }
+    if (request.cuotasPorLinea) {
+      body.cuotas_por_linea = request.cuotasPorLinea;
+    }
 
     const respuesta = await clienteAPI.post('/api/futbol/analizar', body);
     const data = respuesta.data;
@@ -197,6 +225,11 @@ export async function analizarPartido(
               : [],
           }
         : undefined,
+      mercadoObjetivo: (data.mercado_objetivo || data.mercadoObjetivo) as TipoMercadoFutbol | undefined,
+      ladoObjetivo: (data.lado_objetivo || data.ladoObjetivo) as 'OVER' | 'UNDER' | undefined,
+      lineaObjetivo: data.linea_objetivo !== undefined
+        ? Number(data.linea_objetivo)
+        : (data.lineaObjetivo !== undefined ? Number(data.lineaObjetivo) : undefined),
     };
   } catch (error) {
     throw new Error(extraerMensajeError(error));

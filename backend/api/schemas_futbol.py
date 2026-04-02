@@ -199,6 +199,9 @@ class AnalisisRequest(BaseModel):
         default=[22.5, 24.5, 26.5],
         description="Líneas a analizar para disparos"
     )
+    mercado_objetivo: Optional[str] = Field(default=None, description="Mercado específico seleccionado por el usuario")
+    lado_objetivo: Optional[Literal["OVER", "UNDER"]] = Field(default=None)
+    linea_objetivo: Optional[float] = Field(default=None)
 
     @field_validator("lineas_corners", "lineas_goles", "lineas_disparos", mode="before")
     @classmethod
@@ -278,6 +281,9 @@ class AnalisisResponse(BaseModel):
     modelo_version: str
     calibradores_activos: int = 0
     prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
+    mercado_objetivo: Optional[str] = None
+    lado_objetivo: Optional[Literal["OVER", "UNDER"]] = None
+    linea_objetivo: Optional[float] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

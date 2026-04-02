@@ -72,6 +72,7 @@ export function PaginaFutbol() {
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
   const [categoriaMercadoFutbol, setCategoriaMercadoFutbol] = useState<'CORNERS' | 'GOLES' | 'TIROS_A_PUERTA'>('CORNERS');
+  const [alcanceMercadoFutbol, setAlcanceMercadoFutbol] = useState<'TOTAL' | 'LOCAL' | 'VISITANTE'>('TOTAL');
   const [analisis, setAnalisis] = useState<AnalisisFutbolResponse | null>(null);
   const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
@@ -161,6 +162,23 @@ export function PaginaFutbol() {
     []
   );
 
+  const resolverMercadoObjetivo = useCallback((periodo: Mercado): TipoMercadoFutbol => {
+    const periodoTag = periodo === 'Q1' ? '1T' : (periodo === 'Q2' ? '2T' : 'FT');
+    if (categoriaMercadoFutbol === 'CORNERS') {
+      if (alcanceMercadoFutbol === 'LOCAL') return `CORNERS_LOCAL_${periodoTag}` as TipoMercadoFutbol;
+      if (alcanceMercadoFutbol === 'VISITANTE') return `CORNERS_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
+      return `CORNERS_${periodoTag}` as TipoMercadoFutbol;
+    }
+    if (categoriaMercadoFutbol === 'GOLES') {
+      if (alcanceMercadoFutbol === 'LOCAL') return `GOLES_LOCAL_${periodoTag}` as TipoMercadoFutbol;
+      if (alcanceMercadoFutbol === 'VISITANTE') return `GOLES_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
+      return `GOLES_${periodoTag}` as TipoMercadoFutbol;
+    }
+    if (alcanceMercadoFutbol === 'LOCAL') return 'DISPAROS_LOCAL_ARCO_FT';
+    if (alcanceMercadoFutbol === 'VISITANTE') return 'DISPAROS_VISITANTE_ARCO_FT';
+    return 'DISPAROS_ARCO_FT';
+  }, [alcanceMercadoFutbol, categoriaMercadoFutbol]);
+
   const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
     if (!analisis || !partidoSeleccionado) return null;
     const rec = analisis.recomendaciones?.[0];
@@ -174,11 +192,13 @@ export function PaginaFutbol() {
       mercado: 'COMPLETO',
       lado: rec.lado,
       linea: rec.linea,
-      cuota: 1.9,
+      cuota: rec.cuota ?? rec.cuotaOver ?? rec.cuotaUnder ?? 0,
+      cuota_over: rec.cuotaOver ?? null,
+      cuota_under: rec.cuotaUnder ?? null,
       probabilidad_sistema: rec.probabilidad,
       prediccion_media: analisis.mercadosGoles[rec.mercado]?.media ?? null,
       prediccion_desviacion: analisis.mercadosGoles[rec.mercado]?.std ?? null,
-      confianza_sistema: 'MEDIA',
+      confianza_sistema: rec.confianza === 'MUY_ALTA' ? 'ALTA' : (rec.confianza === 'MUY_BAJA' ? 'BAJA' : (rec.confianza as 'ALTA' | 'MEDIA' | 'BAJA')),
       valor_esperado_individual: rec.valorEsperado ?? null,
       razones: [{ razon: rec.razon }],
     };
@@ -244,12 +264,28 @@ export function PaginaFutbol() {
       setPartidoSeleccionadoId(partidoIdObjetivo);
     }
 
+    const periodo = (peticion.mercado || 'COMPLETO') as Mercado;
+    const mercadoObjetivo = resolverMercadoObjetivo(periodo);
+    const lineaObjetivo = peticion.linea ?? 0;
+    const cuotasPorLinea = (lineaObjetivo > 0 && (peticion.cuota_over || peticion.cuota_under))
+      ? {
+          [`${mercadoObjetivo}|${lineaObjetivo}`]: {
+            cuota_over: peticion.cuota_over,
+            cuota_under: peticion.cuota_under,
+          },
+        }
+      : undefined;
+
     try {
       setCargandoAnalisis(true);
       setErrorAnalisis(null);
       const data = await analizarPartido({
         partidoId: partidoIdObjetivo,
         h2hLimite: limiteH2h,
+        mercadoObjetivo,
+        ladoObjetivo: peticion.lado,
+        lineaObjetivo,
+        cuotasPorLinea,
       });
       setAnalisis(data);
     } catch (error) {
@@ -257,7 +293,7 @@ export function PaginaFutbol() {
     } finally {
       setCargandoAnalisis(false);
     }
-  }, [partidoSeleccionadoId, limiteH2h]);
+  }, [limiteH2h, partidoSeleccionadoId, resolverMercadoObjetivo]);
 
   const recargarTodo = useCallback(() => {
     historialCacheRef.current.clear();
@@ -278,7 +314,7 @@ export function PaginaFutbol() {
         mercado: rec.mercado as TipoMercadoFutbol,
         lado: rec.lado,
         linea: rec.linea,
-        cuota: 1.9,
+        cuota: rec.cuota ?? rec.cuotaOver ?? rec.cuotaUnder ?? 0,
         stake,
         notas: 'Guardado desde flujo unificado fútbol',
       });
@@ -336,6 +372,18 @@ export function PaginaFutbol() {
                   <option value="CORNERS">Corners</option>
                   <option value="GOLES">Goles</option>
                   <option value="TIROS_A_PUERTA">Tiros a puerta</option>
+                </select>
+                <label className="block mt-3 text-xs font-semibold uppercase tracking-wider text-texto-secundario">
+                  Alcance
+                </label>
+                <select
+                  value={alcanceMercadoFutbol}
+                  onChange={(e) => setAlcanceMercadoFutbol(e.target.value as 'TOTAL' | 'LOCAL' | 'VISITANTE')}
+                  className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+                >
+                  <option value="TOTAL">Total</option>
+                  <option value="LOCAL">Local</option>
+                  <option value="VISITANTE">Visitante</option>
                 </select>
               </Tarjeta>
 
@@ -417,7 +465,7 @@ export function PaginaFutbol() {
             mercado: analisis.recomendaciones[0].mercado as TipoMercadoFutbol,
             lado: analisis.recomendaciones[0].lado,
             linea: analisis.recomendaciones[0].linea,
-            cuota: 1.9,
+            cuota: analisis.recomendaciones[0].cuota ?? analisis.recomendaciones[0].cuotaOver ?? analisis.recomendaciones[0].cuotaUnder ?? 0,
             probabilidad: analisis.recomendaciones[0].probabilidad,
             confianza: analisis.recomendaciones[0].confianza,
           }}
