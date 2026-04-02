@@ -219,7 +219,7 @@ def _recomendaciones_ml_a_api(
 def _prediccion_ganador_desde_mercados_ml(
     mercados_goles_ml: Dict[str, Any],
 ) -> Optional[ProbabilidadesGanadorFutbol]:
-    """Deriva 1X2 con Poisson usando GOLES_LOCAL_FT y GOLES_VISITANTE_FT del motor ML."""
+    """Deriva 1X2 con Dixon-Coles usando GOLES_LOCAL_FT y GOLES_VISITANTE_FT del motor ML."""
     try:
         goles_local_ft = mercados_goles_ml.get("GOLES_LOCAL_FT")
         goles_visitante_ft = mercados_goles_ml.get("GOLES_VISITANTE_FT")
@@ -228,7 +228,7 @@ def _prediccion_ganador_desde_mercados_ml(
 
         media_local = float(goles_local_ft.media)
         media_visitante = float(goles_visitante_ft.media)
-        prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_poisson(
+        prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_dixon_coles(
             media_local,
             media_visitante,
         )
@@ -246,7 +246,7 @@ def _prediccion_ganador_desde_mercados_ml(
             marcador_probable=marcador_probable,
             razones=[
                 f"Estimación ML de goles FT: local={media_local:.2f}, visitante={media_visitante:.2f}.",
-                f"1X2 derivado con Poisson sobre medias ML. Marcador más probable: {marcador_probable}.",
+                f"1X2 derivado con Dixon-Coles sobre medias ML. Marcador más probable: {marcador_probable}.",
             ],
         )
     except Exception:
@@ -295,17 +295,51 @@ def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, flo
 
 
 
-def _calcular_1x2_poisson(goles_local: float, goles_visitante: float, max_goles: int = 10) -> tuple[float, float, float, str]:
-    """Calcula probabilidades 1X2 con Poisson independiente."""
-    pl = np.array([stats.poisson.pmf(i, max(goles_local, 0.05)) for i in range(max_goles + 1)])
-    pv = np.array([stats.poisson.pmf(i, max(goles_visitante, 0.05)) for i in range(max_goles + 1)])
+def _tau_dixon_coles(x: int, y: int, lambda_local: float, lambda_visitante: float, rho: float) -> float:
+    """Factor tau de Dixon-Coles para corregir correlación en marcadores bajos."""
+    if x == 0 and y == 0:
+        return max(0.01, 1.0 - (lambda_local * lambda_visitante * rho))
+    if x == 0 and y == 1:
+        return max(0.01, 1.0 + (lambda_local * rho))
+    if x == 1 and y == 0:
+        return max(0.01, 1.0 + (lambda_visitante * rho))
+    if x == 1 and y == 1:
+        return max(0.01, 1.0 - rho)
+    return 1.0
+
+
+def _calcular_1x2_dixon_coles(
+    goles_local: float,
+    goles_visitante: float,
+    max_goles: int = 10,
+    rho: float = -0.06,
+) -> tuple[float, float, float, str]:
+    """Calcula probabilidades 1X2 con Poisson corregido por Dixon-Coles."""
+    lambda_local = max(goles_local, 0.05)
+    lambda_visitante = max(goles_visitante, 0.05)
+
+    pl = np.array([stats.poisson.pmf(i, lambda_local) for i in range(max_goles + 1)])
+    pv = np.array([stats.poisson.pmf(i, lambda_visitante) for i in range(max_goles + 1)])
     matriz = np.outer(pl, pv)
+
+    # Corrección Dixon-Coles en marcadores bajos
+    for x in range(min(2, max_goles + 1)):
+        for y in range(min(2, max_goles + 1)):
+            matriz[x, y] *= _tau_dixon_coles(x, y, lambda_local, lambda_visitante, rho)
+
+    # Renormalizar
+    total_prob = float(matriz.sum())
+    if total_prob > 0:
+        matriz = matriz / total_prob
+
     prob_local = float(np.tril(matriz, -1).sum())
     prob_empate = float(np.trace(matriz))
     prob_visitante = float(np.triu(matriz, 1).sum())
+
     total = prob_local + prob_empate + prob_visitante
     if total > 0:
         prob_local, prob_empate, prob_visitante = prob_local / total, prob_empate / total, prob_visitante / total
+
     score_idx = np.unravel_index(np.argmax(matriz), matriz.shape)
     marcador = f"{score_idx[0]}-{score_idx[1]}"
     return prob_local, prob_empate, prob_visitante, marcador
@@ -1099,12 +1133,51 @@ def _agregar_razones_a_mercados(
             )
             prob.razones = razones
 
-def _calcular_probabilidad_over(media: float, std: float, linea: float) -> float:
+def _calcular_probabilidad_over_normal(media: float, std: float, linea: float) -> float:
     """Calcula P(over) usando distribución normal."""
     if std <= 0:
         std = 1.0
     z = (linea - media) / std
     return 1.0 - stats.norm.cdf(z)
+
+
+def _calcular_probabilidad_over_poisson(media: float, linea: float) -> float:
+    """Calcula P(over) para conteos discretos usando Poisson."""
+    lam = max(float(media), 0.05)
+    k = int(np.floor(linea))
+    return float(1.0 - stats.poisson.cdf(k, lam))
+
+
+def _calcular_probabilidad_over_nbinom(media: float, std: float, linea: float) -> float:
+    """Calcula P(over) usando Negative Binomial ajustada por media y varianza."""
+    mu = max(float(media), 0.05)
+    var = max(float(std) ** 2, mu + 1e-6)
+
+    # Si no hay sobredispersión suficiente, volver a Poisson
+    if var <= mu + 1e-6:
+        return _calcular_probabilidad_over_poisson(mu, linea)
+
+    r = (mu ** 2) / (var - mu)
+    r = max(r, 1e-3)
+    p = r / (r + mu)
+    p = float(min(max(p, 1e-6), 1.0 - 1e-6))
+    k = int(np.floor(linea))
+    return float(1.0 - stats.nbinom.cdf(k, r, p))
+
+
+def _calcular_probabilidad_over(
+    media: float,
+    std: float,
+    linea: float,
+    distribucion: str = "normal",
+) -> float:
+    """Calcula P(over) según la distribución configurada para el mercado."""
+    dist = str(distribucion or "normal").lower()
+    if dist == "poisson":
+        return _calcular_probabilidad_over_poisson(media, linea)
+    if dist in {"nbinom", "negative_binomial", "neg_binomial"}:
+        return _calcular_probabilidad_over_nbinom(media, std, linea)
+    return _calcular_probabilidad_over_normal(media, std, linea)
 
 
 def _determinar_confianza(
@@ -1129,6 +1202,7 @@ def _generar_predicciones_mercado(
     std: float,
     lineas: List[float],
     calibrador: Optional[Any] = None,
+    distribucion: str = "normal",
 ) -> PrediccionMercado:
     """Genera predicciones para un mercado específico."""
     lineas_dict = {}
@@ -1141,7 +1215,7 @@ def _generar_predicciones_mercado(
         factor_conservador = 0.92
 
     for linea in lineas:
-        prob_over_raw = _calcular_probabilidad_over(media, std, linea)
+        prob_over_raw = _calcular_probabilidad_over(media, std, linea, distribucion=distribucion)
         prob_over_raw = 0.5 + (prob_over_raw - 0.5) * factor_conservador
         prob_over_raw = float(max(0.02, min(0.98, prob_over_raw)))
         prob_under_raw = 1.0 - prob_over_raw
@@ -2080,31 +2154,31 @@ async def analizar_partido(
                 # Mercados de Corners
                 mercados_corners = {
                     "CORNERS_FT": _generar_predicciones_mercado(
-                        "CORNERS_FT", corners_total, corners_std, lineas_corners
+                        "CORNERS_FT", corners_total, corners_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_1T": _generar_predicciones_mercado(
-                        "CORNERS_1T", corners_1t_total, corners_1t_std, lineas_corners
+                        "CORNERS_1T", corners_1t_total, corners_1t_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_2T": _generar_predicciones_mercado(
-                        "CORNERS_2T", corners_2t_total, corners_2t_std, lineas_corners
+                        "CORNERS_2T", corners_2t_total, corners_2t_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_LOCAL_FT": _generar_predicciones_mercado(
-                        "CORNERS_LOCAL_FT", corners_local_ft, corners_local_ft_std, lineas_corners
+                        "CORNERS_LOCAL_FT", corners_local_ft, corners_local_ft_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_LOCAL_1T": _generar_predicciones_mercado(
-                        "CORNERS_LOCAL_1T", corners_local_1t, corners_1t_std, lineas_corners
+                        "CORNERS_LOCAL_1T", corners_local_1t, corners_1t_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_LOCAL_2T": _generar_predicciones_mercado(
-                        "CORNERS_LOCAL_2T", corners_local_2t, corners_2t_std, lineas_corners
+                        "CORNERS_LOCAL_2T", corners_local_2t, corners_2t_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_VISITANTE_FT": _generar_predicciones_mercado(
-                        "CORNERS_VISITANTE_FT", corners_visitante_ft, corners_visitante_ft_std, lineas_corners
+                        "CORNERS_VISITANTE_FT", corners_visitante_ft, corners_visitante_ft_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_VISITANTE_1T": _generar_predicciones_mercado(
-                        "CORNERS_VISITANTE_1T", corners_visitante_1t, corners_1t_std, lineas_corners
+                        "CORNERS_VISITANTE_1T", corners_visitante_1t, corners_1t_std, lineas_corners, distribucion="nbinom"
                     ),
                     "CORNERS_VISITANTE_2T": _generar_predicciones_mercado(
-                        "CORNERS_VISITANTE_2T", corners_visitante_2t, corners_2t_std, lineas_corners
+                        "CORNERS_VISITANTE_2T", corners_visitante_2t, corners_2t_std, lineas_corners, distribucion="nbinom"
                     ),
                 }
 
@@ -2142,22 +2216,22 @@ async def analizar_partido(
                 # Mercados de Disparos
                 mercados_disparos = {
                     "DISPAROS_FT": _generar_predicciones_mercado(
-                        "DISPAROS_FT", disparos_total, disparos_std, lineas_disparos
+                        "DISPAROS_FT", disparos_total, disparos_std, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_ARCO_FT": _generar_predicciones_mercado(
-                        "DISPAROS_ARCO_FT", disparos_arco_total, disparos_arco_std, lineas_disparos
+                        "DISPAROS_ARCO_FT", disparos_arco_total, disparos_arco_std, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_LOCAL_FT": _generar_predicciones_mercado(
-                        "DISPAROS_LOCAL_FT", disparos_local, disparos_local_std, lineas_disparos
+                        "DISPAROS_LOCAL_FT", disparos_local, disparos_local_std, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_LOCAL_ARCO_FT": _generar_predicciones_mercado(
-                        "DISPAROS_LOCAL_ARCO_FT", disparos_arco_local, disparos_arco_local_std, lineas_disparos
+                        "DISPAROS_LOCAL_ARCO_FT", disparos_arco_local, disparos_arco_local_std, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_VISITANTE_FT": _generar_predicciones_mercado(
-                        "DISPAROS_VISITANTE_FT", disparos_visitante, disparos_visitante_std, lineas_disparos
+                        "DISPAROS_VISITANTE_FT", disparos_visitante, disparos_visitante_std, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_VISITANTE_ARCO_FT": _generar_predicciones_mercado(
-                        "DISPAROS_VISITANTE_ARCO_FT", disparos_arco_visitante, disparos_arco_visitante_std, lineas_disparos
+                        "DISPAROS_VISITANTE_ARCO_FT", disparos_arco_visitante, disparos_arco_visitante_std, lineas_disparos, distribucion="nbinom"
                     ),
                 }
 
@@ -2276,13 +2350,13 @@ async def analizar_partido(
                     jornada=partido["jornada"],
                 )
 
-                prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_poisson(goles_local, goles_visitante)
+                prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_dixon_coles(goles_local, goles_visitante)
                 ganador_probable = "LOCAL" if prob_local >= prob_empate and prob_local >= prob_visitante else ("VISITANTE" if prob_visitante >= prob_empate else "EMPATE")
                 diferencial_xg = goles_local - goles_visitante
                 razones_1x2 = [
                     f"Diferencial esperado de gol: {diferencial_xg:+.2f} ({partido['equipo_local']} vs {partido['equipo_visitante']}).",
                     f"Probabilidades 1X2: Local {prob_local*100:.1f}%, Empate {prob_empate*100:.1f}%, Visitante {prob_visitante*100:.1f}%.",
-                    f"Marcador más probable según distribución de Poisson: {marcador_probable}.",
+                    f"Marcador más probable según modelo Dixon-Coles: {marcador_probable}.",
                     f"Base ofensiva estimada: xG local {goles_local:.2f} y xG visitante {goles_visitante:.2f}.",
                 ]
 
