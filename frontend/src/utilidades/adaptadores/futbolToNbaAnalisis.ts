@@ -1,5 +1,17 @@
-import type { ResultadoAnalisis, PrediccionCuarto } from '../../tipos/analisis';
-import type { AnalisisFutbolResponse, PrediccionMercadoFutbol } from '../../tipos/futbol';
+import type { ResultadoAnalisis, PrediccionCuarto, NivelConfianza as NivelConfianzaNba, TipoRecomendacion } from '../../tipos/analisis';
+import type { AnalisisFutbolResponse, PrediccionMercadoFutbol, NivelConfianza as NivelConfianzaFutbol } from '../../tipos/futbol';
+
+function normalizarConfianza(confianza?: NivelConfianzaFutbol): NivelConfianzaNba {
+  if (confianza === 'MUY_ALTA' || confianza === 'ALTA') return 'ALTA';
+  if (confianza === 'MUY_BAJA' || confianza === 'BAJA') return 'BAJA';
+  return 'MEDIA';
+}
+
+function mapearRecomendacion(valorEsperado: number): TipoRecomendacion {
+  if (valorEsperado > 0.02) return 'VALOR';
+  if (valorEsperado < 0) return 'EVITAR';
+  return 'JUSTO';
+}
 
 function pickMainMarket(analisis: AnalisisFutbolResponse): PrediccionMercadoFutbol | null {
   const rec = analisis.recomendaciones?.[0];
@@ -75,7 +87,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(analisis: AnalisisFutbol
         descripcion: `Sistema proyecta ${predMain.media_total.toFixed(1)} en mercado principal de fútbol.`,
       },
     ],
-    nivel_confianza: (analisis.recomendaciones?.[0]?.confianza as any) || 'MEDIA',
+    nivel_confianza: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
     factores_confianza: {
       tamano_muestra: 'MEDIO',
       volatilidad: 'MEDIA',
@@ -87,7 +99,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(analisis: AnalisisFutbol
       probabilidad_implicita: 1 / 1.9,
       edge: (analisis.recomendaciones?.[0]?.probabilidad ?? 0.5) - (1 / 1.9),
       valor_esperado: analisis.recomendaciones?.[0]?.valorEsperado ?? 0,
-      recomendacion: ((analisis.recomendaciones?.[0]?.valorEsperado ?? 0) > 0 ? 'APUESTA APTA' : 'NO APOSTAR') as any,
+      recomendacion: mapearRecomendacion(analisis.recomendaciones?.[0]?.valorEsperado ?? 0),
     },
     mejor_apuesta: analisis.recomendaciones?.[0]
       ? {
