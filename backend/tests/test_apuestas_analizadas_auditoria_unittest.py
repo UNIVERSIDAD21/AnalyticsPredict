@@ -64,7 +64,7 @@ class _FakePool:
 class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
     def test_where_base(self):
         where, params = _armar_where_auditoria_futbol()
-        self.assertEqual(where, "deporte = 'futbol'")
+        self.assertEqual(where, "a.deporte = 'futbol'")
         self.assertEqual(params, [])
 
     def test_where_con_todos_los_filtros(self):
@@ -72,8 +72,12 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
             mercado="GOLES_FT",
             fuente="ENSEMBLE",
             devig_metodo="exacto",
-            fecha_desde=datetime(2026, 1, 1, tzinfo=timezone.utc),
-            fecha_hasta=datetime(2026, 1, 31, tzinfo=timezone.utc),
+            creado_desde=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            creado_hasta=datetime(2026, 1, 31, tzinfo=timezone.utc),
+            actualizado_desde=datetime(2026, 2, 1, tzinfo=timezone.utc),
+            actualizado_hasta=datetime(2026, 2, 28, tzinfo=timezone.utc),
+            fecha_partido_desde=datetime(2026, 3, 1, tzinfo=timezone.utc),
+            fecha_partido_hasta=datetime(2026, 3, 31, tzinfo=timezone.utc),
             partido_id="abc",
             modelo_version_id="m1",
             calibrador_id="c1",
@@ -81,19 +85,23 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
             resultado_outcome="GANADA",
         )
         for clause in [
-            "mercado = %s",
-            "decision_fuente = %s",
-            "decision_devig_metodo = %s",
-            "actualizado_en >= %s",
-            "actualizado_en <= %s",
-            "partido_id = %s",
-            "decision_modelo_version_id = %s",
-            "decision_calibrador_id = %s",
-            "estado = %s",
-            "resultado_outcome = %s",
+            "a.mercado = %s",
+            "a.decision_fuente = %s",
+            "a.decision_devig_metodo = %s",
+            "a.creado_en >= %s",
+            "a.creado_en <= %s",
+            "a.actualizado_en >= %s",
+            "a.actualizado_en <= %s",
+            "pf.fecha_partido >= %s",
+            "pf.fecha_partido <= %s",
+            "a.partido_id = %s",
+            "a.decision_modelo_version_id = %s",
+            "a.decision_calibrador_id = %s",
+            "a.estado = %s",
+            "a.resultado_outcome = %s",
         ]:
             self.assertIn(clause, where)
-        self.assertEqual(len(params), 10)
+        self.assertEqual(len(params), 14)
 
     def test_contrato_respuesta_dataset_vacio(self):
         cursor = _FakeCursor(
@@ -103,10 +111,16 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
                 "total_ml": 0,
                 "total_heuristico": 0,
                 "total_ensemble": 0,
+                "total_resueltas": 0,
+                "total_no_resueltas": 0,
                 "edge_promedio": None,
                 "score_promedio": None,
                 "sizing_promedio": None,
                 "ev_promedio": None,
+                "brier_score": None,
+                "log_loss": None,
+                "calibration_gap": None,
+                "hit_rate": None,
             },
             cortes=[],
         )
@@ -143,6 +157,10 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
             "decision_devig_metodo": "exacto",
             "decision_devig_overround": 1.05,
             "decision_devig_p_mkt_fair": 0.57,
+            "decision_cuota": 1.90,
+            "decision_cuota_over": 1.90,
+            "decision_cuota_under": 1.90,
+            "fecha_partido": datetime.now(timezone.utc),
             "creado_en": datetime.now(timezone.utc),
             "actualizado_en": datetime.now(timezone.utc),
         }
@@ -153,10 +171,16 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
                 "total_ml": 0,
                 "total_heuristico": 0,
                 "total_ensemble": 1,
+                "total_resueltas": 0,
+                "total_no_resueltas": 1,
                 "edge_promedio": 0.04,
                 "score_promedio": 72.0,
                 "sizing_promedio": 0.02,
                 "ev_promedio": 0.05,
+                "brier_score": None,
+                "log_loss": None,
+                "calibration_gap": None,
+                "hit_rate": None,
             },
             cortes=[
                 {
@@ -164,10 +188,13 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
                     "fuente": "ENSEMBLE",
                     "devig_metodo": "exacto",
                     "total": 1,
+                    "resueltas": 0,
                     "edge_promedio": 0.04,
                     "score_promedio": 72.0,
                     "sizing_promedio": 0.02,
                     "ev_promedio": 0.05,
+                    "brier_score": None,
+                    "hit_rate": None,
                 }
             ],
         )

@@ -1,8 +1,10 @@
 # P6.3 — Auditoría canónica de decisiones fútbol
 
-## Endpoint nuevo
+## Endpoints
 
-`GET /api/bitacora/apuestas-analizadas/auditoria-futbol`
+- `GET /api/bitacora/apuestas-analizadas/auditoria-futbol` (v2 canónico)
+- `GET /api/bitacora/apuestas-analizadas/auditoria-futbol/legacy` (compatibilidad)
+- `POST /api/bitacora/apuestas-analizadas/auditoria-futbol/backfill` (backfill histórico)
 
 Filtros opcionales:
 - `mercado`

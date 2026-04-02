@@ -973,6 +973,10 @@ class AuditoriaDecisionFutbolItem(BaseModel):
     decision_devig_metodo: Optional[str] = None
     decision_devig_overround: Optional[float] = None
     decision_devig_p_mkt_fair: Optional[float] = None
+    decision_cuota: Optional[float] = None
+    decision_cuota_over: Optional[float] = None
+    decision_cuota_under: Optional[float] = None
+    fecha_partido: Optional[datetime] = None
     creado_en: Optional[datetime] = None
     actualizado_en: Optional[datetime] = None
 
@@ -982,10 +986,13 @@ class AuditoriaDecisionFutbolCorte(BaseModel):
     fuente: str
     devig_metodo: str
     total: int
+    resueltas: int = 0
     edge_promedio: Optional[float] = None
     score_promedio: Optional[float] = None
     sizing_promedio: Optional[float] = None
     ev_promedio: Optional[float] = None
+    brier_score: Optional[float] = None
+    hit_rate: Optional[float] = None
 
 
 class AuditoriaDecisionFutbolResponse(BaseModel):
@@ -999,17 +1006,33 @@ class AuditoriaDecisionFutbolResponse(BaseModel):
     paginacion: dict
 
 
-@router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol', response_model=AuditoriaDecisionFutbolResponse)
+def _exigir_admin_bitacora(usuario_id: UUID) -> None:
+    """Gobernanza explícita: auditoría global es admin-only."""
+    with obtener_pool().connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("SELECT rol FROM usuarios WHERE id = %s", [str(usuario_id)])
+            row = cur.fetchone() or {}
+            rol = str(row.get("rol") or "").lower()
+            if rol != "admin":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Acceso restringido: auditoría de fútbol requiere rol admin.",
+                )
+
+
+@router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol (v2)', response_model=AuditoriaDecisionFutbolResponse)
 async def auditoria_apuestas_analizadas_futbol(
-    response: Response,
-    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     limite: int = 200,
     offset: int = 0,
     mercado: Optional[str] = None,
     fuente: Optional[str] = None,
     devig_metodo: Optional[str] = None,
-    fecha_desde: Optional[datetime] = None,
-    fecha_hasta: Optional[datetime] = None,
+    creado_desde: Optional[datetime] = None,
+    creado_hasta: Optional[datetime] = None,
+    actualizado_desde: Optional[datetime] = None,
+    actualizado_hasta: Optional[datetime] = None,
+    fecha_partido_desde: Optional[datetime] = None,
+    fecha_partido_hasta: Optional[datetime] = None,
     partido_id: Optional[UUID] = None,
     modelo_version_id: Optional[str] = None,
     calibrador_id: Optional[str] = None,
@@ -1017,11 +1040,11 @@ async def auditoria_apuestas_analizadas_futbol(
     resultado_outcome: Optional[str] = None,
     usuario_id: UUID = Depends(obtener_usuario_id),
 ):
-    """Reporte canónico para auditoría/backtesting de decisiones de fútbol sin parsear payload JSON.
+    """Reporte canónico v2 para auditoría/backtesting de decisiones fútbol.
 
-    Gobernanza: requiere usuario autenticado (Depends(obtener_usuario_id)).
+    Gobernanza aplicada: endpoint global admin-only.
     """
-    _ = usuario_id
+    _exigir_admin_bitacora(usuario_id)
     from servicios.apuestas_analizadas import obtener_auditoria_decisiones_futbol
 
     payload = obtener_auditoria_decisiones_futbol(
@@ -1030,16 +1053,57 @@ async def auditoria_apuestas_analizadas_futbol(
         mercado=mercado,
         fuente=fuente,
         devig_metodo=devig_metodo,
-        fecha_desde=fecha_desde,
-        fecha_hasta=fecha_hasta,
+        creado_desde=creado_desde,
+        creado_hasta=creado_hasta,
+        actualizado_desde=actualizado_desde,
+        actualizado_hasta=actualizado_hasta,
+        fecha_partido_desde=fecha_partido_desde,
+        fecha_partido_hasta=fecha_partido_hasta,
         partido_id=str(partido_id) if partido_id else None,
         modelo_version_id=modelo_version_id,
         calibrador_id=calibrador_id,
         estado=estado,
         resultado_outcome=resultado_outcome,
     )
+    return AuditoriaDecisionFutbolResponse(exito=True, **payload)
+
+
+@router.get('/apuestas-analizadas/auditoria-futbol/legacy', summary='Auditoría decisiones fútbol (legacy)')
+async def auditoria_apuestas_analizadas_futbol_legacy(
+    response: Response,
+    limite: int = 200,
+    offset: int = 0,
+    mercado: Optional[str] = None,
+    fuente: Optional[str] = None,
+    devig_metodo: Optional[str] = None,
+    usuario_id: UUID = Depends(obtener_usuario_id),
+):
+    """Compatibilidad legacy explícita (sin response_model v2)."""
+    _exigir_admin_bitacora(usuario_id)
+    from servicios.apuestas_analizadas import obtener_auditoria_decisiones_futbol
+
+    payload = obtener_auditoria_decisiones_futbol(
+        limite=limite,
+        offset=offset,
+        mercado=mercado,
+        fuente=fuente,
+        devig_metodo=devig_metodo,
+    )
     payload_legacy = {"exito": True, **payload}
-    return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas-auditoria-futbol")
+    return _respuesta_contrato(payload_legacy, "legacy", response, "apuestas-analizadas-auditoria-futbol-legacy")
+
+
+@router.post('/apuestas-analizadas/auditoria-futbol/backfill', summary='Backfill canónico de auditoría fútbol')
+async def backfill_auditoria_futbol(
+    limite: int = 5000,
+    usuario_id: UUID = Depends(obtener_usuario_id),
+):
+    """Backfill de columnas canónicas desde payload histórico cuando exista metadata recuperable."""
+    _exigir_admin_bitacora(usuario_id)
+    from servicios.apuestas_analizadas import backfill_decisiones_desde_payload_futbol
+
+    resultado = backfill_decisiones_desde_payload_futbol(limite=limite)
+    return {"exito": True, **resultado}
 
 
 @router.get("/{apuesta_id}", summary="Detalle de apuesta")

@@ -2863,6 +2863,9 @@ async def analizar_partido(
                                 decision_devig_metodo=rec.devig_metodo,
                                 decision_devig_overround=rec.devig_overround,
                                 decision_devig_p_mkt_fair=rec.devig_p_mkt_fair,
+                                decision_cuota=rec.cuota,
+                                decision_cuota_over=rec.cuota_over,
+                                decision_cuota_under=rec.cuota_under,
                             )
                     else:
                         payload = {
