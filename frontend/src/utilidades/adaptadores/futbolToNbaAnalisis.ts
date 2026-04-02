@@ -130,6 +130,44 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     ),
   };
 
+  const mejorApuestaDetalle = recObjetivo ? {
+    mercado: recObjetivo.mercado,
+    lado: recObjetivo.lado,
+    linea: recObjetivo.linea,
+    cuota: recObjetivo.cuota ?? recObjetivo.cuotaOver ?? recObjetivo.cuotaUnder ?? 0,
+    cuota_over: recObjetivo.cuotaOver ?? null,
+    cuota_under: recObjetivo.cuotaUnder ?? null,
+    probabilidad_sistema: recObjetivo.probabilidad,
+    edge_real: recObjetivo.edgeReal ?? null,
+    valor_esperado: recObjetivo.valorEsperado ?? null,
+    prediccion_media: mediaTotal,
+    prediccion_desviacion: stdTotal,
+    distancia_z: 0,
+    p_raw: recObjetivo.pRaw ?? null,
+    p_calibrada: recObjetivo.pCalibrada ?? null,
+    calibrador_usado: null,
+    devig_metodo: recObjetivo.devigMetodo ?? 'no_aplicado',
+    devig_overround: recObjetivo.devigOverround ?? null,
+    devig_p_mkt_raw: 1 / (recObjetivo.cuota ?? 2),
+    devig_p_mkt_fair: recObjetivo.devigPMktFair ?? (1 / (recObjetivo.cuota ?? 2)),
+    devig_advertencias: recObjetivo.advertencias ?? [],
+    edge_raw: null,
+    score_total: recObjetivo.score ?? 0,
+    score_componentes: { ev: 0, edge_real: 0, riesgo_valor: 0, riesgo_referencia: 1, riesgo_normalizado: 0, penalizacion_riesgo: 0, penalizacion_devig: 0 },
+    score_explicacion: recObjetivo.razon || 'Score calculado por backend fútbol',
+    score_penalizaciones: [],
+    kelly_full: recObjetivo.sizing ?? null,
+    kelly_fraccional: recObjetivo.sizing ?? null,
+    fraccion_kelly: recObjetivo.sizing ?? null,
+    stake: null,
+    stake_porcentaje: null,
+    bankroll_momento: null,
+    perfil_riesgo_usado: 'MEDIO',
+    sizing_advertencias: [],
+    sizing_penalizaciones: {},
+    aplicaron_caps: false,
+  } : null;
+
   return {
     equipo: analisis.partido.equipoLocalNombre,
     equipo_nombre_completo: analisis.partido.equipoLocalNombre,
@@ -155,11 +193,11 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       puntaje_total: 0.65,
     },
     analisis_mercado: {
-      cuota: 1.9,
-      probabilidad_implicita: 1 / 1.9,
-      edge: (analisis.recomendaciones?.[0]?.probabilidad ?? 0.5) - (1 / 1.9),
-      valor_esperado: analisis.recomendaciones?.[0]?.valorEsperado ?? 0,
-      recomendacion: mapearRecomendacion(analisis.recomendaciones?.[0]?.valorEsperado ?? 0),
+      cuota: recObjetivo?.cuota ?? recObjetivo?.cuotaOver ?? recObjetivo?.cuotaUnder ?? 1.9,
+      probabilidad_implicita: 1 / (recObjetivo?.cuota ?? recObjetivo?.cuotaOver ?? recObjetivo?.cuotaUnder ?? 1.9),
+      edge: (recObjetivo?.probabilidad ?? 0.5) - (1 / (recObjetivo?.cuota ?? recObjetivo?.cuotaOver ?? recObjetivo?.cuotaUnder ?? 1.9)),
+      valor_esperado: recObjetivo?.valorEsperado ?? 0,
+      recomendacion: mapearRecomendacion(recObjetivo?.valorEsperado ?? 0),
     },
     mejor_apuesta: recObjetivo
       ? {
@@ -173,6 +211,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
           distancia_z: 0,
         }
       : null,
+    mejor_apuesta_detalle: mejorApuestaDetalle as ResultadoAnalisis['mejor_apuesta_detalle'],
     es_en_vivo: false,
     cuartos_reales: {},
     metadata: {

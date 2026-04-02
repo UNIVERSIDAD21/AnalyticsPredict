@@ -454,7 +454,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           11. HISTORIAL DETALLADO
           ═══════════════════════════════════════════════════════════ */}
-      {equipoLocalId && equipoVisitanteId && linea > 0 && mercado && (
+      {!esFutbol && equipoLocalId && equipoVisitanteId && linea > 0 && mercado && (
         <SeccionHistorialDetallado
           equipoLocalId={equipoLocalId}
           equipoLocalNombre={resultado.equipo_nombre_completo}
