@@ -58,6 +58,57 @@ def _actualizar_usuario_desde_onboarding(user_id: str, perfil: dict) -> None:
             )
 
 
+def _resolver_usuario_app_por_email(email: str) -> dict | None:
+    """Resuelve el usuario canónico en tabla usuarios para evitar re-onboarding por IDs desalineados."""
+    with obtener_pool().connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, preferencias
+                FROM usuarios
+                WHERE lower(email) = lower(%s)
+                LIMIT 1
+                """,
+                [email],
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+
+            user_id = str(row[0])
+            preferencias = row[1] or {}
+            onboarding = preferencias.get("onboarding") if isinstance(preferencias, dict) else None
+            completado = bool(onboarding.get("completado")) if isinstance(onboarding, dict) else False
+            return {
+                "id": user_id,
+                "onboarding_completado": completado,
+            }
+
+
+def _obtener_estado_onboarding_robusto(
+    onboarding_store: OnboardingStore,
+    auth_user_id: str,
+    email: str,
+) -> tuple[dict | None, str, bool]:
+    """Busca onboarding por id canónico y fallback por auth id para evitar repeticiones."""
+    usuario_app = _resolver_usuario_app_por_email(email)
+    canonical_id = str(usuario_app["id"]) if usuario_app else str(auth_user_id)
+    flag_completado = bool(usuario_app.get("onboarding_completado")) if usuario_app else False
+
+    estado = onboarding_store.obtener_onboarding(canonical_id)
+    if not estado and str(auth_user_id) != canonical_id:
+        estado = onboarding_store.obtener_onboarding(auth_user_id)
+
+    if not estado and flag_completado:
+        estado = {
+            "completado": True,
+            "updated_at": None,
+            "perfil": None,
+        }
+
+    return estado, canonical_id, flag_completado
+
+
 def _usuario_actual(authorization: str | None, auth_store: AuthStore) -> dict:
     token = _extraer_bearer_token(authorization)
     try:
@@ -85,7 +136,11 @@ def obtener_estado_onboarding(
     onboarding_store: OnboardingStore = Depends(obtener_onboarding_store),
 ):
     user = _usuario_actual(authorization, auth_store)
-    estado = onboarding_store.obtener_onboarding(user["id"])
+    estado, _canonical_id, _flag = _obtener_estado_onboarding_robusto(
+        onboarding_store=onboarding_store,
+        auth_user_id=str(user["id"]),
+        email=str(user.get("email") or ""),
+    )
 
     if not estado:
         return {
@@ -112,11 +167,26 @@ def guardar_perfil_onboarding(
 ):
     user = _usuario_actual(authorization, auth_store)
     perfil = payload.model_dump()
-    _actualizar_usuario_desde_onboarding(str(user["id"]), perfil)
-    estado = onboarding_store.guardar_onboarding(user["id"], perfil)
+
+    estado_prev, canonical_id, _ = _obtener_estado_onboarding_robusto(
+        onboarding_store=onboarding_store,
+        auth_user_id=str(user["id"]),
+        email=str(user.get("email") or ""),
+    )
+    if estado_prev and bool(estado_prev.get("completado")):
+        return {
+            "ok": True,
+            "data": estado_prev,
+        }
+
+    _actualizar_usuario_desde_onboarding(canonical_id, perfil)
+    estado = onboarding_store.guardar_onboarding(canonical_id, perfil)
+    # Compatibilidad defensiva: guardar también por auth_user_id si difiere.
+    if str(user["id"]) != canonical_id:
+        onboarding_store.guardar_onboarding(str(user["id"]), perfil)
 
     onboarding_store.registrar_evento(
-        user_id=user["id"],
+        user_id=canonical_id,
         event_name="onboarding_completed",
         event_ts=datetime.now(timezone.utc).isoformat(),
         metadata={"source": "perfil"},
@@ -150,9 +220,14 @@ def registrar_evento_conversion(
 ):
     user = _usuario_actual(authorization, auth_store)
     event_ts = payload.event_ts.isoformat() if payload.event_ts else datetime.now(timezone.utc).isoformat()
+    _estado, canonical_id, _ = _obtener_estado_onboarding_robusto(
+        onboarding_store=onboarding_store,
+        auth_user_id=str(user["id"]),
+        email=str(user.get("email") or ""),
+    )
 
     onboarding_store.registrar_evento(
-        user_id=user["id"],
+        user_id=canonical_id,
         event_name=payload.event_name,
         event_ts=event_ts,
         metadata=payload.metadata,
