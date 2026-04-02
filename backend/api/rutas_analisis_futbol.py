@@ -58,6 +58,153 @@ except ImportError:
 _cache_estadisticas: Dict[str, tuple] = {}
 CACHE_TTL = 3600
 
+# Instancia singleton del predictor ML de fútbol (P1)
+_predictor_futbol_ml: Optional["PredictorFutbol"] = None
+
+
+def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
+    """Obtiene/crea el predictor ML de fútbol para usarlo como núcleo del endpoint."""
+    global _predictor_futbol_ml
+    if not MOTOR_DISPONIBLE:
+        return None
+
+    if _predictor_futbol_ml is None:
+        try:
+            _predictor_futbol_ml = PredictorFutbol(pool=pool, cargar_modelos=True)
+            logger.info("PredictorFutbol ML inicializado para /api/futbol/analizar")
+        except Exception:
+            logger.exception("No se pudo inicializar PredictorFutbol ML")
+            _predictor_futbol_ml = None
+
+    return _predictor_futbol_ml
+
+
+def _inferir_lineas_desde_probabilidades(
+    probabilidades: Dict[str, float],
+    lineas_default: List[float],
+) -> List[float]:
+    """Extrae líneas desde keys over_X.X / under_X.X para respetar modelo activo."""
+    lineas_detectadas: List[float] = []
+    for clave in probabilidades.keys():
+        if not (clave.startswith("over_") or clave.startswith("under_")):
+            continue
+        try:
+            linea = float(clave.split("_", 1)[1])
+            if linea not in lineas_detectadas:
+                lineas_detectadas.append(linea)
+        except Exception:
+            continue
+
+    if lineas_detectadas:
+        lineas_detectadas.sort()
+        return lineas_detectadas
+    return lineas_default
+
+
+def _convertir_mercado_ml_a_schema(
+    prediccion_ml,
+    lineas_default: List[float],
+) -> PrediccionMercado:
+    """Convierte PrediccionMercado del motor_futbol al schema API actual."""
+    lineas: Dict[str, ProbabilidadLinea] = {}
+    probabilidades = getattr(prediccion_ml, "probabilidades", {}) or {}
+
+    for linea in _inferir_lineas_desde_probabilidades(probabilidades, lineas_default):
+        prob_over = float(probabilidades.get(f"over_{linea}", 0.5))
+        prob_under = float(probabilidades.get(f"under_{linea}", 1.0 - prob_over))
+        lineas[str(linea)] = ProbabilidadLinea(
+            over_raw=round(prob_over, 4),
+            over_calibrada=round(prob_over, 4),
+            under_raw=round(prob_under, 4),
+            under_calibrada=round(prob_under, 4),
+            razones=None,
+        )
+
+    return PrediccionMercado(
+        mercado=str(getattr(prediccion_ml.mercado, "value", prediccion_ml.mercado)),
+        media=round(float(prediccion_ml.media), 2),
+        std=round(float(prediccion_ml.std), 2),
+        lineas=lineas,
+    )
+
+
+def _nivel_confianza_ml_a_api(nivel: str) -> str:
+    nivel_u = str(nivel or "MEDIA").upper()
+    if nivel_u in {"MUY_ALTA", "ALTA", "MEDIA", "BAJA", "MUY_BAJA"}:
+        return nivel_u
+    if nivel_u == "ALTA":
+        return "ALTA"
+    if nivel_u == "BAJA":
+        return "BAJA"
+    return "MEDIA"
+
+
+def _recomendaciones_ml_a_api(
+    recomendaciones_ml: List[Dict[str, Any]],
+    confianza_base: str,
+) -> List[RecomendacionApuesta]:
+    recomendaciones: List[RecomendacionApuesta] = []
+    confianza_api = _nivel_confianza_ml_a_api(confianza_base)
+
+    for rec in recomendaciones_ml or []:
+        try:
+            lado = str(rec.get("tipo", "OVER")).upper()
+            if lado not in {"OVER", "UNDER"}:
+                lado = "OVER"
+            recomendaciones.append(
+                RecomendacionApuesta(
+                    mercado=str(rec.get("mercado", "")),
+                    lado=lado,
+                    linea=float(rec.get("linea", 0.0)),
+                    probabilidad=float(rec.get("probabilidad_modelo", 0.5)),
+                    confianza=confianza_api,
+                    valor_esperado=None,
+                )
+            )
+        except Exception:
+            logger.exception("No se pudo convertir recomendación ML de fútbol")
+            continue
+
+    return recomendaciones[:10]
+
+
+def _prediccion_ganador_desde_mercados_ml(
+    mercados_goles_ml: Dict[str, Any],
+) -> Optional[ProbabilidadesGanadorFutbol]:
+    """Deriva 1X2 con Poisson usando GOLES_LOCAL_FT y GOLES_VISITANTE_FT del motor ML."""
+    try:
+        goles_local_ft = mercados_goles_ml.get("GOLES_LOCAL_FT")
+        goles_visitante_ft = mercados_goles_ml.get("GOLES_VISITANTE_FT")
+        if not goles_local_ft or not goles_visitante_ft:
+            return None
+
+        media_local = float(goles_local_ft.media)
+        media_visitante = float(goles_visitante_ft.media)
+        prob_local, prob_empate, prob_visitante, marcador_probable = _calcular_1x2_poisson(
+            media_local,
+            media_visitante,
+        )
+        ganador_probable = (
+            "LOCAL"
+            if prob_local >= prob_empate and prob_local >= prob_visitante
+            else ("VISITANTE" if prob_visitante >= prob_empate else "EMPATE")
+        )
+
+        return ProbabilidadesGanadorFutbol(
+            prob_local=prob_local,
+            prob_empate=prob_empate,
+            prob_visitante=prob_visitante,
+            ganador_probable=ganador_probable,
+            marcador_probable=marcador_probable,
+            razones=[
+                f"Estimación ML de goles FT: local={media_local:.2f}, visitante={media_visitante:.2f}.",
+                f"1X2 derivado con Poisson sobre medias ML. Marcador más probable: {marcador_probable}.",
+            ],
+        )
+    except Exception:
+        logger.exception("No se pudo derivar predicción 1X2 desde mercados ML")
+        return None
+
 
 def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, float]:
     """Obtiene estadísticas de equipo con cache."""
@@ -1401,7 +1548,80 @@ async def analizar_partido(
                         detail=f"No se puede analizar un partido con estado: {estado_partido}",
                     )
 
-                # 2. Obtener estadísticas de equipos
+                # 2. Intentar flujo principal ML (P1: PredictorFutbol)
+                lineas_corners = request.lineas_corners or [8.5, 9.5, 10.5, 11.5]
+                lineas_goles = request.lineas_goles or [1.5, 2.5, 3.5]
+                lineas_disparos = request.lineas_disparos or [22.5, 24.5, 26.5]
+
+                if MOTOR_DISPONIBLE:
+                    predictor_ml = _obtener_predictor_futbol_ml(pool)
+                    if predictor_ml is not None and predictor_ml.modelos_entrenados:
+                        try:
+                            pred_ml = predictor_ml.predecir_partido(request.partido_id)
+
+                            mercados_corners_ml = {
+                                k: _convertir_mercado_ml_a_schema(v, lineas_corners)
+                                for k, v in (pred_ml.mercados_corners or {}).items()
+                            }
+                            mercados_goles_ml = {
+                                k: _convertir_mercado_ml_a_schema(v, lineas_goles)
+                                for k, v in (pred_ml.mercados_goles or {}).items()
+                            }
+                            mercados_disparos_ml = {
+                                k: _convertir_mercado_ml_a_schema(v, lineas_disparos)
+                                for k, v in (pred_ml.mercados_disparos or {}).items()
+                            }
+
+                            if mercados_corners_ml or mercados_goles_ml or mercados_disparos_ml:
+                                cursor.execute(
+                                    "SELECT COUNT(*) FROM calibradores_futbol WHERE activo = true"
+                                )
+                                calibradores_activos = int((cursor.fetchone() or {}).get("count", 0))
+
+                                recomendaciones_ml = _recomendaciones_ml_a_api(
+                                    pred_ml.recomendaciones,
+                                    getattr(pred_ml.nivel_confianza, "value", pred_ml.nivel_confianza),
+                                )
+
+                                prediccion_ganador = _prediccion_ganador_desde_mercados_ml(
+                                    pred_ml.mercados_goles or {}
+                                )
+
+                                partido_resumen_ml = PartidoResumen(
+                                    id=partido["id"],
+                                    competicion=partido["competicion"],
+                                    fecha_partido=partido["fecha_partido"],
+                                    equipo_local=partido["equipo_local"],
+                                    equipo_visitante=partido["equipo_visitante"],
+                                    estado=partido["estado"],
+                                    jornada=partido["jornada"],
+                                )
+
+                                duracion = time.time() - inicio
+                                logger.info(
+                                    "Análisis fútbol resuelto por PredictorFutbol ML en %.2fs (partido_id=%s)",
+                                    duracion,
+                                    request.partido_id,
+                                )
+
+                                return AnalisisResponse(
+                                    exito=True,
+                                    partido=partido_resumen_ml,
+                                    timestamp_analisis=datetime.now(),
+                                    mercados_corners=mercados_corners_ml,
+                                    mercados_goles=mercados_goles_ml,
+                                    mercados_disparos=mercados_disparos_ml,
+                                    recomendaciones=recomendaciones_ml,
+                                    modelo_version=pred_ml.version_modelo or "ml_predictor",
+                                    calibradores_activos=calibradores_activos,
+                                    prediccion_ganador=prediccion_ganador,
+                                )
+                        except Exception:
+                            logger.exception(
+                                "Fallo flujo ML principal en /api/futbol/analizar; se activa fallback heurístico"
+                            )
+
+                # 3. Fallback heurístico actual (se mantiene por compatibilidad)
                 equipo_local_id = str(partido["equipo_local_id"])
                 equipo_visitante_id = str(partido["equipo_visitante_id"])
 
