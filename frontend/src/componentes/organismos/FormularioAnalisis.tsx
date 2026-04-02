@@ -36,6 +36,11 @@ import { esCuotaValida } from '../../utilidades/validadores';
 // TIPOS
 // ══════════════════════════════════════════════════════════════
 
+interface OpcionMercadoCustom {
+  valor: Mercado;
+  etiqueta: string;
+}
+
 interface PropsFormularioAnalisis {
   /** Lista de equipos disponibles */
   equipos: Equipo[];
@@ -47,6 +52,10 @@ interface PropsFormularioAnalisis {
   cargando?: boolean;
   /** Indica si los equipos están cargando */
   cargandoEquipos?: boolean;
+  /** Permite inyectar partidos desde módulo (ej: fútbol) */
+  partidosDisponibles?: PartidoResumen[];
+  /** Opciones de mercado personalizadas por módulo */
+  opcionesMercado?: OpcionMercadoCustom[];
 }
 
 interface EstadoFormulario {
@@ -82,6 +91,8 @@ export function FormularioAnalisis({
   onAnalizar,
   cargando = false,
   cargandoEquipos = false,
+  partidosDisponibles,
+  opcionesMercado,
 }: PropsFormularioAnalisis) {
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
@@ -335,6 +346,7 @@ export function FormularioAnalisis({
             partidoSeleccionado={partidoSeleccionado}
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
+            partidosDisponibles={partidosDisponibles}
           />
 
           {/* Equipo Local - deshabilitado si hay partido seleccionado */}
@@ -382,6 +394,7 @@ export function FormularioAnalisis({
             valor={formulario.mercado}
             onChange={(valor) => actualizarCampo('mercado', valor)}
             deshabilitado={cargando}
+            opciones={opcionesMercado}
           />
 
           {/* Línea con selector Over/Under */}

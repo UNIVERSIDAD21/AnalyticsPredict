@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, BarChart3, RefreshCw, Trophy } from 'lucide-react';
+import { Activity, BarChart3, Trophy } from 'lucide-react';
 import { Encabezado, FormularioAnalisis } from '../organismos';
 import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, PanelDepthPremium, ProgresoAnalisis } from '../moleculas';
@@ -22,7 +22,7 @@ import type {
   PartidoFutbolResumen,
   UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
-import type { Equipo, PeticionAnalisis } from '../../tipos';
+import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis } from '../../tipos';
 import { PanelH2HFutbol } from '../organismos/PanelH2HFutbol';
 import { PanelHistorialEquipoFutbol } from '../organismos/PanelHistorialEquipoFutbol';
 
@@ -31,16 +31,6 @@ const navegar = (ruta: string) => {
   window.history.pushState({}, '', ruta);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
-
-function formatearFechaHoraCorta(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 function EstadoVacioFutbol() {
   return (
@@ -139,6 +129,32 @@ export function PaginaFutbol() {
     ];
   }, [partidoSeleccionado]);
 
+  const partidosSelector: PartidoResumen[] = useMemo(() => (
+    partidos.map((partido) => ({
+      id: partido.id,
+      fecha_partido: partido.fechaPartido.split('T')[0],
+      tipo_partido: 'REG',
+      equipo_local_id: String(partido.equipoLocal),
+      equipo_local_nombre: partido.equipoLocalNombre,
+      equipo_visitante_id: String(partido.equipoVisitante),
+      equipo_visitante_nombre: partido.equipoVisitanteNombre,
+      temporada_id: partido.competicion,
+      temporada_nombre: partido.competicionNombre,
+      local_total: null,
+      visitante_total: null,
+      finalizado: false,
+    }))
+  ), [partidos]);
+
+  const opcionesMercadoFutbol: Array<{ valor: Mercado; etiqueta: string }> = useMemo(
+    () => [
+      { valor: 'Q1', etiqueta: 'Corners' },
+      { valor: 'Q2', etiqueta: 'Goles' },
+      { valor: 'Q3', etiqueta: 'Tiros a puerta' },
+    ],
+    []
+  );
+
   const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
     const localId = String(partido.equipoLocal);
     const visitanteId = String(partido.equipoVisitante);
@@ -175,13 +191,22 @@ export function PaginaFutbol() {
     void cargarContexto(partidoSeleccionado);
   }, [partidoSeleccionado, cargarContexto]);
 
-  const ejecutarAnalisis = useCallback(async (_peticion: PeticionAnalisis) => {
-    if (!partidoSeleccionadoId) return;
+  const ejecutarAnalisis = useCallback(async (peticion: PeticionAnalisis) => {
+    const partidoIdObjetivo = peticion.partido_id || partidoSeleccionadoId;
+    if (!partidoIdObjetivo) {
+      setErrorAnalisis('Selecciona un partido para analizar.');
+      return;
+    }
+
+    if (partidoIdObjetivo !== partidoSeleccionadoId) {
+      setPartidoSeleccionadoId(partidoIdObjetivo);
+    }
+
     try {
       setCargandoAnalisis(true);
       setErrorAnalisis(null);
       const data = await analizarPartido({
-        partidoId: partidoSeleccionadoId,
+        partidoId: partidoIdObjetivo,
         h2hLimite: limiteH2h,
       });
       setAnalisis(data);
@@ -234,40 +259,18 @@ export function PaginaFutbol() {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
             <div className="lg:sticky lg:top-6 space-y-4">
-              <Tarjeta className="border border-neon-cyan/20">
-                <label className="flex flex-col gap-2 text-sm text-texto-secundario">
-                  Partido
-                  <select
-                    value={partidoSeleccionadoId}
-                    onChange={(event) => {
-                      setPartidoSeleccionadoId(event.target.value);
-                      setAnalisis(null);
-                    }}
-                    disabled={cargandoPartidos || partidos.length === 0}
-                    className="bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
-                  >
-                    <option value="">Selecciona un partido...</option>
-                    {partidos.map((partido) => (
-                      <option key={partido.id} value={partido.id}>
-                        {partido.equipoLocalNombre} vs {partido.equipoVisitanteNombre} · {formatearFechaHoraCorta(partido.fechaPartido)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="mt-3">
-                  <Boton variante="secundario" anchoCompleto iconoInicio={<RefreshCw size={16} />} onClick={recargarTodo}>
-                    Actualizar datos
-                  </Boton>
-                </div>
-              </Tarjeta>
-
               <FormularioAnalisis
                 equipos={equiposAnalisis}
                 estadisticas={[]}
                 onAnalizar={ejecutarAnalisis}
                 cargando={cargandoAnalisis}
                 cargandoEquipos={cargandoPartidos}
+                partidosDisponibles={partidosSelector}
+                opcionesMercado={opcionesMercadoFutbol}
               />
+              <Boton variante="secundario" anchoCompleto onClick={recargarTodo}>
+                Actualizar datos
+              </Boton>
             </div>
           </div>
 

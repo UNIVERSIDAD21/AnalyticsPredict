@@ -30,6 +30,8 @@ interface PropsSelectorMercado {
   error?: string;
   /** Deshabilitado */
   deshabilitado?: boolean;
+  /** Opciones custom por módulo (ej: fútbol) */
+  opciones?: OpcionSelect[];
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -44,11 +46,12 @@ export function SelectorMercado({
   onChange,
   error,
   deshabilitado = false,
+  opciones,
 }: PropsSelectorMercado) {
   return (
     <Select
       etiqueta="Mercado"
-      opciones={OPCIONES_MERCADO}
+      opciones={opciones ?? OPCIONES_MERCADO}
       value={valor}
       onChange={(e) => onChange(e.target.value as Mercado)}
       placeholder="Selecciona el mercado"

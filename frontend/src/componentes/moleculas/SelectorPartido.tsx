@@ -42,6 +42,8 @@ interface PropsSelectorPartido {
   deshabilitado?: boolean;
   /** Días hacia adelante para buscar partidos */
   diasAdelante?: number;
+  /** Partidos inyectados por módulo (si llega, no consulta servicio) */
+  partidosDisponibles?: PartidoResumen[];
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -53,6 +55,7 @@ export function SelectorPartido({
   onSeleccionar,
   deshabilitado = false,
   diasAdelante = 7,
+  partidosDisponibles,
 }: PropsSelectorPartido) {
   const [partidos, setPartidos] = useState<PartidoResumen[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -95,6 +98,13 @@ export function SelectorPartido({
 
   // Cargar partidos próximos
   const cargarPartidos = useCallback(async () => {
+    if (partidosDisponibles) {
+      setPartidos(ordenarYDedupe(partidosDisponibles));
+      setError(null);
+      setCargando(false);
+      return;
+    }
+
     setCargando(true);
     setError(null);
     try {
@@ -106,23 +116,38 @@ export function SelectorPartido({
     } finally {
       setCargando(false);
     }
-  }, [diasAdelante, ordenarYDedupe]);
+  }, [diasAdelante, ordenarYDedupe, partidosDisponibles]);
 
   useEffect(() => {
     void cargarPartidos();
   }, [cargarPartidos]);
 
-  // Agrupar partidos por fecha
-  const partidosPorFecha = useMemo(() => {
-    const grupos = new Map<string, PartidoResumen[]>();
+  const partidosAgrupados = useMemo(() => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
+
+    const porBloque = {
+      hoy: new Map<string, PartidoResumen[]>(),
+      manana: new Map<string, PartidoResumen[]>(),
+      otros: new Map<string, PartidoResumen[]>(),
+    };
+
     for (const partido of partidos) {
-      const fecha = partido.fecha_partido;
-      if (!grupos.has(fecha)) {
-        grupos.set(fecha, []);
-      }
-      grupos.get(fecha)!.push(partido);
+      const fecha = new Date(`${partido.fecha_partido}T00:00:00`);
+      fecha.setHours(0, 0, 0, 0);
+
+      const liga = partido.temporada_nombre || 'Liga sin nombre';
+      let bloque: keyof typeof porBloque = 'otros';
+      if (fecha.getTime() === hoy.getTime()) bloque = 'hoy';
+      else if (fecha.getTime() === manana.getTime()) bloque = 'manana';
+
+      if (!porBloque[bloque].has(liga)) porBloque[bloque].set(liga, []);
+      porBloque[bloque].get(liga)!.push(partido);
     }
-    return grupos;
+
+    return porBloque;
   }, [partidos]);
 
   const handleSeleccionar = (partido: PartidoResumen) => {
@@ -301,37 +326,44 @@ export function SelectorPartido({
 
           {/* Lista de partidos */}
           {expandido && partidos.length > 0 && (
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-neon-cyan/20 bg-futurista-oscuro">
-              {Array.from(partidosPorFecha.entries()).map(([fecha, lista]) => (
-                <div key={fecha}>
-                  {/* Cabecera de fecha */}
-                  <div className="sticky top-0 px-3 py-2 bg-futurista-medio border-b border-neon-cyan/10">
-                    <span className="text-xs font-semibold text-neon-cyan uppercase tracking-wider">
-                      {formatearFechaPartido(fecha)}
-                    </span>
+            <div className="max-h-72 overflow-y-auto rounded-lg border border-neon-cyan/20 bg-futurista-oscuro">
+              {([
+                ['hoy', 'HOY'],
+                ['manana', 'MAÑANA'],
+                ['otros', 'TODOS'],
+              ] as const).map(([key, titulo]) => {
+                const ligas = partidosAgrupados[key];
+                if (ligas.size === 0) return null;
+                return (
+                  <div key={key}>
+                    <div className="sticky top-0 px-3 py-2 bg-futurista-medio border-b border-neon-cyan/10">
+                      <span className="text-xs font-semibold text-neon-cyan uppercase tracking-wider">{titulo}</span>
+                    </div>
+                    {Array.from(ligas.entries()).map(([liga, lista]) => (
+                      <div key={`${key}-${liga}`}>
+                        <div className="px-3 py-2 bg-futurista-negro/40 border-b border-neon-cyan/10">
+                          <span className="text-[11px] font-semibold text-neon-magenta uppercase tracking-wide">{liga}</span>
+                        </div>
+                        {lista.map((partido) => (
+                          <button
+                            key={partido.id}
+                            type="button"
+                            onClick={() => handleSeleccionar(partido)}
+                            className="w-full px-3 py-2 text-left hover:bg-neon-cyan/10 border-b border-neon-cyan/5 last:border-b-0 transition-colors"
+                          >
+                            <p className="text-sm text-texto-principal">
+                              {partido.equipo_local_nombre} vs {partido.equipo_visitante_nombre}
+                            </p>
+                            <p className="text-xs text-texto-terciario">
+                              {formatearFechaPartido(partido.fecha_partido)}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                  {/* Partidos de esa fecha */}
-                  {lista.map((partido) => (
-                    <button
-                      key={partido.id}
-                      type="button"
-                      onClick={() => handleSeleccionar(partido)}
-                      className="w-full px-3 py-2 text-left hover:bg-neon-cyan/10 border-b border-neon-cyan/5 last:border-b-0 transition-colors"
-                    >
-                      <p className="text-sm text-texto-principal">
-                        {partido.equipo_local_nombre} vs {partido.equipo_visitante_nombre}
-                      </p>
-                      <p className="text-xs text-texto-terciario">
-                        {partido.tipo_partido === 'REG'
-                          ? 'Temporada Regular'
-                          : partido.tipo_partido === 'POST'
-                            ? 'Playoffs'
-                            : 'Pretemporada'}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
