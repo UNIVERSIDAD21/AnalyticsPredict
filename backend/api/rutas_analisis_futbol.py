@@ -382,7 +382,7 @@ def _calcular_metricas_mercado(
     cuota_opuesta = cuota_under if lado_u == "OVER" else cuota_over
 
     advertencias: List[str] = []
-    devig_metodo = "sin_cuotas"
+    devig_metodo = "fallback_conservador_no_odds"
     devig_overround = None
     p_mkt_fair = None
 
@@ -400,11 +400,12 @@ def _calcular_metricas_mercado(
             p_under_fair = (1.0 / float(cuota_under)) / overround
             p_mkt_fair = float(p_over_fair if lado_u == "OVER" else p_under_fair)
     elif cuota_lado is not None:
-        devig_metodo = "estimado"
+        devig_metodo = "implied_raw_single_side"
         p_mkt_fair = float(p_mkt_raw)
-        advertencias.append("Falta cuota opuesta; de-vig estimado con una sola cuota.")
+        advertencias.append("Solo una cuota disponible: se usa probabilidad implícita raw (sin de-vig real).")
+        advertencias.append("Resultado en modo fallback conservador; priorizar confirmación con cuota opuesta.")
     else:
-        advertencias.append("Sin cuotas de mercado; edge/EV/sizing en modo conservador.")
+        advertencias.append("Sin cuotas de mercado: edge/EV/sizing en fallback conservador.")
 
     edge_real = float(prob_cal - p_mkt_fair) if p_mkt_fair is not None else float(prob_cal - 0.5)
     ev_real = None
@@ -504,7 +505,7 @@ def _arbitrar_recomendaciones(
     estado_mercados: Dict[str, str],
     partidos_relevantes: int,
 ) -> List[RecomendacionApuesta]:
-    """Dedupe + arbitraje por (mercado, lado, línea) con metadata trazable."""
+    """Dedupe + arbitraje fuerte por (mercado, lado, línea) con trazabilidad."""
     mapa_ml = {
         _clave_recomendacion(r.mercado, r.lado, r.linea): r for r in (recomendaciones_ml or [])
     }
@@ -522,6 +523,48 @@ def _arbitrar_recomendaciones(
         mercado_estado = estado_mercados.get(str(base.mercado).upper(), "verde") if base else "verde"
 
         if r_ml and r_h:
+            score_ml = float(r_ml.score or 0.0)
+            score_h = float(r_h.score or 0.0)
+            delta_score = score_ml - score_h
+            ml_exacto = str(r_ml.devig_metodo or "") == "exacto"
+            h_exacto = str(r_h.devig_metodo or "") == "exacto"
+
+            # Selección dura por evidencia fuerte
+            if ml_exacto and not h_exacto and delta_score >= -4.0:
+                ganador = r_ml
+                ganador.fuente = "ML"
+                ganador.metadata_ensemble = {
+                    "decision": "seleccion_dura",
+                    "motivo_arbitraje": "ml_tiene_devig_exacto",
+                    "delta_score": round(delta_score, 4),
+                    "clave": key,
+                }
+                salida.append(ganador)
+                continue
+            if h_exacto and not ml_exacto and delta_score <= 4.0:
+                ganador = r_h
+                ganador.fuente = "HEURISTICO"
+                ganador.metadata_ensemble = {
+                    "decision": "seleccion_dura",
+                    "motivo_arbitraje": "heuristico_tiene_devig_exacto",
+                    "delta_score": round(delta_score, 4),
+                    "clave": key,
+                }
+                salida.append(ganador)
+                continue
+            if abs(delta_score) >= 12.0:
+                ganador = r_ml if delta_score > 0 else r_h
+                ganador.fuente = "ML" if delta_score > 0 else "HEURISTICO"
+                ganador.metadata_ensemble = {
+                    "decision": "seleccion_dura",
+                    "motivo_arbitraje": "diferencia_score_alta",
+                    "delta_score": round(delta_score, 4),
+                    "clave": key,
+                }
+                salida.append(ganador)
+                continue
+
+            # Blend sólo cuando no hay evidencia fuerte para selección dura
             ml_cal = r_ml.p_calibrada is not None
             h_cal = r_h.p_calibrada is not None
             peso_ml = _calcular_peso_ml_dinamico(
@@ -535,8 +578,6 @@ def _arbitrar_recomendaciones(
             p_raw = (peso_ml * float(r_ml.p_raw or r_ml.probabilidad)) + (peso_h * float(r_h.p_raw or r_h.probabilidad))
             p_cal = (peso_ml * float(r_ml.p_calibrada or r_ml.probabilidad)) + (peso_h * float(r_h.p_calibrada or r_h.probabilidad))
             prob = (peso_ml * float(r_ml.probabilidad)) + (peso_h * float(r_h.probabilidad))
-            fuente = "ENSEMBLE"
-            motivo = f"blend_dinamico(ml={peso_ml:.2f},heur={peso_h:.2f},estado={mercado_estado},n={partidos_relevantes})"
 
             rec = RecomendacionApuesta(
                 mercado=base.mercado,
@@ -550,21 +591,23 @@ def _arbitrar_recomendaciones(
                 modelo_version_id=r_ml.modelo_version_id or r_h.modelo_version_id,
                 calibrador_id=r_ml.calibrador_id or r_h.calibrador_id,
                 edge_real=(peso_ml * float(r_ml.edge_real or 0.0)) + (peso_h * float(r_h.edge_real or 0.0)),
-                score=(peso_ml * float(r_ml.score or 0.0)) + (peso_h * float(r_h.score or 0.0)),
+                score=(peso_ml * float(score_ml)) + (peso_h * float(score_h)),
                 sizing=(peso_ml * float(r_ml.sizing or 0.0)) + (peso_h * float(r_h.sizing or 0.0)),
                 cuota=r_ml.cuota or r_h.cuota,
                 cuota_over=r_ml.cuota_over or r_h.cuota_over,
                 cuota_under=r_ml.cuota_under or r_h.cuota_under,
-                devig_metodo=r_ml.devig_metodo or r_h.devig_metodo,
-                devig_overround=r_ml.devig_overround or r_h.devig_overround,
-                devig_p_mkt_fair=r_ml.devig_p_mkt_fair or r_h.devig_p_mkt_fair,
+                devig_metodo=r_ml.devig_metodo if ml_exacto else (r_h.devig_metodo if h_exacto else (r_ml.devig_metodo or r_h.devig_metodo)),
+                devig_overround=r_ml.devig_overround if ml_exacto else (r_h.devig_overround if h_exacto else (r_ml.devig_overround or r_h.devig_overround)),
+                devig_p_mkt_fair=r_ml.devig_p_mkt_fair if ml_exacto else (r_h.devig_p_mkt_fair if h_exacto else (r_ml.devig_p_mkt_fair or r_h.devig_p_mkt_fair)),
                 advertencias=(r_ml.advertencias or []) + (r_h.advertencias or []),
-                fuente=fuente,
+                fuente="ENSEMBLE",
                 metadata_ensemble={
+                    "decision": "blend",
                     "peso_ml": round(peso_ml, 4),
                     "peso_heuristico": round(peso_h, 4),
                     "mercado_estado": mercado_estado,
-                    "motivo_arbitraje": motivo,
+                    "motivo_arbitraje": "sin_evidencia_fuerte_para_seleccion_dura",
+                    "delta_score": round(delta_score, 4),
                     "clave": key,
                 },
             )
@@ -572,6 +615,7 @@ def _arbitrar_recomendaciones(
         elif r_ml:
             r_ml.fuente = r_ml.fuente or "ML"
             r_ml.metadata_ensemble = {
+                "decision": "seleccion_dura",
                 "motivo_arbitraje": "solo_ml",
                 "clave": key,
             }
@@ -579,6 +623,7 @@ def _arbitrar_recomendaciones(
         elif r_h:
             r_h.fuente = r_h.fuente or "HEURISTICO"
             r_h.metadata_ensemble = {
+                "decision": "seleccion_dura",
                 "motivo_arbitraje": "solo_heuristico",
                 "clave": key,
             }
@@ -2806,6 +2851,18 @@ async def analizar_partido(
                                 probabilidad_sistema=float(rec.probabilidad),
                                 confianza=rec.confianza,
                                 payload_json=json.dumps(payload, ensure_ascii=False),
+                                decision_p_raw=rec.p_raw,
+                                decision_p_calibrada=rec.p_calibrada,
+                                decision_edge_real=rec.edge_real,
+                                decision_score=rec.score,
+                                decision_sizing=rec.sizing,
+                                decision_valor_esperado=rec.valor_esperado,
+                                decision_calibrador_id=rec.calibrador_id,
+                                decision_modelo_version_id=rec.modelo_version_id,
+                                decision_fuente=rec.fuente,
+                                decision_devig_metodo=rec.devig_metodo,
+                                decision_devig_overround=rec.devig_overround,
+                                decision_devig_p_mkt_fair=rec.devig_p_mkt_fair,
                             )
                     else:
                         payload = {

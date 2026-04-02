@@ -28,6 +28,18 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
                     valor_real NUMERIC,
                     resultado_resumen TEXT,
                     payload JSONB,
+                    decision_p_raw NUMERIC,
+                    decision_p_calibrada NUMERIC,
+                    decision_edge_real NUMERIC,
+                    decision_score NUMERIC,
+                    decision_sizing NUMERIC,
+                    decision_valor_esperado NUMERIC,
+                    decision_calibrador_id TEXT,
+                    decision_modelo_version_id TEXT,
+                    decision_fuente TEXT,
+                    decision_devig_metodo TEXT,
+                    decision_devig_overround NUMERIC,
+                    decision_devig_p_mkt_fair NUMERIC,
                     creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
                     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now()
                 );
@@ -35,6 +47,18 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
             )
             cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS resultado_outcome TEXT;")
             cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS valor_real NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_p_raw NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_p_calibrada NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_edge_real NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_score NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_sizing NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_valor_esperado NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_calibrador_id TEXT;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_modelo_version_id TEXT;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_fuente TEXT;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_metodo TEXT;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_overround NUMERIC;")
+            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_p_mkt_fair NUMERIC;")
             # Historial completo: NO deduplicar por clave natural.
             # Antes existía un índice único que sobreescribía análisis repetidos.
             # Para bitácora completa por evento, se elimina esa restricción.
@@ -57,6 +81,18 @@ def registrar_apuesta_analizada(
     probabilidad_sistema: Optional[float],
     confianza: Optional[str],
     payload_json: str,
+    decision_p_raw: Optional[float] = None,
+    decision_p_calibrada: Optional[float] = None,
+    decision_edge_real: Optional[float] = None,
+    decision_score: Optional[float] = None,
+    decision_sizing: Optional[float] = None,
+    decision_valor_esperado: Optional[float] = None,
+    decision_calibrador_id: Optional[str] = None,
+    decision_modelo_version_id: Optional[str] = None,
+    decision_fuente: Optional[str] = None,
+    decision_devig_metodo: Optional[str] = None,
+    decision_devig_overround: Optional[float] = None,
+    decision_devig_p_mkt_fair: Optional[float] = None,
     pool=None,
 ) -> None:
     pool = pool or obtener_pool()
@@ -66,8 +102,17 @@ def registrar_apuesta_analizada(
             cur.execute(
                 """
                 INSERT INTO apuestas_analizadas
-                (deporte, partido_id, mercado, lado, linea, probabilidad_sistema, confianza, payload)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                (
+                    deporte, partido_id, mercado, lado, linea, probabilidad_sistema, confianza, payload,
+                    decision_p_raw, decision_p_calibrada, decision_edge_real, decision_score,
+                    decision_sizing, decision_valor_esperado, decision_calibrador_id,
+                    decision_modelo_version_id, decision_fuente, decision_devig_metodo,
+                    decision_devig_overround, decision_devig_p_mkt_fair
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s::jsonb,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
                 """,
                 [
                     deporte,
@@ -78,6 +123,18 @@ def registrar_apuesta_analizada(
                     probabilidad_sistema,
                     confianza,
                     payload_json,
+                    decision_p_raw,
+                    decision_p_calibrada,
+                    decision_edge_real,
+                    decision_score,
+                    decision_sizing,
+                    decision_valor_esperado,
+                    decision_calibrador_id,
+                    decision_modelo_version_id,
+                    decision_fuente,
+                    decision_devig_metodo,
+                    decision_devig_overround,
+                    decision_devig_p_mkt_fair,
                 ],
             )
 
