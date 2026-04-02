@@ -8,7 +8,19 @@ Filtros opcionales:
 - `mercado`
 - `fuente` (`ML|HEURISTICO|ENSEMBLE`)
 - `devig_metodo` (`exacto|implied_raw_single_side|fallback_conservador_no_odds`)
+- `fecha_desde` (filtra por `actualizado_en >= fecha_desde`)
+- `fecha_hasta` (filtra por `actualizado_en <= fecha_hasta`)
+- `partido_id`
+- `modelo_version_id`
+- `calibrador_id`
+- `estado`
+- `resultado_outcome`
 - `limite`, `offset`
+
+## Gobernanza / acceso
+
+El endpoint requiere autenticación (`Depends(obtener_usuario_id)`).
+No es público anónimo.
 
 ## Métricas incluidas
 

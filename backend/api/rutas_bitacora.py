@@ -951,7 +951,55 @@ async def listar_apuestas_analizadas(
     return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas")
 
 
-@router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol')
+class AuditoriaDecisionFutbolItem(BaseModel):
+    id: int
+    partido_id: str
+    mercado: Optional[str] = None
+    lado: Optional[str] = None
+    linea: Optional[float] = None
+    probabilidad_sistema: Optional[float] = None
+    confianza: Optional[str] = None
+    estado: Optional[str] = None
+    resultado_outcome: Optional[str] = None
+    decision_p_raw: Optional[float] = None
+    decision_p_calibrada: Optional[float] = None
+    decision_edge_real: Optional[float] = None
+    decision_score: Optional[float] = None
+    decision_sizing: Optional[float] = None
+    decision_valor_esperado: Optional[float] = None
+    decision_calibrador_id: Optional[str] = None
+    decision_modelo_version_id: Optional[str] = None
+    decision_fuente: Optional[str] = None
+    decision_devig_metodo: Optional[str] = None
+    decision_devig_overround: Optional[float] = None
+    decision_devig_p_mkt_fair: Optional[float] = None
+    creado_en: Optional[datetime] = None
+    actualizado_en: Optional[datetime] = None
+
+
+class AuditoriaDecisionFutbolCorte(BaseModel):
+    mercado: str
+    fuente: str
+    devig_metodo: str
+    total: int
+    edge_promedio: Optional[float] = None
+    score_promedio: Optional[float] = None
+    sizing_promedio: Optional[float] = None
+    ev_promedio: Optional[float] = None
+
+
+class AuditoriaDecisionFutbolResponse(BaseModel):
+    exito: bool = True
+    total: int
+    totales: dict
+    promedios: dict
+    cortes: List[AuditoriaDecisionFutbolCorte]
+    items: List[AuditoriaDecisionFutbolItem]
+    filtros_aplicados: dict
+    paginacion: dict
+
+
+@router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol', response_model=AuditoriaDecisionFutbolResponse)
 async def auditoria_apuestas_analizadas_futbol(
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
@@ -960,8 +1008,20 @@ async def auditoria_apuestas_analizadas_futbol(
     mercado: Optional[str] = None,
     fuente: Optional[str] = None,
     devig_metodo: Optional[str] = None,
+    fecha_desde: Optional[datetime] = None,
+    fecha_hasta: Optional[datetime] = None,
+    partido_id: Optional[UUID] = None,
+    modelo_version_id: Optional[str] = None,
+    calibrador_id: Optional[str] = None,
+    estado: Optional[str] = None,
+    resultado_outcome: Optional[str] = None,
+    usuario_id: UUID = Depends(obtener_usuario_id),
 ):
-    """Reporte canónico para auditoría/backtesting de decisiones de fútbol sin parsear payload JSON."""
+    """Reporte canónico para auditoría/backtesting de decisiones de fútbol sin parsear payload JSON.
+
+    Gobernanza: requiere usuario autenticado (Depends(obtener_usuario_id)).
+    """
+    _ = usuario_id
     from servicios.apuestas_analizadas import obtener_auditoria_decisiones_futbol
 
     payload = obtener_auditoria_decisiones_futbol(
@@ -970,6 +1030,13 @@ async def auditoria_apuestas_analizadas_futbol(
         mercado=mercado,
         fuente=fuente,
         devig_metodo=devig_metodo,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        partido_id=str(partido_id) if partido_id else None,
+        modelo_version_id=modelo_version_id,
+        calibrador_id=calibrador_id,
+        estado=estado,
+        resultado_outcome=resultado_outcome,
     )
     payload_legacy = {"exito": True, **payload}
     return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas-auditoria-futbol")

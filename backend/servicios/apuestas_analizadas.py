@@ -3,7 +3,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional, Any
+
+from psycopg.rows import dict_row
 
 from db import obtener_pool
 
@@ -67,6 +70,43 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
                 """
                 CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_lookup
                 ON apuestas_analizadas (deporte, partido_id, mercado, lado, linea);
+                """
+            )
+            # Índices de auditoría canónica (enfocados en fútbol)
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_actualizado
+                ON apuestas_analizadas (deporte, actualizado_en DESC);
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_cortes
+                ON apuestas_analizadas (deporte, mercado, decision_fuente, decision_devig_metodo);
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_modelo
+                ON apuestas_analizadas (deporte, decision_modelo_version_id);
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_calibrador
+                ON apuestas_analizadas (deporte, decision_calibrador_id);
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_estado_outcome
+                ON apuestas_analizadas (deporte, estado, resultado_outcome);
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_creado
+                ON apuestas_analizadas (deporte, creado_en DESC);
                 """
             )
 
@@ -253,7 +293,15 @@ def _armar_where_auditoria_futbol(
     mercado: Optional[str] = None,
     fuente: Optional[str] = None,
     devig_metodo: Optional[str] = None,
+    fecha_desde: Optional[datetime] = None,
+    fecha_hasta: Optional[datetime] = None,
+    partido_id: Optional[str] = None,
+    modelo_version_id: Optional[str] = None,
+    calibrador_id: Optional[str] = None,
+    estado: Optional[str] = None,
+    resultado_outcome: Optional[str] = None,
 ) -> tuple[str, list[Any]]:
+    # Filtros temporales se aplican sobre actualizado_en
     condiciones = ["deporte = 'futbol'"]
     params: list[Any] = []
 
@@ -266,6 +314,27 @@ def _armar_where_auditoria_futbol(
     if devig_metodo:
         condiciones.append("decision_devig_metodo = %s")
         params.append(devig_metodo)
+    if fecha_desde:
+        condiciones.append("actualizado_en >= %s")
+        params.append(fecha_desde)
+    if fecha_hasta:
+        condiciones.append("actualizado_en <= %s")
+        params.append(fecha_hasta)
+    if partido_id:
+        condiciones.append("partido_id = %s")
+        params.append(partido_id)
+    if modelo_version_id:
+        condiciones.append("decision_modelo_version_id = %s")
+        params.append(modelo_version_id)
+    if calibrador_id:
+        condiciones.append("decision_calibrador_id = %s")
+        params.append(calibrador_id)
+    if estado:
+        condiciones.append("estado = %s")
+        params.append(estado)
+    if resultado_outcome:
+        condiciones.append("resultado_outcome = %s")
+        params.append(resultado_outcome)
 
     return (" AND ".join(condiciones), params)
 
@@ -277,14 +346,32 @@ def obtener_auditoria_decisiones_futbol(
     mercado: Optional[str] = None,
     fuente: Optional[str] = None,
     devig_metodo: Optional[str] = None,
+    fecha_desde: Optional[datetime] = None,
+    fecha_hasta: Optional[datetime] = None,
+    partido_id: Optional[str] = None,
+    modelo_version_id: Optional[str] = None,
+    calibrador_id: Optional[str] = None,
+    estado: Optional[str] = None,
+    resultado_outcome: Optional[str] = None,
     pool=None,
 ) -> dict:
     pool = pool or obtener_pool()
     asegurar_tabla_apuestas_analizadas(pool)
-    where_sql, params = _armar_where_auditoria_futbol(mercado, fuente, devig_metodo)
+    where_sql, params = _armar_where_auditoria_futbol(
+        mercado=mercado,
+        fuente=fuente,
+        devig_metodo=devig_metodo,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        partido_id=partido_id,
+        modelo_version_id=modelo_version_id,
+        calibrador_id=calibrador_id,
+        estado=estado,
+        resultado_outcome=resultado_outcome,
+    )
 
     with pool.connection() as conn:
-        with conn.cursor() as cur:
+        with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
                 f"""
                 SELECT
@@ -321,7 +408,7 @@ def obtener_auditoria_decisiones_futbol(
                 """,
                 params,
             )
-            resumen = cur.fetchone()
+            resumen = cur.fetchone() or {}
 
             cur.execute(
                 f"""
@@ -344,31 +431,77 @@ def obtener_auditoria_decisiones_futbol(
             )
             cortes = cur.fetchall() or []
 
+    items = [
+        {
+            "id": row["id"],
+            "partido_id": row["partido_id"],
+            "mercado": row["mercado"],
+            "lado": row["lado"],
+            "linea": row["linea"],
+            "probabilidad_sistema": row["probabilidad_sistema"],
+            "confianza": row["confianza"],
+            "estado": row["estado"],
+            "resultado_outcome": row["resultado_outcome"],
+            "decision_p_raw": row["decision_p_raw"],
+            "decision_p_calibrada": row["decision_p_calibrada"],
+            "decision_edge_real": row["decision_edge_real"],
+            "decision_score": row["decision_score"],
+            "decision_sizing": row["decision_sizing"],
+            "decision_valor_esperado": row["decision_valor_esperado"],
+            "decision_calibrador_id": row["decision_calibrador_id"],
+            "decision_modelo_version_id": row["decision_modelo_version_id"],
+            "decision_fuente": row["decision_fuente"],
+            "decision_devig_metodo": row["decision_devig_metodo"],
+            "decision_devig_overround": row["decision_devig_overround"],
+            "decision_devig_p_mkt_fair": row["decision_devig_p_mkt_fair"],
+            "creado_en": row["creado_en"],
+            "actualizado_en": row["actualizado_en"],
+        }
+        for row in filas
+    ]
+
     return {
-        "total": int(resumen[0] or 0),
+        "total": int(resumen.get("total") or 0),
         "totales": {
-            "ml": int(resumen[1] or 0),
-            "heuristico": int(resumen[2] or 0),
-            "ensemble": int(resumen[3] or 0),
+            "ml": int(resumen.get("total_ml") or 0),
+            "heuristico": int(resumen.get("total_heuristico") or 0),
+            "ensemble": int(resumen.get("total_ensemble") or 0),
         },
         "promedios": {
-            "edge_real": float(resumen[4]) if resumen[4] is not None else None,
-            "score": float(resumen[5]) if resumen[5] is not None else None,
-            "sizing": float(resumen[6]) if resumen[6] is not None else None,
-            "valor_esperado": float(resumen[7]) if resumen[7] is not None else None,
+            "edge_real": float(resumen["edge_promedio"]) if resumen.get("edge_promedio") is not None else None,
+            "score": float(resumen["score_promedio"]) if resumen.get("score_promedio") is not None else None,
+            "sizing": float(resumen["sizing_promedio"]) if resumen.get("sizing_promedio") is not None else None,
+            "valor_esperado": float(resumen["ev_promedio"]) if resumen.get("ev_promedio") is not None else None,
         },
         "cortes": [
             {
-                "mercado": c[0],
-                "fuente": c[1],
-                "devig_metodo": c[2],
-                "total": int(c[3] or 0),
-                "edge_promedio": float(c[4]) if c[4] is not None else None,
-                "score_promedio": float(c[5]) if c[5] is not None else None,
-                "sizing_promedio": float(c[6]) if c[6] is not None else None,
-                "ev_promedio": float(c[7]) if c[7] is not None else None,
+                "mercado": c["mercado"],
+                "fuente": c["fuente"],
+                "devig_metodo": c["devig_metodo"],
+                "total": int(c["total"] or 0),
+                "edge_promedio": float(c["edge_promedio"]) if c.get("edge_promedio") is not None else None,
+                "score_promedio": float(c["score_promedio"]) if c.get("score_promedio") is not None else None,
+                "sizing_promedio": float(c["sizing_promedio"]) if c.get("sizing_promedio") is not None else None,
+                "ev_promedio": float(c["ev_promedio"]) if c.get("ev_promedio") is not None else None,
             }
             for c in cortes
         ],
-        "items": filas,
+        "items": items,
+        "filtros_aplicados": {
+            "mercado": mercado,
+            "fuente": fuente,
+            "devig_metodo": devig_metodo,
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "partido_id": partido_id,
+            "modelo_version_id": modelo_version_id,
+            "calibrador_id": calibrador_id,
+            "estado": estado,
+            "resultado_outcome": resultado_outcome,
+        },
+        "paginacion": {
+            "limite": max(1, min(limite, 2000)),
+            "offset": max(0, offset),
+            "items": len(items),
+        },
     }
