@@ -22,10 +22,10 @@ import {
 } from 'lucide-react';
 import {
   Encabezado,
-  PanelAnalisisMercadoFutbol,
   PanelH2HFutbol,
   PanelHistorialEquipoFutbol,
   ModalGuardarApuestaFutbol,
+  ResultadoAnalisis,
 } from '../organismos';
 import { MensajeError, PanelDepthPremium } from '../moleculas';
 import { Boton, Spinner, Tarjeta } from '../atomos';
@@ -34,6 +34,7 @@ import {
   obtenerH2HPartidos,
   obtenerPartidosEquipoDetalle,
   crearApuesta,
+  analizarPartido,
 } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import {
@@ -46,9 +47,11 @@ import type {
   TipoMercadoFutbol,
   NivelConfianza,
   UbicacionHistorialEquipo,
+  AnalisisFutbolResponse,
 } from '../../tipos/futbol';
 import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
+import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -254,6 +257,9 @@ export function AnalisisPartidoFutbol() {
   const [refrescoContexto, setRefrescoContexto] = useState(0);
   const [cargandoContexto, setCargandoContexto] = useState(false);
   const [errorContexto, setErrorContexto] = useState<string | null>(null);
+  const [analisis, setAnalisis] = useState<AnalisisFutbolResponse | null>(null);
+  const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
+  const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
   const { agregarToast } = useToasts();
   const historialCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
   const h2hCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
@@ -410,6 +416,29 @@ export function AnalisisPartidoFutbol() {
     obtenerHistorialEquipoCached,
   ]);
 
+  // Cargar análisis unificado (misma UI que NBA)
+  useEffect(() => {
+    const cargarAnalisis = async () => {
+      if (!partidoId) return;
+      setCargandoAnalisis(true);
+      setErrorAnalisis(null);
+      try {
+        const data = await analizarPartido({
+          partidoId,
+          h2hLimite: limiteH2h,
+        });
+        setAnalisis(data);
+      } catch (err) {
+        const mensaje = err instanceof Error ? err.message : 'Error al analizar partido de fútbol';
+        setErrorAnalisis(mensaje);
+      } finally {
+        setCargandoAnalisis(false);
+      }
+    };
+
+    void cargarAnalisis();
+  }, [partidoId, limiteH2h]);
+
   const equipoLocalId = partido?.equipoLocalId ?? partido?.equipoLocal;
   const equipoVisitanteId = partido?.equipoVisitanteId ?? partido?.equipoVisitante;
 
@@ -540,17 +569,31 @@ export function AnalisisPartidoFutbol() {
           />
         )}
 
-        {/* Panel analizador */}
-        {partido && equipoLocalId && equipoVisitanteId && (
-          <PanelAnalisisMercadoFutbol
+        {/* Panel analizador unificado (misma UI NBA para fútbol) */}
+        {cargandoAnalisis && (
+          <Tarjeta className="flex items-center justify-center py-10">
+            <Spinner tamano="lg" texto="Ejecutando análisis unificado..." centrado />
+          </Tarjeta>
+        )}
+
+        {errorAnalisis && !cargandoAnalisis && (
+          <MensajeError
+            titulo="Error en análisis de fútbol"
+            mensaje={errorAnalisis}
+            onCerrar={() => setErrorAnalisis(null)}
+          />
+        )}
+
+        {analisis && !cargandoAnalisis && (
+          <ResultadoAnalisis
+            resultado={adaptarAnalisisFutbolAResultadoAnalisis(analisis)}
+            advertencias={[]}
+            seleccionUsuario={analisis.recomendaciones?.[0] ? {
+              lado: analisis.recomendaciones[0].lado,
+              linea: analisis.recomendaciones[0].linea,
+            } : null}
             equipoLocalId={equipoLocalId}
             equipoVisitanteId={equipoVisitanteId}
-            equipoLocalNombre={partido.equipoLocalNombre}
-            equipoVisitanteNombre={partido.equipoVisitanteNombre}
-            h2h={h2hPartidos}
-            historialLocal={historialLocal}
-            historialVisitante={historialVisitante}
-            onGuardarApuesta={handleSolicitarGuardar}
           />
         )}
 
