@@ -180,6 +180,13 @@ class AnalisisRequest(BaseModel):
         le=20,
         description="Cantidad de partidos H2H a considerar (5-20).",
     )
+    cuotas_por_linea: Optional[Dict[str, Dict[str, float]]] = Field(
+        default=None,
+        description=(
+            "Mapa opcional de cuotas por llave 'MERCADO|LINEA'. "
+            "Ejemplo: {'GOLES_FT|2.5': {'cuota_over': 1.9, 'cuota_under': 1.95}}"
+        ),
+    )
     lineas_corners: Optional[List[float]] = Field(
         default=[8.5, 9.5, 10.5, 11.5],
         description="Líneas a analizar para corners"
@@ -237,6 +244,15 @@ class RecomendacionApuesta(BaseModel):
     edge_real: Optional[float] = None
     score: Optional[float] = None
     sizing: Optional[float] = None
+    cuota: Optional[float] = None
+    cuota_over: Optional[float] = None
+    cuota_under: Optional[float] = None
+    devig_metodo: Optional[str] = None
+    devig_overround: Optional[float] = None
+    devig_p_mkt_fair: Optional[float] = None
+    advertencias: Optional[List[str]] = None
+    fuente: Optional[str] = None
+    metadata_ensemble: Optional[Dict[str, Any]] = None
 
 
 

@@ -219,6 +219,15 @@ def _recomendaciones_ml_a_api(
                     edge_real=float(edge_real) if edge_real is not None else None,
                     score=float(score) if score is not None else None,
                     sizing=float(sizing) if sizing is not None else None,
+                    cuota=float(rec.get("cuota")) if rec.get("cuota") is not None else None,
+                    cuota_over=float(rec.get("cuota_over")) if rec.get("cuota_over") is not None else None,
+                    cuota_under=float(rec.get("cuota_under")) if rec.get("cuota_under") is not None else None,
+                    devig_metodo=rec.get("devig_metodo"),
+                    devig_overround=float(rec.get("devig_overround")) if rec.get("devig_overround") is not None else None,
+                    devig_p_mkt_fair=float(rec.get("devig_p_mkt_fair")) if rec.get("devig_p_mkt_fair") is not None else None,
+                    advertencias=rec.get("advertencias"),
+                    fuente="ML",
+                    metadata_ensemble={"motivo_arbitraje": "senal_ml"},
                 )
             )
         except Exception:
@@ -320,6 +329,263 @@ def _ensamblar_mercados(
             resultado[clave] = ml
 
     return resultado
+
+
+def _normalizar_linea_key(linea: float) -> str:
+    return f"{float(linea):.2f}".rstrip("0").rstrip(".")
+
+
+def _clave_recomendacion(mercado: str, lado: str, linea: float) -> str:
+    return f"{str(mercado).upper()}|{str(lado).upper()}|{_normalizar_linea_key(linea)}"
+
+
+def _obtener_cuotas_para_recomendacion(
+    cuotas_por_linea: Optional[Dict[str, Dict[str, float]]],
+    mercado: str,
+    linea: float,
+) -> Tuple[Optional[float], Optional[float]]:
+    if not cuotas_por_linea:
+        return (None, None)
+
+    mercado_u = str(mercado).upper()
+    linea_keys = {_normalizar_linea_key(linea), str(linea)}
+    posibles = [
+        f"{mercado_u}|{lk}" for lk in linea_keys
+    ]
+
+    for key in posibles:
+        data = cuotas_por_linea.get(key)
+        if not data:
+            continue
+        cuota_over = data.get("cuota_over")
+        cuota_under = data.get("cuota_under")
+        return (
+            float(cuota_over) if cuota_over is not None else None,
+            float(cuota_under) if cuota_under is not None else None,
+        )
+
+    return (None, None)
+
+
+def _calcular_metricas_mercado(
+    *,
+    lado: str,
+    prob_raw: float,
+    prob_cal: float,
+    cuota_over: Optional[float],
+    cuota_under: Optional[float],
+    std: float,
+    mercado_estado: str,
+) -> Dict[str, Any]:
+    lado_u = str(lado).upper()
+    cuota_lado = cuota_over if lado_u == "OVER" else cuota_under
+    cuota_opuesta = cuota_under if lado_u == "OVER" else cuota_over
+
+    advertencias: List[str] = []
+    devig_metodo = "sin_cuotas"
+    devig_overround = None
+    p_mkt_fair = None
+
+    if cuota_lado is not None:
+        p_mkt_raw = 1.0 / max(float(cuota_lado), 1e-9)
+    else:
+        p_mkt_raw = None
+
+    if cuota_lado is not None and cuota_opuesta is not None:
+        devig_metodo = "exacto"
+        overround = (1.0 / max(float(cuota_over), 1e-9)) + (1.0 / max(float(cuota_under), 1e-9))
+        devig_overround = float(overround)
+        if overround > 0:
+            p_over_fair = (1.0 / float(cuota_over)) / overround
+            p_under_fair = (1.0 / float(cuota_under)) / overround
+            p_mkt_fair = float(p_over_fair if lado_u == "OVER" else p_under_fair)
+    elif cuota_lado is not None:
+        devig_metodo = "estimado"
+        p_mkt_fair = float(p_mkt_raw)
+        advertencias.append("Falta cuota opuesta; de-vig estimado con una sola cuota.")
+    else:
+        advertencias.append("Sin cuotas de mercado; edge/EV/sizing en modo conservador.")
+
+    edge_real = float(prob_cal - p_mkt_fair) if p_mkt_fair is not None else float(prob_cal - 0.5)
+    ev_real = None
+    if cuota_lado is not None:
+        ev_real = float((prob_cal * float(cuota_lado)) - 1.0)
+
+    # Score: EV + edge + calidad mercado + calibración + riesgo
+    base_score = 50.0
+    if ev_real is not None:
+        base_score += ev_real * 120.0
+    base_score += edge_real * 80.0
+    if mercado_estado == "verde":
+        base_score += 6.0
+    elif mercado_estado == "amarillo":
+        base_score -= 6.0
+    else:
+        base_score -= 14.0
+    # Penalización por varianza
+    base_score -= min(18.0, max(0.0, float(std) * 1.8))
+    score = float(max(0.0, min(100.0, base_score)))
+
+    # Kelly fraccional comparable a NBA
+    kelly_full = 0.0
+    kelly_frac = 0.0
+    sizing = 0.0
+    if cuota_lado is not None and cuota_lado > 1.0:
+        b = float(cuota_lado) - 1.0
+        p = float(prob_cal)
+        q = 1.0 - p
+        kelly_full = ((b * p) - q) / b
+        if kelly_full < 0:
+            kelly_full = 0.0
+        kelly_frac = 0.25 * kelly_full
+        # Penalizaciones de riesgo
+        risk_factor = 1.0
+        if mercado_estado == "amarillo":
+            risk_factor *= 0.8
+        elif mercado_estado == "rojo":
+            risk_factor *= 0.5
+        if std > 4.0:
+            risk_factor *= 0.75
+            advertencias.append("Alta volatilidad del mercado; sizing penalizado.")
+        sizing = float(max(0.0, min(0.05, kelly_frac * risk_factor)))
+
+    return {
+        "cuota_lado": cuota_lado,
+        "cuota_over": cuota_over,
+        "cuota_under": cuota_under,
+        "devig_metodo": devig_metodo,
+        "devig_overround": devig_overround,
+        "devig_p_mkt_fair": p_mkt_fair,
+        "edge_real": edge_real,
+        "valor_esperado": ev_real,
+        "score": score,
+        "sizing": sizing,
+        "advertencias": advertencias,
+    }
+
+
+def _calcular_peso_ml_dinamico(
+    *,
+    mercado: str,
+    mercado_estado: str,
+    partidos_relevantes: int,
+    ml_calibrada: bool,
+    heur_calibrada: bool,
+) -> float:
+    peso = 0.55
+    mercado_u = str(mercado).upper()
+    if mercado_u.startswith("GOLES"):
+        peso += 0.08
+    elif mercado_u.startswith("CORNERS"):
+        peso += 0.04
+
+    if ml_calibrada:
+        peso += 0.07
+    if heur_calibrada:
+        peso -= 0.03
+
+    if partidos_relevantes >= 80:
+        peso += 0.05
+    elif partidos_relevantes < 25:
+        peso -= 0.08
+
+    if mercado_estado == "amarillo":
+        peso -= 0.08
+    elif mercado_estado == "rojo":
+        peso -= 0.15
+
+    return float(max(0.25, min(0.80, peso)))
+
+
+def _arbitrar_recomendaciones(
+    recomendaciones_ml: List[RecomendacionApuesta],
+    recomendaciones_heur: List[RecomendacionApuesta],
+    *,
+    estado_mercados: Dict[str, str],
+    partidos_relevantes: int,
+) -> List[RecomendacionApuesta]:
+    """Dedupe + arbitraje por (mercado, lado, línea) con metadata trazable."""
+    mapa_ml = {
+        _clave_recomendacion(r.mercado, r.lado, r.linea): r for r in (recomendaciones_ml or [])
+    }
+    mapa_h = {
+        _clave_recomendacion(r.mercado, r.lado, r.linea): r for r in (recomendaciones_heur or [])
+    }
+
+    claves = set(mapa_ml.keys()) | set(mapa_h.keys())
+    salida: List[RecomendacionApuesta] = []
+
+    for key in claves:
+        r_ml = mapa_ml.get(key)
+        r_h = mapa_h.get(key)
+        base = r_ml or r_h
+        mercado_estado = estado_mercados.get(str(base.mercado).upper(), "verde") if base else "verde"
+
+        if r_ml and r_h:
+            ml_cal = r_ml.p_calibrada is not None
+            h_cal = r_h.p_calibrada is not None
+            peso_ml = _calcular_peso_ml_dinamico(
+                mercado=str(base.mercado),
+                mercado_estado=mercado_estado,
+                partidos_relevantes=partidos_relevantes,
+                ml_calibrada=ml_cal,
+                heur_calibrada=h_cal,
+            )
+            peso_h = 1.0 - peso_ml
+            p_raw = (peso_ml * float(r_ml.p_raw or r_ml.probabilidad)) + (peso_h * float(r_h.p_raw or r_h.probabilidad))
+            p_cal = (peso_ml * float(r_ml.p_calibrada or r_ml.probabilidad)) + (peso_h * float(r_h.p_calibrada or r_h.probabilidad))
+            prob = (peso_ml * float(r_ml.probabilidad)) + (peso_h * float(r_h.probabilidad))
+            fuente = "ENSEMBLE"
+            motivo = f"blend_dinamico(ml={peso_ml:.2f},heur={peso_h:.2f},estado={mercado_estado},n={partidos_relevantes})"
+
+            rec = RecomendacionApuesta(
+                mercado=base.mercado,
+                lado=base.lado,
+                linea=base.linea,
+                probabilidad=float(prob),
+                confianza=base.confianza,
+                valor_esperado=r_ml.valor_esperado if r_ml.valor_esperado is not None else r_h.valor_esperado,
+                p_raw=float(p_raw),
+                p_calibrada=float(p_cal),
+                modelo_version_id=r_ml.modelo_version_id or r_h.modelo_version_id,
+                calibrador_id=r_ml.calibrador_id or r_h.calibrador_id,
+                edge_real=(peso_ml * float(r_ml.edge_real or 0.0)) + (peso_h * float(r_h.edge_real or 0.0)),
+                score=(peso_ml * float(r_ml.score or 0.0)) + (peso_h * float(r_h.score or 0.0)),
+                sizing=(peso_ml * float(r_ml.sizing or 0.0)) + (peso_h * float(r_h.sizing or 0.0)),
+                cuota=r_ml.cuota or r_h.cuota,
+                cuota_over=r_ml.cuota_over or r_h.cuota_over,
+                cuota_under=r_ml.cuota_under or r_h.cuota_under,
+                devig_metodo=r_ml.devig_metodo or r_h.devig_metodo,
+                devig_overround=r_ml.devig_overround or r_h.devig_overround,
+                devig_p_mkt_fair=r_ml.devig_p_mkt_fair or r_h.devig_p_mkt_fair,
+                advertencias=(r_ml.advertencias or []) + (r_h.advertencias or []),
+                fuente=fuente,
+                metadata_ensemble={
+                    "peso_ml": round(peso_ml, 4),
+                    "peso_heuristico": round(peso_h, 4),
+                    "mercado_estado": mercado_estado,
+                    "motivo_arbitraje": motivo,
+                    "clave": key,
+                },
+            )
+            salida.append(rec)
+        elif r_ml:
+            r_ml.fuente = r_ml.fuente or "ML"
+            r_ml.metadata_ensemble = {
+                "motivo_arbitraje": "solo_ml",
+                "clave": key,
+            }
+            salida.append(r_ml)
+        elif r_h:
+            r_h.fuente = r_h.fuente or "HEURISTICO"
+            r_h.metadata_ensemble = {
+                "motivo_arbitraje": "solo_heuristico",
+                "clave": key,
+            }
+            salida.append(r_h)
+
+    salida.sort(key=lambda x: float(x.score or 0.0), reverse=True)
+    return salida[:10]
 
 
 def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, float]:
@@ -1516,13 +1782,22 @@ def _generar_recomendaciones(
     partidos_relevantes: int,
     umbral_prob: float = 0.55,
     modelo_version_id: Optional[str] = None,
+    cuotas_por_linea: Optional[Dict[str, Dict[str, float]]] = None,
+    estado_mercados: Optional[Dict[str, str]] = None,
+    fuente: str = "HEURISTICO",
 ) -> List[RecomendacionApuesta]:
     """Genera recomendaciones de apuestas basadas en las predicciones."""
     recomendaciones = []
 
     for mercado_key, prediccion in mercados.items():
+        mercado_estado = (estado_mercados or {}).get(str(prediccion.mercado).upper(), "verde")
         for linea_str, probs in prediccion.lineas.items():
             linea = float(linea_str)
+            cuota_over, cuota_under = _obtener_cuotas_para_recomendacion(
+                cuotas_por_linea,
+                str(prediccion.mercado),
+                linea,
+            )
 
             prob_over_ajustada = ajustar_probabilidad_por_muestras(
                 probs.over_calibrada, n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes
@@ -1536,23 +1811,38 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_over_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
-                edge_over = float(prob_over_ajustada - 0.5)
-                score_over = float(max(0.0, min(100.0, edge_over * 200.0)))
-                sizing_over = float(max(0.0, min(0.05, edge_over * 0.20)))
+                m_over = _calcular_metricas_mercado(
+                    lado="OVER",
+                    prob_raw=float(probs.over_raw),
+                    prob_cal=float(prob_over_ajustada),
+                    cuota_over=cuota_over,
+                    cuota_under=cuota_under,
+                    std=float(prediccion.std),
+                    mercado_estado=mercado_estado,
+                )
                 recomendaciones.append(RecomendacionApuesta(
                     mercado=prediccion.mercado,
                     lado="OVER",
                     linea=linea,
                     probabilidad=prob_over_ajustada,
                     confianza=confianza,
-                    valor_esperado=None,
+                    valor_esperado=m_over["valor_esperado"],
                     p_raw=float(probs.over_raw),
-                    p_calibrada=float(probs.over_calibrada),
+                    p_calibrada=float(prob_over_ajustada),
                     modelo_version_id=modelo_version_id,
                     calibrador_id=None,
-                    edge_real=edge_over,
-                    score=score_over,
-                    sizing=sizing_over,
+                    edge_real=m_over["edge_real"],
+                    score=m_over["score"],
+                    sizing=m_over["sizing"],
+                    cuota=m_over["cuota_lado"],
+                    cuota_over=m_over["cuota_over"],
+                    cuota_under=m_over["cuota_under"],
+                    devig_metodo=m_over["devig_metodo"],
+                    devig_overround=m_over["devig_overround"],
+                    devig_p_mkt_fair=m_over["devig_p_mkt_fair"],
+                    advertencias=m_over["advertencias"],
+                    fuente=fuente,
+                    metadata_ensemble={"mercado_estado": mercado_estado, "llave": _clave_recomendacion(prediccion.mercado, "OVER", linea)},
                 ))
 
             # Evaluar UNDER
@@ -1560,27 +1850,42 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_under_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
-                edge_under = float(prob_under_ajustada - 0.5)
-                score_under = float(max(0.0, min(100.0, edge_under * 200.0)))
-                sizing_under = float(max(0.0, min(0.05, edge_under * 0.20)))
+                m_under = _calcular_metricas_mercado(
+                    lado="UNDER",
+                    prob_raw=float(probs.under_raw),
+                    prob_cal=float(prob_under_ajustada),
+                    cuota_over=cuota_over,
+                    cuota_under=cuota_under,
+                    std=float(prediccion.std),
+                    mercado_estado=mercado_estado,
+                )
                 recomendaciones.append(RecomendacionApuesta(
                     mercado=prediccion.mercado,
                     lado="UNDER",
                     linea=linea,
                     probabilidad=prob_under_ajustada,
                     confianza=confianza,
-                    valor_esperado=None,
+                    valor_esperado=m_under["valor_esperado"],
                     p_raw=float(probs.under_raw),
-                    p_calibrada=float(probs.under_calibrada),
+                    p_calibrada=float(prob_under_ajustada),
                     modelo_version_id=modelo_version_id,
                     calibrador_id=None,
-                    edge_real=edge_under,
-                    score=score_under,
-                    sizing=sizing_under,
+                    edge_real=m_under["edge_real"],
+                    score=m_under["score"],
+                    sizing=m_under["sizing"],
+                    cuota=m_under["cuota_lado"],
+                    cuota_over=m_under["cuota_over"],
+                    cuota_under=m_under["cuota_under"],
+                    devig_metodo=m_under["devig_metodo"],
+                    devig_overround=m_under["devig_overround"],
+                    devig_p_mkt_fair=m_under["devig_p_mkt_fair"],
+                    advertencias=m_under["advertencias"],
+                    fuente=fuente,
+                    metadata_ensemble={"mercado_estado": mercado_estado, "llave": _clave_recomendacion(prediccion.mercado, "UNDER", linea)},
                 ))
 
-    # Ordenar por probabilidad descendente
-    recomendaciones.sort(key=lambda x: x.probabilidad, reverse=True)
+    # Ordenar por score descendente (fallback a probabilidad)
+    recomendaciones.sort(key=lambda x: (x.score if x.score is not None else x.probabilidad), reverse=True)
     return recomendaciones[:10]  # Top 10 recomendaciones
 
 
@@ -2343,32 +2648,37 @@ async def analizar_partido(
                     mercados_goles = _ensamblar_mercados(mercados_goles_ml, mercados_goles, peso_ml=0.65)
                     mercados_disparos = _ensamblar_mercados(mercados_disparos_ml, mercados_disparos, peso_ml=0.65)
 
-                # 5b. Generar recomendaciones
-                todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
-                partidos_relevantes = min(
-                    int(local_corners_ctx.get("n") or 0),
-                    int(vis_corners_ctx.get("n") or 0),
-                )
-                recomendaciones = _generar_recomendaciones(
-                    todos_mercados,
-                    stats_local["partidos"],
-                    stats_visitante["partidos"],
-                    partidos_relevantes,
-                    modelo_version_id=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
-                )
-
-                # Mezclar recomendaciones heurísticas con señal ML (si existe)
-                if recomendaciones_ml:
-                    recomendaciones.extend(recomendaciones_ml)
-                    recomendaciones.sort(key=lambda x: float(x.probabilidad), reverse=True)
-                    recomendaciones = recomendaciones[:10]
-
-                # 5a. Enforce de política de calidad por mercado (bloqueo + modo seguro)
+                # 5a. Estado de calidad por mercado (insumo para scoring/arbitraje)
                 estado_mercados = _obtener_estado_mercados_futbol(
                     cursor,
                     min_muestras=100,
                     warning_brier=0.24,
                     bloquear_brier=0.28,
+                )
+
+                # 5b. Generar recomendaciones heurísticas con pipeline de decisión completo
+                todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
+                partidos_relevantes = min(
+                    int(local_corners_ctx.get("n") or 0),
+                    int(vis_corners_ctx.get("n") or 0),
+                )
+                recomendaciones_heur = _generar_recomendaciones(
+                    todos_mercados,
+                    stats_local["partidos"],
+                    stats_visitante["partidos"],
+                    partidos_relevantes,
+                    modelo_version_id=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
+                    cuotas_por_linea=request.cuotas_por_linea,
+                    estado_mercados=estado_mercados,
+                    fuente="HEURISTICO",
+                )
+
+                # 5c. Arbitraje/dedupe de señales (P5.1)
+                recomendaciones = _arbitrar_recomendaciones(
+                    recomendaciones_ml,
+                    recomendaciones_heur,
+                    estado_mercados=estado_mercados,
+                    partidos_relevantes=partidos_relevantes,
                 )
                 mercados_bloqueados = {m for m, s in estado_mercados.items() if s == "rojo"}
 
@@ -2466,6 +2776,25 @@ async def analizar_partido(
                                     "prob_visitante": prob_visitante,
                                     "ganador_probable": ganador_probable,
                                     "marcador_probable": marcador_probable,
+                                },
+                                "decision": {
+                                    "p_raw": rec.p_raw,
+                                    "p_calibrada": rec.p_calibrada,
+                                    "edge_real": rec.edge_real,
+                                    "score": rec.score,
+                                    "sizing": rec.sizing,
+                                    "valor_esperado": rec.valor_esperado,
+                                    "calibrador_id": rec.calibrador_id,
+                                    "modelo_version_id": rec.modelo_version_id,
+                                    "fuente": rec.fuente,
+                                    "metadata_ensemble": rec.metadata_ensemble,
+                                    "devig_metodo": rec.devig_metodo,
+                                    "devig_overround": rec.devig_overround,
+                                    "devig_p_mkt_fair": rec.devig_p_mkt_fair,
+                                    "cuota": rec.cuota,
+                                    "cuota_over": rec.cuota_over,
+                                    "cuota_under": rec.cuota_under,
+                                    "advertencias": rec.advertencias,
                                 },
                             }
                             registrar_apuesta_analizada(
