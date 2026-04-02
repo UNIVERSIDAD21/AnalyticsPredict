@@ -31,7 +31,7 @@ class UsuarioActual:
 
 
 def _extraer_bearer_token(authorization: str | None) -> Optional[str]:
-    if not authorization:
+    if not authorization or not isinstance(authorization, str):
         return None
     if not authorization.lower().startswith("bearer "):
         return None
@@ -130,10 +130,11 @@ def obtener_usuario_id_opcional(
 
 def obtener_usuario_actual(
     usuario_id: Optional[str] = Header(None, alias="X-Usuario-Id"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
     x_usuario_email: Optional[str] = Header(None, alias="X-Usuario-Email"),
 ) -> UsuarioActual:
     """
     Devuelve el usuario autenticado como objeto UsuarioActual.
     """
-    usuario_uuid = obtener_usuario_id(usuario_id)
+    usuario_uuid = obtener_usuario_id(x_usuario_id=usuario_id, authorization=authorization)
     return UsuarioActual(id=usuario_uuid, email=x_usuario_email)
