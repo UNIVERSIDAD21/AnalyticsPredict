@@ -190,38 +190,38 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                 UPDATE apuestas_analizadas a
                 SET estado = 'FINALIZADA',
                     valor_real = CASE
-                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                         ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                     END,
                     resultado_outcome = CASE
                         WHEN a.lado IS NULL OR a.linea IS NULL THEN NULL
                         WHEN (
                             CASE
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                                 ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                             END
                         ) = a.linea THEN 'PUSH'
                         WHEN UPPER(COALESCE(a.lado, '')) = 'OVER' AND (
                             CASE
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                                 ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                             END
                         ) > a.linea THEN 'GANADA'
                         WHEN UPPER(COALESCE(a.lado, '')) = 'UNDER' AND (
                             CASE
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                                 ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                             END
                         ) < a.linea THEN 'GANADA'
@@ -231,8 +231,8 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                     actualizado_en = now()
                 FROM partidos_baloncesto pb
                 WHERE a.deporte = 'baloncesto'
-                  AND v.estado = 'PENDIENTE'
-                  AND pb.id = v.partido_id
+                  AND a.estado = 'PENDIENTE'
+                  AND pb.id = a.partido_id
                   AND pb.local_total IS NOT NULL
                   AND pb.visitante_total IS NOT NULL;
                 """
@@ -256,8 +256,8 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                     actualizado_en = now()
                 FROM partidos_futbol pf
                 WHERE a.deporte = 'futbol'
-                  AND v.estado = 'PENDIENTE'
-                  AND pf.id = v.partido_id
+                  AND a.estado = 'PENDIENTE'
+                  AND pf.id = a.partido_id
                   AND pf.estado = 'FINALIZADO';
                 """
             )
@@ -399,18 +399,17 @@ def obtener_auditoria_decisiones_futbol(
             cur.execute(
                 f"""
                 SELECT
-                    a.id, v.partido_id, v.mercado, a.lado, a.linea,
-                    a.probabilidad_sistema, a.confianza, v.estado, v.resultado_outcome,
-                    a.decision_p_raw, a.decision_p_calibrada, a.decision_edge_real,
-                    a.decision_score, a.decision_sizing, a.decision_valor_esperado,
+                    v.id, v.partido_id, v.mercado, v.lado, v.linea,
+                    v.probabilidad_sistema, v.confianza, v.estado, v.resultado_outcome,
+                    v.decision_p_raw, v.decision_p_calibrada, v.decision_edge_real,
+                    v.decision_score, v.decision_sizing, v.decision_valor_esperado,
                     v.decision_calibrador_id, v.decision_modelo_version_id,
                     v.decision_fuente, v.decision_devig_metodo,
-                    a.decision_devig_overround, a.decision_devig_p_mkt_fair,
-                    a.decision_cuota, a.decision_cuota_over, a.decision_cuota_under,
+                    v.decision_devig_overround, v.decision_devig_p_mkt_fair,
+                    v.decision_cuota, v.decision_cuota_over, v.decision_cuota_under,
                     v.fecha_partido,
                     v.creado_en, v.actualizado_en
-                FROM apuestas_analizadas a
-                LEFT JOIN partidos_futbol pf ON pf.id = v.partido_id
+                FROM vw_auditoria_decisiones_futbol v
                 WHERE {where_sql}
                 ORDER BY v.actualizado_en DESC
                 LIMIT %s OFFSET %s
@@ -464,8 +463,7 @@ def obtener_auditoria_decisiones_futbol(
                             CASE WHEN resultado_outcome = 'GANADA' THEN 1.0 ELSE 0.0 END
                         END
                     ) AS hit_rate
-                FROM apuestas_analizadas a
-                LEFT JOIN partidos_futbol pf ON pf.id = v.partido_id
+                FROM vw_auditoria_decisiones_futbol v
                 WHERE {where_sql}
                 """,
                 params,
@@ -498,8 +496,7 @@ def obtener_auditoria_decisiones_futbol(
                             CASE WHEN resultado_outcome = 'GANADA' THEN 1.0 ELSE 0.0 END
                         END
                     ) AS hit_rate
-                FROM apuestas_analizadas a
-                LEFT JOIN partidos_futbol pf ON pf.id = v.partido_id
+                FROM vw_auditoria_decisiones_futbol v
                 WHERE {where_sql}
                 GROUP BY 1,2,3
                 ORDER BY total DESC, mercado ASC
