@@ -103,7 +103,15 @@ function calcularVig(overround: number | null): string {
     return '—';
   }
   const vig = (overround - 1) * 100;
+  if (!isFinite(vig)) return '—';
   return `${vig.toFixed(2)}%`;
+}
+
+function formatearProbabilidad(valor: number | null | undefined): string {
+  if (valor === null || valor === undefined || !isFinite(valor) || valor < 0 || valor > 1) {
+    return '—';
+  }
+  return `${(valor * 100).toFixed(1)}%`;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -166,7 +174,7 @@ export function TarjetaDeVig({
             <span className="text-[10px] uppercase tracking-wider">P. Implícita</span>
           </div>
           <div className="text-lg font-mono font-bold text-texto-principal">
-            {(pMktRaw * 100).toFixed(1)}%
+            {formatearProbabilidad(pMktRaw)}
           </div>
           <div className="text-[10px] text-texto-terciario mt-1">
             Cruda (1/cuota)
@@ -179,7 +187,7 @@ export function TarjetaDeVig({
             <span className="text-[10px] uppercase tracking-wider">P. Justa</span>
           </div>
           <div className={`text-lg font-mono font-bold ${metodo === 'exacto' ? 'text-neon-verde' : 'text-texto-principal'}`}>
-            {(pMktFair * 100).toFixed(1)}%
+            {formatearProbabilidad(pMktFair)}
           </div>
           <div className="text-[10px] text-texto-terciario mt-1">
             Sin vig
@@ -192,7 +200,7 @@ export function TarjetaDeVig({
             <span className="text-[10px] uppercase tracking-wider">Diferencia</span>
           </div>
           <div className="text-lg font-mono font-bold text-neon-magenta">
-            {((pMktRaw - pMktFair) * 100).toFixed(2)} pts
+            {isFinite(pMktRaw) && isFinite(pMktFair) ? `${((pMktRaw - pMktFair) * 100).toFixed(2)} pts` : '—'}
           </div>
           <div className="text-[10px] text-texto-terciario mt-1">
             Vig aplicado

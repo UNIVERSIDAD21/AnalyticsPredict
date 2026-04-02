@@ -53,6 +53,17 @@ function promedio(nums: number[]): number {
   return nums.reduce((acc, n) => acc + n, 0) / nums.length;
 }
 
+function numeroSeguro(valor: unknown, fallback = 0): number {
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function cuotaValida(cuota?: number | null): number | null {
+  const n = numeroSeguro(cuota, NaN);
+  if (!Number.isFinite(n) || n <= 1) return null;
+  return n;
+}
+
 function desdePerspectiva(partido: PartidoFutbolEstadistico, equipoId: string): { equipo: number; rival: number } {
   const esLocal = String(partido.equipoLocalId) === String(equipoId);
   if (esLocal) return { equipo: partido.golesLocal, rival: partido.golesVisitante };
@@ -88,15 +99,17 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   )) ?? analisis.recomendaciones?.[0];
 
   const mercadoMain = pickMainMarket(analisis);
-  const lineaMain = analisis.lineaObjetivo ?? mercadoMain?.probabilidades?.[0]?.linea ?? recObjetivo?.linea ?? 2.5;
-  const pOver = mercadoMain?.probabilidades?.find((p) => p.linea === lineaMain)?.overCalibrada
+  const lineaMain = numeroSeguro(analisis.lineaObjetivo ?? mercadoMain?.probabilidades?.[0]?.linea ?? recObjetivo?.linea, 0);
+  const pOver = numeroSeguro(
+    mercadoMain?.probabilidades?.find((p) => p.linea === lineaMain)?.overCalibrada
     ?? mercadoMain?.probabilidades?.[0]?.overCalibrada
-    ?? recObjetivo?.probabilidad
-    ?? 0.5;
-  const pUnder = 1 - pOver;
+    ?? recObjetivo?.probabilidad,
+    0,
+  );
+  const pUnder = Math.max(0, Math.min(1, 1 - pOver));
 
-  const mediaTotal = mercadoMain?.media ?? 0;
-  const stdTotal = mercadoMain?.std ?? 1;
+  const mediaTotal = numeroSeguro(mercadoMain?.media, 0);
+  const stdTotal = numeroSeguro(mercadoMain?.std, 0);
   const mediaEq = mediaTotal * 0.48;
   const mediaRv = mediaTotal * 0.52;
   const stdEq = Math.max(0.5, stdTotal * 0.7);
@@ -130,40 +143,47 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     ),
   };
 
+  const cuotaPrincipal = cuotaValida(recObjetivo?.cuota) ?? cuotaValida(recObjetivo?.cuotaOver) ?? cuotaValida(recObjetivo?.cuotaUnder);
+  const pMktRaw = cuotaPrincipal ? (1 / cuotaPrincipal) : null;
+  const pMktFair = numeroSeguro(recObjetivo?.devigPMktFair, pMktRaw ?? 0);
+  const scoreValido = Number.isFinite(recObjetivo?.score ?? NaN) ? Number(recObjetivo?.score) : null;
+
   const mejorApuestaDetalle = recObjetivo ? {
     mercado: recObjetivo.mercado,
     lado: recObjetivo.lado,
     linea: recObjetivo.linea,
-    cuota: recObjetivo.cuota ?? recObjetivo.cuotaOver ?? recObjetivo.cuotaUnder ?? 0,
-    cuota_over: recObjetivo.cuotaOver ?? null,
-    cuota_under: recObjetivo.cuotaUnder ?? null,
-    probabilidad_sistema: recObjetivo.probabilidad,
-    edge_real: recObjetivo.edgeReal ?? null,
-    valor_esperado: recObjetivo.valorEsperado ?? null,
+    cuota: cuotaPrincipal ?? 0,
+    cuota_over: cuotaValida(recObjetivo.cuotaOver) ?? null,
+    cuota_under: cuotaValida(recObjetivo.cuotaUnder) ?? null,
+    probabilidad_sistema: numeroSeguro(recObjetivo.probabilidad, 0),
+    edge_real: Number.isFinite(recObjetivo.edgeReal ?? NaN) ? recObjetivo.edgeReal ?? null : null,
+    valor_esperado: Number.isFinite(recObjetivo.valorEsperado ?? NaN) ? recObjetivo.valorEsperado ?? null : null,
     prediccion_media: mediaTotal,
     prediccion_desviacion: stdTotal,
     distancia_z: 0,
-    p_raw: recObjetivo.pRaw ?? null,
-    p_calibrada: recObjetivo.pCalibrada ?? null,
+    p_raw: Number.isFinite(recObjetivo.pRaw ?? NaN) ? recObjetivo.pRaw ?? null : null,
+    p_calibrada: Number.isFinite(recObjetivo.pCalibrada ?? NaN) ? recObjetivo.pCalibrada ?? null : null,
     calibrador_usado: null,
-    devig_metodo: recObjetivo.devigMetodo ?? 'no_aplicado',
-    devig_overround: recObjetivo.devigOverround ?? null,
-    devig_p_mkt_raw: 1 / (recObjetivo.cuota ?? 2),
-    devig_p_mkt_fair: recObjetivo.devigPMktFair ?? (1 / (recObjetivo.cuota ?? 2)),
-    devig_advertencias: recObjetivo.advertencias ?? [],
+    devig_metodo: cuotaPrincipal ? (recObjetivo.devigMetodo ?? 'estimado') : 'no_aplicado',
+    devig_overround: Number.isFinite(recObjetivo.devigOverround ?? NaN) ? recObjetivo.devigOverround ?? null : null,
+    devig_p_mkt_raw: pMktRaw ?? 0,
+    devig_p_mkt_fair: pMktFair,
+    devig_advertencias: cuotaPrincipal ? (recObjetivo.advertencias ?? []) : ['Sin cuotas reales: no se puede calcular de-vig de mercado'],
     edge_raw: null,
-    score_total: recObjetivo.score ?? 0,
-    score_componentes: { ev: 0, edge_real: 0, riesgo_valor: 0, riesgo_referencia: 1, riesgo_normalizado: 0, penalizacion_riesgo: 0, penalizacion_devig: 0 },
-    score_explicacion: recObjetivo.razon || 'Score calculado por backend fútbol',
-    score_penalizaciones: [],
-    kelly_full: recObjetivo.sizing ?? null,
-    kelly_fraccional: recObjetivo.sizing ?? null,
-    fraccion_kelly: recObjetivo.sizing ?? null,
+    score_total: scoreValido ?? -1000,
+    score_componentes: { ev: 0, edge_real: 0, riesgo_valor: 0, riesgo_referencia: 1, riesgo_normalizado: 0, penalizacion_riesgo: 0, penalizacion_devig: cuotaPrincipal ? 0 : -20 },
+    score_explicacion: scoreValido === null
+      ? 'Score no disponible: faltan datos mínimos válidos para evaluación de valor.'
+      : (recObjetivo.razon || 'Score calculado por backend fútbol'),
+    score_penalizaciones: cuotaPrincipal ? [] : ['SIN_DEVIG'],
+    kelly_full: Number.isFinite(recObjetivo.sizing ?? NaN) ? recObjetivo.sizing ?? null : null,
+    kelly_fraccional: Number.isFinite(recObjetivo.sizing ?? NaN) ? recObjetivo.sizing ?? null : null,
+    fraccion_kelly: Number.isFinite(recObjetivo.sizing ?? NaN) ? recObjetivo.sizing ?? null : null,
     stake: null,
     stake_porcentaje: null,
     bankroll_momento: null,
     perfil_riesgo_usado: 'MEDIO',
-    sizing_advertencias: [],
+    sizing_advertencias: cuotaPrincipal ? [] : ['Sin cuotas reales, sizing degradado'],
     sizing_penalizaciones: {},
     aplicaron_caps: false,
   } : null;
@@ -192,13 +212,15 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       frescura_datos: 'ALTA',
       puntaje_total: 0.65,
     },
-    analisis_mercado: {
-      cuota: recObjetivo?.cuota ?? recObjetivo?.cuotaOver ?? recObjetivo?.cuotaUnder ?? 1.9,
-      probabilidad_implicita: 1 / (recObjetivo?.cuota ?? recObjetivo?.cuotaOver ?? recObjetivo?.cuotaUnder ?? 1.9),
-      edge: (recObjetivo?.probabilidad ?? 0.5) - (1 / (recObjetivo?.cuota ?? recObjetivo?.cuotaOver ?? recObjetivo?.cuotaUnder ?? 1.9)),
-      valor_esperado: recObjetivo?.valorEsperado ?? 0,
-      recomendacion: mapearRecomendacion(recObjetivo?.valorEsperado ?? 0),
-    },
+    analisis_mercado: cuotaPrincipal
+      ? {
+          cuota: cuotaPrincipal,
+          probabilidad_implicita: 1 / cuotaPrincipal,
+          edge: (recObjetivo?.probabilidad ?? 0) - (1 / cuotaPrincipal),
+          valor_esperado: recObjetivo?.valorEsperado ?? 0,
+          recomendacion: mapearRecomendacion(recObjetivo?.valorEsperado ?? 0),
+        }
+      : null,
     mejor_apuesta: recObjetivo
       ? {
           cuarto: 'COMPLETO',
@@ -314,7 +336,15 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     },
     probabilidad_over: pOver,
     probabilidad_under: pUnder,
-    linea_analizada: lineaMain,
-    mensaje_apuesta: analisis.recomendaciones?.length ? 'Tu predicción coincide con la recomendación del sistema' : 'Sin recomendación disponible',
+    linea_analizada: lineaMain > 0 ? lineaMain : null,
+    advertencias_contexto: [
+      ...(mediaTotal <= 0 || stdTotal <= 0 ? ['Mercado principal sin media/desviación válidas. Verifica selección y disponibilidad de datos.'] : []),
+      ...(!cuotaPrincipal ? ['Análisis sin cuotas reales: se desactiva comparación de valor contra mercado.'] : []),
+    ],
+    mensaje_apuesta: analisis.recomendaciones?.length
+      ? (mediaTotal <= 0 || stdTotal <= 0
+          ? 'Inconsistencia detectada: faltan datos válidos del mercado principal para evaluación completa.'
+          : 'Tu predicción coincide con la recomendación del sistema')
+      : 'Sin recomendación disponible',
   } as ResultadoAnalisis;
 }
