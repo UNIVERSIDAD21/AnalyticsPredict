@@ -70,6 +70,7 @@ export function PaginaFutbol() {
   const { navegarConGate } = useGateNavigation(navegar);
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
+  const [categoriaMercadoFutbol, setCategoriaMercadoFutbol] = useState<'CORNERS' | 'GOLES' | 'TIROS_A_PUERTA'>('CORNERS');
   const [analisis, setAnalisis] = useState<AnalisisFutbolResponse | null>(null);
   const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
@@ -148,9 +149,9 @@ export function PaginaFutbol() {
 
   const opcionesMercadoFutbol: Array<{ valor: Mercado; etiqueta: string }> = useMemo(
     () => [
-      { valor: 'Q1', etiqueta: 'Corners' },
-      { valor: 'Q2', etiqueta: 'Goles' },
-      { valor: 'Q3', etiqueta: 'Tiros a puerta' },
+      { valor: 'Q1', etiqueta: 'Primer tiempo' },
+      { valor: 'Q2', etiqueta: 'Segundo tiempo' },
+      { valor: 'COMPLETO', etiqueta: 'Juego completo' },
     ],
     []
   );
@@ -267,6 +268,21 @@ export function PaginaFutbol() {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
             <div className="lg:sticky lg:top-6 space-y-4">
+              <Tarjeta className="border border-neon-cyan/20">
+                <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
+                  Mercado fútbol
+                </label>
+                <select
+                  value={categoriaMercadoFutbol}
+                  onChange={(e) => setCategoriaMercadoFutbol(e.target.value as 'CORNERS' | 'GOLES' | 'TIROS_A_PUERTA')}
+                  className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
+                >
+                  <option value="CORNERS">Corners</option>
+                  <option value="GOLES">Goles</option>
+                  <option value="TIROS_A_PUERTA">Tiros a puerta</option>
+                </select>
+              </Tarjeta>
+
               <FormularioAnalisis
                 equipos={equiposAnalisis}
                 estadisticas={[]}
@@ -275,6 +291,7 @@ export function PaginaFutbol() {
                 cargandoEquipos={cargandoPartidos}
                 partidosDisponibles={partidosSelector}
                 opcionesMercado={opcionesMercadoFutbol}
+                textoAyudaMercado="Selecciona si quieres analizar primer tiempo, segundo tiempo o juego completo."
               />
               <Boton variante="secundario" anchoCompleto onClick={recargarTodo}>
                 Actualizar datos

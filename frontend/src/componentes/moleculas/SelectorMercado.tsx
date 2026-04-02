@@ -32,6 +32,8 @@ interface PropsSelectorMercado {
   deshabilitado?: boolean;
   /** Opciones custom por módulo (ej: fútbol) */
   opciones?: OpcionSelect[];
+  /** Texto de ayuda custom */
+  textoAyuda?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -47,6 +49,7 @@ export function SelectorMercado({
   error,
   deshabilitado = false,
   opciones,
+  textoAyuda,
 }: PropsSelectorMercado) {
   return (
     <Select
@@ -57,7 +60,7 @@ export function SelectorMercado({
       placeholder="Selecciona el mercado"
       error={error}
       disabled={deshabilitado}
-      textoAyuda="Q1-Q4 para cuartos individuales, COMPLETO para el juego entero"
+      textoAyuda={textoAyuda ?? "Q1-Q4 para cuartos individuales, COMPLETO para el juego entero"}
     />
   );
 }

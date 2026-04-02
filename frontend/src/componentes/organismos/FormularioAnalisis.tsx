@@ -56,6 +56,8 @@ interface PropsFormularioAnalisis {
   partidosDisponibles?: PartidoResumen[];
   /** Opciones de mercado personalizadas por módulo */
   opcionesMercado?: OpcionMercadoCustom[];
+  /** Texto de ayuda en selector de mercado */
+  textoAyudaMercado?: string;
 }
 
 interface EstadoFormulario {
@@ -93,6 +95,7 @@ export function FormularioAnalisis({
   cargandoEquipos = false,
   partidosDisponibles,
   opcionesMercado,
+  textoAyudaMercado,
 }: PropsFormularioAnalisis) {
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
@@ -395,6 +398,7 @@ export function FormularioAnalisis({
             onChange={(valor) => actualizarCampo('mercado', valor)}
             deshabilitado={cargando}
             opciones={opcionesMercado}
+            textoAyuda={textoAyudaMercado}
           />
 
           {/* Línea con selector Over/Under */}
