@@ -12,7 +12,7 @@ import { MensajeError, PanelDepthPremium, ProgresoAnalisis } from '../moleculas'
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { usePartidosFutbol } from '../../hooks';
-import { analizarPartido, obtenerH2HPartidos, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
+import { analizarPartido, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
@@ -156,17 +156,25 @@ export function PaginaFutbol() {
   );
 
   const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
-    const localId = String(partido.equipoLocal);
-    const visitanteId = String(partido.equipoVisitante);
-    if (!localId || !visitanteId) return;
-
-    const keyH2h = `${localId}|${visitanteId}|${limiteH2h}`;
-    const keyLocal = `${localId}|${limiteLocal}|${ubicacionLocal}`;
-    const keyVisit = `${visitanteId}|${limiteVisitante}|${ubicacionVisitante}`;
-
     try {
       setCargandoContexto(true);
       setErrorContexto(null);
+
+      const detalle = await obtenerPartido(partido.id);
+      const localId = String(detalle.equipoLocalId || detalle.equipoLocal || '');
+      const visitanteId = String(detalle.equipoVisitanteId || detalle.equipoVisitante || '');
+
+      if (!localId || !visitanteId) {
+        setH2hPartidos([]);
+        setHistorialLocal([]);
+        setHistorialVisitante([]);
+        setErrorContexto('No se pudo resolver el ID real de los equipos para H2H/historial.');
+        return;
+      }
+
+      const keyH2h = `${localId}|${visitanteId}|${limiteH2h}`;
+      const keyLocal = `${localId}|${limiteLocal}|${ubicacionLocal}`;
+      const keyVisit = `${visitanteId}|${limiteVisitante}|${ubicacionVisitante}`;
 
       const h2h = h2hCacheRef.current.get(keyH2h) || await obtenerH2HPartidos(localId, visitanteId, limiteH2h);
       const local = historialCacheRef.current.get(keyLocal) || await obtenerPartidosEquipoDetalle(localId, limiteLocal, ubicacionLocal);
