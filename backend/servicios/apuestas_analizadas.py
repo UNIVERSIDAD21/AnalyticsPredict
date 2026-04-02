@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 
 from db import obtener_pool
 
@@ -247,3 +247,128 @@ def resumen_apuestas_analizadas(pool=None) -> dict:
                 'perdidas': int(row[3] or 0),
                 'push': int(row[4] or 0),
             }
+
+
+def _armar_where_auditoria_futbol(
+    mercado: Optional[str] = None,
+    fuente: Optional[str] = None,
+    devig_metodo: Optional[str] = None,
+) -> tuple[str, list[Any]]:
+    condiciones = ["deporte = 'futbol'"]
+    params: list[Any] = []
+
+    if mercado:
+        condiciones.append("mercado = %s")
+        params.append(mercado)
+    if fuente:
+        condiciones.append("decision_fuente = %s")
+        params.append(fuente)
+    if devig_metodo:
+        condiciones.append("decision_devig_metodo = %s")
+        params.append(devig_metodo)
+
+    return (" AND ".join(condiciones), params)
+
+
+def obtener_auditoria_decisiones_futbol(
+    *,
+    limite: int = 200,
+    offset: int = 0,
+    mercado: Optional[str] = None,
+    fuente: Optional[str] = None,
+    devig_metodo: Optional[str] = None,
+    pool=None,
+) -> dict:
+    pool = pool or obtener_pool()
+    asegurar_tabla_apuestas_analizadas(pool)
+    where_sql, params = _armar_where_auditoria_futbol(mercado, fuente, devig_metodo)
+
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT
+                    id, partido_id, mercado, lado, linea,
+                    probabilidad_sistema, confianza, estado, resultado_outcome,
+                    decision_p_raw, decision_p_calibrada, decision_edge_real,
+                    decision_score, decision_sizing, decision_valor_esperado,
+                    decision_calibrador_id, decision_modelo_version_id,
+                    decision_fuente, decision_devig_metodo,
+                    decision_devig_overround, decision_devig_p_mkt_fair,
+                    creado_en, actualizado_en
+                FROM apuestas_analizadas
+                WHERE {where_sql}
+                ORDER BY actualizado_en DESC
+                LIMIT %s OFFSET %s
+                """,
+                params + [max(1, min(limite, 2000)), max(0, offset)],
+            )
+            filas = cur.fetchall() or []
+
+            cur.execute(
+                f"""
+                SELECT
+                    COUNT(*) AS total,
+                    COUNT(*) FILTER (WHERE decision_fuente = 'ML') AS total_ml,
+                    COUNT(*) FILTER (WHERE decision_fuente = 'HEURISTICO') AS total_heuristico,
+                    COUNT(*) FILTER (WHERE decision_fuente = 'ENSEMBLE') AS total_ensemble,
+                    AVG(decision_edge_real) AS edge_promedio,
+                    AVG(decision_score) AS score_promedio,
+                    AVG(decision_sizing) AS sizing_promedio,
+                    AVG(decision_valor_esperado) AS ev_promedio
+                FROM apuestas_analizadas
+                WHERE {where_sql}
+                """,
+                params,
+            )
+            resumen = cur.fetchone()
+
+            cur.execute(
+                f"""
+                SELECT
+                    COALESCE(mercado, 'N/A') AS mercado,
+                    COALESCE(decision_fuente, 'N/A') AS fuente,
+                    COALESCE(decision_devig_metodo, 'N/A') AS devig_metodo,
+                    COUNT(*) AS total,
+                    AVG(decision_edge_real) AS edge_promedio,
+                    AVG(decision_score) AS score_promedio,
+                    AVG(decision_sizing) AS sizing_promedio,
+                    AVG(decision_valor_esperado) AS ev_promedio
+                FROM apuestas_analizadas
+                WHERE {where_sql}
+                GROUP BY 1,2,3
+                ORDER BY total DESC, mercado ASC
+                LIMIT 200
+                """,
+                params,
+            )
+            cortes = cur.fetchall() or []
+
+    return {
+        "total": int(resumen[0] or 0),
+        "totales": {
+            "ml": int(resumen[1] or 0),
+            "heuristico": int(resumen[2] or 0),
+            "ensemble": int(resumen[3] or 0),
+        },
+        "promedios": {
+            "edge_real": float(resumen[4]) if resumen[4] is not None else None,
+            "score": float(resumen[5]) if resumen[5] is not None else None,
+            "sizing": float(resumen[6]) if resumen[6] is not None else None,
+            "valor_esperado": float(resumen[7]) if resumen[7] is not None else None,
+        },
+        "cortes": [
+            {
+                "mercado": c[0],
+                "fuente": c[1],
+                "devig_metodo": c[2],
+                "total": int(c[3] or 0),
+                "edge_promedio": float(c[4]) if c[4] is not None else None,
+                "score_promedio": float(c[5]) if c[5] is not None else None,
+                "sizing_promedio": float(c[6]) if c[6] is not None else None,
+                "ev_promedio": float(c[7]) if c[7] is not None else None,
+            }
+            for c in cortes
+        ],
+        "items": filas,
+    }

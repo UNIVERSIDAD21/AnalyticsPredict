@@ -951,6 +951,30 @@ async def listar_apuestas_analizadas(
     return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas")
 
 
+@router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol')
+async def auditoria_apuestas_analizadas_futbol(
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
+    limite: int = 200,
+    offset: int = 0,
+    mercado: Optional[str] = None,
+    fuente: Optional[str] = None,
+    devig_metodo: Optional[str] = None,
+):
+    """Reporte canónico para auditoría/backtesting de decisiones de fútbol sin parsear payload JSON."""
+    from servicios.apuestas_analizadas import obtener_auditoria_decisiones_futbol
+
+    payload = obtener_auditoria_decisiones_futbol(
+        limite=limite,
+        offset=offset,
+        mercado=mercado,
+        fuente=fuente,
+        devig_metodo=devig_metodo,
+    )
+    payload_legacy = {"exito": True, **payload}
+    return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas-auditoria-futbol")
+
+
 @router.get("/{apuesta_id}", summary="Detalle de apuesta")
 async def obtener_apuesta(
     apuesta_id: UUID,
