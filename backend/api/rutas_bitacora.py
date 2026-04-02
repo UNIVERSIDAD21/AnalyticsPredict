@@ -995,15 +995,57 @@ class AuditoriaDecisionFutbolCorte(BaseModel):
     hit_rate: Optional[float] = None
 
 
+class AuditoriaDecisionFutbolTotales(BaseModel):
+    ml: int = 0
+    heuristico: int = 0
+    ensemble: int = 0
+    resueltas: int = 0
+    no_resueltas: int = 0
+
+
+class AuditoriaDecisionFutbolPromedios(BaseModel):
+    edge_real: Optional[float] = None
+    score: Optional[float] = None
+    sizing: Optional[float] = None
+    valor_esperado: Optional[float] = None
+    brier_score: Optional[float] = None
+    log_loss: Optional[float] = None
+    calibration_gap: Optional[float] = None
+    hit_rate: Optional[float] = None
+
+
+class AuditoriaDecisionFutbolFiltros(BaseModel):
+    mercado: Optional[str] = None
+    fuente: Optional[str] = None
+    devig_metodo: Optional[str] = None
+    creado_desde: Optional[datetime] = None
+    creado_hasta: Optional[datetime] = None
+    actualizado_desde: Optional[datetime] = None
+    actualizado_hasta: Optional[datetime] = None
+    fecha_partido_desde: Optional[datetime] = None
+    fecha_partido_hasta: Optional[datetime] = None
+    partido_id: Optional[str] = None
+    modelo_version_id: Optional[str] = None
+    calibrador_id: Optional[str] = None
+    estado: Optional[str] = None
+    resultado_outcome: Optional[str] = None
+
+
+class AuditoriaDecisionFutbolPaginacion(BaseModel):
+    limite: int
+    offset: int
+    items: int
+
+
 class AuditoriaDecisionFutbolResponse(BaseModel):
     exito: bool = True
     total: int
-    totales: dict
-    promedios: dict
+    totales: AuditoriaDecisionFutbolTotales
+    promedios: AuditoriaDecisionFutbolPromedios
     cortes: List[AuditoriaDecisionFutbolCorte]
     items: List[AuditoriaDecisionFutbolItem]
-    filtros_aplicados: dict
-    paginacion: dict
+    filtros_aplicados: AuditoriaDecisionFutbolFiltros
+    paginacion: AuditoriaDecisionFutbolPaginacion
 
 
 def _exigir_admin_bitacora(usuario_id: UUID) -> None:
@@ -1096,13 +1138,21 @@ async def auditoria_apuestas_analizadas_futbol_legacy(
 @router.post('/apuestas-analizadas/auditoria-futbol/backfill', summary='Backfill canónico de auditoría fútbol')
 async def backfill_auditoria_futbol(
     limite: int = 5000,
+    batch_size: int = 500,
+    checkpoint_id: Optional[int] = None,
+    dry_run: bool = True,
     usuario_id: UUID = Depends(obtener_usuario_id),
 ):
     """Backfill de columnas canónicas desde payload histórico cuando exista metadata recuperable."""
     _exigir_admin_bitacora(usuario_id)
     from servicios.apuestas_analizadas import backfill_decisiones_desde_payload_futbol
 
-    resultado = backfill_decisiones_desde_payload_futbol(limite=limite)
+    resultado = backfill_decisiones_desde_payload_futbol(
+        limite=limite,
+        batch_size=batch_size,
+        checkpoint_id=checkpoint_id,
+        dry_run=dry_run,
+    )
     return {"exito": True, **resultado}
 
 

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Optional, Any
 
@@ -51,71 +52,56 @@ def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
                 );
                 """
             )
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS resultado_outcome TEXT;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS valor_real NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_p_raw NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_p_calibrada NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_edge_real NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_score NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_sizing NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_valor_esperado NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_calibrador_id TEXT;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_modelo_version_id TEXT;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_fuente TEXT;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_metodo TEXT;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_overround NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_p_mkt_fair NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_cuota NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_cuota_over NUMERIC;")
-            cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_cuota_under NUMERIC;")
-            # Historial completo: NO deduplicar por clave natural.
-            # Antes existía un índice único que sobreescribía análisis repetidos.
-            # Para bitácora completa por evento, se elimina esa restricción.
-            cur.execute("DROP INDEX IF EXISTS uq_apuestas_analizadas_natural;")
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_lookup
-                ON apuestas_analizadas (deporte, partido_id, mercado, lado, linea);
-                """
-            )
-            # Índices de auditoría canónica (enfocados en fútbol)
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_actualizado
-                ON apuestas_analizadas (deporte, actualizado_en DESC);
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_cortes
-                ON apuestas_analizadas (deporte, mercado, decision_fuente, decision_devig_metodo);
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_modelo
-                ON apuestas_analizadas (deporte, decision_modelo_version_id);
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_calibrador
-                ON apuestas_analizadas (deporte, decision_calibrador_id);
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_estado_outcome
-                ON apuestas_analizadas (deporte, estado, resultado_outcome);
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_creado
-                ON apuestas_analizadas (deporte, creado_en DESC);
-                """
-            )
-
+            # Política de esquema: migraciones formales primero.
+            # Runtime DDL solo cuando se habilita explícitamente para bootstrap/emergencia.
+            allow_runtime_ddl = os.getenv("APUESTAS_ANALIZADAS_RUNTIME_DDL", "0") == "1"
+            if allow_runtime_ddl:
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS resultado_outcome TEXT;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS valor_real NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_p_raw NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_p_calibrada NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_edge_real NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_score NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_sizing NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_valor_esperado NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_calibrador_id TEXT;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_modelo_version_id TEXT;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_fuente TEXT;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_metodo TEXT;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_overround NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_devig_p_mkt_fair NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_cuota NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_cuota_over NUMERIC;")
+                cur.execute("ALTER TABLE apuestas_analizadas ADD COLUMN IF NOT EXISTS decision_cuota_under NUMERIC;")
+                cur.execute("DROP INDEX IF EXISTS uq_apuestas_analizadas_natural;")
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_lookup
+                    ON apuestas_analizadas (deporte, partido_id, mercado, lado, linea);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_actualizado
+                    ON apuestas_analizadas (deporte, actualizado_en DESC);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_cortes
+                    ON apuestas_analizadas (deporte, mercado, decision_fuente, decision_devig_metodo);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_modelo
+                    ON apuestas_analizadas (deporte, decision_modelo_version_id);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_calibrador
+                    ON apuestas_analizadas (deporte, decision_calibrador_id);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_estado_outcome
+                    ON apuestas_analizadas (deporte, estado, resultado_outcome);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS ix_apuestas_analizadas_futbol_creado
+                    ON apuestas_analizadas (deporte, creado_en DESC);
+                """)
 
 def registrar_apuesta_analizada(
     *,
@@ -204,38 +190,38 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                 UPDATE apuestas_analizadas a
                 SET estado = 'FINALIZADA',
                     valor_real = CASE
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                        WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                         ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                     END,
                     resultado_outcome = CASE
                         WHEN a.lado IS NULL OR a.linea IS NULL THEN NULL
                         WHEN (
                             CASE
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                                 ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                             END
                         ) = a.linea THEN 'PUSH'
                         WHEN UPPER(COALESCE(a.lado, '')) = 'OVER' AND (
                             CASE
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                                 ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                             END
                         ) > a.linea THEN 'GANADA'
                         WHEN UPPER(COALESCE(a.lado, '')) = 'UNDER' AND (
                             CASE
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
+                                WHEN UPPER(COALESCE(v.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
                                 ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
                             END
                         ) < a.linea THEN 'GANADA'
@@ -245,8 +231,8 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                     actualizado_en = now()
                 FROM partidos_baloncesto pb
                 WHERE a.deporte = 'baloncesto'
-                  AND a.estado = 'PENDIENTE'
-                  AND pb.id = a.partido_id
+                  AND v.estado = 'PENDIENTE'
+                  AND pb.id = v.partido_id
                   AND pb.local_total IS NOT NULL
                   AND pb.visitante_total IS NOT NULL;
                 """
@@ -270,8 +256,8 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
                     actualizado_en = now()
                 FROM partidos_futbol pf
                 WHERE a.deporte = 'futbol'
-                  AND a.estado = 'PENDIENTE'
-                  AND pf.id = a.partido_id
+                  AND v.estado = 'PENDIENTE'
+                  AND pf.id = v.partido_id
                   AND pf.estado = 'FINALIZADO';
                 """
             )
@@ -319,50 +305,51 @@ def _armar_where_auditoria_futbol(
     estado: Optional[str] = None,
     resultado_outcome: Optional[str] = None,
 ) -> tuple[str, list[Any]]:
-    condiciones = ["a.deporte = 'futbol'"]
+    # La vista ya está filtrada a deporte='futbol'
+    condiciones = ["1=1"]
     params: list[Any] = []
 
     if mercado:
-        condiciones.append("a.mercado = %s")
+        condiciones.append("v.mercado = %s")
         params.append(mercado)
     if fuente:
-        condiciones.append("a.decision_fuente = %s")
+        condiciones.append("v.decision_fuente = %s")
         params.append(fuente)
     if devig_metodo:
-        condiciones.append("a.decision_devig_metodo = %s")
+        condiciones.append("v.decision_devig_metodo = %s")
         params.append(devig_metodo)
     if creado_desde:
-        condiciones.append("a.creado_en >= %s")
+        condiciones.append("v.creado_en >= %s")
         params.append(creado_desde)
     if creado_hasta:
-        condiciones.append("a.creado_en <= %s")
+        condiciones.append("v.creado_en <= %s")
         params.append(creado_hasta)
     if actualizado_desde:
-        condiciones.append("a.actualizado_en >= %s")
+        condiciones.append("v.actualizado_en >= %s")
         params.append(actualizado_desde)
     if actualizado_hasta:
-        condiciones.append("a.actualizado_en <= %s")
+        condiciones.append("v.actualizado_en <= %s")
         params.append(actualizado_hasta)
     if fecha_partido_desde:
-        condiciones.append("pf.fecha_partido >= %s")
+        condiciones.append("v.fecha_partido >= %s")
         params.append(fecha_partido_desde)
     if fecha_partido_hasta:
-        condiciones.append("pf.fecha_partido <= %s")
+        condiciones.append("v.fecha_partido <= %s")
         params.append(fecha_partido_hasta)
     if partido_id:
-        condiciones.append("a.partido_id = %s")
+        condiciones.append("v.partido_id = %s")
         params.append(partido_id)
     if modelo_version_id:
-        condiciones.append("a.decision_modelo_version_id = %s")
+        condiciones.append("v.decision_modelo_version_id = %s")
         params.append(modelo_version_id)
     if calibrador_id:
-        condiciones.append("a.decision_calibrador_id = %s")
+        condiciones.append("v.decision_calibrador_id = %s")
         params.append(calibrador_id)
     if estado:
-        condiciones.append("a.estado = %s")
+        condiciones.append("v.estado = %s")
         params.append(estado)
     if resultado_outcome:
-        condiciones.append("a.resultado_outcome = %s")
+        condiciones.append("v.resultado_outcome = %s")
         params.append(resultado_outcome)
 
     return (" AND ".join(condiciones), params)
@@ -412,20 +399,20 @@ def obtener_auditoria_decisiones_futbol(
             cur.execute(
                 f"""
                 SELECT
-                    a.id, a.partido_id, a.mercado, a.lado, a.linea,
-                    a.probabilidad_sistema, a.confianza, a.estado, a.resultado_outcome,
+                    a.id, v.partido_id, v.mercado, a.lado, a.linea,
+                    a.probabilidad_sistema, a.confianza, v.estado, v.resultado_outcome,
                     a.decision_p_raw, a.decision_p_calibrada, a.decision_edge_real,
                     a.decision_score, a.decision_sizing, a.decision_valor_esperado,
-                    a.decision_calibrador_id, a.decision_modelo_version_id,
-                    a.decision_fuente, a.decision_devig_metodo,
+                    v.decision_calibrador_id, v.decision_modelo_version_id,
+                    v.decision_fuente, v.decision_devig_metodo,
                     a.decision_devig_overround, a.decision_devig_p_mkt_fair,
                     a.decision_cuota, a.decision_cuota_over, a.decision_cuota_under,
-                    pf.fecha_partido,
-                    a.creado_en, a.actualizado_en
+                    v.fecha_partido,
+                    v.creado_en, v.actualizado_en
                 FROM apuestas_analizadas a
-                LEFT JOIN partidos_futbol pf ON pf.id = a.partido_id
+                LEFT JOIN partidos_futbol pf ON pf.id = v.partido_id
                 WHERE {where_sql}
-                ORDER BY a.actualizado_en DESC
+                ORDER BY v.actualizado_en DESC
                 LIMIT %s OFFSET %s
                 """,
                 params + [max(1, min(limite, 2000)), max(0, offset)],
@@ -439,14 +426,14 @@ def obtener_auditoria_decisiones_futbol(
                     COUNT(*) FILTER (WHERE decision_fuente = 'ML') AS total_ml,
                     COUNT(*) FILTER (WHERE decision_fuente = 'HEURISTICO') AS total_heuristico,
                     COUNT(*) FILTER (WHERE decision_fuente = 'ENSEMBLE') AS total_ensemble,
-                    COUNT(*) FILTER (WHERE resultado_outcome IS NOT NULL) AS total_resueltas,
-                    COUNT(*) FILTER (WHERE resultado_outcome IS NULL) AS total_no_resueltas,
+                    COUNT(*) FILTER (WHERE resultado_outcome IN ('GANADA','PERDIDA')) AS total_resueltas,
+                    COUNT(*) FILTER (WHERE resultado_outcome IS NULL OR resultado_outcome IN ('PUSH','ANULADA')) AS total_no_resueltas,
                     AVG(decision_edge_real) AS edge_promedio,
                     AVG(decision_score) AS score_promedio,
                     AVG(decision_sizing) AS sizing_promedio,
                     AVG(decision_valor_esperado) AS ev_promedio,
                     AVG(
-                        CASE WHEN resultado_outcome IS NOT NULL THEN
+                        CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             POWER(
                                 COALESCE(decision_p_calibrada, probabilidad_sistema)
                                 - CASE WHEN resultado_outcome = 'GANADA' THEN 1 ELSE 0 END,
@@ -455,7 +442,7 @@ def obtener_auditoria_decisiones_futbol(
                         END
                     ) AS brier_score,
                     AVG(
-                        CASE WHEN resultado_outcome IS NOT NULL THEN
+                        CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             -(
                                 CASE WHEN resultado_outcome = 'GANADA'
                                     THEN LN(GREATEST(LEAST(COALESCE(decision_p_calibrada, probabilidad_sistema), 0.999999), 0.000001))
@@ -465,7 +452,7 @@ def obtener_auditoria_decisiones_futbol(
                         END
                     ) AS log_loss,
                     AVG(
-                        CASE WHEN resultado_outcome IS NOT NULL THEN
+                        CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             ABS(
                                 COALESCE(decision_p_calibrada, probabilidad_sistema)
                                 - CASE WHEN resultado_outcome = 'GANADA' THEN 1 ELSE 0 END
@@ -473,12 +460,12 @@ def obtener_auditoria_decisiones_futbol(
                         END
                     ) AS calibration_gap,
                     AVG(
-                        CASE WHEN resultado_outcome IS NOT NULL THEN
+                        CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             CASE WHEN resultado_outcome = 'GANADA' THEN 1.0 ELSE 0.0 END
                         END
                     ) AS hit_rate
                 FROM apuestas_analizadas a
-                LEFT JOIN partidos_futbol pf ON pf.id = a.partido_id
+                LEFT JOIN partidos_futbol pf ON pf.id = v.partido_id
                 WHERE {where_sql}
                 """,
                 params,
@@ -488,17 +475,17 @@ def obtener_auditoria_decisiones_futbol(
             cur.execute(
                 f"""
                 SELECT
-                    COALESCE(a.mercado, 'N/A') AS mercado,
-                    COALESCE(a.decision_fuente, 'N/A') AS fuente,
-                    COALESCE(a.decision_devig_metodo, 'N/A') AS devig_metodo,
+                    COALESCE(v.mercado, 'N/A') AS mercado,
+                    COALESCE(v.decision_fuente, 'N/A') AS fuente,
+                    COALESCE(v.decision_devig_metodo, 'N/A') AS devig_metodo,
                     COUNT(*) AS total,
-                    COUNT(*) FILTER (WHERE resultado_outcome IS NOT NULL) AS resueltas,
+                    COUNT(*) FILTER (WHERE resultado_outcome IN ('GANADA','PERDIDA')) AS resueltas,
                     AVG(decision_edge_real) AS edge_promedio,
                     AVG(decision_score) AS score_promedio,
                     AVG(decision_sizing) AS sizing_promedio,
                     AVG(decision_valor_esperado) AS ev_promedio,
                     AVG(
-                        CASE WHEN resultado_outcome IS NOT NULL THEN
+                        CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             POWER(
                                 COALESCE(decision_p_calibrada, probabilidad_sistema)
                                 - CASE WHEN resultado_outcome = 'GANADA' THEN 1 ELSE 0 END,
@@ -507,12 +494,12 @@ def obtener_auditoria_decisiones_futbol(
                         END
                     ) AS brier_score,
                     AVG(
-                        CASE WHEN resultado_outcome IS NOT NULL THEN
+                        CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             CASE WHEN resultado_outcome = 'GANADA' THEN 1.0 ELSE 0.0 END
                         END
                     ) AS hit_rate
                 FROM apuestas_analizadas a
-                LEFT JOIN partidos_futbol pf ON pf.id = a.partido_id
+                LEFT JOIN partidos_futbol pf ON pf.id = v.partido_id
                 WHERE {where_sql}
                 GROUP BY 1,2,3
                 ORDER BY total DESC, mercado ASC
@@ -615,84 +602,155 @@ def obtener_auditoria_decisiones_futbol(
     }
 
 
-def backfill_decisiones_desde_payload_futbol(*, limite: int = 5000, pool=None) -> dict:
-    """Backfill de columnas canónicas desde payload JSON cuando sea posible."""
+def backfill_decisiones_desde_payload_futbol(
+    *,
+    limite: int = 5000,
+    batch_size: int = 500,
+    checkpoint_id: Optional[int] = None,
+    dry_run: bool = False,
+    pool=None,
+) -> dict:
+    """Backfill idempotente de columnas canónicas desde payload JSON cuando sea posible."""
     pool = pool or obtener_pool()
     asegurar_tabla_apuestas_analizadas(pool)
 
-    with pool.connection() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(
-                """
-                SELECT id, payload
-                FROM apuestas_analizadas
-                WHERE deporte = 'futbol'
-                  AND (
-                    decision_p_raw IS NULL
-                    OR decision_p_calibrada IS NULL
-                    OR decision_fuente IS NULL
-                    OR decision_devig_metodo IS NULL
-                  )
-                ORDER BY actualizado_en DESC
-                LIMIT %s
-                """,
-                [max(1, min(limite, 50000))],
-            )
-            filas = cur.fetchall() or []
+    limite_n = max(1, min(limite, 50000))
+    batch_n = max(1, min(batch_size, 5000))
 
-            actualizadas = 0
-            sin_datos = 0
-            for row in filas:
-                payload = row.get("payload") or {}
-                decision = payload.get("decision") if isinstance(payload, dict) else None
-                if not isinstance(decision, dict):
-                    sin_datos += 1
-                    continue
+    coverage = {
+        "decision_p_raw": 0,
+        "decision_p_calibrada": 0,
+        "decision_edge_real": 0,
+        "decision_score": 0,
+        "decision_sizing": 0,
+        "decision_valor_esperado": 0,
+        "decision_calibrador_id": 0,
+        "decision_modelo_version_id": 0,
+        "decision_fuente": 0,
+        "decision_devig_metodo": 0,
+        "decision_devig_overround": 0,
+        "decision_devig_p_mkt_fair": 0,
+        "decision_cuota": 0,
+        "decision_cuota_over": 0,
+        "decision_cuota_under": 0,
+    }
 
+    candidatas = 0
+    actualizadas = 0
+    sin_datos = 0
+    ultimo_id = checkpoint_id
+    procesadas = 0
+
+    while procesadas < limite_n:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                restantes = limite_n - procesadas
+                chunk = min(batch_n, restantes)
                 cur.execute(
                     """
-                    UPDATE apuestas_analizadas
-                    SET
-                        decision_p_raw = COALESCE(decision_p_raw, %s),
-                        decision_p_calibrada = COALESCE(decision_p_calibrada, %s),
-                        decision_edge_real = COALESCE(decision_edge_real, %s),
-                        decision_score = COALESCE(decision_score, %s),
-                        decision_sizing = COALESCE(decision_sizing, %s),
-                        decision_valor_esperado = COALESCE(decision_valor_esperado, %s),
-                        decision_calibrador_id = COALESCE(decision_calibrador_id, %s),
-                        decision_modelo_version_id = COALESCE(decision_modelo_version_id, %s),
-                        decision_fuente = COALESCE(decision_fuente, %s),
-                        decision_devig_metodo = COALESCE(decision_devig_metodo, %s),
-                        decision_devig_overround = COALESCE(decision_devig_overround, %s),
-                        decision_devig_p_mkt_fair = COALESCE(decision_devig_p_mkt_fair, %s),
-                        decision_cuota = COALESCE(decision_cuota, %s),
-                        decision_cuota_over = COALESCE(decision_cuota_over, %s),
-                        decision_cuota_under = COALESCE(decision_cuota_under, %s)
-                    WHERE id = %s
+                    SELECT id, payload
+                    FROM apuestas_analizadas
+                    WHERE deporte = 'futbol'
+                      AND (%s IS NULL OR id > %s)
+                      AND (
+                        decision_p_raw IS NULL
+                        OR decision_p_calibrada IS NULL
+                        OR decision_fuente IS NULL
+                        OR decision_devig_metodo IS NULL
+                      )
+                    ORDER BY id ASC
+                    LIMIT %s
                     """,
-                    [
-                        decision.get("p_raw"),
-                        decision.get("p_calibrada"),
-                        decision.get("edge_real"),
-                        decision.get("score"),
-                        decision.get("sizing"),
-                        decision.get("valor_esperado"),
-                        decision.get("calibrador_id"),
-                        decision.get("modelo_version_id"),
-                        decision.get("fuente"),
-                        decision.get("devig_metodo"),
-                        decision.get("devig_overround"),
-                        decision.get("devig_p_mkt_fair"),
-                        decision.get("cuota"),
-                        decision.get("cuota_over"),
-                        decision.get("cuota_under"),
-                        row["id"],
-                    ],
+                    [ultimo_id, ultimo_id, chunk],
                 )
-                actualizadas += cur.rowcount
+                filas = cur.fetchall() or []
+
+                if not filas:
+                    break
+
+                for row in filas:
+                    candidatas += 1
+                    procesadas += 1
+                    ultimo_id = int(row["id"])
+                    payload = row.get("payload") or {}
+                    decision = payload.get("decision") if isinstance(payload, dict) else None
+                    if not isinstance(decision, dict):
+                        sin_datos += 1
+                        continue
+
+                    for field, source_key in [
+                        ("decision_p_raw", "p_raw"),
+                        ("decision_p_calibrada", "p_calibrada"),
+                        ("decision_edge_real", "edge_real"),
+                        ("decision_score", "score"),
+                        ("decision_sizing", "sizing"),
+                        ("decision_valor_esperado", "valor_esperado"),
+                        ("decision_calibrador_id", "calibrador_id"),
+                        ("decision_modelo_version_id", "modelo_version_id"),
+                        ("decision_fuente", "fuente"),
+                        ("decision_devig_metodo", "devig_metodo"),
+                        ("decision_devig_overround", "devig_overround"),
+                        ("decision_devig_p_mkt_fair", "devig_p_mkt_fair"),
+                        ("decision_cuota", "cuota"),
+                        ("decision_cuota_over", "cuota_over"),
+                        ("decision_cuota_under", "cuota_under"),
+                    ]:
+                        if decision.get(source_key) is not None:
+                            coverage[field] += 1
+
+                    if dry_run:
+                        continue
+
+                    cur.execute(
+                        """
+                        UPDATE apuestas_analizadas
+                        SET
+                            decision_p_raw = COALESCE(decision_p_raw, %s),
+                            decision_p_calibrada = COALESCE(decision_p_calibrada, %s),
+                            decision_edge_real = COALESCE(decision_edge_real, %s),
+                            decision_score = COALESCE(decision_score, %s),
+                            decision_sizing = COALESCE(decision_sizing, %s),
+                            decision_valor_esperado = COALESCE(decision_valor_esperado, %s),
+                            decision_calibrador_id = COALESCE(decision_calibrador_id, %s),
+                            decision_modelo_version_id = COALESCE(decision_modelo_version_id, %s),
+                            decision_fuente = COALESCE(decision_fuente, %s),
+                            decision_devig_metodo = COALESCE(decision_devig_metodo, %s),
+                            decision_devig_overround = COALESCE(decision_devig_overround, %s),
+                            decision_devig_p_mkt_fair = COALESCE(decision_devig_p_mkt_fair, %s),
+                            decision_cuota = COALESCE(decision_cuota, %s),
+                            decision_cuota_over = COALESCE(decision_cuota_over, %s),
+                            decision_cuota_under = COALESCE(decision_cuota_under, %s)
+                        WHERE id = %s
+                        """,
+                        [
+                            decision.get("p_raw"),
+                            decision.get("p_calibrada"),
+                            decision.get("edge_real"),
+                            decision.get("score"),
+                            decision.get("sizing"),
+                            decision.get("valor_esperado"),
+                            decision.get("calibrador_id"),
+                            decision.get("modelo_version_id"),
+                            decision.get("fuente"),
+                            decision.get("devig_metodo"),
+                            decision.get("devig_overround"),
+                            decision.get("devig_p_mkt_fair"),
+                            decision.get("cuota"),
+                            decision.get("cuota_over"),
+                            decision.get("cuota_under"),
+                            row["id"],
+                        ],
+                    )
+                    actualizadas += cur.rowcount
 
     return {
-        "candidatas": len(filas),
+        "dry_run": dry_run,
+        "candidatas": candidatas,
         "actualizadas": actualizadas,
         "sin_datos_decision": sin_datos,
+        "checkpoint_inicial": checkpoint_id,
+        "checkpoint_final": ultimo_id,
+        "batch_size": batch_n,
+        "coverage_por_campo": coverage,
+        "idempotencia": "usa COALESCE en UPDATE: re-ejecutar no sobrescribe campos ya poblados",
     }

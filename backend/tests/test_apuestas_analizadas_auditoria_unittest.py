@@ -64,7 +64,7 @@ class _FakePool:
 class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
     def test_where_base(self):
         where, params = _armar_where_auditoria_futbol()
-        self.assertEqual(where, "a.deporte = 'futbol'")
+        self.assertEqual(where, "1=1")
         self.assertEqual(params, [])
 
     def test_where_con_todos_los_filtros(self):
@@ -85,20 +85,20 @@ class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
             resultado_outcome="GANADA",
         )
         for clause in [
-            "a.mercado = %s",
-            "a.decision_fuente = %s",
-            "a.decision_devig_metodo = %s",
-            "a.creado_en >= %s",
-            "a.creado_en <= %s",
-            "a.actualizado_en >= %s",
-            "a.actualizado_en <= %s",
-            "pf.fecha_partido >= %s",
-            "pf.fecha_partido <= %s",
-            "a.partido_id = %s",
-            "a.decision_modelo_version_id = %s",
-            "a.decision_calibrador_id = %s",
-            "a.estado = %s",
-            "a.resultado_outcome = %s",
+            "v.mercado = %s",
+            "v.decision_fuente = %s",
+            "v.decision_devig_metodo = %s",
+            "v.creado_en >= %s",
+            "v.creado_en <= %s",
+            "v.actualizado_en >= %s",
+            "v.actualizado_en <= %s",
+            "v.fecha_partido >= %s",
+            "v.fecha_partido <= %s",
+            "v.partido_id = %s",
+            "v.decision_modelo_version_id = %s",
+            "v.decision_calibrador_id = %s",
+            "v.estado = %s",
+            "v.resultado_outcome = %s",
         ]:
             self.assertIn(clause, where)
         self.assertEqual(len(params), 14)

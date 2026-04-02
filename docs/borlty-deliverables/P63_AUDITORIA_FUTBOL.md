@@ -21,8 +21,41 @@ Filtros opcionales:
 
 ## Gobernanza / acceso
 
-El endpoint requiere autenticación (`Depends(obtener_usuario_id)`).
-No es público anónimo.
+- Auditoría v2/legacy/backfill: **admin-only** (no solo autenticación).
+- Se valida rol en tabla `usuarios` (`rol='admin'`).
+- No es público anónimo ni para cualquier usuario autenticado.
+
+## Política de outcomes para métricas
+
+Para métricas de backtesting binarias (`hit_rate`, `brier`, `log_loss`, `calibration_gap`):
+
+- `GANADA` -> y=1
+- `PERDIDA` -> y=0
+- `PUSH` / `ANULADA` / `NULL` -> **se excluyen** del denominador binario
+
+Totales:
+- `resueltas`: solo `GANADA` + `PERDIDA`
+- `no_resueltas`: `NULL` + `PUSH` + `ANULADA`
+
+## Política de migraciones vs runtime
+
+- **Mecanismo principal**: migración formal SQL (`backend/migrations/2026-04-02_auditoria_futbol_canonica.sql`).
+- Runtime DDL en `asegurar_tabla_apuestas_analizadas` queda solo como fallback de bootstrap/emergencia y se activa únicamente con:
+  - `APUESTAS_ANALIZADAS_RUNTIME_DDL=1`
+- En operación normal debe estar desactivado.
+
+## Uso de vista canónica
+
+La auditoría operativa usa como base oficial:
+- `vw_auditoria_decisiones_futbol`
+
+Esto alinea API y BI sobre la misma semántica canónica.
+
+## Legacy policy
+
+- `legacy` se mantiene por compatibilidad mínima.
+- Nuevas capacidades (tipado estricto/estructura v2) viven en endpoint v2.
+- Sunset recomendado: congelar legacy y retirarlo cuando consumidores migren.
 
 ## Métricas incluidas
 
