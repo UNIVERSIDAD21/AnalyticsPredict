@@ -25,6 +25,7 @@ import {
   PanelH2HFutbol,
   PanelHistorialEquipoFutbol,
   ModalGuardarApuestaFutbol,
+  FormularioAnalisis,
 } from '../organismos';
 import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, PanelDepthPremium } from '../moleculas';
@@ -52,6 +53,7 @@ import type {
 import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useGateNavigation } from '../../hooks/useGateNavigation';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
+import type { Equipo, PeticionAnalisis } from '../../tipos';
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -448,6 +450,36 @@ export function AnalisisPartidoFutbol() {
     setRefrescoContexto((valor) => valor + 1);
   }, []);
 
+  const equiposAnalisis: Equipo[] = partido ? [
+    {
+      id: String(equipoLocalId || ''),
+      nombre: partido.equipoLocalNombre,
+      nombre_corto: partido.equipoLocalNombre,
+      abreviatura: partido.equipoLocalNombre.slice(0, 3).toUpperCase(),
+    },
+    {
+      id: String(equipoVisitanteId || ''),
+      nombre: partido.equipoVisitanteNombre,
+      nombre_corto: partido.equipoVisitanteNombre,
+      abreviatura: partido.equipoVisitanteNombre.slice(0, 3).toUpperCase(),
+    },
+  ] : [];
+
+  const handleAnalizarDesdeUIUnificada = useCallback(async (_peticion: PeticionAnalisis) => {
+    if (!partidoId) return;
+    setCargandoAnalisis(true);
+    setErrorAnalisis(null);
+    try {
+      const data = await analizarPartido({ partidoId, h2hLimite: limiteH2h });
+      setAnalisis(data);
+    } catch (err) {
+      const mensaje = err instanceof Error ? err.message : 'Error al analizar partido de fútbol';
+      setErrorAnalisis(mensaje);
+    } finally {
+      setCargandoAnalisis(false);
+    }
+  }, [partidoId, limiteH2h]);
+
   const handleSolicitarGuardar = useCallback(
     (recomendacion: RecomendacionSeleccionada) => {
       setRecomendacionSeleccionada(recomendacion);
@@ -591,6 +623,17 @@ export function AnalisisPartidoFutbol() {
             titulo="Error al cargar contexto"
             mensaje={errorContexto}
             onCerrar={handleActualizarContexto}
+          />
+        )}
+
+        {/* Formulario unificado (misma UI de selector de equipos/líneas de NBA) */}
+        {partido && (
+          <FormularioAnalisis
+            equipos={equiposAnalisis}
+            estadisticas={[]}
+            onAnalizar={handleAnalizarDesdeUIUnificada}
+            cargando={cargandoAnalisis}
+            cargandoEquipos={false}
           />
         )}
 
