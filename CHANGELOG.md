@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 20B fútbol (auditoría y priorización de la familia de GOLES):
+  - Nuevo pipeline reproducible: `backend/scripts/auditoria_goles_b20b.py` para mercados `GOLES_FT`, `GOLES_1T`, `GOLES_2T`, `GOLES_LOCAL_FT`, `GOLES_VISITANTE_FT`.
+  - Se extiende marco operativo (scorecard básico, readiness, freshness y ranking de rescatabilidad) a la familia GOLES.
+  - Reportes generados:
+    - `docs/reportes/BLOQUE_20B_AUDITORIA_GOLES_FAMILIA.json`
+    - `docs/reportes/BLOQUE_20B_AUDITORIA_GOLES_FAMILIA.md`
+  - Resultado de corrida: 5/5 mercados en `NO_LISTO` y rescatabilidad `BAJA`; no se detectan finalizados/resolubles en ventana activa para abrir rescate inmediato.
+  - Recomendación formal: `no_abrir_rescate_goles_todavia`.
+  - Comparación estratégica GOLES vs CORNERS: empate en cuello principal de calendario/masa (finalizados_30d=0 en ambos frentes).
 - Bloque 20A fútbol (expansión del marco de madurez a familia corners restante):
   - Nuevo pipeline de expansión/auditoría por mercado: `backend/scripts/expansion_corners_b20a.py`.
   - Mercados core evaluados: `CORNERS_FT`, `CORNERS_2T`, `CORNERS_VISITANTE_2T`; opcionales auditados: `CORNERS_VISITANTE_1T`, `CORNERS_LOCAL_FT`.

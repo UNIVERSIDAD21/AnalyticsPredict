@@ -1,0 +1,204 @@
+{
+  "generated_at": "2026-04-03T22:33:15.067064+00:00",
+  "bloque": "20B",
+  "mercados_objetivo": [
+    "GOLES_FT",
+    "GOLES_1T",
+    "GOLES_2T",
+    "GOLES_LOCAL_FT",
+    "GOLES_VISITANTE_FT"
+  ],
+  "auditoria_goles": [
+    {
+      "mercado": "GOLES_FT",
+      "emitidos": 21,
+      "resueltos_binarios": 3,
+      "cerrados_operativos": 3,
+      "pendientes": 18,
+      "coverage_lineas": 3,
+      "fallback_rate": 0.0,
+      "brier": 0.18548647333333335,
+      "log_loss": 0.5297304915029926,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness": {
+        "SANO": 6,
+        "AMARILLO": 6,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA"
+    },
+    {
+      "mercado": "GOLES_1T",
+      "emitidos": 21,
+      "resueltos_binarios": 3,
+      "cerrados_operativos": 3,
+      "pendientes": 18,
+      "coverage_lineas": 3,
+      "fallback_rate": 0.0,
+      "brier": 0.4319275,
+      "log_loss": 1.2930648514396597,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness": {
+        "SANO": 6,
+        "AMARILLO": 6,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA"
+    },
+    {
+      "mercado": "GOLES_2T",
+      "emitidos": 21,
+      "resueltos_binarios": 3,
+      "cerrados_operativos": 3,
+      "pendientes": 18,
+      "coverage_lineas": 3,
+      "fallback_rate": 0.0,
+      "brier": 0.57482297,
+      "log_loss": 1.980247471020483,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness": {
+        "SANO": 6,
+        "AMARILLO": 6,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA"
+    },
+    {
+      "mercado": "GOLES_LOCAL_FT",
+      "emitidos": 21,
+      "resueltos_binarios": 3,
+      "cerrados_operativos": 3,
+      "pendientes": 18,
+      "coverage_lineas": 3,
+      "fallback_rate": 0.0,
+      "brier": 0.65085628,
+      "log_loss": 2.2468829626648876,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness": {
+        "SANO": 6,
+        "AMARILLO": 6,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA"
+    },
+    {
+      "mercado": "GOLES_VISITANTE_FT",
+      "emitidos": 21,
+      "resueltos_binarios": 3,
+      "cerrados_operativos": 3,
+      "pendientes": 18,
+      "coverage_lineas": 3,
+      "fallback_rate": 0.0,
+      "brier": 0.10446082666666667,
+      "log_loss": 0.2982240560381949,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness": {
+        "SANO": 6,
+        "AMARILLO": 6,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA"
+    }
+  ],
+  "ranking_rescatabilidad": [
+    {
+      "mercado": "GOLES_FT",
+      "score": 2,
+      "nivel": "BAJA",
+      "readiness_status": "NO_LISTO",
+      "pendientes_finalizado_con_datos": 0
+    },
+    {
+      "mercado": "GOLES_1T",
+      "score": 2,
+      "nivel": "BAJA",
+      "readiness_status": "NO_LISTO",
+      "pendientes_finalizado_con_datos": 0
+    },
+    {
+      "mercado": "GOLES_2T",
+      "score": 2,
+      "nivel": "BAJA",
+      "readiness_status": "NO_LISTO",
+      "pendientes_finalizado_con_datos": 0
+    },
+    {
+      "mercado": "GOLES_LOCAL_FT",
+      "score": 2,
+      "nivel": "BAJA",
+      "readiness_status": "NO_LISTO",
+      "pendientes_finalizado_con_datos": 0
+    },
+    {
+      "mercado": "GOLES_VISITANTE_FT",
+      "score": 2,
+      "nivel": "BAJA",
+      "readiness_status": "NO_LISTO",
+      "pendientes_finalizado_con_datos": 0
+    }
+  ],
+  "recomendacion": {
+    "candidato_1": null,
+    "candidato_2": null,
+    "accion": "no_abrir_rescate_goles_todavia"
+  },
+  "comparacion_estrategica_goles_vs_corners": {
+    "goles": {
+      "emitidos": 105,
+      "resueltos_binarios": 15,
+      "finalizados_30d": 0
+    },
+    "corners_benchmark": {
+      "emitidos": 252,
+      "resueltos": 36,
+      "finalizados_30d": 0
+    },
+    "veredicto": "empate_en_cuello_calendario_masa"
+  },
+  "nota": "No se abre B20 ni promoción automática en este bloque."
+}

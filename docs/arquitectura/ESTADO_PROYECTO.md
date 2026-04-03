@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 20A expansión corners familia + bloque 19.7/19.6/19.5/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
+Última actualización: 2026-04-03 (bloque 20B auditoría goles + bloque 20A/19.7/19.6/19.5/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -123,6 +123,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 19.6 vigilancia automática de `PROGRAMADO` vencido (2026-04-03): se formaliza SLA de frescura y clasificación operacional (`SANO|AMARILLO|VENCIDO`) para separar calendario real de stale data en mercados foco. Se agrega pipeline de vigilancia con señal automática para abrir o no bloque de ingestión/resultados. Snapshot actual: 0 casos `VENCIDO`; bloqueo sigue explicado por calendario real y no por feed claramente desactualizado en esta corrida.
 - Bloque 19.7 automatización diaria consolidada (2026-04-03): se integra vigilancia diaria en entrypoint único con snapshot consolidado y alertas automáticas sobre cambios operativos relevantes (freshness, masa resolutiva, readiness y gates). Se define disparo controlado: B20 nunca corre automático; solo se registra habilitación del gate para decisión explícita. Se deja runbook con cron/template para ejecución diaria reproducible.
 - Bloque 20A expansión del marco a corners restantes (2026-04-03): se extiende auditoría técnica y framework operativo (readiness+freshness+rescatabilidad) a `CORNERS_FT`, `CORNERS_2T` y `CORNERS_VISITANTE_2T` (más opcionales auditados). Resultado de corrida: todos permanecen `NO_LISTO`, con rescatabilidad `BAJA` por ausencia de partidos finalizados/resolubles en ventana activa; rescate técnico focalizado quedó integrado pero sin casos aplicables en esta corrida.
+- Bloque 20B auditoría y priorización de familia GOLES (2026-04-03): se implementa pipeline dedicado de evaluación para `GOLES_FT`, `GOLES_1T`, `GOLES_2T`, `GOLES_LOCAL_FT`, `GOLES_VISITANTE_FT` con métricas completas de operación, readiness, freshness y ranking de rescatabilidad. Resultado: 5/5 mercados `NO_LISTO`, rescatabilidad `BAJA` y sin señal de finalizados/resolubles en ventana activa; decisión formal: no abrir rescate activo de GOLES todavía.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
