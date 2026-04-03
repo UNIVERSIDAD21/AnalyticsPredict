@@ -20,7 +20,7 @@ function mapearRecomendacion(valorEsperado: number): TipoRecomendacion {
 }
 
 function pickMainMarket(analisis: AnalisisFutbolResponse): PrediccionMercadoFutbol | null {
-  const mercadoObjetivo = analisis.mercadoObjetivo;
+  const mercadoObjetivo = analisis.objetivo?.mercado;
   if (mercadoObjetivo) {
     return (
       analisis.mercadosGoles[mercadoObjetivo]
@@ -93,13 +93,13 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   contexto?: AdaptadorContextoFutbol,
 ): ResultadoAnalisis {
   const recObjetivo = analisis.recomendaciones.find((r) => (
-    (!analisis.mercadoObjetivo || r.mercado === analisis.mercadoObjetivo)
-    && (!analisis.ladoObjetivo || r.lado === analisis.ladoObjetivo)
-    && (analisis.lineaObjetivo === undefined || Math.abs(r.linea - analisis.lineaObjetivo) < 1e-9)
+    (!analisis.objetivo?.mercado || r.mercado === analisis.objetivo.mercado)
+    && (!analisis.objetivo?.lado || r.lado === analisis.objetivo.lado)
+    && (analisis.objetivo?.linea === undefined || Math.abs(r.linea - analisis.objetivo.linea) < 1e-9)
   )) ?? analisis.recomendaciones?.[0];
 
   const mercadoMain = pickMainMarket(analisis);
-  const lineaMain = numeroSeguro(analisis.lineaObjetivo ?? mercadoMain?.probabilidades?.[0]?.linea ?? recObjetivo?.linea, 0);
+  const lineaMain = numeroSeguro(analisis.objetivo?.linea ?? mercadoMain?.probabilidades?.[0]?.linea ?? recObjetivo?.linea, 0);
   const pOver = numeroSeguro(
     mercadoMain?.probabilidades?.find((p) => p.linea === lineaMain)?.overCalibrada
     ?? mercadoMain?.probabilidades?.[0]?.overCalibrada
@@ -168,8 +168,8 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     calibrador_usado: null,
     devig_metodo: cuotaPrincipal ? (recObjetivo.devigMetodo ?? 'estimado') : 'no_aplicado',
     devig_overround: Number.isFinite(recObjetivo.devigOverround ?? NaN) ? recObjetivo.devigOverround ?? null : null,
-    devig_p_mkt_raw: pMktRaw ?? 0,
-    devig_p_mkt_fair: pMktFair,
+    devig_p_mkt_raw: pMktRaw ?? Number.NaN,
+    devig_p_mkt_fair: cuotaPrincipal ? pMktFair : Number.NaN,
     devig_advertencias: cuotaPrincipal ? (recObjetivo.advertencias ?? []) : ['Sin cuotas reales: no se puede calcular de-vig de mercado'],
     edge_raw: null,
     score_total: scoreValido ?? -1000,
@@ -240,7 +240,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     cuartos_reales: {},
     metadata: {
       deporte: 'futbol',
-      mercado: analisis.mercadoObjetivo ?? 'COMPLETO',
+      mercado: analisis.objetivo?.mercado ?? 'COMPLETO',
       policy_gate: 'POLICY_GATE_FUTBOL_MERCADOS_BLOQUEADOS',
       modelo_version: analisis.modeloVersion,
     },

@@ -12,6 +12,7 @@ import type {
   ProbabilidadLinea,
   TipoMercadoFutbol,
   NivelConfianza,
+  ObjetivoAnalisisFutbol,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -147,6 +148,91 @@ function transformarMercadosAgrupados(
   return resultado;
 }
 
+function transformarObjetivoAnalisis(
+  data: Record<string, unknown>
+): ObjetivoAnalisisFutbol {
+  const bloqueBase = (data.bloque_base || {}) as Record<string, unknown>;
+  const bloqueAjustado = (data.bloque_ajustado || {}) as Record<string, unknown>;
+  const devig = (data.devig || {}) as Record<string, unknown>;
+  const calibracion = (data.calibracion || {}) as Record<string, unknown>;
+  const scoreRiesgo = (data.score_riesgo || {}) as Record<string, unknown>;
+  const disponibilidad = (data.disponibilidad_datos || {}) as Record<string, unknown>;
+
+  return {
+    estado: (data.estado as ObjetivoAnalisisFutbol['estado']) || 'datos_insuficientes',
+    mercado: String(data.mercado || '') as TipoMercadoFutbol,
+    lado: (data.lado as 'OVER' | 'UNDER') || 'OVER',
+    linea: Number(data.linea || 0),
+    unidad: String(data.unidad || 'unidades'),
+    mediaObjetivo: data.media_objetivo !== undefined ? Number(data.media_objetivo) : null,
+    desviacionObjetivo: data.desviacion_objetivo !== undefined ? Number(data.desviacion_objetivo) : null,
+    probabilidadesObjetivo: {
+      over: data.probabilidades_objetivo && typeof data.probabilidades_objetivo === 'object'
+        ? Number(((data.probabilidades_objetivo as Record<string, unknown>).over ?? Number.NaN)) || null
+        : null,
+      under: data.probabilidades_objetivo && typeof data.probabilidades_objetivo === 'object'
+        ? Number(((data.probabilidades_objetivo as Record<string, unknown>).under ?? Number.NaN)) || null
+        : null,
+    },
+    bloqueBase: {
+      estado: (bloqueBase.estado as ObjetivoAnalisisFutbol['estado']) || 'datos_insuficientes',
+      media: bloqueBase.media !== undefined ? Number(bloqueBase.media) : null,
+      desviacion: bloqueBase.desviacion !== undefined ? Number(bloqueBase.desviacion) : null,
+      probabilidades: {
+        over: bloqueBase.probabilidades && typeof bloqueBase.probabilidades === 'object'
+          ? Number((((bloqueBase.probabilidades as Record<string, unknown>).over) ?? Number.NaN)) || null
+          : null,
+        under: bloqueBase.probabilidades && typeof bloqueBase.probabilidades === 'object'
+          ? Number((((bloqueBase.probabilidades as Record<string, unknown>).under) ?? Number.NaN)) || null
+          : null,
+      },
+    },
+    bloqueAjustado: {
+      estado: (bloqueAjustado.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
+      media: bloqueAjustado.media !== undefined ? Number(bloqueAjustado.media) : null,
+      desviacion: bloqueAjustado.desviacion !== undefined ? Number(bloqueAjustado.desviacion) : null,
+      probabilidades: {
+        over: bloqueAjustado.probabilidades && typeof bloqueAjustado.probabilidades === 'object'
+          ? Number((((bloqueAjustado.probabilidades as Record<string, unknown>).over) ?? Number.NaN)) || null
+          : null,
+        under: bloqueAjustado.probabilidades && typeof bloqueAjustado.probabilidades === 'object'
+          ? Number((((bloqueAjustado.probabilidades as Record<string, unknown>).under) ?? Number.NaN)) || null
+          : null,
+      },
+    },
+    devig: {
+      estado: (devig.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
+      metodo: devig.metodo !== undefined ? String(devig.metodo) : null,
+      overround: devig.overround !== undefined ? Number(devig.overround) : null,
+      pMktFair: devig.p_mkt_fair !== undefined ? Number(devig.p_mkt_fair) : null,
+      advertencias: Array.isArray(devig.advertencias) ? devig.advertencias as string[] : [],
+    },
+    calibracion: {
+      estado: (calibracion.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
+      pRaw: calibracion.p_raw !== undefined ? Number(calibracion.p_raw) : null,
+      pCalibrada: calibracion.p_calibrada !== undefined ? Number(calibracion.p_calibrada) : null,
+      calibradorId: calibracion.calibrador_id !== undefined ? String(calibracion.calibrador_id) : null,
+    },
+    scoreRiesgo: {
+      estado: (scoreRiesgo.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
+      score: scoreRiesgo.score !== undefined ? Number(scoreRiesgo.score) : null,
+      sizing: scoreRiesgo.sizing !== undefined ? Number(scoreRiesgo.sizing) : null,
+      edgeReal: scoreRiesgo.edge_real !== undefined ? Number(scoreRiesgo.edge_real) : null,
+      valorEsperado: scoreRiesgo.valor_esperado !== undefined ? Number(scoreRiesgo.valor_esperado) : null,
+      confianza: scoreRiesgo.confianza !== undefined ? String(scoreRiesgo.confianza) : null,
+    },
+    disponibilidadDatos: {
+      realesDisponibles: Array.isArray(disponibilidad.reales_disponibles) ? disponibilidad.reales_disponibles as string[] : [],
+      noDisponibles: Array.isArray(disponibilidad.no_disponibles) ? disponibilidad.no_disponibles as string[] : [],
+      degradacionControlada: Array.isArray(disponibilidad.degradacion_controlada) ? disponibilidad.degradacion_controlada as string[] : [],
+      datosInsuficientes: Array.isArray(disponibilidad.datos_insuficientes) ? disponibilidad.datos_insuficientes as string[] : [],
+    },
+    trazabilidad: (data.trazabilidad && typeof data.trazabilidad === 'object')
+      ? data.trazabilidad as Record<string, unknown>
+      : {},
+  };
+}
+
 // ══════════════════════════════════════════════════════════════
 // SERVICIOS
 // ══════════════════════════════════════════════════════════════
@@ -203,6 +289,7 @@ export async function analizarPartido(
       exito: Boolean(data.exito ?? true),
       partido: transformarPartidoResumen(data.partido || {}),
       timestampAnalisis: String(data.timestamp_analisis || data.timestampAnalisis || new Date().toISOString()),
+      objetivo: transformarObjetivoAnalisis((data.objetivo || {}) as Record<string, unknown>),
       mercadosCorners: transformarMercadosAgrupados(mercadosCorners),
       mercadosGoles: transformarMercadosAgrupados(mercadosGoles),
       mercadosDisparos: transformarMercadosAgrupados(mercadosDisparos),
@@ -225,11 +312,6 @@ export async function analizarPartido(
               : [],
           }
         : undefined,
-      mercadoObjetivo: (data.mercado_objetivo || data.mercadoObjetivo) as TipoMercadoFutbol | undefined,
-      ladoObjetivo: (data.lado_objetivo || data.ladoObjetivo) as 'OVER' | 'UNDER' | undefined,
-      lineaObjetivo: data.linea_objetivo !== undefined
-        ? Number(data.linea_objetivo)
-        : (data.lineaObjetivo !== undefined ? Number(data.lineaObjetivo) : undefined),
     };
   } catch (error) {
     throw new Error(extraerMensajeError(error));

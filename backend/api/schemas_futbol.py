@@ -269,11 +269,73 @@ class ProbabilidadesGanadorFutbol(BaseModel):
     marcador_probable: str
     razones: List[str] = []
 
+class ObjetivoProbabilidadesFutbol(BaseModel):
+    over: Optional[float] = Field(default=None, ge=0, le=1)
+    under: Optional[float] = Field(default=None, ge=0, le=1)
+
+
+class ObjetivoBloqueFutbol(BaseModel):
+    estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
+    media: Optional[float] = None
+    desviacion: Optional[float] = None
+    probabilidades: ObjetivoProbabilidadesFutbol
+
+
+class ObjetivoDevigFutbol(BaseModel):
+    estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
+    metodo: Optional[str] = None
+    overround: Optional[float] = None
+    p_mkt_fair: Optional[float] = None
+    advertencias: List[str] = []
+
+
+class ObjetivoCalibracionFutbol(BaseModel):
+    estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
+    p_raw: Optional[float] = Field(default=None, ge=0, le=1)
+    p_calibrada: Optional[float] = Field(default=None, ge=0, le=1)
+    calibrador_id: Optional[str] = None
+
+
+class ObjetivoScoreRiesgoFutbol(BaseModel):
+    estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
+    score: Optional[float] = None
+    sizing: Optional[float] = None
+    edge_real: Optional[float] = None
+    valor_esperado: Optional[float] = None
+    confianza: Optional[str] = None
+
+
+class ObjetivoDisponibilidadFutbol(BaseModel):
+    reales_disponibles: List[str] = []
+    no_disponibles: List[str] = []
+    degradacion_controlada: List[str] = []
+    datos_insuficientes: List[str] = []
+
+
+class ObjetivoAnalisisFutbol(BaseModel):
+    estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
+    mercado: str
+    lado: Literal["OVER", "UNDER"]
+    linea: float
+    unidad: str
+    media_objetivo: Optional[float] = None
+    desviacion_objetivo: Optional[float] = None
+    probabilidades_objetivo: ObjetivoProbabilidadesFutbol
+    bloque_base: ObjetivoBloqueFutbol
+    bloque_ajustado: ObjetivoBloqueFutbol
+    devig: ObjetivoDevigFutbol
+    calibracion: ObjetivoCalibracionFutbol
+    score_riesgo: ObjetivoScoreRiesgoFutbol
+    disponibilidad_datos: ObjetivoDisponibilidadFutbol
+    trazabilidad: Dict[str, Any] = {}
+
+
 class AnalisisResponse(BaseModel):
     """Respuesta del análisis de un partido."""
     exito: bool = True
     partido: PartidoResumen
     timestamp_analisis: datetime
+    objetivo: ObjetivoAnalisisFutbol
     mercados_corners: Dict[str, PrediccionMercado]
     mercados_goles: Dict[str, PrediccionMercado]
     mercados_disparos: Dict[str, PrediccionMercado]
@@ -281,9 +343,6 @@ class AnalisisResponse(BaseModel):
     modelo_version: str
     calibradores_activos: int = 0
     prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
-    mercado_objetivo: Optional[str] = None
-    lado_objetivo: Optional[Literal["OVER", "UNDER"]] = None
-    linea_objetivo: Optional[float] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

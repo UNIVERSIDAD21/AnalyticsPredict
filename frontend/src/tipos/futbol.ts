@@ -308,10 +308,71 @@ export interface PrediccionGanadorFutbol {
 /**
  * Response de análisis
  */
+export interface ObjetivoEstadoFutbol {
+  estado: 'disponible' | 'no_disponible' | 'degradacion_controlada' | 'datos_insuficientes';
+}
+
+export interface ObjetivoProbabilidadesFutbol {
+  over: number | null;
+  under: number | null;
+}
+
+export interface ObjetivoBloqueFutbol extends ObjetivoEstadoFutbol {
+  media: number | null;
+  desviacion: number | null;
+  probabilidades: ObjetivoProbabilidadesFutbol;
+}
+
+export interface ObjetivoDevigFutbol extends ObjetivoEstadoFutbol {
+  metodo: string | null;
+  overround: number | null;
+  pMktFair: number | null;
+  advertencias: string[];
+}
+
+export interface ObjetivoCalibracionFutbol extends ObjetivoEstadoFutbol {
+  pRaw: number | null;
+  pCalibrada: number | null;
+  calibradorId: string | null;
+}
+
+export interface ObjetivoScoreRiesgoFutbol extends ObjetivoEstadoFutbol {
+  score: number | null;
+  sizing: number | null;
+  edgeReal: number | null;
+  valorEsperado: number | null;
+  confianza: string | null;
+}
+
+export interface ObjetivoDisponibilidadDatosFutbol {
+  realesDisponibles: string[];
+  noDisponibles: string[];
+  degradacionControlada: string[];
+  datosInsuficientes: string[];
+}
+
+export interface ObjetivoAnalisisFutbol extends ObjetivoEstadoFutbol {
+  mercado: TipoMercadoFutbol;
+  lado: 'OVER' | 'UNDER';
+  linea: number;
+  unidad: string;
+  mediaObjetivo: number | null;
+  desviacionObjetivo: number | null;
+  probabilidadesObjetivo: ObjetivoProbabilidadesFutbol;
+  bloqueBase: ObjetivoBloqueFutbol;
+  bloqueAjustado: ObjetivoBloqueFutbol;
+  devig: ObjetivoDevigFutbol;
+  calibracion: ObjetivoCalibracionFutbol;
+  scoreRiesgo: ObjetivoScoreRiesgoFutbol;
+  disponibilidadDatos: ObjetivoDisponibilidadDatosFutbol;
+  trazabilidad: Record<string, unknown>;
+}
+
 export interface AnalisisFutbolResponse {
   exito: boolean;
   partido: PartidoFutbolResumen;
   timestampAnalisis: string;
+  objetivo: ObjetivoAnalisisFutbol;
   // Mercados agrupados por categoría
   mercadosCorners: Record<string, PrediccionMercadoFutbol>;
   mercadosGoles: Record<string, PrediccionMercadoFutbol>;
@@ -322,9 +383,6 @@ export interface AnalisisFutbolResponse {
   modeloVersion: string;
   calibradoresActivos: number;
   prediccionGanador?: PrediccionGanadorFutbol;
-  mercadoObjetivo?: TipoMercadoFutbol;
-  ladoObjetivo?: 'OVER' | 'UNDER';
-  lineaObjetivo?: number;
 }
 
 // ══════════════════════════════════════════════════════════════

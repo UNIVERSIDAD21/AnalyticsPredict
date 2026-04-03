@@ -37,6 +37,13 @@ from .schemas_futbol import (
     RecomendacionApuesta,
     ErrorResponse,
     ProbabilidadesGanadorFutbol,
+    ObjetivoAnalisisFutbol,
+    ObjetivoBloqueFutbol,
+    ObjetivoProbabilidadesFutbol,
+    ObjetivoDevigFutbol,
+    ObjetivoCalibracionFutbol,
+    ObjetivoScoreRiesgoFutbol,
+    ObjetivoDisponibilidadFutbol,
 )
 from .dependencias import obtener_usuario_actual, UsuarioActual
 
@@ -2044,6 +2051,205 @@ def _registrar_predicciones_futbol(
     return cursor.rowcount if cursor.rowcount is not None and cursor.rowcount >= 0 else len(filas)
 
 
+def _unidad_por_mercado(mercado: str) -> str:
+    m = str(mercado or "").upper()
+    if m.startswith("GOLES"):
+        return "goles"
+    if m.startswith("CORNERS"):
+        return "corners"
+    if m.startswith("DISPAROS_ARCO"):
+        return "tiros al arco"
+    if m.startswith("DISPAROS"):
+        return "disparos"
+    return "unidades"
+
+
+def _resolver_objetivo_canonico(
+    *,
+    request: AnalisisRequest,
+    mercados: Dict[str, PrediccionMercado],
+    recomendaciones: List[RecomendacionApuesta],
+    estado_mercados: Dict[str, str],
+) -> ObjetivoAnalisisFutbol:
+    mercado = str(request.mercado_objetivo or "").upper()
+    lado = str(request.lado_objetivo or "").upper()
+    linea = float(request.linea_objetivo) if request.linea_objetivo is not None else None
+
+    if not mercado or lado not in {"OVER", "UNDER"} or linea is None:
+        return ObjetivoAnalisisFutbol(
+            estado="datos_insuficientes",
+            mercado=mercado or "NO_DEFINIDO",
+            lado=lado if lado in {"OVER", "UNDER"} else "OVER",
+            linea=float(linea or 0.0),
+            unidad=_unidad_por_mercado(mercado),
+            media_objetivo=None,
+            desviacion_objetivo=None,
+            probabilidades_objetivo=ObjetivoProbabilidadesFutbol(over=None, under=None),
+            bloque_base=ObjetivoBloqueFutbol(
+                estado="datos_insuficientes",
+                media=None,
+                desviacion=None,
+                probabilidades=ObjetivoProbabilidadesFutbol(over=None, under=None),
+            ),
+            bloque_ajustado=ObjetivoBloqueFutbol(
+                estado="datos_insuficientes",
+                media=None,
+                desviacion=None,
+                probabilidades=ObjetivoProbabilidadesFutbol(over=None, under=None),
+            ),
+            devig=ObjetivoDevigFutbol(
+                estado="datos_insuficientes",
+                metodo=None,
+                overround=None,
+                p_mkt_fair=None,
+                advertencias=["Faltan mercado/lado/línea objetivo en la solicitud."],
+            ),
+            calibracion=ObjetivoCalibracionFutbol(
+                estado="datos_insuficientes",
+                p_raw=None,
+                p_calibrada=None,
+                calibrador_id=None,
+            ),
+            score_riesgo=ObjetivoScoreRiesgoFutbol(
+                estado="datos_insuficientes",
+                score=None,
+                sizing=None,
+                edge_real=None,
+                valor_esperado=None,
+                confianza=None,
+            ),
+            disponibilidad_datos=ObjetivoDisponibilidadFutbol(
+                reales_disponibles=[],
+                no_disponibles=["mercado", "lado", "linea"],
+                degradacion_controlada=[],
+                datos_insuficientes=["objetivo_incompleto"],
+            ),
+            trazabilidad={"origen": "backend-futbol", "regla": "request_incompleto"},
+        )
+
+    pred_mercado = mercados.get(mercado)
+    prob_linea = None
+    if pred_mercado is not None:
+        prob_linea = pred_mercado.lineas.get(str(linea)) or pred_mercado.lineas.get(f"{linea:.1f}") or pred_mercado.lineas.get(f"{linea:.2f}")
+
+    recomendacion = next(
+        (
+            r for r in recomendaciones
+            if str(r.mercado).upper() == mercado and str(r.lado).upper() == lado and abs(float(r.linea) - float(linea)) < 1e-9
+        ),
+        None,
+    )
+
+    estado_obj = "disponible"
+    degradacion: List[str] = []
+    no_disponibles: List[str] = []
+
+    if pred_mercado is None or prob_linea is None:
+        estado_obj = "datos_insuficientes"
+        no_disponibles.extend(["media_objetivo", "desviacion_objetivo", "probabilidades_objetivo"])
+
+    if recomendacion is None:
+        estado_obj = "degradacion_controlada" if estado_obj == "disponible" else estado_obj
+        degradacion.append("sin_recomendacion_exacta")
+
+    estado_mercado = estado_mercados.get(mercado)
+    if estado_mercado == "amarillo":
+        estado_obj = "degradacion_controlada" if estado_obj == "disponible" else estado_obj
+        degradacion.append("mercado_en_warning")
+    elif estado_mercado == "rojo":
+        estado_obj = "no_disponible"
+        degradacion.append("mercado_bloqueado_por_calidad")
+
+    p_over = float(prob_linea.over_calibrada) if prob_linea is not None else None
+    p_under = float(prob_linea.under_calibrada) if prob_linea is not None else None
+
+    devig_estado = "no_disponible"
+    calibracion_estado = "no_disponible"
+    score_estado = "no_disponible"
+
+    if recomendacion is not None:
+        if recomendacion.devig_metodo:
+            devig_estado = "degradacion_controlada" if str(recomendacion.devig_metodo) in {"implied_raw_single_side", "fallback_conservador_no_odds"} else "disponible"
+        if recomendacion.p_raw is not None and recomendacion.p_calibrada is not None:
+            calibracion_estado = "disponible"
+        if recomendacion.score is not None and recomendacion.sizing is not None:
+            score_estado = "disponible"
+        elif recomendacion.score is not None:
+            score_estado = "degradacion_controlada"
+
+    reales = ["mercado", "lado", "linea", "unidad"]
+    if pred_mercado is not None and prob_linea is not None:
+        reales.extend(["media_objetivo", "desviacion_objetivo", "probabilidades_objetivo", "bloque_base"])
+    if recomendacion is not None:
+        reales.append("bloque_ajustado")
+
+    return ObjetivoAnalisisFutbol(
+        estado=estado_obj,
+        mercado=mercado,
+        lado=lado,
+        linea=float(linea),
+        unidad=_unidad_por_mercado(mercado),
+        media_objetivo=float(pred_mercado.media) if pred_mercado is not None else None,
+        desviacion_objetivo=float(pred_mercado.std) if pred_mercado is not None else None,
+        probabilidades_objetivo=ObjetivoProbabilidadesFutbol(
+            over=p_over,
+            under=p_under,
+        ),
+        bloque_base=ObjetivoBloqueFutbol(
+            estado="disponible" if pred_mercado is not None and prob_linea is not None else "datos_insuficientes",
+            media=float(pred_mercado.media) if pred_mercado is not None else None,
+            desviacion=float(pred_mercado.std) if pred_mercado is not None else None,
+            probabilidades=ObjetivoProbabilidadesFutbol(over=p_over, under=p_under),
+        ),
+        bloque_ajustado=ObjetivoBloqueFutbol(
+            estado="disponible" if recomendacion is not None else "no_disponible",
+            media=float(pred_mercado.media) if pred_mercado is not None else None,
+            desviacion=float(pred_mercado.std) if pred_mercado is not None else None,
+            probabilidades=ObjetivoProbabilidadesFutbol(
+                over=float(recomendacion.p_calibrada) if recomendacion is not None and str(recomendacion.lado).upper() == "OVER" and recomendacion.p_calibrada is not None else p_over,
+                under=float(recomendacion.p_calibrada) if recomendacion is not None and str(recomendacion.lado).upper() == "UNDER" and recomendacion.p_calibrada is not None else p_under,
+            ),
+        ),
+        devig=ObjetivoDevigFutbol(
+            estado=devig_estado,
+            metodo=recomendacion.devig_metodo if recomendacion is not None else None,
+            overround=float(recomendacion.devig_overround) if recomendacion is not None and recomendacion.devig_overround is not None else None,
+            p_mkt_fair=float(recomendacion.devig_p_mkt_fair) if recomendacion is not None and recomendacion.devig_p_mkt_fair is not None else None,
+            advertencias=list(recomendacion.advertencias or []) if recomendacion is not None else ["No hay recomendación exacta para el objetivo."],
+        ),
+        calibracion=ObjetivoCalibracionFutbol(
+            estado=calibracion_estado,
+            p_raw=float(recomendacion.p_raw) if recomendacion is not None and recomendacion.p_raw is not None else None,
+            p_calibrada=float(recomendacion.p_calibrada) if recomendacion is not None and recomendacion.p_calibrada is not None else None,
+            calibrador_id=recomendacion.calibrador_id if recomendacion is not None else None,
+        ),
+        score_riesgo=ObjetivoScoreRiesgoFutbol(
+            estado=score_estado,
+            score=float(recomendacion.score) if recomendacion is not None and recomendacion.score is not None else None,
+            sizing=float(recomendacion.sizing) if recomendacion is not None and recomendacion.sizing is not None else None,
+            edge_real=float(recomendacion.edge_real) if recomendacion is not None and recomendacion.edge_real is not None else None,
+            valor_esperado=float(recomendacion.valor_esperado) if recomendacion is not None and recomendacion.valor_esperado is not None else None,
+            confianza=recomendacion.confianza if recomendacion is not None else None,
+        ),
+        disponibilidad_datos=ObjetivoDisponibilidadFutbol(
+            reales_disponibles=reales,
+            no_disponibles=no_disponibles,
+            degradacion_controlada=degradacion,
+            datos_insuficientes=["prediccion_objetivo"] if pred_mercado is None or prob_linea is None else [],
+        ),
+        trazabilidad={
+            "origen": "backend-futbol",
+            "request": {
+                "mercado_objetivo": request.mercado_objetivo,
+                "lado_objetivo": request.lado_objetivo,
+                "linea_objetivo": request.linea_objetivo,
+            },
+            "estado_mercado": estado_mercado,
+            "recomendacion_exacta": recomendacion is not None,
+        },
+    )
+
+
 @router.post(
     "/analizar",
     response_model=AnalisisResponse,
@@ -2915,6 +3121,13 @@ async def analizar_partido(
                 except Exception:
                     logger.exception("No se pudo registrar análisis de fútbol en bitácora")
 
+                objetivo = _resolver_objetivo_canonico(
+                    request=request,
+                    mercados=todos_mercados,
+                    recomendaciones=recomendaciones,
+                    estado_mercados=estado_mercados,
+                )
+
                 duracion = time.time() - inicio
                 logger.info(f"Análisis completado en {duracion:.2f}s para partido {request.partido_id}")
 
@@ -2922,6 +3135,7 @@ async def analizar_partido(
                     exito=True,
                     partido=partido_resumen,
                     timestamp_analisis=datetime.now(),
+                    objetivo=objetivo,
                     mercados_corners=mercados_corners,
                     mercados_goles=mercados_goles,
                     mercados_disparos=mercados_disparos,
@@ -2936,9 +3150,6 @@ async def analizar_partido(
                         marcador_probable=marcador_probable,
                         razones=razones_1x2,
                     ),
-                    mercado_objetivo=request.mercado_objetivo,
-                    lado_objetivo=request.lado_objetivo,
-                    linea_objetivo=request.linea_objetivo,
                 )
 
     except HTTPException:
