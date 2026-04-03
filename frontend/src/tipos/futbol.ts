@@ -200,12 +200,24 @@ export type TipoMercadoFutbol =
   | 'GOLES_VISITANTE_1T'
   | 'GOLES_VISITANTE_2T'
   | 'GOLES_VISITANTE_FT'
-  // Disparos (6)
+  // Disparos (18)
+  | 'DISPAROS_1T'
+  | 'DISPAROS_2T'
   | 'DISPAROS_FT'
+  | 'DISPAROS_ARCO_1T'
+  | 'DISPAROS_ARCO_2T'
   | 'DISPAROS_ARCO_FT'
+  | 'DISPAROS_LOCAL_1T'
+  | 'DISPAROS_LOCAL_2T'
   | 'DISPAROS_LOCAL_FT'
+  | 'DISPAROS_LOCAL_ARCO_1T'
+  | 'DISPAROS_LOCAL_ARCO_2T'
   | 'DISPAROS_LOCAL_ARCO_FT'
+  | 'DISPAROS_VISITANTE_1T'
+  | 'DISPAROS_VISITANTE_2T'
   | 'DISPAROS_VISITANTE_FT'
+  | 'DISPAROS_VISITANTE_ARCO_1T'
+  | 'DISPAROS_VISITANTE_ARCO_2T'
   | 'DISPAROS_VISITANTE_ARCO_FT';
 
 /**
@@ -581,11 +593,23 @@ export const MERCADOS_GOLES: TipoMercadoFutbol[] = [
 ];
 
 export const MERCADOS_DISPAROS: TipoMercadoFutbol[] = [
+  'DISPAROS_1T',
+  'DISPAROS_2T',
   'DISPAROS_FT',
+  'DISPAROS_ARCO_1T',
+  'DISPAROS_ARCO_2T',
   'DISPAROS_ARCO_FT',
+  'DISPAROS_LOCAL_1T',
+  'DISPAROS_LOCAL_2T',
   'DISPAROS_LOCAL_FT',
+  'DISPAROS_LOCAL_ARCO_1T',
+  'DISPAROS_LOCAL_ARCO_2T',
   'DISPAROS_LOCAL_ARCO_FT',
+  'DISPAROS_VISITANTE_1T',
+  'DISPAROS_VISITANTE_2T',
   'DISPAROS_VISITANTE_FT',
+  'DISPAROS_VISITANTE_ARCO_1T',
+  'DISPAROS_VISITANTE_ARCO_2T',
   'DISPAROS_VISITANTE_ARCO_FT',
 ];
 
@@ -614,11 +638,23 @@ export const ETIQUETAS_MERCADOS: Record<TipoMercadoFutbol, string> = {
   GOLES_VISITANTE_2T: 'Goles Visitante 2T',
   GOLES_VISITANTE_FT: 'Goles Visitante FT',
   // Disparos
+  DISPAROS_1T: 'Disparos 1T',
+  DISPAROS_2T: 'Disparos 2T',
   DISPAROS_FT: 'Disparos FT',
+  DISPAROS_ARCO_1T: 'Disparos a Puerta 1T',
+  DISPAROS_ARCO_2T: 'Disparos a Puerta 2T',
   DISPAROS_ARCO_FT: 'Disparos a Puerta FT',
+  DISPAROS_LOCAL_1T: 'Disparos Local 1T',
+  DISPAROS_LOCAL_2T: 'Disparos Local 2T',
   DISPAROS_LOCAL_FT: 'Disparos Local FT',
+  DISPAROS_LOCAL_ARCO_1T: 'Disparos Local a Puerta 1T',
+  DISPAROS_LOCAL_ARCO_2T: 'Disparos Local a Puerta 2T',
   DISPAROS_LOCAL_ARCO_FT: 'Disparos Local a Puerta FT',
+  DISPAROS_VISITANTE_1T: 'Disparos Visitante 1T',
+  DISPAROS_VISITANTE_2T: 'Disparos Visitante 2T',
   DISPAROS_VISITANTE_FT: 'Disparos Visitante FT',
+  DISPAROS_VISITANTE_ARCO_1T: 'Disparos Visitante a Puerta 1T',
+  DISPAROS_VISITANTE_ARCO_2T: 'Disparos Visitante a Puerta 2T',
   DISPAROS_VISITANTE_ARCO_FT: 'Disparos Visitante a Puerta FT',
 };
 

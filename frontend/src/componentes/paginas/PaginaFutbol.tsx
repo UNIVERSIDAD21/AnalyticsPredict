@@ -89,9 +89,9 @@ function resolverMercadoCanonicoFutbol(
     if (alcance === 'VISITANTE') return `GOLES_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
     return `GOLES_${periodoTag}` as TipoMercadoFutbol;
   }
-  if (alcance === 'LOCAL') return 'DISPAROS_LOCAL_ARCO_FT';
-  if (alcance === 'VISITANTE') return 'DISPAROS_VISITANTE_ARCO_FT';
-  return 'DISPAROS_ARCO_FT';
+  if (alcance === 'LOCAL') return `DISPAROS_LOCAL_ARCO_${periodoTag}` as TipoMercadoFutbol;
+  if (alcance === 'VISITANTE') return `DISPAROS_VISITANTE_ARCO_${periodoTag}` as TipoMercadoFutbol;
+  return `DISPAROS_ARCO_${periodoTag}` as TipoMercadoFutbol;
 }
 
 function EstadoVacioFutbol() {
@@ -410,6 +410,21 @@ export function PaginaFutbol() {
         }
       : undefined;
 
+    const incluirLinea = (base: number[], linea: number): number[] => {
+      const valores = [...base, linea];
+      return Array.from(new Set(valores.map((v) => Number(v.toFixed(2))))).sort((a, b) => a - b);
+    };
+
+    const lineasCorners = categoriaMercadoFutbol === 'CORNERS'
+      ? incluirLinea([8.5, 9.5, 10.5, 11.5], seleccionCanonica.linea)
+      : undefined;
+    const lineasGoles = categoriaMercadoFutbol === 'GOLES'
+      ? incluirLinea([1.5, 2.5, 3.5], seleccionCanonica.linea)
+      : undefined;
+    const lineasDisparos = categoriaMercadoFutbol === 'TIROS_AL_ARCO'
+      ? incluirLinea([22.5, 24.5, 26.5], seleccionCanonica.linea)
+      : undefined;
+
     try {
       setCargandoAnalisis(true);
       setErrorAnalisis(null);
@@ -420,6 +435,9 @@ export function PaginaFutbol() {
         mercadoObjetivo: seleccionCanonica.mercadoObjetivo,
         ladoObjetivo: seleccionCanonica.lado,
         lineaObjetivo: seleccionCanonica.linea,
+        lineasCorners,
+        lineasGoles,
+        lineasDisparos,
         cuotasPorLinea,
       });
       setAnalisis(data);

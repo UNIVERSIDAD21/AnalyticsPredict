@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
@@ -2107,6 +2108,51 @@ def _unidad_por_mercado(mercado: str) -> str:
     return "unidades"
 
 
+def _normalizar_lineas_grilla(lineas: List[float], fallback: List[float]) -> List[float]:
+    base = lineas or fallback
+    valores = []
+    for v in base:
+        try:
+            num = round(float(v), 2)
+            if math.isfinite(num):
+                valores.append(num)
+        except Exception:
+            continue
+    if not valores:
+        valores = [round(float(v), 2) for v in fallback]
+    return sorted(set(valores))
+
+
+def _asegurar_linea_objetivo_en_grillas(
+    request: AnalisisRequest,
+    lineas_corners: List[float],
+    lineas_goles: List[float],
+    lineas_disparos: List[float],
+) -> Tuple[List[float], List[float], List[float]]:
+    mercado_obj = str(request.mercado_objetivo or "").upper()
+    linea_obj = request.linea_objetivo
+
+    if linea_obj is None:
+        return lineas_corners, lineas_goles, lineas_disparos
+
+    try:
+        linea_num = round(float(linea_obj), 2)
+    except Exception:
+        return lineas_corners, lineas_goles, lineas_disparos
+
+    if not math.isfinite(linea_num):
+        return lineas_corners, lineas_goles, lineas_disparos
+
+    if mercado_obj.startswith("CORNERS"):
+        lineas_corners = sorted(set([*lineas_corners, linea_num]))
+    elif mercado_obj.startswith("GOLES"):
+        lineas_goles = sorted(set([*lineas_goles, linea_num]))
+    elif mercado_obj.startswith("DISPAROS"):
+        lineas_disparos = sorted(set([*lineas_disparos, linea_num]))
+
+    return lineas_corners, lineas_goles, lineas_disparos
+
+
 def _resolver_objetivo_canonico(
     *,
     request: AnalisisRequest,
@@ -2382,9 +2428,15 @@ async def analizar_partido(
                     )
 
                 # 2. Intentar flujo principal ML (P1: PredictorFutbol)
-                lineas_corners = request.lineas_corners or [8.5, 9.5, 10.5, 11.5]
-                lineas_goles = request.lineas_goles or [1.5, 2.5, 3.5]
-                lineas_disparos = request.lineas_disparos or [22.5, 24.5, 26.5]
+                lineas_corners = _normalizar_lineas_grilla(request.lineas_corners or [], [8.5, 9.5, 10.5, 11.5])
+                lineas_goles = _normalizar_lineas_grilla(request.lineas_goles or [], [1.5, 2.5, 3.5])
+                lineas_disparos = _normalizar_lineas_grilla(request.lineas_disparos or [], [22.5, 24.5, 26.5])
+                lineas_corners, lineas_goles, lineas_disparos = _asegurar_linea_objetivo_en_grillas(
+                    request,
+                    lineas_corners,
+                    lineas_goles,
+                    lineas_disparos,
+                )
 
                 mercados_corners_ml: Dict[str, PrediccionMercado] = {}
                 mercados_goles_ml: Dict[str, PrediccionMercado] = {}
@@ -2636,9 +2688,15 @@ async def analizar_partido(
                 )
 
                 # 4. Generar predicciones para cada mercado (P3: sin porcentajes fijos)
-                lineas_corners = request.lineas_corners or [8.5, 9.5, 10.5, 11.5]
-                lineas_goles = request.lineas_goles or [1.5, 2.5, 3.5]
-                lineas_disparos = request.lineas_disparos or [22.5, 24.5, 26.5]
+                lineas_corners = _normalizar_lineas_grilla(request.lineas_corners or [], [8.5, 9.5, 10.5, 11.5])
+                lineas_goles = _normalizar_lineas_grilla(request.lineas_goles or [], [1.5, 2.5, 3.5])
+                lineas_disparos = _normalizar_lineas_grilla(request.lineas_disparos or [], [22.5, 24.5, 26.5])
+                lineas_corners, lineas_goles, lineas_disparos = _asegurar_linea_objetivo_en_grillas(
+                    request,
+                    lineas_corners,
+                    lineas_goles,
+                    lineas_disparos,
+                )
 
                 # Contar calibradores activos
                 cursor.execute(
@@ -2901,24 +2959,83 @@ async def analizar_partido(
                 }
 
                 # Mercados de Disparos
+                ratio_1t = 0.45
+                total_corners_tiempos = max((corners_1t_total + corners_2t_total), 0.0)
+                if total_corners_tiempos > 0:
+                    ratio_1t = float(max(0.25, min(0.75, corners_1t_total / total_corners_tiempos)))
+                ratio_2t = 1.0 - ratio_1t
+                std_factor_1t = max(0.5, math.sqrt(ratio_1t))
+                std_factor_2t = max(0.5, math.sqrt(ratio_2t))
+
+                disparos_1t_total = disparos_total * ratio_1t
+                disparos_2t_total = disparos_total * ratio_2t
+                disparos_arco_1t_total = disparos_arco_total * ratio_1t
+                disparos_arco_2t_total = disparos_arco_total * ratio_2t
+
+                disparos_local_1t = disparos_local * ratio_1t
+                disparos_local_2t = disparos_local * ratio_2t
+                disparos_visitante_1t = disparos_visitante * ratio_1t
+                disparos_visitante_2t = disparos_visitante * ratio_2t
+
+                disparos_local_arco_1t = disparos_arco_local * ratio_1t
+                disparos_local_arco_2t = disparos_arco_local * ratio_2t
+                disparos_visitante_arco_1t = disparos_arco_visitante * ratio_1t
+                disparos_visitante_arco_2t = disparos_arco_visitante * ratio_2t
+
                 mercados_disparos = {
                     "DISPAROS_FT": _generar_predicciones_mercado(
                         "DISPAROS_FT", disparos_total, disparos_std, lineas_disparos, distribucion="nbinom"
                     ),
+                    "DISPAROS_1T": _generar_predicciones_mercado(
+                        "DISPAROS_1T", disparos_1t_total, disparos_std * std_factor_1t, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_2T": _generar_predicciones_mercado(
+                        "DISPAROS_2T", disparos_2t_total, disparos_std * std_factor_2t, lineas_disparos, distribucion="nbinom"
+                    ),
                     "DISPAROS_ARCO_FT": _generar_predicciones_mercado(
                         "DISPAROS_ARCO_FT", disparos_arco_total, disparos_arco_std, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_ARCO_1T": _generar_predicciones_mercado(
+                        "DISPAROS_ARCO_1T", disparos_arco_1t_total, disparos_arco_std * std_factor_1t, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_ARCO_2T": _generar_predicciones_mercado(
+                        "DISPAROS_ARCO_2T", disparos_arco_2t_total, disparos_arco_std * std_factor_2t, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_LOCAL_FT": _generar_predicciones_mercado(
                         "DISPAROS_LOCAL_FT", disparos_local, disparos_local_std, lineas_disparos, distribucion="nbinom"
                     ),
+                    "DISPAROS_LOCAL_1T": _generar_predicciones_mercado(
+                        "DISPAROS_LOCAL_1T", disparos_local_1t, disparos_local_std * std_factor_1t, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_LOCAL_2T": _generar_predicciones_mercado(
+                        "DISPAROS_LOCAL_2T", disparos_local_2t, disparos_local_std * std_factor_2t, lineas_disparos, distribucion="nbinom"
+                    ),
                     "DISPAROS_LOCAL_ARCO_FT": _generar_predicciones_mercado(
                         "DISPAROS_LOCAL_ARCO_FT", disparos_arco_local, disparos_arco_local_std, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_LOCAL_ARCO_1T": _generar_predicciones_mercado(
+                        "DISPAROS_LOCAL_ARCO_1T", disparos_local_arco_1t, disparos_arco_local_std * std_factor_1t, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_LOCAL_ARCO_2T": _generar_predicciones_mercado(
+                        "DISPAROS_LOCAL_ARCO_2T", disparos_local_arco_2t, disparos_arco_local_std * std_factor_2t, lineas_disparos, distribucion="nbinom"
                     ),
                     "DISPAROS_VISITANTE_FT": _generar_predicciones_mercado(
                         "DISPAROS_VISITANTE_FT", disparos_visitante, disparos_visitante_std, lineas_disparos, distribucion="nbinom"
                     ),
+                    "DISPAROS_VISITANTE_1T": _generar_predicciones_mercado(
+                        "DISPAROS_VISITANTE_1T", disparos_visitante_1t, disparos_visitante_std * std_factor_1t, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_VISITANTE_2T": _generar_predicciones_mercado(
+                        "DISPAROS_VISITANTE_2T", disparos_visitante_2t, disparos_visitante_std * std_factor_2t, lineas_disparos, distribucion="nbinom"
+                    ),
                     "DISPAROS_VISITANTE_ARCO_FT": _generar_predicciones_mercado(
                         "DISPAROS_VISITANTE_ARCO_FT", disparos_arco_visitante, disparos_arco_visitante_std, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_VISITANTE_ARCO_1T": _generar_predicciones_mercado(
+                        "DISPAROS_VISITANTE_ARCO_1T", disparos_visitante_arco_1t, disparos_arco_visitante_std * std_factor_1t, lineas_disparos, distribucion="nbinom"
+                    ),
+                    "DISPAROS_VISITANTE_ARCO_2T": _generar_predicciones_mercado(
+                        "DISPAROS_VISITANTE_ARCO_2T", disparos_visitante_arco_2t, disparos_arco_visitante_std * std_factor_2t, lineas_disparos, distribucion="nbinom"
                     ),
                 }
 
