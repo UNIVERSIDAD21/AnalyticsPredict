@@ -29,6 +29,15 @@ from servicios.b3_estabilizacion_futbol import (
     ajustar_probabilidad_por_muestras,
     nivel_confianza_b3,
 )
+from .config_estadistica_futbol import (
+    STATS_TEMPORAL_CONFIG,
+    STATS_MIN_SAMPLE_CONFIG,
+    STATS_OUTLIER_POLICY,
+    STATS_PROB_CONFIG,
+    distribucion_para_mercado,
+    winsorizar_valores,
+    estimar_ratio_tiempo_disparos,
+)
 from .schemas_futbol import (
     AnalisisRequest,
     AnalisisResponse,
@@ -71,12 +80,12 @@ _predictor_futbol_ml: Optional["PredictorFutbol"] = None
 # Instancia singleton del gestor de calibradores (P2)
 _gestor_calibradores_futbol: Optional["GestorCalibradores"] = None
 
-DEFAULT_FALLBACK_WINDOW_DAYS = 540
-DEFAULT_RECENCY_HALF_LIFE_DAYS = 180
+DEFAULT_FALLBACK_WINDOW_DAYS = int(STATS_TEMPORAL_CONFIG["fallback_window_days"])
+DEFAULT_RECENCY_HALF_LIFE_DAYS = int(STATS_TEMPORAL_CONFIG["recency_half_life_days"])
 
-MIN_MUESTRA_H2H_OBJETIVO = 5
-MIN_MUESTRA_LOCAL_HOME_OBJETIVO = 25
-MIN_MUESTRA_VISITANTE_AWAY_OBJETIVO = 25
+MIN_MUESTRA_H2H_OBJETIVO = int(STATS_MIN_SAMPLE_CONFIG["h2h_objetivo"])
+MIN_MUESTRA_LOCAL_HOME_OBJETIVO = int(STATS_MIN_SAMPLE_CONFIG["local_home_objetivo"])
+MIN_MUESTRA_VISITANTE_AWAY_OBJETIVO = int(STATS_MIN_SAMPLE_CONFIG["visitante_away_objetivo"])
 
 
 def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
@@ -944,40 +953,52 @@ def _resumen_valores(
             resumen["valores"] = []
         return resumen
 
+    valores_operativos, winsor_low, winsor_high, winsor_aplicada = winsorizar_valores(
+        valores,
+        policy=STATS_OUTLIER_POLICY,
+    )
+    n_operativo = len(valores_operativos)
+
     usar_ponderacion = (
         pesos is not None
-        and len(pesos) == n
+        and len(pesos) == n_operativo
         and any((p or 0) > 0 for p in pesos)
     )
 
     if usar_ponderacion:
         pesos_np = np.array(pesos, dtype=float)
-        valores_np = np.array(valores, dtype=float)
+        valores_np = np.array(valores_operativos, dtype=float)
         peso_total = float(np.sum(pesos_np))
         if peso_total > 0:
             promedio = float(np.sum(valores_np * pesos_np) / peso_total)
-            if incluir_std and n > 1:
+            if incluir_std and n_operativo > 1:
                 var = float(np.sum(pesos_np * ((valores_np - promedio) ** 2)) / peso_total)
                 std = float(np.sqrt(max(var, 0.0)))
             else:
                 std = None
         else:
-            promedio = float(np.mean(valores))
-            std = float(np.std(valores, ddof=1)) if incluir_std and n > 1 else None
+            promedio = float(np.mean(valores_operativos))
+            std = float(np.std(valores_operativos, ddof=1)) if incluir_std and n_operativo > 1 else None
     else:
-        promedio = float(np.mean(valores))
-        std = float(np.std(valores, ddof=1)) if incluir_std and n > 1 else None
+        promedio = float(np.mean(valores_operativos))
+        std = float(np.std(valores_operativos, ddof=1)) if incluir_std and n_operativo > 1 else None
 
     resumen = {
-        "n": n,
+        "n": n_operativo,
+        "n_original": n,
         "promedio": promedio,
         "std": std,
-        "min": float(min(valores)),
-        "max": float(max(valores)),
+        "min": float(min(valores_operativos)),
+        "max": float(max(valores_operativos)),
         "metodo_promedio": "ponderado_recencia" if usar_ponderacion else "simple",
+        "winsorizacion_aplicada": winsor_aplicada,
+        "winsor_p_low": STATS_OUTLIER_POLICY.p_low if winsor_aplicada else None,
+        "winsor_p_high": STATS_OUTLIER_POLICY.p_high if winsor_aplicada else None,
+        "winsor_low": winsor_low,
+        "winsor_high": winsor_high,
     }
     if incluir_valores:
-        resumen["valores"] = list(valores)
+        resumen["valores"] = list(valores_operativos)
     return resumen
 
 
@@ -1850,10 +1871,10 @@ def _generar_predicciones_mercado(
 
     # Penalización conservadora de confianza cuando la varianza es alta
     factor_conservador = 1.0
-    if std > 5.0:
-        factor_conservador = 0.85
-    elif std > 3.0:
-        factor_conservador = 0.92
+    if std > float(STATS_PROB_CONFIG["std_threshold_alto"]):
+        factor_conservador = float(STATS_PROB_CONFIG["factor_conservador_alto"])
+    elif std > float(STATS_PROB_CONFIG["std_threshold_medio"]):
+        factor_conservador = float(STATS_PROB_CONFIG["factor_conservador_medio"])
 
     for linea in lineas:
         prob_over_raw = _calcular_probabilidad_over(media, std, linea, distribucion=distribucion)
@@ -3257,42 +3278,45 @@ async def analizar_partido(
                 # Mercados de Goles
                 mercados_goles = {
                     "GOLES_FT": _generar_predicciones_mercado(
-                        "GOLES_FT", goles_total, goles_std, lineas_goles
+                        "GOLES_FT", goles_total, goles_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_FT")
                     ),
                     "GOLES_1T": _generar_predicciones_mercado(
-                        "GOLES_1T", goles_1t_total, goles_1t_std, lineas_goles
+                        "GOLES_1T", goles_1t_total, goles_1t_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_1T")
                     ),
                     "GOLES_2T": _generar_predicciones_mercado(
-                        "GOLES_2T", goles_2t_total, goles_2t_std, lineas_goles
+                        "GOLES_2T", goles_2t_total, goles_2t_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_2T")
                     ),
                     "GOLES_LOCAL_FT": _generar_predicciones_mercado(
-                        "GOLES_LOCAL_FT", goles_local_ft, goles_local_ft_std, lineas_goles
+                        "GOLES_LOCAL_FT", goles_local_ft, goles_local_ft_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_LOCAL_FT")
                     ),
                     "GOLES_LOCAL_1T": _generar_predicciones_mercado(
-                        "GOLES_LOCAL_1T", goles_local_1t, goles_1t_std, lineas_goles
+                        "GOLES_LOCAL_1T", goles_local_1t, goles_1t_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_LOCAL_1T")
                     ),
                     "GOLES_LOCAL_2T": _generar_predicciones_mercado(
-                        "GOLES_LOCAL_2T", goles_local_2t, goles_2t_std, lineas_goles
+                        "GOLES_LOCAL_2T", goles_local_2t, goles_2t_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_LOCAL_2T")
                     ),
                     "GOLES_VISITANTE_FT": _generar_predicciones_mercado(
-                        "GOLES_VISITANTE_FT", goles_visitante_ft, goles_visitante_ft_std, lineas_goles
+                        "GOLES_VISITANTE_FT", goles_visitante_ft, goles_visitante_ft_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_VISITANTE_FT")
                     ),
                     "GOLES_VISITANTE_1T": _generar_predicciones_mercado(
-                        "GOLES_VISITANTE_1T", goles_visitante_1t, goles_1t_std, lineas_goles
+                        "GOLES_VISITANTE_1T", goles_visitante_1t, goles_1t_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_VISITANTE_1T")
                     ),
                     "GOLES_VISITANTE_2T": _generar_predicciones_mercado(
-                        "GOLES_VISITANTE_2T", goles_visitante_2t, goles_2t_std, lineas_goles
+                        "GOLES_VISITANTE_2T", goles_visitante_2t, goles_2t_std, lineas_goles, distribucion=distribucion_para_mercado("GOLES_VISITANTE_2T")
                     ),
                 }
 
                 # Mercados de Disparos
-                ratio_1t = 0.45
-                total_corners_tiempos = max((corners_1t_total + corners_2t_total), 0.0)
-                if total_corners_tiempos > 0:
-                    ratio_1t = float(max(0.25, min(0.75, corners_1t_total / total_corners_tiempos)))
-                ratio_2t = 1.0 - ratio_1t
-                std_factor_1t = max(0.5, math.sqrt(ratio_1t))
-                std_factor_2t = max(0.5, math.sqrt(ratio_2t))
+                split_disparos = estimar_ratio_tiempo_disparos(
+                    corners_1t_total=corners_1t_total,
+                    corners_2t_total=corners_2t_total,
+                    goles_1t_total=goles_1t_total,
+                    goles_2t_total=goles_2t_total,
+                )
+                ratio_1t = float(split_disparos["ratio_1t"])
+                ratio_2t = float(split_disparos["ratio_2t"])
+                std_factor_1t = float(split_disparos["std_factor_1t"])
+                std_factor_2t = float(split_disparos["std_factor_2t"])
 
                 disparos_1t_total = disparos_total * ratio_1t
                 disparos_2t_total = disparos_total * ratio_2t
@@ -3671,6 +3695,16 @@ async def analizar_partido(
                                 if request.mercado_objetivo
                                 else None
                             ),
+                            "configuracion_estadistica": {
+                                "fallback_window_days": DEFAULT_FALLBACK_WINDOW_DAYS,
+                                "recency_half_life_days": DEFAULT_RECENCY_HALF_LIFE_DAYS,
+                                "winsorizacion": {
+                                    "enabled": STATS_OUTLIER_POLICY.enabled,
+                                    "min_n": STATS_OUTLIER_POLICY.min_n,
+                                    "p_low": STATS_OUTLIER_POLICY.p_low,
+                                    "p_high": STATS_OUTLIER_POLICY.p_high,
+                                },
+                            },
                         }
                     }
                 )
