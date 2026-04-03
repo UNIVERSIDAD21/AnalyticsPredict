@@ -1,0 +1,232 @@
+{
+  "generated_at": "2026-04-03T21:11:26.679886+00:00",
+  "bloque": 19,
+  "mercados_foco": [
+    "CORNERS_1T",
+    "CORNERS_LOCAL_1T"
+  ],
+  "regla": "No correr re-scorecard seria hasta que gate readiness esté habilitado para ambos mercados foco.",
+  "plan_operativo": [
+    {
+      "mercado": "CORNERS_1T",
+      "masa_actual": 4,
+      "metas_siguiente_ventana": {
+        "semanal_resueltos_nuevos_min": 4,
+        "quincenal_resueltos_nuevos_min": 8,
+        "mensual_resueltos_nuevos_min": 16
+      },
+      "gaps_actuales": {
+        "reevaluacion_seria": 26,
+        "salir_bloqueado": 56,
+        "candidatura_validacion": 116
+      },
+      "delta_gap_desde_b18": {
+        "reevaluacion_seria": 0,
+        "salir_bloqueado": 0,
+        "candidatura_validacion": 0
+      },
+      "horizonte_estimado": {
+        "semanas_hasta_reevaluacion_seria": null,
+        "semanas_hasta_salir_bloqueado": null,
+        "semanas_hasta_candidatura_validacion": null
+      },
+      "tracking_ventanas": [
+        {
+          "days": 7,
+          "emitidos_nuevos": 16,
+          "resueltos_binarios_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_calendario_estimados": 16,
+          "pendientes_calendario_rate": 1.0,
+          "tasa_resolucion_ventana": 0.0
+        },
+        {
+          "days": 14,
+          "emitidos_nuevos": 16,
+          "resueltos_binarios_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_calendario_estimados": 16,
+          "pendientes_calendario_rate": 1.0,
+          "tasa_resolucion_ventana": 0.0
+        },
+        {
+          "days": 30,
+          "emitidos_nuevos": 16,
+          "resueltos_binarios_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_calendario_estimados": 16,
+          "pendientes_calendario_rate": 1.0,
+          "tasa_resolucion_ventana": 0.0
+        }
+      ],
+      "readiness_actual": {
+        "status": "NO_LISTO",
+        "descripcion": "No cumple mínimos de masa/cobertura/pendientes para reevaluación seria.",
+        "emitidos": 28,
+        "resueltos_binarios": 4,
+        "pendientes": 16,
+        "pendientes_rate": 0.5714,
+        "lineas_cubiertas": 4,
+        "ventanas_estables": 0,
+        "checks": {
+          "reevaluacion": {
+            "resueltas": false,
+            "pendientes": true,
+            "lineas": true,
+            "ventanas": false
+          },
+          "salir_bloqueado": {
+            "resueltas": false,
+            "pendientes": false,
+            "lineas": true,
+            "ventanas": false
+          },
+          "candidatura_validacion": {
+            "resueltas": false,
+            "pendientes": false,
+            "lineas": true,
+            "ventanas": false
+          }
+        },
+        "gates": {
+          "reevaluacion": false,
+          "salir_bloqueado": false,
+          "candidatura_validacion": false
+        },
+        "faltantes": [
+          "masa_binaria_insuficiente_para_reevaluacion",
+          "estabilidad_temporal_insuficiente_para_reevaluacion"
+        ],
+        "gaps": {
+          "resueltas_para_reevaluacion": 26,
+          "resueltas_para_salir_bloqueado": 56,
+          "resueltas_para_candidatura_validacion": 116,
+          "lineas_para_reevaluacion": 0,
+          "lineas_para_salir_bloqueado": 0,
+          "lineas_para_candidatura_validacion": 0
+        }
+      },
+      "avance_suficiente": {
+        "semanal": false,
+        "quincenal": false,
+        "mensual": false
+      },
+      "puede_disparar_nueva_reevaluacion_seria": false
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "masa_actual": 4,
+      "metas_siguiente_ventana": {
+        "semanal_resueltos_nuevos_min": 4,
+        "quincenal_resueltos_nuevos_min": 8,
+        "mensual_resueltos_nuevos_min": 16
+      },
+      "gaps_actuales": {
+        "reevaluacion_seria": 26,
+        "salir_bloqueado": 56,
+        "candidatura_validacion": 116
+      },
+      "delta_gap_desde_b18": {
+        "reevaluacion_seria": 0,
+        "salir_bloqueado": 0,
+        "candidatura_validacion": 0
+      },
+      "horizonte_estimado": {
+        "semanas_hasta_reevaluacion_seria": null,
+        "semanas_hasta_salir_bloqueado": null,
+        "semanas_hasta_candidatura_validacion": null
+      },
+      "tracking_ventanas": [
+        {
+          "days": 7,
+          "emitidos_nuevos": 16,
+          "resueltos_binarios_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_calendario_estimados": 16,
+          "pendientes_calendario_rate": 1.0,
+          "tasa_resolucion_ventana": 0.0
+        },
+        {
+          "days": 14,
+          "emitidos_nuevos": 16,
+          "resueltos_binarios_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_calendario_estimados": 16,
+          "pendientes_calendario_rate": 1.0,
+          "tasa_resolucion_ventana": 0.0
+        },
+        {
+          "days": 30,
+          "emitidos_nuevos": 16,
+          "resueltos_binarios_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_calendario_estimados": 16,
+          "pendientes_calendario_rate": 1.0,
+          "tasa_resolucion_ventana": 0.0
+        }
+      ],
+      "readiness_actual": {
+        "status": "NO_LISTO",
+        "descripcion": "No cumple mínimos de masa/cobertura/pendientes para reevaluación seria.",
+        "emitidos": 28,
+        "resueltos_binarios": 4,
+        "pendientes": 16,
+        "pendientes_rate": 0.5714,
+        "lineas_cubiertas": 4,
+        "ventanas_estables": 0,
+        "checks": {
+          "reevaluacion": {
+            "resueltas": false,
+            "pendientes": true,
+            "lineas": true,
+            "ventanas": false
+          },
+          "salir_bloqueado": {
+            "resueltas": false,
+            "pendientes": false,
+            "lineas": true,
+            "ventanas": false
+          },
+          "candidatura_validacion": {
+            "resueltas": false,
+            "pendientes": false,
+            "lineas": true,
+            "ventanas": false
+          }
+        },
+        "gates": {
+          "reevaluacion": false,
+          "salir_bloqueado": false,
+          "candidatura_validacion": false
+        },
+        "faltantes": [
+          "masa_binaria_insuficiente_para_reevaluacion",
+          "estabilidad_temporal_insuficiente_para_reevaluacion"
+        ],
+        "gaps": {
+          "resueltas_para_reevaluacion": 26,
+          "resueltas_para_salir_bloqueado": 56,
+          "resueltas_para_candidatura_validacion": 116,
+          "lineas_para_reevaluacion": 0,
+          "lineas_para_salir_bloqueado": 0,
+          "lineas_para_candidatura_validacion": 0
+        }
+      },
+      "avance_suficiente": {
+        "semanal": false,
+        "quincenal": false,
+        "mensual": false
+      },
+      "puede_disparar_nueva_reevaluacion_seria": false
+    }
+  ],
+  "gate_disparo_b20": {
+    "habilitado": false,
+    "motivo": "mercados_no_listos",
+    "mercados_pendientes": [
+      "CORNERS_1T",
+      "CORNERS_LOCAL_1T"
+    ],
+    "condicion_formal": "B20 se habilita solo cuando CORNERS_1T y CORNERS_LOCAL_1T tengan gate_reevaluacion_seria_habilitado=true en la misma corrida."
+  }
+}

@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 19 fútbol (plan operativo de acumulación de masa resolutiva para corners prioritarios):
+  - Nuevo motor de tracking longitudinal: `backend/motor_futbol/readiness_tracking.py`.
+  - Nuevo pipeline reproducible de progreso por ventanas 7/14/30 días: `backend/scripts/plan_acumulacion_masa_b19.py`.
+  - Reportes de progreso y readiness delta por mercado foco:
+    - `docs/reportes/BLOQUE_19_PLAN_ACUMULACION_MASA_CORNERS.json`
+    - `docs/reportes/BLOQUE_19_PLAN_ACUMULACION_MASA_CORNERS.md`
+  - El tracker mide emitidos/resueltos/cerrados nuevos, pendientes estimados por calendario, tasa de resolución, delta de gap vs baseline B18 y proyección de horizonte para cerrar gaps.
+  - Gate formal de disparo a B20 incorporado: solo habilita re-scorecard seria cuando **ambos** mercados (`CORNERS_1T`, `CORNERS_LOCAL_1T`) tienen `gate_reevaluacion_seria_habilitado=true` en la misma corrida.
+  - Snapshot actual: ambos mercados siguen NO_LISTO; con ritmo semanal observado de resolución (=0), el horizonte estimado para reevaluación seria queda indeterminado (N/D) hasta registrar resueltos binarios nuevos.
 - Bloque 18 fútbol (umbral duro de masa resolutiva + gate de reevaluación para corners prioritarios):
   - Nueva política explícita para `CORNERS_1T` y `CORNERS_LOCAL_1T`: `backend/config/futbol_readiness_gate_corners_b18.json`.
   - Umbrales duros formalizados: mínimos de masa binaria para reevaluación/salida de bloqueo/candidatura a validación, máximo de pendientes tolerable, mínimo de coverage y estabilidad temporal mínima.
