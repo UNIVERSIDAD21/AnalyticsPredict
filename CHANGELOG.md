@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 8 fútbol (auditoría correctiva PSG vs Toulouse `CORNERS_LOCAL_1T`):
+  - Se elimina contradicción H2H visible (muestra superior vs tarjeta): el adaptador reconcilia `contexto.h2h` con la muestra canónica reportada por backend (`objetivo.calidadDatos.muestras.h2h`).
+  - Récord H2H ahora explícito como `G-E-P` para que cierre con el total de partidos mostrado.
+  - Se corrige contradicción lógica de recomendación: sin recomendación formal del mercado objetivo ya no aparece texto de "coincide con la recomendación del sistema".
+  - Panel Base vs Ajustada solo se renderiza cuando hay ajuste contextual real; si no, se muestra aviso explícito de no ajuste efectivo.
+  - Se elevan advertencias de severidad cuando el mercado objetivo queda fuera de cobertura (`estado_mercados_vacio`, `mercado_objetivo_fuera_estado_mercados`).
+  - Se profesionaliza texto de razones (unidad específica de mercado, sin `unid` genérico).
+  - Regresión agregada en `frontend/src/utilidades/adaptadores/futbolToNbaAnalisis.test.ts` para el caso canónico.
+  - Reporte del bloque: `docs/reportes/BLOQUE_8_AUDITORIA_CORRECTIVA_PSG_TFC_CORNERS_LOCAL_1T.md`.
 - Bloque 7 fútbol (coherencia H2H/historial/UI sin rehacer base):
   - `backend/api/rutas_analisis_futbol.py`: H2H e historial del análisis quedan restringidos por `competicion_id` + gobernanza temporal existente (temporadas/fecha mínima), evitando contaminación de contexto cross-competición.
   - `frontend/src/utilidades/adaptadores/futbolToNbaAnalisis.ts`: el contexto renderizado deja de usar goles como proxy genérico y pasa a resolver métrica real por mercado objetivo (goles/corners/disparos, incluyendo 1T/2T cuando aplica).

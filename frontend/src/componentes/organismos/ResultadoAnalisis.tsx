@@ -218,12 +218,24 @@ export function ResultadoAnalisis({
     : resultado.rival_nombre_completo;
 
   // Determinar si la predicción del usuario coincide con el sistema
+  const tieneRecomendacionSistema = Boolean(detalle || resultado.mejor_apuesta);
   const sistemaRecomienda: LadoApuesta = (probabilidadOver !== null && probabilidadUnder !== null && probabilidadOver > probabilidadUnder) ? 'OVER' : 'UNDER';
-  const coincideConSistema = seleccionUsuario?.lado === sistemaRecomienda;
+  const coincideConSistema = Boolean(tieneRecomendacionSistema && seleccionUsuario?.lado === sistemaRecomienda);
   const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
   const probabilidadesNulas = probabilidadOver === null || probabilidadUnder === null;
   const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
   const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
+
+  const hayAjusteContextualReal = Boolean(
+    resultado.prediccion_ajustada
+    && resultado.prediccion_base
+    && (
+      Math.abs((resultado.prediccion_ajustada.media_ajustada ?? 0) - (resultado.prediccion_base.media ?? 0)) > 1e-6
+      || Math.abs((resultado.prediccion_ajustada.probabilidad_over_ajustada ?? 0) - (resultado.prediccion_base.probabilidad_over ?? 0)) > 1e-6
+      || Math.abs((resultado.prediccion_ajustada.probabilidad_under_ajustada ?? 0) - (resultado.prediccion_base.probabilidad_under ?? 0)) > 1e-6
+      || Boolean(resultado.prediccion_ajustada.ajustes_aplicados?.ajustes?.length)
+    )
+  );
 
   // Fase 2: Extraer datos avanzados
   const noApto = esEstadoNoApto(resultado, detalle);
@@ -308,9 +320,11 @@ export function ResultadoAnalisis({
                 </span>
               </p>
               <p className={`text-xs ${coincideConSistema ? 'text-neon-verde' : 'text-advertencia-500'}`}>
-                {coincideConSistema
-                  ? 'Tu predicción coincide con la recomendación del sistema'
-                  : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`
+                {!tieneRecomendacionSistema
+                  ? 'Sin recomendación formal del sistema para este mercado en el estado actual.'
+                  : (coincideConSistema
+                    ? 'Tu predicción coincide con la recomendación del sistema'
+                    : `El sistema recomienda ${sistemaRecomienda === 'OVER' ? 'Over' : 'Under'} - considera revisar`)
                 }
               </p>
             </div>
@@ -362,7 +376,7 @@ export function ResultadoAnalisis({
           ═══════════════════════════════════════════════════════════ */}
 
       {/* Panel de Comparación Base vs Ajustada */}
-      {resultado.prediccion_ajustada && resultado.prediccion_base
+      {hayAjusteContextualReal && resultado.prediccion_ajustada && resultado.prediccion_base
         && numeroValido(resultado.prediccion_base.media)
         && numeroValido(resultado.prediccion_base.probabilidad_over)
         && numeroValido(resultado.prediccion_base.probabilidad_under)
@@ -385,6 +399,12 @@ export function ResultadoAnalisis({
           confianzaAjustada={resultado.prediccion_ajustada.confianza_ajustada}
           unidadLabel={unidadAnalisis}
         />
+      )}
+
+      {!hayAjusteContextualReal && resultado.prediccion_ajustada && resultado.prediccion_base && (
+        <PanelAdvertencias advertencias={[
+          'Predicción base y ajustada coinciden para el mercado objetivo: no hubo ajuste contextual efectivo en esta corrida.',
+        ]} />
       )}
 
       {/* Lista de Ajustes Aplicados */}
@@ -533,7 +553,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           12. RAZONES
           ═══════════════════════════════════════════════════════════ */}
-      <ListaRazones razones={resultado.razones} deporte={esFutbol ? 'futbol' : 'baloncesto'} />
+      <ListaRazones razones={resultado.razones} deporte={esFutbol ? 'futbol' : 'baloncesto'} unidadLabel={unidadAnalisis} />
 
       {/* ═══════════════════════════════════════════════════════════
           13. GUARDAR EN BITÁCORA

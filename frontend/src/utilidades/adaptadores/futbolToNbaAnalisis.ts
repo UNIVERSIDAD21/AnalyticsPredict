@@ -208,6 +208,11 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   const historialLocal = contexto?.historialLocal ?? [];
   const historialVisitante = contexto?.historialVisitante ?? [];
   const mercadoContexto = String(analisis.objetivo?.mercado || recObjetivo?.mercado || 'GOLES_FT').toUpperCase();
+
+  const muestraH2HObjetivo = Number(analisis.objetivo?.calidadDatos?.muestras?.h2h ?? 0);
+  const h2hCanonico = (Number.isFinite(muestraH2HObjetivo) && muestraH2HObjetivo > 0)
+    ? h2h.slice(0, muestraH2HObjetivo)
+    : h2h;
   const equipoAnalizadoId = String(analisis.partido.equipoLocal);
   const rivalAnalizadoId = String(analisis.partido.equipoVisitante);
 
@@ -255,6 +260,8 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   const scoreValido = (metodoDevig === 'exacto') && Number.isFinite(recObjetivo?.score ?? NaN)
     ? Number(recObjetivo?.score)
     : null;
+
+  const penalizacionesCalidad = analisis.objetivo?.calidadDatos?.penalizacionesAplicadas ?? [];
 
   const advertenciasDevig = [
     ...(recObjetivo?.advertencias ?? []),
@@ -385,29 +392,29 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     },
     contexto: {
       h2h: {
-        total_partidos: h2h.length,
-        victorias_equipo: h2h.filter((p) => {
+        total_partidos: h2hCanonico.length,
+        victorias_equipo: h2hCanonico.filter((p) => {
           const m = desdePerspectiva(p, equipoAnalizadoId, mercadoContexto);
           return m.equipo > m.rival;
         }).length,
-        victorias_rival: h2h.filter((p) => {
+        victorias_rival: h2hCanonico.filter((p) => {
           const m = desdePerspectiva(p, equipoAnalizadoId, mercadoContexto);
           return m.rival > m.equipo;
         }).length,
-        promedio_total: promedio(h2h.map((p) => _metricaMercadoPartido(p, mercadoContexto, 'TOTAL'))),
-        promedio_equipo: promedio(h2h.map((p) => desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).equipo)),
-        promedio_rival: promedio(h2h.map((p) => desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).rival)),
-        tendencia_over: promedio(h2h.map((p) => (lineaMain !== null && _metricaMercadoPartido(p, mercadoContexto, 'TOTAL') > lineaMain ? 1 : 0))),
-        ultimo_enfrentamiento: h2h[0] ? {
-          fecha: h2h[0].fechaPartido,
-          puntos_equipo: desdePerspectiva(h2h[0], equipoAnalizadoId, mercadoContexto).equipo,
-          puntos_rival: desdePerspectiva(h2h[0], equipoAnalizadoId, mercadoContexto).rival,
-          total: _metricaMercadoPartido(h2h[0], mercadoContexto, 'TOTAL'),
-          ganador_id: desdePerspectiva(h2h[0], equipoAnalizadoId, mercadoContexto).equipo > desdePerspectiva(h2h[0], equipoAnalizadoId, mercadoContexto).rival
+        promedio_total: promedio(h2hCanonico.map((p) => _metricaMercadoPartido(p, mercadoContexto, 'TOTAL'))),
+        promedio_equipo: promedio(h2hCanonico.map((p) => desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).equipo)),
+        promedio_rival: promedio(h2hCanonico.map((p) => desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).rival)),
+        tendencia_over: promedio(h2hCanonico.map((p) => (lineaMain !== null && _metricaMercadoPartido(p, mercadoContexto, 'TOTAL') > lineaMain ? 1 : 0))),
+        ultimo_enfrentamiento: h2hCanonico[0] ? {
+          fecha: h2hCanonico[0].fechaPartido,
+          puntos_equipo: desdePerspectiva(h2hCanonico[0], equipoAnalizadoId, mercadoContexto).equipo,
+          puntos_rival: desdePerspectiva(h2hCanonico[0], equipoAnalizadoId, mercadoContexto).rival,
+          total: _metricaMercadoPartido(h2hCanonico[0], mercadoContexto, 'TOTAL'),
+          ganador_id: desdePerspectiva(h2hCanonico[0], equipoAnalizadoId, mercadoContexto).equipo > desdePerspectiva(h2hCanonico[0], equipoAnalizadoId, mercadoContexto).rival
             ? 'equipo'
-            : (desdePerspectiva(h2h[0], equipoAnalizadoId, mercadoContexto).equipo < desdePerspectiva(h2h[0], equipoAnalizadoId, mercadoContexto).rival ? 'rival' : 'empate'),
+            : (desdePerspectiva(h2hCanonico[0], equipoAnalizadoId, mercadoContexto).equipo < desdePerspectiva(h2hCanonico[0], equipoAnalizadoId, mercadoContexto).rival ? 'rival' : 'empate'),
         } : null,
-        partidos: h2h.map((p) => ({
+        partidos: h2hCanonico.map((p) => ({
           fecha: p.fechaPartido,
           puntos_equipo: desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).equipo,
           puntos_rival: desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).rival,
@@ -492,8 +499,10 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       ...(estadoCuotas.estado === 'sin_cuotas' ? ['Sin cuotas: análisis de valor/calibración/riesgo no comparable contra casa.'] : []),
       ...(estadoCuotas.estado === 'cuota_unica' ? ['Cuota única: solo fallback interno, sin comparación real completa contra casa.'] : []),
       ...(estadoCuotas.estado === 'cuotas_completas' && !overroundValido ? ['Cuotas presentes pero de-vig inválido: overround fuera de rango.'] : []),
+      ...(penalizacionesCalidad.includes('estado_mercados_vacio') ? ['Estado de mercados vacío: el mercado objetivo no está cubierto por la capa de soporte canónico.'] : []),
+      ...(penalizacionesCalidad.includes('mercado_objetivo_fuera_estado_mercados') ? ['Mercado objetivo fuera del estado de mercados: visualización en modo degradado, no soporte pleno.'] : []),
     ],
-    mensaje_apuesta: analisis.recomendaciones?.length
+    mensaje_apuesta: recObjetivo
       ? (mediaTotal === null || stdTotal === null || pOver === null || pUnder === null
           ? 'Datos insuficientes: no se puede evaluar completamente el mercado objetivo sin degradación.'
           : 'Tu predicción coincide con la recomendación del sistema')

@@ -13,6 +13,7 @@ import { RazonPrediccion } from '../../tipos';
 interface PropsListaRazones {
   razones: RazonPrediccion[];
   deporte?: 'baloncesto' | 'futbol';
+  unidadLabel?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -57,7 +58,7 @@ function obtenerExplicacionRazon(razon: RazonPrediccion, deporte: 'baloncesto' |
 // COMPONENTE INTERNO
 // ══════════════════════════════════════════════════════════════
 
-function ItemRazon({ razon, deporte }: { razon: RazonPrediccion; deporte: 'baloncesto' | 'futbol' }) {
+function ItemRazon({ razon, deporte, unidadLabel }: { razon: RazonPrediccion; deporte: 'baloncesto' | 'futbol'; unidadLabel?: string }) {
   const esSube = razon.direccion === 'sube';
   const Icono = esSube ? ArrowUp : ArrowDown;
   const explicacion = obtenerExplicacionRazon(razon, deporte);
@@ -90,7 +91,7 @@ function ItemRazon({ razon, deporte }: { razon: RazonPrediccion; deporte: 'balon
             {razon.factor}
           </span>
           <span className={`text-xs font-mono font-semibold ${esSube ? 'text-neon-verde' : 'text-neon-rojo'}`}>
-            {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} {deporte === 'futbol' ? 'unid' : 'pts'}
+            {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} {deporte === 'futbol' ? (unidadLabel || 'unidad mercado') : 'pts'}
           </span>
         </div>
       </div>
@@ -105,7 +106,7 @@ function ItemRazon({ razon, deporte }: { razon: RazonPrediccion; deporte: 'balon
 /**
  * Muestra las razones que justifican la predicción
  */
-export function ListaRazones({ razones, deporte = 'baloncesto' }: PropsListaRazones) {
+export function ListaRazones({ razones, deporte = 'baloncesto', unidadLabel }: PropsListaRazones) {
   if (razones.length === 0) {
     return null;
   }
@@ -125,7 +126,7 @@ export function ListaRazones({ razones, deporte = 'baloncesto' }: PropsListaRazo
       {/* Lista de razones */}
       <ul>
         {razones.map((razon, indice) => (
-          <ItemRazon key={`${razon.factor}-${indice}`} razon={razon} deporte={deporte} />
+          <ItemRazon key={`${razon.factor}-${indice}`} razon={razon} deporte={deporte} unidadLabel={unidadLabel} />
         ))}
       </ul>
     </Tarjeta>

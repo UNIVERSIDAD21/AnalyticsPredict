@@ -142,7 +142,7 @@ export function SeccionH2H({
             Head-to-Head
           </h3>
           <span className="text-sm text-texto-terciario">
-            ({h2h.total_partidos} partidos)
+            ({stats.totalPartidos} partidos)
           </span>
         </div>
 
@@ -157,9 +157,11 @@ export function SeccionH2H({
       <div className="flex flex-wrap items-center gap-4 text-sm">
         {/* Record */}
         <div className="flex items-center gap-1.5">
-          <span className="text-texto-secundario">Record:</span>
+          <span className="text-texto-secundario">Record (G-E-P):</span>
           <span className="font-mono">
             <span className="text-neon-verde">{h2h.victorias_equipo}</span>
+            <span className="text-texto-terciario">-</span>
+            <span className="text-texto-principal">{stats.empates}</span>
             <span className="text-texto-terciario">-</span>
             <span className="text-neon-rojo">{h2h.victorias_rival}</span>
           </span>

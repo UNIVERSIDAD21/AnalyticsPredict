@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 7 coherencia fútbol H2H/UI + bloque 6 decisión + bloque 5 NBA)
+Última actualización: 2026-04-03 (bloque 8 auditoría correctiva fútbol + bloque 7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -107,6 +107,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 5 NBA pipeline temporadas (2026-04-03): se auditó y endureció la ruta real `backend/scripts/scraper_equipos_recientes.py` con resolución de `temporada_id` por evento, detección de discrepancias `season_api` vs fecha, fallback controlado por creación/lookup y omisión explícita con advertencias cuando no se puede resolver. Estado de confiabilidad del filtro por temporadas: **confiable en este pipeline**; limitación residual: falta homologar la misma gobernanza en otros ingesters NBA (ej. `scraper_partidos_futuros.py`).
 - Bloque 6 fútbol capa de decisión (2026-04-03): se formaliza matemática canónica de decisión en `rutas_analisis_futbol` con `edge_raw` explícito, `edge_real` derivado de `p_decision` (calibrada solo si calibración aplica), y trazabilidad de `calibracion_aplicada` para evitar mezcla de transformaciones. En ENSEMBLE, `edge/score/sizing` se recomputan canónicamente (no por promedio de outputs ya transformados). Contrato extendido de forma backward-compatible para frontend (`calibracion_aplicada`, `edge_raw`).
 - Bloque 7 coherencia H2H/historial/UI (2026-04-03): se completa la base existente sin rehacerla: en backend de análisis, H2H e historial quedan acotados por competición + filtro temporal resuelto; en frontend adaptador, el contexto visual deja de asumir goles y pasa a métrica real del mercado objetivo (goles/corners/disparos) con perspectiva consistente equipo/rival/total y línea correspondiente.
+- Bloque 8 auditoría correctiva PSG-Toulouse `CORNERS_LOCAL_1T` (2026-04-03): corrección de contradicciones internas de módulo fútbol en caso canónico real. Se alinea muestra H2H visible con muestra canónica del objetivo, se corrige semántica de recomendación/no recomendación, se exige ajuste contextual real para mostrar comparativa base-vs-ajustada, y se refuerza severidad visual cuando el mercado objetivo queda fuera de cobertura (`estado_mercados_vacio` / `mercado_objetivo_fuera_estado_mercados`).
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

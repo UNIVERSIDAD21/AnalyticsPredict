@@ -88,4 +88,42 @@ describe('futbolToNbaAnalisis market-aware contexto', () => {
     const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as unknown as AnalisisFutbolResponse, contexto);
     expect(out.contexto?.h2h?.promedio_total).toBe(8); // 5+3 disparos arco
   });
+
+  it('sin recomendación del mercado objetivo no emite mensaje de coincidencia', () => {
+    const analisis = {
+      ...baseAnalisis,
+      objetivo: { ...baseAnalisis.objetivo, mercado: 'CORNERS_LOCAL_1T', linea: 5.0 },
+      recomendaciones: [],
+    };
+
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as unknown as AnalisisFutbolResponse, contexto);
+    expect(out.mensaje_apuesta).toBe('Sin recomendación disponible');
+  });
+
+  it('alinea total H2H al tamaño de muestra canónica cuando backend la reporta', () => {
+    const analisis = {
+      ...baseAnalisis,
+      objetivo: {
+        ...baseAnalisis.objetivo,
+        calidadDatos: {
+          muestras: { h2h: 1, localHome: 0, visitanteAway: 0, localGlobal: 0, visitanteGlobal: 0, liga: 0 },
+          rangoTemporal: { fechaMin: null, fechaMax: null },
+          temporadasIncluidas: [],
+          competicionesIncluidas: [],
+          muestraInsuficiente: true,
+          datosIncompletos: true,
+          penalizacionesAplicadas: [],
+        },
+      },
+    };
+
+    const ctx = {
+      ...contexto,
+      h2h: [...contexto.h2h, { ...contexto.h2h[0], id: 'h2h-2' }],
+    };
+
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as unknown as AnalisisFutbolResponse, ctx);
+    expect(out.contexto?.h2h?.total_partidos).toBe(1);
+    expect(out.contexto?.h2h?.partidos?.length).toBe(1);
+  });
 });
