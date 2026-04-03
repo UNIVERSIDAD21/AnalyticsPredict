@@ -1,0 +1,146 @@
+{
+  "generated_at": "2026-04-03T21:28:38.091524+00:00",
+  "bloque": "19.5",
+  "mercados_foco": [
+    "CORNERS_1T",
+    "CORNERS_LOCAL_1T"
+  ],
+  "windows_days": [
+    7,
+    14,
+    30
+  ],
+  "auditoria": [
+    {
+      "mercado": "CORNERS_1T",
+      "antes": {
+        "emitidos": 28,
+        "outcomes": 4,
+        "cerrados": 12,
+        "pendientes": 16
+      },
+      "ventanas": [
+        {
+          "emitidos_nuevos": 16,
+          "outcomes_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_nuevos": 16,
+          "partidos_finalizados": 0,
+          "finalizados_con_datos": 0,
+          "pendientes_finalizado_con_datos": 0,
+          "pendientes_finalizado_sin_datos": 0,
+          "pendientes_programado": 16,
+          "pendientes_no_disputables": 0,
+          "days": 7,
+          "cuello_detectado": "calendario_real_sin_partidos_finalizados"
+        },
+        {
+          "emitidos_nuevos": 16,
+          "outcomes_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_nuevos": 16,
+          "partidos_finalizados": 0,
+          "finalizados_con_datos": 0,
+          "pendientes_finalizado_con_datos": 0,
+          "pendientes_finalizado_sin_datos": 0,
+          "pendientes_programado": 16,
+          "pendientes_no_disputables": 0,
+          "days": 14,
+          "cuello_detectado": "calendario_real_sin_partidos_finalizados"
+        },
+        {
+          "emitidos_nuevos": 16,
+          "outcomes_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_nuevos": 16,
+          "partidos_finalizados": 0,
+          "finalizados_con_datos": 0,
+          "pendientes_finalizado_con_datos": 0,
+          "pendientes_finalizado_sin_datos": 0,
+          "pendientes_programado": 16,
+          "pendientes_no_disputables": 0,
+          "days": 30,
+          "cuello_detectado": "calendario_real_sin_partidos_finalizados"
+        }
+      ],
+      "pendientes_resolubles_detectados": 0,
+      "backfill": null,
+      "despues": {
+        "emitidos": 28,
+        "outcomes": 4,
+        "cerrados": 12,
+        "pendientes": 16
+      },
+      "delta_outcomes": 0,
+      "diagnostico_final": "calendario_real_sin_partidos_finalizados"
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "antes": {
+        "emitidos": 28,
+        "outcomes": 4,
+        "cerrados": 12,
+        "pendientes": 16
+      },
+      "ventanas": [
+        {
+          "emitidos_nuevos": 16,
+          "outcomes_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_nuevos": 16,
+          "partidos_finalizados": 0,
+          "finalizados_con_datos": 0,
+          "pendientes_finalizado_con_datos": 0,
+          "pendientes_finalizado_sin_datos": 0,
+          "pendientes_programado": 16,
+          "pendientes_no_disputables": 0,
+          "days": 7,
+          "cuello_detectado": "calendario_real_sin_partidos_finalizados"
+        },
+        {
+          "emitidos_nuevos": 16,
+          "outcomes_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_nuevos": 16,
+          "partidos_finalizados": 0,
+          "finalizados_con_datos": 0,
+          "pendientes_finalizado_con_datos": 0,
+          "pendientes_finalizado_sin_datos": 0,
+          "pendientes_programado": 16,
+          "pendientes_no_disputables": 0,
+          "days": 14,
+          "cuello_detectado": "calendario_real_sin_partidos_finalizados"
+        },
+        {
+          "emitidos_nuevos": 16,
+          "outcomes_nuevos": 0,
+          "cerrados_operativos_nuevos": 0,
+          "pendientes_nuevos": 16,
+          "partidos_finalizados": 0,
+          "finalizados_con_datos": 0,
+          "pendientes_finalizado_con_datos": 0,
+          "pendientes_finalizado_sin_datos": 0,
+          "pendientes_programado": 16,
+          "pendientes_no_disputables": 0,
+          "days": 30,
+          "cuello_detectado": "calendario_real_sin_partidos_finalizados"
+        }
+      ],
+      "pendientes_resolubles_detectados": 0,
+      "backfill": null,
+      "despues": {
+        "emitidos": 28,
+        "outcomes": 4,
+        "cerrados": 12,
+        "pendientes": 16
+      },
+      "delta_outcomes": 0,
+      "diagnostico_final": "calendario_real_sin_partidos_finalizados"
+    }
+  ],
+  "conclusion": {
+    "tipo": "cuello_principal_calendario_real",
+    "gate_b20": "bloqueado",
+    "nota": "No correr B20 mientras gate readiness siga NO_LISTO y sin ritmo resolutivo > 0."
+  }
+}

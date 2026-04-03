@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 19.5 fútbol (auditoría E2E post-partido y conversión a outcomes binarios en mercados prioritarios):
+  - Nueva auditoría extremo a extremo de cadena `emisión -> estado partido -> datos corners 1T/local 1T -> resolución -> persistencia outcome` para `CORNERS_1T` y `CORNERS_LOCAL_1T`.
+  - Script reproducible: `backend/scripts/auditoria_resolucion_corners_b19_5.py` (incluye opción `--apply-backfill` cuando detecta resolubles atascados).
+  - Reportes generados:
+    - `docs/reportes/BLOQUE_19_5_AUDITORIA_RESOLUCION_CORNERS.json`
+    - `docs/reportes/BLOQUE_19_5_AUDITORIA_RESOLUCION_CORNERS.md`
+  - Evidencia de ventanas 7/14/30: hubo emisiones nuevas pero `0` partidos finalizados y `0` pendientes resolubles con datos; no se detectó pipeline roto en la conversión para estos dos mercados.
+  - Diagnóstico formal: cuello principal actual = calendario real (`PROGRAMADO`), con gate B20 correctamente bloqueado.
+  - Backfill focalizado ejecutable/condicional: al no existir pendientes resolubles detectados, no hubo rescates en esta corrida.
 - Bloque 19 fútbol (plan operativo de acumulación de masa resolutiva para corners prioritarios):
   - Nuevo motor de tracking longitudinal: `backend/motor_futbol/readiness_tracking.py`.
   - Nuevo pipeline reproducible de progreso por ventanas 7/14/30 días: `backend/scripts/plan_acumulacion_masa_b19.py`.
