@@ -135,12 +135,15 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   const lineaMain = numeroNullable(analisis.objetivo?.linea);
   const probLineaObjetivo = lineaMain !== null ? buscarProbabilidadLinea(mercadoMain, lineaMain) : null;
 
-  const pOver = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.over)
+  const pOverBase = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.over)
     ?? numeroNullable(probLineaObjetivo?.overCalibrada)
     ?? (recObjetivo && recObjetivo.lado === 'OVER' ? numeroNullable(recObjetivo.probabilidad) : null);
-  const pUnder = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.under)
+  const pUnderBase = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.under)
     ?? numeroNullable(probLineaObjetivo?.underCalibrada)
     ?? (recObjetivo && recObjetivo.lado === 'UNDER' ? numeroNullable(recObjetivo.probabilidad) : null);
+
+  const pOver = pOverBase ?? (pUnderBase !== null ? Math.max(0, Math.min(1, 1 - pUnderBase)) : null);
+  const pUnder = pUnderBase ?? (pOverBase !== null ? Math.max(0, Math.min(1, 1 - pOverBase)) : null);
 
   const mediaTotal = numeroNullable(analisis.objetivo?.mediaObjetivo) ?? numeroNullable(mercadoMain?.media);
   const stdTotal = numeroNullable(analisis.objetivo?.desviacionObjetivo) ?? numeroNullable(mercadoMain?.std);
