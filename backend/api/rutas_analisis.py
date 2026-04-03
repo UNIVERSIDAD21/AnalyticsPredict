@@ -594,6 +594,17 @@ def ejecutar_analisis(
     except ValueError as exc:
         raise ErrorValidacion(str(exc)) from exc
     except Exception as exc:
+        logger.exception(
+            "Error ejecutando analizar_partido (equipo_local=%s equipo_visitante=%s mercado=%s linea=%s lado=%s)",
+            peticion.equipo_local,
+            peticion.equipo_visitante,
+            peticion.mercado,
+            peticion.linea,
+            peticion.lado,
+        )
+        detalle_error = str(exc).strip()
+        if detalle_error:
+            raise ErrorAnalisis(f"No se pudo completar el análisis: {detalle_error}") from exc
         raise ErrorAnalisis("No se pudo completar el análisis.") from exc
 
     # Enforce de política de calidad por mercado (NBA)

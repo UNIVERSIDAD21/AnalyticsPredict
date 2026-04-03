@@ -3,8 +3,11 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+import pytest
+
 from api.modelos_peticion import PeticionAnalisis
 from api import rutas_analisis
+from api.excepciones import ErrorAnalisis
 
 
 def _peticion_base(**overrides):
@@ -117,3 +120,25 @@ def test_cuota_legacy_sin_lado_explicito_no_falla_validacion(monkeypatch):
     respuesta = rutas_analisis.ejecutar_analisis(peticion)
 
     assert respuesta.exito is True
+
+
+def test_error_interno_devuelve_motivo_en_mensaje(monkeypatch):
+    monkeypatch.setattr(rutas_analisis, "obtener_modelo", lambda: object())
+    monkeypatch.setattr(rutas_analisis, "validar_equipos", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        rutas_analisis,
+        "analizar_partido",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("Fallo calibrador X")),
+    )
+
+    peticion = PeticionAnalisis(
+        equipo_local="Lakers",
+        equipo_visitante="Heat",
+        mercado="Q1",
+        linea=50.5,
+    )
+
+    with pytest.raises(ErrorAnalisis) as exc_info:
+        rutas_analisis.ejecutar_analisis(peticion)
+
+    assert "No se pudo completar el análisis: Fallo calibrador X" in str(exc_info.value)
