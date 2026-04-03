@@ -225,7 +225,7 @@ export function FormularioAnalisis({
         lado: ladoSeleccionado,
         modo_devig: modoDevig,
         // Contexto
-        temporadas: temporadasSeleccionadas,
+        temporadas: temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas : undefined,
         partido_id: partidoSeleccionado?.id,
         temporada_id: partidoSeleccionado?.temporada_id
           ?? (temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined),
