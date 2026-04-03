@@ -226,8 +226,10 @@ export function ResultadoAnalisis({
   const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
   const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
 
-  const objetivoMeta = resultado.metadata?.objetivo as { calidad_datos?: { muestra_insuficiente?: boolean; datos_incompletos?: boolean; penalizaciones_aplicadas?: string[] } } | undefined;
+  const objetivoMeta = resultado.metadata?.objetivo as { calidad_datos?: { muestra_insuficiente?: boolean; datos_incompletos?: boolean; penalizaciones_aplicadas?: string[] }; trazabilidad?: { estado_operativo_mercado?: string; motivos_estado_operativo?: string[] } } | undefined;
   const penalizacionesObjetivo = objetivoMeta?.calidad_datos?.penalizaciones_aplicadas || [];
+  const estadoOperativoMercado = objetivoMeta?.trazabilidad?.estado_operativo_mercado || 'LABORATORIO';
+  const motivosEstadoOperativo = objetivoMeta?.trazabilidad?.motivos_estado_operativo || [];
   const gateCriticoBeta = Boolean(
     objetivoMeta?.calidad_datos?.muestra_insuficiente
     || objetivoMeta?.calidad_datos?.datos_incompletos
@@ -257,6 +259,14 @@ export function ResultadoAnalisis({
       {advertencias.length > 0 && (
         <PanelAdvertencias advertencias={advertencias} />
       )}
+
+      <div className="tarjeta p-3 border border-neon-cyan/20">
+        <p className="text-xs uppercase tracking-wider text-texto-terciario">Estado operativo del mercado</p>
+        <p className="text-sm font-semibold text-neon-cyan">{estadoOperativoMercado}</p>
+        {motivosEstadoOperativo.length > 0 && (
+          <p className="text-xs text-texto-secundario mt-1">Motivos: {motivosEstadoOperativo.join(', ')}</p>
+        )}
+      </div>
 
       {gateCriticoBeta && (
         <PanelAdvertencias advertencias={[

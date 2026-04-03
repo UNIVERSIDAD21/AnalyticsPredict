@@ -5,10 +5,12 @@ rutas_metricas_futbol.py — Endpoints para métricas del sistema de fútbol.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 from collections import defaultdict
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional, List, Literal, Dict, Any
 from uuid import UUID
 
@@ -233,6 +235,20 @@ def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: floa
     except Exception:
         logger.exception("No se pudo calcular estado de mercados en endpoint de madurez")
         return {}
+
+
+@router.get(
+    "/politica-promocion",
+    summary="Política formal de salida beta y promoción parcial por mercado",
+    description="Retorna la política canónica de estados operativos por mercado para fútbol.",
+)
+async def obtener_politica_promocion_futbol(
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> Dict[str, Any]:
+    path = Path(__file__).resolve().parents[1] / "config" / "futbol_politica_promocion.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="No existe política canónica de promoción")
+    return json.loads(path.read_text())
 
 
 @router.get(

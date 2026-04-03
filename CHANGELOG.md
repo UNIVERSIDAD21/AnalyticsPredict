@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 11 fútbol (política formal de salida beta y promoción parcial por mercado):
+  - Se formaliza política canónica en `backend/config/futbol_politica_promocion.json` con estados `BLOQUEADO|LABORATORIO|VALIDACION|PROMOCIONABLE`, significados operativos y reglas de transición cuantitativas.
+  - Nuevo endpoint `GET /api/futbol/metricas/politica-promocion` para exponer política auditable en runtime.
+  - `backend/api/rutas_analisis_futbol.py` incorpora estado operativo por mercado en `objetivo.trazabilidad` (`estado_operativo_mercado`, `motivos_estado_operativo`) para cerrar backend→contrato→UI.
+  - Frontend (`ResultadoAnalisis`) muestra explícitamente estado operativo del mercado y mantiene gate beta estricto cuando hay condiciones críticas.
+  - Se agrega propuesta de persistencia canónica por mercado en SQL (`backend/scripts/sql/bloque_11/01_tabla_estado_operativo_mercado.sql`).
+  - Reporte de bloque: `docs/reportes/BLOQUE_11_POLITICA_FORMAL_SALIDA_BETA_PROMOCION_PARCIAL.md`.
 - Bloque 10 fútbol (walk-forward + scorecard de promoción por mercado):
   - Nuevo pipeline reproducible `backend/scripts/walkforward_scorecard_futbol.py` con ventanas explícitas train/cal/eval sin leakage.
   - Scorecard exportable por mercado generado en JSON/CSV (`docs/reportes/BLOQUE_10_WALKFORWARD_SCORECARD_FUTBOL.*`).

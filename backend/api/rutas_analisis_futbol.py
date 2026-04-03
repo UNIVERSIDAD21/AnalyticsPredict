@@ -56,6 +56,7 @@ from .schemas_futbol import (
     ObjetivoDisponibilidadFutbol,
 )
 from .dependencias import obtener_usuario_actual, UsuarioActual
+from motor_futbol.madurez_beta import mapear_status_promocion
 
 router = APIRouter(prefix="/api/futbol", tags=["Fútbol - Análisis"])
 logger = logging.getLogger(__name__)
@@ -2550,6 +2551,42 @@ def _asegurar_linea_objetivo_en_grillas(
     return lineas_corners, lineas_goles, lineas_disparos
 
 
+def _resolver_estado_operativo_mercado(
+    estado_mercado: Optional[str],
+    evaluacion_muestra: Optional[Dict[str, Any]],
+    degradacion: List[str],
+    recomendacion_exacta: bool,
+) -> Tuple[str, List[str]]:
+    motivos: List[str] = []
+
+    if estado_mercado == "rojo":
+        motivos.append("mercado_bloqueado_por_calidad")
+        return "BLOQUEADO", motivos
+
+    if not estado_mercado:
+        motivos.append("sin_estado_mercado")
+        return "LABORATORIO", motivos
+
+    if evaluacion_muestra and not evaluacion_muestra.get("muestra_suficiente", True):
+        motivos.append("muestra_insuficiente")
+        return "LABORATORIO", motivos
+
+    if "estado_mercados_vacio" in degradacion or "mercado_objetivo_fuera_estado_mercados" in degradacion:
+        motivos.append("coverage_incompleto")
+        return "LABORATORIO", motivos
+
+    if estado_mercado == "amarillo":
+        motivos.append("warning_calidad")
+        return "VALIDACION", motivos
+
+    if estado_mercado == "verde" and recomendacion_exacta:
+        motivos.append("mercado_estable_con_recomendacion")
+        return "PROMOCIONABLE", motivos
+
+    motivos.append("sin_recomendacion_exacta")
+    return "VALIDACION", motivos
+
+
 def _resolver_objetivo_canonico(
     *,
     request: AnalisisRequest,
@@ -2695,6 +2732,13 @@ def _resolver_objetivo_canonico(
             score_estado = "degradacion_controlada"
             degradacion.append("score_sin_sizing_o_cuotas_completas")
 
+    estado_operativo, motivos_estado_operativo = _resolver_estado_operativo_mercado(
+        estado_mercado=estado_mercado,
+        evaluacion_muestra=evaluacion_muestra,
+        degradacion=degradacion,
+        recomendacion_exacta=recomendacion is not None,
+    )
+
     reales = ["mercado", "lado", "linea", "unidad"]
     if pred_mercado is not None and prob_linea is not None:
         reales.extend(["media_objetivo", "desviacion_objetivo", "probabilidades_objetivo", "bloque_base"])
@@ -2770,6 +2814,15 @@ def _resolver_objetivo_canonico(
                 "linea_objetivo": request.linea_objetivo,
             },
             "estado_mercado": estado_mercado,
+            "estado_operativo_mercado": estado_operativo,
+            "estado_operativo_visible": mapear_status_promocion(
+                "NO_APTO" if estado_operativo == "BLOQUEADO" else (
+                    "EXPERIMENTAL" if estado_operativo == "LABORATORIO" else (
+                        "VALIDACION" if estado_operativo == "VALIDACION" else "PROMOCIONABLE"
+                    )
+                )
+            ),
+            "motivos_estado_operativo": motivos_estado_operativo,
             "recomendacion_exacta": recomendacion is not None,
             "evaluacion_muestra": evaluacion_muestra or {},
         },

@@ -1,4 +1,4 @@
-from motor_futbol.madurez_beta import clasificar_madurez_mercado
+from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion
 
 
 def test_no_apto_si_estado_rojo_o_volumen_critico():
@@ -34,6 +34,13 @@ def test_promocionable_si_cumple_todos_umbral():
         "verde",
     )
     assert nivel == "PROMOCIONABLE"
+
+
+def test_mapear_status_promocion():
+    assert mapear_status_promocion("NO_APTO") == "BLOQUEADO"
+    assert mapear_status_promocion("EXPERIMENTAL") == "LABORATORIO"
+    assert mapear_status_promocion("VALIDACION") == "VALIDACION"
+    assert mapear_status_promocion("PROMOCIONABLE") == "PROMOCIONABLE"
 
 
 def test_validacion_si_pasa_base_pero_no_calibracion_fina():

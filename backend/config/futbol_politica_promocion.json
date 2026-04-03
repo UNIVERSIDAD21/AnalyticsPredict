@@ -1,0 +1,49 @@
+{
+  "version": "2026-04-03.b11",
+  "estado_global_modulo": "BETA_LAB",
+  "regla_global": "No remover beta global hasta que existan mercados PROMOCIONABLE sostenidos en ventanas consecutivas.",
+  "estados": {
+    "BLOQUEADO": {
+      "significado_tecnico": "Mercado no apto para operación; falla en calidad crítica, cobertura o estabilidad.",
+      "significado_producto": "Mostrar como bloqueado/no apto; sin narrativa de madurez.",
+      "entrada": ["estado_mercado=rojo", "volumen_resuelto_critico", "inconsistencia_contractual_critica"],
+      "permanencia": ["hasta evidencia cuantitativa suficiente"],
+      "salida": ["cumplir mínimos de laboratorio en 2 ventanas consecutivas"]
+    },
+    "LABORATORIO": {
+      "significado_tecnico": "Mercado analizable en modo shadow/paper; evidencia insuficiente para validación.",
+      "significado_producto": "Mostrar badge laboratorio y advertencia de no madurez.",
+      "entrada": ["coverage incompleto", "muestra insuficiente", "estado_mercados vacío/fuera"],
+      "permanencia": ["mientras no cumpla umbrales de validación"],
+      "salida": ["cumplir umbrales de validación"]
+    },
+    "VALIDACION": {
+      "significado_tecnico": "Mercado con base estadística mínima, aún bajo monitoreo estricto.",
+      "significado_producto": "Mostrar como validación controlada, no promocionado.",
+      "entrada": ["min_resueltas_validacion", "coverage mínimo", "degradación controlada"],
+      "permanencia": ["sin degradación crítica", "estabilidad temporal aceptable"],
+      "salida": ["promoción al cumplir umbrales de promoción", "degradación a LABORATORIO/BLOQUEADO si rompe estabilidad"]
+    },
+    "PROMOCIONABLE": {
+      "significado_tecnico": "Mercado con evidencia suficiente para promoción parcial.",
+      "significado_producto": "Puede comunicarse como mercado promocionable dentro de módulo aún beta global.",
+      "entrada": ["cumplimiento total de scorecard + estabilidad por ventanas"],
+      "permanencia": ["sostener métricas dentro de umbral"],
+      "salida": ["degradación automática si excede thresholds de riesgo/calidad"]
+    }
+  },
+  "umbrales": {
+    "min_resueltas_validacion": 120,
+    "min_resueltas_promocion": 250,
+    "min_lineas_validacion": 2,
+    "min_lineas_promocion": 4,
+    "max_brier_promocion": 0.23,
+    "max_logloss_promocion": 0.67,
+    "max_ece_promocion": 0.06,
+    "min_resolved_rate_validacion": 0.7,
+    "min_resolved_rate_promocion": 0.85,
+    "max_fallback_rate_validacion": 0.35,
+    "max_fallback_rate_promocion": 0.15,
+    "max_window_drift_promocion": 0.03
+  }
+}
