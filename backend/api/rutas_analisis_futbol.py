@@ -74,6 +74,10 @@ _gestor_calibradores_futbol: Optional["GestorCalibradores"] = None
 DEFAULT_FALLBACK_WINDOW_DAYS = 540
 DEFAULT_RECENCY_HALF_LIFE_DAYS = 180
 
+MIN_MUESTRA_H2H_OBJETIVO = 5
+MIN_MUESTRA_LOCAL_HOME_OBJETIVO = 25
+MIN_MUESTRA_VISITANTE_AWAY_OBJETIVO = 25
+
 
 def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
     """Obtiene/crea el predictor ML de fútbol para usarlo como núcleo del endpoint."""
@@ -775,6 +779,81 @@ def _limitar_h2h_limite(limite: Optional[int]) -> int:
     if limite is None:
         return 10
     return max(5, min(int(limite), 20))
+
+
+def _degradar_confianza(confianza: str) -> str:
+    nivel = str(confianza or "MEDIA").upper()
+    if nivel == "MUY_ALTA":
+        return "ALTA"
+    if nivel == "ALTA":
+        return "MEDIA"
+    if nivel == "MEDIA":
+        return "BAJA"
+    return "MUY_BAJA"
+
+
+def _evaluar_muestra_contextual_objetivo(
+    request: AnalisisRequest,
+    *,
+    partidos_h2h: int,
+    partidos_local_home: int,
+    partidos_visitante_away: int,
+) -> Dict[str, Any]:
+    """Evalúa robustez mínima de contexto para evitar falsa precisión."""
+    mercado = str(request.mercado_objetivo or "").upper()
+    aplica_objetivo = bool(mercado and request.linea_objetivo is not None)
+
+    minimos = {
+        "h2h": MIN_MUESTRA_H2H_OBJETIVO,
+        "local_home": MIN_MUESTRA_LOCAL_HOME_OBJETIVO,
+        "visitante_away": MIN_MUESTRA_VISITANTE_AWAY_OBJETIVO,
+    }
+    conteos = {
+        "h2h": int(partidos_h2h or 0),
+        "local_home": int(partidos_local_home or 0),
+        "visitante_away": int(partidos_visitante_away or 0),
+    }
+
+    bloques_insuficientes = [
+        bloque for bloque, minimo in minimos.items() if conteos.get(bloque, 0) < minimo
+    ]
+
+    return {
+        "aplica_objetivo": aplica_objetivo,
+        "muestra_suficiente": len(bloques_insuficientes) == 0,
+        "bloques_insuficientes": bloques_insuficientes,
+        "minimos": minimos,
+        "conteos": conteos,
+    }
+
+
+def _aplicar_degradacion_recomendaciones_por_muestra(
+    recomendaciones: List[RecomendacionApuesta],
+    evaluacion_muestra: Dict[str, Any],
+) -> List[RecomendacionApuesta]:
+    """Degrada confianza y añade advertencias cuando la muestra es insuficiente."""
+    if evaluacion_muestra.get("muestra_suficiente", True):
+        return recomendaciones
+
+    bloques = evaluacion_muestra.get("bloques_insuficientes", [])
+    advertencia = (
+        "muestra_insuficiente_contexto: "
+        + ",".join(sorted(str(b) for b in bloques))
+    )
+
+    for rec in recomendaciones:
+        rec.confianza = _degradar_confianza(rec.confianza)
+        advertencias = list(rec.advertencias or [])
+        if advertencia not in advertencias:
+            advertencias.append(advertencia)
+        rec.advertencias = advertencias
+
+        meta = dict(rec.metadata_ensemble or {})
+        meta["muestra_insuficiente"] = True
+        meta["bloques_insuficientes"] = bloques
+        rec.metadata_ensemble = meta
+
+    return recomendaciones
 
 
 def _parsear_mercado(mercado: str) -> Dict[str, str]:
@@ -2334,6 +2413,7 @@ def _resolver_objetivo_canonico(
     mercados: Dict[str, PrediccionMercado],
     recomendaciones: List[RecomendacionApuesta],
     estado_mercados: Dict[str, str],
+    evaluacion_muestra: Optional[Dict[str, Any]] = None,
 ) -> ObjetivoAnalisisFutbol:
     mercado = str(request.mercado_objetivo or "").upper()
     lado = str(request.lado_objetivo or "").upper()
@@ -2417,12 +2497,25 @@ def _resolver_objetivo_canonico(
         degradacion.append("sin_recomendacion_exacta")
 
     estado_mercado = estado_mercados.get(mercado)
-    if estado_mercado == "amarillo":
+    if not estado_mercados:
+        estado_obj = "datos_insuficientes"
+        degradacion.append("estado_mercados_vacio")
+        no_disponibles.append("estado_mercados")
+    elif estado_mercado is None:
+        estado_obj = "datos_insuficientes"
+        degradacion.append("mercado_objetivo_fuera_estado_mercados")
+        no_disponibles.append("estado_mercado_objetivo")
+    elif estado_mercado == "amarillo":
         estado_obj = "degradacion_controlada" if estado_obj == "disponible" else estado_obj
         degradacion.append("mercado_en_warning")
     elif estado_mercado == "rojo":
         estado_obj = "no_disponible"
         degradacion.append("mercado_bloqueado_por_calidad")
+
+    if evaluacion_muestra and not evaluacion_muestra.get("muestra_suficiente", True):
+        estado_obj = "datos_insuficientes"
+        degradacion.append("muestra_insuficiente")
+        no_disponibles.append("muestra_contextual")
 
     p_over = float(prob_linea.over_calibrada) if prob_linea is not None else None
     p_under = float(prob_linea.under_calibrada) if prob_linea is not None else None
@@ -2526,6 +2619,7 @@ def _resolver_objetivo_canonico(
             },
             "estado_mercado": estado_mercado,
             "recomendacion_exacta": recomendacion is not None,
+            "evaluacion_muestra": evaluacion_muestra or {},
         },
     )
 
@@ -2741,6 +2835,13 @@ async def analizar_partido(
                         MAX_PARTIDOS_STATS,
                         temporada_ids=filtro_temporal.get("temporada_ids"),
                         fecha_minima=filtro_temporal.get("fecha_minima"),
+                    )
+
+                    evaluacion_muestra_objetivo = _evaluar_muestra_contextual_objetivo(
+                        request,
+                        partidos_h2h=len(partidos_h2h),
+                        partidos_local_home=len(partidos_local_home),
+                        partidos_visitante_away=len(partidos_visitante_away),
                     )
 
                     resumen_h2h = _resumen_metricas_h2h(
@@ -3313,6 +3414,11 @@ async def analizar_partido(
                     warning_brier=0.24,
                     bloquear_brier=0.28,
                 )
+                estado_mercados_disponible = bool(estado_mercados)
+                if not estado_mercados_disponible:
+                    logger.warning(
+                        "estado_mercados vacío/no disponible; se degradará objetivo y recomendaciones."
+                    )
 
                 # 5b. Generar recomendaciones heurísticas con pipeline de decisión completo
                 todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
@@ -3358,6 +3464,14 @@ async def analizar_partido(
                         sorted(mercados_bloqueados),
                         len(recomendaciones),
                     )
+
+                if not estado_mercados_disponible:
+                    recomendaciones = []
+
+                recomendaciones = _aplicar_degradacion_recomendaciones_por_muestra(
+                    recomendaciones,
+                    evaluacion_muestra_objetivo,
+                )
 
                 # Priorizar selección explícita del usuario (contrato canónico)
                 if request.mercado_objetivo:
@@ -3528,6 +3642,7 @@ async def analizar_partido(
                     mercados=todos_mercados,
                     recomendaciones=recomendaciones,
                     estado_mercados=estado_mercados,
+                    evaluacion_muestra=evaluacion_muestra_objetivo,
                 )
                 objetivo.trazabilidad.update(
                     {
@@ -3548,6 +3663,14 @@ async def analizar_partido(
                                 "visitante_away": len(partidos_visitante_away),
                                 "liga": len(partidos_liga),
                             },
+                            "reglas_minimas": evaluacion_muestra_objetivo.get("minimos", {}),
+                            "evaluacion_muestra_objetivo": evaluacion_muestra_objetivo,
+                            "estado_mercados_disponible": estado_mercados_disponible,
+                            "mercado_objetivo_en_estado_mercados": (
+                                str(request.mercado_objetivo).upper() in estado_mercados
+                                if request.mercado_objetivo
+                                else None
+                            ),
                         }
                     }
                 )
