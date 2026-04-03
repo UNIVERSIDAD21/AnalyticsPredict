@@ -303,6 +303,8 @@ export interface AnalisisFutbolRequest {
   mercadoObjetivo?: TipoMercadoFutbol;
   ladoObjetivo?: 'OVER' | 'UNDER';
   lineaObjetivo?: number;
+  temporadas?: string[];
+  ventanaDiasFallback?: number;
   cuotasPorLinea?: Record<string, { cuota_over?: number; cuota_under?: number }>;
 }
 

@@ -12,7 +12,7 @@ import json
 import logging
 import math
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from uuid import NAMESPACE_URL, uuid4, uuid5
 from uuid import UUID
@@ -70,6 +70,9 @@ CACHE_TTL = 3600
 _predictor_futbol_ml: Optional["PredictorFutbol"] = None
 # Instancia singleton del gestor de calibradores (P2)
 _gestor_calibradores_futbol: Optional["GestorCalibradores"] = None
+
+DEFAULT_FALLBACK_WINDOW_DAYS = 540
+DEFAULT_RECENCY_HALF_LIFE_DAYS = 180
 
 
 def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
@@ -794,9 +797,6 @@ def _parsear_mercado(mercado: str) -> Dict[str, str]:
     else:
         periodo = "ft"
 
-    if base.startswith("disparos"):
-        periodo = "ft"
-
     if "_LOCAL_" in mercado_upper:
         alcance = "local"
     elif "_VISITANTE_" in mercado_upper:
@@ -855,6 +855,7 @@ def _resumen_valores(
     valores: List[float],
     incluir_std: bool = False,
     incluir_valores: bool = False,
+    pesos: Optional[List[float]] = None,
 ) -> Dict[str, Any]:
     """Calcula promedio, std y rango para una lista de valores."""
     n = len(valores)
@@ -864,76 +865,130 @@ def _resumen_valores(
             resumen["valores"] = []
         return resumen
 
-    promedio = float(np.mean(valores))
-    std = float(np.std(valores, ddof=1)) if incluir_std and n > 1 else None
+    usar_ponderacion = (
+        pesos is not None
+        and len(pesos) == n
+        and any((p or 0) > 0 for p in pesos)
+    )
+
+    if usar_ponderacion:
+        pesos_np = np.array(pesos, dtype=float)
+        valores_np = np.array(valores, dtype=float)
+        peso_total = float(np.sum(pesos_np))
+        if peso_total > 0:
+            promedio = float(np.sum(valores_np * pesos_np) / peso_total)
+            if incluir_std and n > 1:
+                var = float(np.sum(pesos_np * ((valores_np - promedio) ** 2)) / peso_total)
+                std = float(np.sqrt(max(var, 0.0)))
+            else:
+                std = None
+        else:
+            promedio = float(np.mean(valores))
+            std = float(np.std(valores, ddof=1)) if incluir_std and n > 1 else None
+    else:
+        promedio = float(np.mean(valores))
+        std = float(np.std(valores, ddof=1)) if incluir_std and n > 1 else None
+
     resumen = {
         "n": n,
         "promedio": promedio,
         "std": std,
         "min": float(min(valores)),
         "max": float(max(valores)),
+        "metodo_promedio": "ponderado_recencia" if usar_ponderacion else "simple",
     }
     if incluir_valores:
         resumen["valores"] = list(valores)
     return resumen
 
 
+def _peso_recencia(
+    fecha_partido: Optional[datetime],
+    fecha_corte: Optional[datetime],
+    half_life_days: int,
+) -> float:
+    if fecha_partido is None or fecha_corte is None or half_life_days <= 0:
+        return 1.0
+    try:
+        edad_dias = max((fecha_corte - fecha_partido).total_seconds() / 86400.0, 0.0)
+        return float(0.5 ** (edad_dias / float(half_life_days)))
+    except Exception:
+        return 1.0
+
+
 def _resumen_metricas_equipo(
     partidos: List[Dict[str, Any]],
     equipo_id: str,
+    fecha_corte: Optional[datetime] = None,
+    recency_half_life_days: int = DEFAULT_RECENCY_HALF_LIFE_DAYS,
 ) -> Dict[str, Dict[str, Any]]:
     """Calcula promedios por metrica para un equipo."""
     acumulados: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_acumulados: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
 
     for partido in partidos:
+        peso = _peso_recencia(partido.get("fecha_partido"), fecha_corte, recency_half_life_days)
         for metric_key in METRIC_COLUMN_MAP:
             valor = _extraer_valor_equipo(partido, equipo_id, metric_key)
             if valor is not None:
                 acumulados[metric_key].append(valor)
+                pesos_acumulados[metric_key].append(peso)
 
     return {
-        metric_key: _resumen_valores(valores, incluir_std=True)
+        metric_key: _resumen_valores(valores, incluir_std=True, pesos=pesos_acumulados.get(metric_key))
         for metric_key, valores in acumulados.items()
     }
 
 
 def _resumen_metricas_liga(
     partidos: List[Dict[str, Any]],
+    fecha_corte: Optional[datetime] = None,
+    recency_half_life_days: int = DEFAULT_RECENCY_HALF_LIFE_DAYS,
 ) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Calcula promedios de liga por metrica (local, visitante, global y total)."""
     acumulados_local: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
     acumulados_visitante: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
     acumulados_total: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
     acumulados_global: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_local: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_visitante: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_total: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_global: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
 
     for partido in partidos:
+        peso = _peso_recencia(partido.get("fecha_partido"), fecha_corte, recency_half_life_days)
         for metric_key, (col_local, col_visitante) in METRIC_COLUMN_MAP.items():
             valor_local = partido.get(col_local)
             valor_visitante = partido.get(col_visitante)
             if valor_local is not None:
                 acumulados_local[metric_key].append(float(valor_local))
                 acumulados_global[metric_key].append(float(valor_local))
+                pesos_local[metric_key].append(peso)
+                pesos_global[metric_key].append(peso)
             if valor_visitante is not None:
                 acumulados_visitante[metric_key].append(float(valor_visitante))
                 acumulados_global[metric_key].append(float(valor_visitante))
+                pesos_visitante[metric_key].append(peso)
+                pesos_global[metric_key].append(peso)
             if valor_local is not None and valor_visitante is not None:
                 acumulados_total[metric_key].append(float(valor_local) + float(valor_visitante))
+                pesos_total[metric_key].append(peso)
 
     return {
         "local": {
-            metric_key: _resumen_valores(valores)
+            metric_key: _resumen_valores(valores, pesos=pesos_local.get(metric_key))
             for metric_key, valores in acumulados_local.items()
         },
         "visitante": {
-            metric_key: _resumen_valores(valores)
+            metric_key: _resumen_valores(valores, pesos=pesos_visitante.get(metric_key))
             for metric_key, valores in acumulados_visitante.items()
         },
         "global": {
-            metric_key: _resumen_valores(valores)
+            metric_key: _resumen_valores(valores, pesos=pesos_global.get(metric_key))
             for metric_key, valores in acumulados_global.items()
         },
         "total": {
-            metric_key: _resumen_valores(valores)
+            metric_key: _resumen_valores(valores, pesos=pesos_total.get(metric_key))
             for metric_key, valores in acumulados_total.items()
         },
     }
@@ -943,39 +998,128 @@ def _resumen_metricas_h2h(
     partidos: List[Dict[str, Any]],
     equipo_local_id: str,
     equipo_visitante_id: str,
+    fecha_corte: Optional[datetime] = None,
+    recency_half_life_days: int = DEFAULT_RECENCY_HALF_LIFE_DAYS,
 ) -> Dict[str, Dict[str, Dict[str, Any]]]:
     """Calcula resumen H2H por metrica para local, visitante y total."""
     acumulados_local: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
     acumulados_visitante: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
     acumulados_total: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_local: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_visitante: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
+    pesos_total: Dict[str, List[float]] = {k: [] for k in METRIC_COLUMN_MAP}
 
     for partido in partidos:
+        peso = _peso_recencia(partido.get("fecha_partido"), fecha_corte, recency_half_life_days)
         for metric_key in METRIC_COLUMN_MAP:
             valor_total = _extraer_valor_total(partido, metric_key)
             if valor_total is not None:
                 acumulados_total[metric_key].append(valor_total)
+                pesos_total[metric_key].append(peso)
 
             valor_local = _extraer_valor_equipo(partido, equipo_local_id, metric_key)
             if valor_local is not None:
                 acumulados_local[metric_key].append(valor_local)
+                pesos_local[metric_key].append(peso)
 
             valor_visitante = _extraer_valor_equipo(partido, equipo_visitante_id, metric_key)
             if valor_visitante is not None:
                 acumulados_visitante[metric_key].append(valor_visitante)
+                pesos_visitante[metric_key].append(peso)
 
     return {
         "local": {
-            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True)
+            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True, pesos=pesos_local.get(metric_key))
             for metric_key, valores in acumulados_local.items()
         },
         "visitante": {
-            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True)
+            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True, pesos=pesos_visitante.get(metric_key))
             for metric_key, valores in acumulados_visitante.items()
         },
         "total": {
-            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True)
+            metric_key: _resumen_valores(valores, incluir_std=True, incluir_valores=True, pesos=pesos_total.get(metric_key))
             for metric_key, valores in acumulados_total.items()
         },
+    }
+
+
+def _resolver_filtro_temporal_futbol(
+    cursor,
+    *,
+    request: AnalisisRequest,
+    competicion_id: str,
+    fecha_corte: datetime,
+) -> Dict[str, Any]:
+    """Resuelve gobernanza temporal (temporadas explícitas o fallback trazable)."""
+    ventana_fallback = int(request.ventana_dias_fallback or DEFAULT_FALLBACK_WINDOW_DAYS)
+    fallback_fecha_min = fecha_corte - timedelta(days=ventana_fallback)
+
+    if request.temporadas:
+        tokens = [str(t).strip() for t in request.temporadas if str(t).strip()]
+        cursor.execute(
+            """
+            SELECT id::text AS id, nombre
+            FROM temporadas_futbol
+            WHERE competicion_id = %s
+              AND (id::text = ANY(%s) OR nombre = ANY(%s))
+            ORDER BY anio_inicio DESC NULLS LAST, fecha_inicio DESC NULLS LAST
+            """,
+            [competicion_id, tokens, tokens],
+        )
+        rows = cursor.fetchall() or []
+        if rows:
+            ids = [str(r["id"]) for r in rows]
+            nombres = [str(r.get("nombre") or r["id"]) for r in rows]
+            return {
+                "estrategia": "temporadas_explicitas",
+                "temporada_ids": ids,
+                "temporadas_resueltas": nombres,
+                "fecha_minima": None,
+                "fuente": "request.temporadas",
+                "ventana_dias_fallback": ventana_fallback,
+            }
+
+        return {
+            "estrategia": "fallback_fecha_minima",
+            "temporada_ids": [],
+            "temporadas_resueltas": [],
+            "fecha_minima": fallback_fecha_min,
+            "fuente": "request.temporadas_no_resueltas",
+            "ventana_dias_fallback": ventana_fallback,
+        }
+
+    cursor.execute(
+        """
+        SELECT id::text AS id, nombre
+        FROM temporadas_futbol
+        WHERE competicion_id = %s
+        ORDER BY CASE WHEN activa THEN 0 ELSE 1 END,
+                 anio_inicio DESC NULLS LAST,
+                 fecha_inicio DESC NULLS LAST
+        LIMIT 2
+        """,
+        [competicion_id],
+    )
+    rows = cursor.fetchall() or []
+    if rows:
+        ids = [str(r["id"]) for r in rows]
+        nombres = [str(r.get("nombre") or r["id"]) for r in rows]
+        return {
+            "estrategia": "temporada_activa_mas_anterior",
+            "temporada_ids": ids,
+            "temporadas_resueltas": nombres,
+            "fecha_minima": None,
+            "fuente": "default_backend",
+            "ventana_dias_fallback": ventana_fallback,
+        }
+
+    return {
+        "estrategia": "fallback_fecha_minima",
+        "temporada_ids": [],
+        "temporadas_resueltas": [],
+        "fecha_minima": fallback_fecha_min,
+        "fuente": "sin_temporadas_resueltas",
+        "ventana_dias_fallback": ventana_fallback,
     }
 
 
@@ -985,6 +1129,8 @@ def _obtener_partidos_equipo(
     fecha_corte: datetime,
     limite: int,
     solo_local: Optional[bool] = None,
+    temporada_ids: Optional[List[str]] = None,
+    fecha_minima: Optional[datetime] = None,
 ) -> List[Dict[str, Any]]:
     """Obtiene partidos recientes de un equipo (hasta limite)."""
     query = """
@@ -1007,6 +1153,7 @@ def _obtener_partidos_equipo(
             pf.local_disparos_arco,
             pf.visitante_disparos_total,
             pf.visitante_disparos_arco,
+            pf.temporada_id,
             pf.fecha_partido
         FROM partidos_futbol pf
         WHERE (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
@@ -1014,6 +1161,13 @@ def _obtener_partidos_equipo(
           AND pf.fecha_partido < %s
     """
     params: List[Any] = [equipo_id, equipo_id, fecha_corte]
+
+    if temporada_ids:
+        query += " AND pf.temporada_id::text = ANY(%s)"
+        params.append(temporada_ids)
+    elif fecha_minima is not None:
+        query += " AND pf.fecha_partido >= %s"
+        params.append(fecha_minima)
 
     if solo_local is True:
         query += " AND pf.equipo_local_id = %s"
@@ -1034,6 +1188,8 @@ def _obtener_partidos_liga(
     competicion_id: str,
     fecha_corte: datetime,
     limite: int,
+    temporada_ids: Optional[List[str]] = None,
+    fecha_minima: Optional[datetime] = None,
 ) -> List[Dict[str, Any]]:
     """Obtiene partidos recientes de una liga (hasta limite)."""
     query = """
@@ -1056,15 +1212,24 @@ def _obtener_partidos_liga(
             pf.local_disparos_arco,
             pf.visitante_disparos_total,
             pf.visitante_disparos_arco,
+            pf.temporada_id,
             pf.fecha_partido
         FROM partidos_futbol pf
         WHERE pf.competicion_id = %s
           AND pf.estado = 'FINALIZADO'
           AND pf.fecha_partido < %s
-        ORDER BY pf.fecha_partido DESC
-        LIMIT %s
     """
-    cursor.execute(query, [competicion_id, fecha_corte, limite])
+    params: List[Any] = [competicion_id, fecha_corte]
+    if temporada_ids:
+        query += " AND pf.temporada_id::text = ANY(%s)"
+        params.append(temporada_ids)
+    elif fecha_minima is not None:
+        query += " AND pf.fecha_partido >= %s"
+        params.append(fecha_minima)
+
+    query += " ORDER BY pf.fecha_partido DESC LIMIT %s"
+    params.append(limite)
+    cursor.execute(query, params)
     return cursor.fetchall()
 
 
@@ -1074,6 +1239,8 @@ def _obtener_partidos_h2h(
     equipo_visitante_id: str,
     fecha_corte: datetime,
     limite: int,
+    temporada_ids: Optional[List[str]] = None,
+    fecha_minima: Optional[datetime] = None,
 ) -> List[Dict[str, Any]]:
     """Obtiene partidos H2H recientes entre dos equipos."""
     query = """
@@ -1096,6 +1263,7 @@ def _obtener_partidos_h2h(
             pf.local_disparos_arco,
             pf.visitante_disparos_total,
             pf.visitante_disparos_arco,
+            pf.temporada_id,
             pf.fecha_partido
         FROM partidos_futbol pf
         WHERE pf.estado = 'FINALIZADO'
@@ -1104,8 +1272,6 @@ def _obtener_partidos_h2h(
             OR (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
           )
           AND pf.fecha_partido < %s
-        ORDER BY pf.fecha_partido DESC
-        LIMIT %s
     """
     params = [
         equipo_local_id,
@@ -1113,8 +1279,17 @@ def _obtener_partidos_h2h(
         equipo_visitante_id,
         equipo_local_id,
         fecha_corte,
-        limite,
     ]
+
+    if temporada_ids:
+        query += " AND pf.temporada_id::text = ANY(%s)"
+        params.append(temporada_ids)
+    elif fecha_minima is not None:
+        query += " AND pf.fecha_partido >= %s"
+        params.append(fecha_minima)
+
+    query += " ORDER BY pf.fecha_partido DESC LIMIT %s"
+    params.append(limite)
     cursor.execute(query, params)
     return cursor.fetchall()
 
@@ -2506,6 +2681,12 @@ async def analizar_partido(
                 competicion_id = str(partido["competicion_id"])
                 fecha_corte = partido.get("fecha_partido") or datetime.now()
                 limite_h2h = _limitar_h2h_limite(request.h2h_limite)
+                filtro_temporal = _resolver_filtro_temporal_futbol(
+                    cursor,
+                    request=request,
+                    competicion_id=competicion_id,
+                    fecha_corte=fecha_corte,
+                )
 
                 try:
                     partidos_h2h = _obtener_partidos_h2h(
@@ -2514,39 +2695,84 @@ async def analizar_partido(
                         equipo_visitante_id,
                         fecha_corte,
                         limite_h2h,
+                        temporada_ids=filtro_temporal.get("temporada_ids"),
+                        fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
                     partidos_local_global = _obtener_partidos_equipo(
-                        cursor, equipo_local_id, fecha_corte, MAX_PARTIDOS_STATS, None
+                        cursor,
+                        equipo_local_id,
+                        fecha_corte,
+                        MAX_PARTIDOS_STATS,
+                        None,
+                        temporada_ids=filtro_temporal.get("temporada_ids"),
+                        fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
                     partidos_local_home = _obtener_partidos_equipo(
-                        cursor, equipo_local_id, fecha_corte, MAX_PARTIDOS_STATS, True
+                        cursor,
+                        equipo_local_id,
+                        fecha_corte,
+                        MAX_PARTIDOS_STATS,
+                        True,
+                        temporada_ids=filtro_temporal.get("temporada_ids"),
+                        fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
                     partidos_visitante_global = _obtener_partidos_equipo(
-                        cursor, equipo_visitante_id, fecha_corte, MAX_PARTIDOS_STATS, None
+                        cursor,
+                        equipo_visitante_id,
+                        fecha_corte,
+                        MAX_PARTIDOS_STATS,
+                        None,
+                        temporada_ids=filtro_temporal.get("temporada_ids"),
+                        fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
                     partidos_visitante_away = _obtener_partidos_equipo(
-                        cursor, equipo_visitante_id, fecha_corte, MAX_PARTIDOS_STATS, False
+                        cursor,
+                        equipo_visitante_id,
+                        fecha_corte,
+                        MAX_PARTIDOS_STATS,
+                        False,
+                        temporada_ids=filtro_temporal.get("temporada_ids"),
+                        fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
                     partidos_liga = _obtener_partidos_liga(
-                        cursor, competicion_id, fecha_corte, MAX_PARTIDOS_STATS
+                        cursor,
+                        competicion_id,
+                        fecha_corte,
+                        MAX_PARTIDOS_STATS,
+                        temporada_ids=filtro_temporal.get("temporada_ids"),
+                        fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
 
                     resumen_h2h = _resumen_metricas_h2h(
-                        partidos_h2h, equipo_local_id, equipo_visitante_id
+                        partidos_h2h,
+                        equipo_local_id,
+                        equipo_visitante_id,
+                        fecha_corte=fecha_corte,
                     )
                     stats_local_global = _resumen_metricas_equipo(
-                        partidos_local_global, equipo_local_id
+                        partidos_local_global,
+                        equipo_local_id,
+                        fecha_corte=fecha_corte,
                     )
                     stats_local_home = _resumen_metricas_equipo(
-                        partidos_local_home, equipo_local_id
+                        partidos_local_home,
+                        equipo_local_id,
+                        fecha_corte=fecha_corte,
                     )
                     stats_visitante_global = _resumen_metricas_equipo(
-                        partidos_visitante_global, equipo_visitante_id
+                        partidos_visitante_global,
+                        equipo_visitante_id,
+                        fecha_corte=fecha_corte,
                     )
                     stats_visitante_away = _resumen_metricas_equipo(
-                        partidos_visitante_away, equipo_visitante_id
+                        partidos_visitante_away,
+                        equipo_visitante_id,
+                        fecha_corte=fecha_corte,
                     )
-                    promedios_liga = _resumen_metricas_liga(partidos_liga)
+                    promedios_liga = _resumen_metricas_liga(
+                        partidos_liga,
+                        fecha_corte=fecha_corte,
+                    )
                 except Exception as e:
                     logger.warning(f"Error calculando contexto H2H/estadisticas: {e}")
                     resumen_h2h = {"local": {}, "visitante": {}, "total": {}}
@@ -3302,6 +3528,28 @@ async def analizar_partido(
                     mercados=todos_mercados,
                     recomendaciones=recomendaciones,
                     estado_mercados=estado_mercados,
+                )
+                objetivo.trazabilidad.update(
+                    {
+                        "temporal": {
+                            "estrategia": filtro_temporal.get("estrategia"),
+                            "temporadas_resueltas": filtro_temporal.get("temporadas_resueltas", []),
+                            "temporada_ids": filtro_temporal.get("temporada_ids", []),
+                            "fecha_minima": (
+                                filtro_temporal.get("fecha_minima").isoformat()
+                                if filtro_temporal.get("fecha_minima")
+                                else None
+                            ),
+                            "muestras": {
+                                "h2h": len(partidos_h2h),
+                                "local_global": len(partidos_local_global),
+                                "local_home": len(partidos_local_home),
+                                "visitante_global": len(partidos_visitante_global),
+                                "visitante_away": len(partidos_visitante_away),
+                                "liga": len(partidos_liga),
+                            },
+                        }
+                    }
                 )
 
                 duracion = time.time() - inicio

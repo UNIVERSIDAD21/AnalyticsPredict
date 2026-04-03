@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-04-03
+- Bloque fútbol (gobernanza temporal real en análisis):
+  - `backend/api/schemas_futbol.py`: se formaliza contrato de request con `temporadas` y `fecha_minima` (mutuamente excluyentes).
+  - `backend/api/rutas_analisis_futbol.py`:
+    - se implementa resolución canónica de filtro temporal (`temporadas` explícitas → default activa+anterior → fallback `fecha_minima` trazable);
+    - `_obtener_partidos_equipo`, `_obtener_partidos_liga`, `_obtener_partidos_h2h` ahora soportan filtro por `temporada_id` o fallback por fecha mínima;
+    - se agrega ponderación por recencia en medias/desviaciones (sin romper contrato de respuesta);
+    - se expone trazabilidad temporal en `objetivo.trazabilidad.temporal` con estrategia, temporadas resueltas, fecha mínima efectiva y tamaños de muestra.
+  - `backend/tests/test_futbol_filtro_temporal.py`: pruebas unitarias reales para contrato temporal, resolución de filtros, SQL de consulta y ponderación de recencia.
+  - `frontend/src/tipos/futbol.ts` y `frontend/src/servicios/futbol/analisis.ts`: contrato cliente alineado para enviar `temporadas`/`fecha_minima`.
+
 ## 2026-03-31
 - Bloque 2 (arquitectura de bitácora única con transición controlada):
   - Se define documento canónico de transición: `docs/arquitectura/ARQUITECTURA_BITACORA_UNICA_TRANSICION.md` (fuente de verdad de lectura, contrato final, convivencia legacy y plan de migración).

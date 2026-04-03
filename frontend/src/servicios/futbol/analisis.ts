@@ -280,6 +280,12 @@ export async function analizarPartido(
     if (request.lineaObjetivo !== undefined) {
       body.linea_objetivo = request.lineaObjetivo;
     }
+    if (request.temporadas && request.temporadas.length > 0) {
+      body.temporadas = request.temporadas;
+    }
+    if (request.ventanaDiasFallback !== undefined) {
+      body.ventana_dias_fallback = request.ventanaDiasFallback;
+    }
     if (request.cuotasPorLinea) {
       body.cuotas_por_linea = request.cuotasPorLinea;
     }

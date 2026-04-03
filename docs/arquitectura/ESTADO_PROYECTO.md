@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-03-31 (home pública `/` reestructurada a enfoque producto/progresión según Doc 06)
+Última actualización: 2026-04-03 (bloque fútbol: gobernanza temporal explícita en análisis + trazabilidad)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -103,6 +103,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Reescritura Auth v2 (2026-03-31): capa de autenticación backend (`rutas_auth`) reconstruida para flujo canónico único con normalización de correo, emisión/refresh de tokens, recuperación, aceptación legal y endpoint `me`, manteniendo compatibilidad de contrato con frontend y mejor trazabilidad de store activo.
 - Persistencia de negocio de autenticación (2026-03-31): registro/auth sincroniza datos también en tabla `usuarios` (correo + password_hash + metadatos base), manteniendo compatibilidad con `auth_users` para no romper contratos actuales mientras se completa transición total.
 - Bitácora global compartida (2026-03-31): lectura de bitácora/resumen/métricas se expone sin aislamiento por `usuario_id` para que apuestas aparezcan a todos los usuarios autenticados.
+- Bloque fútbol temporal (2026-04-03): `AnalisisRequest` recupera contrato temporal formal (`temporadas`/`fecha_minima`), consultas de contexto incorporan filtro por temporada o ventana explícita, y `objetivo.trazabilidad.temporal` publica estrategia efectiva + muestras usadas para auditoría reproducible. Dependencia abierta: calidad de catálogo de temporadas y marcación de activa/anterior por ETL/scraper (validación estructural pendiente en bloque de pipeline).
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

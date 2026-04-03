@@ -13,7 +13,7 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -202,6 +202,28 @@ class AnalisisRequest(BaseModel):
     mercado_objetivo: Optional[str] = Field(default=None, description="Mercado específico seleccionado por el usuario")
     lado_objetivo: Optional[Literal["OVER", "UNDER"]] = Field(default=None)
     linea_objetivo: Optional[float] = Field(default=None)
+    temporadas: Optional[List[str]] = Field(
+        default=None,
+        description="Temporadas a usar en el análisis (UUID o nombre, p.ej. ['2025-26']).",
+    )
+    ventana_dias_fallback: Optional[int] = Field(
+        default=730,
+        ge=30,
+        le=3650,
+        description="Ventana temporal en días cuando no se puede resolver filtro por temporadas.",
+    )
+    temporadas: Optional[List[str]] = Field(
+        default=None,
+        description=(
+            "IDs o nombres de temporadas a respetar estrictamente en el análisis. "
+            "Si no se envía, backend usa temporada activa + anterior; "
+            "si eso falla, aplica ventana temporal trazable."
+        ),
+    )
+    fecha_minima: Optional[datetime] = Field(
+        default=None,
+        description="Fecha mínima explícita para fallback temporal (ISO8601).",
+    )
 
     @field_validator("lineas_corners", "lineas_goles", "lineas_disparos", mode="before")
     @classmethod
@@ -211,6 +233,24 @@ class AnalisisRequest(BaseModel):
         if not isinstance(v, list) or len(v) == 0:
             return None
         return v
+
+    @field_validator("temporadas", mode="before")
+    @classmethod
+    def validar_temporadas(cls, valor):
+        if valor is None:
+            return valor
+        if not isinstance(valor, list):
+            raise ValueError("temporadas debe ser una lista de IDs o nombres")
+        limpias = [str(v).strip() for v in valor if str(v).strip()]
+        if not limpias:
+            raise ValueError("temporadas no puede estar vacía")
+        return limpias
+
+    @model_validator(mode="after")
+    def validar_temporalidad(self):
+        if self.fecha_minima is not None and self.temporadas:
+            raise ValueError("No envíes temporadas y fecha_minima al mismo tiempo")
+        return self
 
 
 class ProbabilidadLinea(BaseModel):
