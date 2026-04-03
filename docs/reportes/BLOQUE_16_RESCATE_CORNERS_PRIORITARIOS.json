@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-04-03T20:44:54.606334+00:00",
+  "mercados_objetivo": [
+    "CORNERS_1T",
+    "CORNERS_LOCAL_1T"
+  ],
+  "acciones": {
+    "backfill_calibradas_desde_raw": 0,
+    "resolucion_pendientes": {
+      "CORNERS_1T": {
+        "resueltas": 0,
+        "push": 0,
+        "anuladas": 0,
+        "pendientes": 16,
+        "sin_datos_partido": 0,
+        "errores": 0,
+        "detalles_errores": []
+      },
+      "CORNERS_LOCAL_1T": {
+        "resueltas": 0,
+        "push": 0,
+        "anuladas": 0,
+        "pendientes": 16,
+        "sin_datos_partido": 0,
+        "errores": 0,
+        "detalles_errores": []
+      }
+    }
+  },
+  "antes": {
+    "CORNERS_1T": {
+      "emitidos": 28,
+      "resueltos": 4,
+      "cerrados_operativos": 12,
+      "pendientes_operativos": 16,
+      "pendientes": 24,
+      "tasa_resolucion": 0.1429,
+      "tasa_cierre_operativo": 0.4286,
+      "lineas_cubiertas": 4,
+      "fallback_rows": 0,
+      "fallback_rate": 0.0,
+      "brier": 0.0004
+    },
+    "CORNERS_LOCAL_1T": {
+      "emitidos": 28,
+      "resueltos": 4,
+      "cerrados_operativos": 12,
+      "pendientes_operativos": 16,
+      "pendientes": 24,
+      "tasa_resolucion": 0.1429,
+      "tasa_cierre_operativo": 0.4286,
+      "lineas_cubiertas": 4,
+      "fallback_rows": 0,
+      "fallback_rate": 0.0,
+      "brier": 0.0004
+    }
+  },
+  "despues": {
+    "CORNERS_1T": {
+      "emitidos": 28,
+      "resueltos": 4,
+      "cerrados_operativos": 12,
+      "pendientes_operativos": 16,
+      "pendientes": 24,
+      "tasa_resolucion": 0.1429,
+      "tasa_cierre_operativo": 0.4286,
+      "lineas_cubiertas": 4,
+      "fallback_rows": 0,
+      "fallback_rate": 0.0,
+      "brier": 0.0004
+    },
+    "CORNERS_LOCAL_1T": {
+      "emitidos": 28,
+      "resueltos": 4,
+      "cerrados_operativos": 12,
+      "pendientes_operativos": 16,
+      "pendientes": 24,
+      "tasa_resolucion": 0.1429,
+      "tasa_cierre_operativo": 0.4286,
+      "lineas_cubiertas": 4,
+      "fallback_rows": 0,
+      "fallback_rate": 0.0,
+      "brier": 0.0004
+    }
+  }
+}

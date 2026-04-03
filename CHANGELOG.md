@@ -1,6 +1,17 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 16 fútbol (rescate técnico focalizado de mercados prioritarios):
+  - Foco estricto en `CORNERS_1T` y `CORNERS_LOCAL_1T` (sin expansión a 24 mercados).
+  - Corrección operativa en resolución: predicciones de partidos `CANCELADO/POSPUESTO/SUSPENDIDO/ABANDONADO` pasan a cierre `VOID` (`resuelto=true`) para evitar pendientes estructurales.
+  - Grilla de líneas focalizada y defendible:
+    - `CORNERS_1T` -> `[4.5, 5.0, 5.5]`
+    - `CORNERS_LOCAL_1T` -> `[2.5, 3.5, 4.5, 5.0]`
+  - Script de rescate/auditoría focalizada: `backend/scripts/rescate_corners_prioritarios_b16.py`.
+  - Evidencia antes/después y diagnóstico específico por mercado en:
+    - `docs/reportes/BLOQUE_16_RESCATE_CORNERS_PRIORITARIOS.json`
+    - `docs/reportes/BLOQUE_16_RESCATE_TECNICO_CORNERS_PRIORITARIOS.md`
+  - Pruebas reales añadidas para resolución/coverage en mercados foco.
 - Bloque 15 fútbol (auditoría de causa raíz de bloqueo total por mercado):
   - Se implementa auditoría causal reproducible `backend/scripts/auditoria_causal_bloqueo_futbol.py` usando evidencia de bloques 10, 12 y 13.
   - Se genera matriz causal por cada uno de los 24 mercados con severidad y evidencia cuantitativa.

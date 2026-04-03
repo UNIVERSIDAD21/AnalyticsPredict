@@ -40,10 +40,12 @@ MIN_PARTIDOS_EQUIPO_ENTRENAMIENTO = 5
 # ══════════════════════════════════════════════════════════════════════════════
 
 LINEAS_CORNERS: Dict[str, List[float]] = {
-    "CORNERS_1T": [4.5, 5.5],
+    # BLOQUE 16: grilla focalizada realista para rescate de mercados prioritarios
+    # (se evita expansión artificial amplia; se cubre línea objetivo 5.0 y adyacentes útiles)
+    "CORNERS_1T": [4.5, 5.0, 5.5],
     "CORNERS_2T": [4.5, 5.5, 6.5],
     "CORNERS_FT": [8.5, 9.5, 10.5, 11.5],
-    "CORNERS_LOCAL_1T": [2.5, 3.5],
+    "CORNERS_LOCAL_1T": [2.5, 3.5, 4.5, 5.0],
     "CORNERS_LOCAL_2T": [2.5, 3.5],
     "CORNERS_LOCAL_FT": [4.5, 5.5, 6.5],
     "CORNERS_VISITANTE_1T": [1.5, 2.5],

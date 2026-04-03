@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 class ResumenResolucionFutbol:
     resueltas: int = 0
     push: int = 0
+    anuladas: int = 0
     pendientes: int = 0
     sin_datos_partido: int = 0
     errores: int = 0
@@ -26,6 +27,7 @@ class ResumenResolucionFutbol:
         return {
             "resueltas": self.resueltas,
             "push": self.push,
+            "anuladas": self.anuladas,
             "pendientes": self.pendientes,
             "sin_datos_partido": self.sin_datos_partido,
             "errores": self.errores,
@@ -156,6 +158,23 @@ def resolver_predicciones_futbol(
                         visitante_disparos_total,
                         visitante_disparos_arco,
                     ) = fila
+
+                    if estado_partido in {"CANCELADO", "POSPUESTO", "SUSPENDIDO", "ABANDONADO"}:
+                        cursor.execute(
+                            """
+                            UPDATE predicciones_futbol
+                            SET valor_real = NULL,
+                                outcome_binario = NULL,
+                                resultado = 'VOID',
+                                resuelto = true,
+                                timestamp_resolucion = NOW(),
+                                actualizado_en = NOW()
+                            WHERE id = %s
+                            """,
+                            [pred_id],
+                        )
+                        resumen.anuladas += 1
+                        continue
 
                     if estado_partido != "FINALIZADO":
                         resumen.pendientes += 1
