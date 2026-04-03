@@ -2,7 +2,7 @@
  * SeccionFormaReciente.tsx — Forma reciente de ambos equipos
  *
  * Muestra la forma reciente de ambos equipos lado a lado: record, racha,
- * PPG, y comparación vs temporada. Incluye contexto de descanso.
+ * promedio a favor/en contra y comparación vs temporada. Incluye contexto de descanso.
  */
 
 import { useState, useMemo } from 'react';
@@ -70,7 +70,7 @@ interface PropsTarjetaFormaEquipo {
  */
 function generarEmojisFuego(racha: string): string {
   // Extraer número de la racha (ej: "W5" -> 5)
-  const match = racha.match(/W(\d+)/);
+  const match = racha.match(/[WG](\d+)/);
   if (!match) return '';
 
   const wins = parseInt(match[1], 10);
@@ -86,7 +86,9 @@ function formatearRacha(racha: string): string {
   // Convertir "W3" a "3V" (3 victorias), "L2" a "2D" (2 derrotas)
   return racha
     .replace(/W/g, 'V')
-    .replace(/L/g, 'D');
+    .replace(/L/g, 'D')
+    .replace(/G/g, 'V')
+    .replace(/P/g, 'D');
 }
 
 /**
@@ -156,7 +158,7 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
     <div className="p-4 rounded-lg bg-futurista-negro/50 border border-neon-cyan/20 space-y-4">
       {/* Nombre del equipo */}
       <div className="flex items-center gap-2">
-        <span className="text-lg">🏀</span>
+        <span className="text-lg">⚽</span>
         <h4 className="font-futurista text-texto-principal tracking-wide truncate">
           {nombre}
         </h4>
@@ -185,10 +187,10 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
         </div>
       </div>
 
-      {/* PPG y vs temporada */}
+      {/* Promedio a favor y vs temporada */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-texto-secundario">PPG</span>
+          <span className="text-sm text-texto-secundario">Promedio a favor</span>
           <span className="font-mono text-texto-principal">
             {forma.ppg.toFixed(1)}
           </span>
@@ -216,14 +218,14 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
         </div>
       </div>
 
-      {/* OPP y Net Rating */}
+      {/* Promedio en contra y balance */}
       <div className="grid grid-cols-2 gap-4 pt-2 border-t border-futurista-medio">
         <div>
-          <p className="text-xs text-texto-terciario mb-1">OPP PPG</p>
+          <p className="text-xs text-texto-terciario mb-1">Promedio en contra</p>
           <p className="font-mono text-texto-principal">{forma.opp_ppg.toFixed(1)}</p>
         </div>
         <div>
-          <p className="text-xs text-texto-terciario mb-1">Net Rating</p>
+          <p className="text-xs text-texto-terciario mb-1">Balance</p>
           <p
             className={clsx(
               'font-mono',

@@ -29,6 +29,7 @@ import {
 } from '../moleculas';
 import { SeccionH2H, SeccionFormaReciente, SeccionHistorialDetallado } from './index';
 import type { Mercado } from '../../tipos/analisis';
+import type { TipoMercadoFutbol } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -510,7 +511,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           11. HISTORIAL DETALLADO
           ═══════════════════════════════════════════════════════════ */}
-      {!esFutbol && equipoLocalId && equipoVisitanteId && linea > 0 && mercado && (
+      {equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
         <SeccionHistorialDetallado
           equipoLocalId={equipoLocalId}
           equipoLocalNombre={resultado.equipo_nombre_completo}
@@ -518,8 +519,9 @@ export function ResultadoAnalisis({
           equipoVisitanteId={equipoVisitanteId}
           equipoVisitanteNombre={resultado.rival_nombre_completo}
           equipoVisitanteAbr={resultado.rival?.toUpperCase() || 'VIS'}
-          mercado={mercado as Mercado}
+          mercado={esFutbol ? (mercadoCanon as TipoMercadoFutbol) : (mercado as Mercado)}
           linea={linea}
+          deporte={esFutbol ? 'futbol' : 'baloncesto'}
           inicialmenteExpandido={false}
         />
       )}

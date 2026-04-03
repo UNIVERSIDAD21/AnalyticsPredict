@@ -9,7 +9,9 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import type { CantidadPartidos, FiltroUbicacion } from '../../tipos';
 import type { Mercado } from '../../tipos/analisis';
+import type { TipoMercadoFutbol } from '../../tipos/futbol';
 import { useHistorialEquipoExtendido } from '../../hooks/useHistorialEquipoExtendido';
+import { useHistorialEquipoFutbolExtendido } from '../../hooks/useHistorialEquipoFutbolExtendido';
 import { FiltrosHistorial, TablaPartidosHistorial, EstadisticasOverUnder } from '../moleculas';
 
 // ══════════════════════════════════════════════════════════════
@@ -24,7 +26,9 @@ interface PropsPanelHistorialEquipo {
   /** Abreviatura del equipo */
   equipoAbr: string;
   /** Mercado seleccionado en el análisis */
-  mercado: Mercado;
+  mercado: Mercado | TipoMercadoFutbol;
+  /** Deporte del historial */
+  deporte?: 'baloncesto' | 'futbol';
   /** Línea ingresada en el análisis */
   linea: number;
   /** Clase CSS adicional */
@@ -44,6 +48,7 @@ export function PanelHistorialEquipo({
   equipoAbr,
   mercado,
   linea,
+  deporte = 'baloncesto',
   className,
 }: PropsPanelHistorialEquipo) {
   // Estado de filtros locales
@@ -51,19 +56,27 @@ export function PanelHistorialEquipo({
   const [ubicacion, setUbicacion] = useState<FiltroUbicacion>('TODOS');
 
   // Hook para obtener datos con filtros
-  const { partidos, estadisticas, cargando, error } = useHistorialEquipoExtendido(equipoId, {
+  const historialNba = useHistorialEquipoExtendido(equipoId, {
     cantidad,
     ubicacion,
-    mercado,
+    mercado: (mercado as Mercado),
     linea,
   });
+  const historialFutbol = useHistorialEquipoFutbolExtendido(equipoId, {
+    cantidad,
+    ubicacion,
+    mercado: mercado as TipoMercadoFutbol,
+    linea,
+  });
+
+  const { partidos, estadisticas, cargando, error } = deporte === 'futbol' ? historialFutbol : historialNba;
 
   return (
     <div className={clsx('space-y-4', className)}>
       {/* Header del equipo */}
       <div className="flex items-center gap-3">
         <span className="text-2xl" aria-hidden="true">
-          🏀
+          {deporte === 'futbol' ? '⚽' : '🏀'}
         </span>
         <div>
           <h4 className="font-futurista text-lg text-texto-principal tracking-wide">
@@ -79,14 +92,14 @@ export function PanelHistorialEquipo({
       <FiltrosHistorial
         cantidad={cantidad}
         ubicacion={ubicacion}
-        mercadoActivo={mercado}
+        mercadoActivo={mercado as Mercado}
         onCambiarCantidad={setCantidad}
         onCambiarUbicacion={setUbicacion}
       />
 
       {/* Estadísticas agregadas */}
       {!cargando && estadisticas && (
-        <EstadisticasOverUnder estadisticas={estadisticas} mercado={mercado} linea={linea} />
+        <EstadisticasOverUnder estadisticas={estadisticas} mercado={mercado as Mercado} linea={linea} />
       )}
 
       {/* Tabla de partidos */}
@@ -94,7 +107,7 @@ export function PanelHistorialEquipo({
         partidos={partidos}
         equipoAbr={equipoAbr}
         linea={linea}
-        mercado={mercado}
+        mercado={mercado as Mercado}
         cargando={cargando}
       />
 

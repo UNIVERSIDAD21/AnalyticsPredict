@@ -11,6 +11,7 @@ import { clsx } from 'clsx';
 import { Tarjeta } from '../atomos';
 import { PanelHistorialEquipo } from './PanelHistorialEquipo';
 import type { Mercado } from '../../tipos/analisis';
+import type { TipoMercadoFutbol } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -30,7 +31,9 @@ interface PropsSeccionHistorialDetallado {
   /** Abreviatura del equipo visitante */
   equipoVisitanteAbr: string;
   /** Mercado seleccionado en el análisis */
-  mercado: Mercado;
+  mercado: Mercado | TipoMercadoFutbol;
+  /** Dominio del historial */
+  deporte?: 'baloncesto' | 'futbol';
   /** Línea ingresada en el análisis */
   linea: number;
   /** Iniciar expandido o colapsado */
@@ -55,13 +58,14 @@ export function SeccionHistorialDetallado({
   equipoVisitanteAbr,
   mercado,
   linea,
+  deporte = 'baloncesto',
   inicialmenteExpandido = false,
   className,
 }: PropsSeccionHistorialDetallado) {
   const [expandido, setExpandido] = useState(inicialmenteExpandido);
 
   // Nombre del mercado para mostrar
-  const nombreMercado = mercado === 'COMPLETO' ? 'Total' : mercado;
+  const nombreMercado = mercado === 'COMPLETO' ? 'Total' : String(mercado);
 
   return (
     <Tarjeta className={clsx('space-y-4', className)} padding="md">
@@ -106,6 +110,7 @@ export function SeccionHistorialDetallado({
             equipoAbr={equipoLocalAbr}
             mercado={mercado}
             linea={linea}
+            deporte={deporte}
           />
 
           {/* Divisor vertical (solo desktop) */}
@@ -121,6 +126,7 @@ export function SeccionHistorialDetallado({
             equipoAbr={equipoVisitanteAbr}
             mercado={mercado}
             linea={linea}
+            deporte={deporte}
           />
         </div>
       )}
