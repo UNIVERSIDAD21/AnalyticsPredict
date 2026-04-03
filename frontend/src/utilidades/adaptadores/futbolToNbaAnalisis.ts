@@ -46,10 +46,21 @@ function numeroNullable(valor: unknown): number | null {
 }
 
 function buscarProbabilidadLinea(mercado: PrediccionMercadoFutbol | null, linea: number): PrediccionMercadoFutbol['probabilidades'][number] | null {
-  if (!mercado) return null;
-  return mercado.probabilidades.find((p) => Math.abs(p.linea - linea) < 1e-9)
-    ?? mercado.probabilidades.find((p) => Math.abs(p.linea - linea) < 1e-6)
-    ?? null;
+  if (!mercado || !Array.isArray(mercado.probabilidades) || mercado.probabilidades.length === 0) {
+    return null;
+  }
+
+  const exacta = mercado.probabilidades.find((p) => Math.abs(p.linea - linea) < 1e-9)
+    ?? mercado.probabilidades.find((p) => Math.abs(p.linea - linea) < 1e-6);
+  if (exacta) return exacta;
+
+  // Fallback robusto: si la línea exacta no existe en grilla del backend,
+  // usar la probabilidad de la línea más cercana para no perder visualización.
+  return mercado.probabilidades.reduce((mejor, actual) => {
+    const distActual = Math.abs(actual.linea - linea);
+    const distMejor = Math.abs(mejor.linea - linea);
+    return distActual < distMejor ? actual : mejor;
+  });
 }
 
 function cuotaValida(cuota?: number | null): number | null {
