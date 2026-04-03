@@ -219,7 +219,7 @@ def _ajustar_platt(probabilidades: Sequence[float], resultados: Sequence[bool]) 
         h_ab = 0.0
         for x, y in zip(x_vals, y_vals):
             z = a * x + b
-            p = 1.0 / (1.0 + math.exp(-z))
+            p = _sigmoid_estable(z)
             diff = p - y
             grad_a += diff * x
             grad_b += diff
@@ -248,7 +248,15 @@ def _ajustar_platt(probabilidades: Sequence[float], resultados: Sequence[bool]) 
 def _aplicar_platt(p_raw: float, a: float, b: float) -> float:
     p = _clip(float(p_raw), 1e-6, 1 - 1e-6)
     x = _logit(p)
-    return _clip(1.0 / (1.0 + math.exp(-(a * x + b))), 0.0, 1.0)
+    return _clip(_sigmoid_estable(a * x + b), 0.0, 1.0)
+
+
+def _sigmoid_estable(z: float) -> float:
+    if z >= 0:
+        ez = math.exp(-z)
+        return 1.0 / (1.0 + ez)
+    ez = math.exp(z)
+    return ez / (1.0 + ez)
 
 
 def _ajustar_isotonic(probabilidades: Sequence[float], resultados: Sequence[bool]) -> tuple[list[float], list[float]]:

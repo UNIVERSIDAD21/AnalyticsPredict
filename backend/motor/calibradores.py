@@ -125,7 +125,17 @@ def _aplicar_platt(p_raw: float, parametros: dict[str, object]) -> float:
         return _clip(float(p_raw), 0.0, 1.0)
     p = _clip(float(p_raw), 1e-6, 1 - 1e-6)
     x = math.log(p / (1 - p))
-    return _clip(1.0 / (1.0 + math.exp(-((a * x) + b))), 0.0, 1.0)
+    z = (float(a) * x) + float(b)
+    return _clip(_sigmoid_estable(z), 0.0, 1.0)
+
+
+def _sigmoid_estable(z: float) -> float:
+    """Sigmoid numéricamente estable para evitar overflow en exp()."""
+    if z >= 0:
+        ez = math.exp(-z)
+        return 1.0 / (1.0 + ez)
+    ez = math.exp(z)
+    return ez / (1.0 + ez)
 
 
 def _aplicar_isotonic(p_raw: float, parametros: dict[str, object]) -> float:

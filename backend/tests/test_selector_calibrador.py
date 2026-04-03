@@ -118,3 +118,9 @@ def test_selector_rechaza_origen_mixto():
     assert calibrador is None
     assert metricas["n_total"] == 110
     assert "ORIGEN_MIXTO" in razon
+
+
+def test_aplicar_platt_estable_con_valores_extremos_no_revienta():
+    # Validar estabilidad numérica para evitar `math range error`.
+    valor = selector._aplicar_platt(0.999999, a=1000.0, b=-1_000_000.0)
+    assert 0.0 <= valor <= 1.0
