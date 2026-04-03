@@ -104,17 +104,15 @@ function _metricaMercadoPartido(partido: PartidoFutbolEstadistico, mercado: stri
     return local + visitante;
   }
 
-  // GOLES
-  const local = es1T
-    ? (partido.localGoles1t ?? 0)
-    : es2T
-      ? (partido.localGoles2t ?? 0)
-      : (partido.golesLocal ?? 0);
-  const visitante = es1T
-    ? (partido.visitanteGoles1t ?? 0)
-    : es2T
-      ? (partido.visitanteGoles2t ?? 0)
-      : (partido.golesVisitante ?? 0);
+  // GOLES (si no vienen columnas 1T/2T en el contrato actual, cae a total)
+  const partidoAny = partido as unknown as Record<string, unknown>;
+  const local1t = Number(partidoAny.localGoles1t ?? partidoAny.golesLocal1t ?? partido.golesLocal ?? 0);
+  const local2t = Number(partidoAny.localGoles2t ?? partidoAny.golesLocal2t ?? partido.golesLocal ?? 0);
+  const visita1t = Number(partidoAny.visitanteGoles1t ?? partidoAny.golesVisitante1t ?? partido.golesVisitante ?? 0);
+  const visita2t = Number(partidoAny.visitanteGoles2t ?? partidoAny.golesVisitante2t ?? partido.golesVisitante ?? 0);
+
+  const local = es1T ? local1t : es2T ? local2t : (partido.golesLocal ?? 0);
+  const visitante = es1T ? visita1t : es2T ? visita2t : (partido.golesVisitante ?? 0);
 
   if (perspectiva === 'LOCAL') return local;
   if (perspectiva === 'VISITANTE') return visitante;

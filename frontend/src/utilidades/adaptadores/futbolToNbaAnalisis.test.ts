@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from './futbolToNbaAnalisis';
+import type { AnalisisFutbolResponse, PartidoFutbolEstadistico } from '../../tipos/futbol';
 
-const baseAnalisis: any = {
+const baseAnalisis = {
   exito: true,
   partido: {
     id: 'p1',
@@ -30,18 +31,19 @@ const baseAnalisis: any = {
   mercadosDisparos: {},
   recomendaciones: [{ mercado: 'GOLES_FT', lado: 'OVER', linea: 2.5, probabilidad: 0.6, confianza: 'MEDIA' }],
   modeloVersion: 'v1',
-};
+} as unknown as AnalisisFutbolResponse;
 
-const contexto: any = {
+const contexto: { h2h: PartidoFutbolEstadistico[]; historialLocal: PartidoFutbolEstadistico[]; historialVisitante: PartidoFutbolEstadistico[] } = {
   h2h: [
     {
+      id: 'h2h-1',
       fechaPartido: '2026-03-01T10:00:00Z',
       equipoLocalId: 'eq-local',
       equipoVisitanteId: 'eq-visita',
+      equipoLocalNombre: 'Local',
+      equipoVisitanteNombre: 'Visitante',
       golesLocal: 1,
       golesVisitante: 2,
-      localGoles1t: 1,
-      visitanteGoles1t: 0,
       cornersLocal: 7,
       cornersVisitante: 4,
       cornersLocal1t: 3,
@@ -68,7 +70,7 @@ describe('futbolToNbaAnalisis market-aware contexto', () => {
       recomendaciones: [{ mercado: 'CORNERS_1T', lado: 'OVER', linea: 3.5, probabilidad: 0.61, confianza: 'MEDIA' }],
     };
 
-    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as any, contexto as any);
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as unknown as AnalisisFutbolResponse, contexto);
     expect(out.contexto?.h2h?.promedio_total).toBe(4); // 3+1 corners 1T
   });
 
@@ -83,7 +85,7 @@ describe('futbolToNbaAnalisis market-aware contexto', () => {
       recomendaciones: [{ mercado: 'DISPAROS_ARCO_FT', lado: 'OVER', linea: 7.5, probabilidad: 0.58, confianza: 'MEDIA' }],
     };
 
-    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as any, contexto as any);
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as unknown as AnalisisFutbolResponse, contexto);
     expect(out.contexto?.h2h?.promedio_total).toBe(8); // 5+3 disparos arco
   });
 });
