@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 20A fútbol (expansión del marco de madurez a familia corners restante):
+  - Nuevo pipeline de expansión/auditoría por mercado: `backend/scripts/expansion_corners_b20a.py`.
+  - Mercados core evaluados: `CORNERS_FT`, `CORNERS_2T`, `CORNERS_VISITANTE_2T`; opcionales auditados: `CORNERS_VISITANTE_1T`, `CORNERS_LOCAL_FT`.
+  - Extensión práctica del framework (scorecard+readiness+freshness) a esa familia en un reporte único reproducible.
+  - Ranking de rescatabilidad generado y causas explícitas de bloqueo (actualmente todos en `NO_LISTO`, rescatabilidad `BAJA` por ausencia de finalizados/resolubles en ventana).
+  - Rescate técnico focalizado condicional integrado en pipeline; en esta corrida no aplicó (sin casos finalizados con datos pendientes de resolver).
+  - Artefactos:
+    - `docs/reportes/BLOQUE_20A_EXPANSION_CORNERS_FAMILIA.json`
+    - `docs/reportes/BLOQUE_20A_EXPANSION_CORNERS_FAMILIA.md`
 - Bloque 19.7 fútbol (automatización diaria consolidada con alertas y disparo controlado):
   - Entrypoint único diario: `backend/scripts/automation_diaria_corners_b19_7.py`.
   - Integración operacional de `freshness (B19.6) + tracking (B19) + readiness gate (B18)` en snapshot consolidado diario.

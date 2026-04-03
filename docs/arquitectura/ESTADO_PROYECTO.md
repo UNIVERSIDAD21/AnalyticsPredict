@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 19.7 automatización diaria + bloque 19.6/19.5/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
+Última actualización: 2026-04-03 (bloque 20A expansión corners familia + bloque 19.7/19.6/19.5/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -122,6 +122,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 19.5 destrabe de resolución post-partido (2026-04-03): auditoría E2E focalizada de la cadena `predicción -> estado partido -> datos corners 1T/local 1T -> outcome_binario` para `CORNERS_1T` y `CORNERS_LOCAL_1T`. Resultado cuantitativo 7/14/30 días: emisiones nuevas sí, pero `0` partidos finalizados y `0` casos resolubles con datos pendientes de conversión; diagnóstico principal = calendario real (no pipeline roto en conversión para estos mercados en esta corrida). Se deja script auditable con backfill condicional cuando existan resolubles atascados.
 - Bloque 19.6 vigilancia automática de `PROGRAMADO` vencido (2026-04-03): se formaliza SLA de frescura y clasificación operacional (`SANO|AMARILLO|VENCIDO`) para separar calendario real de stale data en mercados foco. Se agrega pipeline de vigilancia con señal automática para abrir o no bloque de ingestión/resultados. Snapshot actual: 0 casos `VENCIDO`; bloqueo sigue explicado por calendario real y no por feed claramente desactualizado en esta corrida.
 - Bloque 19.7 automatización diaria consolidada (2026-04-03): se integra vigilancia diaria en entrypoint único con snapshot consolidado y alertas automáticas sobre cambios operativos relevantes (freshness, masa resolutiva, readiness y gates). Se define disparo controlado: B20 nunca corre automático; solo se registra habilitación del gate para decisión explícita. Se deja runbook con cron/template para ejecución diaria reproducible.
+- Bloque 20A expansión del marco a corners restantes (2026-04-03): se extiende auditoría técnica y framework operativo (readiness+freshness+rescatabilidad) a `CORNERS_FT`, `CORNERS_2T` y `CORNERS_VISITANTE_2T` (más opcionales auditados). Resultado de corrida: todos permanecen `NO_LISTO`, con rescatabilidad `BAJA` por ausencia de partidos finalizados/resolubles en ventana activa; rescate técnico focalizado quedó integrado pero sin casos aplicables en esta corrida.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

@@ -1,0 +1,198 @@
+{
+  "generated_at": "2026-04-03T22:28:33.745637+00:00",
+  "bloque": "20A",
+  "mercados_objetivo": [
+    "CORNERS_FT",
+    "CORNERS_2T",
+    "CORNERS_VISITANTE_2T"
+  ],
+  "mercados_opcionales_evaluados": [
+    "CORNERS_VISITANTE_1T",
+    "CORNERS_LOCAL_FT"
+  ],
+  "auditoria": [
+    {
+      "mercado": "CORNERS_FT",
+      "scope": "core",
+      "emitidos": 28,
+      "resueltos_binarios": 4,
+      "cerrados_operativos": 4,
+      "pendientes": 24,
+      "lineas_cubiertas": 4,
+      "fallback_rate": 0.0,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness_programado": {
+        "SANO": 8,
+        "AMARILLO": 8,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA",
+      "delta_resueltos_binarios": 0,
+      "delta_cerrados_operativos": 0
+    },
+    {
+      "mercado": "CORNERS_2T",
+      "scope": "core",
+      "emitidos": 28,
+      "resueltos_binarios": 4,
+      "cerrados_operativos": 4,
+      "pendientes": 24,
+      "lineas_cubiertas": 4,
+      "fallback_rate": 0.0,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness_programado": {
+        "SANO": 8,
+        "AMARILLO": 8,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA",
+      "delta_resueltos_binarios": 0,
+      "delta_cerrados_operativos": 0
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_2T",
+      "scope": "core",
+      "emitidos": 28,
+      "resueltos_binarios": 4,
+      "cerrados_operativos": 4,
+      "pendientes": 24,
+      "lineas_cubiertas": 4,
+      "fallback_rate": 0.0,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness_programado": {
+        "SANO": 8,
+        "AMARILLO": 8,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA",
+      "delta_resueltos_binarios": 0,
+      "delta_cerrados_operativos": 0
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_1T",
+      "scope": "optional",
+      "emitidos": 28,
+      "resueltos_binarios": 4,
+      "cerrados_operativos": 4,
+      "pendientes": 24,
+      "lineas_cubiertas": 4,
+      "fallback_rate": 0.0,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness_programado": {
+        "SANO": 8,
+        "AMARILLO": 8,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA",
+      "delta_resueltos_binarios": 0,
+      "delta_cerrados_operativos": 0
+    },
+    {
+      "mercado": "CORNERS_LOCAL_FT",
+      "scope": "optional",
+      "emitidos": 28,
+      "resueltos_binarios": 4,
+      "cerrados_operativos": 4,
+      "pendientes": 24,
+      "lineas_cubiertas": 4,
+      "fallback_rate": 0.0,
+      "partidos_finalizados_30d": 0,
+      "pendientes_finalizado": 0,
+      "pendientes_finalizado_con_datos": 0,
+      "freshness_programado": {
+        "SANO": 8,
+        "AMARILLO": 8,
+        "VENCIDO": 0
+      },
+      "readiness_status": "NO_LISTO",
+      "readiness_gate": {
+        "reevaluacion": false,
+        "salir_bloqueado": false,
+        "candidatura_validacion": false
+      },
+      "score_rescatabilidad": 2,
+      "nivel_rescatabilidad": "BAJA",
+      "delta_resueltos_binarios": 0,
+      "delta_cerrados_operativos": 0
+    }
+  ],
+  "ranking_rescatabilidad": [
+    {
+      "mercado": "CORNERS_FT",
+      "score": 2,
+      "nivel": "BAJA",
+      "pendientes_finalizado_con_datos": 0,
+      "readiness_status": "NO_LISTO"
+    },
+    {
+      "mercado": "CORNERS_2T",
+      "score": 2,
+      "nivel": "BAJA",
+      "pendientes_finalizado_con_datos": 0,
+      "readiness_status": "NO_LISTO"
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_2T",
+      "score": 2,
+      "nivel": "BAJA",
+      "pendientes_finalizado_con_datos": 0,
+      "readiness_status": "NO_LISTO"
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_1T",
+      "score": 2,
+      "nivel": "BAJA",
+      "pendientes_finalizado_con_datos": 0,
+      "readiness_status": "NO_LISTO"
+    },
+    {
+      "mercado": "CORNERS_LOCAL_FT",
+      "score": 2,
+      "nivel": "BAJA",
+      "pendientes_finalizado_con_datos": 0,
+      "readiness_status": "NO_LISTO"
+    }
+  ],
+  "rescate_aplicado": {
+    "candidatos": [],
+    "backfill_calibradas_desde_raw": 0,
+    "resultado_resolver": {}
+  },
+  "nota": "No se toca promoción/B20; solo expansión de marco y rescate técnico donde aplica."
+}
