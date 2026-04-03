@@ -316,7 +316,7 @@ export function PaginaPrincipal() {
           <p className="text-xs uppercase tracking-wider text-neon-cyan">Marco de uso responsable</p>
           <p className="text-sm text-texto-secundario mt-2">
             AnalyticsPredict prioriza disciplina operativa y trazabilidad de decisiones. No promete ganancias fáciles.
-            NBA es el frente comercial más maduro; fútbol se mantiene en beta/laboratorio hasta cumplir criterios de promoción.
+            NBA es el frente comercial más maduro; fútbol opera en beta global con madurez diferenciada por mercado (shadow/validación/promoción parcial gobernada por evidencia).
           </p>
         </div>
 

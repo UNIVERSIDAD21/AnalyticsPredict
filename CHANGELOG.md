@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 14 fútbol (cierre de beta, promoción parcial y limpieza narrativa):
+  - Se alinea narrativa oficial de producto/documentación con evidencia real de bloques 10–13 (sin sobrepromoción).
+  - `docs/FUENTE_DE_VERDAD_ACTUAL.md` actualizado: fútbol queda definido como beta global con madurez diferenciada por mercado, promoción parcial y reversible.
+  - Se documenta cierre honesto de etapa: en snapshot actual no hay mercados promocionables (0/24), por lo que no procede salida beta global.
+  - Se incorpora reporte final de cierre con tabla de mercados por estado, riesgos residuales y criterio de revisión futura.
+  - Se ajusta copy visible para evitar lectura de “todo fútbol beta indiferenciado” o “fútbol terminado”.
 - Bloque 13 fútbol (shadow/paper mode operativo y validación prolongada):
   - Se formaliza `PAPER_SHADOW` como modo operativo por mercado no promocionable en trazabilidad de análisis (`objetivo.trazabilidad.modo_operativo`).
   - Nuevo endpoint `GET /api/futbol/metricas/shadow-operativo` con métricas longitudinales por mercado (emitidos, resolubles, resueltos, cobertura de líneas, fallback, brier, estado operativo vigente).
