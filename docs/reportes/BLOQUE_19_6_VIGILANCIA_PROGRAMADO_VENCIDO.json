@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-03T21:36:19.623726+00:00",
+  "generated_at": "2026-04-03T21:40:57.519175+00:00",
   "bloque": "19.6",
   "mercados_foco": [
     "CORNERS_1T",
@@ -51,7 +51,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -62,7 +62,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -73,7 +73,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -84,7 +84,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -95,7 +95,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -106,7 +106,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -117,7 +117,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -128,7 +128,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -139,7 +139,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -150,7 +150,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -161,7 +161,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -172,7 +172,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -183,7 +183,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         },
         {
@@ -194,7 +194,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         },
         {
@@ -205,7 +205,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         },
         {
@@ -216,7 +216,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         }
       ]
@@ -244,7 +244,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -255,7 +255,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -266,7 +266,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -277,7 +277,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
           "proveedor": null,
-          "atraso_horas": 7.86,
+          "atraso_horas": 7.93,
           "clase_sla": "AMARILLO"
         },
         {
@@ -288,7 +288,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -299,7 +299,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -310,7 +310,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -321,7 +321,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": 7.61,
+          "atraso_horas": 7.68,
           "clase_sla": "AMARILLO"
         },
         {
@@ -332,7 +332,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -343,7 +343,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -354,7 +354,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -365,7 +365,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -9.39,
+          "atraso_horas": -9.32,
           "clase_sla": "SANO"
         },
         {
@@ -376,7 +376,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         },
         {
@@ -387,7 +387,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         },
         {
@@ -398,7 +398,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         },
         {
@@ -409,7 +409,7 @@
           "estado_partido": "PROGRAMADO",
           "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
           "proveedor": null,
-          "atraso_horas": -16.39,
+          "atraso_horas": -16.32,
           "clase_sla": "SANO"
         }
       ]

@@ -1,0 +1,40 @@
+{
+  "updated_at": "2026-04-03T21:41:02.580964+00:00",
+  "snapshot": {
+    "mercados": [
+      {
+        "mercado": "CORNERS_1T",
+        "masa_actual": 4,
+        "gaps_actuales": {
+          "reevaluacion_seria": 26,
+          "salir_bloqueado": 56,
+          "candidatura_validacion": 116
+        },
+        "pendientes": 16,
+        "readiness_status": "NO_LISTO",
+        "gate_reevaluacion_seria": false,
+        "programado_sano": 8,
+        "programado_amarillo": 8,
+        "programado_vencido": 0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_1T",
+        "masa_actual": 4,
+        "gaps_actuales": {
+          "reevaluacion_seria": 26,
+          "salir_bloqueado": 56,
+          "candidatura_validacion": 116
+        },
+        "pendientes": 16,
+        "readiness_status": "NO_LISTO",
+        "gate_reevaluacion_seria": false,
+        "programado_sano": 8,
+        "programado_amarillo": 8,
+        "programado_vencido": 0
+      }
+    ],
+    "gate_b20": false,
+    "gate_b20_motivo": "mercados_no_listos",
+    "senal_freshness": "calendario_real_sin_vencidos"
+  }
+}

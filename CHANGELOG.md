@@ -1,6 +1,22 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 19.7 fútbol (automatización diaria consolidada con alertas y disparo controlado):
+  - Entrypoint único diario: `backend/scripts/automation_diaria_corners_b19_7.py`.
+  - Integración operacional de `freshness (B19.6) + tracking (B19) + readiness gate (B18)` en snapshot consolidado diario.
+  - Motor de alertas por cambios relevantes en `backend/motor_futbol/automation_diaria.py`:
+    - primer `VENCIDO`,
+    - subida de `AMARILLO`,
+    - aumento de masa resolutiva,
+    - cambio de readiness,
+    - habilitación de gate de reevaluación,
+    - habilitación de gate B20.
+  - Disparo controlado a B20: solo se registra habilitación; **no** ejecución automática (`NO_EJECUTAR_B20_AUTOMATICO`).
+  - Reportes y estado diario:
+    - `docs/reportes/BLOQUE_19_7_AUTOMATION_DIARIA_CORNERS.json`
+    - `docs/reportes/BLOQUE_19_7_AUTOMATION_DIARIA_CORNERS.md`
+    - `docs/reportes/BLOQUE_19_7_AUTOMATION_STATE.json`
+  - Runbook/cron template: `docs/reportes/BLOQUE_19_7_RUNBOOK_AUTOMATION_DIARIA.md`.
 - Bloque 19.6 fútbol (vigilancia automática de PROGRAMADO vencido y stale data):
   - Política SLA formal para `PROGRAMADO` en mercados foco (`CORNERS_1T`, `CORNERS_LOCAL_1T`) en `backend/config/futbol_sla_programado_vencido_b19_6.json`.
   - Motor de clasificación de frescura implementado: `backend/motor_futbol/freshness_programado.py`.
