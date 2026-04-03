@@ -21,6 +21,7 @@ import type {
   AnalisisFutbolResponse,
   PartidoFutbolEstadistico,
   PartidoFutbolResumen,
+  RecomendacionApuesta,
   TipoMercadoFutbol,
   UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
@@ -31,6 +32,50 @@ const navegar = (ruta: string) => {
   window.history.pushState({}, '', ruta);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
+
+type CategoriaSeleccionFutbol = 'GOLES' | 'CORNERS' | 'TIROS_AL_ARCO';
+type PeriodoSeleccionFutbol = '1T' | '2T' | 'FT';
+type AlcanceSeleccionFutbol = 'TOTAL' | 'LOCAL' | 'VISITANTE';
+
+interface SeleccionCanonicaFutbol {
+  categoria: CategoriaSeleccionFutbol;
+  periodo: PeriodoSeleccionFutbol;
+  alcance: AlcanceSeleccionFutbol;
+  lado: 'OVER' | 'UNDER';
+  linea: number;
+  cuotas: {
+    over?: number;
+    under?: number;
+  };
+  partidoId: string;
+  mercadoObjetivo: TipoMercadoFutbol;
+  trazabilidad: {
+    idSeleccion: string;
+    origen: 'ui-futbol';
+    timestampIso: string;
+  };
+}
+
+function resolverMercadoCanonicoFutbol(
+  categoria: CategoriaSeleccionFutbol,
+  alcance: AlcanceSeleccionFutbol,
+  periodo: PeriodoSeleccionFutbol,
+): TipoMercadoFutbol {
+  const periodoTag = periodo;
+  if (categoria === 'CORNERS') {
+    if (alcance === 'LOCAL') return `CORNERS_LOCAL_${periodoTag}` as TipoMercadoFutbol;
+    if (alcance === 'VISITANTE') return `CORNERS_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
+    return `CORNERS_${periodoTag}` as TipoMercadoFutbol;
+  }
+  if (categoria === 'GOLES') {
+    if (alcance === 'LOCAL') return `GOLES_LOCAL_${periodoTag}` as TipoMercadoFutbol;
+    if (alcance === 'VISITANTE') return `GOLES_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
+    return `GOLES_${periodoTag}` as TipoMercadoFutbol;
+  }
+  if (alcance === 'LOCAL') return 'DISPAROS_LOCAL_ARCO_FT';
+  if (alcance === 'VISITANTE') return 'DISPAROS_VISITANTE_ARCO_FT';
+  return 'DISPAROS_ARCO_FT';
+}
 
 function EstadoVacioFutbol() {
   return (
@@ -71,8 +116,9 @@ export function PaginaFutbol() {
   const { agregarToast } = useToasts();
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
-  const [categoriaMercadoFutbol, setCategoriaMercadoFutbol] = useState<'CORNERS' | 'GOLES' | 'TIROS_A_PUERTA'>('CORNERS');
-  const [alcanceMercadoFutbol, setAlcanceMercadoFutbol] = useState<'TOTAL' | 'LOCAL' | 'VISITANTE'>('TOTAL');
+  const [categoriaMercadoFutbol, setCategoriaMercadoFutbol] = useState<CategoriaSeleccionFutbol>('CORNERS');
+  const [alcanceMercadoFutbol, setAlcanceMercadoFutbol] = useState<AlcanceSeleccionFutbol>('TOTAL');
+  const [seleccionCanonicaActiva, setSeleccionCanonicaActiva] = useState<SeleccionCanonicaFutbol | null>(null);
   const [analisis, setAnalisis] = useState<AnalisisFutbolResponse | null>(null);
   const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
@@ -168,47 +214,50 @@ export function PaginaFutbol() {
     return 'tiros a puerta';
   }, [categoriaMercadoFutbol]);
 
-  const resolverMercadoObjetivo = useCallback((periodo: Mercado): TipoMercadoFutbol => {
-    const periodoTag = periodo === 'Q1' ? '1T' : (periodo === 'Q2' ? '2T' : 'FT');
-    if (categoriaMercadoFutbol === 'CORNERS') {
-      if (alcanceMercadoFutbol === 'LOCAL') return `CORNERS_LOCAL_${periodoTag}` as TipoMercadoFutbol;
-      if (alcanceMercadoFutbol === 'VISITANTE') return `CORNERS_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
-      return `CORNERS_${periodoTag}` as TipoMercadoFutbol;
-    }
-    if (categoriaMercadoFutbol === 'GOLES') {
-      if (alcanceMercadoFutbol === 'LOCAL') return `GOLES_LOCAL_${periodoTag}` as TipoMercadoFutbol;
-      if (alcanceMercadoFutbol === 'VISITANTE') return `GOLES_VISITANTE_${periodoTag}` as TipoMercadoFutbol;
-      return `GOLES_${periodoTag}` as TipoMercadoFutbol;
-    }
-    if (alcanceMercadoFutbol === 'LOCAL') return 'DISPAROS_LOCAL_ARCO_FT';
-    if (alcanceMercadoFutbol === 'VISITANTE') return 'DISPAROS_VISITANTE_ARCO_FT';
-    return 'DISPAROS_ARCO_FT';
-  }, [alcanceMercadoFutbol, categoriaMercadoFutbol]);
+  const mercadoSeleccionadoActual = useMemo(() => {
+    if (!analisis || !seleccionCanonicaActiva) return null;
+    const key = seleccionCanonicaActiva.mercadoObjetivo;
+    return analisis.mercadosGoles[key] || analisis.mercadosCorners[key] || analisis.mercadosDisparos[key] || null;
+  }, [analisis, seleccionCanonicaActiva]);
+
+  const recomendacionSeleccionada = useMemo<RecomendacionApuesta | null>(() => {
+    if (!analisis || !seleccionCanonicaActiva) return null;
+    const canon = seleccionCanonicaActiva;
+    return analisis.recomendaciones.find((rec) => (
+      rec.mercado === canon.mercadoObjetivo
+      && rec.lado === canon.lado
+      && Math.abs(rec.linea - canon.linea) < 1e-9
+    )) ?? null;
+  }, [analisis, seleccionCanonicaActiva]);
 
   const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
-    if (!analisis || !partidoSeleccionado) return null;
-    const rec = analisis.recomendaciones?.[0];
-    if (!rec) return null;
+    if (!analisis || !partidoSeleccionado || !seleccionCanonicaActiva || !recomendacionSeleccionada) return null;
+
+    const periodoCombinada: Mercado = seleccionCanonicaActiva.periodo === '1T'
+      ? 'Q1'
+      : (seleccionCanonicaActiva.periodo === '2T' ? 'Q2' : 'COMPLETO');
 
     return {
       partido_id: partidoSeleccionado.id,
       equipo_local: partidoSeleccionado.equipoLocalNombre,
       equipo_visitante: partidoSeleccionado.equipoVisitanteNombre,
       fecha_partido: partidoSeleccionado.fechaPartido,
-      mercado: 'COMPLETO',
-      lado: rec.lado,
-      linea: rec.linea,
-      cuota: rec.cuota ?? rec.cuotaOver ?? rec.cuotaUnder ?? 0,
-      cuota_over: rec.cuotaOver ?? null,
-      cuota_under: rec.cuotaUnder ?? null,
-      probabilidad_sistema: rec.probabilidad,
-      prediccion_media: analisis.mercadosGoles[rec.mercado]?.media ?? null,
-      prediccion_desviacion: analisis.mercadosGoles[rec.mercado]?.std ?? null,
-      confianza_sistema: rec.confianza === 'MUY_ALTA' ? 'ALTA' : (rec.confianza === 'MUY_BAJA' ? 'BAJA' : (rec.confianza as 'ALTA' | 'MEDIA' | 'BAJA')),
-      valor_esperado_individual: rec.valorEsperado ?? null,
-      razones: [{ razon: rec.razon }],
+      mercado: periodoCombinada,
+      lado: seleccionCanonicaActiva.lado,
+      linea: seleccionCanonicaActiva.linea,
+      cuota: seleccionCanonicaActiva.cuotas.over ?? seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuota ?? recomendacionSeleccionada.cuotaOver ?? recomendacionSeleccionada.cuotaUnder ?? 0,
+      cuota_over: seleccionCanonicaActiva.cuotas.over ?? recomendacionSeleccionada.cuotaOver ?? null,
+      cuota_under: seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuotaUnder ?? null,
+      probabilidad_sistema: recomendacionSeleccionada.probabilidad,
+      prediccion_media: mercadoSeleccionadoActual?.media ?? null,
+      prediccion_desviacion: mercadoSeleccionadoActual?.std ?? null,
+      confianza_sistema: recomendacionSeleccionada.confianza === 'MUY_ALTA'
+        ? 'ALTA'
+        : (recomendacionSeleccionada.confianza === 'MUY_BAJA' ? 'BAJA' : (recomendacionSeleccionada.confianza as 'ALTA' | 'MEDIA' | 'BAJA')),
+      valor_esperado_individual: recomendacionSeleccionada.valorEsperado ?? null,
+      razones: [{ razon: recomendacionSeleccionada.razon }],
     };
-  }, [analisis, partidoSeleccionado]);
+  }, [analisis, mercadoSeleccionadoActual, partidoSeleccionado, recomendacionSeleccionada, seleccionCanonicaActiva]);
 
   const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
     try {
@@ -260,24 +309,57 @@ export function PaginaFutbol() {
   }, [partidoSeleccionado, cargarContexto]);
 
   const ejecutarAnalisis = useCallback(async (peticion: PeticionAnalisis) => {
-    const partidoIdObjetivo = peticion.partido_id || partidoSeleccionadoId;
+    const partidoIdObjetivo = peticion.partido_id;
     if (!partidoIdObjetivo) {
-      setErrorAnalisis('Selecciona un partido para analizar.');
+      setErrorAnalisis('Selección inválida: falta partido_id en la selección canónica.');
       return;
     }
+
+    const periodo: PeriodoSeleccionFutbol = peticion.mercado === 'Q1'
+      ? '1T'
+      : (peticion.mercado === 'Q2' ? '2T' : 'FT');
+
+    const lineaObjetivo = peticion.linea;
+    if (lineaObjetivo === undefined || !Number.isFinite(lineaObjetivo) || lineaObjetivo <= 0) {
+      setErrorAnalisis('Selección inválida: línea obligatoria para fútbol.');
+      return;
+    }
+
+    const ladoObjetivo = peticion.lado;
+    if (!ladoObjetivo) {
+      setErrorAnalisis('Selección inválida: lado obligatorio para fútbol.');
+      return;
+    }
+
+    const mercadoObjetivo = resolverMercadoCanonicoFutbol(categoriaMercadoFutbol, alcanceMercadoFutbol, periodo);
+    const seleccionCanonica: SeleccionCanonicaFutbol = {
+      categoria: categoriaMercadoFutbol,
+      periodo,
+      alcance: alcanceMercadoFutbol,
+      lado: ladoObjetivo,
+      linea: lineaObjetivo,
+      cuotas: {
+        over: peticion.cuota_over,
+        under: peticion.cuota_under,
+      },
+      partidoId: partidoIdObjetivo,
+      mercadoObjetivo,
+      trazabilidad: {
+        idSeleccion: `${partidoIdObjetivo}:${mercadoObjetivo}:${ladoObjetivo}:${lineaObjetivo}`,
+        origen: 'ui-futbol',
+        timestampIso: new Date().toISOString(),
+      },
+    };
 
     if (partidoIdObjetivo !== partidoSeleccionadoId) {
       setPartidoSeleccionadoId(partidoIdObjetivo);
     }
 
-    const periodo = (peticion.mercado || 'COMPLETO') as Mercado;
-    const mercadoObjetivo = resolverMercadoObjetivo(periodo);
-    const lineaObjetivo = peticion.linea ?? 0;
-    const cuotasPorLinea = (lineaObjetivo > 0 && (peticion.cuota_over || peticion.cuota_under))
+    const cuotasPorLinea = (seleccionCanonica.cuotas.over || seleccionCanonica.cuotas.under)
       ? {
-          [`${mercadoObjetivo}|${lineaObjetivo}`]: {
-            cuota_over: peticion.cuota_over,
-            cuota_under: peticion.cuota_under,
+          [`${seleccionCanonica.mercadoObjetivo}|${seleccionCanonica.linea}`]: {
+            cuota_over: seleccionCanonica.cuotas.over,
+            cuota_under: seleccionCanonica.cuotas.under,
           },
         }
       : undefined;
@@ -285,12 +367,13 @@ export function PaginaFutbol() {
     try {
       setCargandoAnalisis(true);
       setErrorAnalisis(null);
+      setSeleccionCanonicaActiva(seleccionCanonica);
       const data = await analizarPartido({
-        partidoId: partidoIdObjetivo,
+        partidoId: seleccionCanonica.partidoId,
         h2hLimite: limiteH2h,
-        mercadoObjetivo,
-        ladoObjetivo: peticion.lado,
-        lineaObjetivo,
+        mercadoObjetivo: seleccionCanonica.mercadoObjetivo,
+        ladoObjetivo: seleccionCanonica.lado,
+        lineaObjetivo: seleccionCanonica.linea,
         cuotasPorLinea,
       });
       setAnalisis(data);
@@ -299,7 +382,7 @@ export function PaginaFutbol() {
     } finally {
       setCargandoAnalisis(false);
     }
-  }, [limiteH2h, partidoSeleccionadoId, resolverMercadoObjetivo]);
+  }, [alcanceMercadoFutbol, categoriaMercadoFutbol, limiteH2h, partidoSeleccionadoId]);
 
   const recargarTodo = useCallback(() => {
     historialCacheRef.current.clear();
@@ -311,18 +394,17 @@ export function PaginaFutbol() {
   }, [cargarContexto, partidoSeleccionado, recargar]);
 
   const guardarApuesta = useCallback(async (stake: number) => {
-    if (!analisis?.recomendaciones?.[0] || !partidoSeleccionado) return;
-    const rec = analisis.recomendaciones[0];
+    if (!partidoSeleccionado || !seleccionCanonicaActiva || !recomendacionSeleccionada) return;
     try {
       setGuardandoApuesta(true);
       await crearApuesta({
         partidoId: partidoSeleccionado.id,
-        mercado: rec.mercado as TipoMercadoFutbol,
-        lado: rec.lado,
-        linea: rec.linea,
-        cuota: rec.cuota ?? rec.cuotaOver ?? rec.cuotaUnder ?? 0,
+        mercado: seleccionCanonicaActiva.mercadoObjetivo,
+        lado: seleccionCanonicaActiva.lado,
+        linea: seleccionCanonicaActiva.linea,
+        cuota: seleccionCanonicaActiva.cuotas.over ?? seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuota ?? recomendacionSeleccionada.cuotaOver ?? recomendacionSeleccionada.cuotaUnder ?? 0,
         stake,
-        notas: 'Guardado desde flujo unificado fútbol',
+        notas: `Guardado desde selección canónica fútbol (${seleccionCanonicaActiva.trazabilidad.idSeleccion})`,
       });
       setMostrarGuardar(false);
       agregarToast({ titulo: 'Apuesta guardada', mensaje: 'Se registró en bitácora.', tipo: 'success' });
@@ -331,7 +413,7 @@ export function PaginaFutbol() {
     } finally {
       setGuardandoApuesta(false);
     }
-  }, [agregarToast, analisis, partidoSeleccionado]);
+  }, [agregarToast, partidoSeleccionado, recomendacionSeleccionada, seleccionCanonicaActiva]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -372,19 +454,19 @@ export function PaginaFutbol() {
                 </label>
                 <select
                   value={categoriaMercadoFutbol}
-                  onChange={(e) => setCategoriaMercadoFutbol(e.target.value as 'CORNERS' | 'GOLES' | 'TIROS_A_PUERTA')}
+                  onChange={(e) => setCategoriaMercadoFutbol(e.target.value as CategoriaSeleccionFutbol)}
                   className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
                 >
                   <option value="CORNERS">Corners</option>
                   <option value="GOLES">Goles</option>
-                  <option value="TIROS_A_PUERTA">Tiros a puerta</option>
+                  <option value="TIROS_AL_ARCO">Tiros al arco</option>
                 </select>
                 <label className="block mt-3 text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                   Alcance
                 </label>
                 <select
                   value={alcanceMercadoFutbol}
-                  onChange={(e) => setAlcanceMercadoFutbol(e.target.value as 'TOTAL' | 'LOCAL' | 'VISITANTE')}
+                  onChange={(e) => setAlcanceMercadoFutbol(e.target.value as AlcanceSeleccionFutbol)}
                   className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
                 >
                   <option value="TOTAL">Total</option>
@@ -426,8 +508,8 @@ export function PaginaFutbol() {
                 <ResultadoAnalisis
                   resultado={adaptarAnalisisFutbolAResultadoAnalisis(analisis, { h2h: h2hPartidos, historialLocal, historialVisitante })}
                   advertencias={[]}
-                  seleccionUsuario={analisis.recomendaciones?.[0]
-                    ? { lado: analisis.recomendaciones[0].lado, linea: analisis.recomendaciones[0].linea }
+                  seleccionUsuario={seleccionCanonicaActiva
+                    ? { lado: seleccionCanonicaActiva.lado, linea: seleccionCanonicaActiva.linea }
                     : null}
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
@@ -457,7 +539,7 @@ export function PaginaFutbol() {
         </div>
       </main>
 
-      {analisis?.recomendaciones?.[0] && partidoSeleccionado && (
+      {seleccionCanonicaActiva && recomendacionSeleccionada && partidoSeleccionado && (
         <ModalGuardarApuestaFutbol
           mostrar={mostrarGuardar}
           onCerrar={() => setMostrarGuardar(false)}
@@ -469,12 +551,12 @@ export function PaginaFutbol() {
             fecha: partidoSeleccionado.fechaPartido,
           }}
           recomendacion={{
-            mercado: analisis.recomendaciones[0].mercado as TipoMercadoFutbol,
-            lado: analisis.recomendaciones[0].lado,
-            linea: analisis.recomendaciones[0].linea,
-            cuota: analisis.recomendaciones[0].cuota ?? analisis.recomendaciones[0].cuotaOver ?? analisis.recomendaciones[0].cuotaUnder ?? 0,
-            probabilidad: analisis.recomendaciones[0].probabilidad,
-            confianza: analisis.recomendaciones[0].confianza,
+            mercado: seleccionCanonicaActiva.mercadoObjetivo,
+            lado: seleccionCanonicaActiva.lado,
+            linea: seleccionCanonicaActiva.linea,
+            cuota: seleccionCanonicaActiva.cuotas.over ?? seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuota ?? recomendacionSeleccionada.cuotaOver ?? recomendacionSeleccionada.cuotaUnder ?? 0,
+            probabilidad: recomendacionSeleccionada.probabilidad,
+            confianza: recomendacionSeleccionada.confianza,
           }}
         />
       )}
