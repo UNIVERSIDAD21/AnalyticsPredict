@@ -43,6 +43,8 @@ from typing import Any, Dict, List, Optional, Tuple, Set
 from threading import Lock
 import hashlib
 
+from scripts import temporadas_pipeline as tp
+
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -111,6 +113,7 @@ class SyncStats:
     actualizados: int = 0
     omitidos: int = 0
     errores: int = 0
+    advertencias_temporada: int = 0
 
 
 # ============================================================================
@@ -331,6 +334,99 @@ def parse_fecha_calendario_espn_iso(iso_str: str) -> date:
 
 def seasontype_to_tipo(seasontype: int) -> str:
     return {1: "PRE", 2: "REG", 3: "POST"}.get(seasontype, "REG")
+
+
+def inferir_anio_fin_temporada(fecha_evento: date, tipo_partido: str) -> int:
+    """
+    Regla NBA: la temporada se identifica por el año en que finaliza.
+    - Oct-Dic 2025 => temporada 2026
+    - Ene-Jun 2026 => temporada 2026
+    - Jul-Sep (offseason/pre) se fuerza al mismo año para evitar saltos falsos.
+    """
+    mes = int(fecha_evento.month)
+    anio = int(fecha_evento.year)
+    if mes >= 10:
+        return anio + 1
+    return anio
+
+
+def registrar_advertencia_temporada(
+    warnings: List[Dict[str, Any]],
+    event_id: str,
+    equipo: str,
+    causa: str,
+    detalle: Dict[str, Any],
+    verbose: bool = False,
+) -> None:
+    warning = {
+        "event_id": str(event_id),
+        "equipo": str(equipo),
+        "causa": str(causa),
+        "detalle": detalle,
+    }
+    warnings.append(warning)
+    if verbose:
+        print(f"   ⚠️  Temporada: {causa} | event_id={event_id} | equipo={equipo} | detalle={detalle}", flush=True)
+
+
+def resolver_temporada_id_evento(
+    conexion,
+    fecha_evento: date,
+    season_api: Optional[int],
+    tipo_partido: str,
+    temporada_por_anio_fin: Dict[int, str],
+    warnings: List[Dict[str, Any]],
+    event_id: str,
+    equipo: str,
+    verbose: bool = False,
+) -> Optional[str]:
+    candidatos: List[int] = []
+
+    if season_api is not None:
+        candidatos.append(int(season_api))
+
+    inferida = inferir_anio_fin_temporada(fecha_evento, tipo_partido)
+    if season_api is not None and int(season_api) != inferida:
+        registrar_advertencia_temporada(
+            warnings=warnings,
+            event_id=event_id,
+            equipo=equipo,
+            causa="season_api_difiere_de_fecha",
+            detalle={
+                "season_api": int(season_api),
+                "temporada_inferida": inferida,
+                "tipo_partido": tipo_partido,
+                "fecha_evento": str(fecha_evento),
+            },
+            verbose=verbose,
+        )
+    if inferida not in candidatos:
+        candidatos.append(inferida)
+
+    for candidato in candidatos:
+        temporada_id = temporada_por_anio_fin.get(int(candidato))
+        if temporada_id:
+            return str(temporada_id)
+
+        creada = asegurar_temporadas(conexion, [int(candidato)]).get(int(candidato))
+        if creada:
+            temporada_por_anio_fin[int(candidato)] = str(creada)
+            return str(creada)
+
+    registrar_advertencia_temporada(
+        warnings=warnings,
+        event_id=event_id,
+        equipo=equipo,
+        causa="temporada_no_resuelta",
+        detalle={
+            "season_api": season_api,
+            "temporada_inferida": inferida,
+            "tipo_partido": tipo_partido,
+            "fecha_evento": str(fecha_evento),
+        },
+        verbose=verbose,
+    )
+    return None
 
 
 def normalize_nombre(s: str) -> str:
@@ -707,11 +803,9 @@ def sincronizar_equipo_optimizado(
     team_id = team_info.id
     competicion_id_equipo = equipo_bd.competicion_id
 
-    for season in seasons:
-        temporada_id = temporada_por_anio_fin.get(int(season))
-        if not temporada_id:
-            temporada_id = asegurar_temporadas(conexion, [int(season)]).get(int(season), "")
+    advertencias_temporada: List[Dict[str, Any]] = []
 
+    for season in seasons:
         for st in seasontypes:
             tipo_partido = seasontype_to_tipo(st)
 
@@ -739,6 +833,23 @@ def sincronizar_equipo_optimizado(
                 fecha_ev = parse_fecha_calendario_espn_iso(ev_date_str)
 
                 if fecha_ev < fecha_min or fecha_ev > hoy:
+                    stats.omitidos += 1
+                    continue
+
+                season_api = int(season) if season is not None else None
+                temporada_id_evento = tp.resolver_temporada_id_evento(
+                    conexion=conexion,
+                    fecha_evento=fecha_ev,
+                    season_api=season_api,
+                    tipo_partido=tipo_partido,
+                    temporada_por_anio_fin=temporada_por_anio_fin,
+                    warnings=advertencias_temporada,
+                    event_id=str(event_id),
+                    equipo=equipo_bd.nombre,
+                    asegurar_temporadas_fn=asegurar_temporadas,
+                    verbose=verbose,
+                )
+                if not temporada_id_evento:
                     stats.omitidos += 1
                     continue
 
@@ -779,7 +890,7 @@ def sincronizar_equipo_optimizado(
                     ins, _pid = upsert_partido_con_fecha(
                         conexion=conexion,
                         fecha_partido=parsed["fecha_partido"],
-                        temporada_id=temporada_id,
+                        temporada_id=temporada_id_evento,
                         tipo_partido=tipo_partido,
                         espn_game_id=str(event_id),
                         equipo_local_id=home_team.id,
@@ -807,6 +918,7 @@ def sincronizar_equipo_optimizado(
                     stats.errores += 1
                     continue
 
+    stats.advertencias_temporada = len(advertencias_temporada)
     return stats
 
 
@@ -1039,11 +1151,12 @@ def main() -> int:
                         stats_globales.actualizados += stats.actualizados
                         stats_globales.omitidos += stats.omitidos
                         stats_globales.errores += stats.errores
+                        stats_globales.advertencias_temporada += stats.advertencias_temporada
 
                         if stats.errores > 0:
                             equipos_con_errores += 1
 
-                        print(f"  ✓ {nombre}: {stats.insertados} nuevos, {stats.actualizados} actualizados, {stats.errores} errores")
+                        print(f"  ✓ {nombre}: {stats.insertados} nuevos, {stats.actualizados} actualizados, {stats.errores} errores, {stats.advertencias_temporada} advertencias temporada")
             else:
                 for idx, equipo in enumerate(equipos_a_sincronizar, 1):
                     if args.all_teams:
@@ -1071,12 +1184,13 @@ def main() -> int:
                     stats_globales.actualizados += stats.actualizados
                     stats_globales.omitidos += stats.omitidos
                     stats_globales.errores += stats.errores
+                    stats_globales.advertencias_temporada += stats.advertencias_temporada
 
                     if stats.errores > 0:
                         equipos_con_errores += 1
 
                     if args.all_teams:
-                        print(f"({stats.insertados} nuevos, {stats.actualizados} actualizados, {stats.errores} errores)")
+                        print(f"({stats.insertados} nuevos, {stats.actualizados} actualizados, {stats.errores} errores, {stats.advertencias_temporada} adv temporada)")
                     else:
                         print(f"   Procesados: {stats.procesados} | Nuevos: {stats.insertados} | Actualizados: {stats.actualizados}")
 
@@ -1093,6 +1207,7 @@ def main() -> int:
             print(f"   Actualizados: {stats_globales.actualizados}")
             print(f"   Omitidos: {stats_globales.omitidos}")
             print(f"   Errores: {stats_globales.errores}")
+            print(f"   Advertencias de temporada: {stats_globales.advertencias_temporada}")
             if args.all_teams:
                 print(f"   Equipos con errores: {equipos_con_errores}")
             print(f"   Caché summaries: {cache_hit_rate:.1f}% hit rate ({hits} hits, {misses} misses)")

@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 5 NBA (blindaje ETL de temporada en pipeline real):
+  - Ruta validada y documentada del pipeline real en `docs/reportes/BLOQUE_5_PIPELINE_TEMPORADAS.md`.
+  - `backend/scripts/scraper_equipos_recientes.py` ahora resuelve `temporada_id` por evento con trazabilidad explícita:
+    - inferencia por fecha (`Oct-Dic => año+1`, `Ene-Jun => año`),
+    - fallback controlado a creación/lookup de temporada,
+    - advertencias estructuradas cuando `season_api` difiere de fecha o cuando no se logra resolver temporada.
+  - Se evita persistir partidos con `temporada_id` vacío; esos casos quedan omitidos y auditables.
+  - Pruebas automáticas nuevas: `backend/tests/test_temporadas_scraper_equipos_recientes.py` (asignación correcta, bordes, temporadas cruzadas y fallback controlado).
 - Bloque fútbol (gobernanza temporal real en análisis):
   - `backend/api/schemas_futbol.py`: se formaliza contrato de request con `temporadas` y `fecha_minima` (mutuamente excluyentes).
   - `backend/api/rutas_analisis_futbol.py`:
