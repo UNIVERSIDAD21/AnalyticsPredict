@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-04-03T20:48:38.655225+00:00",
+  "mercados": [
+    "CORNERS_1T",
+    "CORNERS_LOCAL_1T"
+  ],
+  "comparativa": [
+    {
+      "mercado": "CORNERS_1T",
+      "antes_b10": {
+        "emitidos": 28,
+        "resueltos_binarios": 4,
+        "cerrados_operativos": 12,
+        "pendientes": 24,
+        "lineas_cubiertas": 4,
+        "fallback_rate": 0.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "status_gate": "BLOQUEADO"
+      },
+      "despues_b17": {
+        "emitidos": 28,
+        "resueltos_binarios": 4,
+        "cerrados_operativos": 12,
+        "pendientes": 16,
+        "lineas_cubiertas": 4,
+        "fallback_rate": 0.0,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": null,
+        "resolved_rate": 0.1429,
+        "status_gate": "BLOQUEADO",
+        "nivel": "NO_APTO",
+        "motivos": [
+          "volumen_o_resolucion_critica"
+        ]
+      },
+      "delta": {
+        "resueltos_binarios": 0,
+        "cerrados_operativos": 0,
+        "pendientes": -8,
+        "lineas_cubiertas": 0,
+        "fallback_rate": 0.0
+      },
+      "interpretacion": "muestra_binaria_insuficiente"
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "antes_b10": {
+        "emitidos": 28,
+        "resueltos_binarios": 4,
+        "cerrados_operativos": 12,
+        "pendientes": 24,
+        "lineas_cubiertas": 4,
+        "fallback_rate": 0.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "status_gate": "BLOQUEADO"
+      },
+      "despues_b17": {
+        "emitidos": 28,
+        "resueltos_binarios": 4,
+        "cerrados_operativos": 12,
+        "pendientes": 16,
+        "lineas_cubiertas": 4,
+        "fallback_rate": 0.0,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": null,
+        "resolved_rate": 0.1429,
+        "status_gate": "BLOQUEADO",
+        "nivel": "NO_APTO",
+        "motivos": [
+          "volumen_o_resolucion_critica"
+        ]
+      },
+      "delta": {
+        "resueltos_binarios": 0,
+        "cerrados_operativos": 0,
+        "pendientes": -8,
+        "lineas_cubiertas": 0,
+        "fallback_rate": 0.0
+      },
+      "interpretacion": "muestra_binaria_insuficiente"
+    }
+  ],
+  "decision_final": {
+    "ruta": "Ruta 2",
+    "texto": "aún no suben de estado; vale la pena seguir acumulando masa resolutiva en estos dos mercados"
+  }
+}

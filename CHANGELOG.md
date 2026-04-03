@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 17 fútbol (re-scorecard comparativa y reevaluación de estado):
+  - Re-scorecard focalizado ejecutado para `CORNERS_1T` y `CORNERS_LOCAL_1T` con comparación estricta antes vs después.
+  - Resultado cuantitativo: mejora operativa parcial (`pendientes -8` por mercado), pero sin aumento de masa binaria resuelta (`4 -> 4`), por lo que ambos mercados se mantienen `BLOQUEADO`.
+  - Se documenta explícitamente no sobreinterpretar Brier/LogLoss/ECE con n binario pequeño.
+  - Decisión de ruta: **Ruta 2** (seguir acumulando masa resolutiva en estos dos mercados antes de intentar promoción).
+  - Artefactos generados:
+    - `docs/reportes/BLOQUE_17_RESCORECARD_CORNERS_COMPARATIVA.json`
+    - `docs/reportes/BLOQUE_17_RESCORECARD_CORNERS_COMPARATIVA.md`
 - Bloque 16 fútbol (rescate técnico focalizado de mercados prioritarios):
   - Foco estricto en `CORNERS_1T` y `CORNERS_LOCAL_1T` (sin expansión a 24 mercados).
   - Corrección operativa en resolución: predicciones de partidos `CANCELADO/POSPUESTO/SUSPENDIDO/ABANDONADO` pasan a cierre `VOID` (`resuelto=true`) para evitar pendientes estructurales.
