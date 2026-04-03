@@ -13,7 +13,7 @@ import logging
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 from uuid import UUID
 
 import numpy as np
@@ -1945,6 +1945,22 @@ def _generar_recomendaciones(
     return recomendaciones[:10]  # Top 10 recomendaciones
 
 
+def _row_get(row: Any, key: str, index: int = 0) -> Any:
+    """Acceso robusto para dict_row/tuple sin romper por formato de cursor."""
+    if row is None:
+        return None
+    if isinstance(row, dict):
+        return row.get(key)
+    try:
+        return row[key]  # dict_row también soporta llave
+    except Exception:
+        pass
+    try:
+        return row[index]
+    except Exception:
+        return None
+
+
 def _obtener_modelo_version_futbol_id(cursor) -> Optional[int]:
     """Obtiene un modelo_version_id válido para FK de predicciones_futbol."""
     try:
@@ -1957,12 +1973,17 @@ def _obtener_modelo_version_futbol_id(cursor) -> Optional[int]:
             """
         )
         row = cursor.fetchone()
-        if not row:
-            return None
-        return int(row["id"] if isinstance(row, dict) else row[0])
+        valor = _row_get(row, "id", 0)
+        return int(valor) if valor is not None else None
     except Exception:
         logger.exception("No se pudo obtener modelo_version_id de modelo_versiones_futbol")
         return None
+
+
+def _prediccion_futbol_idempotency_id(partido_id: str, mercado: str, linea: float) -> str:
+    """ID determinístico para impedir duplicados por reanálisis del mismo objetivo."""
+    llave = f"predicciones_futbol:{partido_id}:{mercado.upper()}:{linea:.4f}:false"
+    return str(uuid5(NAMESPACE_URL, llave))
 
 
 def _registrar_predicciones_futbol(
@@ -1983,10 +2004,13 @@ def _registrar_predicciones_futbol(
             except (TypeError, ValueError):
                 continue
 
+            partido_id = str(partido["id"])
+            fila_id = _prediccion_futbol_idempotency_id(partido_id, mercado, linea_valor)
+
             filas.append(
                 [
-                    str(uuid4()),
-                    str(partido["id"]),
+                    fila_id,
+                    partido_id,
                     modelo_version_id,
                     str(partido["competicion_id"]),
                     str(partido["temporada_id"]),
@@ -2043,12 +2067,33 @@ def _registrar_predicciones_futbol(
             %s::mercado_futbol, %s, %s, %s, %s,
             %s, %s, %s, %s, %s, %s, %s
         )
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+            modelo_version_id = EXCLUDED.modelo_version_id,
+            competicion_id = EXCLUDED.competicion_id,
+            temporada_id = EXCLUDED.temporada_id,
+            equipo_local_id = EXCLUDED.equipo_local_id,
+            equipo_visitante_id = EXCLUDED.equipo_visitante_id,
+            equipo_local_nombre = EXCLUDED.equipo_local_nombre,
+            equipo_visitante_nombre = EXCLUDED.equipo_visitante_nombre,
+            fecha_partido = EXCLUDED.fecha_partido,
+            mercado = EXCLUDED.mercado,
+            linea = EXCLUDED.linea,
+            linea_es_sintetica = EXCLUDED.linea_es_sintetica,
+            media_predicha = EXCLUDED.media_predicha,
+            desviacion_predicha = EXCLUDED.desviacion_predicha,
+            prob_over = EXCLUDED.prob_over,
+            prob_under = EXCLUDED.prob_under,
+            prob_over_calibrada = EXCLUDED.prob_over_calibrada,
+            prob_under_calibrada = EXCLUDED.prob_under_calibrada,
+            intervalo_inferior = EXCLUDED.intervalo_inferior,
+            intervalo_superior = EXCLUDED.intervalo_superior,
+            nivel_intervalo = EXCLUDED.nivel_intervalo
         """,
         filas,
     )
 
-    return cursor.rowcount if cursor.rowcount is not None and cursor.rowcount >= 0 else len(filas)
+    # executemany+upsert no distingue insert/update por fila; devolvemos filas procesadas.
+    return len(filas)
 
 
 def _unidad_por_mercado(mercado: str) -> str:
@@ -2168,14 +2213,30 @@ def _resolver_objetivo_canonico(
     score_estado = "no_disponible"
 
     if recomendacion is not None:
-        if recomendacion.devig_metodo:
+        cuota_over_valida = recomendacion.cuota_over is not None and float(recomendacion.cuota_over) >= 1.0
+        cuota_under_valida = recomendacion.cuota_under is not None and float(recomendacion.cuota_under) >= 1.0
+        cuotas_completas = cuota_over_valida and cuota_under_valida
+        cuota_unica = (cuota_over_valida or cuota_under_valida) and not cuotas_completas
+
+        if recomendacion.devig_metodo and cuotas_completas:
             devig_estado = "degradacion_controlada" if str(recomendacion.devig_metodo) in {"implied_raw_single_side", "fallback_conservador_no_odds"} else "disponible"
+        elif cuota_unica:
+            devig_estado = "degradacion_controlada"
+            degradacion.append("devig_estimado_por_cuota_unica")
+        else:
+            devig_estado = "no_disponible"
+            no_disponibles.append("devig")
+
         if recomendacion.p_raw is not None and recomendacion.p_calibrada is not None:
             calibracion_estado = "disponible"
-        if recomendacion.score is not None and recomendacion.sizing is not None:
+        else:
+            calibracion_estado = "datos_insuficientes"
+
+        if recomendacion.score is not None and recomendacion.sizing is not None and cuotas_completas:
             score_estado = "disponible"
         elif recomendacion.score is not None:
             score_estado = "degradacion_controlada"
+            degradacion.append("score_sin_sizing_o_cuotas_completas")
 
     reales = ["mercado", "lado", "linea", "unidad"]
     if pred_mercado is not None and prob_linea is not None:
