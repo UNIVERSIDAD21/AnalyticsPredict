@@ -16,7 +16,7 @@ import type { ContextoH2H } from '../../tipos/analisis';
 // ══════════════════════════════════════════════════════════════
 
 /** Línea típica de referencia para determinar OVER/UNDER en H2H */
-const LINEA_TIPICA = 220;
+const LINEA_TIPICA = 2.5;
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -31,6 +31,8 @@ interface PropsSeccionH2H {
   rivalNombre: string;
   /** Línea actual para comparar (opcional) */
   lineaActual?: number;
+  /** Unidad semántica del mercado */
+  unidadLabel?: string;
   /** Iniciar expandido o colapsado */
   inicialmenteExpandido?: boolean;
   /** Clase CSS adicional */
@@ -78,6 +80,7 @@ export function SeccionH2H({
   equipoNombre,
   rivalNombre,
   lineaActual,
+  unidadLabel = 'unidades',
   inicialmenteExpandido = false,
   className,
 }: PropsSeccionH2H) {
@@ -169,7 +172,7 @@ export function SeccionH2H({
         <div className="flex items-center gap-1.5">
           <span className="text-texto-secundario">Promedio:</span>
           <span className="font-mono text-texto-principal">
-            {h2h.promedio_total.toFixed(1)} pts
+            {h2h.promedio_total.toFixed(1)} {unidadLabel}
           </span>
         </div>
 
@@ -308,7 +311,7 @@ export function SeccionH2H({
               </p>
               <p className="text-xl font-mono text-texto-principal">
                 {h2h.promedio_equipo.toFixed(1)}
-                <span className="text-sm text-texto-terciario ml-1">pts</span>
+                <span className="text-sm text-texto-terciario ml-1">{unidadLabel}</span>
               </p>
             </div>
             <div className="p-3 rounded-lg bg-futurista-negro/50 border border-texto-terciario/10">
@@ -317,7 +320,7 @@ export function SeccionH2H({
               </p>
               <p className="text-xl font-mono text-texto-principal">
                 {h2h.promedio_rival.toFixed(1)}
-                <span className="text-sm text-texto-terciario ml-1">pts</span>
+                <span className="text-sm text-texto-terciario ml-1">{unidadLabel}</span>
               </p>
             </div>
           </div>

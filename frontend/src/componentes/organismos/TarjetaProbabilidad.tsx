@@ -42,7 +42,7 @@ export function TarjetaProbabilidad({
   mediaTotal,
   desviacion,
   seleccionUsuario,
-  unidadLabel = 'puntos',
+  unidadLabel = 'unidades',
 }: PropsTarjetaProbabilidad) {
   const esOverFavorito = probabilidadOver > probabilidadUnder;
   const porcentajeOver = probabilidadOver * 100;

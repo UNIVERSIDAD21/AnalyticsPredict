@@ -20,20 +20,26 @@ interface PropsListaRazones {
 // ══════════════════════════════════════════════════════════════
 
 function obtenerExplicacionRazon(razon: RazonPrediccion, deporte: 'baloncesto' | 'futbol'): string | null {
-  const unidad = deporte === 'futbol' ? 'métrica' : 'puntos';
+  const unidad = deporte === 'futbol' ? 'unidades del mercado' : 'puntos';
   switch (razon.factor) {
     case 'total_estimado':
       return `Es la suma de ${unidad} que el modelo espera entre ambos equipos.`;
     case 'ataque_equipo':
-      return 'Indica cuántos puntos se estima que anotará el equipo según sus datos recientes.';
+      return deporte === 'futbol'
+        ? 'Indica cuánto aporta el equipo al total esperado del mercado en este partido.'
+        : 'Indica cuántos puntos se estima que anotará el equipo según sus datos recientes.';
     case 'ataque_rival':
       return `Indica cuánta ${unidad} se estima para el rival según sus datos recientes.`;
     case 'prediccion_sistema':
-      return 'Es el total de puntos que calcula el sistema con los datos disponibles; se compara con la línea si existe.';
+      return deporte === 'futbol'
+        ? 'Es el total estimado del mercado de fútbol con los datos disponibles; se compara con la línea objetivo.'
+        : 'Es el total de puntos que calcula el sistema con los datos disponibles; se compara con la línea si existe.';
     case 'resumen_neto':
       return 'Resume cuánto se ajustó la predicción por el contexto (descanso, rachas, etc.).';
     case 'back_to_back':
-      return 'Cuando hay partidos en días seguidos, el cansancio suele bajar el ritmo y los puntos.';
+      return deporte === 'futbol'
+        ? 'Cuando hay partidos seguidos, el cansancio puede reducir la intensidad y afectar las métricas del mercado.'
+        : 'Cuando hay partidos en días seguidos, el cansancio suele bajar el ritmo y los puntos.';
     case 'descanso_asimetrico':
       return 'Un equipo tuvo más descanso que el otro; eso puede darle ventaja y cambiar la proyección.';
     case 'h2h_tendencia':
@@ -84,7 +90,7 @@ function ItemRazon({ razon, deporte }: { razon: RazonPrediccion; deporte: 'balon
             {razon.factor}
           </span>
           <span className={`text-xs font-mono font-semibold ${esSube ? 'text-neon-verde' : 'text-neon-rojo'}`}>
-            {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} {deporte === 'futbol' ? 'u' : 'pts'}
+            {razon.impacto >= 0 ? '+' : ''}{razon.impacto.toFixed(1)} {deporte === 'futbol' ? 'unid' : 'pts'}
           </span>
         </div>
       </div>

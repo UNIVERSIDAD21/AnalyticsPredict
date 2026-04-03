@@ -40,16 +40,16 @@ function calcularCorrelacion(selecciones: SeleccionCombinadaInput[]) {
     let factorGrupo = 1;
     if (tieneCompleto && tieneCuartos && mismoLado) {
       factorGrupo = 0.8;
-      advertencias.push('⚠️ CORRELACIÓN ALTA: completo + cuartos del mismo partido.');
+      advertencias.push('⚠️ CORRELACIÓN ALTA: completo + períodos del mismo partido.');
     } else if (tieneCompleto && tieneCuartos && !mismoLado) {
       factorGrupo = 0.93;
-      advertencias.push('⚠️ CORRELACIÓN MEDIA: completo + cuartos con lados mixtos.');
+      advertencias.push('⚠️ CORRELACIÓN MEDIA: completo + períodos con lados mixtos.');
     } else if (!tieneCompleto && tieneCuartos && mismoLado) {
       factorGrupo = 0.84;
-      advertencias.push('⚠️ CORRELACIÓN ALTA: múltiples cuartos del mismo partido.');
+      advertencias.push('⚠️ CORRELACIÓN ALTA: múltiples períodos del mismo partido.');
     } else if (!tieneCompleto && tieneCuartos && !mismoLado) {
       factorGrupo = 0.96;
-      advertencias.push('⚠️ CORRELACIÓN BAJA: cuartos del mismo partido con lados mixtos.');
+      advertencias.push('⚠️ CORRELACIÓN BAJA: períodos del mismo partido con lados mixtos.');
     }
 
     factor *= factorGrupo;

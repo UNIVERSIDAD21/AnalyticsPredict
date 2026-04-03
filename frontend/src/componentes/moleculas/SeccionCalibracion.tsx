@@ -22,6 +22,9 @@ interface PropsSeccionCalibracion {
 
   /** Nombre del calibrador usado */
   calibradorUsado: string | null;
+
+  /** Unidad para mostrar delta de calibración */
+  unidadDelta?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -33,13 +36,13 @@ function formatearProbabilidad(valor: number | null): string {
   return `${(valor * 100).toFixed(2)}%`;
 }
 
-function calcularDelta(pRaw: number | null, pCalibrada: number | null): string {
+function calcularDelta(pRaw: number | null, pCalibrada: number | null, unidadDelta: string): string {
   if (pRaw === null || pCalibrada === null || !isFinite(pRaw) || !isFinite(pCalibrada)) {
     return '—';
   }
   const delta = (pCalibrada - pRaw) * 100;
   const signo = delta >= 0 ? '+' : '';
-  return `${signo}${delta.toFixed(2)} pts`;
+  return `${signo}${delta.toFixed(2)} ${unidadDelta}`;
 }
 
 function obtenerNombreCalibrador(calibrador: string | null): string {
@@ -56,7 +59,8 @@ function obtenerNombreCalibrador(calibrador: string | null): string {
 function construirExplicacionProfesional(
   pRaw: number | null,
   pCalibrada: number | null,
-  calibradorUsado: string | null
+  calibradorUsado: string | null,
+  unidadDelta: string,
 ): { resumen: string; tecnico: string; lecturaRiesgo: string } {
   if (pRaw === null || pCalibrada === null || !isFinite(pRaw) || !isFinite(pCalibrada)) {
     return {
@@ -78,7 +82,7 @@ function construirExplicacionProfesional(
       : 'ajuste fino';
 
   return {
-    resumen: `El calibrador aplicó un ${severidad} (${direccion}) de ${absDelta.toFixed(2)} pts sobre la probabilidad del modelo para alinear la confianza con evidencia histórica comparable.`,
+    resumen: `El calibrador aplicó un ${severidad} (${direccion}) de ${absDelta.toFixed(2)} ${unidadDelta} sobre la probabilidad del modelo para alinear la confianza con evidencia histórica comparable.`,
     tecnico: `Método activo: ${metodo}. Se transformó P(raw)=${(pRaw * 100).toFixed(2)}% a P(calibrada)=${(pCalibrada * 100).toFixed(2)}%. Este ajuste corrige sesgo de sobre/sub-confianza observado en validación histórica del mercado.`,
     lecturaRiesgo: `Para decisión operativa, la referencia correcta es la probabilidad calibrada. Un ajuste ${direccion} indica que la certeza inicial del modelo era más optimista/pesimista que el comportamiento real histórico.`,
   };
@@ -95,14 +99,15 @@ export function SeccionCalibracion({
   pRaw,
   pCalibrada,
   calibradorUsado,
+  unidadDelta = 'pp',
 }: PropsSeccionCalibracion) {
   const { can } = useAccessPolicy();
   const tienePremium = can('premium.depth');
   const tieneCalibrador =
     pCalibrada !== null &&
     (calibradorUsado === null || calibradorUsado.toLowerCase() !== 'none');
-  const delta = calcularDelta(pRaw, pCalibrada);
-  const explicacion = construirExplicacionProfesional(pRaw, pCalibrada, calibradorUsado);
+  const delta = calcularDelta(pRaw, pCalibrada, unidadDelta);
+  const explicacion = construirExplicacionProfesional(pRaw, pCalibrada, calibradorUsado, unidadDelta);
 
   const bloqueExplicacion = (
     <div className="mt-4 pt-4 border-t border-neon-cyan/10">

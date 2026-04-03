@@ -34,6 +34,8 @@ interface PropsPanelComparacion {
   confianzaAjustada: NivelConfianza | string;
   /** Clase CSS adicional */
   className?: string;
+  /** Unidad semántica a mostrar */
+  unidadLabel?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -50,9 +52,9 @@ function formatearPorcentaje(valor: number): string {
 /**
  * Formatea la diferencia de puntos con signo
  */
-function formatearDiferenciaPuntos(diferencia: number): string {
+function formatearDiferenciaPuntos(diferencia: number, unidadLabel: string): string {
   const signo = diferencia >= 0 ? '+' : '';
-  return `${signo}${diferencia.toFixed(1)} pts`;
+  return `${signo}${diferencia.toFixed(1)} ${unidadLabel}`;
 }
 
 /**
@@ -90,6 +92,7 @@ export function PanelComparacionPrediccion({
   confianzaBase,
   confianzaAjustada,
   className,
+  unidadLabel = 'unidades',
 }: PropsPanelComparacion) {
   // Cálculos derivados
   const datos = useMemo(() => {
@@ -151,7 +154,7 @@ export function PanelComparacionPrediccion({
             <p className="text-xs text-texto-terciario mb-1">Media Total</p>
             <p className="text-2xl font-mono text-texto-principal">
               {prediccionBase.media.toFixed(1)}
-              <span className="text-sm text-texto-terciario ml-1">pts</span>
+              <span className="text-sm text-texto-terciario ml-1">{unidadLabel}</span>
             </p>
           </div>
 
@@ -229,7 +232,7 @@ export function PanelComparacionPrediccion({
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-mono text-texto-principal">
                 {prediccionAjustada.media.toFixed(1)}
-                <span className="text-sm text-texto-terciario ml-1">pts</span>
+                <span className="text-sm text-texto-terciario ml-1">{unidadLabel}</span>
               </p>
               <span
                 className={clsx(
@@ -241,7 +244,7 @@ export function PanelComparacionPrediccion({
                     : 'text-texto-terciario'
                 )}
               >
-                ({formatearDiferenciaPuntos(datos.diferenciaPuntos)})
+                ({formatearDiferenciaPuntos(datos.diferenciaPuntos, unidadLabel)})
               </span>
             </div>
           </div>

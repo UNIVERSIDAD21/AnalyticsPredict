@@ -106,7 +106,7 @@ function EstadoVacioFutbol() {
 
       <h3 className="text-2xl font-futurista text-texto-principal mb-3 tracking-wider">ESPERANDO ANÁLISIS</h3>
       <p className="text-texto-secundario max-w-md mb-8">
-        Selecciona un partido de fútbol y ejecuta el análisis en el mismo flujo operativo de NBA.
+        Selecciona un partido de fútbol y ejecuta el análisis con trazabilidad completa del mercado objetivo.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl">
@@ -470,7 +470,7 @@ export function PaginaFutbol() {
           <PanelDepthPremium
             modulo="futbol"
             titulo="Depth premium Fútbol"
-            descripcion="Mismo contrato operativo visual que NBA; fútbol solo ajusta datos y mercados del dominio."
+            descripcion="Contrato operativo canónico de fútbol con selección y respuesta trazables de punta a punta."
             bullets={[
               'comparativas_multi_mercado por partido',
               'contexto_historico_extendido de H2H e historial',
@@ -609,7 +609,7 @@ export function PaginaFutbol() {
         <div className="contenedor py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
             <p className="text-texto-terciario text-xs uppercase tracking-wider">
-              Football Analyzer — Flujo base canónico NBA
+              Football Analyzer — Flujo canónico de fútbol
             </p>
             <p className="text-texto-terciario/60 text-xs">Las predicciones son orientativas. Apuesta responsablemente.</p>
           </div>

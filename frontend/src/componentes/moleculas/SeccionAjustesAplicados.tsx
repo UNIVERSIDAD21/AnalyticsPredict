@@ -54,6 +54,8 @@ interface PropsSeccionAjustes {
   inicialmenteExpandido?: boolean;
   /** Clase CSS adicional */
   className?: string;
+  /** Unidad semántica */
+  unidadLabel?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -79,9 +81,9 @@ function calcularPorcentajeBarra(valor: number): number {
 /**
  * Formatea el valor del ajuste con signo
  */
-function formatearValorAjuste(valor: number): string {
+function formatearValorAjuste(valor: number, unidadLabel: string): string {
   const signo = valor >= 0 ? '+' : '';
-  return `${signo}${valor.toFixed(1)} pts`;
+  return `${signo}${valor.toFixed(1)} ${unidadLabel}`;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -90,9 +92,10 @@ function formatearValorAjuste(valor: number): string {
 
 interface PropsTarjetaAjuste {
   ajuste: AjusteIndividual;
+  unidadLabel: string;
 }
 
-function TarjetaAjuste({ ajuste }: PropsTarjetaAjuste) {
+function TarjetaAjuste({ ajuste, unidadLabel }: PropsTarjetaAjuste) {
   const esPositivo = ajuste.direccion === 'sube';
   const porcentajeBarra = calcularPorcentajeBarra(ajuste.valor);
 
@@ -136,7 +139,7 @@ function TarjetaAjuste({ ajuste }: PropsTarjetaAjuste) {
             esPositivo ? 'text-neon-verde' : 'text-neon-rojo'
           )}
         >
-          {formatearValorAjuste(ajuste.valor)}
+          {formatearValorAjuste(ajuste.valor, unidadLabel)}
         </span>
       </div>
 
@@ -159,7 +162,7 @@ function TarjetaAjuste({ ajuste }: PropsTarjetaAjuste) {
           aria-valuenow={Math.abs(ajuste.valor)}
           aria-valuemin={0}
           aria-valuemax={MAX_PUNTOS_BARRA}
-          aria-label={`Impacto: ${Math.abs(ajuste.valor).toFixed(1)} puntos`}
+          aria-label={`Impacto: ${Math.abs(ajuste.valor).toFixed(1)} ${unidadLabel}`}
         />
       </div>
     </div>
@@ -176,6 +179,7 @@ export function SeccionAjustesAplicados({
   fueCapped,
   inicialmenteExpandido = true,
   className,
+  unidadLabel = 'unidades',
 }: PropsSeccionAjustes) {
   const [expandido, setExpandido] = useState(inicialmenteExpandido);
 
@@ -218,7 +222,7 @@ export function SeccionAjustesAplicados({
               esPositivo ? 'text-neon-verde' : 'text-neon-rojo'
             )}
           >
-            {formatearValorAjuste(ajusteTotal)}
+            {formatearValorAjuste(ajusteTotal, unidadLabel)}
           </span>
           {expandido ? (
             <ChevronUp className="w-5 h-5 text-texto-terciario group-hover:text-texto-secundario transition-colors" />
@@ -233,7 +237,7 @@ export function SeccionAjustesAplicados({
         <div id="lista-ajustes" className="space-y-3">
           {/* Lista de ajustes */}
           {ajustesOrdenados.map((ajuste, index) => (
-            <TarjetaAjuste key={`${ajuste.factor}-${index}`} ajuste={ajuste} />
+            <TarjetaAjuste key={`${ajuste.factor}-${index}`} ajuste={ajuste} unidadLabel={unidadLabel} />
           ))}
 
           {/* Separador */}
@@ -251,7 +255,7 @@ export function SeccionAjustesAplicados({
                   esPositivo ? 'text-neon-verde' : 'text-neon-rojo'
                 )}
               >
-                {formatearValorAjuste(ajusteTotal)}
+                {formatearValorAjuste(ajusteTotal, unidadLabel)}
               </span>
               {fueCapped && (
                 <span

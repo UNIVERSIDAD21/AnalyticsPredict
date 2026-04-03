@@ -110,6 +110,26 @@ function extraerMejorApuestaDetalle(resultado: TipoResultado): MejorApuestaDetal
   return null;
 }
 
+function numeroValido(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n);
+}
+
+function unidadPorMercadoFutbol(mercado: string | undefined): string {
+  const m = (mercado || '').toUpperCase();
+  if (m.startsWith('GOLES')) return 'goles';
+  if (m.startsWith('CORNERS')) return 'corners';
+  if (m.includes('DISPAROS')) return 'tiros al arco';
+  return 'unidades';
+}
+
+function etiquetaPeriodoFutbol(mercado: string | undefined): string {
+  const m = (mercado || '').toUpperCase();
+  if (m.includes('_1T') || m === 'Q1') return 'Primer tiempo';
+  if (m.includes('_2T') || m === 'Q2') return 'Segundo tiempo';
+  if (m.endsWith('_FT') || m === 'COMPLETO') return 'Tiempo completo';
+  return m || 'Mercado';
+}
+
 function esEstadoNoApto(resultado: TipoResultado, detalle: MejorApuestaDetalle | null): boolean {
   const mensaje = resultado.mensaje_apuesta?.toUpperCase();
   const mensajeNoApto = Boolean(mensaje?.includes('NO_APTO') || mensaje?.includes('NO APTO'));
@@ -141,37 +161,53 @@ export function ResultadoAnalisis({
   const esFutbol = resultado.metadata?.deporte === 'futbol';
   const configConfianza = obtenerConfigConfianza(resultado.nivel_confianza);
 
-  // Obtener datos de probabilidad según el mercado
-  const probabilidadOver = resultado.probabilidad_over ?? 0;
-  const probabilidadUnder = resultado.probabilidad_under ?? 0;
-  const linea = resultado.linea_analizada ?? 0;
-  const unidadAnalisis = esFutbol ? 'unidades' : 'puntos';
+  const detalle = extraerMejorApuestaDetalle(resultado);
+  const tieneDetalleAvanzado = detalle !== null;
 
-  // Obtener media y desviación
-  let mediaTotal = 0;
-  let desviacion = 0;
-  const prediccionGanador = mercado === 'COMPLETO'
+  const mercadoCanon = detalle?.mercado || mercado;
+  const prediccionMercado = mercadoCanon === 'COMPLETO'
     ? resultado.prediccion_juego_completo
-    : (mercado ? resultado.predicciones[mercado] : null);
-  const etiquetaGanador = mercado === 'COMPLETO' ? 'Ganador del partido' : (esFutbol ? 'Ganador estimado' : 'Ganador del cuarto');
-  const etiquetaPeriodo = mercado === 'Q1'
-    ? 'Primer tiempo'
-    : mercado === 'Q2'
-      ? 'Segundo tiempo'
-      : mercado === 'COMPLETO'
-        ? 'Juego completo'
-        : mercado;
+    : (mercadoCanon ? resultado.predicciones[mercadoCanon] : null);
+
+  const linea = numeroValido(detalle?.linea) ? detalle!.linea : (resultado.linea_analizada ?? 0);
+
+  const probabilidadOver = numeroValido(resultado.probabilidad_over)
+    ? resultado.probabilidad_over!
+    : (resultado.prediccion_ajustada?.probabilidad_over_ajustada ?? prediccionMercado?.probabilidad_over ?? 0);
+  const probabilidadUnder = numeroValido(resultado.probabilidad_under)
+    ? resultado.probabilidad_under!
+    : (resultado.prediccion_ajustada?.probabilidad_under_ajustada ?? prediccionMercado?.probabilidad_under ?? 0);
+
+  const mediaTotal = numeroValido(detalle?.prediccion_media)
+    ? detalle!.prediccion_media
+    : (resultado.prediccion_ajustada?.media_ajustada
+      ?? prediccionMercado?.media_total
+      ?? resultado.prediccion_base?.media
+      ?? 0);
+  const desviacion = numeroValido(detalle?.prediccion_desviacion)
+    ? detalle!.prediccion_desviacion
+    : (resultado.prediccion_ajustada?.desviacion_base
+      ?? prediccionMercado?.desviacion_total
+      ?? 0);
+
+  const unidadAnalisis = esFutbol ? unidadPorMercadoFutbol(mercadoCanon) : 'puntos';
+
+  const prediccionGanador = mercadoCanon === 'COMPLETO'
+    ? resultado.prediccion_juego_completo
+    : (mercadoCanon ? resultado.predicciones[mercadoCanon] : null);
+  const etiquetaGanador = mercadoCanon === 'COMPLETO' ? 'Ganador del partido' : (esFutbol ? 'Ganador estimado' : 'Ganador del cuarto');
+  const etiquetaPeriodo = esFutbol
+    ? etiquetaPeriodoFutbol(mercadoCanon)
+    : mercadoCanon === 'Q1'
+      ? 'Primer tiempo'
+      : mercadoCanon === 'Q2'
+        ? 'Segundo tiempo'
+        : mercadoCanon === 'COMPLETO'
+          ? 'Juego completo'
+          : mercadoCanon;
   const nombreGanador = prediccionGanador?.ganador_probable === 'equipo'
     ? resultado.equipo_nombre_completo
     : resultado.rival_nombre_completo;
-
-  if (mercado === 'COMPLETO' && resultado.prediccion_juego_completo) {
-    mediaTotal = resultado.prediccion_juego_completo.media_total;
-    desviacion = resultado.prediccion_juego_completo.desviacion_total;
-  } else if (mercado && resultado.predicciones[mercado]) {
-    mediaTotal = resultado.predicciones[mercado].media_total;
-    desviacion = resultado.predicciones[mercado].desviacion_total;
-  }
 
   // Determinar si la predicción del usuario coincide con el sistema
   const sistemaRecomienda: LadoApuesta = probabilidadOver > probabilidadUnder ? 'OVER' : 'UNDER';
@@ -179,8 +215,6 @@ export function ResultadoAnalisis({
   const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
 
   // Fase 2: Extraer datos avanzados
-  const detalle = extraerMejorApuestaDetalle(resultado);
-  const tieneDetalleAvanzado = detalle !== null;
   const noApto = esEstadoNoApto(resultado, detalle);
 
   return (
@@ -326,6 +360,7 @@ export function ResultadoAnalisis({
           linea={linea}
           confianzaBase={resultado.prediccion_ajustada.confianza_base}
           confianzaAjustada={resultado.prediccion_ajustada.confianza_ajustada}
+          unidadLabel={unidadAnalisis}
         />
       )}
 
@@ -336,6 +371,7 @@ export function ResultadoAnalisis({
           ajusteTotal={resultado.ajustes.ajuste_total_capped}
           fueCapped={resultado.ajustes.fue_capped}
           inicialmenteExpandido={true}
+          unidadLabel={unidadAnalisis}
         />
       )}
 
@@ -368,6 +404,7 @@ export function ResultadoAnalisis({
                 pRaw={detalle.p_raw}
                 pCalibrada={detalle.p_calibrada}
                 calibradorUsado={detalle.calibrador_usado}
+                unidadDelta="pp"
               />
             </div>
           </div>
@@ -431,6 +468,7 @@ export function ResultadoAnalisis({
           equipoNombre={resultado.equipo_nombre_completo}
           rivalNombre={resultado.rival_nombre_completo}
           lineaActual={linea}
+          unidadLabel={unidadAnalisis}
           inicialmenteExpandido={false}
         />
       )}

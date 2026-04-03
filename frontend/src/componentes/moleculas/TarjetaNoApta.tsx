@@ -89,7 +89,7 @@ export function TarjetaNoApta({ mensaje, candidatos }: PropsTarjetaNoApta) {
           Espera movimiento de cuota antes de volver a evaluar.
         </div>
         <div className="rounded-lg border border-neon-verde/20 bg-neon-verde/5 px-3 py-2">
-          Cambia de mercado o cuarto para detectar valor.
+          Cambia de mercado o período para detectar valor.
         </div>
       </div>
     </div>

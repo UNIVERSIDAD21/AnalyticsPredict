@@ -200,7 +200,7 @@ export function TarjetaDeVig({
             <span className="text-[10px] uppercase tracking-wider">Diferencia</span>
           </div>
           <div className="text-lg font-mono font-bold text-neon-magenta">
-            {isFinite(pMktRaw) && isFinite(pMktFair) ? `${((pMktRaw - pMktFair) * 100).toFixed(2)} pts` : '—'}
+            {isFinite(pMktRaw) && isFinite(pMktFair) ? `${((pMktRaw - pMktFair) * 100).toFixed(2)} pp` : '—'}
           </div>
           <div className="text-[10px] text-texto-terciario mt-1">
             Vig aplicado
