@@ -43,13 +43,18 @@ from typing import Any, Dict, List, Optional, Tuple, Set
 from threading import Lock
 import hashlib
 
-from scripts import temporadas_pipeline as tp
-
-from dotenv import load_dotenv
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.append(str(BACKEND_DIR))
+
+# Soporta ejecución directa desde backend/scripts en Windows/Linux.
+try:
+    from scripts import temporadas_pipeline as tp
+except ModuleNotFoundError:
+    # Fallback defensivo cuando Python no resuelve el namespace package `scripts`.
+    import temporadas_pipeline as tp
+
+from dotenv import load_dotenv
 
 try:
     import requests
