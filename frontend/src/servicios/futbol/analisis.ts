@@ -158,7 +158,7 @@ function transformarMercadosAgrupados(
   return resultado;
 }
 
-function transformarObjetivoAnalisis(
+export function transformarObjetivoAnalisis(
   data: Record<string, unknown>
 ): ObjetivoAnalisisFutbol {
   const bloqueBase = (data.bloque_base || {}) as Record<string, unknown>;
@@ -167,6 +167,9 @@ function transformarObjetivoAnalisis(
   const calibracion = (data.calibracion || {}) as Record<string, unknown>;
   const scoreRiesgo = (data.score_riesgo || {}) as Record<string, unknown>;
   const disponibilidad = (data.disponibilidad_datos || {}) as Record<string, unknown>;
+  const calidad = (data.calidad_datos || {}) as Record<string, unknown>;
+  const muestras = (calidad.muestras || {}) as Record<string, unknown>;
+  const rangoTemporal = (calidad.rango_temporal || {}) as Record<string, unknown>;
 
   return {
     estado: (data.estado as ObjetivoAnalisisFutbol['estado']) || 'datos_insuficientes',
@@ -236,6 +239,25 @@ function transformarObjetivoAnalisis(
       noDisponibles: Array.isArray(disponibilidad.no_disponibles) ? disponibilidad.no_disponibles as string[] : [],
       degradacionControlada: Array.isArray(disponibilidad.degradacion_controlada) ? disponibilidad.degradacion_controlada as string[] : [],
       datosInsuficientes: Array.isArray(disponibilidad.datos_insuficientes) ? disponibilidad.datos_insuficientes as string[] : [],
+    },
+    calidadDatos: {
+      muestras: {
+        h2h: Number(muestras.h2h || 0),
+        localHome: Number(muestras.local_home || 0),
+        visitanteAway: Number(muestras.visitante_away || 0),
+        localGlobal: Number(muestras.local_global || 0),
+        visitanteGlobal: Number(muestras.visitante_global || 0),
+        liga: Number(muestras.liga || 0),
+      },
+      rangoTemporal: {
+        fechaMin: rangoTemporal.fecha_min ? String(rangoTemporal.fecha_min) : null,
+        fechaMax: rangoTemporal.fecha_max ? String(rangoTemporal.fecha_max) : null,
+      },
+      temporadasIncluidas: Array.isArray(calidad.temporadas_incluidas) ? calidad.temporadas_incluidas as string[] : [],
+      competicionesIncluidas: Array.isArray(calidad.competiciones_incluidas) ? calidad.competiciones_incluidas as string[] : [],
+      muestraInsuficiente: Boolean(calidad.muestra_insuficiente),
+      datosIncompletos: Boolean(calidad.datos_incompletos),
+      penalizacionesAplicadas: Array.isArray(calidad.penalizaciones_aplicadas) ? calidad.penalizaciones_aplicadas as string[] : [],
     },
     trazabilidad: (data.trazabilidad && typeof data.trazabilidad === 'object')
       ? data.trazabilidad as Record<string, unknown>

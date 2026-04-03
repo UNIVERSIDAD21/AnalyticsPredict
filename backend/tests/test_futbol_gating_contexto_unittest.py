@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 
 from api.schemas_futbol import (
     AnalisisRequest,
@@ -10,6 +11,7 @@ from api.rutas_analisis_futbol import (
     _resolver_objetivo_canonico,
     _evaluar_muestra_contextual_objetivo,
     _aplicar_degradacion_recomendaciones_por_muestra,
+    _construir_calidad_datos_objetivo,
 )
 
 
@@ -45,10 +47,21 @@ class TestGatingContextoFutbol(unittest.TestCase):
             recomendaciones=[],
             estado_mercados={},
             evaluacion_muestra={"muestra_suficiente": True, "bloques_insuficientes": []},
+            calidad_contexto={
+                "muestras": {"h2h": 4, "local_home": 20, "visitante_away": 18, "local_global": 50, "visitante_global": 50, "liga": 90},
+                "rango_temporal": {"fecha_min": "2024-01-01T00:00:00+00:00", "fecha_max": "2026-03-31T00:00:00+00:00"},
+                "temporadas_incluidas": ["2025-26"],
+                "competiciones_incluidas": ["laliga"],
+                "muestra_insuficiente": True,
+                "datos_incompletos": True,
+                "penalizaciones_aplicadas": ["estado_mercados_vacio"],
+            },
         )
 
         self.assertEqual(objetivo.estado, "datos_insuficientes")
         self.assertIn("estado_mercados_vacio", objetivo.disponibilidad_datos.degradacion_controlada)
+        self.assertEqual(objetivo.calidad_datos.muestras.h2h, 4)
+        self.assertTrue(objetivo.calidad_datos.datos_incompletos)
 
     def test_objetivo_mercado_fuera_estado_mercados_degrada(self):
         req = self._request_objetivo()
@@ -107,6 +120,29 @@ class TestGatingContextoFutbol(unittest.TestCase):
 
         self.assertEqual(objetivo.estado, "datos_insuficientes")
         self.assertIn("muestra_insuficiente", objetivo.disponibilidad_datos.degradacion_controlada)
+
+    def test_construir_calidad_datos_objetivo(self):
+        partidos = [
+            {"fecha_partido": datetime(2026, 1, 1), "temporada_id": "t1", "competicion_id": "c1"},
+            {"fecha_partido": datetime(2026, 3, 1), "temporada_id": "t2", "competicion_id": "c1"},
+        ]
+        out = _construir_calidad_datos_objetivo(
+            partidos_h2h=partidos,
+            partidos_local_global=partidos,
+            partidos_local_home=partidos,
+            partidos_visitante_global=partidos,
+            partidos_visitante_away=partidos,
+            partidos_liga=partidos,
+            filtro_temporal={"estrategia": "fallback_fecha_minima"},
+            evaluacion_muestra={"muestra_suficiente": False, "bloques_insuficientes": ["h2h"]},
+            estado_mercados_disponible=False,
+            mercado_objetivo_en_estado=False,
+        )
+
+        self.assertEqual(out["muestras"]["h2h"], 2)
+        self.assertEqual(out["temporadas_incluidas"], ["t1", "t2"])
+        self.assertTrue(out["muestra_insuficiente"])
+        self.assertIn("estado_mercados_vacio", out["penalizaciones_aplicadas"])
 
 
 if __name__ == "__main__":

@@ -55,3 +55,4 @@ export { IndicadorMercadoFutbol } from './IndicadorMercadoFutbol';
 export { BadgeConfianza, BadgeConfianzaIcono, BarraConfianza } from './BadgeConfianza';
 export { EstadisticaEquipoMini, ComparacionEquiposMini } from './EstadisticaEquipoMini';
 export { PanelDepthPremium } from './PanelDepthPremium';
+export { TarjetaCalidadDatosFutbol } from './TarjetaCalidadDatosFutbol';

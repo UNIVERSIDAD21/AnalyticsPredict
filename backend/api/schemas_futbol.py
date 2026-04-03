@@ -348,6 +348,30 @@ class ObjetivoDisponibilidadFutbol(BaseModel):
     datos_insuficientes: List[str] = []
 
 
+class ObjetivoMuestraContextoFutbol(BaseModel):
+    h2h: int = 0
+    local_home: int = 0
+    visitante_away: int = 0
+    local_global: int = 0
+    visitante_global: int = 0
+    liga: int = 0
+
+
+class ObjetivoRangoTemporalFutbol(BaseModel):
+    fecha_min: Optional[datetime] = None
+    fecha_max: Optional[datetime] = None
+
+
+class ObjetivoCalidadDatosFutbol(BaseModel):
+    muestras: ObjetivoMuestraContextoFutbol = ObjetivoMuestraContextoFutbol()
+    rango_temporal: ObjetivoRangoTemporalFutbol = ObjetivoRangoTemporalFutbol()
+    temporadas_incluidas: List[str] = []
+    competiciones_incluidas: List[str] = []
+    muestra_insuficiente: bool = False
+    datos_incompletos: bool = False
+    penalizaciones_aplicadas: List[str] = []
+
+
 class ObjetivoAnalisisFutbol(BaseModel):
     estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
     mercado: str
@@ -363,6 +387,7 @@ class ObjetivoAnalisisFutbol(BaseModel):
     calibracion: ObjetivoCalibracionFutbol
     score_riesgo: ObjetivoScoreRiesgoFutbol
     disponibilidad_datos: ObjetivoDisponibilidadFutbol
+    calidad_datos: ObjetivoCalidadDatosFutbol = ObjetivoCalidadDatosFutbol()
     trazabilidad: Dict[str, Any] = {}
 
 

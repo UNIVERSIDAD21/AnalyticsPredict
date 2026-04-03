@@ -365,6 +365,26 @@ export interface ObjetivoDisponibilidadDatosFutbol {
   datosInsuficientes: string[];
 }
 
+export interface ObjetivoCalidadDatosFutbol {
+  muestras: {
+    h2h: number;
+    localHome: number;
+    visitanteAway: number;
+    localGlobal: number;
+    visitanteGlobal: number;
+    liga: number;
+  };
+  rangoTemporal: {
+    fechaMin: string | null;
+    fechaMax: string | null;
+  };
+  temporadasIncluidas: string[];
+  competicionesIncluidas: string[];
+  muestraInsuficiente: boolean;
+  datosIncompletos: boolean;
+  penalizacionesAplicadas: string[];
+}
+
 export interface ObjetivoAnalisisFutbol extends ObjetivoEstadoFutbol {
   mercado: TipoMercadoFutbol;
   lado: 'OVER' | 'UNDER';
@@ -379,6 +399,7 @@ export interface ObjetivoAnalisisFutbol extends ObjetivoEstadoFutbol {
   calibracion: ObjetivoCalibracionFutbol;
   scoreRiesgo: ObjetivoScoreRiesgoFutbol;
   disponibilidadDatos: ObjetivoDisponibilidadDatosFutbol;
+  calidadDatos: ObjetivoCalidadDatosFutbol;
   trazabilidad: Record<string, unknown>;
 }
 

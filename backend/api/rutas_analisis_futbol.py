@@ -865,6 +865,73 @@ def _aplicar_degradacion_recomendaciones_por_muestra(
     return recomendaciones
 
 
+def _construir_calidad_datos_objetivo(
+    *,
+    partidos_h2h: List[Dict[str, Any]],
+    partidos_local_global: List[Dict[str, Any]],
+    partidos_local_home: List[Dict[str, Any]],
+    partidos_visitante_global: List[Dict[str, Any]],
+    partidos_visitante_away: List[Dict[str, Any]],
+    partidos_liga: List[Dict[str, Any]],
+    filtro_temporal: Dict[str, Any],
+    evaluacion_muestra: Dict[str, Any],
+    estado_mercados_disponible: bool,
+    mercado_objetivo_en_estado: Optional[bool],
+) -> Dict[str, Any]:
+    conjuntos = [
+        partidos_h2h,
+        partidos_local_global,
+        partidos_local_home,
+        partidos_visitante_global,
+        partidos_visitante_away,
+        partidos_liga,
+    ]
+    fechas: List[datetime] = []
+    temporadas: set[str] = set()
+    competiciones: set[str] = set()
+    for conjunto in conjuntos:
+        for p in conjunto:
+            f = p.get("fecha_partido")
+            if isinstance(f, datetime):
+                fechas.append(f)
+            tid = p.get("temporada_id")
+            if tid is not None:
+                temporadas.add(str(tid))
+            cid = p.get("competicion_id")
+            if cid is not None:
+                competiciones.add(str(cid))
+
+    penalizaciones: List[str] = []
+    if not estado_mercados_disponible:
+        penalizaciones.append("estado_mercados_vacio")
+    if mercado_objetivo_en_estado is False:
+        penalizaciones.append("mercado_objetivo_fuera_estado_mercados")
+    if not evaluacion_muestra.get("muestra_suficiente", True):
+        penalizaciones.append("muestra_insuficiente")
+    if filtro_temporal.get("estrategia") == "fallback_fecha_minima":
+        penalizaciones.append("fallback_temporal_por_fecha")
+
+    return {
+        "muestras": {
+            "h2h": len(partidos_h2h),
+            "local_home": len(partidos_local_home),
+            "visitante_away": len(partidos_visitante_away),
+            "local_global": len(partidos_local_global),
+            "visitante_global": len(partidos_visitante_global),
+            "liga": len(partidos_liga),
+        },
+        "rango_temporal": {
+            "fecha_min": min(fechas).isoformat() if fechas else None,
+            "fecha_max": max(fechas).isoformat() if fechas else None,
+        },
+        "temporadas_incluidas": sorted(temporadas),
+        "competiciones_incluidas": sorted(competiciones),
+        "muestra_insuficiente": not evaluacion_muestra.get("muestra_suficiente", True),
+        "datos_incompletos": (not estado_mercados_disponible) or (mercado_objetivo_en_estado is False),
+        "penalizaciones_aplicadas": penalizaciones,
+    }
+
+
 def _parsear_mercado(mercado: str) -> Dict[str, str]:
     """Deriva base, periodo, alcance y metric_key desde el mercado."""
     mercado_upper = (mercado or "").upper()
@@ -1254,6 +1321,7 @@ def _obtener_partidos_equipo(
             pf.visitante_disparos_total,
             pf.visitante_disparos_arco,
             pf.temporada_id,
+            pf.competicion_id,
             pf.fecha_partido
         FROM partidos_futbol pf
         WHERE (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
@@ -1313,6 +1381,7 @@ def _obtener_partidos_liga(
             pf.visitante_disparos_total,
             pf.visitante_disparos_arco,
             pf.temporada_id,
+            pf.competicion_id,
             pf.fecha_partido
         FROM partidos_futbol pf
         WHERE pf.competicion_id = %s
@@ -1364,6 +1433,7 @@ def _obtener_partidos_h2h(
             pf.visitante_disparos_total,
             pf.visitante_disparos_arco,
             pf.temporada_id,
+            pf.competicion_id,
             pf.fecha_partido
         FROM partidos_futbol pf
         WHERE pf.estado = 'FINALIZADO'
@@ -2435,6 +2505,7 @@ def _resolver_objetivo_canonico(
     recomendaciones: List[RecomendacionApuesta],
     estado_mercados: Dict[str, str],
     evaluacion_muestra: Optional[Dict[str, Any]] = None,
+    calidad_contexto: Optional[Dict[str, Any]] = None,
 ) -> ObjetivoAnalisisFutbol:
     mercado = str(request.mercado_objetivo or "").upper()
     lado = str(request.lado_objetivo or "").upper()
@@ -2489,6 +2560,7 @@ def _resolver_objetivo_canonico(
                 degradacion_controlada=[],
                 datos_insuficientes=["objetivo_incompleto"],
             ),
+            calidad_datos=calidad_contexto or {},
             trazabilidad={"origen": "backend-futbol", "regla": "request_incompleto"},
         )
 
@@ -2631,6 +2703,7 @@ def _resolver_objetivo_canonico(
             degradacion_controlada=degradacion,
             datos_insuficientes=["prediccion_objetivo"] if pred_mercado is None or prob_linea is None else [],
         ),
+        calidad_datos=calidad_contexto or {},
         trazabilidad={
             "origen": "backend-futbol",
             "request": {
@@ -3444,6 +3517,25 @@ async def analizar_partido(
                         "estado_mercados vacío/no disponible; se degradará objetivo y recomendaciones."
                     )
 
+                mercado_objetivo_en_estado = (
+                    str(request.mercado_objetivo).upper() in estado_mercados
+                    if request.mercado_objetivo
+                    else None
+                )
+
+                calidad_datos_objetivo = _construir_calidad_datos_objetivo(
+                    partidos_h2h=partidos_h2h,
+                    partidos_local_global=partidos_local_global,
+                    partidos_local_home=partidos_local_home,
+                    partidos_visitante_global=partidos_visitante_global,
+                    partidos_visitante_away=partidos_visitante_away,
+                    partidos_liga=partidos_liga,
+                    filtro_temporal=filtro_temporal,
+                    evaluacion_muestra=evaluacion_muestra_objetivo,
+                    estado_mercados_disponible=estado_mercados_disponible,
+                    mercado_objetivo_en_estado=mercado_objetivo_en_estado,
+                )
+
                 # 5b. Generar recomendaciones heurísticas con pipeline de decisión completo
                 todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
                 partidos_relevantes = min(
@@ -3667,6 +3759,7 @@ async def analizar_partido(
                     recomendaciones=recomendaciones,
                     estado_mercados=estado_mercados,
                     evaluacion_muestra=evaluacion_muestra_objetivo,
+                    calidad_contexto=calidad_datos_objetivo,
                 )
                 objetivo.trazabilidad.update(
                     {
@@ -3690,11 +3783,7 @@ async def analizar_partido(
                             "reglas_minimas": evaluacion_muestra_objetivo.get("minimos", {}),
                             "evaluacion_muestra_objetivo": evaluacion_muestra_objetivo,
                             "estado_mercados_disponible": estado_mercados_disponible,
-                            "mercado_objetivo_en_estado_mercados": (
-                                str(request.mercado_objetivo).upper() in estado_mercados
-                                if request.mercado_objetivo
-                                else None
-                            ),
+                            "mercado_objetivo_en_estado_mercados": mercado_objetivo_en_estado,
                             "configuracion_estadistica": {
                                 "fallback_window_days": DEFAULT_FALLBACK_WINDOW_DAYS,
                                 "recency_half_life_days": DEFAULT_RECENCY_HALF_LIFE_DAYS,

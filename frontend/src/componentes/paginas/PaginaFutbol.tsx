@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, BarChart3, Trophy } from 'lucide-react';
 import { CreadorCombinada, Encabezado, FormularioAnalisis, ModalGuardarApuestaFutbol } from '../organismos';
 import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
-import { MensajeError, PanelDepthPremium, ProgresoAnalisis } from '../moleculas';
+import { MensajeError, PanelDepthPremium, ProgresoAnalisis, TarjetaCalidadDatosFutbol } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { usePartidosFutbol } from '../../hooks';
@@ -569,6 +569,8 @@ export function PaginaFutbol() {
 
             {renderCanonico && !cargandoAnalisis && (
               <div className="space-y-4">
+                <TarjetaCalidadDatosFutbol calidad={renderCanonico.mercadoObjetivo.calidadDatos} />
+
                 <ResultadoAnalisis
                   resultado={renderCanonico.resultado}
                   advertencias={[]}
