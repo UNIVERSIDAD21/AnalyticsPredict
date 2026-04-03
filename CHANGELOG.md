@@ -1,6 +1,11 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 17 fútbol (reejecución con evidencia real, 20:58Z):
+  - Reejecución del script `backend/scripts/re_scorecard_corners_b17.py` usando entorno `.venv`.
+  - Confirmación cuantitativa reproducible: `CORNERS_1T` y `CORNERS_LOCAL_1T` permanecen `BLOQUEADO` (`NO_APTO`) por `volumen_o_resolucion_critica`.
+  - Sin mejora de masa binaria (`4 -> 4`), con mejora operativa limitada (`pendientes 24 -> 16`).
+  - Evidencia de corrida y pruebas: `docs/reportes/BLOQUE_17_REEJECUCION_EVIDENCIA_2026-04-03T20-58-38Z.md`.
 - Bloque 17 fútbol (re-scorecard comparativa y reevaluación de estado):
   - Re-scorecard focalizado ejecutado para `CORNERS_1T` y `CORNERS_LOCAL_1T` con comparación estricta antes vs después.
   - Resultado cuantitativo: mejora operativa parcial (`pendientes -8` por mercado), pero sin aumento de masa binaria resuelta (`4 -> 4`), por lo que ambos mercados se mantienen `BLOQUEADO`.
