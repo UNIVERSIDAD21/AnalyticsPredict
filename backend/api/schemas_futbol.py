@@ -278,8 +278,10 @@ class RecomendacionApuesta(BaseModel):
     # Contrato unificado estilo NBA (P6)
     p_raw: Optional[float] = Field(default=None, ge=0, le=1)
     p_calibrada: Optional[float] = Field(default=None, ge=0, le=1)
+    calibracion_aplicada: Optional[bool] = None
     modelo_version_id: Optional[str] = None
     calibrador_id: Optional[str] = None
+    edge_raw: Optional[float] = None
     edge_real: Optional[float] = None
     score: Optional[float] = None
     sizing: Optional[float] = None
@@ -329,6 +331,7 @@ class ObjetivoCalibracionFutbol(BaseModel):
     estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
     p_raw: Optional[float] = Field(default=None, ge=0, le=1)
     p_calibrada: Optional[float] = Field(default=None, ge=0, le=1)
+    calibracion_aplicada: Optional[bool] = None
     calibrador_id: Optional[str] = None
 
 
@@ -336,6 +339,7 @@ class ObjetivoScoreRiesgoFutbol(BaseModel):
     estado: Literal["disponible", "no_disponible", "degradacion_controlada", "datos_insuficientes"]
     score: Optional[float] = None
     sizing: Optional[float] = None
+    edge_raw: Optional[float] = None
     edge_real: Optional[float] = None
     valor_esperado: Optional[float] = None
     confianza: Optional[str] = None

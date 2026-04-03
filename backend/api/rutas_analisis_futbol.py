@@ -225,9 +225,13 @@ def _recomendaciones_ml_a_api(
                 lado = "OVER"
             p_cal = float(rec.get("probabilidad_modelo", 0.5))
             p_raw = float(rec.get("p_raw", p_cal))
+            edge_raw = rec.get("edge_raw")
             edge_real = rec.get("edge_real")
             score = rec.get("score")
             sizing = rec.get("sizing")
+            calibracion_aplicada = rec.get("calibracion_aplicada")
+            if calibracion_aplicada is None:
+                calibracion_aplicada = abs(p_cal - p_raw) > 1e-6
             recomendaciones.append(
                 RecomendacionApuesta(
                     mercado=str(rec.get("mercado", "")),
@@ -238,8 +242,10 @@ def _recomendaciones_ml_a_api(
                     valor_esperado=rec.get("valor_esperado"),
                     p_raw=p_raw,
                     p_calibrada=p_cal,
+                    calibracion_aplicada=bool(calibracion_aplicada),
                     modelo_version_id=str(rec.get("modelo_version_id")) if rec.get("modelo_version_id") else None,
                     calibrador_id=str(rec.get("calibrador_id")) if rec.get("calibrador_id") else None,
+                    edge_raw=float(edge_raw) if edge_raw is not None else None,
                     edge_real=float(edge_real) if edge_real is not None else None,
                     score=float(score) if score is not None else None,
                     sizing=float(sizing) if sizing is not None else None,
@@ -396,6 +402,7 @@ def _calcular_metricas_mercado(
     lado: str,
     prob_raw: float,
     prob_cal: float,
+    calibracion_aplicada: bool,
     cuota_over: Optional[float],
     cuota_under: Optional[float],
     std: float,
@@ -415,6 +422,8 @@ def _calcular_metricas_mercado(
     else:
         p_mkt_raw = None
 
+    prob_decision = float(prob_cal if calibracion_aplicada else prob_raw)
+
     if cuota_lado is not None and cuota_opuesta is not None:
         devig_metodo = "exacto"
         overround = (1.0 / max(float(cuota_over), 1e-9)) + (1.0 / max(float(cuota_under), 1e-9))
@@ -431,10 +440,11 @@ def _calcular_metricas_mercado(
     else:
         advertencias.append("Sin cuotas de mercado: edge/EV/sizing en fallback conservador.")
 
-    edge_real = float(prob_cal - p_mkt_fair) if p_mkt_fair is not None else float(prob_cal - 0.5)
+    edge_raw = float(prob_raw - p_mkt_raw) if p_mkt_raw is not None else None
+    edge_real = float(prob_decision - p_mkt_fair) if p_mkt_fair is not None else float(prob_decision - 0.5)
     ev_real = None
     if cuota_lado is not None:
-        ev_real = float((prob_cal * float(cuota_lado)) - 1.0)
+        ev_real = float((prob_decision * float(cuota_lado)) - 1.0)
 
     # Score: EV + edge + calidad mercado + calibración + riesgo
     base_score = 50.0
@@ -457,7 +467,7 @@ def _calcular_metricas_mercado(
     sizing = 0.0
     if cuota_lado is not None and cuota_lado > 1.0:
         b = float(cuota_lado) - 1.0
-        p = float(prob_cal)
+        p = float(prob_decision)
         q = 1.0 - p
         kelly_full = ((b * p) - q) / b
         if kelly_full < 0:
@@ -481,7 +491,9 @@ def _calcular_metricas_mercado(
         "devig_metodo": devig_metodo,
         "devig_overround": devig_overround,
         "devig_p_mkt_fair": p_mkt_fair,
+        "edge_raw": edge_raw,
         "edge_real": edge_real,
+        "calibracion_aplicada": bool(calibracion_aplicada),
         "valor_esperado": ev_real,
         "score": score,
         "sizing": sizing,
@@ -601,29 +613,47 @@ def _arbitrar_recomendaciones(
             peso_h = 1.0 - peso_ml
             p_raw = (peso_ml * float(r_ml.p_raw or r_ml.probabilidad)) + (peso_h * float(r_h.p_raw or r_h.probabilidad))
             p_cal = (peso_ml * float(r_ml.p_calibrada or r_ml.probabilidad)) + (peso_h * float(r_h.p_calibrada or r_h.probabilidad))
-            prob = (peso_ml * float(r_ml.probabilidad)) + (peso_h * float(r_h.probabilidad))
+            calibracion_aplicada = abs(float(p_cal) - float(p_raw)) > 1e-6
+
+            cuota_over_sel = r_ml.cuota_over if r_ml.cuota_over is not None else r_h.cuota_over
+            cuota_under_sel = r_ml.cuota_under if r_ml.cuota_under is not None else r_h.cuota_under
+            cuota_sel = r_ml.cuota if r_ml.cuota is not None else r_h.cuota
+            std_proxy = max(0.0, (peso_ml * abs(float(r_ml.score or 0.0) - 50.0) + peso_h * abs(float(r_h.score or 0.0) - 50.0)) / 25.0)
+
+            metricas = _calcular_metricas_mercado(
+                lado=str(base.lado),
+                prob_raw=float(p_raw),
+                prob_cal=float(p_cal),
+                calibracion_aplicada=calibracion_aplicada,
+                cuota_over=float(cuota_over_sel) if cuota_over_sel is not None else None,
+                cuota_under=float(cuota_under_sel) if cuota_under_sel is not None else None,
+                std=float(std_proxy),
+                mercado_estado=mercado_estado,
+            )
 
             rec = RecomendacionApuesta(
                 mercado=base.mercado,
                 lado=base.lado,
                 linea=base.linea,
-                probabilidad=float(prob),
+                probabilidad=float(p_cal if calibracion_aplicada else p_raw),
                 confianza=base.confianza,
-                valor_esperado=r_ml.valor_esperado if r_ml.valor_esperado is not None else r_h.valor_esperado,
+                valor_esperado=metricas["valor_esperado"],
                 p_raw=float(p_raw),
                 p_calibrada=float(p_cal),
+                calibracion_aplicada=calibracion_aplicada,
                 modelo_version_id=r_ml.modelo_version_id or r_h.modelo_version_id,
                 calibrador_id=r_ml.calibrador_id or r_h.calibrador_id,
-                edge_real=(peso_ml * float(r_ml.edge_real or 0.0)) + (peso_h * float(r_h.edge_real or 0.0)),
-                score=(peso_ml * float(score_ml)) + (peso_h * float(score_h)),
-                sizing=(peso_ml * float(r_ml.sizing or 0.0)) + (peso_h * float(r_h.sizing or 0.0)),
-                cuota=r_ml.cuota or r_h.cuota,
-                cuota_over=r_ml.cuota_over or r_h.cuota_over,
-                cuota_under=r_ml.cuota_under or r_h.cuota_under,
-                devig_metodo=r_ml.devig_metodo if ml_exacto else (r_h.devig_metodo if h_exacto else (r_ml.devig_metodo or r_h.devig_metodo)),
-                devig_overround=r_ml.devig_overround if ml_exacto else (r_h.devig_overround if h_exacto else (r_ml.devig_overround or r_h.devig_overround)),
-                devig_p_mkt_fair=r_ml.devig_p_mkt_fair if ml_exacto else (r_h.devig_p_mkt_fair if h_exacto else (r_ml.devig_p_mkt_fair or r_h.devig_p_mkt_fair)),
-                advertencias=(r_ml.advertencias or []) + (r_h.advertencias or []),
+                edge_raw=metricas["edge_raw"],
+                edge_real=metricas["edge_real"],
+                score=metricas["score"],
+                sizing=metricas["sizing"],
+                cuota=float(cuota_sel) if cuota_sel is not None else None,
+                cuota_over=float(cuota_over_sel) if cuota_over_sel is not None else None,
+                cuota_under=float(cuota_under_sel) if cuota_under_sel is not None else None,
+                devig_metodo=metricas["devig_metodo"],
+                devig_overround=metricas["devig_overround"],
+                devig_p_mkt_fair=metricas["devig_p_mkt_fair"],
+                advertencias=(r_ml.advertencias or []) + (r_h.advertencias or []) + (metricas["advertencias"] or []),
                 fuente="ENSEMBLE",
                 metadata_ensemble={
                     "decision": "blend",
@@ -632,6 +662,10 @@ def _arbitrar_recomendaciones(
                     "mercado_estado": mercado_estado,
                     "motivo_arbitraje": "sin_evidencia_fuerte_para_seleccion_dura",
                     "delta_score": round(delta_score, 4),
+                    "guardas_transformacion": {
+                        "calibracion_aplicada": calibracion_aplicada,
+                        "devig_recalculado_canonico": True,
+                    },
                     "clave": key,
                 },
             )
@@ -2213,10 +2247,12 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_over_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
+                calibracion_aplicada_over = abs(float(prob_over_ajustada) - float(probs.over_raw)) > 1e-6
                 m_over = _calcular_metricas_mercado(
                     lado="OVER",
                     prob_raw=float(probs.over_raw),
                     prob_cal=float(prob_over_ajustada),
+                    calibracion_aplicada=calibracion_aplicada_over,
                     cuota_over=cuota_over,
                     cuota_under=cuota_under,
                     std=float(prediccion.std),
@@ -2231,8 +2267,10 @@ def _generar_recomendaciones(
                     valor_esperado=m_over["valor_esperado"],
                     p_raw=float(probs.over_raw),
                     p_calibrada=float(prob_over_ajustada),
+                    calibracion_aplicada=m_over["calibracion_aplicada"],
                     modelo_version_id=modelo_version_id,
                     calibrador_id=None,
+                    edge_raw=m_over["edge_raw"],
                     edge_real=m_over["edge_real"],
                     score=m_over["score"],
                     sizing=m_over["sizing"],
@@ -2252,10 +2290,12 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_under_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
+                calibracion_aplicada_under = abs(float(prob_under_ajustada) - float(probs.under_raw)) > 1e-6
                 m_under = _calcular_metricas_mercado(
                     lado="UNDER",
                     prob_raw=float(probs.under_raw),
                     prob_cal=float(prob_under_ajustada),
+                    calibracion_aplicada=calibracion_aplicada_under,
                     cuota_over=cuota_over,
                     cuota_under=cuota_under,
                     std=float(prediccion.std),
@@ -2270,8 +2310,10 @@ def _generar_recomendaciones(
                     valor_esperado=m_under["valor_esperado"],
                     p_raw=float(probs.under_raw),
                     p_calibrada=float(prob_under_ajustada),
+                    calibracion_aplicada=m_under["calibracion_aplicada"],
                     modelo_version_id=modelo_version_id,
                     calibrador_id=None,
+                    edge_raw=m_under["edge_raw"],
                     edge_real=m_under["edge_real"],
                     score=m_under["score"],
                     sizing=m_under["sizing"],
@@ -2687,12 +2729,18 @@ def _resolver_objetivo_canonico(
             estado=calibracion_estado,
             p_raw=float(recomendacion.p_raw) if recomendacion is not None and recomendacion.p_raw is not None else None,
             p_calibrada=float(recomendacion.p_calibrada) if recomendacion is not None and recomendacion.p_calibrada is not None else None,
+            calibracion_aplicada=(
+                bool(recomendacion.calibracion_aplicada)
+                if recomendacion is not None and recomendacion.calibracion_aplicada is not None
+                else None
+            ),
             calibrador_id=recomendacion.calibrador_id if recomendacion is not None else None,
         ),
         score_riesgo=ObjetivoScoreRiesgoFutbol(
             estado=score_estado,
             score=float(recomendacion.score) if recomendacion is not None and recomendacion.score is not None else None,
             sizing=float(recomendacion.sizing) if recomendacion is not None and recomendacion.sizing is not None else None,
+            edge_raw=float(recomendacion.edge_raw) if recomendacion is not None and recomendacion.edge_raw is not None else None,
             edge_real=float(recomendacion.edge_real) if recomendacion is not None and recomendacion.edge_real is not None else None,
             valor_esperado=float(recomendacion.valor_esperado) if recomendacion is not None and recomendacion.valor_esperado is not None else None,
             confianza=recomendacion.confianza if recomendacion is not None else None,

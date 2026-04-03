@@ -273,6 +273,8 @@ export interface RecomendacionApuesta {
   razon: string;
   pRaw?: number;
   pCalibrada?: number;
+  calibracionAplicada?: boolean;
+  edgeRaw?: number;
   edgeReal?: number;
   score?: number;
   sizing?: number;
@@ -347,12 +349,14 @@ export interface ObjetivoDevigFutbol extends ObjetivoEstadoFutbol {
 export interface ObjetivoCalibracionFutbol extends ObjetivoEstadoFutbol {
   pRaw: number | null;
   pCalibrada: number | null;
+  calibracionAplicada: boolean | null;
   calibradorId: string | null;
 }
 
 export interface ObjetivoScoreRiesgoFutbol extends ObjetivoEstadoFutbol {
   score: number | null;
   sizing: number | null;
+  edgeRaw: number | null;
   edgeReal: number | null;
   valorEsperado: number | null;
   confianza: string | null;

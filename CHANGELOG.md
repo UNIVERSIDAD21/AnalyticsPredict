@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 6 fútbol (capa de decisión canónica y trazable):
+  - `backend/api/rutas_analisis_futbol.py`: se formaliza base matemática de decisión con `calibracion_aplicada` explícita, `edge_raw` canónico y recomputación canónica de `edge_real/score/sizing` en arbitraje ENSEMBLE para evitar mezcla opaca de transformaciones.
+  - Fórmulas operativas explícitas:
+    - `edge_raw = p_raw - (1/cuota_lado)` cuando aplica.
+    - `edge_real = p_decision - p_mkt_fair`, con `p_decision = p_calibrada` solo si `calibracion_aplicada=true`, de lo contrario `p_raw`.
+  - `backend/api/schemas_futbol.py`: se extiende contrato con `calibracion_aplicada` y `edge_raw` en recomendación/objetivo sin romper render existente.
+  - `frontend/src/servicios/futbol/analisis.ts` y `frontend/src/tipos/futbol.ts`: parser/tipos alineados para nuevos campos (`calibracionAplicada`, `edgeRaw`).
+  - Pruebas reforzadas en `backend/tests/test_futbol_p51_p61_unittest.py` para fórmulas canónicas y guardas de calibración efectiva.
+  - Reporte técnico del bloque: `docs/reportes/BLOQUE_6_CAPA_DECISION_FUTBOL.md`.
 - Bloque 5 NBA (blindaje ETL de temporada en pipeline real):
   - Ruta validada y documentada del pipeline real en `docs/reportes/BLOQUE_5_PIPELINE_TEMPORADAS.md`.
   - `backend/scripts/scraper_equipos_recientes.py` ahora resuelve `temporada_id` por evento con trazabilidad explícita:

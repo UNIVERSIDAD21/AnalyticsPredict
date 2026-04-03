@@ -19,6 +19,7 @@ class TestP52P62(unittest.TestCase):
             lado="OVER",
             prob_raw=0.56,
             prob_cal=0.58,
+            calibracion_aplicada=True,
             cuota_over=1.90,
             cuota_under=1.90,
             std=1.2,
@@ -34,6 +35,7 @@ class TestP52P62(unittest.TestCase):
             lado="UNDER",
             prob_raw=0.54,
             prob_cal=0.57,
+            calibracion_aplicada=True,
             cuota_over=None,
             cuota_under=1.95,
             std=2.5,
@@ -47,6 +49,7 @@ class TestP52P62(unittest.TestCase):
             lado="OVER",
             prob_raw=0.53,
             prob_cal=0.55,
+            calibracion_aplicada=True,
             cuota_over=None,
             cuota_under=None,
             std=3.0,
@@ -54,6 +57,34 @@ class TestP52P62(unittest.TestCase):
         )
         self.assertEqual(m["devig_metodo"], "fallback_conservador_no_odds")
         self.assertIsNone(m["valor_esperado"])
+
+    def test_edge_raw_y_edge_real_con_formulas_canonicas(self):
+        m = _calcular_metricas_mercado(
+            lado="OVER",
+            prob_raw=0.60,
+            prob_cal=0.58,
+            calibracion_aplicada=True,
+            cuota_over=2.0,
+            cuota_under=2.0,
+            std=1.0,
+            mercado_estado="verde",
+        )
+        self.assertAlmostEqual(m["edge_raw"], 0.10, places=6)  # 0.60 - (1/2.0)
+        self.assertAlmostEqual(m["edge_real"], 0.08, places=6)  # 0.58 - 0.50 (fair)
+
+    def test_si_calibracion_no_aplica_score_y_ev_usan_prob_raw(self):
+        m = _calcular_metricas_mercado(
+            lado="OVER",
+            prob_raw=0.62,
+            prob_cal=0.55,
+            calibracion_aplicada=False,
+            cuota_over=2.0,
+            cuota_under=2.0,
+            std=1.0,
+            mercado_estado="verde",
+        )
+        self.assertAlmostEqual(m["valor_esperado"], 0.24, places=6)  # (0.62*2)-1
+        self.assertAlmostEqual(m["edge_real"], 0.12, places=6)
 
     def test_arbitraje_seleccion_dura_por_score(self):
         r_ml = RecomendacionApuesta(

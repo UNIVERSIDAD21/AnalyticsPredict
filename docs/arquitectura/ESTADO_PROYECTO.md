@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 5 NBA: blindaje ETL de temporada + bloque fútbol temporal)
+Última actualización: 2026-04-03 (bloque 6 fútbol decisión canónica + bloque 5 NBA ETL temporadas)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -105,6 +105,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bitácora global compartida (2026-03-31): lectura de bitácora/resumen/métricas se expone sin aislamiento por `usuario_id` para que apuestas aparezcan a todos los usuarios autenticados.
 - Bloque fútbol temporal (2026-04-03): `AnalisisRequest` recupera contrato temporal formal (`temporadas`/`fecha_minima`), consultas de contexto incorporan filtro por temporada o ventana explícita, y `objetivo.trazabilidad.temporal` publica estrategia efectiva + muestras usadas para auditoría reproducible. Dependencia abierta: calidad de catálogo de temporadas y marcación de activa/anterior por ETL/scraper (validación estructural pendiente en bloque de pipeline).
 - Bloque 5 NBA pipeline temporadas (2026-04-03): se auditó y endureció la ruta real `backend/scripts/scraper_equipos_recientes.py` con resolución de `temporada_id` por evento, detección de discrepancias `season_api` vs fecha, fallback controlado por creación/lookup y omisión explícita con advertencias cuando no se puede resolver. Estado de confiabilidad del filtro por temporadas: **confiable en este pipeline**; limitación residual: falta homologar la misma gobernanza en otros ingesters NBA (ej. `scraper_partidos_futuros.py`).
+- Bloque 6 fútbol capa de decisión (2026-04-03): se formaliza matemática canónica de decisión en `rutas_analisis_futbol` con `edge_raw` explícito, `edge_real` derivado de `p_decision` (calibrada solo si calibración aplica), y trazabilidad de `calibracion_aplicada` para evitar mezcla de transformaciones. En ENSEMBLE, `edge/score/sizing` se recomputan canónicamente (no por promedio de outputs ya transformados). Contrato extendido de forma backward-compatible para frontend (`calibracion_aplicada`, `edge_raw`).
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
