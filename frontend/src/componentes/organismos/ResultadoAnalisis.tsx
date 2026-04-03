@@ -263,6 +263,9 @@ export function ResultadoAnalisis({
       <div className="tarjeta p-3 border border-neon-cyan/20">
         <p className="text-xs uppercase tracking-wider text-texto-terciario">Estado operativo del mercado</p>
         <p className="text-sm font-semibold text-neon-cyan">{estadoOperativoMercado}</p>
+        {estadoOperativoMercado !== 'PROMOCIONABLE' && (
+          <p className="text-xs text-advertencia-500 mt-1">Modo activo: PAPER/SHADOW (validación prolongada, no mercado promocionado).</p>
+        )}
         {motivosEstadoOperativo.length > 0 && (
           <p className="text-xs text-texto-secundario mt-1">Motivos: {motivosEstadoOperativo.join(', ')}</p>
         )}

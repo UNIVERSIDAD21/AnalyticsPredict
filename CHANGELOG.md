@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 13 fútbol (shadow/paper mode operativo y validación prolongada):
+  - Se formaliza `PAPER_SHADOW` como modo operativo por mercado no promocionable en trazabilidad de análisis (`objetivo.trazabilidad.modo_operativo`).
+  - Nuevo endpoint `GET /api/futbol/metricas/shadow-operativo` con métricas longitudinales por mercado (emitidos, resolubles, resueltos, cobertura de líneas, fallback, brier, estado operativo vigente).
+  - Nuevo pipeline de reporte por ventanas semanal/quincenal/mensual: `backend/scripts/reporte_shadow_mode_futbol.py`.
+  - Evidencia generada en `docs/reportes/BLOQUE_13_SHADOW_MODE_OPERATIVO_FUTBOL.json` y documento técnico `BLOQUE_13_SHADOW_MODE_PAPER_MODE_OPERATIVO.md`.
+  - Frontend endurecido para visibilizar explícitamente modo PAPER/SHADOW cuando mercado no es promocionable.
 - Bloque 12 fútbol (monitoreo continuo y auto-demotion por mercado):
   - Se implementa regla de auto-demotion en `motor_futbol/madurez_beta.py`: los mercados pueden bajar automáticamente de estado cuando empeoran; no hay auto-promoción.
   - Nuevo pipeline `backend/scripts/monitoreo_autodemotion_futbol.py` para vigilancia periódica por mercado (Brier/LogLoss/coverage/fallback/resolución) y decisión de degradación con motivos trazables.

@@ -266,6 +266,75 @@ async def obtener_estado_operativo_mercados(
             }
 
 
+def _days_by_window(window: str) -> int:
+    w = str(window).lower().strip()
+    if w in {"semanal", "7d", "week"}:
+        return 7
+    if w in {"quincenal", "15d", "fortnight"}:
+        return 15
+    if w in {"mensual", "30d", "month"}:
+        return 30
+    return 30
+
+
+@router.get(
+    "/shadow-operativo",
+    summary="Métricas operativas de shadow/paper mode por mercado",
+    description="Reporte operativo longitudinal por mercado (análisis emitidos, resolubles, resueltos, coverage, degradación y estabilidad).",
+)
+async def obtener_shadow_operativo_futbol(
+    ventana: str = Query("mensual", description="semanal|quincenal|mensual"),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> Dict[str, Any]:
+    days = _days_by_window(ventana)
+    inicio = datetime.now() - timedelta(days=days)
+    pool = obtener_pool()
+
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cursor:
+            fecha_col = "timestamp_generacion" if _columna_existe(cursor, "predicciones_futbol", "timestamp_generacion") else "creado_en"
+            cursor.execute(
+                f"""
+                SELECT
+                  mercado::text AS mercado,
+                  COUNT(*) AS analisis_emitidos,
+                  COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS resueltos,
+                  COUNT(*) FILTER (WHERE outcome_binario IS NULL) AS resolubles_pendientes,
+                  COUNT(DISTINCT linea) AS lineas_cubiertas,
+                  AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate,
+                  AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier
+                FROM predicciones_futbol
+                WHERE {fecha_col} >= %s
+                GROUP BY mercado
+                ORDER BY mercado
+                """,
+                [inicio],
+            )
+            metricas = [dict(r) for r in cursor.fetchall()]
+
+            estado_vigente: Dict[str, str] = {}
+            if _tabla_existe(cursor, "futbol_estado_operativo_mercado"):
+                cursor.execute("SELECT mercado, estado_operativo FROM futbol_estado_operativo_mercado WHERE vigente_hasta IS NULL")
+                for r in cursor.fetchall():
+                    estado_vigente[str(r["mercado"]).upper()] = str(r["estado_operativo"]).upper()
+
+            for m in metricas:
+                mk = str(m["mercado"]).upper()
+                m["estado_operativo_vigente"] = estado_vigente.get(mk, "LABORATORIO")
+                emitidos = int(m.get("analisis_emitidos") or 0)
+                resueltos = int(m.get("resueltos") or 0)
+                m["tasa_resolucion"] = round((resueltos / emitidos), 4) if emitidos else 0.0
+                m["modo_operativo"] = "PAPER_SHADOW" if m["estado_operativo_vigente"] != "PROMOCIONABLE" else "PROMOCIONABLE_ACTIVO"
+
+            return {
+                "exito": True,
+                "ventana": ventana,
+                "dias": days,
+                "desde": inicio.isoformat(),
+                "mercados": metricas,
+            }
+
+
 @router.get(
     "/politica-promocion",
     summary="Política formal de salida beta y promoción parcial por mercado",

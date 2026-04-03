@@ -1,0 +1,731 @@
+{
+  "generated_at": "2026-04-03T20:20:29.991332+00:00",
+  "ventanas": {
+    "semanal": [
+      {
+        "mercado": "CORNERS_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_LOCAL_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_LOCAL_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_VISITANTE_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      }
+    ],
+    "quincenal": [
+      {
+        "mercado": "CORNERS_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_LOCAL_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_LOCAL_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_VISITANTE_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      }
+    ],
+    "mensual": [
+      {
+        "mercado": "CORNERS_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_LOCAL_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_1T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_2T",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "CORNERS_VISITANTE_FT",
+        "emitidos": 16,
+        "resueltos": 0,
+        "pendientes": 16,
+        "lineas": 4,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_LOCAL_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_LOCAL_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "DISPAROS_VISITANTE_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_LOCAL_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_1T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_2T",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      },
+      {
+        "mercado": "GOLES_VISITANTE_FT",
+        "emitidos": 12,
+        "resueltos": 0,
+        "pendientes": 12,
+        "lineas": 3,
+        "brier": null,
+        "fallback_rate": "0E-20",
+        "tasa_resolucion": 0.0
+      }
+    ]
+  }
+}

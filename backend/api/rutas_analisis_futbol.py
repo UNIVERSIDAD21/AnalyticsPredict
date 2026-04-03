@@ -2823,6 +2823,7 @@ def _resolver_objetivo_canonico(
                 )
             ),
             "motivos_estado_operativo": motivos_estado_operativo,
+            "modo_operativo": "PAPER_SHADOW" if estado_operativo != "PROMOCIONABLE" else "PROMOCIONABLE_ACTIVO",
             "recomendacion_exacta": recomendacion is not None,
             "evaluacion_muestra": evaluacion_muestra or {},
         },
