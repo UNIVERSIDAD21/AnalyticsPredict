@@ -1,0 +1,1849 @@
+{
+  "snapshot": {
+    "bloqueado": [
+      "CORNERS_1T",
+      "CORNERS_2T",
+      "CORNERS_FT",
+      "CORNERS_LOCAL_1T",
+      "CORNERS_LOCAL_2T",
+      "CORNERS_LOCAL_FT",
+      "CORNERS_VISITANTE_1T",
+      "CORNERS_VISITANTE_2T",
+      "CORNERS_VISITANTE_FT",
+      "DISPAROS_ARCO_FT",
+      "DISPAROS_FT",
+      "DISPAROS_LOCAL_ARCO_FT",
+      "DISPAROS_LOCAL_FT",
+      "DISPAROS_VISITANTE_ARCO_FT",
+      "DISPAROS_VISITANTE_FT",
+      "GOLES_1T",
+      "GOLES_2T",
+      "GOLES_FT",
+      "GOLES_LOCAL_1T",
+      "GOLES_LOCAL_2T",
+      "GOLES_LOCAL_FT",
+      "GOLES_VISITANTE_1T",
+      "GOLES_VISITANTE_2T",
+      "GOLES_VISITANTE_FT"
+    ],
+    "laboratorio": [],
+    "validacion": [],
+    "promocionable": []
+  },
+  "matriz_causal_por_mercado": [
+    {
+      "mercado": "CORNERS_1T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_2T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.4244,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0005002225,
+        "log_loss": 0.022329071522325536,
+        "ece": 0.022075,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.12443139750000001,
+            "log_loss": 0.42695426282392324,
+            "ece": 0.341375
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.2535,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.12443139750000001,
+        "log_loss": 0.42695426282392324,
+        "ece": 0.341375,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_2T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_1T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_2T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 4.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.428,
+      "evidencia": {
+        "n_resueltas": 4.0,
+        "lineas_cubiertas": 4.0,
+        "brier": 0.0004,
+        "log_loss": 0.020202707317519466,
+        "ece": 0.02,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_ARCO_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.353,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.00160803,
+        "log_loss": 0.04092617746635512,
+        "ece": 0.040100000000000004,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.11990241666666666,
+            "log_loss": 0.41888678228581555,
+            "ece": 0.3377666666666666
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.217,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.11990241666666666,
+        "log_loss": 0.41888678228581555,
+        "ece": 0.3377666666666666,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_ARCO_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.3532,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.0016,
+        "log_loss": 0.040821994520255166,
+        "ece": 0.04,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.3371,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.0024928433333333334,
+        "log_loss": 0.05045838102737236,
+        "ece": 0.049166666666666664,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.3532,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.0016,
+        "log_loss": 0.040821994520255166,
+        "ece": 0.04,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.3499,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.00175666,
+        "log_loss": 0.04277042629571768,
+        "ece": 0.04186666666666666,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_1T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.43192749999999996,
+            "log_loss": 1.2930648514396597,
+            "ece": 0.5203333333333333
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.1212,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.43192749999999996,
+        "log_loss": 1.2930648514396597,
+        "ece": 0.5203333333333333,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_2T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.57482297,
+            "log_loss": 1.9802474710204832,
+            "ece": 0.7112999999999999
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.1212,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.57482297,
+        "log_loss": 1.9802474710204832,
+        "ece": 0.7112999999999999,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.18548647333333335,
+            "log_loss": 0.5297304915029927,
+            "ece": 0.3642666666666666
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.16,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.18548647333333335,
+        "log_loss": 0.5297304915029927,
+        "ece": 0.3642666666666666,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_1T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.3563,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.0020772300000000002,
+        "log_loss": 0.038987512452398045,
+        "ece": 0.037899999999999996,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_2T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.8625451866666666,
+            "log_loss": 3.173377243338688,
+            "ece": 0.9255333333333333
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.1212,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.8625451866666666,
+        "log_loss": 3.173377243338688,
+        "ece": 0.9255333333333333,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.65085628,
+            "log_loss": 2.2468829626648876,
+            "ece": 0.7707333333333333
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.1212,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.65085628,
+        "log_loss": 2.2468829626648876,
+        "ece": 0.7707333333333333,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_1T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.29750083,
+            "log_loss": 0.9760601822279793,
+            "ece": 0.30143333333333333
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.1212,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.29750083,
+        "log_loss": 0.9760601822279793,
+        "ece": 0.30143333333333333,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_2T",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.3205,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.006057079999999999,
+        "log_loss": 0.060579530250560946,
+        "ece": 0.05726666666666666,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_FT",
+      "estado_actual": "BLOQUEADO",
+      "causas": [
+        {
+          "causa": "volumen_resuelto_insuficiente",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "n_resueltas": 3.0,
+            "umbral": 120
+          }
+        },
+        {
+          "causa": "calibracion_fuera_tolerancia",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "brier": 0.10446082666666667,
+            "log_loss": 0.2982240560381949,
+            "ece": 0.21213333333333334
+          }
+        },
+        {
+          "causa": "tasa_resolucion_operativa_baja",
+          "severidad": "ALTA",
+          "evidencia": {
+            "tasa_operativa": 0.0,
+            "tasa_eval": 0.14285714285714285,
+            "umbral": 0.7
+          }
+        },
+        {
+          "causa": "fallback_alto",
+          "severidad": "CRITICA",
+          "evidencia": {
+            "fallback_rate": 1.0,
+            "umbral": 0.35
+          }
+        },
+        {
+          "causa": "datos_incompletos_o_estado_mercado",
+          "severidad": "ALTA",
+          "evidencia": {
+            "motivos_monitor": [
+              "auto_demotion",
+              "volumen_o_resolucion_critica"
+            ]
+          }
+        },
+        {
+          "causa": "auto_demotion_activo",
+          "severidad": "ALTA",
+          "evidencia": {
+            "estado_actual": "LABORATORIO",
+            "estado_nuevo": "BLOQUEADO"
+          }
+        },
+        {
+          "causa": "features_modelado_insuficiente",
+          "severidad": "MEDIA",
+          "evidencia": {
+            "proxy": "muestra insuficiente para validar señal de modelo"
+          }
+        }
+      ],
+      "rescue_score": 0.2304,
+      "evidencia": {
+        "n_resueltas": 3.0,
+        "lineas_cubiertas": 3.0,
+        "brier": 0.10446082666666667,
+        "log_loss": 0.2982240560381949,
+        "ece": 0.21213333333333334,
+        "resolved_rate_monitor": 0.14285714285714285,
+        "resolved_rate_operativo": 0.0,
+        "fallback_rate": 1.0
+      }
+    }
+  ],
+  "agrupacion_causas": {
+    "resolucion/outcomes": {
+      "volumen_resuelto_insuficiente": 24,
+      "tasa_resolucion_operativa_baja": 24
+    },
+    "datos/ETL": {
+      "fallback_alto": 24
+    },
+    "monitoreo/gates": {
+      "datos_incompletos_o_estado_mercado": 24,
+      "auto_demotion_activo": 24
+    },
+    "modelo/features": {
+      "features_modelado_insuficiente": 24
+    },
+    "calibracion": {
+      "calibracion_fuera_tolerancia": 9
+    }
+  },
+  "ranking_rescate": [
+    {
+      "mercado": "CORNERS_1T",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_LOCAL_2T",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_LOCAL_FT",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_1T",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_2T",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_FT",
+      "rescue_score": 0.428
+    },
+    {
+      "mercado": "CORNERS_2T",
+      "rescue_score": 0.4244
+    },
+    {
+      "mercado": "GOLES_LOCAL_1T",
+      "rescue_score": 0.3563
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_ARCO_FT",
+      "rescue_score": 0.3532
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+      "rescue_score": 0.3532
+    },
+    {
+      "mercado": "DISPAROS_ARCO_FT",
+      "rescue_score": 0.353
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_FT",
+      "rescue_score": 0.3499
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_FT",
+      "rescue_score": 0.3371
+    },
+    {
+      "mercado": "GOLES_VISITANTE_2T",
+      "rescue_score": 0.3205
+    },
+    {
+      "mercado": "CORNERS_FT",
+      "rescue_score": 0.2535
+    },
+    {
+      "mercado": "GOLES_VISITANTE_FT",
+      "rescue_score": 0.2304
+    },
+    {
+      "mercado": "DISPAROS_FT",
+      "rescue_score": 0.217
+    },
+    {
+      "mercado": "GOLES_FT",
+      "rescue_score": 0.16
+    },
+    {
+      "mercado": "GOLES_1T",
+      "rescue_score": 0.1212
+    },
+    {
+      "mercado": "GOLES_2T",
+      "rescue_score": 0.1212
+    },
+    {
+      "mercado": "GOLES_LOCAL_2T",
+      "rescue_score": 0.1212
+    },
+    {
+      "mercado": "GOLES_LOCAL_FT",
+      "rescue_score": 0.1212
+    },
+    {
+      "mercado": "GOLES_VISITANTE_1T",
+      "rescue_score": 0.1212
+    }
+  ],
+  "recomendacion_foco": {
+    "mercados_prioritarios": [
+      "CORNERS_1T",
+      "CORNERS_LOCAL_1T",
+      "CORNERS_LOCAL_2T"
+    ],
+    "rationale": "priorizados por mejor score de rescate (coverage relativo + menor degradación + señal calibración) dentro del bloqueo total actual"
+  }
+}

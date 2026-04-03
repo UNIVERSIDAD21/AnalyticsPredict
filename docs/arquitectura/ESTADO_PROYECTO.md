@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 14 cierre narrativo beta/promoción parcial + bloque 13/12/11/10/9/8/7/6/5)
+Última actualización: 2026-04-03 (bloque 15 auditoría causal de bloqueo total + bloque 14/13/12/11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -114,6 +114,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 12 monitoreo continuo + auto-demotion (2026-04-03): se incorpora vigilancia periódica por mercado con decisión automática de degradación cuando hay deterioro cuantitativo (cobertura, resolución, calibración, fallback). Se agrega endpoint para estado operativo vigente por mercado y reporte reproducible de autodemotion con motivos trazables. Sin auto-promoción para evitar ascensos por ruido temporal.
 - Bloque 13 shadow/paper mode operativo (2026-04-03): se habilita fase de validación prolongada por mercado con trazabilidad explícita del modo operativo (`PAPER_SHADOW|PROMOCIONABLE_ACTIVO`), endpoint de métricas longitudinales (`/api/futbol/metricas/shadow-operativo`) y reporte periódico semanal/quincenal/mensual para evaluar consistencia real en flujo operativo continuo.
 - Bloque 14 cierre de etapa beta/promoción parcial (2026-04-03): se consolida narrativa oficial alineada a evidencia de bloques 10-13. Resultado de cierre: fútbol **no** sale de beta global en esta corrida; opera con estados por mercado (gobernanza diferenciada), con promoción parcial solo cuando exista evidencia cuantitativa sostenida. Snapshot actual de scorecards: 24/24 mercados no promocionables.
+- Bloque 15 auditoría causal de bloqueo total (2026-04-03): se ejecuta diagnóstico raíz mercado-por-mercado (24/24) con matriz causal cuantitativa, agrupación de causas, ranking de rescate y foco priorizado de 2–3 mercados. Conclusión técnica: el bloqueo total se explica principalmente por déficit de resolución/outcomes + volumen resuelto insuficiente + fallback/estado de mercado incompleto; no por narrativa de producto.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

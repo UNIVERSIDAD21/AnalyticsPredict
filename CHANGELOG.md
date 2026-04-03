@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 15 fútbol (auditoría de causa raíz de bloqueo total por mercado):
+  - Se implementa auditoría causal reproducible `backend/scripts/auditoria_causal_bloqueo_futbol.py` usando evidencia de bloques 10, 12 y 13.
+  - Se genera matriz causal por cada uno de los 24 mercados con severidad y evidencia cuantitativa.
+  - Se consolidan causas raíz por grupo (datos/ETL, resolución/outcomes, coverage, calibración, modelo/features, monitoreo/gates).
+  - Se publica ranking de rescate y foco priorizado de 2-3 mercados para siguiente fase.
+  - Reportes generados:
+    - `docs/reportes/BLOQUE_15_AUDITORIA_CAUSAL_BLOQUEO_FUTBOL.json`
+    - `docs/reportes/BLOQUE_15_AUDITORIA_CAUSAL_BLOQUEO_FUTBOL.md`
 - Bloque 14 fútbol (cierre de beta, promoción parcial y limpieza narrativa):
   - Se alinea narrativa oficial de producto/documentación con evidencia real de bloques 10–13 (sin sobrepromoción).
   - `docs/FUENTE_DE_VERDAD_ACTUAL.md` actualizado: fútbol queda definido como beta global con madurez diferenciada por mercado, promoción parcial y reversible.
