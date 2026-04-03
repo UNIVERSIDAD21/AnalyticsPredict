@@ -25,7 +25,7 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 - NBA = frente comercial principal.
 - Fútbol = **beta global con madurez diferenciada por mercado** (gobernado por scorecards walk-forward, política formal, monitoreo continuo y shadow mode).
 - Regla vigente: no hay salida beta global automática; la promoción es parcial y reversible por mercado.
-- Estado de cierre de etapa (bloques 10-13): **0 mercados promocionables** en la evidencia actual, por lo que fútbol mantiene beta global.
+- Estado de cierre de etapa (bloques 10-14): **0 mercados promocionables** en la evidencia actual, por lo que fútbol mantiene beta global.
 - No se posiciona el producto como app masiva de picks ni promesa de ganancias fáciles.
 
 ## Bloqueo comercial explícito (auditoría)
