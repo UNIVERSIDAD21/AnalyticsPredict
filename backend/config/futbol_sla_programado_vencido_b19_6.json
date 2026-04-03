@@ -1,0 +1,19 @@
+{
+  "version": "2026-04-03.b19.6",
+  "scope": ["CORNERS_1T", "CORNERS_LOCAL_1T"],
+  "regla": "Detectar automáticamente cuándo un partido en PROGRAMADO pasa de calendario normal a riesgo de stale data.",
+  "sla_horas": {
+    "normal_hasta": 6,
+    "alerta_desde": 6,
+    "vencido_desde": 24
+  },
+  "clases": {
+    "SANO": "Dentro de SLA normal para seguir en PROGRAMADO.",
+    "AMARILLO": "Posible atraso de actualización; vigilar en siguiente corrida.",
+    "VENCIDO": "PROGRAMADO vencido; probable stale data/ingestión atrasada."
+  },
+  "senal_operativa": {
+    "abrir_bloque_ingestion": "Si existe al menos un caso VENCIDO.",
+    "mantener_calendario_real": "Si no existe ningún caso VENCIDO."
+  }
+}

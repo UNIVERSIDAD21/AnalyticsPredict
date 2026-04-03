@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 19.5 auditoría resolución corners + bloque 19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
+Última actualización: 2026-04-03 (bloque 19.6 vigilancia programado vencido + bloque 19.5/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -120,6 +120,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 18 umbral duro de masa resolutiva + gate de reevaluación (2026-04-03): se formaliza política de readiness específica para `CORNERS_1T` y `CORNERS_LOCAL_1T` con mínimos explícitos de masa binaria, pendientes, coverage y estabilidad temporal antes de cualquier reevaluación/promoción. Se integra gate en re-scorecard y monitoreo para impedir ascensos/reevaluaciones prematuras con evidencia insuficiente. Snapshot actual de readiness: ambos mercados `NO_LISTO` (4/28 resueltas; gap 26 para reevaluación seria).
 - Bloque 19 plan operativo de acumulación de masa resolutiva (2026-04-03): se implementa tracker reproducible por ventanas (7/14/30 días) para `CORNERS_1T` y `CORNERS_LOCAL_1T` con métricas de emitidos/resueltos/cerrados/pendientes, deltas de readiness y proyección de horizontes por ritmo real. Se formaliza gate de disparo a B20: solo habilitado cuando ambos mercados tengan `gate_reevaluacion_seria_habilitado=true` en la misma corrida; mientras tanto, reevaluación seria permanece bloqueada.
 - Bloque 19.5 destrabe de resolución post-partido (2026-04-03): auditoría E2E focalizada de la cadena `predicción -> estado partido -> datos corners 1T/local 1T -> outcome_binario` para `CORNERS_1T` y `CORNERS_LOCAL_1T`. Resultado cuantitativo 7/14/30 días: emisiones nuevas sí, pero `0` partidos finalizados y `0` casos resolubles con datos pendientes de conversión; diagnóstico principal = calendario real (no pipeline roto en conversión para estos mercados en esta corrida). Se deja script auditable con backfill condicional cuando existan resolubles atascados.
+- Bloque 19.6 vigilancia automática de `PROGRAMADO` vencido (2026-04-03): se formaliza SLA de frescura y clasificación operacional (`SANO|AMARILLO|VENCIDO`) para separar calendario real de stale data en mercados foco. Se agrega pipeline de vigilancia con señal automática para abrir o no bloque de ingestión/resultados. Snapshot actual: 0 casos `VENCIDO`; bloqueo sigue explicado por calendario real y no por feed claramente desactualizado en esta corrida.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

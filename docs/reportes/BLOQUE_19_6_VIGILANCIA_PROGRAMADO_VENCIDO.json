@@ -1,0 +1,423 @@
+{
+  "generated_at": "2026-04-03T21:36:19.623726+00:00",
+  "bloque": "19.6",
+  "mercados_foco": [
+    "CORNERS_1T",
+    "CORNERS_LOCAL_1T"
+  ],
+  "politica_sla": {
+    "version": "2026-04-03.b19.6",
+    "scope": [
+      "CORNERS_1T",
+      "CORNERS_LOCAL_1T"
+    ],
+    "regla": "Detectar automáticamente cuándo un partido en PROGRAMADO pasa de calendario normal a riesgo de stale data.",
+    "sla_horas": {
+      "normal_hasta": 6,
+      "alerta_desde": 6,
+      "vencido_desde": 24
+    },
+    "clases": {
+      "SANO": "Dentro de SLA normal para seguir en PROGRAMADO.",
+      "AMARILLO": "Posible atraso de actualización; vigilar en siguiente corrida.",
+      "VENCIDO": "PROGRAMADO vencido; probable stale data/ingestión atrasada."
+    },
+    "senal_operativa": {
+      "abrir_bloque_ingestion": "Si existe al menos un caso VENCIDO.",
+      "mantener_calendario_real": "Si no existe ningún caso VENCIDO."
+    }
+  },
+  "resumen_mercados": [
+    {
+      "mercado": "CORNERS_1T",
+      "programado_total": 16,
+      "programado_sano": 8,
+      "programado_amarillo": 8,
+      "programado_vencido": 0,
+      "impacto_masa_resolutiva": {
+        "bloquea_outcomes_nuevos": true,
+        "potencial_stale_data": false
+      },
+      "patron_vencidos": {
+        "por_competicion": {},
+        "por_proveedor": {}
+      },
+      "muestra_casos": [
+        {
+          "prediccion_id": "4925b690-ab82-4654-862d-704ac5227f3e",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "f981d8d8-2d4c-49ad-ba92-5e79d79abc92",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "c097d0a8-2580-4971-91ee-692b1e8bb7c8",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "1360f657-a005-4cbe-96c1-9df5a5254379",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "c676dc91-41eb-5505-9ad9-55d770716069",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "6ca847cb-79f5-59c6-bbae-97321fb9ed5d",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "dabaf49a-0abc-55d8-8b1b-7da3d1ba25a9",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "500e43a7-5aeb-5542-b799-b94263489cb3",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "490da495-053d-51cf-b5da-0f340c5f63ad",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "527bd059-db89-5e8f-8bcd-2d9ac0d1bb64",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "b737d8c5-7483-52c8-8063-2870197cdd81",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "1c7fb9f3-f362-51b9-8348-23c242e889f1",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "2eef5c0c-2392-516d-9750-cd0991637eda",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "9cd48f38-ab35-5164-98ec-dbbe2ae740fa",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "c2a43fd8-e261-5b58-9c3d-b3f01e4fdb76",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "3f4105ba-8514-577f-b687-8151858793e9",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        }
+      ]
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "programado_total": 16,
+      "programado_sano": 8,
+      "programado_amarillo": 8,
+      "programado_vencido": 0,
+      "impacto_masa_resolutiva": {
+        "bloquea_outcomes_nuevos": true,
+        "potencial_stale_data": false
+      },
+      "patron_vencidos": {
+        "por_competicion": {},
+        "por_proveedor": {}
+      },
+      "muestra_casos": [
+        {
+          "prediccion_id": "36d49f3f-a40e-4ee0-93dc-4fa6838271e2",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "3eda84b2-e21b-48f5-8adc-74c9c015de37",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "ae677bf9-3b2b-41b0-9a5b-48682cc627c3",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "9e2d2b75-98a4-41d1-a026-aeed2d8bd806",
+          "partido_id": "b1f05d57-864e-4bbb-9181-e83a1fcde8ec",
+          "fecha_partido": "2026-04-03 13:45:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "9d7f6eec-2914-4baa-b043-f12638ce0f96",
+          "proveedor": null,
+          "atraso_horas": 7.86,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "3c1b5eed-9710-5346-8a6e-60cfd35fd6f9",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "3cb92a7d-6f77-544e-8d33-f5b72a34fbce",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "147099b3-da75-5f1d-b204-5461ee513661",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "c2060a0a-ce01-512b-a12c-7c4722e46c8f",
+          "partido_id": "18e23371-04e1-4ea6-bcbe-8a1903c6c018",
+          "fecha_partido": "2026-04-03 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-03",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": 7.61,
+          "clase_sla": "AMARILLO"
+        },
+        {
+          "prediccion_id": "3c75f4ae-0396-5743-93e1-96d81d620ab5",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "f7b01408-95f2-521e-aaf1-3bd36958cd15",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "841827bf-5fd3-5852-960d-91fd66366a67",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "db8ef7f9-69c4-583b-bf1b-a4ede243a813",
+          "partido_id": "895c3133-6361-4ea7-9f52-9c0f04cff1fb",
+          "fecha_partido": "2026-04-04 07:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -9.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "1e8c6cb9-46f9-59b1-bec4-286774e42659",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "fe4dc391-138b-5cc2-8cd2-92912116b3fd",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "c4f4ee6e-2592-5dbe-897c-893fc85c51c9",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        },
+        {
+          "prediccion_id": "d3ab51fc-eea9-522f-b3e9-2c9cf5fb8e2d",
+          "partido_id": "e380dffe-0758-4ae3-8009-b8bde803ee9c",
+          "fecha_partido": "2026-04-04 14:00:00+00:00",
+          "fecha_prediccion": "2026-04-04",
+          "estado_partido": "PROGRAMADO",
+          "competicion_id": "af908bbc-e6a3-41ed-9ced-d1e3b4892808",
+          "proveedor": null,
+          "atraso_horas": -16.39,
+          "clase_sla": "SANO"
+        }
+      ]
+    }
+  ],
+  "senal_operativa": {
+    "tipo": "calendario_real_sin_vencidos",
+    "abrir_bloque_ingestion_resultados": false,
+    "mensaje": "No hay PROGRAMADO vencidos; el bloqueo actual sigue siendo calendario real."
+  }
+}

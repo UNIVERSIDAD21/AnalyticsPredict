@@ -1,6 +1,15 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 19.6 fútbol (vigilancia automática de PROGRAMADO vencido y stale data):
+  - Política SLA formal para `PROGRAMADO` en mercados foco (`CORNERS_1T`, `CORNERS_LOCAL_1T`) en `backend/config/futbol_sla_programado_vencido_b19_6.json`.
+  - Motor de clasificación de frescura implementado: `backend/motor_futbol/freshness_programado.py`.
+  - Pipeline de vigilancia reproducible: `backend/scripts/vigilancia_programado_vencido_b19_6.py`.
+  - Reportes generados:
+    - `docs/reportes/BLOQUE_19_6_VIGILANCIA_PROGRAMADO_VENCIDO.json`
+    - `docs/reportes/BLOQUE_19_6_VIGILANCIA_PROGRAMADO_VENCIDO.md`
+  - Snapshot actual por mercado foco: 16 `PROGRAMADO` (8 SANO, 8 AMARILLO, 0 VENCIDO).
+  - Señal operativa actual: `calendario_real_sin_vencidos` (no abrir bloque de ingestión todavía).
 - Bloque 19.5 fútbol (auditoría E2E post-partido y conversión a outcomes binarios en mercados prioritarios):
   - Nueva auditoría extremo a extremo de cadena `emisión -> estado partido -> datos corners 1T/local 1T -> resolución -> persistencia outcome` para `CORNERS_1T` y `CORNERS_LOCAL_1T`.
   - Script reproducible: `backend/scripts/auditoria_resolucion_corners_b19_5.py` (incluye opción `--apply-backfill` cuando detecta resolubles atascados).
