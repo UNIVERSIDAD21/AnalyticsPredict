@@ -45,6 +45,19 @@ function numeroNullable(valor: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function cdfNormalEstandar(z: number): number {
+  // Aproximación de Abramowitz & Stegun (7.1.26)
+  const absZ = Math.abs(z);
+  const t = 1 / (1 + 0.2316419 * absZ);
+  const d = 0.3989423 * Math.exp(-absZ * absZ / 2);
+  const p = d * t * (
+    0.3193815
+    + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))
+  );
+  const cdf = 1 - p;
+  return z >= 0 ? cdf : 1 - cdf;
+}
+
 function buscarProbabilidadLinea(mercado: PrediccionMercadoFutbol | null, linea: number): PrediccionMercadoFutbol['probabilidades'][number] | null {
   if (!mercado || !Array.isArray(mercado.probabilidades) || mercado.probabilidades.length === 0) {
     return null;
@@ -153,11 +166,22 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     ?? numeroNullable(probLineaObjetivo?.underCalibrada)
     ?? (recObjetivo && recObjetivo.lado === 'UNDER' ? numeroNullable(recObjetivo.probabilidad) : null);
 
-  const pOver = pOverBase ?? (pUnderBase !== null ? Math.max(0, Math.min(1, 1 - pUnderBase)) : null);
-  const pUnder = pUnderBase ?? (pOverBase !== null ? Math.max(0, Math.min(1, 1 - pOverBase)) : null);
-
   const mediaTotal = numeroNullable(analisis.objetivo?.mediaObjetivo) ?? numeroNullable(mercadoMain?.media);
   const stdTotal = numeroNullable(analisis.objetivo?.desviacionObjetivo) ?? numeroNullable(mercadoMain?.std);
+
+  let pOver = pOverBase ?? (pUnderBase !== null ? Math.max(0, Math.min(1, 1 - pUnderBase)) : null);
+  let pUnder = pUnderBase ?? (pOverBase !== null ? Math.max(0, Math.min(1, 1 - pOverBase)) : null);
+
+  // Fallback robusto para fútbol: cuando el backend no entrega probabilidades
+  // explícitas por línea (caso común en ciertos mercados), derivarlas usando
+  // aproximación normal con media/desviación objetivo.
+  if ((pOver === null || pUnder === null) && lineaMain !== null && mediaTotal !== null && stdTotal !== null && stdTotal > 0) {
+    const z = (lineaMain - mediaTotal) / stdTotal;
+    const pUnderEstimado = cdfNormalEstandar(z);
+    const pOverEstimado = 1 - pUnderEstimado;
+    pOver = pOver ?? Math.max(0, Math.min(1, pOverEstimado));
+    pUnder = pUnder ?? Math.max(0, Math.min(1, pUnderEstimado));
+  }
   const mediaTotalRender = mediaTotal ?? Number.NaN;
   const stdTotalRender = stdTotal ?? Number.NaN;
   const mediaEq = Number.isFinite(mediaTotalRender) ? mediaTotalRender * 0.48 : Number.NaN;
