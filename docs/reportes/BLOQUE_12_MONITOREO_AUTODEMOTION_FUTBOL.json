@@ -1,0 +1,969 @@
+{
+  "generated_at": "2026-04-03T20:12:36.830075+00:00",
+  "window_days": 60,
+  "apply": false,
+  "decisiones": [
+    {
+      "mercado": "CORNERS_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0005002225,
+        "log_loss": 0.022329071522325522,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.1244313975,
+        "log_loss": 0.4269542628239232,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_ARCO_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00160803,
+        "log_loss": 0.0409261774663551,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.11990241666666666,
+        "log_loss": 0.41888678228581555,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_ARCO_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.0016,
+        "log_loss": 0.04082199452025513,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.0024928433333333334,
+        "log_loss": 0.05045838102737233,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.0016,
+        "log_loss": 0.04082199452025513,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00175666,
+        "log_loss": 0.04277042629571766,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.4319275,
+        "log_loss": 1.2930648514396597,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.57482297,
+        "log_loss": 1.980247471020483,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.18548647333333335,
+        "log_loss": 0.5297304915029926,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00207723,
+        "log_loss": 0.038987512452398045,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.8625451866666667,
+        "log_loss": 3.173377243338688,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.65085628,
+        "log_loss": 2.2468829626648876,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.29750083,
+        "log_loss": 0.9760601822279792,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00605708,
+        "log_loss": 0.06057953025056093,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.10446082666666667,
+        "log_loss": 0.2982240560381949,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    }
+  ],
+  "demotions": [
+    {
+      "mercado": "CORNERS_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0005002225,
+        "log_loss": 0.022329071522325522,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.1244313975,
+        "log_loss": 0.4269542628239232,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_LOCAL_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "CORNERS_VISITANTE_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 4,
+        "lineas_cubiertas": 4,
+        "brier": 0.0004,
+        "log_loss": 0.02020270731751945,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_ARCO_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00160803,
+        "log_loss": 0.0409261774663551,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.11990241666666666,
+        "log_loss": 0.41888678228581555,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_ARCO_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.0016,
+        "log_loss": 0.04082199452025513,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_LOCAL_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.0024928433333333334,
+        "log_loss": 0.05045838102737233,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_ARCO_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.0016,
+        "log_loss": 0.04082199452025513,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "DISPAROS_VISITANTE_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00175666,
+        "log_loss": 0.04277042629571766,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.4319275,
+        "log_loss": 1.2930648514396597,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.57482297,
+        "log_loss": 1.980247471020483,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.18548647333333335,
+        "log_loss": 0.5297304915029926,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00207723,
+        "log_loss": 0.038987512452398045,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.8625451866666667,
+        "log_loss": 3.173377243338688,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_LOCAL_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.65085628,
+        "log_loss": 2.2468829626648876,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_1T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.29750083,
+        "log_loss": 0.9760601822279792,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_2T",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.00605708,
+        "log_loss": 0.06057953025056093,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    },
+    {
+      "mercado": "GOLES_VISITANTE_FT",
+      "estado_actual": "LABORATORIO",
+      "estado_objetivo": "BLOQUEADO",
+      "estado_nuevo": "BLOQUEADO",
+      "motivos": [
+        "auto_demotion",
+        "volumen_o_resolucion_critica"
+      ],
+      "metricas": {
+        "n_resueltas": 3,
+        "lineas_cubiertas": 3,
+        "brier": 0.10446082666666667,
+        "log_loss": 0.2982240560381949,
+        "ece": 1.0,
+        "resolved_rate": 0.14285714285714285,
+        "fallback_rate": 1.0,
+        "window_drift_brier": 0.0
+      }
+    }
+  ]
+}

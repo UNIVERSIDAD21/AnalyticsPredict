@@ -1,4 +1,4 @@
-from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion
+from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion, aplicar_autodemotion
 
 
 def test_no_apto_si_estado_rojo_o_volumen_critico():
@@ -41,6 +41,18 @@ def test_mapear_status_promocion():
     assert mapear_status_promocion("EXPERIMENTAL") == "LABORATORIO"
     assert mapear_status_promocion("VALIDACION") == "VALIDACION"
     assert mapear_status_promocion("PROMOCIONABLE") == "PROMOCIONABLE"
+
+
+def test_autodemotion_baja_estado_cuando_objetivo_es_menor():
+    nuevo, motivos = aplicar_autodemotion("PROMOCIONABLE", "VALIDACION", ["brier_empeora"])
+    assert nuevo == "VALIDACION"
+    assert "auto_demotion" in motivos
+
+
+def test_autodemotion_no_promueve_automaticamente():
+    nuevo, motivos = aplicar_autodemotion("LABORATORIO", "PROMOCIONABLE", ["cumple_umbral_promocion"])
+    assert nuevo == "LABORATORIO"
+    assert "sin_demotion" in motivos
 
 
 def test_validacion_si_pasa_base_pero_no_calibracion_fina():

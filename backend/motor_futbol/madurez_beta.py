@@ -84,3 +84,23 @@ def mapear_status_promocion(nivel: NivelMadurez) -> StatusPromocion:
     if nivel == "VALIDACION":
         return "VALIDACION"
     return "PROMOCIONABLE"
+
+
+def aplicar_autodemotion(
+    estado_actual: StatusPromocion,
+    estado_objetivo: StatusPromocion,
+    motivos_objetivo: List[str],
+) -> tuple[StatusPromocion, List[str]]:
+    orden = {
+        "BLOQUEADO": 0,
+        "LABORATORIO": 1,
+        "VALIDACION": 2,
+        "PROMOCIONABLE": 3,
+    }
+
+    # En monitoreo continuo, la regla es conservadora: se permite bajar automáticamente,
+    # pero no subir automáticamente sin proceso explícito de promoción.
+    if orden[estado_objetivo] < orden[estado_actual]:
+        return estado_objetivo, ["auto_demotion", *motivos_objetivo]
+
+    return estado_actual, ["sin_demotion", *motivos_objetivo]

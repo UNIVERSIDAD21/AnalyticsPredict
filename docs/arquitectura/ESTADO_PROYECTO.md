@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 11 política formal de salida beta por mercado + bloque 10/9/8/7/6/5)
+Última actualización: 2026-04-03 (bloque 12 monitoreo continuo/autodemotion + bloque 11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -111,6 +111,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 9 gate beta cuantitativo fútbol (2026-04-03): se institucionaliza salida beta gobernada por evidencia con matriz de madurez por mercado (`NO_APTO|EXPERIMENTAL|VALIDACION|PROMOCIONABLE`), endpoint de reporte reproducible (`/api/futbol/metricas/madurez-beta`), script batch de inventario operativo y endurecimiento UX para no presentar mercados críticos como soporte maduro. Estado actual del módulo: **BETA_LAB** hasta cumplir umbrales de promoción por mercado.
 - Bloque 10 walk-forward + scorecard promoción (2026-04-03): se agrega pipeline temporal auditable para evaluación por ventanas (`train/cal/eval`) y scorecard por mercado con métricas históricas (Brier, Log Loss, ECE, cobertura de líneas, fallback y estabilidad). Se formaliza salida operativa `BLOQUEADO|LABORATORIO|VALIDACION|PROMOCIONABLE` y se genera evidencia exportable para decisiones de promoción real sin sesgo visual.
 - Bloque 11 política formal salida beta/promoción parcial (2026-04-03): se consolida gobernanza por mercado en política canónica (`backend/config/futbol_politica_promocion.json`), endpoint de exposición (`/api/futbol/metricas/politica-promocion`), estado operativo embebido en trazabilidad del objetivo analítico y visualización explícita en UI. Se preserva estatus beta global del módulo y se habilita promoción solo parcial, auditable y reversible por mercado.
+- Bloque 12 monitoreo continuo + auto-demotion (2026-04-03): se incorpora vigilancia periódica por mercado con decisión automática de degradación cuando hay deterioro cuantitativo (cobertura, resolución, calibración, fallback). Se agrega endpoint para estado operativo vigente por mercado y reporte reproducible de autodemotion con motivos trazables. Sin auto-promoción para evitar ascensos por ruido temporal.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

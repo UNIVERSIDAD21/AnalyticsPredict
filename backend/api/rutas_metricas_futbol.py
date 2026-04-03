@@ -238,6 +238,35 @@ def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: floa
 
 
 @router.get(
+    "/estado-operativo-mercados",
+    summary="Estado operativo vigente por mercado (fútbol)",
+    description="Retorna estado vigente por mercado desde tabla canónica si existe.",
+)
+async def obtener_estado_operativo_mercados(
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> Dict[str, Any]:
+    pool = obtener_pool()
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cursor:
+            if not _tabla_existe(cursor, "futbol_estado_operativo_mercado"):
+                return {"exito": True, "disponible": False, "mercados": []}
+            cursor.execute(
+                """
+                SELECT mercado, estado_operativo, fuente, motivos, vigente_desde
+                FROM futbol_estado_operativo_mercado
+                WHERE vigente_hasta IS NULL
+                ORDER BY mercado
+                """
+            )
+            rows = cursor.fetchall()
+            return {
+                "exito": True,
+                "disponible": True,
+                "mercados": [dict(r) for r in rows],
+            }
+
+
+@router.get(
     "/politica-promocion",
     summary="Política formal de salida beta y promoción parcial por mercado",
     description="Retorna la política canónica de estados operativos por mercado para fútbol.",

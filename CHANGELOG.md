@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 12 fútbol (monitoreo continuo y auto-demotion por mercado):
+  - Se implementa regla de auto-demotion en `motor_futbol/madurez_beta.py`: los mercados pueden bajar automáticamente de estado cuando empeoran; no hay auto-promoción.
+  - Nuevo pipeline `backend/scripts/monitoreo_autodemotion_futbol.py` para vigilancia periódica por mercado (Brier/LogLoss/coverage/fallback/resolución) y decisión de degradación con motivos trazables.
+  - Nuevo endpoint `GET /api/futbol/metricas/estado-operativo-mercados` para exponer estado vigente por mercado desde tabla canónica cuando exista.
+  - Evidencia reproducible de monitoreo en `docs/reportes/BLOQUE_12_MONITOREO_AUTODEMOTION_FUTBOL.json`.
+  - Reporte técnico del bloque: `docs/reportes/BLOQUE_12_MONITOREO_CONTINUO_AUTODEMOTION.md`.
 - Bloque 11 fútbol (política formal de salida beta y promoción parcial por mercado):
   - Se formaliza política canónica en `backend/config/futbol_politica_promocion.json` con estados `BLOQUEADO|LABORATORIO|VALIDACION|PROMOCIONABLE`, significados operativos y reglas de transición cuantitativas.
   - Nuevo endpoint `GET /api/futbol/metricas/politica-promocion` para exponer política auditable en runtime.
