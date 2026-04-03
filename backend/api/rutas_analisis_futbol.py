@@ -1332,6 +1332,7 @@ def _obtener_partidos_equipo(
     solo_local: Optional[bool] = None,
     temporada_ids: Optional[List[str]] = None,
     fecha_minima: Optional[datetime] = None,
+    competicion_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Obtiene partidos recientes de un equipo (hasta limite)."""
     query = """
@@ -1363,6 +1364,10 @@ def _obtener_partidos_equipo(
           AND pf.fecha_partido < %s
     """
     params: List[Any] = [equipo_id, equipo_id, fecha_corte]
+
+    if competicion_id:
+        query += " AND pf.competicion_id::text = %s"
+        params.append(str(competicion_id))
 
     if temporada_ids:
         query += " AND pf.temporada_id::text = ANY(%s)"
@@ -1444,6 +1449,7 @@ def _obtener_partidos_h2h(
     limite: int,
     temporada_ids: Optional[List[str]] = None,
     fecha_minima: Optional[datetime] = None,
+    competicion_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Obtiene partidos H2H recientes entre dos equipos."""
     query = """
@@ -1484,6 +1490,10 @@ def _obtener_partidos_h2h(
         equipo_local_id,
         fecha_corte,
     ]
+
+    if competicion_id:
+        query += " AND pf.competicion_id::text = %s"
+        params.append(str(competicion_id))
 
     if temporada_ids:
         query += " AND pf.temporada_id::text = ANY(%s)"
@@ -2933,6 +2943,7 @@ async def analizar_partido(
                         limite_h2h,
                         temporada_ids=filtro_temporal.get("temporada_ids"),
                         fecha_minima=filtro_temporal.get("fecha_minima"),
+                        competicion_id=competicion_id,
                     )
                     partidos_local_global = _obtener_partidos_equipo(
                         cursor,
@@ -2942,6 +2953,7 @@ async def analizar_partido(
                         None,
                         temporada_ids=filtro_temporal.get("temporada_ids"),
                         fecha_minima=filtro_temporal.get("fecha_minima"),
+                        competicion_id=competicion_id,
                     )
                     partidos_local_home = _obtener_partidos_equipo(
                         cursor,
@@ -2951,6 +2963,7 @@ async def analizar_partido(
                         True,
                         temporada_ids=filtro_temporal.get("temporada_ids"),
                         fecha_minima=filtro_temporal.get("fecha_minima"),
+                        competicion_id=competicion_id,
                     )
                     partidos_visitante_global = _obtener_partidos_equipo(
                         cursor,
@@ -2960,6 +2973,7 @@ async def analizar_partido(
                         None,
                         temporada_ids=filtro_temporal.get("temporada_ids"),
                         fecha_minima=filtro_temporal.get("fecha_minima"),
+                        competicion_id=competicion_id,
                     )
                     partidos_visitante_away = _obtener_partidos_equipo(
                         cursor,
@@ -2969,6 +2983,7 @@ async def analizar_partido(
                         False,
                         temporada_ids=filtro_temporal.get("temporada_ids"),
                         fecha_minima=filtro_temporal.get("fecha_minima"),
+                        competicion_id=competicion_id,
                     )
                     partidos_liga = _obtener_partidos_liga(
                         cursor,

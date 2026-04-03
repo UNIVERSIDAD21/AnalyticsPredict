@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 6 fútbol decisión canónica + bloque 5 NBA ETL temporadas)
+Última actualización: 2026-04-03 (bloque 7 coherencia fútbol H2H/UI + bloque 6 decisión + bloque 5 NBA)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -106,6 +106,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque fútbol temporal (2026-04-03): `AnalisisRequest` recupera contrato temporal formal (`temporadas`/`fecha_minima`), consultas de contexto incorporan filtro por temporada o ventana explícita, y `objetivo.trazabilidad.temporal` publica estrategia efectiva + muestras usadas para auditoría reproducible. Dependencia abierta: calidad de catálogo de temporadas y marcación de activa/anterior por ETL/scraper (validación estructural pendiente en bloque de pipeline).
 - Bloque 5 NBA pipeline temporadas (2026-04-03): se auditó y endureció la ruta real `backend/scripts/scraper_equipos_recientes.py` con resolución de `temporada_id` por evento, detección de discrepancias `season_api` vs fecha, fallback controlado por creación/lookup y omisión explícita con advertencias cuando no se puede resolver. Estado de confiabilidad del filtro por temporadas: **confiable en este pipeline**; limitación residual: falta homologar la misma gobernanza en otros ingesters NBA (ej. `scraper_partidos_futuros.py`).
 - Bloque 6 fútbol capa de decisión (2026-04-03): se formaliza matemática canónica de decisión en `rutas_analisis_futbol` con `edge_raw` explícito, `edge_real` derivado de `p_decision` (calibrada solo si calibración aplica), y trazabilidad de `calibracion_aplicada` para evitar mezcla de transformaciones. En ENSEMBLE, `edge/score/sizing` se recomputan canónicamente (no por promedio de outputs ya transformados). Contrato extendido de forma backward-compatible para frontend (`calibracion_aplicada`, `edge_raw`).
+- Bloque 7 coherencia H2H/historial/UI (2026-04-03): se completa la base existente sin rehacerla: en backend de análisis, H2H e historial quedan acotados por competición + filtro temporal resuelto; en frontend adaptador, el contexto visual deja de asumir goles y pasa a métrica real del mercado objetivo (goles/corners/disparos) con perspectiva consistente equipo/rival/total y línea correspondiente.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

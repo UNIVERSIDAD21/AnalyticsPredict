@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 7 fútbol (coherencia H2H/historial/UI sin rehacer base):
+  - `backend/api/rutas_analisis_futbol.py`: H2H e historial del análisis quedan restringidos por `competicion_id` + gobernanza temporal existente (temporadas/fecha mínima), evitando contaminación de contexto cross-competición.
+  - `frontend/src/utilidades/adaptadores/futbolToNbaAnalisis.ts`: el contexto renderizado deja de usar goles como proxy genérico y pasa a resolver métrica real por mercado objetivo (goles/corners/disparos, incluyendo 1T/2T cuando aplica).
+  - Se alinea perspectiva del partido (equipo/rival/total) y línea visible con la métrica correcta del mercado activo.
+  - Pruebas nuevas:
+    - `backend/tests/test_futbol_contexto_competicion.py`
+    - `frontend/src/utilidades/adaptadores/futbolToNbaAnalisis.test.ts`
+  - Reporte técnico: `docs/reportes/BLOQUE_7_COHERENCIA_H2H_HISTORIAL_UI.md`.
 - Bloque 6 fútbol (capa de decisión canónica y trazable):
   - `backend/api/rutas_analisis_futbol.py`: se formaliza base matemática de decisión con `calibracion_aplicada` explícita, `edge_raw` canónico y recomputación canónica de `edge_real/score/sizing` en arbitraje ENSEMBLE para evitar mezcla opaca de transformaciones.
   - Fórmulas operativas explícitas:
