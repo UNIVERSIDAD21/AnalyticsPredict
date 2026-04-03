@@ -58,6 +58,25 @@ function cuotaValida(cuota?: number | null): number | null {
   return n;
 }
 
+type EstadoCuotas = 'sin_cuotas' | 'cuota_unica' | 'cuotas_completas' | 'no_disponible';
+
+function clasificarEstadoCuotas(rec: AnalisisFutbolResponse['recomendaciones'][number] | undefined): {
+  estado: EstadoCuotas;
+  cuotaSeleccion: number | null;
+  cuotaOver: number | null;
+  cuotaUnder: number | null;
+} {
+  if (!rec) return { estado: 'no_disponible', cuotaSeleccion: null, cuotaOver: null, cuotaUnder: null };
+  const cuotaOver = cuotaValida(rec.cuotaOver);
+  const cuotaUnder = cuotaValida(rec.cuotaUnder);
+  const cuotaSeleccion = cuotaValida(rec.cuota) ?? (rec.lado === 'OVER' ? cuotaOver : cuotaUnder) ?? cuotaOver ?? cuotaUnder;
+
+  const validas = [cuotaOver, cuotaUnder].filter((c) => c !== null).length;
+  if (validas === 2) return { estado: 'cuotas_completas', cuotaSeleccion, cuotaOver, cuotaUnder };
+  if (validas === 1 || cuotaSeleccion !== null) return { estado: 'cuota_unica', cuotaSeleccion, cuotaOver, cuotaUnder };
+  return { estado: 'sin_cuotas', cuotaSeleccion: null, cuotaOver: null, cuotaUnder: null };
+}
+
 function desdePerspectiva(partido: PartidoFutbolEstadistico, equipoId: string): { equipo: number; rival: number } {
   const esLocal = String(partido.equipoLocalId) === String(equipoId);
   if (esLocal) return { equipo: partido.golesLocal, rival: partido.golesVisitante };
@@ -140,50 +159,94 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     ),
   };
 
-  const cuotaPrincipal = cuotaValida(recObjetivo?.cuota) ?? cuotaValida(recObjetivo?.cuotaOver) ?? cuotaValida(recObjetivo?.cuotaUnder);
+  const estadoCuotas = clasificarEstadoCuotas(recObjetivo);
+  const cuotaPrincipal = estadoCuotas.cuotaSeleccion;
   const pMktRaw = cuotaPrincipal ? (1 / cuotaPrincipal) : null;
-  const pMktFair = numeroSeguro(recObjetivo?.devigPMktFair, pMktRaw ?? 0);
-  const scoreValido = cuotaPrincipal && Number.isFinite(recObjetivo?.score ?? NaN)
+  const overroundBackend = numeroNullable(recObjetivo?.devigOverround);
+  const overroundValido = overroundBackend !== null && overroundBackend > 0.9 && overroundBackend < 2.0;
+  const pMktFairBackend = numeroNullable(recObjetivo?.devigPMktFair);
+  const pMktFair = (estadoCuotas.estado === 'cuotas_completas' && pMktFairBackend !== null) ? pMktFairBackend : null;
+
+  const metodoDevig: 'exacto' | 'estimado' | 'no_aplicado' = estadoCuotas.estado === 'cuotas_completas'
+    ? 'exacto'
+    : estadoCuotas.estado === 'cuota_unica'
+      ? 'estimado'
+      : 'no_aplicado';
+
+  const edgeRealCanonico = metodoDevig === 'exacto' ? numeroNullable(recObjetivo?.edgeReal) : null;
+  const edgeRawCanonico = (pMktRaw !== null && numeroNullable(recObjetivo?.pRaw) !== null)
+    ? (numeroNullable(recObjetivo?.pRaw)! - pMktRaw)
+    : null;
+
+  const scoreValido = (metodoDevig === 'exacto') && Number.isFinite(recObjetivo?.score ?? NaN)
     ? Number(recObjetivo?.score)
     : null;
+
+  const advertenciasDevig = [
+    ...(recObjetivo?.advertencias ?? []),
+    ...(estadoCuotas.estado === 'sin_cuotas' ? ['Sin cuotas: comparación real contra la casa no disponible.'] : []),
+    ...(estadoCuotas.estado === 'cuota_unica' ? ['Cuota única: de-vig interno estimado, no comparable como mercado completo.'] : []),
+    ...(estadoCuotas.estado === 'cuotas_completas' && !overroundValido ? ['Overround inválido/absurdo: de-vig marcado como no disponible.'] : []),
+  ];
+
+  const penalizacionesScore: string[] = [];
+  if (estadoCuotas.estado === 'sin_cuotas') penalizacionesScore.push('SIN_DEVIG');
+  if (estadoCuotas.estado === 'cuota_unica') penalizacionesScore.push('DEVIG_ESTIMADO');
+
+  const kellyCanonico = (metodoDevig === 'exacto') ? numeroNullable(recObjetivo?.sizing) : null;
 
   const mejorApuestaDetalle = recObjetivo ? {
     mercado: recObjetivo.mercado,
     lado: recObjetivo.lado,
     linea: recObjetivo.linea,
     cuota: cuotaPrincipal ?? 0,
-    cuota_over: cuotaValida(recObjetivo.cuotaOver) ?? null,
-    cuota_under: cuotaValida(recObjetivo.cuotaUnder) ?? null,
+    cuota_over: estadoCuotas.cuotaOver,
+    cuota_under: estadoCuotas.cuotaUnder,
     probabilidad_sistema: numeroNullable(recObjetivo.probabilidad) ?? Number.NaN,
-    edge_real: Number.isFinite(recObjetivo.edgeReal ?? NaN) ? recObjetivo.edgeReal ?? null : null,
-    valor_esperado: Number.isFinite(recObjetivo.valorEsperado ?? NaN) ? recObjetivo.valorEsperado ?? null : null,
+    edge_real: edgeRealCanonico,
+    valor_esperado: metodoDevig === 'exacto' ? (numeroNullable(recObjetivo.valorEsperado)) : null,
     prediccion_media: mediaTotalRender,
     prediccion_desviacion: stdTotalRender,
     distancia_z: 0,
-    p_raw: Number.isFinite(recObjetivo.pRaw ?? NaN) ? recObjetivo.pRaw ?? null : null,
-    p_calibrada: Number.isFinite(recObjetivo.pCalibrada ?? NaN) ? recObjetivo.pCalibrada ?? null : null,
+    p_raw: numeroNullable(recObjetivo.pRaw),
+    p_calibrada: numeroNullable(recObjetivo.pCalibrada),
     calibrador_usado: null,
-    devig_metodo: cuotaPrincipal ? (recObjetivo.devigMetodo ?? 'estimado') : 'no_aplicado',
-    devig_overround: Number.isFinite(recObjetivo.devigOverround ?? NaN) ? recObjetivo.devigOverround ?? null : null,
+    devig_metodo: metodoDevig,
+    devig_overround: (metodoDevig === 'exacto' && overroundValido) ? overroundBackend : null,
     devig_p_mkt_raw: pMktRaw ?? Number.NaN,
-    devig_p_mkt_fair: cuotaPrincipal ? pMktFair : Number.NaN,
-    devig_advertencias: cuotaPrincipal ? (recObjetivo.advertencias ?? []) : ['Sin cuotas reales: no se puede calcular de-vig de mercado'],
-    edge_raw: null,
-    score_total: scoreValido ?? -1000,
-    score_componentes: { ev: 0, edge_real: 0, riesgo_valor: 0, riesgo_referencia: 1, riesgo_normalizado: 0, penalizacion_riesgo: 0, penalizacion_devig: cuotaPrincipal ? 0 : -20 },
+    devig_p_mkt_fair: pMktFair ?? Number.NaN,
+    devig_advertencias: advertenciasDevig,
+    edge_raw: edgeRawCanonico,
+    score_total: scoreValido,
+    score_componentes: scoreValido === null
+      ? null
+      : {
+          ev: numeroNullable(recObjetivo.valorEsperado) ?? 0,
+          edge_real: edgeRealCanonico ?? 0,
+          riesgo_valor: stdTotal ?? 0,
+          riesgo_referencia: mediaTotal !== null && mediaTotal > 0 ? mediaTotal : 1,
+          riesgo_normalizado: (stdTotal !== null && mediaTotal !== null && mediaTotal > 0) ? (stdTotal / mediaTotal) : 0,
+          penalizacion_riesgo: 0,
+          penalizacion_devig: penalizacionesScore.length > 0 ? -20 : 0,
+        },
     score_explicacion: scoreValido === null
-      ? 'Score no disponible: faltan datos mínimos válidos para evaluación de valor.'
+      ? `Score no evaluable (${estadoCuotas.estado}). Requiere cuotas completas y de-vig real válido.`
       : (recObjetivo.razon || 'Score calculado por backend fútbol'),
-    score_penalizaciones: cuotaPrincipal ? [] : ['SIN_DEVIG'],
-    kelly_full: Number.isFinite(recObjetivo.sizing ?? NaN) ? recObjetivo.sizing ?? null : null,
-    kelly_fraccional: Number.isFinite(recObjetivo.sizing ?? NaN) ? recObjetivo.sizing ?? null : null,
-    fraccion_kelly: Number.isFinite(recObjetivo.sizing ?? NaN) ? recObjetivo.sizing ?? null : null,
+    score_penalizaciones: penalizacionesScore,
+    kelly_full: kellyCanonico,
+    kelly_fraccional: kellyCanonico,
+    fraccion_kelly: kellyCanonico,
     stake: null,
     stake_porcentaje: null,
     bankroll_momento: null,
     perfil_riesgo_usado: 'MEDIO',
-    sizing_advertencias: cuotaPrincipal ? [] : ['Sin cuotas reales, sizing degradado'],
-    sizing_penalizaciones: {},
+    sizing_advertencias: kellyCanonico === null
+      ? ['Sizing no evaluable: requiere score y de-vig real con cuotas completas.']
+      : [],
+    sizing_penalizaciones: {
+      ...(estadoCuotas.estado === 'cuota_unica' ? { devig_estimado: 0.5 } : {}),
+      ...(estadoCuotas.estado === 'sin_cuotas' ? { devig_no_aplicado: 0.3 } : {}),
+    },
     aplicaron_caps: false,
   } : null;
 
@@ -211,13 +274,13 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       frescura_datos: 'ALTA',
       puntaje_total: 0.65,
     },
-    analisis_mercado: cuotaPrincipal
+    analisis_mercado: (metodoDevig === 'exacto' && cuotaPrincipal && edgeRealCanonico !== null)
       ? {
           cuota: cuotaPrincipal,
           probabilidad_implicita: 1 / cuotaPrincipal,
-          edge: (recObjetivo?.probabilidad ?? 0) - (1 / cuotaPrincipal),
-          valor_esperado: recObjetivo?.valorEsperado ?? 0,
-          recomendacion: mapearRecomendacion(recObjetivo?.valorEsperado ?? 0),
+          edge: edgeRealCanonico,
+          valor_esperado: numeroNullable(recObjetivo?.valorEsperado) ?? edgeRealCanonico,
+          recomendacion: mapearRecomendacion(numeroNullable(recObjetivo?.valorEsperado) ?? edgeRealCanonico),
         }
       : null,
     mejor_apuesta: recObjetivo
@@ -240,6 +303,11 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       mercado: analisis.objetivo?.mercado ?? 'COMPLETO',
       policy_gate: 'POLICY_GATE_FUTBOL_MERCADOS_BLOQUEADOS',
       modelo_version: analisis.modeloVersion,
+      estado_cuotas: estadoCuotas.estado,
+      metodo_devig: metodoDevig,
+      objetivo: analisis.objetivo,
+      fuente_recomendacion: recObjetivo?.fuente ?? null,
+      metadata_ensemble: recObjetivo?.metadataEnsemble ?? null,
     },
     contexto: {
       h2h: {
@@ -343,7 +411,9 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     advertencias_contexto: [
       ...(mediaTotal === null || stdTotal === null ? ['Datos insuficientes: no hay media/desviación válidas para el mercado objetivo exacto.'] : []),
       ...(pOver === null || pUnder === null ? ['Datos insuficientes: no hay probabilidades válidas para la línea objetivo exacta.'] : []),
-      ...(!cuotaPrincipal ? ['Análisis sin cuotas reales: se desactiva comparación de valor contra mercado.'] : []),
+      ...(estadoCuotas.estado === 'sin_cuotas' ? ['Sin cuotas: análisis de valor/calibración/riesgo no comparable contra casa.'] : []),
+      ...(estadoCuotas.estado === 'cuota_unica' ? ['Cuota única: solo fallback interno, sin comparación real completa contra casa.'] : []),
+      ...(estadoCuotas.estado === 'cuotas_completas' && !overroundValido ? ['Cuotas presentes pero de-vig inválido: overround fuera de rango.'] : []),
     ],
     mensaje_apuesta: analisis.recomendaciones?.length
       ? (mediaTotal === null || stdTotal === null || pOver === null || pUnder === null

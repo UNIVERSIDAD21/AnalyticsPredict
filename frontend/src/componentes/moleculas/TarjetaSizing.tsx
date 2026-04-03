@@ -140,6 +140,20 @@ export function TarjetaSizing({
   const tieneBankroll = bankroll !== null && bankroll > 0;
   const kellyPositivo = kellyFull !== null && kellyFull > 0;
 
+  if (kellyFull === null) {
+    return (
+      <Tarjeta className="animate-deslizar-arriba">
+        <div className="text-center py-6">
+          <AlertTriangle className="w-12 h-12 mx-auto text-texto-terciario mb-3" />
+          <p className="text-sm text-texto-secundario">Sizing no disponible</p>
+          <p className="text-xs text-texto-terciario mt-1">
+            No hay datos coherentes para calcular riesgo y stake en este mercado objetivo.
+          </p>
+        </div>
+      </Tarjeta>
+    );
+  }
+
   // Si Kelly es negativo o cero, no se recomienda apostar
   if (!kellyPositivo) {
     return (

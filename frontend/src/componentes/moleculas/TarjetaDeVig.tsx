@@ -129,9 +129,11 @@ export function TarjetaDeVig({
   pMktFair,
   edgeRaw,
   edgeReal,
+  advertencias = [],
 }: PropsTarjetaDeVig) {
   const config = obtenerConfigMetodo(metodo);
   const Icono = config.icono;
+  const overroundSano = overround !== null && isFinite(overround) && overround > 0.9 && overround < 2.0;
 
   return (
     <Tarjeta className="animate-deslizar-arriba">
@@ -161,10 +163,10 @@ export function TarjetaDeVig({
             <span className="text-[10px] uppercase tracking-wider">Overround</span>
           </div>
           <div className="text-lg font-mono font-bold text-neon-cyan">
-            {formatearOverround(overround)}
+            {formatearOverround(overroundSano ? overround : null)}
           </div>
           <div className="text-[10px] text-texto-terciario mt-1">
-            Vig: {calcularVig(overround)}
+            Vig: {calcularVig(overroundSano ? overround : null)}
           </div>
         </div>
 
@@ -269,6 +271,17 @@ export function TarjetaDeVig({
           </div>
         </div>
       </div>
+
+      {advertencias.length > 0 && (
+        <div className="mt-4 p-3 rounded-lg bg-neon-amarillo/5 border border-neon-amarillo/20">
+          <div className="flex items-center gap-2 mb-2 text-neon-amarillo text-xs font-bold uppercase tracking-wider">
+            <AlertTriangle size={12} /> Advertencias de de-vig
+          </div>
+          <ul className="space-y-1 text-[10px] text-texto-secundario">
+            {advertencias.map((a, i) => <li key={i}>• {a}</li>)}
+          </ul>
+        </div>
+      )}
 
       {/* Nota explicativa sobre de-vig */}
       <div className="mt-4 pt-3 border-t border-neon-cyan/10">
