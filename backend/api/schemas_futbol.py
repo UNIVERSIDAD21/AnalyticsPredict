@@ -204,25 +204,21 @@ class AnalisisRequest(BaseModel):
     linea_objetivo: Optional[float] = Field(default=None)
     temporadas: Optional[List[str]] = Field(
         default=None,
-        description="Temporadas a usar en el análisis (UUID o nombre, p.ej. ['2025-26']).",
-    )
-    ventana_dias_fallback: Optional[int] = Field(
-        default=730,
-        ge=30,
-        le=3650,
-        description="Ventana temporal en días cuando no se puede resolver filtro por temporadas.",
-    )
-    temporadas: Optional[List[str]] = Field(
-        default=None,
         description=(
             "IDs o nombres de temporadas a respetar estrictamente en el análisis. "
             "Si no se envía, backend usa temporada activa + anterior; "
             "si eso falla, aplica ventana temporal trazable."
         ),
     )
+    ventana_dias_fallback: Optional[int] = Field(
+        default=730,
+        ge=30,
+        le=3650,
+        description="Ventana temporal fallback (días) si no se resuelven temporadas.",
+    )
     fecha_minima: Optional[datetime] = Field(
         default=None,
-        description="Fecha mínima explícita para fallback temporal (ISO8601).",
+        description="Fecha mínima explícita opcional para fallback temporal (ISO8601).",
     )
 
     @field_validator("lineas_corners", "lineas_goles", "lineas_disparos", mode="before")

@@ -24,16 +24,14 @@ class CursorFake:
         return []
 
 
-def test_request_acepta_temporadas_y_bloquea_conflicto_con_fecha_minima():
-    req = AnalisisRequest(partido_id="11111111-1111-1111-1111-111111111111", temporadas=["2025/2026"])
+def test_request_acepta_temporadas_y_ventana_fallback():
+    req = AnalisisRequest(
+        partido_id="11111111-1111-1111-1111-111111111111",
+        temporadas=["2025/2026"],
+        ventana_dias_fallback=365,
+    )
     assert req.temporadas == ["2025/2026"]
-
-    with pytest.raises(ValueError):
-        AnalisisRequest(
-            partido_id="11111111-1111-1111-1111-111111111111",
-            temporadas=["2025/2026"],
-            fecha_minima="2025-01-01T00:00:00Z",
-        )
+    assert req.ventana_dias_fallback == 365
 
 
 def test_resolver_filtro_temporal_con_temporadas_explicitas():
