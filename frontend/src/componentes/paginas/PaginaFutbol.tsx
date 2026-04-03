@@ -25,7 +25,7 @@ import type {
   TipoMercadoFutbol,
   UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
-import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
+import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis, SeleccionCombinadaInput, ResultadoAnalisis as ResultadoAnalisisCanonico } from '../../tipos';
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta && window.location.search === '') return;
@@ -54,6 +54,23 @@ interface SeleccionCanonicaFutbol {
     origen: 'ui-futbol';
     timestampIso: string;
   };
+}
+
+interface RenderCanonicoFutbol {
+  seleccion: SeleccionCanonicaFutbol;
+  recomendacion: RecomendacionApuesta | null;
+  mercadoObjetivo: AnalisisFutbolResponse['objetivo'];
+  resultado: ResultadoAnalisisCanonico;
+  combinada: SeleccionCombinadaInput | null;
+  guardar: {
+    mercado: TipoMercadoFutbol;
+    lado: 'OVER' | 'UNDER';
+    linea: number;
+    cuota: number;
+    probabilidad: number;
+    confianza: RecomendacionApuesta['confianza'];
+    trazabilidad: string;
+  } | null;
 }
 
 function resolverMercadoCanonicoFutbol(
@@ -214,50 +231,79 @@ export function PaginaFutbol() {
     return 'tiros a puerta';
   }, [categoriaMercadoFutbol]);
 
-  const mercadoSeleccionadoActual = useMemo(() => {
-    if (!analisis || !seleccionCanonicaActiva) return null;
-    const key = seleccionCanonicaActiva.mercadoObjetivo;
-    return analisis.mercadosGoles[key] || analisis.mercadosCorners[key] || analisis.mercadosDisparos[key] || null;
-  }, [analisis, seleccionCanonicaActiva]);
+  const renderCanonico = useMemo<RenderCanonicoFutbol | null>(() => {
+    if (!analisis || !partidoSeleccionado || !seleccionCanonicaActiva) return null;
 
-  const recomendacionSeleccionada = useMemo<RecomendacionApuesta | null>(() => {
-    if (!analisis || !seleccionCanonicaActiva) return null;
-    const canon = seleccionCanonicaActiva;
-    return analisis.recomendaciones.find((rec) => (
-      rec.mercado === canon.mercadoObjetivo
-      && rec.lado === canon.lado
-      && Math.abs(rec.linea - canon.linea) < 1e-9
+    const resultado = adaptarAnalisisFutbolAResultadoAnalisis(analisis, { h2h: h2hPartidos, historialLocal, historialVisitante });
+    const recomendacion = analisis.recomendaciones.find((rec) => (
+      rec.mercado === seleccionCanonicaActiva.mercadoObjetivo
+      && rec.lado === seleccionCanonicaActiva.lado
+      && Math.abs(rec.linea - seleccionCanonicaActiva.linea) < 1e-9
     )) ?? null;
-  }, [analisis, seleccionCanonicaActiva]);
 
-  const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
-    if (!analisis || !partidoSeleccionado || !seleccionCanonicaActiva || !recomendacionSeleccionada) return null;
+    const cuotaCanonica = seleccionCanonicaActiva.cuotas.over
+      ?? seleccionCanonicaActiva.cuotas.under
+      ?? recomendacion?.cuota
+      ?? recomendacion?.cuotaOver
+      ?? recomendacion?.cuotaUnder
+      ?? 0;
 
     const periodoCombinada: Mercado = seleccionCanonicaActiva.periodo === '1T'
       ? 'Q1'
       : (seleccionCanonicaActiva.periodo === '2T' ? 'Q2' : 'COMPLETO');
 
+    const probabilidadCanonica = resultado.mejor_apuesta_detalle?.probabilidad_sistema
+      ?? recomendacion?.probabilidad
+      ?? 0;
+    const mediaCanonica = resultado.mejor_apuesta_detalle?.prediccion_media
+      ?? analisis.objetivo.mediaObjetivo
+      ?? null;
+    const desviacionCanonica = resultado.mejor_apuesta_detalle?.prediccion_desviacion
+      ?? analisis.objetivo.desviacionObjetivo
+      ?? null;
+
+    const combinada: SeleccionCombinadaInput | null = recomendacion
+      ? {
+          partido_id: partidoSeleccionado.id,
+          equipo_local: partidoSeleccionado.equipoLocalNombre,
+          equipo_visitante: partidoSeleccionado.equipoVisitanteNombre,
+          fecha_partido: partidoSeleccionado.fechaPartido,
+          mercado: periodoCombinada,
+          lado: seleccionCanonicaActiva.lado,
+          linea: seleccionCanonicaActiva.linea,
+          cuota: cuotaCanonica,
+          cuota_over: seleccionCanonicaActiva.cuotas.over ?? recomendacion.cuotaOver ?? null,
+          cuota_under: seleccionCanonicaActiva.cuotas.under ?? recomendacion.cuotaUnder ?? null,
+          probabilidad_sistema: probabilidadCanonica,
+          prediccion_media: mediaCanonica,
+          prediccion_desviacion: desviacionCanonica,
+          confianza_sistema: recomendacion.confianza === 'MUY_ALTA'
+            ? 'ALTA'
+            : (recomendacion.confianza === 'MUY_BAJA' ? 'BAJA' : (recomendacion.confianza as 'ALTA' | 'MEDIA' | 'BAJA')),
+          valor_esperado_individual: resultado.mejor_apuesta_detalle?.valor_esperado ?? recomendacion.valorEsperado ?? null,
+          razones: [{ razon: recomendacion.razon }],
+        }
+      : null;
+
     return {
-      partido_id: partidoSeleccionado.id,
-      equipo_local: partidoSeleccionado.equipoLocalNombre,
-      equipo_visitante: partidoSeleccionado.equipoVisitanteNombre,
-      fecha_partido: partidoSeleccionado.fechaPartido,
-      mercado: periodoCombinada,
-      lado: seleccionCanonicaActiva.lado,
-      linea: seleccionCanonicaActiva.linea,
-      cuota: seleccionCanonicaActiva.cuotas.over ?? seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuota ?? recomendacionSeleccionada.cuotaOver ?? recomendacionSeleccionada.cuotaUnder ?? 0,
-      cuota_over: seleccionCanonicaActiva.cuotas.over ?? recomendacionSeleccionada.cuotaOver ?? null,
-      cuota_under: seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuotaUnder ?? null,
-      probabilidad_sistema: recomendacionSeleccionada.probabilidad,
-      prediccion_media: mercadoSeleccionadoActual?.media ?? null,
-      prediccion_desviacion: mercadoSeleccionadoActual?.std ?? null,
-      confianza_sistema: recomendacionSeleccionada.confianza === 'MUY_ALTA'
-        ? 'ALTA'
-        : (recomendacionSeleccionada.confianza === 'MUY_BAJA' ? 'BAJA' : (recomendacionSeleccionada.confianza as 'ALTA' | 'MEDIA' | 'BAJA')),
-      valor_esperado_individual: recomendacionSeleccionada.valorEsperado ?? null,
-      razones: [{ razon: recomendacionSeleccionada.razon }],
+      seleccion: seleccionCanonicaActiva,
+      recomendacion,
+      mercadoObjetivo: analisis.objetivo,
+      resultado,
+      combinada,
+      guardar: recomendacion
+        ? {
+            mercado: seleccionCanonicaActiva.mercadoObjetivo,
+            lado: seleccionCanonicaActiva.lado,
+            linea: seleccionCanonicaActiva.linea,
+            cuota: cuotaCanonica,
+            probabilidad: probabilidadCanonica,
+            confianza: recomendacion.confianza,
+            trazabilidad: seleccionCanonicaActiva.trazabilidad.idSeleccion,
+          }
+        : null,
     };
-  }, [analisis, mercadoSeleccionadoActual, partidoSeleccionado, recomendacionSeleccionada, seleccionCanonicaActiva]);
+  }, [analisis, h2hPartidos, historialLocal, historialVisitante, partidoSeleccionado, seleccionCanonicaActiva]);
 
   const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
     try {
@@ -394,17 +440,17 @@ export function PaginaFutbol() {
   }, [cargarContexto, partidoSeleccionado, recargar]);
 
   const guardarApuesta = useCallback(async (stake: number) => {
-    if (!partidoSeleccionado || !seleccionCanonicaActiva || !recomendacionSeleccionada) return;
+    if (!partidoSeleccionado || !renderCanonico?.guardar) return;
     try {
       setGuardandoApuesta(true);
       await crearApuesta({
         partidoId: partidoSeleccionado.id,
-        mercado: seleccionCanonicaActiva.mercadoObjetivo,
-        lado: seleccionCanonicaActiva.lado,
-        linea: seleccionCanonicaActiva.linea,
-        cuota: seleccionCanonicaActiva.cuotas.over ?? seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuota ?? recomendacionSeleccionada.cuotaOver ?? recomendacionSeleccionada.cuotaUnder ?? 0,
+        mercado: renderCanonico.guardar.mercado,
+        lado: renderCanonico.guardar.lado,
+        linea: renderCanonico.guardar.linea,
+        cuota: renderCanonico.guardar.cuota,
         stake,
-        notas: `Guardado desde selección canónica fútbol (${seleccionCanonicaActiva.trazabilidad.idSeleccion})`,
+        notas: `Guardado desde render canónico fútbol (${renderCanonico.guardar.trazabilidad})`,
       });
       setMostrarGuardar(false);
       agregarToast({ titulo: 'Apuesta guardada', mensaje: 'Se registró en bitácora.', tipo: 'success' });
@@ -413,7 +459,7 @@ export function PaginaFutbol() {
     } finally {
       setGuardandoApuesta(false);
     }
-  }, [agregarToast, partidoSeleccionado, recomendacionSeleccionada, seleccionCanonicaActiva]);
+  }, [agregarToast, partidoSeleccionado, renderCanonico]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -503,14 +549,12 @@ export function PaginaFutbol() {
               />
             )}
 
-            {analisis && !cargandoAnalisis && (
+            {renderCanonico && !cargandoAnalisis && (
               <div className="space-y-4">
                 <ResultadoAnalisis
-                  resultado={adaptarAnalisisFutbolAResultadoAnalisis(analisis, { h2h: h2hPartidos, historialLocal, historialVisitante })}
+                  resultado={renderCanonico.resultado}
                   advertencias={[]}
-                  seleccionUsuario={seleccionCanonicaActiva
-                    ? { lado: seleccionCanonicaActiva.lado, linea: seleccionCanonicaActiva.linea }
-                    : null}
+                  seleccionUsuario={{ lado: renderCanonico.seleccion.lado, linea: renderCanonico.seleccion.linea }}
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
                   onGuardar={() => setMostrarGuardar(true)}
@@ -524,9 +568,9 @@ export function PaginaFutbol() {
               </div>
             )}
 
-            {analisis && !cargandoAnalisis && (
+            {renderCanonico && !cargandoAnalisis && (
               <div className="mt-4">
-                <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
+                <CreadorCombinada seleccionActual={renderCanonico.combinada} />
               </div>
             )}
 
@@ -539,7 +583,7 @@ export function PaginaFutbol() {
         </div>
       </main>
 
-      {seleccionCanonicaActiva && recomendacionSeleccionada && partidoSeleccionado && (
+      {renderCanonico?.guardar && partidoSeleccionado && (
         <ModalGuardarApuestaFutbol
           mostrar={mostrarGuardar}
           onCerrar={() => setMostrarGuardar(false)}
@@ -551,12 +595,12 @@ export function PaginaFutbol() {
             fecha: partidoSeleccionado.fechaPartido,
           }}
           recomendacion={{
-            mercado: seleccionCanonicaActiva.mercadoObjetivo,
-            lado: seleccionCanonicaActiva.lado,
-            linea: seleccionCanonicaActiva.linea,
-            cuota: seleccionCanonicaActiva.cuotas.over ?? seleccionCanonicaActiva.cuotas.under ?? recomendacionSeleccionada.cuota ?? recomendacionSeleccionada.cuotaOver ?? recomendacionSeleccionada.cuotaUnder ?? 0,
-            probabilidad: recomendacionSeleccionada.probabilidad,
-            confianza: recomendacionSeleccionada.confianza,
+            mercado: renderCanonico.guardar.mercado,
+            lado: renderCanonico.guardar.lado,
+            linea: renderCanonico.guardar.linea,
+            cuota: renderCanonico.guardar.cuota,
+            probabilidad: renderCanonico.guardar.probabilidad,
+            confianza: renderCanonico.guardar.confianza,
           }}
         />
       )}
