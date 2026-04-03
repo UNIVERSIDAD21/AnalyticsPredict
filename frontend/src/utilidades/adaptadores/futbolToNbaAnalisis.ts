@@ -21,29 +21,11 @@ function mapearRecomendacion(valorEsperado: number): TipoRecomendacion {
 
 function pickMainMarket(analisis: AnalisisFutbolResponse): PrediccionMercadoFutbol | null {
   const mercadoObjetivo = analisis.objetivo?.mercado;
-  if (mercadoObjetivo) {
-    return (
-      analisis.mercadosGoles[mercadoObjetivo]
-      || analisis.mercadosCorners[mercadoObjetivo]
-      || analisis.mercadosDisparos[mercadoObjetivo]
-      || null
-    );
-  }
-
-  const rec = analisis.recomendaciones?.[0];
-  if (rec) {
-    return (
-      analisis.mercadosGoles[rec.mercado]
-      || analisis.mercadosCorners[rec.mercado]
-      || analisis.mercadosDisparos[rec.mercado]
-      || null
-    );
-  }
-
+  if (!mercadoObjetivo) return null;
   return (
-    Object.values(analisis.mercadosGoles)[0]
-    || Object.values(analisis.mercadosCorners)[0]
-    || Object.values(analisis.mercadosDisparos)[0]
+    analisis.mercadosGoles[mercadoObjetivo]
+    || analisis.mercadosCorners[mercadoObjetivo]
+    || analisis.mercadosDisparos[mercadoObjetivo]
     || null
   );
 }
@@ -56,6 +38,18 @@ function promedio(nums: number[]): number {
 function numeroSeguro(valor: unknown, fallback = 0): number {
   const n = typeof valor === 'number' ? valor : Number(valor);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function numeroNullable(valor: unknown): number | null {
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(n) ? n : null;
+}
+
+function buscarProbabilidadLinea(mercado: PrediccionMercadoFutbol | null, linea: number): PrediccionMercadoFutbol['probabilidades'][number] | null {
+  if (!mercado) return null;
+  return mercado.probabilidades.find((p) => Math.abs(p.linea - linea) < 1e-9)
+    ?? mercado.probabilidades.find((p) => Math.abs(p.linea - linea) < 1e-6)
+    ?? null;
 }
 
 function cuotaValida(cuota?: number | null): number | null {
@@ -99,21 +93,24 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   )) ?? analisis.recomendaciones?.[0];
 
   const mercadoMain = pickMainMarket(analisis);
-  const lineaMain = numeroSeguro(analisis.objetivo?.linea ?? mercadoMain?.probabilidades?.[0]?.linea ?? recObjetivo?.linea, 0);
-  const pOver = numeroSeguro(
-    mercadoMain?.probabilidades?.find((p) => p.linea === lineaMain)?.overCalibrada
-    ?? mercadoMain?.probabilidades?.[0]?.overCalibrada
-    ?? recObjetivo?.probabilidad,
-    0,
-  );
-  const pUnder = Math.max(0, Math.min(1, 1 - pOver));
+  const lineaMain = numeroNullable(analisis.objetivo?.linea ?? recObjetivo?.linea);
+  const probLineaObjetivo = lineaMain !== null ? buscarProbabilidadLinea(mercadoMain, lineaMain) : null;
 
-  const mediaTotal = numeroSeguro(mercadoMain?.media, 0);
-  const stdTotal = numeroSeguro(mercadoMain?.std, 0);
-  const mediaEq = mediaTotal * 0.48;
-  const mediaRv = mediaTotal * 0.52;
-  const stdEq = Math.max(0.5, stdTotal * 0.7);
-  const stdRv = Math.max(0.5, stdTotal * 0.7);
+  const pOver = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.over)
+    ?? numeroNullable(probLineaObjetivo?.overCalibrada)
+    ?? (recObjetivo && recObjetivo.lado === 'OVER' ? numeroNullable(recObjetivo.probabilidad) : null);
+  const pUnder = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.under)
+    ?? numeroNullable(probLineaObjetivo?.underCalibrada)
+    ?? (recObjetivo && recObjetivo.lado === 'UNDER' ? numeroNullable(recObjetivo.probabilidad) : null);
+
+  const mediaTotal = numeroNullable(analisis.objetivo?.mediaObjetivo) ?? numeroNullable(mercadoMain?.media);
+  const stdTotal = numeroNullable(analisis.objetivo?.desviacionObjetivo) ?? numeroNullable(mercadoMain?.std);
+  const mediaTotalRender = mediaTotal ?? Number.NaN;
+  const stdTotalRender = stdTotal ?? Number.NaN;
+  const mediaEq = Number.isFinite(mediaTotalRender) ? mediaTotalRender * 0.48 : Number.NaN;
+  const mediaRv = Number.isFinite(mediaTotalRender) ? mediaTotalRender * 0.52 : Number.NaN;
+  const stdEq = Number.isFinite(stdTotalRender) ? Math.max(0.5, stdTotalRender * 0.7) : Number.NaN;
+  const stdRv = Number.isFinite(stdTotalRender) ? Math.max(0.5, stdTotalRender * 0.7) : Number.NaN;
 
   const h2h = contexto?.h2h ?? [];
   const historialLocal = contexto?.historialLocal ?? [];
@@ -129,9 +126,9 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     media_rival: mediaRv,
     desviacion_rival: stdRv,
     rango_rival: [mediaRv - stdRv, mediaRv + stdRv],
-    media_total: mediaTotal,
-    desviacion_total: stdTotal,
-    rango_total: [mediaTotal - stdTotal, mediaTotal + stdTotal],
+    media_total: mediaTotalRender,
+    desviacion_total: stdTotalRender,
+    rango_total: [mediaTotalRender - stdTotalRender, mediaTotalRender + stdTotalRender],
     linea_analizada: lineaMain,
     probabilidad_over: pOver,
     probabilidad_under: pUnder,
@@ -157,11 +154,11 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     cuota: cuotaPrincipal ?? 0,
     cuota_over: cuotaValida(recObjetivo.cuotaOver) ?? null,
     cuota_under: cuotaValida(recObjetivo.cuotaUnder) ?? null,
-    probabilidad_sistema: numeroSeguro(recObjetivo.probabilidad, 0),
+    probabilidad_sistema: numeroNullable(recObjetivo.probabilidad) ?? Number.NaN,
     edge_real: Number.isFinite(recObjetivo.edgeReal ?? NaN) ? recObjetivo.edgeReal ?? null : null,
     valor_esperado: Number.isFinite(recObjetivo.valorEsperado ?? NaN) ? recObjetivo.valorEsperado ?? null : null,
-    prediccion_media: mediaTotal,
-    prediccion_desviacion: stdTotal,
+    prediccion_media: mediaTotalRender,
+    prediccion_desviacion: stdTotalRender,
     distancia_z: 0,
     p_raw: Number.isFinite(recObjetivo.pRaw ?? NaN) ? recObjetivo.pRaw ?? null : null,
     p_calibrada: Number.isFinite(recObjetivo.pCalibrada ?? NaN) ? recObjetivo.pCalibrada ?? null : null,
@@ -258,7 +255,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
         promedio_total: promedio(h2h.map((p) => p.golesLocal + p.golesVisitante)),
         promedio_equipo: promedio(h2h.map((p) => desdePerspectiva(p, equipoAnalizadoId).equipo)),
         promedio_rival: promedio(h2h.map((p) => desdePerspectiva(p, equipoAnalizadoId).rival)),
-        tendencia_over: promedio(h2h.map((p) => ((p.golesLocal + p.golesVisitante) > lineaMain ? 1 : 0))),
+        tendencia_over: promedio(h2h.map((p) => (lineaMain !== null && (p.golesLocal + p.golesVisitante) > lineaMain ? 1 : 0))),
         ultimo_enfrentamiento: h2h[0] ? {
           fecha: h2h[0].fechaPartido,
           puntos_equipo: desdePerspectiva(h2h[0], equipoAnalizadoId).equipo,
@@ -304,48 +301,53 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       stats_temporada_equipo: {},
       stats_temporada_rival: {},
     },
-    prediccion_base: {
-      media: mediaTotal,
-      probabilidad_over: pOver,
-      probabilidad_under: pUnder,
-    },
-    prediccion_ajustada: {
-      media_base: mediaTotal,
-      desviacion_base: stdTotal,
-      probabilidad_over_base: pOver,
-      probabilidad_under_base: pUnder,
-      media_ajustada: mediaTotal,
-      probabilidad_over_ajustada: pOver,
-      probabilidad_under_ajustada: pUnder,
-      ajustes_aplicados: {
-        ajustes: [],
-        ajuste_total: 0,
-        ajuste_total_capped: 0,
-        fue_capped: false,
-        advertencias: [],
-        confianza_delta: 0,
-      },
-      confianza_base: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
-      confianza_ajustada: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
-    },
+    prediccion_base: (mediaTotal !== null && pOver !== null && pUnder !== null)
+      ? {
+          media: mediaTotal,
+          probabilidad_over: pOver,
+          probabilidad_under: pUnder,
+        }
+      : null,
+    prediccion_ajustada: (mediaTotal !== null && stdTotal !== null && pOver !== null && pUnder !== null)
+      ? {
+          media_base: mediaTotal,
+          desviacion_base: stdTotal,
+          probabilidad_over_base: pOver,
+          probabilidad_under_base: pUnder,
+          media_ajustada: mediaTotal,
+          probabilidad_over_ajustada: pOver,
+          probabilidad_under_ajustada: pUnder,
+          ajustes_aplicados: {
+            ajustes: [],
+            ajuste_total: 0,
+            ajuste_total_capped: 0,
+            fue_capped: false,
+            advertencias: ['Sin ajuste contextual real para el mercado objetivo.'],
+            confianza_delta: 0,
+          },
+          confianza_base: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
+          confianza_ajustada: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
+        }
+      : null,
     ajustes: {
       ajustes: [],
       ajuste_total: 0,
       ajuste_total_capped: 0,
       fue_capped: false,
-      advertencias: [],
+      advertencias: ['Sin ajuste contextual real para el mercado objetivo.'],
       confianza_delta: 0,
     },
     probabilidad_over: pOver,
     probabilidad_under: pUnder,
-    linea_analizada: lineaMain > 0 ? lineaMain : null,
+    linea_analizada: lineaMain !== null && lineaMain > 0 ? lineaMain : null,
     advertencias_contexto: [
-      ...(mediaTotal <= 0 || stdTotal <= 0 ? ['Mercado principal sin media/desviación válidas. Verifica selección y disponibilidad de datos.'] : []),
+      ...(mediaTotal === null || stdTotal === null ? ['Datos insuficientes: no hay media/desviación válidas para el mercado objetivo exacto.'] : []),
+      ...(pOver === null || pUnder === null ? ['Datos insuficientes: no hay probabilidades válidas para la línea objetivo exacta.'] : []),
       ...(!cuotaPrincipal ? ['Análisis sin cuotas reales: se desactiva comparación de valor contra mercado.'] : []),
     ],
     mensaje_apuesta: analisis.recomendaciones?.length
-      ? (mediaTotal <= 0 || stdTotal <= 0
-          ? 'Inconsistencia detectada: faltan datos válidos del mercado principal para evaluación completa.'
+      ? (mediaTotal === null || stdTotal === null || pOver === null || pUnder === null
+          ? 'Datos insuficientes: no se puede evaluar completamente el mercado objetivo sin degradación.'
           : 'Tu predicción coincide con la recomendación del sistema')
       : 'Sin recomendación disponible',
   } as ResultadoAnalisis;

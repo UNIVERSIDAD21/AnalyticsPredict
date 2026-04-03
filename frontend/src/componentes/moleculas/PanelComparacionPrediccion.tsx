@@ -119,6 +119,10 @@ export function PanelComparacionPrediccion({
         ? prediccionAjustada.probabilidadOver
         : prediccionAjustada.probabilidadUnder;
 
+    const sinAjusteReal = Math.abs(diferenciaPuntos) < 1e-9
+      && Math.abs(diferenciaProbOver) < 1e-9
+      && Math.abs(diferenciaProbUnder) < 1e-9;
+
     return {
       diferenciaPuntos,
       diferenciaProbOver,
@@ -128,6 +132,7 @@ export function PanelComparacionPrediccion({
       recomendacionCambio,
       probLadoBase,
       probLadoAjustada,
+      sinAjusteReal,
     };
   }, [prediccionBase, prediccionAjustada]);
 
@@ -363,6 +368,12 @@ export function PanelComparacionPrediccion({
           </div>
         </div>
       </div>
+
+      {datos.sinAjusteReal && (
+        <div className="p-3 rounded-lg bg-neon-cyan/10 border border-neon-cyan/30 text-sm text-texto-secundario">
+          No hubo ajuste contextual real para este mercado objetivo: base y ajustada son idénticas.
+        </div>
+      )}
 
       {/* Alerta de cambio de recomendación */}
       {datos.recomendacionCambio && (

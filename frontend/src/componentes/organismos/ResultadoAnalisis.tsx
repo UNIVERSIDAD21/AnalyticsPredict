@@ -173,22 +173,27 @@ export function ResultadoAnalisis({
 
   const probabilidadOver = numeroValido(resultado.probabilidad_over)
     ? resultado.probabilidad_over!
-    : (resultado.prediccion_ajustada?.probabilidad_over_ajustada ?? prediccionMercado?.probabilidad_over ?? 0);
+    : (numeroValido(resultado.prediccion_ajustada?.probabilidad_over_ajustada)
+      ? resultado.prediccion_ajustada!.probabilidad_over_ajustada
+      : (numeroValido(prediccionMercado?.probabilidad_over) ? prediccionMercado!.probabilidad_over : null));
   const probabilidadUnder = numeroValido(resultado.probabilidad_under)
     ? resultado.probabilidad_under!
-    : (resultado.prediccion_ajustada?.probabilidad_under_ajustada ?? prediccionMercado?.probabilidad_under ?? 0);
+    : (numeroValido(resultado.prediccion_ajustada?.probabilidad_under_ajustada)
+      ? resultado.prediccion_ajustada!.probabilidad_under_ajustada
+      : (numeroValido(prediccionMercado?.probabilidad_under) ? prediccionMercado!.probabilidad_under : null));
 
   const mediaTotal = numeroValido(detalle?.prediccion_media)
     ? detalle!.prediccion_media
-    : (resultado.prediccion_ajustada?.media_ajustada
-      ?? prediccionMercado?.media_total
-      ?? resultado.prediccion_base?.media
-      ?? 0);
+    : (numeroValido(resultado.prediccion_ajustada?.media_ajustada)
+      ? resultado.prediccion_ajustada!.media_ajustada
+      : (numeroValido(prediccionMercado?.media_total)
+        ? prediccionMercado!.media_total
+        : (numeroValido(resultado.prediccion_base?.media) ? resultado.prediccion_base!.media : null)));
   const desviacion = numeroValido(detalle?.prediccion_desviacion)
     ? detalle!.prediccion_desviacion
-    : (resultado.prediccion_ajustada?.desviacion_base
-      ?? prediccionMercado?.desviacion_total
-      ?? 0);
+    : (numeroValido(resultado.prediccion_ajustada?.desviacion_base)
+      ? resultado.prediccion_ajustada!.desviacion_base
+      : (numeroValido(prediccionMercado?.desviacion_total) ? prediccionMercado!.desviacion_total : null));
 
   const unidadAnalisis = esFutbol ? unidadPorMercadoFutbol(mercadoCanon) : 'puntos';
 
@@ -210,9 +215,10 @@ export function ResultadoAnalisis({
     : resultado.rival_nombre_completo;
 
   // Determinar si la predicción del usuario coincide con el sistema
-  const sistemaRecomienda: LadoApuesta = probabilidadOver > probabilidadUnder ? 'OVER' : 'UNDER';
+  const sistemaRecomienda: LadoApuesta = (probabilidadOver !== null && probabilidadUnder !== null && probabilidadOver > probabilidadUnder) ? 'OVER' : 'UNDER';
   const coincideConSistema = seleccionUsuario?.lado === sistemaRecomienda;
   const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
+  const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadOver === null || probabilidadUnder === null;
 
   // Fase 2: Extraer datos avanzados
   const noApto = esEstadoNoApto(resultado, detalle);
@@ -328,7 +334,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           5. PROBABILIDADES
           ═══════════════════════════════════════════════════════════ */}
-      {linea > 0 && (
+      {linea > 0 && !metricaObjetivoInvalida && (
         <TarjetaProbabilidad
           linea={linea}
           probabilidadOver={probabilidadOver}
@@ -340,17 +346,29 @@ export function ResultadoAnalisis({
         />
       )}
 
+      {metricaObjetivoInvalida && (
+        <PanelAdvertencias advertencias={[
+          'Datos insuficientes del mercado objetivo: no se puede renderizar media/desviación/probabilidades sin degradación honesta.',
+        ]} />
+      )}
+
       {/* ═══════════════════════════════════════════════════════════
           6. SECCIÓN: AJUSTES CONTEXTUALES (Fase 3)
           ═══════════════════════════════════════════════════════════ */}
 
       {/* Panel de Comparación Base vs Ajustada */}
-      {resultado.prediccion_ajustada && resultado.prediccion_base && (
+      {resultado.prediccion_ajustada && resultado.prediccion_base
+        && numeroValido(resultado.prediccion_base.media)
+        && numeroValido(resultado.prediccion_base.probabilidad_over)
+        && numeroValido(resultado.prediccion_base.probabilidad_under)
+        && numeroValido(resultado.prediccion_ajustada.media_ajustada)
+        && numeroValido(resultado.prediccion_ajustada.probabilidad_over_ajustada)
+        && numeroValido(resultado.prediccion_ajustada.probabilidad_under_ajustada) && (
         <PanelComparacionPrediccion
           prediccionBase={{
             media: resultado.prediccion_base.media,
-            probabilidadOver: resultado.prediccion_base.probabilidad_over ?? 0,
-            probabilidadUnder: resultado.prediccion_base.probabilidad_under ?? 0,
+            probabilidadOver: resultado.prediccion_base.probabilidad_over,
+            probabilidadUnder: resultado.prediccion_base.probabilidad_under,
           }}
           prediccionAjustada={{
             media: resultado.prediccion_ajustada.media_ajustada,
