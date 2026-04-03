@@ -2067,7 +2067,7 @@ def _registrar_predicciones_futbol(
             %s::mercado_futbol, %s, %s, %s, %s,
             %s, %s, %s, %s, %s, %s, %s
         )
-        ON CONFLICT (id) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT uq_prediccion_futbol DO UPDATE SET
             modelo_version_id = EXCLUDED.modelo_version_id,
             competicion_id = EXCLUDED.competicion_id,
             temporada_id = EXCLUDED.temporada_id,
@@ -2076,8 +2076,6 @@ def _registrar_predicciones_futbol(
             equipo_local_nombre = EXCLUDED.equipo_local_nombre,
             equipo_visitante_nombre = EXCLUDED.equipo_visitante_nombre,
             fecha_partido = EXCLUDED.fecha_partido,
-            mercado = EXCLUDED.mercado,
-            linea = EXCLUDED.linea,
             linea_es_sintetica = EXCLUDED.linea_es_sintetica,
             media_predicha = EXCLUDED.media_predicha,
             desviacion_predicha = EXCLUDED.desviacion_predicha,
