@@ -94,3 +94,26 @@ def test_respuesta_no_apta_incluye_mensaje(monkeypatch):
         respuesta.datos["mensaje_apuesta"]
         == "NO_APTO: EV<=0 o edge_real<=0 en todos los candidatos"
     )
+
+
+def test_cuota_legacy_sin_lado_explicito_no_falla_validacion(monkeypatch):
+    _stub_ejecucion(
+        monkeypatch,
+        {
+            "mejor_apuesta": None,
+            "mensaje_apuesta": "NO_APTO: SIN_CANDIDATOS",
+            "candidatos": [],
+        },
+    )
+
+    peticion = PeticionAnalisis(
+        equipo_local="Lakers",
+        equipo_visitante="Heat",
+        mercado="Q1",
+        linea=50.5,
+        cuota=1.9,
+    )
+
+    respuesta = rutas_analisis.ejecutar_analisis(peticion)
+
+    assert respuesta.exito is True

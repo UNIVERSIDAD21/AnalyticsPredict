@@ -83,17 +83,25 @@ def validar_equipos(modelo, equipo_local: str, equipo_visitante: str) -> None:
 def _obtener_config_usuario(usuario_id: Optional[UUID]) -> Optional[dict]:
     if usuario_id is None:
         return None
-    with obtener_pool().connection() as conexion:
-        with conexion.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                SELECT bankroll_actual, perfil_riesgo_default, config_sizing
-                FROM usuarios
-                WHERE id = %s
-                """,
-                [str(usuario_id)],
-            )
-            return cursor.fetchone()
+
+    try:
+        with obtener_pool().connection() as conexion:
+            with conexion.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT bankroll_actual, perfil_riesgo_default, config_sizing
+                    FROM usuarios
+                    WHERE id = %s
+                    """,
+                    [str(usuario_id)],
+                )
+                return cursor.fetchone()
+    except Exception:
+        logger.exception(
+            "No se pudo obtener configuración de usuario para sizing (usuario_id=%s)",
+            usuario_id,
+        )
+        return None
 
 
 def _construir_configuracion_sizing(
@@ -159,9 +167,6 @@ def _validar_peticion_analisis(peticion: PeticionAnalisis) -> List[str]:
         cuota is not None
         for cuota in (peticion.cuota, peticion.cuota_over, peticion.cuota_under)
     )
-
-    if cuotas_presentes and "lado" not in peticion.model_fields_set:
-        raise ErrorValidacion("Debes indicar lado cuando envías cuotas.")
 
     if peticion.lado not in {"OVER", "UNDER"}:
         raise ErrorValidacion("lado debe ser OVER o UNDER.")
