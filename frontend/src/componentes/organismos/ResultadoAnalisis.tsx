@@ -221,7 +221,9 @@ export function ResultadoAnalisis({
   const sistemaRecomienda: LadoApuesta = (probabilidadOver !== null && probabilidadUnder !== null && probabilidadOver > probabilidadUnder) ? 'OVER' : 'UNDER';
   const coincideConSistema = seleccionUsuario?.lado === sistemaRecomienda;
   const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
-  const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadOver === null || probabilidadUnder === null;
+  const probabilidadesNulas = probabilidadOver === null || probabilidadUnder === null;
+  const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
+  const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
 
   // Fase 2: Extraer datos avanzados
   const noApto = esEstadoNoApto(resultado, detalle);

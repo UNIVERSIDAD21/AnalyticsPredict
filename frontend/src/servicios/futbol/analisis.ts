@@ -118,7 +118,7 @@ function transformarRecomendacion(
     mercado: String(data.mercado || '') as TipoMercadoFutbol,
     lado: (data.lado as 'OVER' | 'UNDER') || 'OVER',
     linea: Number(data.linea || 0),
-    probabilidad: Number(data.probabilidad || 0),
+    probabilidad: numeroDesde(data, 'probabilidad', 'p_calibrada', 'p_raw') ?? Number.NaN,
     confianza: (data.confianza as NivelConfianza) || 'MEDIA',
     valorEsperado: data.valor_esperado !== undefined ? Number(data.valor_esperado) : undefined,
     razon: String(data.razon || ''),
