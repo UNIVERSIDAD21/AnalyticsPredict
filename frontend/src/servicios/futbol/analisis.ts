@@ -19,6 +19,16 @@ import type {
 // TRANSFORMADORES
 // ══════════════════════════════════════════════════════════════
 
+function numeroDesde(data: Record<string, unknown>, ...keys: string[]): number | null {
+  for (const key of keys) {
+    if (data[key] !== undefined && data[key] !== null) {
+      const n = Number(data[key]);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+
 /**
  * Transforma un partido resumen de snake_case a camelCase
  */
@@ -52,11 +62,11 @@ function transformarProbabilidadLinea(
 ): ProbabilidadLinea {
   const razones = Array.isArray(data.razones) ? (data.razones as ProbabilidadLinea['razones']) : undefined;
   return {
-    linea: Number(data.linea || 0),
-    overRaw: Number(data.over_raw || data.over || 0),
-    overCalibrada: Number(data.over_calibrada || data.over || 0),
-    underRaw: Number(data.under_raw || data.under || 0),
-    underCalibrada: Number(data.under_calibrada || data.under || 0),
+    linea: numeroDesde(data, 'linea') ?? 0,
+    overRaw: numeroDesde(data, 'over_raw', 'over') ?? Number.NaN,
+    overCalibrada: numeroDesde(data, 'over_calibrada', 'over') ?? Number.NaN,
+    underRaw: numeroDesde(data, 'under_raw', 'under') ?? Number.NaN,
+    underCalibrada: numeroDesde(data, 'under_calibrada', 'under') ?? Number.NaN,
     razones,
   };
 }
@@ -91,8 +101,8 @@ function transformarPrediccionMercado(
 
   return {
     mercado: String(data.mercado || '') as TipoMercadoFutbol,
-    media: Number(data.media || 0),
-    std: Number(data.std || data.desviacion || 0),
+    media: numeroDesde(data, 'media') ?? Number.NaN,
+    std: numeroDesde(data, 'std', 'desviacion') ?? Number.NaN,
     probabilidades: probabilidadesArray,
     confianza: (data.confianza as NivelConfianza) || 'MEDIA',
   };
@@ -168,10 +178,10 @@ function transformarObjetivoAnalisis(
     desviacionObjetivo: data.desviacion_objetivo !== undefined ? Number(data.desviacion_objetivo) : null,
     probabilidadesObjetivo: {
       over: data.probabilidades_objetivo && typeof data.probabilidades_objetivo === 'object'
-        ? Number(((data.probabilidades_objetivo as Record<string, unknown>).over ?? Number.NaN)) || null
+        ? numeroDesde((data.probabilidades_objetivo as Record<string, unknown>), 'over')
         : null,
       under: data.probabilidades_objetivo && typeof data.probabilidades_objetivo === 'object'
-        ? Number(((data.probabilidades_objetivo as Record<string, unknown>).under ?? Number.NaN)) || null
+        ? numeroDesde((data.probabilidades_objetivo as Record<string, unknown>), 'under')
         : null,
     },
     bloqueBase: {
@@ -180,10 +190,10 @@ function transformarObjetivoAnalisis(
       desviacion: bloqueBase.desviacion !== undefined ? Number(bloqueBase.desviacion) : null,
       probabilidades: {
         over: bloqueBase.probabilidades && typeof bloqueBase.probabilidades === 'object'
-          ? Number((((bloqueBase.probabilidades as Record<string, unknown>).over) ?? Number.NaN)) || null
+          ? numeroDesde((bloqueBase.probabilidades as Record<string, unknown>), 'over')
           : null,
         under: bloqueBase.probabilidades && typeof bloqueBase.probabilidades === 'object'
-          ? Number((((bloqueBase.probabilidades as Record<string, unknown>).under) ?? Number.NaN)) || null
+          ? numeroDesde((bloqueBase.probabilidades as Record<string, unknown>), 'under')
           : null,
       },
     },
@@ -193,10 +203,10 @@ function transformarObjetivoAnalisis(
       desviacion: bloqueAjustado.desviacion !== undefined ? Number(bloqueAjustado.desviacion) : null,
       probabilidades: {
         over: bloqueAjustado.probabilidades && typeof bloqueAjustado.probabilidades === 'object'
-          ? Number((((bloqueAjustado.probabilidades as Record<string, unknown>).over) ?? Number.NaN)) || null
+          ? numeroDesde((bloqueAjustado.probabilidades as Record<string, unknown>), 'over')
           : null,
         under: bloqueAjustado.probabilidades && typeof bloqueAjustado.probabilidades === 'object'
-          ? Number((((bloqueAjustado.probabilidades as Record<string, unknown>).under) ?? Number.NaN)) || null
+          ? numeroDesde((bloqueAjustado.probabilidades as Record<string, unknown>), 'under')
           : null,
       },
     },

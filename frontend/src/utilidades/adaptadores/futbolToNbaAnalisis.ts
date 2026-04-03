@@ -129,10 +129,10 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     (!analisis.objetivo?.mercado || r.mercado === analisis.objetivo.mercado)
     && (!analisis.objetivo?.lado || r.lado === analisis.objetivo.lado)
     && (analisis.objetivo?.linea === undefined || Math.abs(r.linea - analisis.objetivo.linea) < 1e-9)
-  )) ?? analisis.recomendaciones?.[0];
+  )) ?? null;
 
   const mercadoMain = pickMainMarket(analisis);
-  const lineaMain = numeroNullable(analisis.objetivo?.linea ?? recObjetivo?.linea);
+  const lineaMain = numeroNullable(analisis.objetivo?.linea);
   const probLineaObjetivo = lineaMain !== null ? buscarProbabilidadLinea(mercadoMain, lineaMain) : null;
 
   const pOver = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.over)
@@ -179,7 +179,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     ),
   };
 
-  const estadoCuotas = clasificarEstadoCuotas(recObjetivo);
+  const estadoCuotas = clasificarEstadoCuotas(recObjetivo ?? undefined);
   const cuotaPrincipal = estadoCuotas.cuotaSeleccion;
   const pMktRaw = cuotaPrincipal ? (1 / cuotaPrincipal) : null;
   const overroundBackend = numeroNullable(recObjetivo?.devigOverround);
@@ -287,7 +287,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
         descripcion: `Sistema proyecta ${predMain.media_total.toFixed(1)} en mercado principal de fútbol.`,
       },
     ],
-    nivel_confianza: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
+    nivel_confianza: normalizarConfianza(recObjetivo?.confianza),
     factores_confianza: {
       tamano_muestra: 'MEDIO',
       volatilidad: 'MEDIA',
@@ -417,8 +417,8 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
             advertencias: ['Sin ajuste contextual real para el mercado objetivo.'],
             confianza_delta: 0,
           },
-          confianza_base: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
-          confianza_ajustada: normalizarConfianza(analisis.recomendaciones?.[0]?.confianza),
+          confianza_base: normalizarConfianza(recObjetivo?.confianza),
+          confianza_ajustada: normalizarConfianza(recObjetivo?.confianza),
         }
       : null,
     ajustes: {

@@ -170,7 +170,9 @@ export function ResultadoAnalisis({
     ? resultado.prediccion_juego_completo
     : (mercadoCanon ? resultado.predicciones[mercadoCanon] : null);
 
-  const linea = numeroValido(detalle?.linea) ? detalle!.linea : (resultado.linea_analizada ?? 0);
+  const linea = numeroValido(seleccionUsuario?.linea)
+    ? seleccionUsuario!.linea
+    : (numeroValido(detalle?.linea) ? detalle!.linea : (resultado.linea_analizada ?? 0));
 
   const probabilidadOver = numeroValido(resultado.probabilidad_over)
     ? resultado.probabilidad_over!
