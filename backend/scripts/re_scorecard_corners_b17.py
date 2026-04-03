@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 
 from db import obtener_pool
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion
+from motor_futbol.readiness_gate import cargar_politica_readiness, evaluar_readiness_corners
 
 TARGET = ["CORNERS_1T", "CORNERS_LOCAL_1T"]
 
@@ -84,6 +85,8 @@ def main() -> None:
             for m in TARGET:
                 current[m] = _current(cur, m)
 
+    politica_readiness = cargar_politica_readiness()
+
     comparativa: List[Dict[str, Any]] = []
     for m in TARGET:
         p10 = prev_b10.get(m, {})
@@ -103,6 +106,13 @@ def main() -> None:
         nivel, motivos = clasificar_madurez_mercado(metricas_gate, estado_mercado="verde")
         status = mapear_status_promocion(nivel)
 
+        readiness = evaluar_readiness_corners(now, politica_readiness, ventanas_estables=0)
+        reevaluacion_seria_habilitada = readiness["gates"]["reevaluacion"]
+        if not reevaluacion_seria_habilitada:
+            status = "BLOQUEADO"
+            if "gate_readiness_no_habilitado" not in motivos:
+                motivos = ["gate_readiness_no_habilitado", *motivos]
+
         comparativa.append({
             "mercado": m,
             "antes_b10": {
@@ -117,7 +127,12 @@ def main() -> None:
                 "ece": p10.get("ece"),
                 "status_gate": p10.get("status_final"),
             },
-            "despues_b17": now | {"status_gate": status, "nivel": nivel, "motivos": motivos},
+            "despues_b17": now | {
+                "status_gate": status,
+                "nivel": nivel,
+                "motivos": motivos,
+                "readiness": readiness,
+            },
             "delta": {
                 "resueltos_binarios": _delta({"x": p10.get("n_resueltas")}, {"x": now["resueltos_binarios"]}, "x"),
                 "cerrados_operativos": _delta({"x": p16.get("cerrados_operativos", p16.get("resueltos", 0))}, {"x": now["cerrados_operativos"]}, "x"),
@@ -125,7 +140,7 @@ def main() -> None:
                 "lineas_cubiertas": _delta({"x": p10.get("lineas_cubiertas", 0)}, {"x": now["lineas_cubiertas"]}, "x"),
                 "fallback_rate": _delta({"x": float(p10.get("fallback_rate") or 0)}, {"x": now["fallback_rate"]}, "x"),
             },
-            "interpretacion": "muestra_binaria_insuficiente" if now["resueltos_binarios"] < 20 else "muestra_usable",
+            "interpretacion": readiness["status"],
         })
 
     out = {

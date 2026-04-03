@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 17 re-scorecard comparativa corners + bloque 16/15/14/13/12/11/10/9/8/7/6/5)
+Última actualización: 2026-04-03 (bloque 18 readiness/gate duro corners + bloque 17/16/15/14/13/12/11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -117,6 +117,7 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 15 auditoría causal de bloqueo total (2026-04-03): se ejecuta diagnóstico raíz mercado-por-mercado (24/24) con matriz causal cuantitativa, agrupación de causas, ranking de rescate y foco priorizado de 2–3 mercados. Conclusión técnica: el bloqueo total se explica principalmente por déficit de resolución/outcomes + volumen resuelto insuficiente + fallback/estado de mercado incompleto; no por narrativa de producto.
 - Bloque 16 rescate técnico focalizado corners prioritarios (2026-04-03): se intervienen únicamente `CORNERS_1T` y `CORNERS_LOCAL_1T`. Se corrige cierre operativo de predicciones en partidos no disputables (`VOID` para cancelado/pospuesto/suspendido/abandonado), se ajusta grilla de líneas útil con foco en 5.0 y se deja evidencia antes/después para re-scorecard focalizado en siguiente bloque.
 - Bloque 17 re-scorecard comparativa corners rescatados (2026-04-03): reevaluación estricta de `CORNERS_1T` y `CORNERS_LOCAL_1T` confirma mejora operativa parcial (limpieza de pendientes espurios) pero sin crecimiento de masa binaria resuelta. Ambos mercados permanecen en `BLOQUEADO` por `volumen_o_resolucion_critica`; decisión técnica: continuar en ruta de acumulación de evidencia (Ruta 2) sin sobrepromoción.
+- Bloque 18 umbral duro de masa resolutiva + gate de reevaluación (2026-04-03): se formaliza política de readiness específica para `CORNERS_1T` y `CORNERS_LOCAL_1T` con mínimos explícitos de masa binaria, pendientes, coverage y estabilidad temporal antes de cualquier reevaluación/promoción. Se integra gate en re-scorecard y monitoreo para impedir ascensos/reevaluaciones prematuras con evidencia insuficiente. Snapshot actual de readiness: ambos mercados `NO_LISTO` (4/28 resueltas; gap 26 para reevaluación seria).
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.

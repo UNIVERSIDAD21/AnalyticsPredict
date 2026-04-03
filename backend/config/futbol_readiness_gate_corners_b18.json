@@ -1,0 +1,25 @@
+{
+  "version": "2026-04-03.b18",
+  "scope": ["CORNERS_1T", "CORNERS_LOCAL_1T"],
+  "regla_central": "Sin masa resolutiva mínima no se permite reevaluación seria ni promoción.",
+  "umbrales": {
+    "min_resueltas_reevaluacion_seria": 30,
+    "min_resueltas_salida_bloqueado": 60,
+    "min_resueltas_candidatura_validacion": 120,
+    "max_pendientes_rate_reevaluacion": 0.65,
+    "max_pendientes_rate_salida_bloqueado": 0.45,
+    "max_pendientes_rate_candidatura_validacion": 0.30,
+    "min_lineas_cobertura_reevaluacion": 3,
+    "min_lineas_cobertura_salida_bloqueado": 4,
+    "min_lineas_cobertura_candidatura_validacion": 4,
+    "min_ventanas_estables_reevaluacion": 1,
+    "min_ventanas_estables_salida_bloqueado": 2,
+    "min_ventanas_estables_candidatura_validacion": 3
+  },
+  "interpretacion": {
+    "NO_LISTO": "No cumple mínimos de masa/cobertura/pendientes para reevaluación seria.",
+    "LISTO_REEVALUACION": "Puede correrse reevaluación seria, pero no implica salida de BLOQUEADO.",
+    "LISTO_SALIR_BLOQUEADO": "Cumple mínimos para competir por LABORATORIO (sujeto a gate cuantitativo).",
+    "LISTO_CANDIDATO_VALIDACION": "Cumple mínimos de readiness para candidatura a VALIDACION (sujeto a scorecard completo)."
+  }
+}

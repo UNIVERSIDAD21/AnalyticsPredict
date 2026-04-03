@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 18 fútbol (umbral duro de masa resolutiva + gate de reevaluación para corners prioritarios):
+  - Nueva política explícita para `CORNERS_1T` y `CORNERS_LOCAL_1T`: `backend/config/futbol_readiness_gate_corners_b18.json`.
+  - Umbrales duros formalizados: mínimos de masa binaria para reevaluación/salida de bloqueo/candidatura a validación, máximo de pendientes tolerable, mínimo de coverage y estabilidad temporal mínima.
+  - Nuevo motor de readiness: `backend/motor_futbol/readiness_gate.py` con cálculo de `readiness_status`, gaps y motivos no-silent.
+  - Integración de gate en re-scorecard: `backend/scripts/re_scorecard_corners_b17.py` ahora degrada a `BLOQUEADO` con motivo `gate_readiness_no_habilitado` cuando no cumple readiness.
+  - Integración en monitoreo: `backend/scripts/monitoreo_autodemotion_futbol.py` evalúa readiness en mercados foco y evita ascensos silenciosos con evidencia insuficiente.
+  - Nuevo reporte operativo de readiness: `backend/scripts/gate_readiness_corners_b18.py` + artefactos `docs/reportes/BLOQUE_18_READINESS_GATE_CORNERS.{json,md}`.
+  - Estado actual cuantitativo en ambos mercados foco: `NO_LISTO` (masa 4/28, gap 26 para reevaluación seria, gate de reevaluación BLOQUEADO).
 - Bloque 17 fútbol (reejecución con evidencia real, 20:58Z):
   - Reejecución del script `backend/scripts/re_scorecard_corners_b17.py` usando entorno `.venv`.
   - Confirmación cuantitativa reproducible: `CORNERS_1T` y `CORNERS_LOCAL_1T` permanecen `BLOQUEADO` (`NO_APTO`) por `volumen_o_resolucion_critica`.

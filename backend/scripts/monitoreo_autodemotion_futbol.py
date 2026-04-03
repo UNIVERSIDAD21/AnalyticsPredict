@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
 
 from db import obtener_pool
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion, aplicar_autodemotion
+from motor_futbol.readiness_gate import cargar_politica_readiness, evaluar_readiness_corners
 
 
 def _tabla_existe(cur, tabla: str) -> bool:
@@ -89,6 +90,9 @@ def main() -> None:
                 for r in cur.fetchall():
                     actuales[str(r["mercado"]).upper()] = str(r["estado_operativo"]).upper()
 
+            politica_readiness = cargar_politica_readiness()
+            scope_readiness = set(politica_readiness.get("scope", []))
+
             decisiones: List[Dict[str, Any]] = []
             for r in rows:
                 mercado = str(r["mercado"]).upper()
@@ -107,6 +111,19 @@ def main() -> None:
                 }
                 nivel, motivos = clasificar_madurez_mercado(metricas, estado_mercado="verde")
                 objetivo = mapear_status_promocion(nivel)
+
+                readiness = None
+                if mercado in scope_readiness:
+                    readiness = evaluar_readiness_corners({
+                        "emitidos": n_total,
+                        "resueltos_binarios": n_res,
+                        "pendientes": max(0, n_total - n_res),
+                        "lineas_cubiertas": int(r["lineas"] or 0),
+                    }, politica_readiness, ventanas_estables=0)
+                    if not readiness["gates"]["reevaluacion"]:
+                        objetivo = "BLOQUEADO"
+                        motivos = ["gate_readiness_no_habilitado", *motivos]
+
                 estado_actual = actuales.get(mercado, "LABORATORIO")
                 nuevo, motivos_d = aplicar_autodemotion(estado_actual, objetivo, motivos)
 
@@ -117,6 +134,7 @@ def main() -> None:
                     "estado_nuevo": nuevo,
                     "motivos": motivos_d,
                     "metricas": metricas,
+                    "readiness": readiness,
                 })
 
                 if args.apply and nuevo != estado_actual and _tabla_existe(cur, "futbol_estado_operativo_mercado"):

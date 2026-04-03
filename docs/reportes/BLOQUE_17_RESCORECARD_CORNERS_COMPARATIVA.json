@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-03T20:58:38.571924+00:00",
+  "generated_at": "2026-04-03T21:06:08.242868+00:00",
   "mercados": [
     "CORNERS_1T",
     "CORNERS_LOCAL_1T"
@@ -33,8 +33,56 @@
         "status_gate": "BLOQUEADO",
         "nivel": "NO_APTO",
         "motivos": [
+          "gate_readiness_no_habilitado",
           "volumen_o_resolucion_critica"
-        ]
+        ],
+        "readiness": {
+          "status": "NO_LISTO",
+          "descripcion": "No cumple mínimos de masa/cobertura/pendientes para reevaluación seria.",
+          "emitidos": 28,
+          "resueltos_binarios": 4,
+          "pendientes": 16,
+          "pendientes_rate": 0.5714,
+          "lineas_cubiertas": 4,
+          "ventanas_estables": 0,
+          "checks": {
+            "reevaluacion": {
+              "resueltas": false,
+              "pendientes": true,
+              "lineas": true,
+              "ventanas": false
+            },
+            "salir_bloqueado": {
+              "resueltas": false,
+              "pendientes": false,
+              "lineas": true,
+              "ventanas": false
+            },
+            "candidatura_validacion": {
+              "resueltas": false,
+              "pendientes": false,
+              "lineas": true,
+              "ventanas": false
+            }
+          },
+          "gates": {
+            "reevaluacion": false,
+            "salir_bloqueado": false,
+            "candidatura_validacion": false
+          },
+          "faltantes": [
+            "masa_binaria_insuficiente_para_reevaluacion",
+            "estabilidad_temporal_insuficiente_para_reevaluacion"
+          ],
+          "gaps": {
+            "resueltas_para_reevaluacion": 26,
+            "resueltas_para_salir_bloqueado": 56,
+            "resueltas_para_candidatura_validacion": 116,
+            "lineas_para_reevaluacion": 0,
+            "lineas_para_salir_bloqueado": 0,
+            "lineas_para_candidatura_validacion": 0
+          }
+        }
       },
       "delta": {
         "resueltos_binarios": 0,
@@ -43,7 +91,7 @@
         "lineas_cubiertas": 0,
         "fallback_rate": 0.0
       },
-      "interpretacion": "muestra_binaria_insuficiente"
+      "interpretacion": "NO_LISTO"
     },
     {
       "mercado": "CORNERS_LOCAL_1T",
@@ -73,8 +121,56 @@
         "status_gate": "BLOQUEADO",
         "nivel": "NO_APTO",
         "motivos": [
+          "gate_readiness_no_habilitado",
           "volumen_o_resolucion_critica"
-        ]
+        ],
+        "readiness": {
+          "status": "NO_LISTO",
+          "descripcion": "No cumple mínimos de masa/cobertura/pendientes para reevaluación seria.",
+          "emitidos": 28,
+          "resueltos_binarios": 4,
+          "pendientes": 16,
+          "pendientes_rate": 0.5714,
+          "lineas_cubiertas": 4,
+          "ventanas_estables": 0,
+          "checks": {
+            "reevaluacion": {
+              "resueltas": false,
+              "pendientes": true,
+              "lineas": true,
+              "ventanas": false
+            },
+            "salir_bloqueado": {
+              "resueltas": false,
+              "pendientes": false,
+              "lineas": true,
+              "ventanas": false
+            },
+            "candidatura_validacion": {
+              "resueltas": false,
+              "pendientes": false,
+              "lineas": true,
+              "ventanas": false
+            }
+          },
+          "gates": {
+            "reevaluacion": false,
+            "salir_bloqueado": false,
+            "candidatura_validacion": false
+          },
+          "faltantes": [
+            "masa_binaria_insuficiente_para_reevaluacion",
+            "estabilidad_temporal_insuficiente_para_reevaluacion"
+          ],
+          "gaps": {
+            "resueltas_para_reevaluacion": 26,
+            "resueltas_para_salir_bloqueado": 56,
+            "resueltas_para_candidatura_validacion": 116,
+            "lineas_para_reevaluacion": 0,
+            "lineas_para_salir_bloqueado": 0,
+            "lineas_para_candidatura_validacion": 0
+          }
+        }
       },
       "delta": {
         "resueltos_binarios": 0,
@@ -83,7 +179,7 @@
         "lineas_cubiertas": 0,
         "fallback_rate": 0.0
       },
-      "interpretacion": "muestra_binaria_insuficiente"
+      "interpretacion": "NO_LISTO"
     }
   ],
   "decision_final": {
