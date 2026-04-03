@@ -1,6 +1,19 @@
 # CHANGELOG
 
 ## 2026-04-03
+- Bloque 10 fútbol (walk-forward + scorecard de promoción por mercado):
+  - Nuevo pipeline reproducible `backend/scripts/walkforward_scorecard_futbol.py` con ventanas explícitas train/cal/eval sin leakage.
+  - Scorecard exportable por mercado generado en JSON/CSV (`docs/reportes/BLOQUE_10_WALKFORWARD_SCORECARD_FUTBOL.*`).
+  - Clasificación operativa formal de salida (`BLOQUEADO|LABORATORIO|VALIDACION|PROMOCIONABLE`) mapeada desde reglas cuantitativas en `motor_futbol/madurez_beta.py`.
+  - Prueba de integridad temporal de ventanas walk-forward: `backend/tests/test_futbol_walkforward_scorecard.py`.
+  - Reporte ejecutivo de bloque: `docs/reportes/BLOQUE_10_WALKFORWARD_SCORECARD_PROMOCION_FUTBOL.md`.
+- Bloque 9 fútbol (gate cuantitativo de salida beta):
+  - Se implementa clasificación formal de madurez por mercado (`NO_APTO|EXPERIMENTAL|VALIDACION|PROMOCIONABLE`) en `backend/motor_futbol/madurez_beta.py`.
+  - Nuevo endpoint `GET /api/futbol/metricas/madurez-beta` con matriz de madurez, bloqueados, candidatos promoción y criterios reproducibles.
+  - Nuevo script batch `backend/scripts/reporte_madurez_futbol_beta.py` para generar reporte automático (`docs/reportes/BLOQUE_9_MADUREZ_FUTBOL_AUTO.json`).
+  - Endurecimiento de frontend gate en `ResultadoAnalisis`: modo validación beta explícito y supresión de bloques contextuales/razones cuando hay degradación crítica de coverage.
+  - Adaptador fútbol propaga advertencias severas de coverage y mantiene mensajería honesta de recomendación.
+  - Pruebas nuevas y reforzadas: `backend/tests/test_futbol_madurez_beta.py` + regresión frontend.
 - Bloque 8 fútbol (auditoría correctiva PSG vs Toulouse `CORNERS_LOCAL_1T`):
   - Se elimina contradicción H2H visible (muestra superior vs tarjeta): el adaptador reconcilia `contexto.h2h` con la muestra canónica reportada por backend (`objetivo.calidadDatos.muestras.h2h`).
   - Récord H2H ahora explícito como `G-E-P` para que cierre con el total de partidos mostrado.

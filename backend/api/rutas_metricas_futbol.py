@@ -6,6 +6,8 @@ rutas_metricas_futbol.py — Endpoints para métricas del sistema de fútbol.
 from __future__ import annotations
 
 import logging
+import math
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional, List, Literal, Dict, Any
 from uuid import UUID
@@ -14,6 +16,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+from motor_futbol.madurez_beta import clasificar_madurez_mercado, CRITERIOS_DEFAULT
 from .schemas_futbol import (
     MetricasCalibracion,
     MetricasRendimiento,
@@ -22,6 +25,8 @@ from .schemas_futbol import (
     ResumenSistema,
     ListaMetricasCalibracionResponse,
     ListaMetricasRendimientoResponse,
+    ReporteMadurezFutbolResponse,
+    MadurezMercadoFutbol,
     ErrorResponse,
 )
 from .dependencias import obtener_usuario_actual, UsuarioActual
@@ -172,6 +177,254 @@ def _resolver_columna_modelo(cursor, columnas: List[str]) -> Optional[str]:  # C
         if _columna_existe(cursor, "modelo_versiones_futbol", columna):
             return columna
     return None
+
+
+def _ece_binario(probabilidades: List[float], outcomes: List[int], bins: int = 10) -> float:
+    if not probabilidades:
+        return 1.0
+    buckets: Dict[int, List[int]] = defaultdict(list)
+    bucket_prob: Dict[int, List[float]] = defaultdict(list)
+    for p, y in zip(probabilidades, outcomes):
+        idx = min(bins - 1, max(0, int(math.floor(float(p) * bins))))
+        buckets[idx].append(int(y))
+        bucket_prob[idx].append(float(p))
+
+    n = len(probabilidades)
+    ece = 0.0
+    for idx in range(bins):
+        ys = buckets.get(idx, [])
+        ps = bucket_prob.get(idx, [])
+        if not ys:
+            continue
+        avg_y = sum(ys) / len(ys)
+        avg_p = sum(ps) / len(ps)
+        ece += (len(ys) / n) * abs(avg_y - avg_p)
+    return float(ece)
+
+
+def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: float = 0.24, bloquear_brier: float = 0.28) -> Dict[str, str]:
+    try:
+        cursor.execute(
+            """
+            SELECT mercado::text,
+                   COUNT(*) AS n,
+                   AVG(POWER(COALESCE(prob_over_calibrada, prob_over_raw, prob_over) - COALESCE(outcome_binario::int,0), 2)) AS brier
+            FROM predicciones_futbol
+            WHERE outcome_binario IS NOT NULL
+              AND COALESCE(prob_over_calibrada, prob_over_raw, prob_over) IS NOT NULL
+            GROUP BY mercado
+            HAVING COUNT(*) >= %s
+            """,
+            [min_muestras],
+        )
+        out: Dict[str, str] = {}
+        for row in cursor.fetchall():
+            m = str(row["mercado"]).upper()
+            b = float(row["brier"]) if row.get("brier") is not None else None
+            if b is None:
+                continue
+            if b >= bloquear_brier:
+                out[m] = "rojo"
+            elif b >= warning_brier:
+                out[m] = "amarillo"
+            else:
+                out[m] = "verde"
+        return out
+    except Exception:
+        logger.exception("No se pudo calcular estado de mercados en endpoint de madurez")
+        return {}
+
+
+@router.get(
+    "/madurez-beta",
+    response_model=ReporteMadurezFutbolResponse,
+    summary="Gate cuantitativo de salida beta del módulo de fútbol",
+    description="Clasifica madurez por mercado con criterios cuantitativos reproducibles (NO_APTO/EXPERIMENTAL/VALIDACION/PROMOCIONABLE).",
+)
+async def obtener_madurez_beta_futbol(
+    dias: int = Query(120, ge=30, le=720, description="Ventana principal de evaluación"),
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> ReporteMadurezFutbolResponse:
+    pool = obtener_pool()
+    fecha_fin = datetime.now()
+    fecha_inicio = fecha_fin - timedelta(days=dias)
+    mitad = fecha_fin - timedelta(days=max(15, dias // 2))
+
+    mercados_catalogo = [
+        "CORNERS_1T", "CORNERS_2T", "CORNERS_FT", "CORNERS_LOCAL_1T", "CORNERS_LOCAL_2T", "CORNERS_LOCAL_FT", "CORNERS_VISITANTE_1T", "CORNERS_VISITANTE_2T", "CORNERS_VISITANTE_FT",
+        "GOLES_1T", "GOLES_2T", "GOLES_FT", "GOLES_LOCAL_1T", "GOLES_LOCAL_2T", "GOLES_LOCAL_FT", "GOLES_VISITANTE_1T", "GOLES_VISITANTE_2T", "GOLES_VISITANTE_FT",
+        "DISPAROS_FT", "DISPAROS_ARCO_FT", "DISPAROS_LOCAL_FT", "DISPAROS_LOCAL_ARCO_FT", "DISPAROS_VISITANTE_FT", "DISPAROS_VISITANTE_ARCO_FT",
+    ]
+
+    try:
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cursor:
+                if not _tabla_existe(cursor, "predicciones_futbol"):
+                    raise HTTPException(status_code=400, detail="No existe tabla predicciones_futbol")
+
+                estado_mercados = _estado_mercados_futbol(cursor)
+
+                fecha_col = "fecha_prediccion" if _columna_existe(cursor, "predicciones_futbol", "fecha_prediccion") else (
+                    "timestamp_generacion" if _columna_existe(cursor, "predicciones_futbol", "timestamp_generacion") else "creado_en"
+                )
+
+                cursor.execute(
+                    f"""
+                    SELECT
+                      mercado::text AS mercado,
+                      linea,
+                      {fecha_col} AS fecha_evento,
+                      COALESCE(prob_over_calibrada, prob_over_raw, prob_over) AS p,
+                      outcome_binario::int AS y,
+                      CASE WHEN outcome_binario IS NOT NULL THEN 1 ELSE 0 END AS resuelta,
+                      CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END AS fallback
+                    FROM predicciones_futbol
+                    WHERE {fecha_col} >= %s
+                    """,
+                    [fecha_inicio],
+                )
+                filas = cursor.fetchall()
+
+                por_mercado: Dict[str, Dict[str, Any]] = {}
+                for m in mercados_catalogo:
+                    por_mercado[m] = {
+                        "n_total": 0,
+                        "n_resueltas": 0,
+                        "lineas": set(),
+                        "prob": [],
+                        "y": [],
+                        "fallback_n": 0,
+                        "prob_w1": [],
+                        "y_w1": [],
+                        "prob_w2": [],
+                        "y_w2": [],
+                    }
+
+                for row in filas:
+                    m = str(row["mercado"]).upper()
+                    if m not in por_mercado:
+                        por_mercado[m] = {
+                            "n_total": 0, "n_resueltas": 0, "lineas": set(), "prob": [], "y": [], "fallback_n": 0,
+                            "prob_w1": [], "y_w1": [], "prob_w2": [], "y_w2": [],
+                        }
+                    acc = por_mercado[m]
+                    acc["n_total"] += 1
+                    if row.get("linea") is not None:
+                        acc["lineas"].add(float(row["linea"]))
+                    if int(row.get("fallback") or 0) == 1:
+                        acc["fallback_n"] += 1
+                    if row.get("resuelta") and row.get("p") is not None and row.get("y") is not None:
+                        p = float(row["p"])
+                        y = int(row["y"])
+                        acc["n_resueltas"] += 1
+                        acc["prob"].append(p)
+                        acc["y"].append(y)
+                        if row.get("fecha_evento") and row["fecha_evento"] < mitad:
+                            acc["prob_w1"].append(p)
+                            acc["y_w1"].append(y)
+                        else:
+                            acc["prob_w2"].append(p)
+                            acc["y_w2"].append(y)
+
+                mercados_resp: List[MadurezMercadoFutbol] = []
+                for mercado, acc in por_mercado.items():
+                    n_total = int(acc["n_total"])
+                    n_res = int(acc["n_resueltas"])
+                    prob = acc["prob"]
+                    ys = acc["y"]
+                    if n_res > 0:
+                        brier = sum((p - y) ** 2 for p, y in zip(prob, ys)) / n_res
+                        eps = 1e-9
+                        logloss = -sum(y * math.log(max(p, eps)) + (1 - y) * math.log(max(1 - p, eps)) for p, y in zip(prob, ys)) / n_res
+                        ece = _ece_binario(prob, ys, bins=10)
+                    else:
+                        brier = None
+                        logloss = None
+                        ece = None
+
+                    brier_w1 = None
+                    if len(acc["prob_w1"]) > 0:
+                        brier_w1 = sum((p - y) ** 2 for p, y in zip(acc["prob_w1"], acc["y_w1"])) / len(acc["prob_w1"])
+                    brier_w2 = None
+                    if len(acc["prob_w2"]) > 0:
+                        brier_w2 = sum((p - y) ** 2 for p, y in zip(acc["prob_w2"], acc["y_w2"])) / len(acc["prob_w2"])
+
+                    drift = None
+                    if brier_w1 is not None and brier_w2 is not None:
+                        drift = float(brier_w2 - brier_w1)
+
+                    metricas = {
+                        "n_resueltas": n_res,
+                        "lineas_cubiertas": len(acc["lineas"]),
+                        "brier": brier if brier is not None else 1.0,
+                        "log_loss": logloss if logloss is not None else 2.0,
+                        "ece": ece if ece is not None else 1.0,
+                        "resolved_rate": (n_res / n_total) if n_total > 0 else 0.0,
+                        "fallback_rate": (acc["fallback_n"] / n_total) if n_total > 0 else 1.0,
+                        "window_drift_brier": drift if drift is not None else 1.0,
+                    }
+                    nivel, motivos = clasificar_madurez_mercado(metricas, estado_mercados.get(mercado))
+                    mercados_resp.append(MadurezMercadoFutbol(
+                        mercado=mercado,
+                        clasificacion=nivel,
+                        estado_mercado=estado_mercados.get(mercado),
+                        n_resueltas=n_res,
+                        tasa_resolucion=round(metricas["resolved_rate"], 4),
+                        lineas_cubiertas=len(acc["lineas"]),
+                        brier=round(brier, 6) if brier is not None else None,
+                        log_loss=round(logloss, 6) if logloss is not None else None,
+                        ece=round(ece, 6) if ece is not None else None,
+                        fallback_rate=round(metricas["fallback_rate"], 4),
+                        drift_ventana_brier=round(drift, 6) if drift is not None else None,
+                        motivos=motivos,
+                    ))
+
+                bloqueados = [m.mercado for m in mercados_resp if m.clasificacion == "NO_APTO"]
+                candidatos = [m.mercado for m in mercados_resp if m.clasificacion == "PROMOCIONABLE"]
+                validacion = [m for m in mercados_resp if m.clasificacion == "VALIDACION"]
+
+                estado_global: Literal["BETA_LAB", "VALIDACION_CONTROLADA", "LISTO_PARA_PROMOCION_PARCIAL"] = "BETA_LAB"
+                if len(candidatos) >= 3:
+                    estado_global = "LISTO_PARA_PROMOCION_PARCIAL"
+                elif len(validacion) >= 4:
+                    estado_global = "VALIDACION_CONTROLADA"
+
+                riesgos = []
+                if len(bloqueados) > 0:
+                    riesgos.append("mercados_no_aptos_activos")
+                if any(m.estado_mercado is None for m in mercados_resp):
+                    riesgos.append("estado_mercados_incompleto")
+                if any((m.fallback_rate or 0) > CRITERIOS_DEFAULT.max_fallback_rate_validacion for m in mercados_resp):
+                    riesgos.append("fallback_elevado")
+
+                criterios = {
+                    "min_resueltas_validacion": CRITERIOS_DEFAULT.min_resueltas_validacion,
+                    "min_resueltas_promocion": CRITERIOS_DEFAULT.min_resueltas_promocion,
+                    "min_lineas_promocion": CRITERIOS_DEFAULT.min_lineas_promocion,
+                    "max_brier_promocion": CRITERIOS_DEFAULT.max_brier_promocion,
+                    "max_logloss_promocion": CRITERIOS_DEFAULT.max_logloss_promocion,
+                    "max_ece_promocion": CRITERIOS_DEFAULT.max_ece_promocion,
+                    "min_tasa_resolucion_promocion": CRITERIOS_DEFAULT.min_resolved_rate_promocion,
+                    "max_fallback_promocion": CRITERIOS_DEFAULT.max_fallback_rate_promocion,
+                    "max_drift_brier_ventana": CRITERIOS_DEFAULT.max_window_drift_promocion,
+                    "modo_operativo_recomendado": "SHADOW_PAPER_TRADING para mercados != PROMOCIONABLE",
+                }
+
+                mercados_resp.sort(key=lambda x: (x.clasificacion, x.mercado))
+                return ReporteMadurezFutbolResponse(
+                    exito=True,
+                    estado_global=estado_global,
+                    criterios=criterios,
+                    mercados=mercados_resp,
+                    bloqueados=bloqueados,
+                    candidatos_promocion=candidatos,
+                    riesgos_activos=riesgos,
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando reporte de madurez beta fútbol: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
 @router.get(

@@ -100,6 +100,30 @@ describe('futbolToNbaAnalisis market-aware contexto', () => {
     expect(out.mensaje_apuesta).toBe('Sin recomendación disponible');
   });
 
+  it('propaga severidad cuando mercado objetivo está fuera de coverage', () => {
+    const analisis = {
+      ...baseAnalisis,
+      objetivo: {
+        ...baseAnalisis.objetivo,
+        calidadDatos: {
+          muestras: { h2h: 1, localHome: 0, visitanteAway: 0, localGlobal: 0, visitanteGlobal: 0, liga: 0 },
+          rangoTemporal: { fechaMin: null, fechaMax: null },
+          temporadasIncluidas: [],
+          competicionesIncluidas: [],
+          muestraInsuficiente: true,
+          datosIncompletos: true,
+          penalizacionesAplicadas: ['estado_mercados_vacio', 'mercado_objetivo_fuera_estado_mercados'],
+        },
+      },
+      recomendaciones: [],
+    };
+
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis as unknown as AnalisisFutbolResponse, contexto);
+    expect((out.advertencias_contexto || []).join(' ')).toContain('Estado de mercados vacío');
+    expect((out.advertencias_contexto || []).join(' ')).toContain('Mercado objetivo fuera del estado de mercados');
+    expect(out.mensaje_apuesta).toBe('Sin recomendación disponible');
+  });
+
   it('alinea total H2H al tamaño de muestra canónica cuando backend la reporta', () => {
     const analisis = {
       ...baseAnalisis,

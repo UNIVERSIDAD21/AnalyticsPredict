@@ -226,6 +226,15 @@ export function ResultadoAnalisis({
   const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
   const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
 
+  const objetivoMeta = resultado.metadata?.objetivo as { calidad_datos?: { muestra_insuficiente?: boolean; datos_incompletos?: boolean; penalizaciones_aplicadas?: string[] } } | undefined;
+  const penalizacionesObjetivo = objetivoMeta?.calidad_datos?.penalizaciones_aplicadas || [];
+  const gateCriticoBeta = Boolean(
+    objetivoMeta?.calidad_datos?.muestra_insuficiente
+    || objetivoMeta?.calidad_datos?.datos_incompletos
+    || penalizacionesObjetivo.includes('estado_mercados_vacio')
+    || penalizacionesObjetivo.includes('mercado_objetivo_fuera_estado_mercados')
+  );
+
   const hayAjusteContextualReal = Boolean(
     resultado.prediccion_ajustada
     && resultado.prediccion_base
@@ -247,6 +256,13 @@ export function ResultadoAnalisis({
           ═══════════════════════════════════════════════════════════ */}
       {advertencias.length > 0 && (
         <PanelAdvertencias advertencias={advertencias} />
+      )}
+
+      {gateCriticoBeta && (
+        <PanelAdvertencias advertencias={[
+          'MODO VALIDACIÓN BETA: mercado no promocionable. Este resultado es solo para shadow/paper trading y monitoreo cuantitativo.',
+          ...penalizacionesObjetivo.map((p) => `Gate crítico activo: ${p}`),
+        ]} />
       )}
 
       {/* ═══════════════════════════════════════════════════════════
@@ -505,7 +521,7 @@ export function ResultadoAnalisis({
           ═══════════════════════════════════════════════════════════ */}
 
       {/* Head-to-Head */}
-      {resultado.contexto?.h2h && (
+      {!gateCriticoBeta && resultado.contexto?.h2h && (
         <SeccionH2H
           h2h={resultado.contexto.h2h}
           equipoNombre={resultado.equipo_nombre_completo}
@@ -517,7 +533,7 @@ export function ResultadoAnalisis({
       )}
 
       {/* Forma Reciente */}
-      {resultado.contexto && resultado.contexto.forma_equipo && resultado.contexto.forma_rival && (
+      {!gateCriticoBeta && resultado.contexto && resultado.contexto.forma_equipo && resultado.contexto.forma_rival && (
         <SeccionFormaReciente
           formaEquipo={resultado.contexto.forma_equipo}
           formaRival={resultado.contexto.forma_rival}
@@ -535,7 +551,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           11. HISTORIAL DETALLADO
           ═══════════════════════════════════════════════════════════ */}
-      {equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
+      {!gateCriticoBeta && equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
         <SeccionHistorialDetallado
           equipoLocalId={equipoLocalId}
           equipoLocalNombre={resultado.equipo_nombre_completo}
@@ -553,7 +569,9 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           12. RAZONES
           ═══════════════════════════════════════════════════════════ */}
-      <ListaRazones razones={resultado.razones} deporte={esFutbol ? 'futbol' : 'baloncesto'} unidadLabel={unidadAnalisis} />
+      {!gateCriticoBeta && (
+        <ListaRazones razones={resultado.razones} deporte={esFutbol ? 'futbol' : 'baloncesto'} unidadLabel={unidadAnalisis} />
+      )}
 
       {/* ═══════════════════════════════════════════════════════════
           13. GUARDAR EN BITÁCORA

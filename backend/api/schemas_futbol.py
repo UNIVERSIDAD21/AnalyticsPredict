@@ -602,6 +602,31 @@ class ListaMetricasRendimientoResponse(BaseModel):
     metricas: List[MetricasRendimiento]
 
 
+class MadurezMercadoFutbol(BaseModel):
+    mercado: str
+    clasificacion: Literal["NO_APTO", "EXPERIMENTAL", "VALIDACION", "PROMOCIONABLE"]
+    estado_mercado: Optional[Literal["verde", "amarillo", "rojo"]] = None
+    n_resueltas: int = 0
+    tasa_resolucion: float = 0.0
+    lineas_cubiertas: int = 0
+    brier: Optional[float] = None
+    log_loss: Optional[float] = None
+    ece: Optional[float] = None
+    fallback_rate: float = 1.0
+    drift_ventana_brier: Optional[float] = None
+    motivos: List[str] = []
+
+
+class ReporteMadurezFutbolResponse(BaseModel):
+    exito: bool = True
+    estado_global: Literal["BETA_LAB", "VALIDACION_CONTROLADA", "LISTO_PARA_PROMOCION_PARCIAL"]
+    criterios: Dict[str, Any]
+    mercados: List[MadurezMercadoFutbol]
+    bloqueados: List[str] = []
+    candidatos_promocion: List[str] = []
+    riesgos_activos: List[str] = []
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCHEMAS GENÉRICOS
 # ═══════════════════════════════════════════════════════════════════════════════

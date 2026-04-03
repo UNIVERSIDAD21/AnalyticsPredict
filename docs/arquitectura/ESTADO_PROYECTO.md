@@ -1,7 +1,7 @@
 # ESTADO_PROYECTO.md
 
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
-Última actualización: 2026-04-03 (bloque 8 auditoría correctiva fútbol + bloque 7/6/5)
+Última actualización: 2026-04-03 (bloque 10 walk-forward + scorecard fútbol + bloque 9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual
@@ -108,6 +108,8 @@ El esquema A/B queda como histórico de ejecución previa. Para decisiones de la
 - Bloque 6 fútbol capa de decisión (2026-04-03): se formaliza matemática canónica de decisión en `rutas_analisis_futbol` con `edge_raw` explícito, `edge_real` derivado de `p_decision` (calibrada solo si calibración aplica), y trazabilidad de `calibracion_aplicada` para evitar mezcla de transformaciones. En ENSEMBLE, `edge/score/sizing` se recomputan canónicamente (no por promedio de outputs ya transformados). Contrato extendido de forma backward-compatible para frontend (`calibracion_aplicada`, `edge_raw`).
 - Bloque 7 coherencia H2H/historial/UI (2026-04-03): se completa la base existente sin rehacerla: en backend de análisis, H2H e historial quedan acotados por competición + filtro temporal resuelto; en frontend adaptador, el contexto visual deja de asumir goles y pasa a métrica real del mercado objetivo (goles/corners/disparos) con perspectiva consistente equipo/rival/total y línea correspondiente.
 - Bloque 8 auditoría correctiva PSG-Toulouse `CORNERS_LOCAL_1T` (2026-04-03): corrección de contradicciones internas de módulo fútbol en caso canónico real. Se alinea muestra H2H visible con muestra canónica del objetivo, se corrige semántica de recomendación/no recomendación, se exige ajuste contextual real para mostrar comparativa base-vs-ajustada, y se refuerza severidad visual cuando el mercado objetivo queda fuera de cobertura (`estado_mercados_vacio` / `mercado_objetivo_fuera_estado_mercados`).
+- Bloque 9 gate beta cuantitativo fútbol (2026-04-03): se institucionaliza salida beta gobernada por evidencia con matriz de madurez por mercado (`NO_APTO|EXPERIMENTAL|VALIDACION|PROMOCIONABLE`), endpoint de reporte reproducible (`/api/futbol/metricas/madurez-beta`), script batch de inventario operativo y endurecimiento UX para no presentar mercados críticos como soporte maduro. Estado actual del módulo: **BETA_LAB** hasta cumplir umbrales de promoción por mercado.
+- Bloque 10 walk-forward + scorecard promoción (2026-04-03): se agrega pipeline temporal auditable para evaluación por ventanas (`train/cal/eval`) y scorecard por mercado con métricas históricas (Brier, Log Loss, ECE, cobertura de líneas, fallback y estabilidad). Se formaliza salida operativa `BLOQUEADO|LABORATORIO|VALIDACION|PROMOCIONABLE` y se genera evidencia exportable para decisiones de promoción real sin sesgo visual.
 
 ## Reglas permanentes de documentación
 1. Al cerrar bloque: actualizar este archivo.
