@@ -6,7 +6,7 @@
 - Partido: San Antonio Spurs (SAS) local vs Minnesota Timberwolves (MIN) visitante
 - Fecha del partido: 2026-05-05
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:36:00
+- Generado: 2026-05-06T00:44:14
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -24,6 +24,12 @@
 ## Muestras usadas
 - Local general/local: 30 / 30
 - Visitante general/visitante: 30 / 30
+
+## Calidad de datos usada en este análisis
+- Apariciones candidatas: 360
+- Apariciones usadas: 120
+- Apariciones excluidas: 20 (5.56%)
+- Razones de exclusión: marcador 0-0: 20
 
 ## Forma reciente - San Antonio Spurs local
 
@@ -66,7 +72,13 @@
 
 ### Q1_TOTAL
 - Línea: 54.5
+- Tipo de fuente: TECHNICAL_ESTIMATE (TÉCNICA)
+- Fuente: manual/technical
+- URL fuente: N/D
+- Notas: Línea técnica derivada para validación porque no se encontró mercado Q1 real; no proviene de mercado real.
 - Clasificación técnica: **señal estadística débil**
+- Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.
+- Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.
 - Promedio combinado: 57.12
 - Mediana combinada: 57.50
 - Diferencia contra línea: 2.62
@@ -75,10 +87,14 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 30.0, '20': 30.0, '30': 23.33}
 - Cumplimiento split local/visitante over: 76.67%
 - Cumplimiento split local/visitante under: 23.33%
-- Advertencias: datos afectados por overtime en 1 apariciones recientes
+- Advertencias: línea no REAL_MARKET: TECHNICAL_ESTIMATE; Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.; datos afectados por overtime en 1 apariciones recientes
 
 ### FULL_GAME_TOTAL
 - Línea: 218.5
+- Tipo de fuente: REAL_MARKET (REAL)
+- Fuente: ESPN pickcenter / DraftKings close
+- URL fuente: https://www.espn.com/nba/game/_/gameId/401871152
+- Notas: ESPN pickcenter expuso overUnder 218.5 con odds -110/-110; convertido a decimal aproximado 1.91.
 - Clasificación técnica: **señal inconsistente**
 - Promedio combinado: 226.03
 - Mediana combinada: 225.75
@@ -92,7 +108,12 @@
 
 ### HOME_TEAM_TOTAL
 - Línea: 114.5
+- Tipo de fuente: DERIVED_FROM_TOTAL_SPREAD (DERIVADA/IMPLÍCITA)
+- Fuente: derived from ESPN/DraftKings total 218.5 and spread SA -10.5
+- URL fuente: https://www.espn.com/nba/game/_/gameId/401871152
+- Notas: Total implícito del local derivado desde total de partido y spread; no es una línea de team total observada directamente.
 - Clasificación técnica: **señal estadística débil**
+- Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.
 - Promedio combinado: 115.83
 - Mediana combinada: 117.25
 - Diferencia contra línea: 1.33
@@ -101,11 +122,16 @@
 - Cumplimiento under 5/10/20/30: {'5': 80.0, '10': 60.0, '20': 40.0, '30': 36.67}
 - Cumplimiento split local/visitante over: 56.67%
 - Cumplimiento split local/visitante under: 43.33%
-- Advertencias: diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 1 apariciones recientes
+- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 1 apariciones recientes
 
 ### AWAY_TEAM_TOTAL
 - Línea: 104.0
+- Tipo de fuente: DERIVED_FROM_TOTAL_SPREAD (DERIVADA/IMPLÍCITA)
+- Fuente: derived from ESPN/DraftKings total 218.5 and spread SA -10.5
+- URL fuente: https://www.espn.com/nba/game/_/gameId/401871152
+- Notas: Total implícito del visitante derivado desde total de partido y spread; no es una línea de team total observada directamente.
 - Clasificación técnica: **señal estadística moderada**
+- Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.
 - Promedio combinado: 110.20
 - Mediana combinada: 109.75
 - Diferencia contra línea: 6.20
@@ -114,7 +140,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 40.0, '10': 40.0, '20': 20.0, '30': 13.33}
 - Cumplimiento split local/visitante over: 80.00%
 - Cumplimiento split local/visitante under: 13.33%
-- Advertencias: datos afectados por overtime en 1 apariciones recientes
+- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; datos afectados por overtime en 1 apariciones recientes
 
 ## Advertencias generales
 - se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras
@@ -123,5 +149,5 @@
 Partido: San Antonio Spurs local vs Minnesota Timberwolves visitante, fecha 2026-05-05. BD disponible hasta 2026-05-05.
 Muestras recientes: SAS general 30 y local 30; MIN general 30 y visitante 30.
 Combinado split local/visitante últimos 30: Q1 57.93, Q2 56.65, Q3 59.05, Q4 58.88, total partido 233.35.
-Líneas evaluadas técnicamente: Q1_TOTAL línea 54.5: señal estadística débil, diff 2.62, vol 5.48; FULL_GAME_TOTAL línea 218.5: señal inconsistente, diff 7.53, vol 14.39; HOME_TEAM_TOTAL línea 114.5: señal estadística débil, diff 1.33, vol 9.66; AWAY_TEAM_TOTAL línea 104.0: señal estadística moderada, diff 6.20, vol 8.01.
+Líneas evaluadas técnicamente: Q1_TOTAL línea 54.5 (TECHNICAL_ESTIMATE): señal estadística débil, diff 2.62, vol 5.48; FULL_GAME_TOTAL línea 218.5 (REAL_MARKET): señal inconsistente, diff 7.53, vol 14.39; HOME_TEAM_TOTAL línea 114.5 (DERIVED_FROM_TOTAL_SPREAD): señal estadística débil, diff 1.33, vol 9.66; AWAY_TEAM_TOTAL línea 104.0 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 6.20, vol 8.01.
 Usar como evidencia estadística, no como recomendación de apuesta.

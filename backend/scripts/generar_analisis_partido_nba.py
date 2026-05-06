@@ -36,6 +36,13 @@ FIELDS_BY_MARKET = {
     "HOME_TEAM_TOTAL": ("puntos_total", "recibidos_total", "home_total"),
     "AWAY_TEAM_TOTAL": ("puntos_total", "recibidos_total", "away_total"),
 }
+VALID_SOURCE_TYPES = {"REAL_MARKET", "DERIVED_FROM_TOTAL_SPREAD", "TECHNICAL_ESTIMATE", "MANUAL_INPUT"}
+SOURCE_TYPE_LABELS = {
+    "REAL_MARKET": "REAL",
+    "DERIVED_FROM_TOTAL_SPREAD": "DERIVADA/IMPLÍCITA",
+    "TECHNICAL_ESTIMATE": "TÉCNICA",
+    "MANUAL_INPUT": "MANUAL",
+}
 QUARTER_FIELDS = ["q1", "q2", "q3", "q4"]
 
 
@@ -147,8 +154,43 @@ def db_url() -> str:
     return url
 
 
+def exclusion_reason(row: dict[str, Any]) -> str | None:
+    puntos = int(row.get("puntos_total") or 0)
+    recibidos = int(row.get("recibidos_total") or 0)
+    if puntos == 0 and recibidos == 0:
+        return "marcador 0-0"
+    if puntos <= 0 or recibidos <= 0:
+        return "marcador parcial o incompleto"
+    quarters = [
+        int(row.get("puntos_q1") or 0), int(row.get("puntos_q2") or 0), int(row.get("puntos_q3") or 0), int(row.get("puntos_q4") or 0),
+        int(row.get("recibidos_q1") or 0), int(row.get("recibidos_q2") or 0), int(row.get("recibidos_q3") or 0), int(row.get("recibidos_q4") or 0),
+    ]
+    if any(q < 0 for q in quarters):
+        return "cuartos negativos/inconsistentes"
+    return None
+
+
+def classify_exclusion(row: dict[str, Any]) -> str:
+    reason = exclusion_reason(row) or "sin exclusión"
+    fecha = str(row.get("fecha_partido") or "")
+    today = datetime.now().date().isoformat()
+    if fecha and fecha > today:
+        return "partido futuro"
+    if "0-0" in reason or "incompleto" in reason:
+        return "incompleto"
+    return "inconsistente" if reason != "sin exclusión" else "válido"
+
+
 def is_valid_scored_row(row: dict[str, Any]) -> bool:
-    return int(row.get("puntos_total") or 0) > 0 and int(row.get("recibidos_total") or 0) > 0
+    return exclusion_reason(row) is None
+
+
+def serialize_row(row: dict[str, Any]) -> dict[str, Any]:
+    out = dict(row)
+    for key in ("fecha_partido", "partido_id"):
+        if key in out:
+            out[key] = str(out[key])
+    return out
 
 
 def build_split(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -168,7 +210,7 @@ def build_split(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
-def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: int = 30) -> tuple[list[dict[str, Any]], int]:
+def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: int = 30) -> dict[str, Any]:
     import psycopg
     from psycopg.rows import dict_row
 
@@ -184,16 +226,30 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
       SELECT id, abreviatura, nombre FROM equipos WHERE upper(abreviatura)=upper(%s) LIMIT 1
     ), apariciones AS (
       SELECT e.abreviatura,e.nombre equipo,p.id partido_id,p.fecha_partido,'local' localia,p.tipo_partido,
+             el.nombre equipo_local, ev.nombre equipo_visitante,
+             p.local_q1,p.local_q2,p.local_q3,p.local_q4,p.local_ot,p.local_total,
+             p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_ot,p.visitante_total,
              p.local_q1 puntos_q1,p.local_q2 puntos_q2,p.local_q3 puntos_q3,p.local_q4 puntos_q4,p.local_total puntos_total,
              p.visitante_q1 recibidos_q1,p.visitante_q2 recibidos_q2,p.visitante_q3 recibidos_q3,p.visitante_q4 recibidos_q4,p.visitante_total recibidos_total,
              p.hubo_overtime,p.source,p.source_game_id
-      FROM partidos_baloncesto p JOIN equipo e ON e.id=p.equipo_local_id JOIN nba ON nba.id=p.competicion_id
+      FROM partidos_baloncesto p
+      JOIN equipo e ON e.id=p.equipo_local_id
+      JOIN equipos el ON el.id=p.equipo_local_id
+      JOIN equipos ev ON ev.id=p.equipo_visitante_id
+      JOIN nba ON nba.id=p.competicion_id
       UNION ALL
       SELECT e.abreviatura,e.nombre,p.id,p.fecha_partido,'visitante',p.tipo_partido,
+             el.nombre, ev.nombre,
+             p.local_q1,p.local_q2,p.local_q3,p.local_q4,p.local_ot,p.local_total,
+             p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_ot,p.visitante_total,
              p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_total,
              p.local_q1,p.local_q2,p.local_q3,p.local_q4,p.local_total,
              p.hubo_overtime,p.source,p.source_game_id
-      FROM partidos_baloncesto p JOIN equipo e ON e.id=p.equipo_visitante_id JOIN nba ON nba.id=p.competicion_id
+      FROM partidos_baloncesto p
+      JOIN equipo e ON e.id=p.equipo_visitante_id
+      JOIN equipos el ON el.id=p.equipo_local_id
+      JOIN equipos ev ON ev.id=p.equipo_visitante_id
+      JOIN nba ON nba.id=p.competicion_id
     )
     SELECT * FROM apariciones
     {where_localia}
@@ -203,13 +259,17 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
     with psycopg.connect(db_url(), row_factory=dict_row) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, (team_abbr, max(limit * 3, 90)))
-            raw = [dict(r) for r in cur.fetchall()]
-    invalid = [r for r in raw if not is_valid_scored_row(r)]
+            raw = [serialize_row(dict(r)) for r in cur.fetchall()]
+    invalid = []
+    for r in raw:
+        reason = exclusion_reason(r)
+        if reason:
+            item = serialize_row(r)
+            item["razon_exclusion"] = reason
+            item["clasificacion_exclusion"] = classify_exclusion(item)
+            invalid.append(item)
     valid = [r for r in raw if is_valid_scored_row(r)][:limit]
-    for r in valid:
-        r["fecha_partido"] = str(r["fecha_partido"])
-        r["partido_id"] = str(r["partido_id"])
-    return valid, len(invalid)
+    return {"valid": valid, "excluded": invalid, "candidate_count": len(raw), "used_count": len(valid)}
 
 
 def extract_rows(team: dict[str, Any], localia: str | None = None) -> list[dict[str, Any]]:
@@ -239,7 +299,22 @@ def evaluate_signal(avg: float | None, line: float, percentages: dict[str, float
 def evaluate_market(market: dict[str, Any], home_rows: list[dict[str, Any]], away_rows: list[dict[str, Any]], home_local_rows: list[dict[str, Any]], away_visit_rows: list[dict[str, Any]]) -> dict[str, Any]:
     name = str(market.get("market", "")).upper()
     line = market.get("line")
-    result: dict[str, Any] = {"market": name, "input": market, "advertencias": []}
+    source_type = str(market.get("source_type") or "MANUAL_INPUT").upper()
+    result: dict[str, Any] = {
+        "market": name,
+        "input": market,
+        "source": market.get("source"),
+        "source_type": source_type,
+        "source_url": market.get("source_url"),
+        "notes": market.get("notes"),
+        "advertencias": [],
+    }
+    if source_type not in VALID_SOURCE_TYPES:
+        result["advertencias"].append(f"source_type inválido ({source_type}); valores válidos: {sorted(VALID_SOURCE_TYPES)}")
+    elif source_type != "REAL_MARKET":
+        result["advertencias"].append(f"línea no REAL_MARKET: {source_type}")
+        if source_type == "TECHNICAL_ESTIMATE":
+            result["advertencias"].append("Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.")
     if name not in FIELDS_BY_MARKET:
         result.update({"evaluable": False, "clasificacion": "no evaluable por datos insuficientes"})
         result["advertencias"].append("mercado no soportado por el script")
@@ -295,17 +370,24 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
     all_dates = [d.get("fecha_mas_reciente") for d in teams.values() if d.get("fecha_mas_reciente")]
     max_db_date = max(all_dates) if all_dates else None
     try:
-        home_rows, home_invalid = fetch_team_rows_from_db(home_abbr, None)
-        away_rows, away_invalid = fetch_team_rows_from_db(away_abbr, None)
-        home_local_rows, home_local_invalid = fetch_team_rows_from_db(home_abbr, "local")
-        away_visit_rows, away_visit_invalid = fetch_team_rows_from_db(away_abbr, "visitante")
+        home_general_quality = fetch_team_rows_from_db(home_abbr, None)
+        away_general_quality = fetch_team_rows_from_db(away_abbr, None)
+        home_local_quality = fetch_team_rows_from_db(home_abbr, "local")
+        away_visit_quality = fetch_team_rows_from_db(away_abbr, "visitante")
+        home_rows = home_general_quality["valid"]
+        away_rows = away_general_quality["valid"]
+        home_local_rows = home_local_quality["valid"]
+        away_visit_rows = away_visit_quality["valid"]
         data_source = "bd_partidos_baloncesto"
     except Exception as exc:  # noqa: BLE001
         home_rows = extract_rows(home)
         away_rows = extract_rows(away)
         home_local_rows = extract_rows(home, "local")
         away_visit_rows = extract_rows(away, "visitante")
-        home_invalid = away_invalid = home_local_invalid = away_visit_invalid = 0
+        home_general_quality = {"candidate_count": len(home_rows), "used_count": len(home_rows), "excluded": []}
+        away_general_quality = {"candidate_count": len(away_rows), "used_count": len(away_rows), "excluded": []}
+        home_local_quality = {"candidate_count": len(home_local_rows), "used_count": len(home_local_rows), "excluded": []}
+        away_visit_quality = {"candidate_count": len(away_visit_rows), "used_count": len(away_visit_rows), "excluded": []}
         data_source = f"fallback_json_forma_reciente: {exc}"
 
     home_general_split = build_split(home_rows)
@@ -322,9 +404,12 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
         warnings.append(f"local {home['equipo']}: split local válido menor a 30")
     if len(away_visit_rows) < 30:
         warnings.append(f"visitante {away['equipo']}: split visitante válido menor a 30")
-    invalid_total = home_invalid + away_invalid + home_local_invalid + away_visit_invalid
+    invalid_total = sum(len(q["excluded"]) for q in (home_general_quality, away_general_quality, home_local_quality, away_visit_quality))
+    candidate_total = sum(q["candidate_count"] for q in (home_general_quality, away_general_quality, home_local_quality, away_visit_quality))
     if invalid_total:
         warnings.append(f"se excluyeron {invalid_total} apariciones con marcador 0 o incompleto antes de calcular muestras")
+    if candidate_total and invalid_total / candidate_total > 0.10:
+        warnings.append(f"más del 10% de candidatas fueron excluidas ({invalid_total}/{candidate_total})")
     if max_db_date and game_date > max_db_date:
         warnings.append(f"fecha del partido posterior a fecha máxima disponible ({max_db_date})")
 
@@ -362,8 +447,18 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
             "fecha_maxima_disponible_bd": max_db_date,
         },
         "muestras": {
-            "local": {"general": len(home_rows), "local": len(home_local_rows), "excluidas_incompletas": home_invalid + home_local_invalid, "conteos_historicos": home.get("conteos", {})},
-            "visitante": {"general": len(away_rows), "visitante": len(away_visit_rows), "excluidas_incompletas": away_invalid + away_visit_invalid, "conteos_historicos": away.get("conteos", {})},
+            "local": {"general": len(home_rows), "local": len(home_local_rows), "excluidas_incompletas": len(home_general_quality["excluded"]) + len(home_local_quality["excluded"]), "conteos_historicos": home.get("conteos", {})},
+            "visitante": {"general": len(away_rows), "visitante": len(away_visit_rows), "excluidas_incompletas": len(away_general_quality["excluded"]) + len(away_visit_quality["excluded"]), "conteos_historicos": away.get("conteos", {})},
+            "calidad_datos": {
+                "local_general": home_general_quality,
+                "visitante_general": away_general_quality,
+                "local_split": home_local_quality,
+                "visitante_split": away_visit_quality,
+                "candidatas_total": candidate_total,
+                "usadas_total": sum(q["used_count"] for q in (home_general_quality, away_general_quality, home_local_quality, away_visit_quality)),
+                "excluidas_total": invalid_total,
+                "porcentaje_excluido": round(invalid_total * 100 / candidate_total, 2) if candidate_total else 0,
+            },
         },
         "forma_local": {"general": home_general_split, "local": home_local_split, "ultimos_30": home_rows, "ultimos_30_local": home_local_rows},
         "forma_visitante": {"general": away_general_split, "visitante": away_visit_split, "ultimos_30": away_rows, "ultimos_30_visitante": away_visit_rows},
@@ -423,6 +518,23 @@ def render_markdown(analysis: dict[str, Any]) -> str:
         lines.append(f"- **{k}:** {v}")
     lines += ["", "## Muestras usadas", f"- Local general/local: {analysis['muestras']['local']['general']} / {analysis['muestras']['local']['local']}", f"- Visitante general/visitante: {analysis['muestras']['visitante']['general']} / {analysis['muestras']['visitante']['visitante']}", ""]
 
+    calidad = analysis["muestras"]["calidad_datos"]
+    lines += [
+        "## Calidad de datos usada en este análisis",
+        f"- Apariciones candidatas: {calidad['candidatas_total']}",
+        f"- Apariciones usadas: {calidad['usadas_total']}",
+        f"- Apariciones excluidas: {calidad['excluidas_total']} ({fmt(calidad['porcentaje_excluido'])}%)",
+    ]
+    razones: dict[str, int] = {}
+    for bucket in ("local_general", "visitante_general", "local_split", "visitante_split"):
+        for item in calidad[bucket].get("excluded", []):
+            razones[item.get("razon_exclusion", "sin razón")] = razones.get(item.get("razon_exclusion", "sin razón"), 0) + 1
+    if razones:
+        lines.append("- Razones de exclusión: " + "; ".join(f"{k}: {v}" for k, v in sorted(razones.items())))
+    if calidad["porcentaje_excluido"] > 10:
+        lines.append("- Advertencia: se excluyó más del 10% de las apariciones candidatas; revisar auditoría antes de usar como base final.")
+    lines.append("")
+
     lines += [f"## Forma reciente - {home['nombre']} local", "", "### General"]
     for n in WINDOWS:
         lines.append(metric_line(home['nombre'], analysis['forma_local']['general'], n))
@@ -447,7 +559,21 @@ def render_markdown(analysis: dict[str, Any]) -> str:
     if not analysis["evaluacion_mercados"]:
         lines.append("- No se pasó archivo de mercados; solo se generó análisis estadístico base.")
     for m in analysis["evaluacion_mercados"]:
-        lines += ["", f"### {m['market']}", f"- Línea: {m['input'].get('line')}", f"- Clasificación técnica: **{m.get('clasificacion')}**"]
+        source_type = m.get("source_type") or "MANUAL_INPUT"
+        lines += [
+            "",
+            f"### {m['market']}",
+            f"- Línea: {m['input'].get('line')}",
+            f"- Tipo de fuente: {source_type} ({SOURCE_TYPE_LABELS.get(source_type, 'NO VALIDADO')})",
+            f"- Fuente: {m.get('source') or 'N/D'}",
+            f"- URL fuente: {m.get('source_url') or 'N/D'}",
+            f"- Notas: {m.get('notes') or m['input'].get('source_note') or 'N/D'}",
+            f"- Clasificación técnica: **{m.get('clasificacion')}**",
+        ]
+        if source_type != "REAL_MARKET":
+            lines.append("- Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.")
+            if source_type == "TECHNICAL_ESTIMATE":
+                lines.append("- Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.")
         if not m.get("evaluable"):
             lines.append(f"- No evaluable: {'; '.join(m.get('advertencias', []))}")
             continue
@@ -479,7 +605,7 @@ def render_markdown(analysis: dict[str, Any]) -> str:
         f"Combinado split local/visitante últimos 30: Q1 {fmt(total30['q1']['total_combinado'])}, Q2 {fmt(total30['q2']['total_combinado'])}, Q3 {fmt(total30['q3']['total_combinado'])}, Q4 {fmt(total30['q4']['total_combinado'])}, total partido {fmt(total30['total']['total_combinado'])}.",
     ]
     if analysis["evaluacion_mercados"]:
-        compact = "; ".join(f"{m['market']} línea {m['input'].get('line')}: {m.get('clasificacion')}, diff {fmt(m.get('diferencia_contra_linea'))}, vol {fmt(m.get('volatilidad'))}" for m in analysis["evaluacion_mercados"])
+        compact = "; ".join(f"{m['market']} línea {m['input'].get('line')} ({m.get('source_type')}): {m.get('clasificacion')}, diff {fmt(m.get('diferencia_contra_linea'))}, vol {fmt(m.get('volatilidad'))}" for m in analysis["evaluacion_mercados"])
         lines.append(f"Líneas evaluadas técnicamente: {compact}.")
     lines.append("Usar como evidencia estadística, no como recomendación de apuesta.")
     lines.append("")

@@ -3,26 +3,42 @@
     {
       "market": "Q1_TOTAL",
       "line": 56.5,
-      "over_odds": 1.90,
-      "under_odds": 1.90
+      "over_odds": null,
+      "under_odds": null,
+      "source": "manual/technical",
+      "source_type": "TECHNICAL_ESTIMATE",
+      "source_url": null,
+      "notes": "Ejemplo técnico; reemplazar por fuente real si existe."
     },
     {
       "market": "FULL_GAME_TOTAL",
       "line": 228.5,
       "over_odds": 1.90,
-      "under_odds": 1.90
+      "under_odds": 1.90,
+      "source": "manual input",
+      "source_type": "MANUAL_INPUT",
+      "source_url": null,
+      "notes": "Ejemplo genérico, no usar como línea real sin validar fuente."
     },
     {
       "market": "HOME_TEAM_TOTAL",
       "line": 112.5,
       "over_odds": 1.85,
-      "under_odds": 1.95
+      "under_odds": 1.95,
+      "source": "manual input",
+      "source_type": "MANUAL_INPUT",
+      "source_url": null,
+      "notes": "Ejemplo genérico."
     },
     {
       "market": "AWAY_TEAM_TOTAL",
       "line": 110.5,
       "over_odds": 1.88,
-      "under_odds": 1.92
+      "under_odds": 1.92,
+      "source": "manual input",
+      "source_type": "MANUAL_INPUT",
+      "source_url": null,
+      "notes": "Ejemplo genérico."
     }
   ]
 }
