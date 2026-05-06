@@ -18,6 +18,7 @@ const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes
 const PaginaConfiguracion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaConfiguracion')).PaginaConfiguracion }));
 const PaginaFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaFutbol')).PaginaFutbol }));
 const AnalisisPartidoFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/AnalisisPartidoFutbol')).AnalisisPartidoFutbol }));
+const PaginaAnalisisNbaAdmin = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaAnalisisNbaAdmin')).PaginaAnalisisNbaAdmin }));
 
 function RutaProtegida({ children }: { children: ReactElement }) {
   const { autenticado, cargando } = useAuth();
@@ -109,6 +110,9 @@ function App() {
         <Route path="/bitacora" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="bitacora.personal"><PaginaBitacora /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/configuracion" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="configuracion.base"><PaginaConfiguracion /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
         <Route path="/chat" element={<Navigate to="/" replace />} />
+
+        {/* Herramientas internas/admin protegidas */}
+        <Route path="/admin/nba-analysis" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="analisis.nba.base"><PaginaAnalisisNbaAdmin /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
 
         {/* Rutas del módulo de fútbol protegidas */}
         <Route path="/futbol" element={<RutaProtegida><RutaConOnboarding><RutaConCapacidad capability="futbol.base"><PaginaFutbol /></RutaConCapacidad></RutaConOnboarding></RutaProtegida>} />
