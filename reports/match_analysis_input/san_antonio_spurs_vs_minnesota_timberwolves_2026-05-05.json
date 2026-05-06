@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "generado_en": "2026-05-06T00:44:14",
+    "generado_en": "2026-05-06T00:51:47",
     "fuente_forma_reciente": "reports/team_recent_form/nba_team_recent_form.json",
     "fuente_muestras_calculadas": "bd_partidos_baloncesto",
-    "markets_file": "reports/match_markets/spurs_vs_timberwolves_2026-05-05_markets.json",
+    "markets_file": "reports/match_markets/generated_batch/sas_min_2026_05_05_markets.json",
     "reglas_clasificacion": {
       "señal estadística fuerte": "brecha promedio-línea >= 6, al menos 3 ventanas con cumplimiento direccional >=60% o <=40%, y ventanas consistentes",
       "señal estadística moderada": "brecha promedio-línea >= 3 y al menos 2 ventanas con cumplimiento direccional",
@@ -10771,12 +10771,12 @@
         "source": "manual/technical",
         "source_type": "TECHNICAL_ESTIMATE",
         "source_url": null,
-        "notes": "Línea técnica derivada para validación porque no se encontró mercado Q1 real; no proviene de mercado real."
+        "notes": "Línea técnica para validar Q1; no proviene de mercado real observado."
       },
       "source": "manual/technical",
       "source_type": "TECHNICAL_ESTIMATE",
       "source_url": null,
-      "notes": "Línea técnica derivada para validación porque no se encontró mercado Q1 real; no proviene de mercado real.",
+      "notes": "Línea técnica para validar Q1; no proviene de mercado real observado.",
       "advertencias": [
         "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
         "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
@@ -10843,12 +10843,12 @@
         "source": "ESPN pickcenter / DraftKings close",
         "source_type": "REAL_MARKET",
         "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
-        "notes": "ESPN pickcenter expuso overUnder 218.5 con odds -110/-110; convertido a decimal aproximado 1.91."
+        "notes": "overUnder 218.5, odds -110/-110"
       },
       "source": "ESPN pickcenter / DraftKings close",
       "source_type": "REAL_MARKET",
       "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
-      "notes": "ESPN pickcenter expuso overUnder 218.5 con odds -110/-110; convertido a decimal aproximado 1.91.",
+      "notes": "overUnder 218.5, odds -110/-110",
       "advertencias": [
         "desviación estándar alta: mercado volátil",
         "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
@@ -10912,15 +10912,15 @@
         "line": 114.5,
         "over_odds": null,
         "under_odds": null,
-        "source": "derived from ESPN/DraftKings total 218.5 and spread SA -10.5",
+        "source": "derived from total 218.5 and spread SA -10.5",
         "source_type": "DERIVED_FROM_TOTAL_SPREAD",
         "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
-        "notes": "Total implícito del local derivado desde total de partido y spread; no es una línea de team total observada directamente."
+        "notes": "Team total implícito del local."
       },
-      "source": "derived from ESPN/DraftKings total 218.5 and spread SA -10.5",
+      "source": "derived from total 218.5 and spread SA -10.5",
       "source_type": "DERIVED_FROM_TOTAL_SPREAD",
       "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
-      "notes": "Total implícito del local derivado desde total de partido y spread; no es una línea de team total observada directamente.",
+      "notes": "Team total implícito del local.",
       "advertencias": [
         "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
         "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
@@ -10984,15 +10984,15 @@
         "line": 104.0,
         "over_odds": null,
         "under_odds": null,
-        "source": "derived from ESPN/DraftKings total 218.5 and spread SA -10.5",
+        "source": "derived from total 218.5 and spread SA -10.5",
         "source_type": "DERIVED_FROM_TOTAL_SPREAD",
         "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
-        "notes": "Total implícito del visitante derivado desde total de partido y spread; no es una línea de team total observada directamente."
+        "notes": "Team total implícito del visitante."
       },
-      "source": "derived from ESPN/DraftKings total 218.5 and spread SA -10.5",
+      "source": "derived from total 218.5 and spread SA -10.5",
       "source_type": "DERIVED_FROM_TOTAL_SPREAD",
       "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
-      "notes": "Total implícito del visitante derivado desde total de partido y spread; no es una línea de team total observada directamente.",
+      "notes": "Team total implícito del visitante.",
       "advertencias": [
         "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
         "datos afectados por overtime en 1 apariciones recientes"

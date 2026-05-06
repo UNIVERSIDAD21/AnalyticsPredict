@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "id": "cle_tor_2026_05_03",
+    "home": "Cleveland Cavaliers",
+    "away": "Toronto Raptors",
+    "date": "2026-05-03",
+    "espn_event_id": "401869384"
+  },
+  "markets": [
+    {
+      "market": "Q1_TOTAL",
+      "line": 52.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "manual/technical",
+      "source_type": "TECHNICAL_ESTIMATE",
+      "source_url": null,
+      "notes": "Línea técnica para validar mercado Q1 sin fuente real observada."
+    },
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 209.5,
+      "over_odds": 1.95,
+      "under_odds": 1.87,
+      "source": "ESPN pickcenter / DraftKings close",
+      "source_type": "REAL_MARKET",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869384",
+      "notes": "overUnder 209.5, odds -105/-115 convertidas aprox."
+    }
+  ]
+}

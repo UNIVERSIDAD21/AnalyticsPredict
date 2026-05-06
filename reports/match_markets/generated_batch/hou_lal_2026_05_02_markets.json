@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "id": "hou_lal_2026_05_02",
+    "home": "HOU",
+    "away": "Los Angeles Lakers",
+    "date": "2026-05-02",
+    "espn_event_id": "401869409"
+  },
+  "markets": [
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 203.5,
+      "over_odds": 1.89,
+      "under_odds": 1.93,
+      "source": "ESPN pickcenter / DraftKings close",
+      "source_type": "REAL_MARKET",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869409",
+      "notes": "overUnder 203.5, odds -112/-108 convertidas aprox."
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "line": 104.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 203.5 and spread HOU -5.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869409",
+      "notes": "Team total implícito del local."
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "line": 99.0,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 203.5 and spread HOU -5.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869409",
+      "notes": "Team total implícito del visitante."
+    }
+  ]
+}

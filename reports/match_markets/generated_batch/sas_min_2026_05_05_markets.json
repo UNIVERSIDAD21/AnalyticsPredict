@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "id": "sas_min_2026_05_05",
+    "home": "San Antonio Spurs",
+    "away": "Minnesota Timberwolves",
+    "date": "2026-05-05",
+    "espn_event_id": "401871152"
+  },
+  "markets": [
+    {
+      "market": "Q1_TOTAL",
+      "line": 54.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "manual/technical",
+      "source_type": "TECHNICAL_ESTIMATE",
+      "source_url": null,
+      "notes": "Línea técnica para validar Q1; no proviene de mercado real observado."
+    },
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 218.5,
+      "over_odds": 1.91,
+      "under_odds": 1.91,
+      "source": "ESPN pickcenter / DraftKings close",
+      "source_type": "REAL_MARKET",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
+      "notes": "overUnder 218.5, odds -110/-110"
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "line": 114.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 218.5 and spread SA -10.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
+      "notes": "Team total implícito del local."
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "line": 104.0,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 218.5 and spread SA -10.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401871152",
+      "notes": "Team total implícito del visitante."
+    }
+  ]
+}

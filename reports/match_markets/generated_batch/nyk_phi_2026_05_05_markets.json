@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "id": "nyk_phi_2026_05_05",
+    "home": "NYK",
+    "away": "PHI",
+    "date": "2026-05-05",
+    "espn_event_id": "401871159"
+  },
+  "markets": [
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 212.5,
+      "over_odds": 1.91,
+      "under_odds": 1.91,
+      "source": "ESPN pickcenter / DraftKings close",
+      "source_type": "REAL_MARKET",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401871159",
+      "notes": "overUnder 212.5, odds -110/-110"
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "line": 110.0,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 212.5 and spread NY -7.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401871159",
+      "notes": "Team total implícito del local."
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "line": 102.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 212.5 and spread NY -7.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401871159",
+      "notes": "Team total implícito del visitante."
+    }
+  ]
+}

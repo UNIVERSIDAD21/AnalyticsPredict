@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "id": "orl_det_2026_05_01",
+    "home": "ORL",
+    "away": "DET",
+    "date": "2026-05-01",
+    "espn_event_id": "401869417"
+  },
+  "markets": [
+    {
+      "market": "Q1_TOTAL",
+      "line": 52.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "manual/technical",
+      "source_type": "TECHNICAL_ESTIMATE",
+      "source_url": null,
+      "notes": "Línea técnica para validar Q1; no mercado real observado."
+    },
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 210.5,
+      "over_odds": 1.87,
+      "under_odds": 1.95,
+      "source": "ESPN pickcenter / DraftKings close",
+      "source_type": "REAL_MARKET",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869417",
+      "notes": "overUnder 210.5, odds -115/-105 convertidas aprox."
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "line": 103.5,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 210.5 and spread DET -3.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869417",
+      "notes": "Team total implícito del local underdog."
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "line": 107.0,
+      "over_odds": null,
+      "under_odds": null,
+      "source": "derived from total 210.5 and spread DET -3.5",
+      "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+      "source_url": "https://www.espn.com/nba/game/_/gameId/401869417",
+      "notes": "Team total implícito del visitante favorito."
+    }
+  ]
+}

@@ -1,0 +1,355 @@
+{
+  "generated_at": "2026-05-06T00:52:08",
+  "batch_file": "reports/match_markets/lote_validacion_nba_2026-05-05.json",
+  "totals": {
+    "total": 5,
+    "OK": 0,
+    "WARNING": 5,
+    "ERROR": 0
+  },
+  "warning_counts": {
+    "se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras": 1,
+    "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE": 3,
+    "diferencia fuerte reciente/completa en FULL_GAME_TOTAL": 4,
+    "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD": 4,
+    "diferencia fuerte reciente/completa en HOME_TEAM_TOTAL": 3,
+    "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD": 4,
+    "se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras": 1,
+    "diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL": 3,
+    "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras": 3
+  },
+  "results": [
+    {
+      "id": "sas_min_2026_05_05",
+      "home": "San Antonio Spurs",
+      "away": "Minnesota Timberwolves",
+      "date": "2026-05-05",
+      "markets_file": "reports/match_markets/generated_batch/sas_min_2026_05_05_markets.json",
+      "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home San Antonio Spurs --away Minnesota Timberwolves --date 2026-05-05 --markets reports/match_markets/generated_batch/sas_min_2026_05_05_markets.json",
+      "status": "WARNING",
+      "warnings": [
+        "se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE",
+        "diferencia fuerte reciente/completa en FULL_GAME_TOTAL",
+        "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "diferencia fuerte reciente/completa en HOME_TEAM_TOTAL",
+        "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD"
+      ],
+      "generated": {
+        "json": "reports/match_analysis_input/san_antonio_spurs_vs_minnesota_timberwolves_2026-05-05.json",
+        "markdown": "reports/match_analysis_reports/san_antonio_spurs_vs_minnesota_timberwolves_2026-05-05.md"
+      },
+      "market_source_types": {
+        "TECHNICAL_ESTIMATE": 1,
+        "REAL_MARKET": 1,
+        "DERIVED_FROM_TOTAL_SPREAD": 2
+      },
+      "stdout": "{\n  \"json\": \"reports/match_analysis_input/san_antonio_spurs_vs_minnesota_timberwolves_2026-05-05.json\",\n  \"markdown\": \"reports/match_analysis_reports/san_antonio_spurs_vs_minnesota_timberwolves_2026-05-05.md\"\n}",
+      "stderr": "",
+      "summary_external": "## Resumen para análisis externo\nPartido: San Antonio Spurs local vs Minnesota Timberwolves visitante, fecha 2026-05-05. BD disponible hasta 2026-05-05.\nMuestras recientes: SAS general 30 y local 30; MIN general 30 y visitante 30.\nCombinado split local/visitante últimos 30: Q1 57.93, Q2 56.65, Q3 59.05, Q4 58.88, total partido 233.35.\nLíneas evaluadas técnicamente: Q1_TOTAL línea 54.5 (TECHNICAL_ESTIMATE): señal estadística débil, diff 2.62, vol 5.48; FULL_GAME_TOTAL línea 218.5 (REAL_MARKET): señal inconsistente, diff 7.53, vol 14.39; HOME_TEAM_TOTAL línea 114.5 (DERIVED_FROM_TOTAL_SPREAD): señal estadística débil, diff 1.33, vol 9.66; AWAY_TEAM_TOTAL línea 104.0 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 6.20, vol 8.01.\nUsar como evidencia estadística, no como recomendación de apuesta.",
+      "quality": {
+        "candidatas": 360,
+        "usadas": 120,
+        "excluidas": 20,
+        "porcentaje_excluido": 5.56
+      },
+      "markets": [
+        {
+          "market": "Q1_TOTAL",
+          "source_type": "TECHNICAL_ESTIMATE",
+          "clasificacion": "señal estadística débil",
+          "advertencias": [
+            "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
+            "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+            "datos afectados por overtime en 1 apariciones recientes"
+          ]
+        },
+        {
+          "market": "FULL_GAME_TOTAL",
+          "source_type": "REAL_MARKET",
+          "clasificacion": "señal inconsistente",
+          "advertencias": [
+            "desviación estándar alta: mercado volátil",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 1 apariciones recientes"
+          ]
+        },
+        {
+          "market": "HOME_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística débil",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 1 apariciones recientes"
+          ]
+        },
+        {
+          "market": "AWAY_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "datos afectados por overtime en 1 apariciones recientes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nyk_phi_2026_05_05",
+      "home": "NYK",
+      "away": "PHI",
+      "date": "2026-05-05",
+      "markets_file": "reports/match_markets/generated_batch/nyk_phi_2026_05_05_markets.json",
+      "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home NYK --away PHI --date 2026-05-05 --markets reports/match_markets/generated_batch/nyk_phi_2026_05_05_markets.json",
+      "status": "WARNING",
+      "warnings": [
+        "se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL"
+      ],
+      "generated": {
+        "json": "reports/match_analysis_input/new_york_knicks_vs_philadelphia_76ers_2026-05-05.json",
+        "markdown": "reports/match_analysis_reports/new_york_knicks_vs_philadelphia_76ers_2026-05-05.md"
+      },
+      "market_source_types": {
+        "REAL_MARKET": 1,
+        "DERIVED_FROM_TOTAL_SPREAD": 2
+      },
+      "stdout": "{\n  \"json\": \"reports/match_analysis_input/new_york_knicks_vs_philadelphia_76ers_2026-05-05.json\",\n  \"markdown\": \"reports/match_analysis_reports/new_york_knicks_vs_philadelphia_76ers_2026-05-05.md\"\n}",
+      "stderr": "",
+      "summary_external": "## Resumen para análisis externo\nPartido: New York Knicks local vs Philadelphia 76ers visitante, fecha 2026-05-05. BD disponible hasta 2026-05-05.\nMuestras recientes: NYK general 30 y local 30; PHI general 30 y visitante 30.\nCombinado split local/visitante últimos 30: Q1 58.10, Q2 58.77, Q3 57.55, Q4 53.05, total partido 229.20.\nLíneas evaluadas técnicamente: FULL_GAME_TOTAL línea 212.5 (REAL_MARKET): señal inconsistente, diff 12.78, vol 16.42; HOME_TEAM_TOTAL línea 110.0 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 5.83, vol 10.71; AWAY_TEAM_TOTAL línea 102.5 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 6.95, vol 10.96.\nUsar como evidencia estadística, no como recomendación de apuesta.",
+      "quality": {
+        "candidatas": 360,
+        "usadas": 120,
+        "excluidas": 18,
+        "porcentaje_excluido": 5.0
+      },
+      "markets": [
+        {
+          "market": "FULL_GAME_TOTAL",
+          "source_type": "REAL_MARKET",
+          "clasificacion": "señal inconsistente",
+          "advertencias": [
+            "desviación estándar alta: mercado volátil"
+          ]
+        },
+        {
+          "market": "HOME_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD"
+          ]
+        },
+        {
+          "market": "AWAY_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cle_tor_2026_05_03",
+      "home": "Cleveland Cavaliers",
+      "away": "Toronto Raptors",
+      "date": "2026-05-03",
+      "markets_file": "reports/match_markets/generated_batch/cle_tor_2026_05_03_markets.json",
+      "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home Cleveland Cavaliers --away Toronto Raptors --date 2026-05-03 --markets reports/match_markets/generated_batch/cle_tor_2026_05_03_markets.json",
+      "status": "WARNING",
+      "warnings": [
+        "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE",
+        "diferencia fuerte reciente/completa en FULL_GAME_TOTAL"
+      ],
+      "generated": {
+        "json": "reports/match_analysis_input/cleveland_cavaliers_vs_toronto_raptors_2026-05-03.json",
+        "markdown": "reports/match_analysis_reports/cleveland_cavaliers_vs_toronto_raptors_2026-05-03.md"
+      },
+      "market_source_types": {
+        "TECHNICAL_ESTIMATE": 1,
+        "REAL_MARKET": 1
+      },
+      "stdout": "{\n  \"json\": \"reports/match_analysis_input/cleveland_cavaliers_vs_toronto_raptors_2026-05-03.json\",\n  \"markdown\": \"reports/match_analysis_reports/cleveland_cavaliers_vs_toronto_raptors_2026-05-03.md\"\n}",
+      "stderr": "",
+      "summary_external": "## Resumen para análisis externo\nPartido: Cleveland Cavaliers local vs Toronto Raptors visitante, fecha 2026-05-03. BD disponible hasta 2026-05-05.\nMuestras recientes: CLE general 30 y local 30; TOR general 30 y visitante 30.\nCombinado split local/visitante últimos 30: Q1 56.05, Q2 58.20, Q3 60.13, Q4 55.83, total partido 230.35.\nLíneas evaluadas técnicamente: Q1_TOTAL línea 52.5 (TECHNICAL_ESTIMATE): señal estadística moderada, diff 4.28, vol 7.62; FULL_GAME_TOTAL línea 209.5 (REAL_MARKET): señal inconsistente, diff 18.40, vol 16.93.\nUsar como evidencia estadística, no como recomendación de apuesta.",
+      "quality": {
+        "candidatas": 360,
+        "usadas": 120,
+        "excluidas": 17,
+        "porcentaje_excluido": 4.72
+      },
+      "markets": [
+        {
+          "market": "Q1_TOTAL",
+          "source_type": "TECHNICAL_ESTIMATE",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
+            "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+            "datos afectados por overtime en 3 apariciones recientes"
+          ]
+        },
+        {
+          "market": "FULL_GAME_TOTAL",
+          "source_type": "REAL_MARKET",
+          "clasificacion": "señal inconsistente",
+          "advertencias": [
+            "desviación estándar alta: mercado volátil",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 3 apariciones recientes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hou_lal_2026_05_02",
+      "home": "HOU",
+      "away": "Los Angeles Lakers",
+      "date": "2026-05-02",
+      "markets_file": "reports/match_markets/generated_batch/hou_lal_2026_05_02_markets.json",
+      "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home HOU --away Los Angeles Lakers --date 2026-05-02 --markets reports/match_markets/generated_batch/hou_lal_2026_05_02_markets.json",
+      "status": "WARNING",
+      "warnings": [
+        "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        "diferencia fuerte reciente/completa en FULL_GAME_TOTAL",
+        "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "diferencia fuerte reciente/completa en HOME_TEAM_TOTAL",
+        "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL"
+      ],
+      "generated": {
+        "json": "reports/match_analysis_input/houston_rockets_vs_los_angeles_lakers_2026-05-02.json",
+        "markdown": "reports/match_analysis_reports/houston_rockets_vs_los_angeles_lakers_2026-05-02.md"
+      },
+      "market_source_types": {
+        "REAL_MARKET": 1,
+        "DERIVED_FROM_TOTAL_SPREAD": 2
+      },
+      "stdout": "{\n  \"json\": \"reports/match_analysis_input/houston_rockets_vs_los_angeles_lakers_2026-05-02.json\",\n  \"markdown\": \"reports/match_analysis_reports/houston_rockets_vs_los_angeles_lakers_2026-05-02.md\"\n}",
+      "stderr": "",
+      "summary_external": "## Resumen para análisis externo\nPartido: Houston Rockets local vs Los Angeles Lakers visitante, fecha 2026-05-02. BD disponible hasta 2026-05-05.\nMuestras recientes: HOU general 30 y local 30; LAL general 30 y visitante 30.\nCombinado split local/visitante últimos 30: Q1 57.48, Q2 55.33, Q3 54.83, Q4 52.40, total partido 221.08.\nLíneas evaluadas técnicamente: FULL_GAME_TOTAL línea 203.5 (REAL_MARKET): señal inconsistente, diff 18.12, vol 16.16; HOME_TEAM_TOTAL línea 104.5 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 5.50, vol 10.02; AWAY_TEAM_TOTAL línea 99.0 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 12.62, vol 9.61.\nUsar como evidencia estadística, no como recomendación de apuesta.",
+      "quality": {
+        "candidatas": 360,
+        "usadas": 120,
+        "excluidas": 17,
+        "porcentaje_excluido": 4.72
+      },
+      "markets": [
+        {
+          "market": "FULL_GAME_TOTAL",
+          "source_type": "REAL_MARKET",
+          "clasificacion": "señal inconsistente",
+          "advertencias": [
+            "desviación estándar alta: mercado volátil",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 5 apariciones recientes"
+          ]
+        },
+        {
+          "market": "HOME_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 5 apariciones recientes"
+          ]
+        },
+        {
+          "market": "AWAY_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 5 apariciones recientes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orl_det_2026_05_01",
+      "home": "ORL",
+      "away": "DET",
+      "date": "2026-05-01",
+      "markets_file": "reports/match_markets/generated_batch/orl_det_2026_05_01_markets.json",
+      "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home ORL --away DET --date 2026-05-01 --markets reports/match_markets/generated_batch/orl_det_2026_05_01_markets.json",
+      "status": "WARNING",
+      "warnings": [
+        "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE",
+        "diferencia fuerte reciente/completa en FULL_GAME_TOTAL",
+        "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "diferencia fuerte reciente/completa en HOME_TEAM_TOTAL",
+        "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
+        "diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL"
+      ],
+      "generated": {
+        "json": "reports/match_analysis_input/orlando_magic_vs_detroit_pistons_2026-05-01.json",
+        "markdown": "reports/match_analysis_reports/orlando_magic_vs_detroit_pistons_2026-05-01.md"
+      },
+      "market_source_types": {
+        "TECHNICAL_ESTIMATE": 1,
+        "REAL_MARKET": 1,
+        "DERIVED_FROM_TOTAL_SPREAD": 2
+      },
+      "stdout": "{\n  \"json\": \"reports/match_analysis_input/orlando_magic_vs_detroit_pistons_2026-05-01.json\",\n  \"markdown\": \"reports/match_analysis_reports/orlando_magic_vs_detroit_pistons_2026-05-01.md\"\n}",
+      "stderr": "",
+      "summary_external": "## Resumen para análisis externo\nPartido: Orlando Magic local vs Detroit Pistons visitante, fecha 2026-05-01. BD disponible hasta 2026-05-05.\nMuestras recientes: ORL general 30 y local 30; DET general 30 y visitante 30.\nCombinado split local/visitante últimos 30: Q1 56.87, Q2 57.03, Q3 57.32, Q4 52.42, total partido 224.52.\nLíneas evaluadas técnicamente: Q1_TOTAL línea 52.5 (TECHNICAL_ESTIMATE): señal estadística moderada, diff 3.77, vol 6.27; FULL_GAME_TOTAL línea 210.5 (REAL_MARKET): señal inconsistente, diff 11.50, vol 18.53; HOME_TEAM_TOTAL línea 103.5 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 5.42, vol 10.76; AWAY_TEAM_TOTAL línea 107.0 (DERIVED_FROM_TOTAL_SPREAD): señal estadística moderada, diff 6.08, vol 11.59.\nUsar como evidencia estadística, no como recomendación de apuesta.",
+      "quality": {
+        "candidatas": 360,
+        "usadas": 120,
+        "excluidas": 17,
+        "porcentaje_excluido": 4.72
+      },
+      "markets": [
+        {
+          "market": "Q1_TOTAL",
+          "source_type": "TECHNICAL_ESTIMATE",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
+            "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+            "datos afectados por overtime en 4 apariciones recientes"
+          ]
+        },
+        {
+          "market": "FULL_GAME_TOTAL",
+          "source_type": "REAL_MARKET",
+          "clasificacion": "señal inconsistente",
+          "advertencias": [
+            "desviación estándar alta: mercado volátil",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 4 apariciones recientes"
+          ]
+        },
+        {
+          "market": "HOME_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 4 apariciones recientes"
+          ]
+        },
+        {
+          "market": "AWAY_TEAM_TOTAL",
+          "source_type": "DERIVED_FROM_TOTAL_SPREAD",
+          "clasificacion": "señal estadística moderada",
+          "advertencias": [
+            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
+            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+            "datos afectados por overtime en 4 apariciones recientes"
+          ]
+        }
+      ]
+    }
+  ]
+}
