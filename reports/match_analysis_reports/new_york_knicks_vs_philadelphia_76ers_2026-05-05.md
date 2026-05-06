@@ -6,7 +6,7 @@
 - Partido: New York Knicks (NYK) local vs Philadelphia 76ers (PHI) visitante
 - Fecha del partido: 2026-05-05
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:51:52
+- Generado: 2026-05-06T00:59:47
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -29,7 +29,7 @@
 - Apariciones candidatas: 360
 - Apariciones usadas: 120
 - Apariciones excluidas: 18 (5.00%)
-- Razones de exclusión: marcador 0-0: 18
+- Razones de exclusión: Marcador 0-0 no válido para muestra histórica: 18
 
 ## Forma reciente - New York Knicks local
 
@@ -85,7 +85,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 40.0, '10': 50.0, '20': 35.0, '30': 33.33}
 - Cumplimiento split local/visitante over: 83.33%
 - Cumplimiento split local/visitante under: 16.67%
-- Advertencias: desviación estándar alta: mercado volátil
+- Advertencias: [HIGH_VOLATILITY] desviación estándar alta: mercado volátil ({'stddev': 16.42})
 
 ### HOME_TEAM_TOTAL
 - Línea: 110.0
@@ -103,7 +103,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 40.0, '10': 50.0, '20': 35.0, '30': 36.67}
 - Cumplimiento split local/visitante over: 73.33%
 - Cumplimiento split local/visitante under: 26.67%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD
+- Advertencias: [NON_REAL_MARKET_LINE] La línea HOME_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'})
 
 ### AWAY_TEAM_TOTAL
 - Línea: 102.5
@@ -121,10 +121,10 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 30.0, '20': 25.0, '30': 30.0}
 - Cumplimiento split local/visitante over: 86.67%
 - Cumplimiento split local/visitante under: 13.33%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30)
+- Advertencias: [NON_REAL_MARKET_LINE] La línea AWAY_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 101.3, 'avg_30': 109.45})
 
 ## Advertencias generales
-- se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras
+- [EXCLUDED_APPEARANCES] se excluyeron 18 apariciones antes de calcular muestras ({'excluded': 18})
 
 ## Resumen para análisis externo
 Partido: New York Knicks local vs Philadelphia 76ers visitante, fecha 2026-05-05. BD disponible hasta 2026-05-05.

@@ -111,7 +111,7 @@ def run_match(match: dict[str, Any]) -> dict[str, Any]:
                 result["warnings"].append(f"línea no real en {m.get('market')}: {st}")
             if not m.get("evaluable", True):
                 result["warnings"].append(f"mercado no evaluable: {m.get('market')}")
-            if any("diferencia fuerte" in w for w in m.get("advertencias", [])):
+            if any((isinstance(w, dict) and w.get("code") == "RECENT_FULL_SAMPLE_DIVERGENCE") or ("diferencia fuerte" in str(w)) for w in m.get("advertencias", [])):
                 result["warnings"].append(f"diferencia fuerte reciente/completa en {m.get('market')}")
             result["markets"].append({
                 "market": m.get("market"),
@@ -158,7 +158,7 @@ def render_md(data: dict[str, Any]) -> str:
     for r in data["results"]:
         lines += ["", f"### {r['id']} — {r['status']}"]
         if r.get("warnings"):
-            lines.extend(f"- {w}" for w in r["warnings"])
+            lines.extend(f"- {json.dumps(w, ensure_ascii=False) if isinstance(w, dict) else w}" for w in r["warnings"])
         else:
             lines.append("- Sin warnings.")
         lines.append("- Source types: " + json.dumps(r.get("market_source_types", {}), ensure_ascii=False))
@@ -177,7 +177,7 @@ def main() -> int:
     totals = Counter(r["status"] for r in results)
     warning_counts = Counter()
     for r in results:
-        warning_counts.update(r.get("warnings", []))
+        warning_counts.update(json.dumps(w, ensure_ascii=False, sort_keys=True) if isinstance(w, dict) else str(w) for w in r.get("warnings", []))
     data = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "batch_file": str(Path(args.batch).relative_to(ROOT) if Path(args.batch).is_absolute() and ROOT in Path(args.batch).parents else args.batch),

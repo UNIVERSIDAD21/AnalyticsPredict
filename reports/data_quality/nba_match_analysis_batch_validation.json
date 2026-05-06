@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-06T00:52:08",
+  "generated_at": "2026-05-06T01:00:00",
   "batch_file": "reports/match_markets/lote_validacion_nba_2026-05-05.json",
   "totals": {
     "total": 5,
@@ -8,15 +8,15 @@
     "ERROR": 0
   },
   "warning_counts": {
-    "se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras": 1,
+    "{\"code\": \"EXCLUDED_APPEARANCES\", \"details\": {\"excluded\": 20}, \"message\": \"se excluyeron 20 apariciones antes de calcular muestras\", \"scope\": \"data_quality\", \"severity\": \"WARNING\"}": 1,
     "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE": 3,
     "diferencia fuerte reciente/completa en FULL_GAME_TOTAL": 4,
     "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD": 4,
     "diferencia fuerte reciente/completa en HOME_TEAM_TOTAL": 3,
     "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD": 4,
-    "se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras": 1,
+    "{\"code\": \"EXCLUDED_APPEARANCES\", \"details\": {\"excluded\": 18}, \"message\": \"se excluyeron 18 apariciones antes de calcular muestras\", \"scope\": \"data_quality\", \"severity\": \"WARNING\"}": 1,
     "diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL": 3,
-    "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras": 3
+    "{\"code\": \"EXCLUDED_APPEARANCES\", \"details\": {\"excluded\": 17}, \"message\": \"se excluyeron 17 apariciones antes de calcular muestras\", \"scope\": \"data_quality\", \"severity\": \"WARNING\"}": 3
   },
   "results": [
     {
@@ -28,7 +28,15 @@
       "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home San Antonio Spurs --away Minnesota Timberwolves --date 2026-05-05 --markets reports/match_markets/generated_batch/sas_min_2026_05_05_markets.json",
       "status": "WARNING",
       "warnings": [
-        "se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        {
+          "code": "EXCLUDED_APPEARANCES",
+          "severity": "WARNING",
+          "message": "se excluyeron 20 apariciones antes de calcular muestras",
+          "scope": "data_quality",
+          "details": {
+            "excluded": 20
+          }
+        },
         "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE",
         "diferencia fuerte reciente/completa en FULL_GAME_TOTAL",
         "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
@@ -59,9 +67,36 @@
           "source_type": "TECHNICAL_ESTIMATE",
           "clasificacion": "señal estadística débil",
           "advertencias": [
-            "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
-            "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
-            "datos afectados por overtime en 1 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea Q1_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "source_type": "TECHNICAL_ESTIMATE"
+              }
+            },
+            {
+              "code": "TECHNICAL_ESTIMATE_ONLY",
+              "severity": "WARNING",
+              "message": "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "source_type": "TECHNICAL_ESTIMATE"
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 1 apariciones recientes",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "overtime_count": 1
+              }
+            }
           ]
         },
         {
@@ -69,9 +104,37 @@
           "source_type": "REAL_MARKET",
           "clasificacion": "señal inconsistente",
           "advertencias": [
-            "desviación estándar alta: mercado volátil",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 1 apariciones recientes"
+            {
+              "code": "HIGH_VOLATILITY",
+              "severity": "WARNING",
+              "message": "desviación estándar alta: mercado volátil",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "stddev": 14.39
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "recent_avg": 212.8,
+                "avg_30": 226.033
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 1 apariciones recientes",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "overtime_count": 1
+              }
+            }
           ]
         },
         {
@@ -79,9 +142,37 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística débil",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 1 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea HOME_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "recent_avg": 107.0,
+                "avg_30": 115.833
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 1 apariciones recientes",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "overtime_count": 1
+              }
+            }
           ]
         },
         {
@@ -89,8 +180,26 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "datos afectados por overtime en 1 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea AWAY_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 1 apariciones recientes",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "overtime_count": 1
+              }
+            }
           ]
         }
       ]
@@ -104,7 +213,15 @@
       "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home NYK --away PHI --date 2026-05-05 --markets reports/match_markets/generated_batch/nyk_phi_2026_05_05_markets.json",
       "status": "WARNING",
       "warnings": [
-        "se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        {
+          "code": "EXCLUDED_APPEARANCES",
+          "severity": "WARNING",
+          "message": "se excluyeron 18 apariciones antes de calcular muestras",
+          "scope": "data_quality",
+          "details": {
+            "excluded": 18
+          }
+        },
         "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
         "línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
         "diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL"
@@ -132,7 +249,16 @@
           "source_type": "REAL_MARKET",
           "clasificacion": "señal inconsistente",
           "advertencias": [
-            "desviación estándar alta: mercado volátil"
+            {
+              "code": "HIGH_VOLATILITY",
+              "severity": "WARNING",
+              "message": "desviación estándar alta: mercado volátil",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "stddev": 16.42
+              }
+            }
           ]
         },
         {
@@ -140,7 +266,16 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea HOME_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            }
           ]
         },
         {
@@ -148,8 +283,27 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea AWAY_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "recent_avg": 101.3,
+                "avg_30": 109.45
+              }
+            }
           ]
         }
       ]
@@ -163,7 +317,15 @@
       "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home Cleveland Cavaliers --away Toronto Raptors --date 2026-05-03 --markets reports/match_markets/generated_batch/cle_tor_2026_05_03_markets.json",
       "status": "WARNING",
       "warnings": [
-        "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        {
+          "code": "EXCLUDED_APPEARANCES",
+          "severity": "WARNING",
+          "message": "se excluyeron 17 apariciones antes de calcular muestras",
+          "scope": "data_quality",
+          "details": {
+            "excluded": 17
+          }
+        },
         "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE",
         "diferencia fuerte reciente/completa en FULL_GAME_TOTAL"
       ],
@@ -190,9 +352,36 @@
           "source_type": "TECHNICAL_ESTIMATE",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
-            "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
-            "datos afectados por overtime en 3 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea Q1_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "source_type": "TECHNICAL_ESTIMATE"
+              }
+            },
+            {
+              "code": "TECHNICAL_ESTIMATE_ONLY",
+              "severity": "WARNING",
+              "message": "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "source_type": "TECHNICAL_ESTIMATE"
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 3 apariciones recientes",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "overtime_count": 3
+              }
+            }
           ]
         },
         {
@@ -200,9 +389,37 @@
           "source_type": "REAL_MARKET",
           "clasificacion": "señal inconsistente",
           "advertencias": [
-            "desviación estándar alta: mercado volátil",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 3 apariciones recientes"
+            {
+              "code": "HIGH_VOLATILITY",
+              "severity": "WARNING",
+              "message": "desviación estándar alta: mercado volátil",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "stddev": 16.925
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "recent_avg": 219.0,
+                "avg_30": 227.9
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 3 apariciones recientes",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "overtime_count": 3
+              }
+            }
           ]
         }
       ]
@@ -216,7 +433,15 @@
       "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home HOU --away Los Angeles Lakers --date 2026-05-02 --markets reports/match_markets/generated_batch/hou_lal_2026_05_02_markets.json",
       "status": "WARNING",
       "warnings": [
-        "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        {
+          "code": "EXCLUDED_APPEARANCES",
+          "severity": "WARNING",
+          "message": "se excluyeron 17 apariciones antes de calcular muestras",
+          "scope": "data_quality",
+          "details": {
+            "excluded": 17
+          }
+        },
         "diferencia fuerte reciente/completa en FULL_GAME_TOTAL",
         "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
         "diferencia fuerte reciente/completa en HOME_TEAM_TOTAL",
@@ -246,9 +471,37 @@
           "source_type": "REAL_MARKET",
           "clasificacion": "señal inconsistente",
           "advertencias": [
-            "desviación estándar alta: mercado volátil",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 5 apariciones recientes"
+            {
+              "code": "HIGH_VOLATILITY",
+              "severity": "WARNING",
+              "message": "desviación estándar alta: mercado volátil",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "stddev": 16.158
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "recent_avg": 198.8,
+                "avg_30": 221.617
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 5 apariciones recientes",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "overtime_count": 5
+              }
+            }
           ]
         },
         {
@@ -256,9 +509,37 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 5 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea HOME_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "recent_avg": 98.8,
+                "avg_30": 110.0
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 5 apariciones recientes",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "overtime_count": 5
+              }
+            }
           ]
         },
         {
@@ -266,9 +547,37 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 5 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea AWAY_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "recent_avg": 100.0,
+                "avg_30": 111.617
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 5 apariciones recientes",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "overtime_count": 5
+              }
+            }
           ]
         }
       ]
@@ -282,7 +591,15 @@
       "command": "/home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python /home/borlty/.openclaw/workspace/repos/AnalyticsPredict/backend/scripts/generar_analisis_partido_nba.py --home ORL --away DET --date 2026-05-01 --markets reports/match_markets/generated_batch/orl_det_2026_05_01_markets.json",
       "status": "WARNING",
       "warnings": [
-        "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras",
+        {
+          "code": "EXCLUDED_APPEARANCES",
+          "severity": "WARNING",
+          "message": "se excluyeron 17 apariciones antes de calcular muestras",
+          "scope": "data_quality",
+          "details": {
+            "excluded": 17
+          }
+        },
         "línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE",
         "diferencia fuerte reciente/completa en FULL_GAME_TOTAL",
         "línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD",
@@ -314,9 +631,36 @@
           "source_type": "TECHNICAL_ESTIMATE",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
-            "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
-            "datos afectados por overtime en 4 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea Q1_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "source_type": "TECHNICAL_ESTIMATE"
+              }
+            },
+            {
+              "code": "TECHNICAL_ESTIMATE_ONLY",
+              "severity": "WARNING",
+              "message": "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "source_type": "TECHNICAL_ESTIMATE"
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 4 apariciones recientes",
+              "scope": "market",
+              "market": "Q1_TOTAL",
+              "details": {
+                "overtime_count": 4
+              }
+            }
           ]
         },
         {
@@ -324,9 +668,37 @@
           "source_type": "REAL_MARKET",
           "clasificacion": "señal inconsistente",
           "advertencias": [
-            "desviación estándar alta: mercado volátil",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 4 apariciones recientes"
+            {
+              "code": "HIGH_VOLATILITY",
+              "severity": "WARNING",
+              "message": "desviación estándar alta: mercado volátil",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "stddev": 18.534
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "recent_avg": 201.4,
+                "avg_30": 222.0
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 4 apariciones recientes",
+              "scope": "market",
+              "market": "FULL_GAME_TOTAL",
+              "details": {
+                "overtime_count": 4
+              }
+            }
           ]
         },
         {
@@ -334,9 +706,37 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 4 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea HOME_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "recent_avg": 97.8,
+                "avg_30": 108.917
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 4 apariciones recientes",
+              "scope": "market",
+              "market": "HOME_TEAM_TOTAL",
+              "details": {
+                "overtime_count": 4
+              }
+            }
           ]
         },
         {
@@ -344,9 +744,37 @@
           "source_type": "DERIVED_FROM_TOTAL_SPREAD",
           "clasificacion": "señal estadística moderada",
           "advertencias": [
-            "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-            "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-            "datos afectados por overtime en 4 apariciones recientes"
+            {
+              "code": "NON_REAL_MARKET_LINE",
+              "severity": "WARNING",
+              "message": "La línea AWAY_TEAM_TOTAL no proviene de mercado real",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+              }
+            },
+            {
+              "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+              "severity": "WARNING",
+              "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "recent_avg": 103.6,
+                "avg_30": 113.083
+              }
+            },
+            {
+              "code": "OVERTIME_IN_SAMPLE",
+              "severity": "WARNING",
+              "message": "datos afectados por overtime en 4 apariciones recientes",
+              "scope": "market",
+              "market": "AWAY_TEAM_TOTAL",
+              "details": {
+                "overtime_count": 4
+              }
+            }
           ]
         }
       ]

@@ -40,6 +40,7 @@ from api.rutas_chat import router as router_chat
 from api.rutas_premium import router as router_premium
 from api.rutas_access import router as router_access
 from api.rutas_product_analytics import router as router_product_analytics
+from api.rutas_match_analysis_nba import router as router_match_analysis_nba
 
 # Routers de Fútbol
 from api.rutas_competiciones_futbol import router as router_competiciones_futbol
@@ -307,6 +308,7 @@ app.include_router(router_notificaciones)
 app.include_router(router_premium)
 app.include_router(router_access)
 app.include_router(router_product_analytics)
+app.include_router(router_match_analysis_nba)
 if _chat_habilitado():
     app.include_router(router_chat)
 

@@ -6,7 +6,7 @@
 - Partido: Orlando Magic (ORL) local vs Detroit Pistons (DET) visitante
 - Fecha del partido: 2026-05-01
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:52:07
+- Generado: 2026-05-06T01:00:00
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -29,7 +29,7 @@
 - Apariciones candidatas: 360
 - Apariciones usadas: 120
 - Apariciones excluidas: 17 (4.72%)
-- Razones de exclusión: marcador 0-0: 17
+- Razones de exclusión: Marcador 0-0 no válido para muestra histórica: 17
 
 ## Forma reciente - Orlando Magic local
 
@@ -87,7 +87,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 50.0, '20': 25.0, '30': 23.33}
 - Cumplimiento split local/visitante over: 73.33%
 - Cumplimiento split local/visitante under: 26.67%
-- Advertencias: línea no REAL_MARKET: TECHNICAL_ESTIMATE; Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.; datos afectados por overtime en 4 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea Q1_TOTAL no proviene de mercado real ({'source_type': 'TECHNICAL_ESTIMATE'}); [TECHNICAL_ESTIMATE_ONLY] Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico. ({'source_type': 'TECHNICAL_ESTIMATE'}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 4 apariciones recientes ({'overtime_count': 4})
 
 ### FULL_GAME_TOTAL
 - Línea: 210.5
@@ -104,7 +104,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 40.0, '20': 20.0, '30': 13.33}
 - Cumplimiento split local/visitante over: 93.33%
 - Cumplimiento split local/visitante under: 6.67%
-- Advertencias: desviación estándar alta: mercado volátil; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 4 apariciones recientes
+- Advertencias: [HIGH_VOLATILITY] desviación estándar alta: mercado volátil ({'stddev': 18.534}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 201.4, 'avg_30': 222.0}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 4 apariciones recientes ({'overtime_count': 4})
 
 ### HOME_TEAM_TOTAL
 - Línea: 103.5
@@ -122,7 +122,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 40.0, '20': 35.0, '30': 23.33}
 - Cumplimiento split local/visitante over: 73.33%
 - Cumplimiento split local/visitante under: 23.33%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 4 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea HOME_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 97.8, 'avg_30': 108.917}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 4 apariciones recientes ({'overtime_count': 4})
 
 ### AWAY_TEAM_TOTAL
 - Línea: 107.0
@@ -140,10 +140,10 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 60.0, '20': 30.0, '30': 30.0}
 - Cumplimiento split local/visitante over: 76.67%
 - Cumplimiento split local/visitante under: 23.33%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 4 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea AWAY_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 103.6, 'avg_30': 113.083}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 4 apariciones recientes ({'overtime_count': 4})
 
 ## Advertencias generales
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras
+- [EXCLUDED_APPEARANCES] se excluyeron 17 apariciones antes de calcular muestras ({'excluded': 17})
 
 ## Resumen para análisis externo
 Partido: Orlando Magic local vs Detroit Pistons visitante, fecha 2026-05-01. BD disponible hasta 2026-05-05.

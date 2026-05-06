@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generado_en": "2026-05-06T00:51:57",
+    "generado_en": "2026-05-06T00:59:51",
     "fuente_forma_reciente": "reports/team_recent_form/nba_team_recent_form.json",
     "fuente_muestras_calculadas": "bd_partidos_baloncesto",
     "markets_file": "reports/match_markets/generated_batch/cle_tor_2026_05_03_markets.json",
@@ -1134,8 +1134,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "CLE",
@@ -1171,8 +1171,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "CLE",
@@ -1208,8 +1208,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "CLE",
@@ -1245,8 +1245,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "CLE",
@@ -1282,8 +1282,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -2377,8 +2377,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -2414,8 +2414,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -2451,8 +2451,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -2488,8 +2488,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -2525,8 +2525,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -2562,8 +2562,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -3657,8 +3657,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "CLE",
@@ -3694,8 +3694,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "CLE",
@@ -3731,8 +3731,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -4826,8 +4826,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -4863,8 +4863,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "TOR",
@@ -4900,8 +4900,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -10667,9 +10667,36 @@
       "source_url": null,
       "notes": "Línea técnica para validar mercado Q1 sin fuente real observada.",
       "advertencias": [
-        "línea no REAL_MARKET: TECHNICAL_ESTIMATE",
-        "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
-        "datos afectados por overtime en 3 apariciones recientes"
+        {
+          "code": "NON_REAL_MARKET_LINE",
+          "severity": "WARNING",
+          "message": "La línea Q1_TOTAL no proviene de mercado real",
+          "scope": "market",
+          "market": "Q1_TOTAL",
+          "details": {
+            "source_type": "TECHNICAL_ESTIMATE"
+          }
+        },
+        {
+          "code": "TECHNICAL_ESTIMATE_ONLY",
+          "severity": "WARNING",
+          "message": "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.",
+          "scope": "market",
+          "market": "Q1_TOTAL",
+          "details": {
+            "source_type": "TECHNICAL_ESTIMATE"
+          }
+        },
+        {
+          "code": "OVERTIME_IN_SAMPLE",
+          "severity": "WARNING",
+          "message": "datos afectados por overtime en 3 apariciones recientes",
+          "scope": "market",
+          "market": "Q1_TOTAL",
+          "details": {
+            "overtime_count": 3
+          }
+        }
       ],
       "evaluable": true,
       "promedio_combinado": 56.783,
@@ -10739,9 +10766,37 @@
       "source_url": "https://www.espn.com/nba/game/_/gameId/401869384",
       "notes": "overUnder 209.5, odds -105/-115 convertidas aprox.",
       "advertencias": [
-        "desviación estándar alta: mercado volátil",
-        "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
-        "datos afectados por overtime en 3 apariciones recientes"
+        {
+          "code": "HIGH_VOLATILITY",
+          "severity": "WARNING",
+          "message": "desviación estándar alta: mercado volátil",
+          "scope": "market",
+          "market": "FULL_GAME_TOTAL",
+          "details": {
+            "stddev": 16.925
+          }
+        },
+        {
+          "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+          "severity": "WARNING",
+          "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+          "scope": "market",
+          "market": "FULL_GAME_TOTAL",
+          "details": {
+            "recent_avg": 219.0,
+            "avg_30": 227.9
+          }
+        },
+        {
+          "code": "OVERTIME_IN_SAMPLE",
+          "severity": "WARNING",
+          "message": "datos afectados por overtime en 3 apariciones recientes",
+          "scope": "market",
+          "market": "FULL_GAME_TOTAL",
+          "details": {
+            "overtime_count": 3
+          }
+        }
       ],
       "evaluable": true,
       "promedio_combinado": 227.9,
@@ -10796,6 +10851,14 @@
     }
   ],
   "advertencias": [
-    "se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras"
+    {
+      "code": "EXCLUDED_APPEARANCES",
+      "severity": "WARNING",
+      "message": "se excluyeron 17 apariciones antes de calcular muestras",
+      "scope": "data_quality",
+      "details": {
+        "excluded": 17
+      }
+    }
   ]
 }

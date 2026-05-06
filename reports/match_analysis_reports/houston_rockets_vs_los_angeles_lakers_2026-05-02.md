@@ -6,7 +6,7 @@
 - Partido: Houston Rockets (HOU) local vs Los Angeles Lakers (LAL) visitante
 - Fecha del partido: 2026-05-02
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:52:02
+- Generado: 2026-05-06T00:59:55
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -29,7 +29,7 @@
 - Apariciones candidatas: 360
 - Apariciones usadas: 120
 - Apariciones excluidas: 17 (4.72%)
-- Razones de exclusión: marcador 0-0: 17
+- Razones de exclusión: Marcador 0-0 no válido para muestra histórica: 17
 
 ## Forma reciente - Houston Rockets local
 
@@ -85,7 +85,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 30.0, '20': 20.0, '30': 13.33}
 - Cumplimiento split local/visitante over: 93.33%
 - Cumplimiento split local/visitante under: 6.67%
-- Advertencias: desviación estándar alta: mercado volátil; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 5 apariciones recientes
+- Advertencias: [HIGH_VOLATILITY] desviación estándar alta: mercado volátil ({'stddev': 16.158}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 198.8, 'avg_30': 221.617}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 5 apariciones recientes ({'overtime_count': 5})
 
 ### HOME_TEAM_TOTAL
 - Línea: 104.5
@@ -103,7 +103,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 40.0, '20': 25.0, '30': 20.0}
 - Cumplimiento split local/visitante over: 80.00%
 - Cumplimiento split local/visitante under: 20.00%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 5 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea HOME_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 98.8, 'avg_30': 110.0}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 5 apariciones recientes ({'overtime_count': 5})
 
 ### AWAY_TEAM_TOTAL
 - Línea: 99.0
@@ -121,10 +121,10 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 30.0, '20': 15.0, '30': 13.33}
 - Cumplimiento split local/visitante over: 90.00%
 - Cumplimiento split local/visitante under: 10.00%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 5 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea AWAY_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 100.0, 'avg_30': 111.617}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 5 apariciones recientes ({'overtime_count': 5})
 
 ## Advertencias generales
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras
+- [EXCLUDED_APPEARANCES] se excluyeron 17 apariciones antes de calcular muestras ({'excluded': 17})
 
 ## Resumen para análisis externo
 Partido: Houston Rockets local vs Los Angeles Lakers visitante, fecha 2026-05-02. BD disponible hasta 2026-05-05.

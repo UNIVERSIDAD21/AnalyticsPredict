@@ -6,7 +6,7 @@
 - Partido: Cleveland Cavaliers (CLE) local vs Toronto Raptors (TOR) visitante
 - Fecha del partido: 2026-05-03
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:51:57
+- Generado: 2026-05-06T00:59:51
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -29,7 +29,7 @@
 - Apariciones candidatas: 360
 - Apariciones usadas: 120
 - Apariciones excluidas: 17 (4.72%)
-- Razones de exclusión: marcador 0-0: 17
+- Razones de exclusión: Marcador 0-0 no válido para muestra histórica: 17
 
 ## Forma reciente - Cleveland Cavaliers local
 
@@ -87,7 +87,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 40.0, '10': 30.0, '20': 20.0, '30': 20.0}
 - Cumplimiento split local/visitante over: 66.67%
 - Cumplimiento split local/visitante under: 26.67%
-- Advertencias: línea no REAL_MARKET: TECHNICAL_ESTIMATE; Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.; datos afectados por overtime en 3 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea Q1_TOTAL no proviene de mercado real ({'source_type': 'TECHNICAL_ESTIMATE'}); [TECHNICAL_ESTIMATE_ONLY] Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico. ({'source_type': 'TECHNICAL_ESTIMATE'}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 3 apariciones recientes ({'overtime_count': 3})
 
 ### FULL_GAME_TOTAL
 - Línea: 209.5
@@ -104,10 +104,10 @@
 - Cumplimiento under 5/10/20/30: {'5': 20.0, '10': 10.0, '20': 5.0, '30': 10.0}
 - Cumplimiento split local/visitante over: 90.00%
 - Cumplimiento split local/visitante under: 10.00%
-- Advertencias: desviación estándar alta: mercado volátil; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 3 apariciones recientes
+- Advertencias: [HIGH_VOLATILITY] desviación estándar alta: mercado volátil ({'stddev': 16.925}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 219.0, 'avg_30': 227.9}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 3 apariciones recientes ({'overtime_count': 3})
 
 ## Advertencias generales
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras
+- [EXCLUDED_APPEARANCES] se excluyeron 17 apariciones antes de calcular muestras ({'excluded': 17})
 
 ## Resumen para análisis externo
 Partido: Cleveland Cavaliers local vs Toronto Raptors visitante, fecha 2026-05-03. BD disponible hasta 2026-05-05.

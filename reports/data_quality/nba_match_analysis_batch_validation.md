@@ -1,6 +1,6 @@
 # Validación por lote de análisis de partidos NBA
 
-Generado: 2026-05-06T00:52:08
+Generado: 2026-05-06T01:00:00
 
 ## Resumen
 - Total partidos validados: 5
@@ -15,9 +15,9 @@ Generado: 2026-05-06T00:52:08
 - diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL: 3
 - diferencia fuerte reciente/completa en HOME_TEAM_TOTAL: 3
 - línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE: 3
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras: 3
-- se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras: 1
-- se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras: 1
+- {"code": "EXCLUDED_APPEARANCES", "details": {"excluded": 17}, "message": "se excluyeron 17 apariciones antes de calcular muestras", "scope": "data_quality", "severity": "WARNING"}: 3
+- {"code": "EXCLUDED_APPEARANCES", "details": {"excluded": 18}, "message": "se excluyeron 18 apariciones antes de calcular muestras", "scope": "data_quality", "severity": "WARNING"}: 1
+- {"code": "EXCLUDED_APPEARANCES", "details": {"excluded": 20}, "message": "se excluyeron 20 apariciones antes de calcular muestras", "scope": "data_quality", "severity": "WARNING"}: 1
 
 ## Resultado por partido
 
@@ -32,7 +32,7 @@ Generado: 2026-05-06T00:52:08
 ## Detalle de warnings por partido
 
 ### sas_min_2026_05_05 — WARNING
-- se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras
+- {"code": "EXCLUDED_APPEARANCES", "severity": "WARNING", "message": "se excluyeron 20 apariciones antes de calcular muestras", "scope": "data_quality", "details": {"excluded": 20}}
 - línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE
 - diferencia fuerte reciente/completa en FULL_GAME_TOTAL
 - línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD
@@ -41,20 +41,20 @@ Generado: 2026-05-06T00:52:08
 - Source types: {"TECHNICAL_ESTIMATE": 1, "REAL_MARKET": 1, "DERIVED_FROM_TOTAL_SPREAD": 2}
 
 ### nyk_phi_2026_05_05 — WARNING
-- se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras
+- {"code": "EXCLUDED_APPEARANCES", "severity": "WARNING", "message": "se excluyeron 18 apariciones antes de calcular muestras", "scope": "data_quality", "details": {"excluded": 18}}
 - línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD
 - línea no real en AWAY_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD
 - diferencia fuerte reciente/completa en AWAY_TEAM_TOTAL
 - Source types: {"REAL_MARKET": 1, "DERIVED_FROM_TOTAL_SPREAD": 2}
 
 ### cle_tor_2026_05_03 — WARNING
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras
+- {"code": "EXCLUDED_APPEARANCES", "severity": "WARNING", "message": "se excluyeron 17 apariciones antes de calcular muestras", "scope": "data_quality", "details": {"excluded": 17}}
 - línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE
 - diferencia fuerte reciente/completa en FULL_GAME_TOTAL
 - Source types: {"TECHNICAL_ESTIMATE": 1, "REAL_MARKET": 1}
 
 ### hou_lal_2026_05_02 — WARNING
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras
+- {"code": "EXCLUDED_APPEARANCES", "severity": "WARNING", "message": "se excluyeron 17 apariciones antes de calcular muestras", "scope": "data_quality", "details": {"excluded": 17}}
 - diferencia fuerte reciente/completa en FULL_GAME_TOTAL
 - línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD
 - diferencia fuerte reciente/completa en HOME_TEAM_TOTAL
@@ -63,7 +63,7 @@ Generado: 2026-05-06T00:52:08
 - Source types: {"REAL_MARKET": 1, "DERIVED_FROM_TOTAL_SPREAD": 2}
 
 ### orl_det_2026_05_01 — WARNING
-- se excluyeron 17 apariciones con marcador 0 o incompleto antes de calcular muestras
+- {"code": "EXCLUDED_APPEARANCES", "severity": "WARNING", "message": "se excluyeron 17 apariciones antes de calcular muestras", "scope": "data_quality", "details": {"excluded": 17}}
 - línea no real en Q1_TOTAL: TECHNICAL_ESTIMATE
 - diferencia fuerte reciente/completa en FULL_GAME_TOTAL
 - línea no real en HOME_TEAM_TOTAL: DERIVED_FROM_TOTAL_SPREAD

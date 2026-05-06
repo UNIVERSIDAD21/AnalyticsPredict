@@ -46,6 +46,60 @@ SOURCE_TYPE_LABELS = {
 QUARTER_FIELDS = ["q1", "q2", "q3", "q4"]
 
 
+def warning(code: str, message: str, scope: str = "analysis", severity: str = "WARNING", market: str | None = None, team: str | None = None, details: dict[str, Any] | None = None) -> dict[str, Any]:
+    item = {"code": code, "severity": severity, "message": message, "scope": scope}
+    if market is not None:
+        item["market"] = market
+    if team is not None:
+        item["team"] = team
+    if details is not None:
+        item["details"] = details
+    return item
+
+
+def warning_text(item: Any) -> str:
+    if isinstance(item, dict):
+        base = f"[{item.get('code')}] {item.get('message')}"
+        details = item.get("details")
+        return base + (f" ({details})" if details else "")
+    return str(item)
+
+
+def validate_market_schema(market: dict[str, Any], index: int = 0) -> None:
+    if not isinstance(market, dict):
+        raise ValueError(f"markets[{index}] debe ser objeto")
+    name = market.get("market")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError(f"markets[{index}].market es obligatorio")
+    if name.upper() not in FIELDS_BY_MARKET:
+        raise ValueError(f"markets[{index}].market no soportado: {name}")
+    line = market.get("line")
+    if not isinstance(line, (int, float)):
+        raise ValueError(f"markets[{index}].line debe ser numérico")
+    for odds_key in ("over_odds", "under_odds"):
+        odds = market.get(odds_key)
+        if odds is not None and not isinstance(odds, (int, float)):
+            raise ValueError(f"markets[{index}].{odds_key} debe ser numérico o null")
+    source = market.get("source")
+    if not isinstance(source, str) or not source.strip():
+        raise ValueError(f"markets[{index}].source es obligatorio")
+    source_type = market.get("source_type")
+    if not isinstance(source_type, str) or not source_type.strip():
+        raise ValueError(f"markets[{index}].source_type es obligatorio")
+    source_type = source_type.upper()
+    if source_type not in VALID_SOURCE_TYPES:
+        raise ValueError(f"markets[{index}].source_type inválido: {source_type}. Valores: {sorted(VALID_SOURCE_TYPES)}")
+    if source_type != "REAL_MARKET":
+        notes = market.get("notes")
+        if not isinstance(notes, str) or not notes.strip():
+            raise ValueError(f"markets[{index}].notes es obligatorio cuando source_type no es REAL_MARKET")
+
+
+def validate_markets(markets: list[dict[str, Any]]) -> None:
+    for i, market in enumerate(markets):
+        validate_market_schema(market, i)
+
+
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -154,35 +208,47 @@ def db_url() -> str:
     return url
 
 
-def exclusion_reason(row: dict[str, Any]) -> str | None:
+EXCLUSION_CATEGORY_MESSAGES = {
+    "FUTURE_OR_NOT_PLAYED": "Partido futuro o aún no jugado",
+    "INCOMPLETE_SCORE": "Marcador parcial/incompleto",
+    "INVALID_ZERO_ZERO": "Marcador 0-0 no válido para muestra histórica",
+    "MISSING_QUARTERS": "Faltan cuartos o todos los cuartos están en cero",
+    "TOTAL_MISMATCH": "La suma de cuartos no coincide con el total",
+    "UNKNOWN_EXCLUSION_REASON": "Razón de exclusión desconocida",
+}
+
+
+def exclusion_category(row: dict[str, Any]) -> str | None:
     puntos = int(row.get("puntos_total") or 0)
     recibidos = int(row.get("recibidos_total") or 0)
+    fecha = str(row.get("fecha_partido") or "")
+    if fecha and fecha > datetime.now().date().isoformat():
+        return "FUTURE_OR_NOT_PLAYED"
+    qs_for = [int(row.get(k) or 0) for k in ("puntos_q1", "puntos_q2", "puntos_q3", "puntos_q4")]
+    qs_against = [int(row.get(k) or 0) for k in ("recibidos_q1", "recibidos_q2", "recibidos_q3", "recibidos_q4")]
     if puntos == 0 and recibidos == 0:
-        return "marcador 0-0"
+        return "INVALID_ZERO_ZERO"
     if puntos <= 0 or recibidos <= 0:
-        return "marcador parcial o incompleto"
-    quarters = [
-        int(row.get("puntos_q1") or 0), int(row.get("puntos_q2") or 0), int(row.get("puntos_q3") or 0), int(row.get("puntos_q4") or 0),
-        int(row.get("recibidos_q1") or 0), int(row.get("recibidos_q2") or 0), int(row.get("recibidos_q3") or 0), int(row.get("recibidos_q4") or 0),
-    ]
-    if any(q < 0 for q in quarters):
-        return "cuartos negativos/inconsistentes"
+        return "INCOMPLETE_SCORE"
+    if sum(qs_for) == 0 or sum(qs_against) == 0:
+        return "MISSING_QUARTERS"
+    # Tolerar overtime implícito: si los cuartos base superan el total sí es inconsistente.
+    if sum(qs_for) > puntos or sum(qs_against) > recibidos:
+        return "TOTAL_MISMATCH"
     return None
 
 
+def exclusion_reason(row: dict[str, Any]) -> str | None:
+    category = exclusion_category(row)
+    return EXCLUSION_CATEGORY_MESSAGES.get(category or "") if category else None
+
+
 def classify_exclusion(row: dict[str, Any]) -> str:
-    reason = exclusion_reason(row) or "sin exclusión"
-    fecha = str(row.get("fecha_partido") or "")
-    today = datetime.now().date().isoformat()
-    if fecha and fecha > today:
-        return "partido futuro"
-    if "0-0" in reason or "incompleto" in reason:
-        return "incompleto"
-    return "inconsistente" if reason != "sin exclusión" else "válido"
+    return exclusion_category(row) or "VALID"
 
 
 def is_valid_scored_row(row: dict[str, Any]) -> bool:
-    return exclusion_reason(row) is None
+    return exclusion_category(row) is None
 
 
 def serialize_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -266,7 +332,7 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
         if reason:
             item = serialize_row(r)
             item["razon_exclusion"] = reason
-            item["clasificacion_exclusion"] = classify_exclusion(item)
+            item["categoria_exclusion"] = classify_exclusion(item)
             invalid.append(item)
     valid = [r for r in raw if is_valid_scored_row(r)][:limit]
     return {"valid": valid, "excluded": invalid, "candidate_count": len(raw), "used_count": len(valid)}
@@ -281,13 +347,13 @@ def extract_rows(team: dict[str, Any], localia: str | None = None) -> list[dict[
 
 def evaluate_signal(avg: float | None, line: float, percentages: dict[str, float | None], volatility: float | None, warnings: list[str]) -> str:
     valid = [v for v in percentages.values() if v is not None]
-    if avg is None or len(valid) < 2 or any("muestra baja" in w for w in warnings):
+    if avg is None or len(valid) < 2 or any((isinstance(w, dict) and w.get("code") == "LOW_SAMPLE") or ("muestra baja" in str(w)) for w in warnings):
         return "no evaluable por datos insuficientes"
     avg_gap = abs(avg - line)
     hit_consensus = sum(1 for v in valid if v >= 60 or v <= 40)
     direction_consistent = max(valid) - min(valid) <= 20
     high_vol = volatility is not None and volatility >= 14
-    if high_vol or any("inconsistente" in w for w in warnings):
+    if high_vol or any("inconsistente" in warning_text(w) for w in warnings):
         return "señal inconsistente"
     if avg_gap >= 6 and hit_consensus >= 3 and direction_consistent:
         return "señal estadística fuerte"
@@ -310,18 +376,18 @@ def evaluate_market(market: dict[str, Any], home_rows: list[dict[str, Any]], awa
         "advertencias": [],
     }
     if source_type not in VALID_SOURCE_TYPES:
-        result["advertencias"].append(f"source_type inválido ({source_type}); valores válidos: {sorted(VALID_SOURCE_TYPES)}")
+        result["advertencias"].append(warning("INVALID_SOURCE_TYPE", f"source_type inválido ({source_type})", scope="market", market=name, details={"valid": sorted(VALID_SOURCE_TYPES)}))
     elif source_type != "REAL_MARKET":
-        result["advertencias"].append(f"línea no REAL_MARKET: {source_type}")
+        result["advertencias"].append(warning("NON_REAL_MARKET_LINE", f"La línea {name} no proviene de mercado real", scope="market", market=name, details={"source_type": source_type}))
         if source_type == "TECHNICAL_ESTIMATE":
-            result["advertencias"].append("Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.")
+            result["advertencias"].append(warning("TECHNICAL_ESTIMATE_ONLY", "Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.", scope="market", market=name, details={"source_type": source_type}))
     if name not in FIELDS_BY_MARKET:
         result.update({"evaluable": False, "clasificacion": "no evaluable por datos insuficientes"})
-        result["advertencias"].append("mercado no soportado por el script")
+        result["advertencias"].append(warning("UNSUPPORTED_MARKET", "mercado no soportado por el script", scope="market", market=name))
         return result
     if not isinstance(line, (int, float)):
         result.update({"evaluable": False, "clasificacion": "no evaluable por datos insuficientes"})
-        result["advertencias"].append("línea ausente o no numérica")
+        result["advertencias"].append(warning("INVALID_LINE", "línea ausente o no numérica", scope="market", market=name))
         return result
 
     values_by_window = {str(n): paired_values(home_rows, away_rows, name, n) for n in WINDOWS}
@@ -334,14 +400,14 @@ def evaluate_market(market: dict[str, Any], home_rows: list[dict[str, Any]], awa
     under_pct = {str(n): pct(values_by_window[str(n)], float(line), "under") for n in WINDOWS}
     recent_avg = summary(values_by_window["5"])["promedio"]
     if len(values_by_window["30"]) < 20:
-        result["advertencias"].append("muestra baja: menos de 20 observaciones combinadas")
+        result["advertencias"].append(warning("LOW_SAMPLE", "muestra baja: menos de 20 observaciones combinadas", scope="market", market=name))
     if volatility is not None and volatility >= 14:
-        result["advertencias"].append("desviación estándar alta: mercado volátil")
+        result["advertencias"].append(warning("HIGH_VOLATILITY", "desviación estándar alta: mercado volátil", scope="market", market=name, details={"stddev": volatility}))
     if avg is not None and recent_avg is not None and abs(float(recent_avg) - float(avg)) >= 8:
-        result["advertencias"].append("diferencia fuerte entre forma reciente (5) y muestra completa (30)")
+        result["advertencias"].append(warning("RECENT_FULL_SAMPLE_DIVERGENCE", "diferencia fuerte entre forma reciente (5) y muestra completa (30)", scope="market", market=name, details={"recent_avg": recent_avg, "avg_30": avg}))
     ot_count = sum(1 for r in home_rows[:30] if r.get("hubo_overtime")) + sum(1 for r in away_rows[:30] if r.get("hubo_overtime"))
     if ot_count:
-        result["advertencias"].append(f"datos afectados por overtime en {ot_count} apariciones recientes")
+        result["advertencias"].append(warning("OVERTIME_IN_SAMPLE", f"datos afectados por overtime en {ot_count} apariciones recientes", scope="market", market=name, details={"overtime_count": ot_count}))
 
     signal_pcts = over_pct if avg is not None and avg >= float(line) else under_pct
     result.update({
@@ -397,21 +463,21 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
 
     warnings = []
     for label, data, rows in (("local", home, home_rows), ("visitante", away, away_rows)):
-        warnings.extend([f"{label} {data['equipo']}: {w}" for w in data.get("advertencias", [])])
+        warnings.extend([warning("TEAM_DATA_WARNING", str(w), scope="team", team=data["equipo"]) for w in data.get("advertencias", [])])
         if len(rows) < 30:
-            warnings.append(f"{label} {data['equipo']}: muestra general válida menor a 30")
+            warnings.append(warning("LOW_TEAM_SAMPLE", f"{label} {data['equipo']}: muestra general válida menor a 30", scope="team", team=data["equipo"]))
     if len(home_local_rows) < 30:
-        warnings.append(f"local {home['equipo']}: split local válido menor a 30")
+        warnings.append(warning("LOW_LOCAL_SPLIT_SAMPLE", f"local {home['equipo']}: split local válido menor a 30", scope="team", team=home["equipo"]))
     if len(away_visit_rows) < 30:
-        warnings.append(f"visitante {away['equipo']}: split visitante válido menor a 30")
+        warnings.append(warning("LOW_AWAY_SPLIT_SAMPLE", f"visitante {away['equipo']}: split visitante válido menor a 30", scope="team", team=away["equipo"]))
     invalid_total = sum(len(q["excluded"]) for q in (home_general_quality, away_general_quality, home_local_quality, away_visit_quality))
     candidate_total = sum(q["candidate_count"] for q in (home_general_quality, away_general_quality, home_local_quality, away_visit_quality))
     if invalid_total:
-        warnings.append(f"se excluyeron {invalid_total} apariciones con marcador 0 o incompleto antes de calcular muestras")
+        warnings.append(warning("EXCLUDED_APPEARANCES", f"se excluyeron {invalid_total} apariciones antes de calcular muestras", scope="data_quality", details={"excluded": invalid_total}))
     if candidate_total and invalid_total / candidate_total > 0.10:
-        warnings.append(f"más del 10% de candidatas fueron excluidas ({invalid_total}/{candidate_total})")
+        warnings.append(warning("HIGH_EXCLUSION_RATE", f"más del 10% de candidatas fueron excluidas ({invalid_total}/{candidate_total})", scope="data_quality", details={"excluded": invalid_total, "candidate": candidate_total}))
     if max_db_date and game_date > max_db_date:
-        warnings.append(f"fecha del partido posterior a fecha máxima disponible ({max_db_date})")
+        warnings.append(warning("MATCH_DATE_AFTER_DATA_MAX", f"fecha del partido posterior a fecha máxima disponible ({max_db_date})", scope="match", details={"max_db_date": max_db_date}))
 
     home_calc = {"splits": {"general": home_general_split, "local": home_local_split}}
     away_calc = {"splits": {"general": away_general_split, "visitante": away_visit_split}}
@@ -424,6 +490,7 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
     if markets_path:
         raw = load_json(markets_path)
         markets = raw.get("markets", []) if isinstance(raw, dict) else []
+        validate_markets(markets)
     market_eval = [evaluate_market(m, home_rows, away_rows, home_local_rows, away_visit_rows) for m in markets]
 
     analysis = {
@@ -575,7 +642,7 @@ def render_markdown(analysis: dict[str, Any]) -> str:
             if source_type == "TECHNICAL_ESTIMATE":
                 lines.append("- Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.")
         if not m.get("evaluable"):
-            lines.append(f"- No evaluable: {'; '.join(m.get('advertencias', []))}")
+            lines.append(f"- No evaluable: {'; '.join(warning_text(w) for w in m.get('advertencias', []))}")
             continue
         lines += [
             f"- Promedio combinado: {fmt(m.get('promedio_combinado'))}",
@@ -588,11 +655,11 @@ def render_markdown(analysis: dict[str, Any]) -> str:
             f"- Cumplimiento split local/visitante under: {fmt(m.get('cumplimiento_split_local_visitante_under'))}%",
         ]
         if m.get("advertencias"):
-            lines.append("- Advertencias: " + "; ".join(m["advertencias"]))
+            lines.append("- Advertencias: " + "; ".join(warning_text(w) for w in m["advertencias"]))
 
     lines += ["", "## Advertencias generales"]
     if analysis["advertencias"]:
-        lines.extend(f"- {w}" for w in analysis["advertencias"])
+        lines.extend(f"- {warning_text(w)}" for w in analysis["advertencias"])
     else:
         lines.append("- Sin advertencias generales de cobertura en las muestras principales.")
 

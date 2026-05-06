@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generado_en": "2026-05-06T00:51:52",
+    "generado_en": "2026-05-06T00:59:47",
     "fuente_forma_reciente": "reports/team_recent_form/nba_team_recent_form.json",
     "fuente_muestras_calculadas": "bd_partidos_baloncesto",
     "markets_file": "reports/match_markets/generated_batch/nyk_phi_2026_05_05_markets.json",
@@ -1134,8 +1134,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -1171,8 +1171,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -1208,8 +1208,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -1245,8 +1245,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -1282,8 +1282,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -2377,8 +2377,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -2414,8 +2414,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -2451,8 +2451,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -2488,8 +2488,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -2525,8 +2525,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -2562,8 +2562,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -3657,8 +3657,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -3694,8 +3694,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -3731,8 +3731,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "NYK",
@@ -3768,8 +3768,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -4863,8 +4863,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -4900,8 +4900,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           },
           {
             "abreviatura": "PHI",
@@ -4937,8 +4937,8 @@
             "hubo_overtime": false,
             "source": null,
             "source_game_id": null,
-            "razon_exclusion": "marcador 0-0",
-            "clasificacion_exclusion": "incompleto"
+            "razon_exclusion": "Marcador 0-0 no válido para muestra histórica",
+            "categoria_exclusion": "INVALID_ZERO_ZERO"
           }
         ],
         "candidate_count": 90,
@@ -10704,7 +10704,16 @@
       "source_url": "https://www.espn.com/nba/game/_/gameId/401871159",
       "notes": "overUnder 212.5, odds -110/-110",
       "advertencias": [
-        "desviación estándar alta: mercado volátil"
+        {
+          "code": "HIGH_VOLATILITY",
+          "severity": "WARNING",
+          "message": "desviación estándar alta: mercado volátil",
+          "scope": "market",
+          "market": "FULL_GAME_TOTAL",
+          "details": {
+            "stddev": 16.42
+          }
+        }
       ],
       "evaluable": true,
       "promedio_combinado": 225.283,
@@ -10774,7 +10783,16 @@
       "source_url": "https://www.espn.com/nba/game/_/gameId/401871159",
       "notes": "Team total implícito del local.",
       "advertencias": [
-        "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD"
+        {
+          "code": "NON_REAL_MARKET_LINE",
+          "severity": "WARNING",
+          "message": "La línea HOME_TEAM_TOTAL no proviene de mercado real",
+          "scope": "market",
+          "market": "HOME_TEAM_TOTAL",
+          "details": {
+            "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+          }
+        }
       ],
       "evaluable": true,
       "promedio_combinado": 115.833,
@@ -10844,8 +10862,27 @@
       "source_url": "https://www.espn.com/nba/game/_/gameId/401871159",
       "notes": "Team total implícito del visitante.",
       "advertencias": [
-        "línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD",
-        "diferencia fuerte entre forma reciente (5) y muestra completa (30)"
+        {
+          "code": "NON_REAL_MARKET_LINE",
+          "severity": "WARNING",
+          "message": "La línea AWAY_TEAM_TOTAL no proviene de mercado real",
+          "scope": "market",
+          "market": "AWAY_TEAM_TOTAL",
+          "details": {
+            "source_type": "DERIVED_FROM_TOTAL_SPREAD"
+          }
+        },
+        {
+          "code": "RECENT_FULL_SAMPLE_DIVERGENCE",
+          "severity": "WARNING",
+          "message": "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+          "scope": "market",
+          "market": "AWAY_TEAM_TOTAL",
+          "details": {
+            "recent_avg": 101.3,
+            "avg_30": 109.45
+          }
+        }
       ],
       "evaluable": true,
       "promedio_combinado": 109.45,
@@ -10900,6 +10937,14 @@
     }
   ],
   "advertencias": [
-    "se excluyeron 18 apariciones con marcador 0 o incompleto antes de calcular muestras"
+    {
+      "code": "EXCLUDED_APPEARANCES",
+      "severity": "WARNING",
+      "message": "se excluyeron 18 apariciones antes de calcular muestras",
+      "scope": "data_quality",
+      "details": {
+        "excluded": 18
+      }
+    }
   ]
 }

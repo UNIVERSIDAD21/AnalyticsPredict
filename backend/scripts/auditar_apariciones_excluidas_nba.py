@@ -27,24 +27,28 @@ def db_url() -> str:
     return url
 
 
-def reason(local_total: int, visitante_total: int, qs: list[int]) -> str | None:
-    if local_total == 0 and visitante_total == 0:
-        return "marcador 0-0"
-    if local_total <= 0 or visitante_total <= 0:
-        return "marcador parcial o incompleto"
-    if any(q < 0 for q in qs):
-        return "cuartos negativos/inconsistentes"
-    if sum(qs[:5]) != local_total or sum(qs[5:]) != visitante_total:
-        return "suma de cuartos no coincide con total"
-    return None
+EXCLUSION_CATEGORY_MESSAGES = {
+    "FUTURE_OR_NOT_PLAYED": "Partido futuro o aún no jugado",
+    "INCOMPLETE_SCORE": "Marcador parcial/incompleto",
+    "INVALID_ZERO_ZERO": "Marcador 0-0 no válido para muestra histórica",
+    "MISSING_QUARTERS": "Faltan cuartos o todos los cuartos están en cero",
+    "TOTAL_MISMATCH": "La suma de cuartos no coincide con el total",
+    "UNKNOWN_EXCLUSION_REASON": "Razón de exclusión desconocida",
+}
 
 
-def classify(fecha: date, razon: str) -> str:
+def category(fecha: date, local_total: int, visitante_total: int, qs: list[int]) -> str | None:
     if fecha > date.today():
-        return "partido futuro"
-    if "0-0" in razon or "incompleto" in razon:
-        return "incompleto"
-    return "inconsistente"
+        return "FUTURE_OR_NOT_PLAYED"
+    if local_total == 0 and visitante_total == 0:
+        return "INVALID_ZERO_ZERO"
+    if local_total <= 0 or visitante_total <= 0:
+        return "INCOMPLETE_SCORE"
+    if sum(qs[:4]) == 0 or sum(qs[5:9]) == 0:
+        return "MISSING_QUARTERS"
+    if sum(qs[:5]) > local_total or sum(qs[5:]) > visitante_total:
+        return "TOTAL_MISMATCH"
+    return None
 
 
 def build() -> dict[str, Any]:
@@ -71,9 +75,10 @@ def build() -> dict[str, Any]:
             for r in cur.fetchall():
                 d = dict(r)
                 qs = [int(d[k] or 0) for k in ("local_q1","local_q2","local_q3","local_q4","local_ot","visitante_q1","visitante_q2","visitante_q3","visitante_q4","visitante_ot")]
-                rz = reason(int(d["local_total"] or 0), int(d["visitante_total"] or 0), qs)
-                if not rz:
+                cat = category(d["fecha_partido"], int(d["local_total"] or 0), int(d["visitante_total"] or 0), qs)
+                if not cat:
                     continue
+                rz = EXCLUSION_CATEGORY_MESSAGES.get(cat, EXCLUSION_CATEGORY_MESSAGES["UNKNOWN_EXCLUSION_REASON"])
                 item = {
                     "equipo_local": d["local"],
                     "equipo_visitante": d["visitante"],
@@ -88,14 +93,14 @@ def build() -> dict[str, Any]:
                         "visitante_q1": d["visitante_q1"], "visitante_q2": d["visitante_q2"], "visitante_q3": d["visitante_q3"], "visitante_q4": d["visitante_q4"], "visitante_ot": d["visitante_ot"],
                     },
                     "razon_exclusion": rz,
-                    "clasificacion": classify(d["fecha_partido"], rz),
+                    "categoria_exclusion": cat,
                     "source": d["source"],
                     "source_game_id": d["source_game_id"],
                     "tipo_partido": d["tipo_partido"],
                 }
                 rows.append(item)
     counts = Counter(x["razon_exclusion"] for x in rows)
-    classes = Counter(x["clasificacion"] for x in rows)
+    classes = Counter(x["categoria_exclusion"] for x in rows)
     return {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "total_excluded_games": len(rows),
@@ -123,7 +128,7 @@ def write_reports(data: dict[str, Any]) -> None:
         lines.append(f"- {k}: {v}")
     lines += ["", "## Detalle", "", "| Fecha | Local | Visitante | Marcador | Razón | Clasificación | Source | Source Game ID |", "|---|---|---|---:|---|---|---|---|"]
     for r in data["rows"][:500]:
-        lines.append(f"| {r['fecha']} | {r['local']} | {r['visitante']} | {r['puntos_local']}-{r['puntos_visitante']} | {r['razon_exclusion']} | {r['clasificacion']} | {r.get('source') or 'N/D'} | {r.get('source_game_id') or 'N/D'} |")
+        lines.append(f"| {r['fecha']} | {r['local']} | {r['visitante']} | {r['puntos_local']}-{r['puntos_visitante']} | {r['razon_exclusion']} | {r['categoria_exclusion']} | {r.get('source') or 'N/D'} | {r.get('source_game_id') or 'N/D'} |")
     if len(data["rows"]) > 500:
         lines.append(f"\n> Detalle truncado en Markdown a 500 filas. JSON contiene {len(data['rows'])} filas.")
     OUT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -6,7 +6,7 @@
 - Partido: San Antonio Spurs (SAS) local vs Minnesota Timberwolves (MIN) visitante
 - Fecha del partido: 2026-05-05
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:51:47
+- Generado: 2026-05-06T00:59:43
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -29,7 +29,7 @@
 - Apariciones candidatas: 360
 - Apariciones usadas: 120
 - Apariciones excluidas: 20 (5.56%)
-- Razones de exclusión: marcador 0-0: 20
+- Razones de exclusión: Marcador 0-0 no válido para muestra histórica: 20
 
 ## Forma reciente - San Antonio Spurs local
 
@@ -87,7 +87,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 60.0, '10': 30.0, '20': 30.0, '30': 23.33}
 - Cumplimiento split local/visitante over: 76.67%
 - Cumplimiento split local/visitante under: 23.33%
-- Advertencias: línea no REAL_MARKET: TECHNICAL_ESTIMATE; Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.; datos afectados por overtime en 1 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea Q1_TOTAL no proviene de mercado real ({'source_type': 'TECHNICAL_ESTIMATE'}); [TECHNICAL_ESTIMATE_ONLY] Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico. ({'source_type': 'TECHNICAL_ESTIMATE'}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 1 apariciones recientes ({'overtime_count': 1})
 
 ### FULL_GAME_TOTAL
 - Línea: 218.5
@@ -104,7 +104,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 80.0, '10': 50.0, '20': 25.0, '30': 20.0}
 - Cumplimiento split local/visitante over: 83.33%
 - Cumplimiento split local/visitante under: 16.67%
-- Advertencias: desviación estándar alta: mercado volátil; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 1 apariciones recientes
+- Advertencias: [HIGH_VOLATILITY] desviación estándar alta: mercado volátil ({'stddev': 14.39}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 212.8, 'avg_30': 226.033}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 1 apariciones recientes ({'overtime_count': 1})
 
 ### HOME_TEAM_TOTAL
 - Línea: 114.5
@@ -122,7 +122,7 @@
 - Cumplimiento under 5/10/20/30: {'5': 80.0, '10': 60.0, '20': 40.0, '30': 36.67}
 - Cumplimiento split local/visitante over: 56.67%
 - Cumplimiento split local/visitante under: 43.33%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; diferencia fuerte entre forma reciente (5) y muestra completa (30); datos afectados por overtime en 1 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea HOME_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [RECENT_FULL_SAMPLE_DIVERGENCE] diferencia fuerte entre forma reciente (5) y muestra completa (30) ({'recent_avg': 107.0, 'avg_30': 115.833}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 1 apariciones recientes ({'overtime_count': 1})
 
 ### AWAY_TEAM_TOTAL
 - Línea: 104.0
@@ -140,10 +140,10 @@
 - Cumplimiento under 5/10/20/30: {'5': 40.0, '10': 40.0, '20': 20.0, '30': 13.33}
 - Cumplimiento split local/visitante over: 80.00%
 - Cumplimiento split local/visitante under: 13.33%
-- Advertencias: línea no REAL_MARKET: DERIVED_FROM_TOTAL_SPREAD; datos afectados por overtime en 1 apariciones recientes
+- Advertencias: [NON_REAL_MARKET_LINE] La línea AWAY_TEAM_TOTAL no proviene de mercado real ({'source_type': 'DERIVED_FROM_TOTAL_SPREAD'}); [OVERTIME_IN_SAMPLE] datos afectados por overtime en 1 apariciones recientes ({'overtime_count': 1})
 
 ## Advertencias generales
-- se excluyeron 20 apariciones con marcador 0 o incompleto antes de calcular muestras
+- [EXCLUDED_APPEARANCES] se excluyeron 20 apariciones antes de calcular muestras ({'excluded': 20})
 
 ## Resumen para análisis externo
 Partido: San Antonio Spurs local vs Minnesota Timberwolves visitante, fecha 2026-05-05. BD disponible hasta 2026-05-05.
