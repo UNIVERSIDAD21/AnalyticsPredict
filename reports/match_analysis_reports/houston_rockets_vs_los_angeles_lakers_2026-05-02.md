@@ -6,7 +6,7 @@
 - Partido: Houston Rockets (HOU) local vs Los Angeles Lakers (LAL) visitante
 - Fecha del partido: 2026-05-02
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:59:55
+- Generado: 2026-05-06T01:08:08
 
 ## Mercados soportados por el script
 - Q1_TOTAL

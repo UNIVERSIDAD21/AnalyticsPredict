@@ -6,7 +6,7 @@
 - Partido: Orlando Magic (ORL) local vs Detroit Pistons (DET) visitante
 - Fecha del partido: 2026-05-01
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T01:00:00
+- Generado: 2026-05-06T01:08:12
 
 ## Mercados soportados por el script
 - Q1_TOTAL

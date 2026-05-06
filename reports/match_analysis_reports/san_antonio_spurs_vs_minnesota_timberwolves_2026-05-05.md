@@ -6,7 +6,7 @@
 - Partido: San Antonio Spurs (SAS) local vs Minnesota Timberwolves (MIN) visitante
 - Fecha del partido: 2026-05-05
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:59:43
+- Generado: 2026-05-06T01:08:16
 
 ## Mercados soportados por el script
 - Q1_TOTAL
@@ -75,7 +75,7 @@
 - Tipo de fuente: TECHNICAL_ESTIMATE (TÉCNICA)
 - Fuente: manual/technical
 - URL fuente: N/D
-- Notas: Línea técnica para validar Q1; no proviene de mercado real observado.
+- Notas: Línea técnica derivada para validación porque no se encontró mercado Q1 real; no proviene de mercado real.
 - Clasificación técnica: **señal estadística débil**
 - Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.
 - Esta línea no proviene de mercado real; se usa solo para simulación/análisis técnico.
@@ -94,7 +94,7 @@
 - Tipo de fuente: REAL_MARKET (REAL)
 - Fuente: ESPN pickcenter / DraftKings close
 - URL fuente: https://www.espn.com/nba/game/_/gameId/401871152
-- Notas: overUnder 218.5, odds -110/-110
+- Notas: ESPN pickcenter expuso overUnder 218.5 con odds -110/-110; convertido a decimal aproximado 1.91.
 - Clasificación técnica: **señal inconsistente**
 - Promedio combinado: 226.03
 - Mediana combinada: 225.75
@@ -109,9 +109,9 @@
 ### HOME_TEAM_TOTAL
 - Línea: 114.5
 - Tipo de fuente: DERIVED_FROM_TOTAL_SPREAD (DERIVADA/IMPLÍCITA)
-- Fuente: derived from total 218.5 and spread SA -10.5
+- Fuente: derived from ESPN/DraftKings total 218.5 and spread SA -10.5
 - URL fuente: https://www.espn.com/nba/game/_/gameId/401871152
-- Notas: Team total implícito del local.
+- Notas: Total implícito del local derivado desde total de partido y spread; no es una línea de team total observada directamente.
 - Clasificación técnica: **señal estadística débil**
 - Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.
 - Promedio combinado: 115.83
@@ -127,9 +127,9 @@
 ### AWAY_TEAM_TOTAL
 - Línea: 104.0
 - Tipo de fuente: DERIVED_FROM_TOTAL_SPREAD (DERIVADA/IMPLÍCITA)
-- Fuente: derived from total 218.5 and spread SA -10.5
+- Fuente: derived from ESPN/DraftKings total 218.5 and spread SA -10.5
 - URL fuente: https://www.espn.com/nba/game/_/gameId/401871152
-- Notas: Team total implícito del visitante.
+- Notas: Total implícito del visitante derivado desde total de partido y spread; no es una línea de team total observada directamente.
 - Clasificación técnica: **señal estadística moderada**
 - Advertencia de trazabilidad: esta línea no está marcada como mercado real; interpretar con menor peso analítico.
 - Promedio combinado: 110.20

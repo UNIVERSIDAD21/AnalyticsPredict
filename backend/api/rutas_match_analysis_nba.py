@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field, StrictFloat, StrictInt, field_validator
 
 from scripts.generar_analisis_partido_nba import build_analysis, render_markdown, validate_markets
+from .dependencias import UsuarioActual, obtener_usuario_actual
 
 router = APIRouter(prefix="/api/nba", tags=["NBA Match Analysis"])
 
@@ -16,9 +17,9 @@ SourceType = Literal["REAL_MARKET", "DERIVED_FROM_TOTAL_SPREAD", "TECHNICAL_ESTI
 
 class MarketInput(BaseModel):
     market: str
-    line: float
-    over_odds: float | None = None
-    under_odds: float | None = None
+    line: StrictFloat | StrictInt
+    over_odds: StrictFloat | StrictInt | None = None
+    under_odds: StrictFloat | StrictInt | None = None
     source: str = Field(min_length=1)
     source_type: SourceType
     source_url: str | None = None
@@ -41,7 +42,10 @@ class MatchAnalysisRequest(BaseModel):
 
 
 @router.post("/match-analysis")
-def generar_match_analysis(payload: MatchAnalysisRequest) -> dict[str, Any]:
+def generar_match_analysis(
+    payload: MatchAnalysisRequest,
+    _usuario: UsuarioActual = Depends(obtener_usuario_actual),
+) -> dict[str, Any]:
     """Genera análisis técnico interno sin picks, stakes ni recomendaciones."""
     try:
         markets = [m.model_dump() for m in payload.markets]

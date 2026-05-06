@@ -6,7 +6,7 @@
 - Partido: New York Knicks (NYK) local vs Philadelphia 76ers (PHI) visitante
 - Fecha del partido: 2026-05-05
 - Fecha máxima disponible en BD: 2026-05-05
-- Generado: 2026-05-06T00:59:47
+- Generado: 2026-05-06T01:08:00
 
 ## Mercados soportados por el script
 - Q1_TOTAL
