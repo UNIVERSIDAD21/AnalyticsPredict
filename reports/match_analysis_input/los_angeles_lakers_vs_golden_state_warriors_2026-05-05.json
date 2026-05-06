@@ -1,0 +1,4360 @@
+{
+  "metadata": {
+    "generado_en": "2026-05-06T00:30:49",
+    "fuente_forma_reciente": "reports/team_recent_form/nba_team_recent_form.json",
+    "fuente_muestras_calculadas": "bd_partidos_baloncesto",
+    "markets_file": "reports/match_markets/ejemplo_markets.json",
+    "reglas_clasificacion": {
+      "señal estadística fuerte": "brecha promedio-línea >= 6, al menos 3 ventanas con cumplimiento direccional >=60% o <=40%, y ventanas consistentes",
+      "señal estadística moderada": "brecha promedio-línea >= 3 y al menos 2 ventanas con cumplimiento direccional",
+      "señal estadística débil": "evaluable, pero sin suficiente brecha/consenso",
+      "señal inconsistente": "volatilidad alta o advertencias de inconsistencia reciente vs completa",
+      "no evaluable por datos insuficientes": "línea inválida, mercado no soportado o muestra insuficiente"
+    }
+  },
+  "partido": {
+    "fecha": "2026-05-05",
+    "equipo_local": {
+      "abreviatura": "LAL",
+      "nombre": "Los Angeles Lakers"
+    },
+    "equipo_visitante": {
+      "abreviatura": "GSW",
+      "nombre": "Golden State Warriors"
+    },
+    "fecha_maxima_disponible_bd": "2026-05-05"
+  },
+  "muestras": {
+    "local": {
+      "general": 30,
+      "local": 30,
+      "excluidas_incompletas": 10,
+      "conteos_historicos": {
+        "general": 700,
+        "local": 354,
+        "visitante": 346
+      }
+    },
+    "visitante": {
+      "general": 30,
+      "visitante": 30,
+      "excluidas_incompletas": 9,
+      "conteos_historicos": {
+        "general": 714,
+        "local": 356,
+        "visitante": 358
+      }
+    }
+  },
+  "forma_local": {
+    "general": {
+      "5": {
+        "partidos": 5,
+        "fecha_mas_reciente": "2026-05-02",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 28.8,
+            "mediana": 28.0,
+            "desviacion_estandar": 6.585,
+            "minimo": 21.0,
+            "maximo": 39.0
+          },
+          "puntos_q2": {
+            "promedio": 23.2,
+            "mediana": 24.0,
+            "desviacion_estandar": 2.786,
+            "minimo": 19.0,
+            "maximo": 26.0
+          },
+          "puntos_q3": {
+            "promedio": 19.6,
+            "mediana": 20.0,
+            "desviacion_estandar": 1.855,
+            "minimo": 17.0,
+            "maximo": 22.0
+          },
+          "puntos_q4": {
+            "promedio": 26.2,
+            "mediana": 26.0,
+            "desviacion_estandar": 3.187,
+            "minimo": 21.0,
+            "maximo": 31.0
+          },
+          "puntos_total": {
+            "promedio": 100.0,
+            "mediana": 98.0,
+            "desviacion_estandar": 6.542,
+            "minimo": 93.0,
+            "maximo": 112.0
+          },
+          "recibidos_q1": {
+            "promedio": 24.6,
+            "mediana": 26.0,
+            "desviacion_estandar": 4.8,
+            "minimo": 18.0,
+            "maximo": 32.0
+          },
+          "recibidos_q2": {
+            "promedio": 23.6,
+            "mediana": 25.0,
+            "desviacion_estandar": 6.468,
+            "minimo": 13.0,
+            "maximo": 30.0
+          },
+          "recibidos_q3": {
+            "promedio": 24.6,
+            "mediana": 24.0,
+            "desviacion_estandar": 5.463,
+            "minimo": 17.0,
+            "maximo": 34.0
+          },
+          "recibidos_q4": {
+            "promedio": 24.6,
+            "mediana": 25.0,
+            "desviacion_estandar": 1.356,
+            "minimo": 23.0,
+            "maximo": 26.0
+          },
+          "recibidos_total": {
+            "promedio": 98.8,
+            "mediana": 99.0,
+            "desviacion_estandar": 12.671,
+            "minimo": 78.0,
+            "maximo": 115.0
+          }
+        }
+      },
+      "10": {
+        "partidos": 10,
+        "fecha_mas_reciente": "2026-05-02",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 29.0,
+            "mediana": 30.0,
+            "desviacion_estandar": 5.983,
+            "minimo": 21.0,
+            "maximo": 39.0
+          },
+          "puntos_q2": {
+            "promedio": 26.2,
+            "mediana": 26.0,
+            "desviacion_estandar": 6.478,
+            "minimo": 17.0,
+            "maximo": 40.0
+          },
+          "puntos_q3": {
+            "promedio": 23.4,
+            "mediana": 21.5,
+            "desviacion_estandar": 7.877,
+            "minimo": 16.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 26.9,
+            "mediana": 28.0,
+            "desviacion_estandar": 4.504,
+            "minimo": 17.0,
+            "maximo": 32.0
+          },
+          "puntos_total": {
+            "promedio": 106.6,
+            "mediana": 104.0,
+            "desviacion_estandar": 11.083,
+            "minimo": 93.0,
+            "maximo": 127.0
+          },
+          "recibidos_q1": {
+            "promedio": 28.6,
+            "mediana": 27.5,
+            "desviacion_estandar": 6.859,
+            "minimo": 18.0,
+            "maximo": 44.0
+          },
+          "recibidos_q2": {
+            "promedio": 24.1,
+            "mediana": 22.5,
+            "desviacion_estandar": 7.19,
+            "minimo": 13.0,
+            "maximo": 38.0
+          },
+          "recibidos_q3": {
+            "promedio": 25.9,
+            "mediana": 25.0,
+            "desviacion_estandar": 5.522,
+            "minimo": 17.0,
+            "maximo": 34.0
+          },
+          "recibidos_q4": {
+            "promedio": 25.1,
+            "mediana": 25.5,
+            "desviacion_estandar": 4.346,
+            "minimo": 15.0,
+            "maximo": 32.0
+          },
+          "recibidos_total": {
+            "promedio": 104.4,
+            "mediana": 100.0,
+            "desviacion_estandar": 15.207,
+            "minimo": 78.0,
+            "maximo": 139.0
+          }
+        }
+      },
+      "20": {
+        "partidos": 20,
+        "fecha_mas_reciente": "2026-05-02",
+        "overtime": 2,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 29.95,
+            "mediana": 30.0,
+            "desviacion_estandar": 6.734,
+            "minimo": 16.0,
+            "maximo": 45.0
+          },
+          "puntos_q2": {
+            "promedio": 27.3,
+            "mediana": 26.0,
+            "desviacion_estandar": 5.984,
+            "minimo": 17.0,
+            "maximo": 41.0
+          },
+          "puntos_q3": {
+            "promedio": 27.55,
+            "mediana": 25.5,
+            "desviacion_estandar": 8.447,
+            "minimo": 16.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 27.95,
+            "mediana": 29.0,
+            "desviacion_estandar": 5.818,
+            "minimo": 17.0,
+            "maximo": 37.0
+          },
+          "puntos_total": {
+            "promedio": 113.75,
+            "mediana": 111.0,
+            "desviacion_estandar": 14.321,
+            "minimo": 93.0,
+            "maximo": 142.0
+          },
+          "recibidos_q1": {
+            "promedio": 27.95,
+            "mediana": 26.0,
+            "desviacion_estandar": 6.265,
+            "minimo": 18.0,
+            "maximo": 44.0
+          },
+          "recibidos_q2": {
+            "promedio": 27.0,
+            "mediana": 27.5,
+            "desviacion_estandar": 7.176,
+            "minimo": 13.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 26.5,
+            "mediana": 24.5,
+            "desviacion_estandar": 6.021,
+            "minimo": 17.0,
+            "maximo": 37.0
+          },
+          "recibidos_q4": {
+            "promedio": 27.0,
+            "mediana": 26.0,
+            "desviacion_estandar": 7.668,
+            "minimo": 12.0,
+            "maximo": 45.0
+          },
+          "recibidos_total": {
+            "promedio": 109.15,
+            "mediana": 107.0,
+            "desviacion_estandar": 14.971,
+            "minimo": 78.0,
+            "maximo": 139.0
+          }
+        }
+      },
+      "30": {
+        "partidos": 30,
+        "fecha_mas_reciente": "2026-05-02",
+        "overtime": 2,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 30.7,
+            "mediana": 31.5,
+            "desviacion_estandar": 6.341,
+            "minimo": 16.0,
+            "maximo": 45.0
+          },
+          "puntos_q2": {
+            "promedio": 27.2,
+            "mediana": 26.5,
+            "desviacion_estandar": 5.388,
+            "minimo": 17.0,
+            "maximo": 41.0
+          },
+          "puntos_q3": {
+            "promedio": 28.033,
+            "mediana": 26.5,
+            "desviacion_estandar": 7.472,
+            "minimo": 16.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 28.067,
+            "mediana": 29.0,
+            "desviacion_estandar": 5.304,
+            "minimo": 17.0,
+            "maximo": 37.0
+          },
+          "puntos_total": {
+            "promedio": 114.667,
+            "mediana": 112.5,
+            "desviacion_estandar": 13.676,
+            "minimo": 89.0,
+            "maximo": 142.0
+          },
+          "recibidos_q1": {
+            "promedio": 27.5,
+            "mediana": 26.5,
+            "desviacion_estandar": 5.892,
+            "minimo": 18.0,
+            "maximo": 44.0
+          },
+          "recibidos_q2": {
+            "promedio": 27.533,
+            "mediana": 28.5,
+            "desviacion_estandar": 6.5,
+            "minimo": 13.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 26.567,
+            "mediana": 25.5,
+            "desviacion_estandar": 5.277,
+            "minimo": 17.0,
+            "maximo": 37.0
+          },
+          "recibidos_q4": {
+            "promedio": 27.467,
+            "mediana": 27.0,
+            "desviacion_estandar": 6.751,
+            "minimo": 12.0,
+            "maximo": 45.0
+          },
+          "recibidos_total": {
+            "promedio": 109.533,
+            "mediana": 109.0,
+            "desviacion_estandar": 12.945,
+            "minimo": 78.0,
+            "maximo": 139.0
+          }
+        }
+      }
+    },
+    "local": {
+      "5": {
+        "partidos": 5,
+        "fecha_mas_reciente": "2026-04-30",
+        "overtime": 0,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 30.2,
+            "mediana": 32.0,
+            "desviacion_estandar": 3.187,
+            "minimo": 25.0,
+            "maximo": 33.0
+          },
+          "puntos_q2": {
+            "promedio": 26.0,
+            "mediana": 21.0,
+            "desviacion_estandar": 8.944,
+            "minimo": 17.0,
+            "maximo": 40.0
+          },
+          "puntos_q3": {
+            "promedio": 27.4,
+            "mediana": 25.0,
+            "desviacion_estandar": 9.091,
+            "minimo": 20.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 26.0,
+            "mediana": 26.0,
+            "desviacion_estandar": 5.02,
+            "minimo": 17.0,
+            "maximo": 32.0
+          },
+          "puntos_total": {
+            "promedio": 109.6,
+            "mediana": 107.0,
+            "desviacion_estandar": 12.387,
+            "minimo": 93.0,
+            "maximo": 127.0
+          },
+          "recibidos_q1": {
+            "promedio": 27.2,
+            "mediana": 26.0,
+            "desviacion_estandar": 4.261,
+            "minimo": 21.0,
+            "maximo": 34.0
+          },
+          "recibidos_q2": {
+            "promedio": 22.2,
+            "mediana": 19.0,
+            "desviacion_estandar": 4.622,
+            "minimo": 18.0,
+            "maximo": 30.0
+          },
+          "recibidos_q3": {
+            "promedio": 24.6,
+            "mediana": 25.0,
+            "desviacion_estandar": 6.344,
+            "minimo": 17.0,
+            "maximo": 33.0
+          },
+          "recibidos_q4": {
+            "promedio": 27.0,
+            "mediana": 26.0,
+            "desviacion_estandar": 3.464,
+            "minimo": 23.0,
+            "maximo": 32.0
+          },
+          "recibidos_total": {
+            "promedio": 101.0,
+            "mediana": 99.0,
+            "desviacion_estandar": 6.419,
+            "minimo": 94.0,
+            "maximo": 113.0
+          }
+        }
+      },
+      "10": {
+        "partidos": 10,
+        "fecha_mas_reciente": "2026-04-30",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 29.3,
+            "mediana": 31.5,
+            "desviacion_estandar": 5.478,
+            "minimo": 16.0,
+            "maximo": 35.0
+          },
+          "puntos_q2": {
+            "promedio": 27.6,
+            "mediana": 26.5,
+            "desviacion_estandar": 7.864,
+            "minimo": 17.0,
+            "maximo": 41.0
+          },
+          "puntos_q3": {
+            "promedio": 30.1,
+            "mediana": 26.0,
+            "desviacion_estandar": 8.467,
+            "minimo": 20.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 28.4,
+            "mediana": 30.0,
+            "desviacion_estandar": 5.463,
+            "minimo": 17.0,
+            "maximo": 36.0
+          },
+          "puntos_total": {
+            "promedio": 116.3,
+            "mediana": 118.0,
+            "desviacion_estandar": 13.491,
+            "minimo": 93.0,
+            "maximo": 142.0
+          },
+          "recibidos_q1": {
+            "promedio": 26.2,
+            "mediana": 26.0,
+            "desviacion_estandar": 3.842,
+            "minimo": 21.0,
+            "maximo": 34.0
+          },
+          "recibidos_q2": {
+            "promedio": 25.0,
+            "mediana": 24.5,
+            "desviacion_estandar": 5.348,
+            "minimo": 18.0,
+            "maximo": 36.0
+          },
+          "recibidos_q3": {
+            "promedio": 26.4,
+            "mediana": 25.0,
+            "desviacion_estandar": 6.902,
+            "minimo": 17.0,
+            "maximo": 37.0
+          },
+          "recibidos_q4": {
+            "promedio": 27.9,
+            "mediana": 29.0,
+            "desviacion_estandar": 5.991,
+            "minimo": 15.0,
+            "maximo": 38.0
+          },
+          "recibidos_total": {
+            "promedio": 106.2,
+            "mediana": 100.0,
+            "desviacion_estandar": 11.822,
+            "minimo": 94.0,
+            "maximo": 130.0
+          }
+        }
+      },
+      "20": {
+        "partidos": 20,
+        "fecha_mas_reciente": "2026-04-30",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 30.65,
+            "mediana": 31.5,
+            "desviacion_estandar": 5.606,
+            "minimo": 16.0,
+            "maximo": 41.0
+          },
+          "puntos_q2": {
+            "promedio": 26.7,
+            "mediana": 26.5,
+            "desviacion_estandar": 6.084,
+            "minimo": 17.0,
+            "maximo": 41.0
+          },
+          "puntos_q3": {
+            "promedio": 29.55,
+            "mediana": 26.5,
+            "desviacion_estandar": 7.159,
+            "minimo": 20.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 27.6,
+            "mediana": 28.5,
+            "desviacion_estandar": 5.2,
+            "minimo": 17.0,
+            "maximo": 36.0
+          },
+          "puntos_total": {
+            "promedio": 114.95,
+            "mediana": 113.0,
+            "desviacion_estandar": 12.781,
+            "minimo": 89.0,
+            "maximo": 142.0
+          },
+          "recibidos_q1": {
+            "promedio": 27.65,
+            "mediana": 26.5,
+            "desviacion_estandar": 6.101,
+            "minimo": 18.0,
+            "maximo": 47.0
+          },
+          "recibidos_q2": {
+            "promedio": 27.2,
+            "mediana": 27.0,
+            "desviacion_estandar": 6.177,
+            "minimo": 18.0,
+            "maximo": 37.0
+          },
+          "recibidos_q3": {
+            "promedio": 26.6,
+            "mediana": 26.5,
+            "desviacion_estandar": 5.407,
+            "minimo": 17.0,
+            "maximo": 37.0
+          },
+          "recibidos_q4": {
+            "promedio": 27.45,
+            "mediana": 27.5,
+            "desviacion_estandar": 5.287,
+            "minimo": 15.0,
+            "maximo": 38.0
+          },
+          "recibidos_total": {
+            "promedio": 109.25,
+            "mediana": 105.0,
+            "desviacion_estandar": 11.738,
+            "minimo": 94.0,
+            "maximo": 136.0
+          }
+        }
+      },
+      "30": {
+        "partidos": 30,
+        "fecha_mas_reciente": "2026-04-30",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 30.267,
+            "mediana": 30.5,
+            "desviacion_estandar": 5.893,
+            "minimo": 16.0,
+            "maximo": 41.0
+          },
+          "puntos_q2": {
+            "promedio": 27.967,
+            "mediana": 28.0,
+            "desviacion_estandar": 6.696,
+            "minimo": 16.0,
+            "maximo": 44.0
+          },
+          "puntos_q3": {
+            "promedio": 29.167,
+            "mediana": 28.0,
+            "desviacion_estandar": 6.659,
+            "minimo": 20.0,
+            "maximo": 45.0
+          },
+          "puntos_q4": {
+            "promedio": 27.7,
+            "mediana": 27.5,
+            "desviacion_estandar": 5.751,
+            "minimo": 17.0,
+            "maximo": 39.0
+          },
+          "puntos_total": {
+            "promedio": 115.4,
+            "mediana": 116.5,
+            "desviacion_estandar": 12.8,
+            "minimo": 89.0,
+            "maximo": 142.0
+          },
+          "recibidos_q1": {
+            "promedio": 28.533,
+            "mediana": 28.5,
+            "desviacion_estandar": 5.696,
+            "minimo": 18.0,
+            "maximo": 47.0
+          },
+          "recibidos_q2": {
+            "promedio": 28.333,
+            "mediana": 29.0,
+            "desviacion_estandar": 5.706,
+            "minimo": 18.0,
+            "maximo": 37.0
+          },
+          "recibidos_q3": {
+            "promedio": 27.233,
+            "mediana": 26.5,
+            "desviacion_estandar": 5.396,
+            "minimo": 17.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 26.733,
+            "mediana": 27.0,
+            "desviacion_estandar": 5.513,
+            "minimo": 13.0,
+            "maximo": 38.0
+          },
+          "recibidos_total": {
+            "promedio": 111.067,
+            "mediana": 110.5,
+            "desviacion_estandar": 12.05,
+            "minimo": 93.0,
+            "maximo": 136.0
+          }
+        }
+      }
+    },
+    "ultimos_30": [
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "e548e31a-fbff-413a-8850-65f16ed26f92",
+        "fecha_partido": "2026-05-02",
+        "localia": "visitante",
+        "tipo_partido": "POST",
+        "puntos_q1": 23,
+        "puntos_q2": 26,
+        "puntos_q3": 22,
+        "puntos_q4": 27,
+        "puntos_total": 98,
+        "recibidos_q1": 18,
+        "recibidos_q2": 13,
+        "recibidos_q3": 24,
+        "recibidos_q4": 23,
+        "recibidos_total": 78,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869409"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "3a6eed9a-ccbf-410e-b2a5-b66d1f126445",
+        "fecha_partido": "2026-04-30",
+        "localia": "local",
+        "tipo_partido": "POST",
+        "puntos_q1": 28,
+        "puntos_q2": 19,
+        "puntos_q3": 20,
+        "puntos_q4": 26,
+        "puntos_total": 93,
+        "recibidos_q1": 21,
+        "recibidos_q2": 30,
+        "recibidos_q3": 25,
+        "recibidos_q4": 23,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869407"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "d7a74cd0-fa21-4d5b-a27c-df602886bc28",
+        "fecha_partido": "2026-04-27",
+        "localia": "visitante",
+        "tipo_partido": "POST",
+        "puntos_q1": 21,
+        "puntos_q2": 26,
+        "puntos_q3": 18,
+        "puntos_q4": 31,
+        "puntos_total": 96,
+        "recibidos_q1": 26,
+        "recibidos_q2": 30,
+        "recibidos_q3": 34,
+        "recibidos_q4": 25,
+        "recibidos_total": 115,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869405"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "e5d38b2b-bf71-464d-bf3f-458dcbbc2336",
+        "fecha_partido": "2026-04-25",
+        "localia": "visitante",
+        "tipo_partido": "POST",
+        "puntos_q1": 39,
+        "puntos_q2": 24,
+        "puntos_q3": 17,
+        "puntos_q4": 21,
+        "puntos_total": 112,
+        "recibidos_q1": 32,
+        "recibidos_q2": 20,
+        "recibidos_q3": 23,
+        "recibidos_q4": 26,
+        "recibidos_total": 108,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401869400"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "d46a5bc9-9c92-400b-a047-a16fac1ed90e",
+        "fecha_partido": "2026-04-22",
+        "localia": "local",
+        "tipo_partido": "POST",
+        "puntos_q1": 33,
+        "puntos_q2": 21,
+        "puntos_q3": 21,
+        "puntos_q4": 26,
+        "puntos_total": 101,
+        "recibidos_q1": 26,
+        "recibidos_q2": 25,
+        "recibidos_q3": 17,
+        "recibidos_q4": 26,
+        "recibidos_total": 94,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869397"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "46a0c3ab-1ac4-4d7d-b55c-ae266770187c",
+        "fecha_partido": "2026-04-19",
+        "localia": "local",
+        "tipo_partido": "POST",
+        "puntos_q1": 33,
+        "puntos_q2": 17,
+        "puntos_q3": 25,
+        "puntos_q4": 32,
+        "puntos_total": 107,
+        "recibidos_q1": 29,
+        "recibidos_q2": 19,
+        "recibidos_q3": 18,
+        "recibidos_q4": 32,
+        "recibidos_total": 98,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869190"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "8a012ffc-6f7f-4455-b05c-1992b7ebdbd8",
+        "fecha_partido": "2026-04-02",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 21,
+        "puntos_q2": 30,
+        "puntos_q3": 16,
+        "puntos_q4": 29,
+        "puntos_total": 96,
+        "recibidos_q1": 44,
+        "recibidos_q2": 38,
+        "recibidos_q3": 30,
+        "recibidos_q4": 27,
+        "recibidos_total": 139,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "f597f097-68d1-4ae7-b7ae-434c008609ef",
+        "fecha_partido": "2026-03-31",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 32,
+        "puntos_q2": 33,
+        "puntos_q3": 45,
+        "puntos_q4": 17,
+        "puntos_total": 127,
+        "recibidos_q1": 34,
+        "recibidos_q2": 19,
+        "recibidos_q3": 30,
+        "recibidos_q4": 30,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "86f857e5-2b5b-4229-8875-d4b001a59904",
+        "fecha_partido": "2026-03-30",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 40,
+        "puntos_q3": 26,
+        "puntos_q4": 29,
+        "puntos_total": 120,
+        "recibidos_q1": 26,
+        "recibidos_q2": 18,
+        "recibidos_q3": 33,
+        "recibidos_q4": 24,
+        "recibidos_total": 101,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "cf3c0d08-f2e3-4850-abc8-21f43c8761aa",
+        "fecha_partido": "2026-03-27",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 26,
+        "puntos_q3": 24,
+        "puntos_q4": 31,
+        "puntos_total": 116,
+        "recibidos_q1": 30,
+        "recibidos_q2": 29,
+        "recibidos_q3": 25,
+        "recibidos_q4": 15,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "4498758e-5fba-412c-bb59-5d81ef1bb6da",
+        "fecha_partido": "2026-03-25",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 45,
+        "puntos_q2": 30,
+        "puntos_q3": 30,
+        "puntos_q4": 32,
+        "puntos_total": 137,
+        "recibidos_q1": 28,
+        "recibidos_q2": 31,
+        "recibidos_q3": 26,
+        "recibidos_q4": 45,
+        "recibidos_total": 130,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "47ed6423-0ee6-46b6-8914-3e6e934fefce",
+        "fecha_partido": "2026-03-23",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 27,
+        "puntos_q2": 25,
+        "puntos_q3": 35,
+        "puntos_q4": 23,
+        "puntos_total": 110,
+        "recibidos_q1": 23,
+        "recibidos_q2": 42,
+        "recibidos_q3": 24,
+        "recibidos_q4": 24,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "0d86bc9a-d37f-4c23-98da-b356f9d446b7",
+        "fecha_partido": "2026-03-21",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 37,
+        "puntos_q2": 25,
+        "puntos_q3": 20,
+        "puntos_q4": 23,
+        "puntos_total": 105,
+        "recibidos_q1": 30,
+        "recibidos_q2": 35,
+        "recibidos_q3": 22,
+        "recibidos_q4": 17,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "0636c0ce-f1ea-4451-9030-20f1eb9ab7d4",
+        "fecha_partido": "2026-03-19",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 29,
+        "puntos_q2": 30,
+        "puntos_q3": 38,
+        "puntos_q4": 37,
+        "puntos_total": 134,
+        "recibidos_q1": 42,
+        "recibidos_q2": 23,
+        "recibidos_q3": 23,
+        "recibidos_q4": 38,
+        "recibidos_total": 126,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "6c080c30-a456-4187-a118-d76fd71ebd58",
+        "fecha_partido": "2026-03-18",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 32,
+        "puntos_q3": 22,
+        "puntos_q4": 35,
+        "puntos_total": 124,
+        "recibidos_q1": 26,
+        "recibidos_q2": 29,
+        "recibidos_q3": 37,
+        "recibidos_q4": 24,
+        "recibidos_total": 116,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "ad02cdf6-0f0d-44c8-a562-90442775f6ac",
+        "fecha_partido": "2026-03-16",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 29,
+        "puntos_q2": 22,
+        "puntos_q3": 32,
+        "puntos_q4": 17,
+        "puntos_total": 100,
+        "recibidos_q1": 28,
+        "recibidos_q2": 29,
+        "recibidos_q3": 23,
+        "recibidos_q4": 12,
+        "recibidos_total": 92,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "31cd423a-f300-4476-b45b-8dd77b6008ec",
+        "fecha_partido": "2026-03-14",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 27,
+        "puntos_q3": 26,
+        "puntos_q4": 31,
+        "puntos_total": 127,
+        "recibidos_q1": 26,
+        "recibidos_q2": 24,
+        "recibidos_q3": 37,
+        "recibidos_q4": 31,
+        "recibidos_total": 125,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401810829"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "9f394a9f-640e-4b7c-b892-8ab33c798aaa",
+        "fecha_partido": "2026-03-12",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 41,
+        "puntos_q3": 41,
+        "puntos_q4": 34,
+        "puntos_total": 142,
+        "recibidos_q1": 26,
+        "recibidos_q2": 36,
+        "recibidos_q3": 36,
+        "recibidos_q4": 32,
+        "recibidos_total": 130,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810815"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "fac7b8d9-b6b9-4ebf-9078-a58cb01c54d5",
+        "fecha_partido": "2026-03-10",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 16,
+        "puntos_q2": 29,
+        "puntos_q3": 39,
+        "puntos_q4": 36,
+        "puntos_total": 120,
+        "recibidos_q1": 21,
+        "recibidos_q2": 24,
+        "recibidos_q3": 23,
+        "recibidos_q4": 38,
+        "recibidos_total": 106,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810801"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "93cf2512-80dd-4968-a04a-b44b22073b36",
+        "fecha_partido": "2026-03-08",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 31,
+        "puntos_q2": 23,
+        "puntos_q3": 34,
+        "puntos_q4": 22,
+        "puntos_total": 110,
+        "recibidos_q1": 23,
+        "recibidos_q2": 26,
+        "recibidos_q3": 20,
+        "recibidos_q4": 28,
+        "recibidos_total": 97,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810777"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "74c91aac-6de1-4fb5-9ef6-3cd0fd00c32a",
+        "fecha_partido": "2026-03-06",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 29,
+        "puntos_q3": 35,
+        "puntos_q4": 29,
+        "puntos_total": 128,
+        "recibidos_q1": 27,
+        "recibidos_q2": 24,
+        "recibidos_q3": 29,
+        "recibidos_q4": 37,
+        "recibidos_total": 117,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810769"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "22bf8a8c-ceb0-41ba-9368-9fa64e9f967f",
+        "fecha_partido": "2026-03-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 22,
+        "puntos_q2": 32,
+        "puntos_q3": 32,
+        "puntos_q4": 27,
+        "puntos_total": 113,
+        "recibidos_q1": 32,
+        "recibidos_q2": 32,
+        "recibidos_q3": 29,
+        "recibidos_q4": 27,
+        "recibidos_total": 120,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810761"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "b06a0d74-12b9-4e62-88fa-d97960a9c3d9",
+        "fecha_partido": "2026-03-03",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 31,
+        "puntos_q2": 23,
+        "puntos_q3": 22,
+        "puntos_q4": 34,
+        "puntos_total": 110,
+        "recibidos_q1": 33,
+        "recibidos_q2": 18,
+        "recibidos_q3": 27,
+        "recibidos_q4": 23,
+        "recibidos_total": 101,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810746"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "8d206904-baa9-46ee-9491-2dcf07794236",
+        "fecha_partido": "2026-03-01",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 36,
+        "puntos_q2": 28,
+        "puntos_q3": 32,
+        "puntos_q4": 32,
+        "puntos_total": 128,
+        "recibidos_q1": 18,
+        "recibidos_q2": 31,
+        "recibidos_q3": 27,
+        "recibidos_q4": 28,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810733"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "9953a60f-37e0-4601-9947-a016c24ff51d",
+        "fecha_partido": "2026-02-28",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 33,
+        "puntos_q2": 32,
+        "puntos_q3": 34,
+        "puntos_q4": 30,
+        "puntos_total": 129,
+        "recibidos_q1": 20,
+        "recibidos_q2": 27,
+        "recibidos_q3": 25,
+        "recibidos_q4": 29,
+        "recibidos_total": 101,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810721"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "86c25e82-74f1-4d97-9c26-ee79e0daa323",
+        "fecha_partido": "2026-02-26",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 27,
+        "puntos_q2": 22,
+        "puntos_q3": 31,
+        "puntos_q4": 30,
+        "puntos_total": 110,
+        "recibidos_q1": 22,
+        "recibidos_q2": 27,
+        "recibidos_q3": 31,
+        "recibidos_q4": 33,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810710"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "ed1eec2a-d842-400d-a080-99c1918c520f",
+        "fecha_partido": "2026-02-24",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 33,
+        "puntos_q2": 23,
+        "puntos_q3": 24,
+        "puntos_q4": 29,
+        "puntos_total": 109,
+        "recibidos_q1": 25,
+        "recibidos_q2": 28,
+        "recibidos_q3": 26,
+        "recibidos_q4": 31,
+        "recibidos_total": 110,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810695"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "5e8fd6b2-25aa-4d3d-95a7-72a6f8c49f2f",
+        "fecha_partido": "2026-02-22",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 22,
+        "puntos_q3": 21,
+        "puntos_q4": 18,
+        "puntos_total": 89,
+        "recibidos_q1": 28,
+        "recibidos_q2": 32,
+        "recibidos_q3": 24,
+        "recibidos_q4": 27,
+        "recibidos_total": 111,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810678"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "ab9c0e82-015f-4555-9cd9-dc3de37c7f84",
+        "fecha_partido": "2026-02-20",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 41,
+        "puntos_q2": 31,
+        "puntos_q3": 27,
+        "puntos_q4": 26,
+        "puntos_total": 125,
+        "recibidos_q1": 30,
+        "recibidos_q2": 35,
+        "recibidos_q3": 30,
+        "recibidos_q4": 27,
+        "recibidos_total": 122,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810664"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "5ce78ca0-99b3-4f99-a129-f7359ef040d4",
+        "fecha_partido": "2026-02-12",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 36,
+        "puntos_q2": 28,
+        "puntos_q3": 32,
+        "puntos_q4": 28,
+        "puntos_total": 124,
+        "recibidos_q1": 31,
+        "recibidos_q2": 32,
+        "recibidos_q3": 19,
+        "recibidos_q4": 22,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810646"
+      }
+    ],
+    "ultimos_30_local": [
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "3a6eed9a-ccbf-410e-b2a5-b66d1f126445",
+        "fecha_partido": "2026-04-30",
+        "localia": "local",
+        "tipo_partido": "POST",
+        "puntos_q1": 28,
+        "puntos_q2": 19,
+        "puntos_q3": 20,
+        "puntos_q4": 26,
+        "puntos_total": 93,
+        "recibidos_q1": 21,
+        "recibidos_q2": 30,
+        "recibidos_q3": 25,
+        "recibidos_q4": 23,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869407"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "d46a5bc9-9c92-400b-a047-a16fac1ed90e",
+        "fecha_partido": "2026-04-22",
+        "localia": "local",
+        "tipo_partido": "POST",
+        "puntos_q1": 33,
+        "puntos_q2": 21,
+        "puntos_q3": 21,
+        "puntos_q4": 26,
+        "puntos_total": 101,
+        "recibidos_q1": 26,
+        "recibidos_q2": 25,
+        "recibidos_q3": 17,
+        "recibidos_q4": 26,
+        "recibidos_total": 94,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869397"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "46a0c3ab-1ac4-4d7d-b55c-ae266770187c",
+        "fecha_partido": "2026-04-19",
+        "localia": "local",
+        "tipo_partido": "POST",
+        "puntos_q1": 33,
+        "puntos_q2": 17,
+        "puntos_q3": 25,
+        "puntos_q4": 32,
+        "puntos_total": 107,
+        "recibidos_q1": 29,
+        "recibidos_q2": 19,
+        "recibidos_q3": 18,
+        "recibidos_q4": 32,
+        "recibidos_total": 98,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401869190"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "f597f097-68d1-4ae7-b7ae-434c008609ef",
+        "fecha_partido": "2026-03-31",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 32,
+        "puntos_q2": 33,
+        "puntos_q3": 45,
+        "puntos_q4": 17,
+        "puntos_total": 127,
+        "recibidos_q1": 34,
+        "recibidos_q2": 19,
+        "recibidos_q3": 30,
+        "recibidos_q4": 30,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "86f857e5-2b5b-4229-8875-d4b001a59904",
+        "fecha_partido": "2026-03-30",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 40,
+        "puntos_q3": 26,
+        "puntos_q4": 29,
+        "puntos_total": 120,
+        "recibidos_q1": 26,
+        "recibidos_q2": 18,
+        "recibidos_q3": 33,
+        "recibidos_q4": 24,
+        "recibidos_total": 101,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "cf3c0d08-f2e3-4850-abc8-21f43c8761aa",
+        "fecha_partido": "2026-03-27",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 26,
+        "puntos_q3": 24,
+        "puntos_q4": 31,
+        "puntos_total": 116,
+        "recibidos_q1": 30,
+        "recibidos_q2": 29,
+        "recibidos_q3": 25,
+        "recibidos_q4": 15,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "31cd423a-f300-4476-b45b-8dd77b6008ec",
+        "fecha_partido": "2026-03-14",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 27,
+        "puntos_q3": 26,
+        "puntos_q4": 31,
+        "puntos_total": 127,
+        "recibidos_q1": 26,
+        "recibidos_q2": 24,
+        "recibidos_q3": 37,
+        "recibidos_q4": 31,
+        "recibidos_total": 125,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401810829"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "9f394a9f-640e-4b7c-b892-8ab33c798aaa",
+        "fecha_partido": "2026-03-12",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 41,
+        "puntos_q3": 41,
+        "puntos_q4": 34,
+        "puntos_total": 142,
+        "recibidos_q1": 26,
+        "recibidos_q2": 36,
+        "recibidos_q3": 36,
+        "recibidos_q4": 32,
+        "recibidos_total": 130,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810815"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "fac7b8d9-b6b9-4ebf-9078-a58cb01c54d5",
+        "fecha_partido": "2026-03-10",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 16,
+        "puntos_q2": 29,
+        "puntos_q3": 39,
+        "puntos_q4": 36,
+        "puntos_total": 120,
+        "recibidos_q1": 21,
+        "recibidos_q2": 24,
+        "recibidos_q3": 23,
+        "recibidos_q4": 38,
+        "recibidos_total": 106,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810801"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "93cf2512-80dd-4968-a04a-b44b22073b36",
+        "fecha_partido": "2026-03-08",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 31,
+        "puntos_q2": 23,
+        "puntos_q3": 34,
+        "puntos_q4": 22,
+        "puntos_total": 110,
+        "recibidos_q1": 23,
+        "recibidos_q2": 26,
+        "recibidos_q3": 20,
+        "recibidos_q4": 28,
+        "recibidos_total": 97,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810777"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "74c91aac-6de1-4fb5-9ef6-3cd0fd00c32a",
+        "fecha_partido": "2026-03-06",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 29,
+        "puntos_q3": 35,
+        "puntos_q4": 29,
+        "puntos_total": 128,
+        "recibidos_q1": 27,
+        "recibidos_q2": 24,
+        "recibidos_q3": 29,
+        "recibidos_q4": 37,
+        "recibidos_total": 117,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810769"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "b06a0d74-12b9-4e62-88fa-d97960a9c3d9",
+        "fecha_partido": "2026-03-03",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 31,
+        "puntos_q2": 23,
+        "puntos_q3": 22,
+        "puntos_q4": 34,
+        "puntos_total": 110,
+        "recibidos_q1": 33,
+        "recibidos_q2": 18,
+        "recibidos_q3": 27,
+        "recibidos_q4": 23,
+        "recibidos_total": 101,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810746"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "8d206904-baa9-46ee-9491-2dcf07794236",
+        "fecha_partido": "2026-03-01",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 36,
+        "puntos_q2": 28,
+        "puntos_q3": 32,
+        "puntos_q4": 32,
+        "puntos_total": 128,
+        "recibidos_q1": 18,
+        "recibidos_q2": 31,
+        "recibidos_q3": 27,
+        "recibidos_q4": 28,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810733"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "ed1eec2a-d842-400d-a080-99c1918c520f",
+        "fecha_partido": "2026-02-24",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 33,
+        "puntos_q2": 23,
+        "puntos_q3": 24,
+        "puntos_q4": 29,
+        "puntos_total": 109,
+        "recibidos_q1": 25,
+        "recibidos_q2": 28,
+        "recibidos_q3": 26,
+        "recibidos_q4": 31,
+        "recibidos_total": 110,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810695"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "5e8fd6b2-25aa-4d3d-95a7-72a6f8c49f2f",
+        "fecha_partido": "2026-02-22",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 22,
+        "puntos_q3": 21,
+        "puntos_q4": 18,
+        "puntos_total": 89,
+        "recibidos_q1": 28,
+        "recibidos_q2": 32,
+        "recibidos_q3": 24,
+        "recibidos_q4": 27,
+        "recibidos_total": 111,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810678"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "ab9c0e82-015f-4555-9cd9-dc3de37c7f84",
+        "fecha_partido": "2026-02-20",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 41,
+        "puntos_q2": 31,
+        "puntos_q3": 27,
+        "puntos_q4": 26,
+        "puntos_total": 125,
+        "recibidos_q1": 30,
+        "recibidos_q2": 35,
+        "recibidos_q3": 30,
+        "recibidos_q4": 27,
+        "recibidos_total": 122,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810664"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "5ce78ca0-99b3-4f99-a129-f7359ef040d4",
+        "fecha_partido": "2026-02-12",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 36,
+        "puntos_q2": 28,
+        "puntos_q3": 32,
+        "puntos_q4": 28,
+        "puntos_total": 124,
+        "recibidos_q1": 31,
+        "recibidos_q2": 32,
+        "recibidos_q3": 19,
+        "recibidos_q4": 22,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810646"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "4956e496-33df-45eb-ba09-507b73c837e4",
+        "fecha_partido": "2026-02-10",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 25,
+        "puntos_q3": 26,
+        "puntos_q4": 27,
+        "puntos_total": 108,
+        "recibidos_q1": 47,
+        "recibidos_q2": 37,
+        "recibidos_q3": 31,
+        "recibidos_q4": 21,
+        "recibidos_total": 136,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810629"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "3896a92e-2546-48c1-8c8f-bdc9772d56b6",
+        "fecha_partido": "2026-02-09",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 28,
+        "puntos_q3": 33,
+        "puntos_q4": 19,
+        "puntos_total": 110,
+        "recibidos_q1": 31,
+        "recibidos_q2": 36,
+        "recibidos_q3": 26,
+        "recibidos_q4": 26,
+        "recibidos_total": 119,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810624"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "a7210eee-adab-4205-b464-87fdb779608e",
+        "fecha_partido": "2026-02-07",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 20,
+        "puntos_q2": 21,
+        "puntos_q3": 38,
+        "puntos_q4": 26,
+        "puntos_total": 105,
+        "recibidos_q1": 21,
+        "recibidos_q2": 21,
+        "recibidos_q3": 29,
+        "recibidos_q4": 28,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810608"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "1c61f2e3-7f34-4db2-adf7-5ef8e9755769",
+        "fecha_partido": "2026-02-05",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 21,
+        "puntos_q2": 30,
+        "puntos_q3": 34,
+        "puntos_q4": 34,
+        "puntos_total": 119,
+        "recibidos_q1": 27,
+        "recibidos_q2": 32,
+        "recibidos_q3": 28,
+        "recibidos_q4": 28,
+        "recibidos_total": 115,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810595"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "05106627-7f28-4dd1-8aab-e45f536dcdf6",
+        "fecha_partido": "2026-01-18",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 23,
+        "puntos_q2": 32,
+        "puntos_q3": 32,
+        "puntos_q4": 23,
+        "puntos_total": 110,
+        "recibidos_q1": 30,
+        "recibidos_q2": 24,
+        "recibidos_q3": 26,
+        "recibidos_q4": 13,
+        "recibidos_total": 93,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810462"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "8108078e-f4b1-4351-89ba-3e20e56e3a2c",
+        "fecha_partido": "2026-01-15",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 39,
+        "puntos_q2": 16,
+        "puntos_q3": 38,
+        "puntos_q4": 24,
+        "puntos_total": 117,
+        "recibidos_q1": 30,
+        "recibidos_q2": 34,
+        "recibidos_q3": 40,
+        "recibidos_q4": 31,
+        "recibidos_total": 135,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810441"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "56f7e291-ee32-44e1-a170-2a37b4f34ee0",
+        "fecha_partido": "2026-01-13",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 37,
+        "puntos_q2": 44,
+        "puntos_q3": 21,
+        "puntos_q4": 39,
+        "puntos_total": 141,
+        "recibidos_q1": 30,
+        "recibidos_q2": 30,
+        "recibidos_q3": 26,
+        "recibidos_q4": 30,
+        "recibidos_total": 116,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810424"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "508ee033-34f3-4c00-813b-c0e449ea8e7a",
+        "fecha_partido": "2026-01-09",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 27,
+        "puntos_q3": 25,
+        "puntos_q4": 24,
+        "puntos_total": 101,
+        "recibidos_q1": 24,
+        "recibidos_q2": 37,
+        "recibidos_q3": 25,
+        "recibidos_q4": 19,
+        "recibidos_total": 105,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810396"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "0a8c0e58-da6e-4cb3-b44e-2f8c58ea9d9c",
+        "fecha_partido": "2026-01-04",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 28,
+        "puntos_q3": 29,
+        "puntos_q4": 37,
+        "puntos_total": 120,
+        "recibidos_q1": 34,
+        "recibidos_q2": 31,
+        "recibidos_q3": 22,
+        "recibidos_q4": 27,
+        "recibidos_total": 114,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810356"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "ef150859-cf4a-4523-a57c-7eacda460353",
+        "fecha_partido": "2026-01-02",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 39,
+        "puntos_q2": 27,
+        "puntos_q3": 30,
+        "puntos_q4": 32,
+        "puntos_total": 128,
+        "recibidos_q1": 31,
+        "recibidos_q2": 29,
+        "recibidos_q3": 36,
+        "recibidos_q4": 25,
+        "recibidos_total": 121,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810340"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "82982e32-40cc-4711-8194-afc02f94e334",
+        "fecha_partido": "2025-12-30",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 35,
+        "puntos_q3": 23,
+        "puntos_q4": 18,
+        "puntos_total": 106,
+        "recibidos_q1": 36,
+        "recibidos_q2": 34,
+        "recibidos_q3": 26,
+        "recibidos_q4": 32,
+        "recibidos_total": 128,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810315"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "a7de18a7-e28c-4caf-8a62-72853690b8c3",
+        "fecha_partido": "2025-12-28",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 38,
+        "puntos_q3": 31,
+        "puntos_q4": 26,
+        "puntos_total": 125,
+        "recibidos_q1": 24,
+        "recibidos_q2": 29,
+        "recibidos_q3": 27,
+        "recibidos_q4": 21,
+        "recibidos_total": 101,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810301"
+      },
+      {
+        "abreviatura": "LAL",
+        "equipo": "Los Angeles Lakers",
+        "partido_id": "7f997a30-ecce-4253-8187-26c01fa80698",
+        "fecha_partido": "2025-12-25",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 28,
+        "puntos_q3": 21,
+        "puntos_q4": 22,
+        "puntos_total": 96,
+        "recibidos_q1": 37,
+        "recibidos_q2": 26,
+        "recibidos_q3": 29,
+        "recibidos_q4": 27,
+        "recibidos_total": 119,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401809241"
+      }
+    ]
+  },
+  "forma_visitante": {
+    "general": {
+      "5": {
+        "partidos": 5,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 0,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 23.4,
+            "mediana": 26.0,
+            "desviacion_estandar": 4.63,
+            "minimo": 15.0,
+            "maximo": 28.0
+          },
+          "puntos_q2": {
+            "promedio": 26.0,
+            "mediana": 25.0,
+            "desviacion_estandar": 3.899,
+            "minimo": 21.0,
+            "maximo": 31.0
+          },
+          "puntos_q3": {
+            "promedio": 28.4,
+            "mediana": 30.0,
+            "desviacion_estandar": 5.083,
+            "minimo": 21.0,
+            "maximo": 34.0
+          },
+          "puntos_q4": {
+            "promedio": 30.0,
+            "mediana": 30.0,
+            "desviacion_estandar": 7.746,
+            "minimo": 19.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 107.8,
+            "mediana": 111.0,
+            "desviacion_estandar": 12.057,
+            "minimo": 93.0,
+            "maximo": 126.0
+          },
+          "recibidos_q1": {
+            "promedio": 30.4,
+            "mediana": 31.0,
+            "desviacion_estandar": 4.079,
+            "minimo": 23.0,
+            "maximo": 35.0
+          },
+          "recibidos_q2": {
+            "promedio": 25.8,
+            "mediana": 24.0,
+            "desviacion_estandar": 6.177,
+            "minimo": 17.0,
+            "maximo": 35.0
+          },
+          "recibidos_q3": {
+            "promedio": 30.4,
+            "mediana": 28.0,
+            "desviacion_estandar": 4.964,
+            "minimo": 26.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 32.0,
+            "mediana": 32.0,
+            "desviacion_estandar": 1.414,
+            "minimo": 30.0,
+            "maximo": 34.0
+          },
+          "recibidos_total": {
+            "promedio": 118.6,
+            "mediana": 118.0,
+            "desviacion_estandar": 5.314,
+            "minimo": 111.0,
+            "maximo": 127.0
+          }
+        }
+      },
+      "10": {
+        "partidos": 10,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 27.6,
+            "mediana": 26.0,
+            "desviacion_estandar": 6.515,
+            "minimo": 15.0,
+            "maximo": 38.0
+          },
+          "puntos_q2": {
+            "promedio": 26.7,
+            "mediana": 25.0,
+            "desviacion_estandar": 3.874,
+            "minimo": 21.0,
+            "maximo": 34.0
+          },
+          "puntos_q3": {
+            "promedio": 26.7,
+            "mediana": 25.5,
+            "desviacion_estandar": 5.622,
+            "minimo": 20.0,
+            "maximo": 35.0
+          },
+          "puntos_q4": {
+            "promedio": 30.6,
+            "mediana": 29.5,
+            "desviacion_estandar": 6.248,
+            "minimo": 19.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 112.7,
+            "mediana": 110.5,
+            "desviacion_estandar": 13.893,
+            "minimo": 93.0,
+            "maximo": 137.0
+          },
+          "recibidos_q1": {
+            "promedio": 29.4,
+            "mediana": 30.5,
+            "desviacion_estandar": 4.609,
+            "minimo": 21.0,
+            "maximo": 35.0
+          },
+          "recibidos_q2": {
+            "promedio": 29.8,
+            "mediana": 29.0,
+            "desviacion_estandar": 7.011,
+            "minimo": 17.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 30.8,
+            "mediana": 29.0,
+            "desviacion_estandar": 4.936,
+            "minimo": 25.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 29.2,
+            "mediana": 30.5,
+            "desviacion_estandar": 4.142,
+            "minimo": 20.0,
+            "maximo": 34.0
+          },
+          "recibidos_total": {
+            "promedio": 119.7,
+            "mediana": 119.5,
+            "desviacion_estandar": 7.511,
+            "minimo": 106.0,
+            "maximo": 131.0
+          }
+        }
+      },
+      "20": {
+        "partidos": 20,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 3,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 28.1,
+            "mediana": 28.0,
+            "desviacion_estandar": 5.558,
+            "minimo": 15.0,
+            "maximo": 38.0
+          },
+          "puntos_q2": {
+            "promedio": 25.55,
+            "mediana": 25.0,
+            "desviacion_estandar": 3.93,
+            "minimo": 19.0,
+            "maximo": 34.0
+          },
+          "puntos_q3": {
+            "promedio": 27.85,
+            "mediana": 28.0,
+            "desviacion_estandar": 5.36,
+            "minimo": 20.0,
+            "maximo": 39.0
+          },
+          "puntos_q4": {
+            "promedio": 28.4,
+            "mediana": 28.5,
+            "desviacion_estandar": 6.43,
+            "minimo": 14.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 111.45,
+            "mediana": 110.5,
+            "desviacion_estandar": 12.151,
+            "minimo": 93.0,
+            "maximo": 137.0
+          },
+          "recibidos_q1": {
+            "promedio": 28.3,
+            "mediana": 30.0,
+            "desviacion_estandar": 5.423,
+            "minimo": 19.0,
+            "maximo": 36.0
+          },
+          "recibidos_q2": {
+            "promedio": 29.85,
+            "mediana": 30.0,
+            "desviacion_estandar": 5.867,
+            "minimo": 17.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 30.95,
+            "mediana": 30.5,
+            "desviacion_estandar": 5.045,
+            "minimo": 19.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 28.45,
+            "mediana": 29.5,
+            "desviacion_estandar": 4.842,
+            "minimo": 18.0,
+            "maximo": 37.0
+          },
+          "recibidos_total": {
+            "promedio": 119.0,
+            "mediana": 118.5,
+            "desviacion_estandar": 7.829,
+            "minimo": 104.0,
+            "maximo": 131.0
+          }
+        }
+      },
+      "30": {
+        "partidos": 30,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 3,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 29.033,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.085,
+            "minimo": 15.0,
+            "maximo": 39.0
+          },
+          "puntos_q2": {
+            "promedio": 26.2,
+            "mediana": 25.0,
+            "desviacion_estandar": 5.237,
+            "minimo": 19.0,
+            "maximo": 40.0
+          },
+          "puntos_q3": {
+            "promedio": 26.7,
+            "mediana": 27.0,
+            "desviacion_estandar": 5.711,
+            "minimo": 16.0,
+            "maximo": 39.0
+          },
+          "puntos_q4": {
+            "promedio": 28.833,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.309,
+            "minimo": 14.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 111.8,
+            "mediana": 110.5,
+            "desviacion_estandar": 12.153,
+            "minimo": 93.0,
+            "maximo": 137.0
+          },
+          "recibidos_q1": {
+            "promedio": 29.3,
+            "mediana": 31.0,
+            "desviacion_estandar": 5.803,
+            "minimo": 19.0,
+            "maximo": 45.0
+          },
+          "recibidos_q2": {
+            "promedio": 29.433,
+            "mediana": 30.0,
+            "desviacion_estandar": 6.469,
+            "minimo": 15.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 30.7,
+            "mediana": 31.0,
+            "desviacion_estandar": 4.769,
+            "minimo": 19.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 27.2,
+            "mediana": 28.5,
+            "desviacion_estandar": 6.3,
+            "minimo": 15.0,
+            "maximo": 37.0
+          },
+          "recibidos_total": {
+            "promedio": 117.6,
+            "mediana": 117.0,
+            "desviacion_estandar": 8.574,
+            "minimo": 97.0,
+            "maximo": 131.0
+          }
+        }
+      }
+    },
+    "visitante": {
+      "5": {
+        "partidos": 5,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 27.0,
+            "mediana": 28.0,
+            "desviacion_estandar": 7.746,
+            "minimo": 15.0,
+            "maximo": 36.0
+          },
+          "puntos_q2": {
+            "promedio": 28.0,
+            "mediana": 29.0,
+            "desviacion_estandar": 2.53,
+            "minimo": 25.0,
+            "maximo": 31.0
+          },
+          "puntos_q3": {
+            "promedio": 26.0,
+            "mediana": 24.0,
+            "desviacion_estandar": 5.692,
+            "minimo": 20.0,
+            "maximo": 35.0
+          },
+          "puntos_q4": {
+            "promedio": 29.2,
+            "mediana": 28.0,
+            "desviacion_estandar": 7.756,
+            "minimo": 19.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 112.4,
+            "mediana": 110.0,
+            "desviacion_estandar": 16.978,
+            "minimo": 93.0,
+            "maximo": 137.0
+          },
+          "recibidos_q1": {
+            "promedio": 30.6,
+            "mediana": 31.0,
+            "desviacion_estandar": 4.079,
+            "minimo": 23.0,
+            "maximo": 35.0
+          },
+          "recibidos_q2": {
+            "promedio": 28.0,
+            "mediana": 28.0,
+            "desviacion_estandar": 8.319,
+            "minimo": 17.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 32.0,
+            "mediana": 28.0,
+            "desviacion_estandar": 6.229,
+            "minimo": 25.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 29.4,
+            "mediana": 30.0,
+            "desviacion_estandar": 3.2,
+            "minimo": 24.0,
+            "maximo": 33.0
+          },
+          "recibidos_total": {
+            "promedio": 121.0,
+            "mediana": 121.0,
+            "desviacion_estandar": 7.071,
+            "minimo": 111.0,
+            "maximo": 131.0
+          }
+        }
+      },
+      "10": {
+        "partidos": 10,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 1,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 28.0,
+            "mediana": 27.5,
+            "desviacion_estandar": 6.481,
+            "minimo": 15.0,
+            "maximo": 36.0
+          },
+          "puntos_q2": {
+            "promedio": 26.8,
+            "mediana": 27.5,
+            "desviacion_estandar": 3.458,
+            "minimo": 19.0,
+            "maximo": 31.0
+          },
+          "puntos_q3": {
+            "promedio": 26.5,
+            "mediana": 25.0,
+            "desviacion_estandar": 5.005,
+            "minimo": 20.0,
+            "maximo": 35.0
+          },
+          "puntos_q4": {
+            "promedio": 28.6,
+            "mediana": 27.5,
+            "desviacion_estandar": 5.713,
+            "minimo": 19.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 111.0,
+            "mediana": 108.5,
+            "desviacion_estandar": 13.9,
+            "minimo": 93.0,
+            "maximo": 137.0
+          },
+          "recibidos_q1": {
+            "promedio": 28.3,
+            "mediana": 30.0,
+            "desviacion_estandar": 5.515,
+            "minimo": 21.0,
+            "maximo": 36.0
+          },
+          "recibidos_q2": {
+            "promedio": 29.1,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.745,
+            "minimo": 17.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 31.5,
+            "mediana": 29.5,
+            "desviacion_estandar": 5.258,
+            "minimo": 25.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 29.2,
+            "mediana": 29.0,
+            "desviacion_estandar": 2.561,
+            "minimo": 24.0,
+            "maximo": 33.0
+          },
+          "recibidos_total": {
+            "promedio": 118.6,
+            "mediana": 118.0,
+            "desviacion_estandar": 6.086,
+            "minimo": 110.0,
+            "maximo": 131.0
+          }
+        }
+      },
+      "20": {
+        "partidos": 20,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 2,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 27.1,
+            "mediana": 27.0,
+            "desviacion_estandar": 5.915,
+            "minimo": 15.0,
+            "maximo": 36.0
+          },
+          "puntos_q2": {
+            "promedio": 26.4,
+            "mediana": 25.5,
+            "desviacion_estandar": 5.544,
+            "minimo": 18.0,
+            "maximo": 40.0
+          },
+          "puntos_q3": {
+            "promedio": 27.7,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.27,
+            "minimo": 17.0,
+            "maximo": 39.0
+          },
+          "puntos_q4": {
+            "promedio": 28.2,
+            "mediana": 27.0,
+            "desviacion_estandar": 6.683,
+            "minimo": 14.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 110.65,
+            "mediana": 109.5,
+            "desviacion_estandar": 15.024,
+            "minimo": 83.0,
+            "maximo": 140.0
+          },
+          "recibidos_q1": {
+            "promedio": 26.8,
+            "mediana": 26.5,
+            "desviacion_estandar": 5.573,
+            "minimo": 19.0,
+            "maximo": 36.0
+          },
+          "recibidos_q2": {
+            "promedio": 27.8,
+            "mediana": 27.5,
+            "desviacion_estandar": 6.266,
+            "minimo": 15.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 29.7,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.573,
+            "minimo": 17.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 28.35,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.126,
+            "minimo": 15.0,
+            "maximo": 39.0
+          },
+          "recibidos_total": {
+            "promedio": 113.5,
+            "mediana": 114.0,
+            "desviacion_estandar": 10.274,
+            "minimo": 85.0,
+            "maximo": 131.0
+          }
+        }
+      },
+      "30": {
+        "partidos": 30,
+        "fecha_mas_reciente": "2026-04-18",
+        "overtime": 3,
+        "metricas": {
+          "puntos_q1": {
+            "promedio": 26.267,
+            "mediana": 27.5,
+            "desviacion_estandar": 6.99,
+            "minimo": 10.0,
+            "maximo": 38.0
+          },
+          "puntos_q2": {
+            "promedio": 27.467,
+            "mediana": 26.5,
+            "desviacion_estandar": 5.667,
+            "minimo": 18.0,
+            "maximo": 40.0
+          },
+          "puntos_q3": {
+            "promedio": 27.733,
+            "mediana": 29.0,
+            "desviacion_estandar": 6.532,
+            "minimo": 13.0,
+            "maximo": 39.0
+          },
+          "puntos_q4": {
+            "promedio": 28.833,
+            "mediana": 27.5,
+            "desviacion_estandar": 6.293,
+            "minimo": 14.0,
+            "maximo": 43.0
+          },
+          "puntos_total": {
+            "promedio": 111.3,
+            "mediana": 109.5,
+            "desviacion_estandar": 14.86,
+            "minimo": 83.0,
+            "maximo": 140.0
+          },
+          "recibidos_q1": {
+            "promedio": 27.4,
+            "mediana": 29.0,
+            "desviacion_estandar": 5.276,
+            "minimo": 18.0,
+            "maximo": 36.0
+          },
+          "recibidos_q2": {
+            "promedio": 26.833,
+            "mediana": 27.0,
+            "desviacion_estandar": 6.045,
+            "minimo": 15.0,
+            "maximo": 42.0
+          },
+          "recibidos_q3": {
+            "promedio": 29.067,
+            "mediana": 28.5,
+            "desviacion_estandar": 6.121,
+            "minimo": 17.0,
+            "maximo": 40.0
+          },
+          "recibidos_q4": {
+            "promedio": 28.0,
+            "mediana": 28.0,
+            "desviacion_estandar": 6.618,
+            "minimo": 15.0,
+            "maximo": 40.0
+          },
+          "recibidos_total": {
+            "promedio": 112.5,
+            "mediana": 112.5,
+            "desviacion_estandar": 12.842,
+            "minimo": 85.0,
+            "maximo": 141.0
+          }
+        }
+      }
+    },
+    "ultimos_30": [
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "e558f60c-1e30-46b3-83ec-3eb337f0c9be",
+        "fecha_partido": "2026-04-18",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 15,
+        "puntos_q2": 30,
+        "puntos_q3": 24,
+        "puntos_q4": 27,
+        "puntos_total": 96,
+        "recibidos_q1": 33,
+        "recibidos_q2": 17,
+        "recibidos_q3": 28,
+        "recibidos_q4": 33,
+        "recibidos_total": 111,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401866759"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "695d1f35-ee48-42f7-801d-3709c2b5d80b",
+        "fecha_partido": "2026-04-16",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 22,
+        "puntos_q2": 31,
+        "puntos_q3": 30,
+        "puntos_q4": 43,
+        "puntos_total": 126,
+        "recibidos_q1": 31,
+        "recibidos_q2": 30,
+        "recibidos_q3": 28,
+        "recibidos_q4": 32,
+        "recibidos_total": 121,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401866756"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "2b696386-92a6-4e24-a675-adecb98d6dc7",
+        "fecha_partido": "2026-04-02",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 21,
+        "puntos_q3": 33,
+        "puntos_q4": 31,
+        "puntos_total": 111,
+        "recibidos_q1": 30,
+        "recibidos_q2": 24,
+        "recibidos_q3": 30,
+        "recibidos_q4": 34,
+        "recibidos_total": 118,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "16cbdf33-d049-4cbb-8049-5c9035689c8f",
+        "fecha_partido": "2026-04-01",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 23,
+        "puntos_q3": 34,
+        "puntos_q4": 30,
+        "puntos_total": 113,
+        "recibidos_q1": 35,
+        "recibidos_q2": 35,
+        "recibidos_q3": 26,
+        "recibidos_q4": 31,
+        "recibidos_total": 127,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "ad2d7349-b9a3-4011-a86f-a9660dabe3bd",
+        "fecha_partido": "2026-03-29",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 25,
+        "puntos_q3": 21,
+        "puntos_q4": 19,
+        "puntos_total": 93,
+        "recibidos_q1": 23,
+        "recibidos_q2": 23,
+        "recibidos_q3": 40,
+        "recibidos_q4": 30,
+        "recibidos_total": 116,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "167266d6-a5e2-4800-aa01-fa21b0066ec3",
+        "fecha_partido": "2026-03-27",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 38,
+        "puntos_q2": 34,
+        "puntos_q3": 20,
+        "puntos_q4": 39,
+        "puntos_total": 131,
+        "recibidos_q1": 25,
+        "recibidos_q2": 35,
+        "recibidos_q3": 34,
+        "recibidos_q4": 32,
+        "recibidos_total": 126,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "8f9ccf31-9fa0-4279-8a47-c16e7be1bd02",
+        "fecha_partido": "2026-03-25",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 25,
+        "puntos_q3": 27,
+        "puntos_q4": 32,
+        "puntos_total": 109,
+        "recibidos_q1": 30,
+        "recibidos_q2": 28,
+        "recibidos_q3": 28,
+        "recibidos_q4": 20,
+        "recibidos_total": 106,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "c0d13d01-d592-4cb8-bd80-2cf699cc607d",
+        "fecha_partido": "2026-03-23",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 29,
+        "puntos_q3": 35,
+        "puntos_q4": 28,
+        "puntos_total": 137,
+        "recibidos_q1": 31,
+        "recibidos_q2": 42,
+        "recibidos_q3": 25,
+        "recibidos_q4": 28,
+        "recibidos_total": 131,
+        "hubo_overtime": true,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "010b34bd-c5b1-46ab-a39d-c31b69d9f884",
+        "fecha_partido": "2026-03-21",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 36,
+        "puntos_q2": 25,
+        "puntos_q3": 20,
+        "puntos_q4": 29,
+        "puntos_total": 110,
+        "recibidos_q1": 35,
+        "recibidos_q2": 28,
+        "recibidos_q3": 39,
+        "recibidos_q4": 24,
+        "recibidos_total": 126,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "a6a40912-9654-4543-8f10-53551c3d9391",
+        "fecha_partido": "2026-03-20",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 24,
+        "puntos_q3": 23,
+        "puntos_q4": 28,
+        "puntos_total": 101,
+        "recibidos_q1": 21,
+        "recibidos_q2": 36,
+        "recibidos_q3": 30,
+        "recibidos_q4": 28,
+        "recibidos_total": 115,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "53ecdc2c-579c-49e9-980e-51bfa083d25b",
+        "fecha_partido": "2026-03-18",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 23,
+        "puntos_q2": 27,
+        "puntos_q3": 23,
+        "puntos_q4": 26,
+        "puntos_total": 99,
+        "recibidos_q1": 36,
+        "recibidos_q2": 27,
+        "recibidos_q3": 26,
+        "recibidos_q4": 31,
+        "recibidos_total": 120,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "5ef596f6-ae7e-4941-bc1d-f94f68cbd86f",
+        "fecha_partido": "2026-03-16",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 30,
+        "puntos_q3": 34,
+        "puntos_q4": 27,
+        "puntos_total": 125,
+        "recibidos_q1": 23,
+        "recibidos_q2": 34,
+        "recibidos_q3": 29,
+        "recibidos_q4": 31,
+        "recibidos_total": 117,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "5d3d5979-db94-455d-b759-cb29f6386969",
+        "fecha_partido": "2026-03-15",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 19,
+        "puntos_q3": 26,
+        "puntos_q4": 27,
+        "puntos_total": 107,
+        "recibidos_q1": 21,
+        "recibidos_q2": 24,
+        "recibidos_q3": 38,
+        "recibidos_q4": 27,
+        "recibidos_total": 110,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810836"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "5e6218dc-28eb-4af6-876a-1b44071a2b64",
+        "fecha_partido": "2026-03-13",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 20,
+        "puntos_q3": 39,
+        "puntos_q4": 30,
+        "puntos_total": 117,
+        "recibidos_q1": 31,
+        "recibidos_q2": 38,
+        "recibidos_q3": 31,
+        "recibidos_q4": 27,
+        "recibidos_total": 127,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810821"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "e9372623-6b3d-4cfc-a17f-819ab09a3698",
+        "fecha_partido": "2026-03-10",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 21,
+        "puntos_q3": 32,
+        "puntos_q4": 35,
+        "puntos_total": 124,
+        "recibidos_q1": 26,
+        "recibidos_q2": 31,
+        "recibidos_q3": 32,
+        "recibidos_q4": 29,
+        "recibidos_total": 130,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401810798"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "becf0741-522a-4ec4-b6eb-bcb28b7ded31",
+        "fecha_partido": "2026-03-09",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 27,
+        "puntos_q2": 28,
+        "puntos_q3": 29,
+        "puntos_q4": 32,
+        "puntos_total": 116,
+        "recibidos_q1": 29,
+        "recibidos_q2": 30,
+        "recibidos_q3": 32,
+        "recibidos_q4": 28,
+        "recibidos_total": 119,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810789"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "3adac79d-f1c8-4492-b9da-a57d9fd5c6e3",
+        "fecha_partido": "2026-03-07",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 26,
+        "puntos_q3": 29,
+        "puntos_q4": 14,
+        "puntos_total": 97,
+        "recibidos_q1": 34,
+        "recibidos_q2": 33,
+        "recibidos_q3": 19,
+        "recibidos_q4": 18,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810775"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "516a279b-70a6-4277-87eb-7fd324d2dfe5",
+        "fecha_partido": "2026-03-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 21,
+        "puntos_q3": 30,
+        "puntos_q4": 20,
+        "puntos_total": 115,
+        "recibidos_q1": 20,
+        "recibidos_q2": 27,
+        "recibidos_q3": 35,
+        "recibidos_q4": 19,
+        "recibidos_total": 113,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401810757"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "6d12d774-0324-4f64-87ef-db3555d28c28",
+        "fecha_partido": "2026-03-02",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 31,
+        "puntos_q2": 25,
+        "puntos_q3": 23,
+        "puntos_q4": 22,
+        "puntos_total": 101,
+        "recibidos_q1": 19,
+        "recibidos_q2": 23,
+        "recibidos_q3": 35,
+        "recibidos_q4": 37,
+        "recibidos_total": 114,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810737"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "9953a60f-37e0-4601-9947-a016c24ff51d",
+        "fecha_partido": "2026-02-28",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 20,
+        "puntos_q2": 27,
+        "puntos_q3": 25,
+        "puntos_q4": 29,
+        "puntos_total": 101,
+        "recibidos_q1": 33,
+        "recibidos_q2": 32,
+        "recibidos_q3": 34,
+        "recibidos_q4": 30,
+        "recibidos_total": 129,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810721"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "9987fec3-d4c6-42f0-8606-6df3a57c9ccb",
+        "fecha_partido": "2026-02-25",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 40,
+        "puntos_q3": 22,
+        "puntos_q4": 37,
+        "puntos_total": 133,
+        "recibidos_q1": 31,
+        "recibidos_q2": 22,
+        "recibidos_q3": 23,
+        "recibidos_q4": 36,
+        "recibidos_total": 112,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810699"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "88bc0bb1-2315-4945-8113-8fbce67f2f74",
+        "fecha_partido": "2026-02-24",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 19,
+        "puntos_q2": 20,
+        "puntos_q3": 33,
+        "puntos_q4": 37,
+        "puntos_total": 109,
+        "recibidos_q1": 31,
+        "recibidos_q2": 15,
+        "recibidos_q3": 31,
+        "recibidos_q4": 36,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810693"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "791e4ae8-f746-466c-9396-af46c4041f45",
+        "fecha_partido": "2026-02-22",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 39,
+        "puntos_q2": 37,
+        "puntos_q3": 19,
+        "puntos_q4": 33,
+        "puntos_total": 128,
+        "recibidos_q1": 27,
+        "recibidos_q2": 40,
+        "recibidos_q3": 34,
+        "recibidos_q4": 16,
+        "recibidos_total": 117,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810675"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "3ae00251-15b9-4856-9a7f-5698ed30e2b4",
+        "fecha_partido": "2026-02-19",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 32,
+        "puntos_q2": 19,
+        "puntos_q3": 22,
+        "puntos_q4": 37,
+        "puntos_total": 110,
+        "recibidos_q1": 36,
+        "recibidos_q2": 38,
+        "recibidos_q3": 28,
+        "recibidos_q4": 19,
+        "recibidos_total": 121,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810654"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "55477bc3-c800-4ddb-8575-3316cd7e1257",
+        "fecha_partido": "2026-02-11",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 38,
+        "puntos_q2": 29,
+        "puntos_q3": 27,
+        "puntos_q4": 19,
+        "puntos_total": 113,
+        "recibidos_q1": 31,
+        "recibidos_q2": 32,
+        "recibidos_q3": 31,
+        "recibidos_q4": 32,
+        "recibidos_total": 126,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810643"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "aa3afdb6-ad60-463b-8d0a-1266814cd666",
+        "fecha_partido": "2026-02-09",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 32,
+        "puntos_q2": 25,
+        "puntos_q3": 28,
+        "puntos_q4": 29,
+        "puntos_total": 114,
+        "recibidos_q1": 32,
+        "recibidos_q2": 33,
+        "recibidos_q3": 33,
+        "recibidos_q4": 15,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810623"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "a7210eee-adab-4205-b464-87fdb779608e",
+        "fecha_partido": "2026-02-07",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 21,
+        "puntos_q2": 21,
+        "puntos_q3": 29,
+        "puntos_q4": 28,
+        "puntos_total": 99,
+        "recibidos_q1": 20,
+        "recibidos_q2": 21,
+        "recibidos_q3": 38,
+        "recibidos_q4": 26,
+        "recibidos_total": 105,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810608"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "cf12a946-e13d-4de8-9dcc-f5d2f8be4e62",
+        "fecha_partido": "2026-02-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 34,
+        "puntos_q3": 17,
+        "puntos_q4": 25,
+        "puntos_total": 101,
+        "recibidos_q1": 29,
+        "recibidos_q2": 26,
+        "recibidos_q3": 27,
+        "recibidos_q4": 15,
+        "recibidos_total": 97,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810594"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "1d4abd1c-9f74-49c8-bad4-99cb6b8e24b7",
+        "fecha_partido": "2026-02-03",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 32,
+        "puntos_q2": 23,
+        "puntos_q3": 16,
+        "puntos_q4": 23,
+        "puntos_total": 94,
+        "recibidos_q1": 31,
+        "recibidos_q2": 27,
+        "recibidos_q3": 26,
+        "recibidos_q4": 29,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810579"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "69d50496-c9fd-4fb1-a6f3-48ed7a3da32d",
+        "fecha_partido": "2026-01-30",
+        "localia": "local",
+        "tipo_partido": "REG",
+        "puntos_q1": 37,
+        "puntos_q2": 27,
+        "puntos_q3": 31,
+        "puntos_q4": 29,
+        "puntos_total": 124,
+        "recibidos_q1": 45,
+        "recibidos_q2": 32,
+        "recibidos_q3": 31,
+        "recibidos_q4": 23,
+        "recibidos_total": 131,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810551"
+      }
+    ],
+    "ultimos_30_visitante": [
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "e558f60c-1e30-46b3-83ec-3eb337f0c9be",
+        "fecha_partido": "2026-04-18",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 15,
+        "puntos_q2": 30,
+        "puntos_q3": 24,
+        "puntos_q4": 27,
+        "puntos_total": 96,
+        "recibidos_q1": 33,
+        "recibidos_q2": 17,
+        "recibidos_q3": 28,
+        "recibidos_q4": 33,
+        "recibidos_total": 111,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401866759"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "695d1f35-ee48-42f7-801d-3709c2b5d80b",
+        "fecha_partido": "2026-04-16",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 22,
+        "puntos_q2": 31,
+        "puntos_q3": 30,
+        "puntos_q4": 43,
+        "puntos_total": 126,
+        "recibidos_q1": 31,
+        "recibidos_q2": 30,
+        "recibidos_q3": 28,
+        "recibidos_q4": 32,
+        "recibidos_total": 121,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401866756"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "ad2d7349-b9a3-4011-a86f-a9660dabe3bd",
+        "fecha_partido": "2026-03-29",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 25,
+        "puntos_q3": 21,
+        "puntos_q4": 19,
+        "puntos_total": 93,
+        "recibidos_q1": 23,
+        "recibidos_q2": 23,
+        "recibidos_q3": 40,
+        "recibidos_q4": 30,
+        "recibidos_total": 116,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "c0d13d01-d592-4cb8-bd80-2cf699cc607d",
+        "fecha_partido": "2026-03-23",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 29,
+        "puntos_q3": 35,
+        "puntos_q4": 28,
+        "puntos_total": 137,
+        "recibidos_q1": 31,
+        "recibidos_q2": 42,
+        "recibidos_q3": 25,
+        "recibidos_q4": 28,
+        "recibidos_total": 131,
+        "hubo_overtime": true,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "010b34bd-c5b1-46ab-a39d-c31b69d9f884",
+        "fecha_partido": "2026-03-21",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 36,
+        "puntos_q2": 25,
+        "puntos_q3": 20,
+        "puntos_q4": 29,
+        "puntos_total": 110,
+        "recibidos_q1": 35,
+        "recibidos_q2": 28,
+        "recibidos_q3": 39,
+        "recibidos_q4": 24,
+        "recibidos_total": 126,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "a6a40912-9654-4543-8f10-53551c3d9391",
+        "fecha_partido": "2026-03-20",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 26,
+        "puntos_q2": 24,
+        "puntos_q3": 23,
+        "puntos_q4": 28,
+        "puntos_total": 101,
+        "recibidos_q1": 21,
+        "recibidos_q2": 36,
+        "recibidos_q3": 30,
+        "recibidos_q4": 28,
+        "recibidos_total": 115,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "53ecdc2c-579c-49e9-980e-51bfa083d25b",
+        "fecha_partido": "2026-03-18",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 23,
+        "puntos_q2": 27,
+        "puntos_q3": 23,
+        "puntos_q4": 26,
+        "puntos_total": 99,
+        "recibidos_q1": 36,
+        "recibidos_q2": 27,
+        "recibidos_q3": 26,
+        "recibidos_q4": 31,
+        "recibidos_total": 120,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "5ef596f6-ae7e-4941-bc1d-f94f68cbd86f",
+        "fecha_partido": "2026-03-16",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 30,
+        "puntos_q3": 34,
+        "puntos_q4": 27,
+        "puntos_total": 125,
+        "recibidos_q1": 23,
+        "recibidos_q2": 34,
+        "recibidos_q3": 29,
+        "recibidos_q4": 31,
+        "recibidos_total": 117,
+        "hubo_overtime": false,
+        "source": null,
+        "source_game_id": null
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "5d3d5979-db94-455d-b759-cb29f6386969",
+        "fecha_partido": "2026-03-15",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 35,
+        "puntos_q2": 19,
+        "puntos_q3": 26,
+        "puntos_q4": 27,
+        "puntos_total": 107,
+        "recibidos_q1": 21,
+        "recibidos_q2": 24,
+        "recibidos_q3": 38,
+        "recibidos_q4": 27,
+        "recibidos_total": 110,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810836"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "becf0741-522a-4ec4-b6eb-bcb28b7ded31",
+        "fecha_partido": "2026-03-09",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 27,
+        "puntos_q2": 28,
+        "puntos_q3": 29,
+        "puntos_q4": 32,
+        "puntos_total": 116,
+        "recibidos_q1": 29,
+        "recibidos_q2": 30,
+        "recibidos_q3": 32,
+        "recibidos_q4": 28,
+        "recibidos_total": 119,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810789"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "3adac79d-f1c8-4492-b9da-a57d9fd5c6e3",
+        "fecha_partido": "2026-03-07",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 26,
+        "puntos_q3": 29,
+        "puntos_q4": 14,
+        "puntos_total": 97,
+        "recibidos_q1": 34,
+        "recibidos_q2": 33,
+        "recibidos_q3": 19,
+        "recibidos_q4": 18,
+        "recibidos_total": 104,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810775"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "516a279b-70a6-4277-87eb-7fd324d2dfe5",
+        "fecha_partido": "2026-03-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 21,
+        "puntos_q3": 30,
+        "puntos_q4": 20,
+        "puntos_total": 115,
+        "recibidos_q1": 20,
+        "recibidos_q2": 27,
+        "recibidos_q3": 35,
+        "recibidos_q4": 19,
+        "recibidos_total": 113,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401810757"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "9987fec3-d4c6-42f0-8606-6df3a57c9ccb",
+        "fecha_partido": "2026-02-25",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 40,
+        "puntos_q3": 22,
+        "puntos_q4": 37,
+        "puntos_total": 133,
+        "recibidos_q1": 31,
+        "recibidos_q2": 22,
+        "recibidos_q3": 23,
+        "recibidos_q4": 36,
+        "recibidos_total": 112,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810699"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "88bc0bb1-2315-4945-8113-8fbce67f2f74",
+        "fecha_partido": "2026-02-24",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 19,
+        "puntos_q2": 20,
+        "puntos_q3": 33,
+        "puntos_q4": 37,
+        "puntos_total": 109,
+        "recibidos_q1": 31,
+        "recibidos_q2": 15,
+        "recibidos_q3": 31,
+        "recibidos_q4": 36,
+        "recibidos_total": 113,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810693"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "a7210eee-adab-4205-b464-87fdb779608e",
+        "fecha_partido": "2026-02-07",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 21,
+        "puntos_q2": 21,
+        "puntos_q3": 29,
+        "puntos_q4": 28,
+        "puntos_total": 99,
+        "recibidos_q1": 20,
+        "recibidos_q2": 21,
+        "recibidos_q3": 38,
+        "recibidos_q4": 26,
+        "recibidos_total": 105,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810608"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "cf12a946-e13d-4de8-9dcc-f5d2f8be4e62",
+        "fecha_partido": "2026-02-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 25,
+        "puntos_q2": 34,
+        "puntos_q3": 17,
+        "puntos_q4": 25,
+        "puntos_total": 101,
+        "recibidos_q1": 29,
+        "recibidos_q2": 26,
+        "recibidos_q3": 27,
+        "recibidos_q4": 15,
+        "recibidos_total": 97,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810594"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "ebbc002c-7a3f-47ea-8b5b-4392cf0f64e9",
+        "fecha_partido": "2026-01-28",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 34,
+        "puntos_q2": 34,
+        "puntos_q3": 33,
+        "puntos_q4": 39,
+        "puntos_total": 140,
+        "recibidos_q1": 24,
+        "recibidos_q2": 31,
+        "recibidos_q3": 38,
+        "recibidos_q4": 31,
+        "recibidos_total": 124,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810533"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "0f70e986-2fc8-4343-ba2d-ed290470dd75",
+        "fecha_partido": "2026-01-26",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 20,
+        "puntos_q2": 18,
+        "puntos_q3": 19,
+        "puntos_q4": 26,
+        "puntos_total": 83,
+        "recibidos_q1": 21,
+        "recibidos_q2": 32,
+        "recibidos_q3": 22,
+        "recibidos_q4": 33,
+        "recibidos_total": 108,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810518"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "86dd6bc6-4f24-4900-917d-bea730d08fdf",
+        "fecha_partido": "2026-01-25",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 24,
+        "puntos_q2": 23,
+        "puntos_q3": 38,
+        "puntos_q4": 26,
+        "puntos_total": 111,
+        "recibidos_q1": 19,
+        "recibidos_q2": 27,
+        "recibidos_q3": 17,
+        "recibidos_q4": 22,
+        "recibidos_total": 85,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401857824"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "e4ca604d-30da-4ceb-9932-bc9c2f28ab2e",
+        "fecha_partido": "2026-01-22",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 27,
+        "puntos_q2": 23,
+        "puntos_q3": 39,
+        "puntos_q4": 26,
+        "puntos_total": 115,
+        "recibidos_q1": 24,
+        "recibidos_q2": 31,
+        "recibidos_q3": 29,
+        "recibidos_q4": 39,
+        "recibidos_total": 123,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810485"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "37fda78b-8234-4aaf-b14c-352eb9b31a25",
+        "fecha_partido": "2026-01-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 19,
+        "puntos_q2": 32,
+        "puntos_q3": 13,
+        "puntos_q4": 38,
+        "puntos_total": 102,
+        "recibidos_q1": 31,
+        "recibidos_q2": 24,
+        "recibidos_q3": 21,
+        "recibidos_q4": 27,
+        "recibidos_total": 103,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810363"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "9e2ead7b-74b0-4696-bf97-30ec30328e74",
+        "fecha_partido": "2025-12-31",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 30,
+        "puntos_q2": 39,
+        "puntos_q3": 29,
+        "puntos_q4": 34,
+        "puntos_total": 132,
+        "recibidos_q1": 30,
+        "recibidos_q2": 34,
+        "recibidos_q3": 36,
+        "recibidos_q4": 25,
+        "recibidos_total": 125,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810317"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "0b54ee0c-94a3-43b5-a2c9-f9f16abd77ab",
+        "fecha_partido": "2025-12-29",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 28,
+        "puntos_q2": 31,
+        "puntos_q3": 30,
+        "puntos_q4": 31,
+        "puntos_total": 120,
+        "recibidos_q1": 30,
+        "recibidos_q2": 27,
+        "recibidos_q3": 28,
+        "recibidos_q4": 22,
+        "recibidos_total": 107,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810304"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "6b4cb4e2-db30-46b1-bc0e-9262aed14a6f",
+        "fecha_partido": "2025-12-28",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 29,
+        "puntos_q2": 35,
+        "puntos_q3": 36,
+        "puntos_q4": 22,
+        "puntos_total": 127,
+        "recibidos_q1": 33,
+        "recibidos_q2": 32,
+        "recibidos_q3": 31,
+        "recibidos_q4": 26,
+        "recibidos_total": 141,
+        "hubo_overtime": true,
+        "source": "ESPN",
+        "source_game_id": "401810296"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "bb230306-224b-4530-9d32-0b1aa44bed4d",
+        "fecha_partido": "2025-12-19",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 29,
+        "puntos_q2": 24,
+        "puntos_q3": 18,
+        "puntos_q4": 27,
+        "puntos_total": 98,
+        "recibidos_q1": 26,
+        "recibidos_q2": 20,
+        "recibidos_q3": 24,
+        "recibidos_q4": 29,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810233"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "8aa49ed8-4fc2-4fba-9c3c-b04963e4b2d5",
+        "fecha_partido": "2025-12-15",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 31,
+        "puntos_q2": 31,
+        "puntos_q3": 37,
+        "puntos_q4": 32,
+        "puntos_total": 131,
+        "recibidos_q1": 34,
+        "recibidos_q2": 27,
+        "recibidos_q3": 35,
+        "recibidos_q4": 40,
+        "recibidos_total": 136,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401836802"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "83c16256-76d0-43e6-b366-0253f37d9035",
+        "fecha_partido": "2025-12-08",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 38,
+        "puntos_q2": 22,
+        "puntos_q3": 27,
+        "puntos_q4": 36,
+        "puntos_total": 123,
+        "recibidos_q1": 25,
+        "recibidos_q2": 21,
+        "recibidos_q3": 30,
+        "recibidos_q4": 15,
+        "recibidos_total": 91,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810216"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "16633810-de54-4149-bf40-704c9011d3f9",
+        "fecha_partido": "2025-12-07",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 12,
+        "puntos_q2": 33,
+        "puntos_q3": 27,
+        "puntos_q4": 27,
+        "puntos_total": 99,
+        "recibidos_q1": 18,
+        "recibidos_q2": 18,
+        "recibidos_q3": 26,
+        "recibidos_q4": 32,
+        "recibidos_total": 94,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810207"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "72ded9a8-58dd-45e8-80e0-b3ff71522a6a",
+        "fecha_partido": "2025-12-05",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 10,
+        "puntos_q2": 24,
+        "puntos_q3": 32,
+        "puntos_q4": 32,
+        "puntos_total": 98,
+        "recibidos_q1": 30,
+        "recibidos_q2": 26,
+        "recibidos_q3": 24,
+        "recibidos_q4": 19,
+        "recibidos_total": 99,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810188"
+      },
+      {
+        "abreviatura": "GSW",
+        "equipo": "Golden State Warriors",
+        "partido_id": "521c841a-364d-4501-8510-afdecd626104",
+        "fecha_partido": "2025-11-20",
+        "localia": "visitante",
+        "tipo_partido": "REG",
+        "puntos_q1": 20,
+        "puntos_q2": 25,
+        "puntos_q3": 29,
+        "puntos_q4": 22,
+        "puntos_total": 96,
+        "recibidos_q1": 29,
+        "recibidos_q2": 20,
+        "recibidos_q3": 23,
+        "recibidos_q4": 38,
+        "recibidos_total": 110,
+        "hubo_overtime": false,
+        "source": "ESPN",
+        "source_game_id": "401810112"
+      }
+    ]
+  },
+  "comparaciones": {
+    "ataque_local_vs_defensa_visitante": {
+      "5": {
+        "q1": 29.6,
+        "q2": 24.5,
+        "q3": 25.0,
+        "q4": 29.1,
+        "total": 109.3
+      },
+      "10": {
+        "q1": 29.2,
+        "q2": 28.0,
+        "q3": 27.1,
+        "q4": 28.05,
+        "total": 113.15
+      },
+      "20": {
+        "q1": 29.125,
+        "q2": 28.575,
+        "q3": 29.25,
+        "q4": 28.2,
+        "total": 116.375
+      },
+      "30": {
+        "q1": 30.0,
+        "q2": 28.316,
+        "q3": 29.367,
+        "q4": 27.633,
+        "total": 116.133
+      }
+    },
+    "ataque_visitante_vs_defensa_local": {
+      "5": {
+        "q1": 24.0,
+        "q2": 24.8,
+        "q3": 26.5,
+        "q4": 27.3,
+        "total": 103.3
+      },
+      "10": {
+        "q1": 28.1,
+        "q2": 25.4,
+        "q3": 26.3,
+        "q4": 27.85,
+        "total": 108.55
+      },
+      "20": {
+        "q1": 28.025,
+        "q2": 26.275,
+        "q3": 27.175,
+        "q4": 27.7,
+        "total": 110.3
+      },
+      "30": {
+        "q1": 28.267,
+        "q2": 26.867,
+        "q3": 26.633,
+        "q4": 28.15,
+        "total": 110.666
+      }
+    },
+    "metricas_combinadas_esperadas": {
+      "general": {
+        "5": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 29.6,
+            "visitante_ataque_vs_defensa_local": 24.0,
+            "total_combinado": 53.6
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 24.5,
+            "visitante_ataque_vs_defensa_local": 24.8,
+            "total_combinado": 49.3
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 25.0,
+            "visitante_ataque_vs_defensa_local": 26.5,
+            "total_combinado": 51.5
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 29.1,
+            "visitante_ataque_vs_defensa_local": 27.3,
+            "total_combinado": 56.4
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 109.3,
+            "visitante_ataque_vs_defensa_local": 103.3,
+            "total_combinado": 212.6
+          }
+        },
+        "10": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 29.2,
+            "visitante_ataque_vs_defensa_local": 28.1,
+            "total_combinado": 57.3
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 28.0,
+            "visitante_ataque_vs_defensa_local": 25.4,
+            "total_combinado": 53.4
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 27.1,
+            "visitante_ataque_vs_defensa_local": 26.3,
+            "total_combinado": 53.4
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 28.05,
+            "visitante_ataque_vs_defensa_local": 27.85,
+            "total_combinado": 55.9
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 113.15,
+            "visitante_ataque_vs_defensa_local": 108.55,
+            "total_combinado": 221.7
+          }
+        },
+        "20": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 29.125,
+            "visitante_ataque_vs_defensa_local": 28.025,
+            "total_combinado": 57.15
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 28.575,
+            "visitante_ataque_vs_defensa_local": 26.275,
+            "total_combinado": 54.85
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 29.25,
+            "visitante_ataque_vs_defensa_local": 27.175,
+            "total_combinado": 56.425
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 28.2,
+            "visitante_ataque_vs_defensa_local": 27.7,
+            "total_combinado": 55.9
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 116.375,
+            "visitante_ataque_vs_defensa_local": 110.3,
+            "total_combinado": 226.675
+          }
+        },
+        "30": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 30.0,
+            "visitante_ataque_vs_defensa_local": 28.267,
+            "total_combinado": 58.267
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 28.316,
+            "visitante_ataque_vs_defensa_local": 26.867,
+            "total_combinado": 55.183
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 29.367,
+            "visitante_ataque_vs_defensa_local": 26.633,
+            "total_combinado": 56.0
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 27.633,
+            "visitante_ataque_vs_defensa_local": 28.15,
+            "total_combinado": 55.783
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 116.133,
+            "visitante_ataque_vs_defensa_local": 110.666,
+            "total_combinado": 226.8
+          }
+        }
+      },
+      "local_vs_visitante": {
+        "5": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 30.4,
+            "visitante_ataque_vs_defensa_local": 27.1,
+            "total_combinado": 57.5
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 27.0,
+            "visitante_ataque_vs_defensa_local": 25.1,
+            "total_combinado": 52.1
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 29.7,
+            "visitante_ataque_vs_defensa_local": 25.3,
+            "total_combinado": 55.0
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 27.7,
+            "visitante_ataque_vs_defensa_local": 28.1,
+            "total_combinado": 55.8
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 115.3,
+            "visitante_ataque_vs_defensa_local": 106.7,
+            "total_combinado": 222.0
+          }
+        },
+        "10": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 28.8,
+            "visitante_ataque_vs_defensa_local": 27.1,
+            "total_combinado": 55.9
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 28.35,
+            "visitante_ataque_vs_defensa_local": 25.9,
+            "total_combinado": 54.25
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 30.8,
+            "visitante_ataque_vs_defensa_local": 26.45,
+            "total_combinado": 57.25
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 28.8,
+            "visitante_ataque_vs_defensa_local": 28.25,
+            "total_combinado": 57.05
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 117.45,
+            "visitante_ataque_vs_defensa_local": 108.6,
+            "total_combinado": 226.05
+          }
+        },
+        "20": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 28.725,
+            "visitante_ataque_vs_defensa_local": 27.375,
+            "total_combinado": 56.1
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 27.25,
+            "visitante_ataque_vs_defensa_local": 26.8,
+            "total_combinado": 54.05
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 29.625,
+            "visitante_ataque_vs_defensa_local": 27.15,
+            "total_combinado": 56.775
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 27.975,
+            "visitante_ataque_vs_defensa_local": 27.825,
+            "total_combinado": 55.8
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 114.225,
+            "visitante_ataque_vs_defensa_local": 109.95,
+            "total_combinado": 224.175
+          }
+        },
+        "30": {
+          "q1": {
+            "local_ataque_vs_defensa_visitante": 28.834,
+            "visitante_ataque_vs_defensa_local": 27.4,
+            "total_combinado": 56.233
+          },
+          "q2": {
+            "local_ataque_vs_defensa_visitante": 27.4,
+            "visitante_ataque_vs_defensa_local": 27.9,
+            "total_combinado": 55.3
+          },
+          "q3": {
+            "local_ataque_vs_defensa_visitante": 29.117,
+            "visitante_ataque_vs_defensa_local": 27.483,
+            "total_combinado": 56.6
+          },
+          "q4": {
+            "local_ataque_vs_defensa_visitante": 27.85,
+            "visitante_ataque_vs_defensa_local": 27.783,
+            "total_combinado": 55.633
+          },
+          "total": {
+            "local_ataque_vs_defensa_visitante": 113.95,
+            "visitante_ataque_vs_defensa_local": 111.183,
+            "total_combinado": 225.133
+          }
+        }
+      }
+    }
+  },
+  "evaluacion_mercados": [
+    {
+      "market": "Q1_TOTAL",
+      "input": {
+        "market": "Q1_TOTAL",
+        "line": 56.5,
+        "over_odds": 1.9,
+        "under_odds": 1.9
+      },
+      "advertencias": [
+        "datos afectados por overtime en 5 apariciones recientes"
+      ],
+      "evaluable": true,
+      "promedio_combinado": 58.267,
+      "mediana_combinada": 59.25,
+      "diferencia_contra_linea": 1.767,
+      "volatilidad": 6.939,
+      "porcentaje_cumplimiento_over": {
+        "5": 20.0,
+        "10": 50.0,
+        "20": 50.0,
+        "30": 53.33
+      },
+      "porcentaje_cumplimiento_under": {
+        "5": 80.0,
+        "10": 50.0,
+        "20": 45.0,
+        "30": 40.0
+      },
+      "cumplimiento_split_local_visitante_over": 43.33,
+      "cumplimiento_split_local_visitante_under": 50.0,
+      "resumen_muestras": {
+        "5": {
+          "promedio": 53.6,
+          "mediana": 51.5,
+          "desviacion_estandar": 7.067,
+          "minimo": 44.5,
+          "maximo": 66.0
+        },
+        "10": {
+          "promedio": 57.3,
+          "mediana": 58.0,
+          "desviacion_estandar": 6.596,
+          "minimo": 44.5,
+          "maximo": 66.0
+        },
+        "20": {
+          "promedio": 57.15,
+          "mediana": 57.5,
+          "desviacion_estandar": 6.565,
+          "minimo": 43.5,
+          "maximo": 66.0
+        },
+        "30": {
+          "promedio": 58.267,
+          "mediana": 59.25,
+          "desviacion_estandar": 6.939,
+          "minimo": 43.5,
+          "maximo": 74.5
+        }
+      },
+      "clasificacion": "señal estadística débil"
+    },
+    {
+      "market": "FULL_GAME_TOTAL",
+      "input": {
+        "market": "FULL_GAME_TOTAL",
+        "line": 228.5,
+        "over_odds": 1.9,
+        "under_odds": 1.9
+      },
+      "advertencias": [
+        "desviación estándar alta: mercado volátil",
+        "diferencia fuerte entre forma reciente (5) y muestra completa (30)",
+        "datos afectados por overtime en 5 apariciones recientes"
+      ],
+      "evaluable": true,
+      "promedio_combinado": 226.8,
+      "mediana_combinada": 227.25,
+      "diferencia_contra_linea": -1.7,
+      "volatilidad": 15.117,
+      "porcentaje_cumplimiento_over": {
+        "5": 20.0,
+        "10": 30.0,
+        "20": 40.0,
+        "30": 40.0
+      },
+      "porcentaje_cumplimiento_under": {
+        "5": 80.0,
+        "10": 60.0,
+        "20": 55.0,
+        "30": 56.67
+      },
+      "cumplimiento_split_local_visitante_over": 33.33,
+      "cumplimiento_split_local_visitante_under": 63.33,
+      "resumen_muestras": {
+        "5": {
+          "promedio": 212.6,
+          "mediana": 219.5,
+          "desviacion_estandar": 13.876,
+          "minimo": 191.5,
+          "maximo": 230.0
+        },
+        "10": {
+          "promedio": 221.7,
+          "mediana": 222.5,
+          "desviacion_estandar": 16.131,
+          "minimo": 191.5,
+          "maximo": 254.0
+        },
+        "20": {
+          "promedio": 226.675,
+          "mediana": 225.75,
+          "desviacion_estandar": 16.146,
+          "minimo": 191.5,
+          "maximo": 254.0
+        },
+        "30": {
+          "promedio": 226.8,
+          "mediana": 227.25,
+          "desviacion_estandar": 15.117,
+          "minimo": 191.5,
+          "maximo": 254.0
+        }
+      },
+      "clasificacion": "señal inconsistente"
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "input": {
+        "market": "HOME_TEAM_TOTAL",
+        "line": 112.5,
+        "over_odds": 1.85,
+        "under_odds": 1.95
+      },
+      "advertencias": [
+        "datos afectados por overtime en 5 apariciones recientes"
+      ],
+      "evaluable": true,
+      "promedio_combinado": 116.133,
+      "mediana_combinada": 116.0,
+      "diferencia_contra_linea": 3.633,
+      "volatilidad": 9.25,
+      "porcentaje_cumplimiento_over": {
+        "5": 20.0,
+        "10": 50.0,
+        "20": 65.0,
+        "30": 66.67
+      },
+      "porcentaje_cumplimiento_under": {
+        "5": 80.0,
+        "10": 50.0,
+        "20": 35.0,
+        "30": 33.33
+      },
+      "cumplimiento_split_local_visitante_over": 46.67,
+      "cumplimiento_split_local_visitante_under": 53.33,
+      "resumen_muestras": {
+        "5": {
+          "promedio": 109.3,
+          "mediana": 107.0,
+          "desviacion_estandar": 5.259,
+          "minimo": 104.5,
+          "maximo": 119.5
+        },
+        "10": {
+          "promedio": 113.15,
+          "mediana": 112.0,
+          "desviacion_estandar": 8.515,
+          "minimo": 101.0,
+          "maximo": 129.0
+        },
+        "20": {
+          "promedio": 116.375,
+          "mediana": 116.0,
+          "desviacion_estandar": 8.825,
+          "minimo": 101.0,
+          "maximo": 130.5
+        },
+        "30": {
+          "promedio": 116.133,
+          "mediana": 116.0,
+          "desviacion_estandar": 9.25,
+          "minimo": 93.0,
+          "maximo": 130.5
+        }
+      },
+      "clasificacion": "señal estadística moderada"
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "input": {
+        "market": "AWAY_TEAM_TOTAL",
+        "line": 110.5,
+        "over_odds": 1.88,
+        "under_odds": 1.92
+      },
+      "advertencias": [
+        "datos afectados por overtime en 5 apariciones recientes"
+      ],
+      "evaluable": true,
+      "promedio_combinado": 110.667,
+      "mediana_combinada": 111.75,
+      "diferencia_contra_linea": 0.167,
+      "volatilidad": 9.013,
+      "porcentaje_cumplimiento_over": {
+        "5": 40.0,
+        "10": 50.0,
+        "20": 55.0,
+        "30": 53.33
+      },
+      "porcentaje_cumplimiento_under": {
+        "5": 40.0,
+        "10": 40.0,
+        "20": 40.0,
+        "30": 43.33
+      },
+      "cumplimiento_split_local_visitante_over": 43.33,
+      "cumplimiento_split_local_visitante_under": 56.67,
+      "resumen_muestras": {
+        "5": {
+          "promedio": 103.3,
+          "mediana": 110.5,
+          "desviacion_estandar": 10.884,
+          "minimo": 87.0,
+          "maximo": 113.0
+        },
+        "10": {
+          "promedio": 108.55,
+          "mediana": 111.5,
+          "desviacion_estandar": 11.65,
+          "minimo": 87.0,
+          "maximo": 125.0
+        },
+        "20": {
+          "promedio": 110.3,
+          "mediana": 111.75,
+          "desviacion_estandar": 10.214,
+          "minimo": 87.0,
+          "maximo": 125.0
+        },
+        "30": {
+          "promedio": 110.667,
+          "mediana": 111.75,
+          "desviacion_estandar": 9.013,
+          "minimo": 87.0,
+          "maximo": 125.0
+        }
+      },
+      "clasificacion": "señal estadística débil"
+    }
+  ],
+  "advertencias": [
+    "se excluyeron 19 apariciones con marcador 0 o incompleto antes de calcular muestras"
+  ]
+}

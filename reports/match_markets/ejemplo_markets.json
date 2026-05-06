@@ -1,0 +1,28 @@
+{
+  "markets": [
+    {
+      "market": "Q1_TOTAL",
+      "line": 56.5,
+      "over_odds": 1.90,
+      "under_odds": 1.90
+    },
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 228.5,
+      "over_odds": 1.90,
+      "under_odds": 1.90
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "line": 112.5,
+      "over_odds": 1.85,
+      "under_odds": 1.95
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "line": 110.5,
+      "over_odds": 1.88,
+      "under_odds": 1.92
+    }
+  ]
+}
