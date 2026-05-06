@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "match": "San Antonio Spurs vs Minnesota Timberwolves",
+    "date": "2026-05-05",
+    "source": "ESPN summary pickcenter / DraftKings close where available",
+    "espn_event_id": "401871152",
+    "notes": [
+      "FULL_GAME_TOTAL usa overUnder 218.5 publicado por ESPN pickcenter/DraftKings close.",
+      "HOME_TEAM_TOTAL y AWAY_TEAM_TOTAL son totales implícitos derivados de total 218.5 y spread SA -10.5: home 114.5, away 104.0.",
+      "Q1_TOTAL no apareció en ESPN pickcenter; se incluye línea técnica derivada de full total / 4 redondeada a 54.5 para validar el flujo, no como cuota sportsbook verificada."
+    ],
+    "supported_markets_by_script": [
+      "Q1_TOTAL",
+      "FULL_GAME_TOTAL",
+      "HOME_TEAM_TOTAL",
+      "AWAY_TEAM_TOTAL"
+    ]
+  },
+  "markets": [
+    {
+      "market": "Q1_TOTAL",
+      "line": 54.5,
+      "over_odds": 1.91,
+      "under_odds": 1.91,
+      "source_note": "línea técnica derivada, no sportsbook verificada"
+    },
+    {
+      "market": "FULL_GAME_TOTAL",
+      "line": 218.5,
+      "over_odds": 1.91,
+      "under_odds": 1.91,
+      "source_note": "ESPN pickcenter / DraftKings close: overUnder 218.5, odds -110/-110"
+    },
+    {
+      "market": "HOME_TEAM_TOTAL",
+      "line": 114.5,
+      "over_odds": 1.91,
+      "under_odds": 1.91,
+      "source_note": "implícito desde total 218.5 y spread SA -10.5"
+    },
+    {
+      "market": "AWAY_TEAM_TOTAL",
+      "line": 104.0,
+      "over_odds": 1.91,
+      "under_odds": 1.91,
+      "source_note": "implícito desde total 218.5 y spread SA -10.5"
+    }
+  ]
+}

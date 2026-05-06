@@ -411,6 +411,12 @@ def render_markdown(analysis: dict[str, Any]) -> str:
         f"- Fecha máxima disponible en BD: {p['fecha_maxima_disponible_bd']}",
         f"- Generado: {analysis['metadata']['generado_en']}",
         "",
+        "## Mercados soportados por el script",
+        "- Q1_TOTAL",
+        "- FULL_GAME_TOTAL",
+        "- HOME_TEAM_TOTAL",
+        "- AWAY_TEAM_TOTAL",
+        "",
         "## Reglas de clasificación de señales",
     ]
     for k, v in analysis["metadata"]["reglas_clasificacion"].items():
