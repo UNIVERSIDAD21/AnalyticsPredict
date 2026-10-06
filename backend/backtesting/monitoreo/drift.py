@@ -519,6 +519,7 @@ def _obtener_metricas_periodo(
         origen=origen,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
+        persistir=False,
     )
 
 
