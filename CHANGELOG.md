@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — preflight de ambas vistas H9
+- Neon auditada read-only: la vista NBA tiene 42 columnas y una vista resumen dependiente que también usaba probabilidad calibrada sin procedencia. Definiciones originales de ambas vistas guardadas para rollback externo.
+- Migración H9 ampliada para exigir calibrador resoluble del mismo mercado y probabilidad válida; prueba PostgreSQL efímera cubre nueve casos, contratos y rollback. Suite backend local: 646 passed, 0 failed, 0 skipped. **DDL aún no aplicado a Neon; H9 sigue abierto.**
+
 ## 2026-10-06 — H9 temporal y suite sin omisiones
 - Nueve tests omitidos pasan a ejecución en PostgreSQL sintético; calibración fútbol excluye backtest/sintéticos, fuga temporal y outcomes no disponibles. Diagnóstico usa conexión read-only; `GOLES_FT` mostró 0 pares elegibles en Neon, sin guardar calibrador.
 - B16/B17/B20A/B20B exigen ID para usar probabilidad calibrada. Migración compatible de vista NBA preparada y ensayada, **no aplicada a Neon**. Suite local Python 3.12: 646 passed, 0 failed, 0 skipped; frontend 16 tests, lint/build verdes. CI `b8a6d74`: 4/4 jobs (run `37518301706`). H9 y dictamen analítico siguen abiertos.

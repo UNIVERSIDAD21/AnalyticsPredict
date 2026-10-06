@@ -56,3 +56,13 @@ CI del código `50a372e`: **4/4 jobs verdes**, incluida la suite global en Postg
 - CI del commit `b8a6d74` (run `37518301706`): **4/4 jobs verdes**, incluyendo suite global PostgreSQL efímera, frontend, contratos y Compose.
 
 **H9 sigue abierto:** aplicar/validar la migración de vista bajo control operativo, verificar N/D y mercados con datos frescos, producir predicciones congeladas con outcomes posteriores independientes y completar recertificación. Esta suite demuestra comportamiento de código, no calidad/calibración del modelo ni rentabilidad futura.
+
+## Preflight del plan de cierre — ambas vistas NBA, 2026-10-06
+
+- [x] Cotejar en Neon mediante transacción read-only las 42 columnas de la vista base, FK validada a `calibradores(id)` y dependencias. `vista_resumen_calibracion` depende de ella y también usaba `COALESCE` sin procedencia; 2.582 filas resueltas de la vista base, cero con ID de calibrador.
+- [x] Guardar DDL vigente de ambas vistas como rollback fuera del repositorio; no se exportaron filas ni credenciales.
+- [x] Ampliar migración para que solo exponga calibrada con ID resoluble, mercado coincidente y probabilidad en rango; raw fuera de rango o falta total de pares deja `NULL`. La vista resumen compara únicamente pares raw/efectiva válidos y expone `n=0` y métricas `NULL` si no hay pares.
+- [x] Ensayar en PostgreSQL efímero nueve escenarios, rechazo de FK inexistente, preservación de nombres/tipos en ambas vistas y rollback. Suite backend completa del worktree aislado: **646 passed, 0 failed, 0 skipped, 2 warnings** bajo Python 3.14.
+- [ ] Aplicar DDL a Neon tras autorización expresa, revalidar contrato/agregados y verificar CI del commit definitivo.
+
+El ensayo no modifica el estado analítico: calibración real y P&L continúan **NO CERTIFICADOS**. El backend del propietario opera con `--reload`, por lo que los archivos se prepararon en un worktree temporal externo al árbol observado para no disparar entrenamiento implícito antes de abordar ese siguiente bloque del plan.
