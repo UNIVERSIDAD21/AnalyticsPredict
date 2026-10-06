@@ -1,0 +1,9 @@
+# Ingesta NBA controlada — 2026-10-06
+
+El propietario confirmó Neon como destino y autorizó avanzar la reactivación. Se corrigió el cliente ESPN Scoreboard: el endpoint respondió HTTP 400 a `dates=YYYYMMDD-YYYYMMDD` y HTTP 200 a fechas individuales. La ingesta ahora consulta cada día, conserva la deduplicación por ID de fuente y considera clave natural legacy durante el dry-run y antes de insertar. Tres pruebas puras cubren estos contratos, incluida la omisión de escritura sobre una fila legacy coincidente.
+
+Se comprobó por lectura que la competición NBA tenía 2025–26 activa y no existía 2026–27. Se guardó una copia **local protegida, fuera del repositorio** del catálogo previo, se desactivó 2025–26 y se creó 2026–27 activa en una transacción validada (exactamente una temporada NBA activa). No se modificaron partidos anteriores. El dry-run para 2026-10-01 a 2026-10-06 encontró 8 eventos completados, 8 mapeados, 0 fallos, 0 resultados 0–0, 8 inserciones previstas. La ejecución real insertó **8**, sin actualizaciones ni fallos.
+
+Verificación read-only posterior: 8 filas ESPN de 2026-10-03 a 2026-10-06, 8 IDs distintos, 0 totales inconsistentes con Q1–Q4/OT, 0 marcadores 0–0. Un segundo dry-run encontró **8 existentes / 0 por insertar**, evidencia de idempotencia para la misma ventana. `ingestion_state_baloncesto` registró 8 insertados, 0 actualizados y cursor 2026-10-06. El corte total NBA subió de 12.767 a **12.775** partidos y de 0 a **8 en últimos 30 días**. Son partidos de **pretemporada**, no una muestra de temporada regular ni evidencia de rendimiento del modelo.
+
+No se certificó contraste independiente de marcador, timezone ni outcome: el intento de obtener NBA CDN devolvió HTTP 403. Tampoco se entrenó ni recalibró un modelo. Las 102 inconsistencias P&L y 2.136 incompatibilidades temporales permanecen. Fútbol continúa sin frescura y Sofascore respondió 403. **Dictamen global: NO CERTIFICADO.**

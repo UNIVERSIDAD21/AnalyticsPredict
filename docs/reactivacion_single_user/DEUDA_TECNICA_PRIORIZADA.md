@@ -13,7 +13,7 @@
 | P1 | H11 entorno reproducible y H10 CI | BD efímera, unit/contract/integration/FE/build en CI | Lock Python 3.12, integración PG y smoke Compose alojado en verde (run 37481234870); suite global y Docker local no certificados. |
 | P1 | H4 SQLite versionadas | Retirar seguimiento sin borrar evidencia; clasificar credenciales | DB comerciales retiradas del índice Git e ignoradas; copias locales preservadas. Historial Git anterior aún contiene blobs. |
 | P1 analítico | H8 walk-forward real/no-leakage | `fit_end < prediction_time < outcome_time`, snapshots/model IDs | Bloqueado: 2.136/2.934 NBA enlazan a cutoff posterior al día de generación; no hay prueba de no-leakage. |
-| P2 analítico | Recertificar NBA/fútbol, confidence, odds, calidad y KPIs | Cortes actuales, n/método/limitaciones, sin rentabilidad futura | Corte read-only 2026-10-06 ejecutado, **NO CERTIFICADO**: 0 partidos últimos 30 días, 102/181 P&L NBA inconsistentes, fútbol 3–4 pares/mercado; ver reporte. |
+| P2 analítico | Recertificar NBA/fútbol, confidence, odds, calidad y KPIs | Cortes actuales, n/método/limitaciones, sin rentabilidad futura | Corte read-only 2026-10-06 ejecutado; luego 8 partidos NBA de pretemporada ingresados y verificados. **NO CERTIFICADO**: 102/181 P&L NBA inconsistentes, fútbol sin frescura y 3–4 pares/mercado; ver reporte. |
 | P3 | H12 permisos/reportes vacíos y project rot | Reparación específica con evidencia, no limpieza estética | Pendiente; 30 cambios de modo preexistentes preservados |
 
 H1–H3 no se cierran por decisión de producto sino al probar la desaparición de sus superficies. Fútbol permanece beta hasta evidencia cuantitativa actual; el análisis NBA interno mantiene política sin picks/stakes/recomendaciones.

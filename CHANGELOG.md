@@ -1,9 +1,12 @@
 # CHANGELOG
 
 ## 2026-10-06 — CI efímera y corte analítico sin certificación
+- Ingesta ESPN por fecha individual con deduplicación por clave natural legacy; 8 partidos NBA de pretemporada ingresados en Neon tras dry-run, integridad e idempotencia verificadas. No certifica outcomes ni modelos.
+- Lecturas GET de bitácora desacopladas de auto-resolución y DDL. Esquemas comerciales sin consumidores retirados; reglas y scorecard local de calidad, catálogo semántico KPI v0, inventario legacy/rot y preflight H4 documentados. H4 no se declara purgado.
+- Suite backend global segura: 578 passed, 19 failed dependientes de PostgreSQL de pruebas no disponible en host, 11 skipped. Gates dirigidos, frontend lint/11 tests/build y auditoría de dependencias de producción en verde; 10 alertas de dependencias dev siguen abiertas.
 - Lock de 51 dependencias Python 3.12; CI de la rama con contratos, unitarias analíticas, frontend, migración PostgreSQL efímera y smoke Docker Compose privado (4/4 jobs verdes en run 37481234870).
 - `.dockerignore` excluye envs, DB locales y caches de las imágenes. La migración se probó con dos identidades sintéticas, conservación de histórico y rechazo/rollback de ganador incorrecto.
-- Corte read-only NBA/fútbol/confidence/odds/calidad: **NO CERTIFICADO**. No hay partidos finalizados recientes; 102/181 P&L NBA no cumplen fórmula decimal y 2.136/2.934 cutoffs NBA son posteriores al día de generación. Detalle y límites en `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`.
+- Corte read-only previo a la ingesta NBA/fútbol/confidence/odds/calidad: **NO CERTIFICADO**. En ese corte no había partidos finalizados recientes; luego se ingresaron 8 NBA de pretemporada. 102/181 P&L NBA no cumplen fórmula decimal y 2.136/2.934 cutoffs NBA son posteriores al día de generación. Detalle y límites en `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`.
 - Smoke visual de rutas clave sin login con datos no vacíos; ROI/ganancia históricos rotulados como registrados/no certificados en dashboard, bitácora y métricas. Lectura read-only reveló intento de auto-resolución/escritura desde GET; no se completó ninguna escritura de esa prueba.
 - ADR-005 y el índice comercial de ejecución inmediata se marcaron `SUPERADO`; el roadmap single-user es la referencia operativa vigente.
 
