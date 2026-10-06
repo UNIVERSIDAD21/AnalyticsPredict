@@ -5,6 +5,7 @@
 - `.dockerignore` excluye envs, DB locales y caches de las imágenes. La migración se probó con dos identidades sintéticas, conservación de histórico y rechazo/rollback de ganador incorrecto.
 - Corte read-only NBA/fútbol/confidence/odds/calidad: **NO CERTIFICADO**. No hay partidos finalizados recientes; 102/181 P&L NBA no cumplen fórmula decimal y 2.136/2.934 cutoffs NBA son posteriores al día de generación. Detalle y límites en `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`.
 - Smoke visual de rutas clave sin login con datos no vacíos; ROI/ganancia históricos rotulados como registrados/no certificados en dashboard, bitácora y métricas. Lectura read-only reveló intento de auto-resolución/escritura desde GET; no se completó ninguna escritura de esa prueba.
+- ADR-005 y el índice comercial de ejecución inmediata se marcaron `SUPERADO`; el roadmap single-user es la referencia operativa vigente.
 
 ## 2026-10-05 — contratos, métricas y limpieza single-user
 - Bitácora frontend consume v2 explícito y valida envelopes; un error o payload desconocido no se interpreta como lista vacía. Analizadas usa `FINALIZADA` y total global independiente de la página.

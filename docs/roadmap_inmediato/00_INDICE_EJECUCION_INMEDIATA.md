@@ -1,9 +1,9 @@
-# 00 — Índice de Ejecución Inmediata (Panel Operativo Permanente)
+# 00 — Índice histórico de Ejecución Inmediata Comercial
 
-Estado: VIGENTE
-Fecha: 2026-03-26
+Estado: SUPERADO para trabajo nuevo por el plan single-user
+Fecha de supersesión: 2026-10-05 (corte de revisión 2026-10-06)
 
-Este índice define el orden operativo único para evitar confusión entre sesiones.
+Este índice conserva el orden comercial histórico, **no** define tareas actuales. Para trabajo nuevo manda `docs/reactivacion_single_user/ROADMAP_REACTIVACION_ANALYTICSPREDICT.md`; ver evidencia y blockers en `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`.
 
 ## Orden de ejecución aprobado
 1. A1 real (staging + smoke)
@@ -16,8 +16,7 @@ Este índice define el orden operativo único para evitar confusión entre sesio
 8. B5 proveedor real (solo si chat vuelve a prioridad)
 
 ## Regla de gobierno
-- Este índice manda sobre listas dispersas de prioridades.
-- Si cambia el orden, se actualiza aquí primero y luego ESTADO_PROYECTO/CHANGELOG.
+- Regla histórica superada. El roadmap single-user y `docs/FUENTE_DE_VERDAD_ACTUAL.md` gobiernan el orden actual.
 
 ## Documentos de bloque
 - [01_A1_STAGING_SMOKE_REAL.md](./01_A1_STAGING_SMOKE_REAL.md)

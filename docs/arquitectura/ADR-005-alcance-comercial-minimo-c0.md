@@ -1,6 +1,6 @@
 # ADR-005 — Alcance comercial mínimo (C0)
 
-Estado: ACEPTADO
+Estado: SUPERADO (decisión single-user del 2026-10-05; conservar como historia comercial)
 Fecha: 2026-03-24
 Responsable: UNIVERSIDAD21
 
