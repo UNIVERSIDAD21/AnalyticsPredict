@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — suite global sobre PostgreSQL desechable
+- Runner local/CI crea una base aleatoria en PostgreSQL local, carga un esquema sintético sin datos productivos, ejecuta la suite backend y elimina la base. Rechaza hosts remotos y bases administradoras distintas de `postgres`.
+- Nueve tests NBA con mocks aíslan gates de BD ajenos a su objetivo. Gate local: 621 passed, 0 failed, 9 skipped; frontend: 16 tests, lint, build/typecheck y audit de producción pasaron. Los skips y la validación CI se registran en `docs/reactivacion_single_user/AUDITORIA_SUITE_GLOBAL_2026-10-06.md`.
+
 ## 2026-10-06 — procedencia de calibración fútbol
 - El gestor conserva UUID del artefacto cargado y solo publica probabilidad calibrada tras transformación identificada; ausencia, fallo o salida inválida quedan `null`.
 - Inferencia ML, persistencia, endpoint de métricas y UI separan raw/calibrada; ajuste de muestra y mezcla heurística no se atribuyen a un calibrador. El histórico 567/567 sin ID no se modifica ni certifica; ver `docs/reactivacion_single_user/CALIBRACION_FUTBOL_PROCEDENCIA_2026-10-06.md`.

@@ -20,7 +20,8 @@ def db_efimera():
     if not admin_url:
         pytest.skip("TEST_PG_ADMIN_URL no configurada; integración PostgreSQL separada")
     cfg = conninfo_to_dict(admin_url)
-    if cfg.get("host") not in {"localhost", "127.0.0.1"} or cfg.get("dbname") != "postgres":
+    host = cfg.get("host") or ""
+    if (host not in {"localhost", "127.0.0.1"} and not host.startswith("/tmp/")) or cfg.get("dbname") != "postgres":
         pytest.fail("La integración solo admite servidor local y base administradora postgres")
     nombre = f"ap_single_user_test_{uuid4().hex}"
     with psycopg.connect(admin_url, autocommit=True) as admin:

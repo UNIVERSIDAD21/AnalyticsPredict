@@ -127,6 +127,9 @@ def test_api_expone_p_raw_y_p_calibrada_y_registra_calibrador(monkeypatch):
 
     monkeypatch.setattr("api.rutas_analisis.obtener_modelo", lambda: modelo)
     monkeypatch.setattr("api.rutas_analisis.validar_equipos", lambda *args, **kwargs: None)
+    monkeypatch.setattr("api.rutas_analisis._obtener_mercados_bloqueados_nba", lambda **_: set())
+    monkeypatch.setattr("api.rutas_analisis._modo_estricto_nba_activo", lambda: False)
+    monkeypatch.setattr("api.rutas_analisis._obtener_config_usuario", lambda: None)
     monkeypatch.setattr(
         "motor.nba_predictor_cuartos.obtener_calibrador_activo",
         lambda **kwargs: calibrador,

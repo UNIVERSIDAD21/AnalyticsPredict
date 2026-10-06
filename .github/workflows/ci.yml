@@ -108,6 +108,9 @@ jobs:
       - name: Migración single-user en base efímera
         working-directory: backend
         run: python -m pytest -q tests/integracion/test_migracion_single_user_pg.py
+      - name: Suite backend global con base efímera sintética
+        working-directory: backend
+        run: python scripts/run_suite_global_testdb.py
 
   compose-smoke:
     runs-on: ubuntu-latest

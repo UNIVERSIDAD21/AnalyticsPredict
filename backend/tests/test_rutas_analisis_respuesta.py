@@ -31,6 +31,8 @@ def _stub_ejecucion(monkeypatch, datos_respuesta):
             self.candidatos = []
 
     monkeypatch.setattr(rutas_analisis, "obtener_modelo", lambda: object())
+    monkeypatch.setattr(rutas_analisis, "_obtener_mercados_bloqueados_nba", lambda **_: set())
+    monkeypatch.setattr(rutas_analisis, "_modo_estricto_nba_activo", lambda: False)
     monkeypatch.setattr(rutas_analisis, "validar_equipos", lambda *args, **kwargs: None)
     monkeypatch.setattr(rutas_analisis, "analizar_partido", lambda **kwargs: _ResultadoStub())
     monkeypatch.setattr(

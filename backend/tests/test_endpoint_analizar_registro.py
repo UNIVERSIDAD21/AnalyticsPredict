@@ -26,6 +26,13 @@ from api.modelos_peticion import PeticionAnalisis
 from api.rutas_analisis import _extraer_contexto_registro, _buscar_partido_por_equipos_fecha
 
 
+@pytest.fixture(autouse=True)
+def _aislar_politicas_nba(monkeypatch):
+    """Estos casos prueban el registro, no los gates que consultan la BD."""
+    monkeypatch.setattr("api.rutas_analisis._obtener_mercados_bloqueados_nba", lambda **_: set())
+    monkeypatch.setattr("api.rutas_analisis._modo_estricto_nba_activo", lambda: False)
+
+
 # =============================================================================
 # TESTS UNITARIOS - Lógica de _extraer_contexto_registro
 # =============================================================================
