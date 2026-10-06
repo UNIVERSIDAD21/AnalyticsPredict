@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — clasificación temporal histórica NBA
+
+- Auditor read-only clasifica 2.934 predicciones: 2.136 con cutoff posterior al día UTC de generación, 476 ambiguas y 322 no determinables. Ninguna tiene evidencia completa para certificación temporal; no se altera el histórico ni se atribuye ausencia de leakage. Suite backend local PostgreSQL desechable: 661 passed, 0 failed, 0 skipped.
+
 ## 2026-10-06 — clasificación P&L NBA y ROI condicionado
 - Auditoría read-only y reproducible de 182 apuestas/181 resultados binarios: 102 importes incompatibles con fórmula neta y una fila adicional con cuota del lado discrepante; 103 no evaluables para ROI, 78 binarias aritméticamente conciliables pero no certificadas. Valores históricos intactos.
 - API de resumen y métricas devuelve ROI `null` en segmentos con P&L NBA no evaluable, expone conteos y conserva ganancia como importe registrado. Dashboard/Bitácora/Métricas muestran N/D y exclusiones. GET de bitácora deja de escribir contadores locales de contrato.
