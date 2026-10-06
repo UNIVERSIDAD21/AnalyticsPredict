@@ -127,7 +127,7 @@ SELECT id, mercado, origen, fecha_partido, modelo_version_id,
        outcome_binario,
        NULL::numeric AS media_predicha,
        NULL::numeric AS desviacion_predicha,
-       NULL::numeric AS valor_real,
+       valor_real,
        NULL::numeric AS intervalo_inferior,
        NULL::numeric AS intervalo_superior,
        NULL::integer AS nivel_intervalo
