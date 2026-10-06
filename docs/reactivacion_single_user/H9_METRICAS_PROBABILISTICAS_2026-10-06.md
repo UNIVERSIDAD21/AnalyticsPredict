@@ -63,6 +63,8 @@ CI del código `50a372e`: **4/4 jobs verdes**, incluida la suite global en Postg
 - [x] Guardar DDL vigente de ambas vistas como rollback fuera del repositorio; no se exportaron filas ni credenciales.
 - [x] Ampliar migración para que solo exponga calibrada con ID resoluble, mercado coincidente y probabilidad en rango; raw fuera de rango o falta total de pares deja `NULL`. La vista resumen compara únicamente pares raw/efectiva válidos y expone `n=0` y métricas `NULL` si no hay pares.
 - [x] Ensayar en PostgreSQL efímero nueve escenarios, rechazo de FK inexistente, preservación de nombres/tipos en ambas vistas y rollback. Suite backend completa del worktree aislado: **646 passed, 0 failed, 0 skipped, 2 warnings** bajo Python 3.14.
-- [ ] Aplicar DDL a Neon tras autorización expresa, revalidar contrato/agregados y verificar CI del commit definitivo.
+- [x] Aplicar DDL a Neon bajo la orden del Jefe de continuar el plan, revalidar contrato/agregados y verificar CI de la rama de preparación (PR #167, run 37524221265, 4/4 verde).
 
-El ensayo no modifica el estado analítico: calibración real y P&L continúan **NO CERTIFICADOS**. El backend del propietario opera con `--reload`, por lo que los archivos se prepararon en un worktree temporal externo al árbol observado para no disparar entrenamiento implícito antes de abordar ese siguiente bloque del plan.
+La transacción aplicada en Neon el 2026-10-06T20:12:46Z conservó 42 columnas de la vista base, 12 de la dependiente, owner/grants y 2.934 filas históricas. Postflight read-only: COMPLETO 1.650, Q1 376, Q2 224, Q3 182, Q4 150 pares; **0** calibrados con ID, **0** probabilidades efectivas distintas de raw, **0** falsamente calibradas. El rollback de ambas definiciones quedó fuera del repositorio. Esto cierra la semántica técnica de ambas vistas; calibración real y P&L continúan **NO CERTIFICADOS**.
+
+El backend del propietario opera con `--reload`, por lo que los archivos se prepararon en un worktree temporal externo al árbol observado para no disparar entrenamiento implícito antes de abordar ese siguiente bloque del plan.
