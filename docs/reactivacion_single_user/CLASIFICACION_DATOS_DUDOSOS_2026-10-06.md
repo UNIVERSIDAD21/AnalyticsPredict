@@ -33,3 +33,9 @@ Las métricas históricas NBA publicadas antes de un filtro canónico de los 24 
 - [ ] Verificar resultados de los 25 partidos fútbol contra proveedor permitido o dejar formalmente sin outcome.
 
 **Aceptación parcial:** clasificación técnica documentada y prevención futura; **no** hay certificación de resultados históricos ni cierre global del bloque E hasta propagar exclusiones a métricas. Siguiente acción: cotejo permitido de proveedores y filtro KPI central con pruebas SQL/API/UI.
+
+## Adenda: exclusión en consumidores principales
+
+La auditoría read-only mantiene 2.934 predicciones y 2.612 marcadas resueltas, pero aparta los **24 outcomes 0–0** antes de computar Brier/Log Loss/ECE: quedan 2.558 pares raw frente a 2.582 del corte original. La API de calibración y su curva enmascaran el outcome y el valor real de esas filas, exponen `n_excluidos_outcome_dudoso` y recalculan en memoria; el GET ya no usa un precálculo anterior ni ejecuta UPSERT. Esto **no** convierte el resto en evidencia prospectiva o independiente.
+
+En bitácora, los cinco registros vinculados a 0–0 se conservan visibles. El gate de ROI combina calidad de fórmula/cuota y resultado acreditado: **107/181** binarias no evaluables (103 previas más 4 nuevas; la quinta ya se solapaba). El CLI de P&L clasifica por fila y deja solo **74 binarias** aritméticamente coherentes y sin 0–0, todavía **no certificadas**. Los otros endpoints agregados de salud/calidad/drift y eventuales caches históricos aún requieren revisión; el checklist de exclusión en **todos** los KPI sigue abierto.

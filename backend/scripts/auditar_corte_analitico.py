@@ -60,19 +60,32 @@ def resumen_bets(filas: list[tuple]) -> dict:
 
 
 def predicciones(cur, tabla: str, raw: str, calibrada: str) -> dict:
-    cur.execute(f"SELECT {raw}, {calibrada}, outcome_binario, resuelto, timestamp_generacion, "
-                f"timestamp_resolucion, modelo_version_id, calibrador_id, mercado FROM {tabla}")
+    # El histórico se conserva; un 0–0 NBA no constituye outcome evaluable.
+    join_partido = (
+        "LEFT JOIN partidos_baloncesto pb ON pb.id = p.partido_id"
+        if tabla == "predicciones_registradas" else ""
+    )
+    dudoso = (
+        "(pb.local_total = 0 AND pb.visitante_total = 0)"
+        if join_partido else "NULL::boolean"
+    )
+    cur.execute(f"SELECT p.{raw}, p.{calibrada}, p.outcome_binario, p.resuelto, "
+                f"p.timestamp_generacion, p.timestamp_resolucion, p.modelo_version_id, "
+                f"p.calibrador_id, p.mercado, {dudoso} FROM {tabla} p {join_partido}")
     filas = cur.fetchall()
     raw_pares, cal_pares = [], []
     mercados: dict[str, list[tuple[float, int]]] = defaultdict(list)
     sin_modelo = sin_calibrador = violaciones = cal_sin_procedencia = 0
-    resueltas = 0
-    for p_raw, p_cal, y, resuelto, generado, resuelto_en, modelo, calibrador, mercado in filas:
+    resueltas = outcomes_no_acreditados = 0
+    for p_raw, p_cal, y, resuelto, generado, resuelto_en, modelo, calibrador, mercado, cero_cero in filas:
         sin_modelo += modelo is None
         sin_calibrador += calibrador is None
         resueltas += bool(resuelto)
         if generado and resuelto_en and generado >= resuelto_en:
             violaciones += 1
+        if resuelto and y is not None and cero_cero:
+            outcomes_no_acreditados += 1
+            continue
         if not resuelto or y is None:
             continue
         yi = int(y)
@@ -83,7 +96,9 @@ def predicciones(cur, tabla: str, raw: str, calibrada: str) -> dict:
             cal_sin_procedencia += 1
         if p_cal is not None and calibrador is not None and 0 <= p_cal <= 1:
             cal_pares.append((float(p_cal), yi))
-    return {"total": len(filas), "resueltas": resueltas, "sin_modelo_id": sin_modelo,
+    return {"total": len(filas), "resueltas": resueltas,
+            "outcomes_cero_cero_no_acreditados": outcomes_no_acreditados,
+            "sin_modelo_id": sin_modelo,
             "sin_calibrador_id": sin_calibrador, "generacion_no_anterior_a_resolucion": violaciones,
             "calibrada_resuelta_sin_calibrador_id": cal_sin_procedencia,
             "raw": metricas_binarias(raw_pares), "calibrada": metricas_binarias(cal_pares),

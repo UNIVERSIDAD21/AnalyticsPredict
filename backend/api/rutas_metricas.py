@@ -54,6 +54,7 @@ class MetricaMercado(BaseModel):
     mercado: str = Field(..., description="Q1/Q2/Q3/Q4/COMPLETO")
     n_predicciones: int = Field(..., description="Total de predicciones evaluadas")
     n_excluidos_push: int = Field(0, description="Predicciones excluidas por PUSH")
+    n_excluidos_outcome_dudoso: int = Field(0, description="Outcomes NBA 0–0 sin resultado acreditado")
 
     brier_score: Optional[float] = Field(None, description="Brier Score (0-1, menor mejor)")
     brier_score_raw: Optional[float] = Field(None, description="Brier usando p_raw")
@@ -116,6 +117,7 @@ class RespuestaCurvaCalibracion(BaseModel):
     n_bins: int
     n_predicciones_total: int
     n_excluidos_push: int
+    n_excluidos_outcome_dudoso: int = 0
     bins: List[BinCalibracionResponse]
     ece: float
     mce: float
@@ -219,28 +221,27 @@ async def obtener_metricas_calibracion(
             continue
 
         try:
-            resultado = _buscar_metricas_precalculadas(
-                mercado_actual,
-                origen,
-                periodo.inicio,
-                periodo.fin,
+            # Las filas materializadas antes del filtro 0–0 pueden estar contaminadas.
+            # Recalcular en lectura evita además UPSERT implícito en GET.
+            resultado = calcular_metricas_calibracion(
+                mercado=mercado_actual,
+                origen=origen,
+                fecha_inicio=periodo.inicio,
+                fecha_fin=periodo.fin,
                 modelo_version_id=modelo_version_id,
+                usar_p_calibrada=True,
+                persistir=False,
             )
-            if resultado is None:
-                resultado = calcular_metricas_calibracion(
-                    mercado=mercado_actual,
-                    origen=origen,
-                    fecha_inicio=periodo.inicio,
-                    fecha_fin=periodo.fin,
-                    modelo_version_id=modelo_version_id,
-                    usar_p_calibrada=True,
-                )
 
             n_excluidos = _contar_excluidos_push(
                 mercado_actual,
                 origen,
                 periodo.inicio,
                 periodo.fin,
+                modelo_version_id=modelo_version_id,
+            )
+            n_dudosos = _contar_outcomes_nba_cero_cero(
+                mercado_actual, origen, periodo.inicio, periodo.fin,
                 modelo_version_id=modelo_version_id,
             )
 
@@ -271,11 +272,14 @@ async def obtener_metricas_calibracion(
                 )
 
             advertencias = list(resultado.get("alertas", [])) if resultado else []
+            if n_dudosos:
+                advertencias.append(f"{n_dudosos} outcomes NBA 0–0 excluidos por resultado no acreditado.")
 
             metrica = MetricaMercado(
                 mercado=mercado_actual,
                 n_predicciones=resultado.get("n_predicciones", 0),
                 n_excluidos_push=n_excluidos,
+                n_excluidos_outcome_dudoso=n_dudosos,
                 brier_score=resultado.get("brier_score"),
                 brier_score_raw=brier_raw,
                 brier_score_calibrado=brier_calibrado,
@@ -473,6 +477,9 @@ async def obtener_curva_calibracion(
         periodo.fin,
         modelo_version_id=None,
     )
+    n_dudosos = _contar_outcomes_nba_cero_cero(
+        mercado, origen, periodo.inicio, periodo.fin, modelo_version_id=None,
+    )
 
     resultado = _calcular_curva(tipo_bins, predicciones_filtradas, n_bins=n_bins)
 
@@ -496,6 +503,7 @@ async def obtener_curva_calibracion(
         n_bins=n_bins,
         n_predicciones_total=resultado.n_total,
         n_excluidos_push=n_excluidos,
+        n_excluidos_outcome_dudoso=n_dudosos,
         bins=_mapear_bins_respuesta(resultado.bins),
         ece=resultado.ece,
         mce=resultado.mce,
@@ -710,6 +718,32 @@ def _contar_excluidos_push(
     return int(fila[0]) if fila else 0
 
 
+def _contar_outcomes_nba_cero_cero(
+    mercado: str,
+    origen: str,
+    fecha_inicio: date,
+    fecha_fin: date,
+    *,
+    modelo_version_id: Optional[int],
+) -> int:
+    consulta = """
+        SELECT COUNT(*)
+        FROM predicciones_registradas pr
+        JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
+        WHERE pr.mercado = %s AND pr.origen = %s
+          AND pr.fecha_partido >= %s AND pr.fecha_partido <= %s
+          AND (%s::integer IS NULL OR pr.modelo_version_id = %s)
+          AND pr.resuelto = true AND pr.outcome_binario IS NOT NULL
+          AND pb.local_total = 0 AND pb.visitante_total = 0
+    """
+    with obtener_pool().connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(consulta, [mercado, origen, fecha_inicio, fecha_fin,
+                                     modelo_version_id, modelo_version_id])
+            fila = cursor.fetchone()
+    return int(fila[0]) if fila else 0
+
+
 def _obtener_predicciones_para_curva(
     *,
     mercado: str,
@@ -719,15 +753,18 @@ def _obtener_predicciones_para_curva(
 ) -> List[Dict[str, object]]:
     pool = obtener_pool()
     consulta = """
-        SELECT COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) AS p_efectiva,
-               outcome_binario
-        FROM vista_predicciones_para_calibracion
-        WHERE mercado = %s
-          AND origen = %s
-          AND fecha_partido >= %s
-          AND fecha_partido <= %s
-          AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) IS NOT NULL
-        ORDER BY fecha_partido
+        SELECT COALESCE(CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END, v.p_raw) AS p_efectiva,
+               CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
+                    THEN NULL ELSE v.outcome_binario END AS outcome_binario
+        FROM vista_predicciones_para_calibracion v
+        LEFT JOIN predicciones_registradas pr ON pr.id = v.id
+        LEFT JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
+        WHERE v.mercado = %s
+          AND v.origen = %s
+          AND v.fecha_partido >= %s
+          AND v.fecha_partido <= %s
+          AND COALESCE(CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END, v.p_raw) IS NOT NULL
+        ORDER BY v.fecha_partido
     """
     params = [mercado, origen, desde, hasta]
 

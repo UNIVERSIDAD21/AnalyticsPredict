@@ -41,6 +41,14 @@ def test_cuota_del_lado_discrepante_excluye_aunque_profit_concilie():
     assert salida["motivo"] == "CUOTA_REGISTRADA_DISCREPA_DEL_LADO"
 
 
+def test_partido_cero_cero_excluye_aunque_profit_concilie():
+    fila = _fila("GANADA")
+    fila["partido_cero_cero"] = True
+    salida = clasificar_fila(fila)
+    assert salida["estado_pnl"] == "NO_EVALUABLE"
+    assert salida["motivo"] == "RESULTADO_PARTIDO_CERO_CERO_NO_ACREDITADO"
+
+
 def test_roi_provisional_usa_exclusivamente_mismas_filas_conciliables():
     filas = [
         {"estado_pnl": "ARITMETICAMENTE_CONSISTENTE", "resultado": "GANADA", "stake": "100",

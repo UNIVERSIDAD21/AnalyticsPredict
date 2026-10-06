@@ -33,6 +33,9 @@ def clasificar_fila(fila: dict[str, Any]) -> dict[str, Any]:
         salida["estado_pnl"] = "PENDIENTE_O_DESCONOCIDO"
         salida["motivo"] = "RESULTADO_NO_FINAL"
         return salida
+    if fila.get("partido_cero_cero"):
+        salida["motivo"] = "RESULTADO_PARTIDO_CERO_CERO_NO_ACREDITADO"
+        return salida
     if stake is None or ganancia is None or stake <= 0:
         salida["motivo"] = "STAKE_O_GANANCIA_INVALIDO"
         return salida
@@ -103,10 +106,13 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         conn.execute("SET TRANSACTION READ ONLY")
         conn.execute("SET LOCAL statement_timeout = '30s'")
         filas = conn.execute(
-            """SELECT id, partido_id, fecha_partido, mercado, lado, cuota, stake,
-                      resultado, ganancia, creado_en, fecha_resolucion,
-                      cuota_over, cuota_under, stake_porcentaje, bankroll_momento
-               FROM apuestas ORDER BY creado_en, id"""
+            """SELECT a.id, a.partido_id, a.fecha_partido, a.mercado, a.lado,
+                      a.cuota, a.stake, a.resultado, a.ganancia, a.creado_en,
+                      a.fecha_resolucion, a.cuota_over, a.cuota_under,
+                      a.stake_porcentaje, a.bankroll_momento,
+                      (pb.local_total = 0 AND pb.visitante_total = 0) AS partido_cero_cero
+               FROM apuestas a LEFT JOIN partidos_baloncesto pb ON pb.id = a.partido_id
+               ORDER BY a.creado_en, a.id"""
         ).fetchall()
     detalle = []
     conteos = Counter()
@@ -128,6 +134,7 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             "stake": str(fila["stake"]) if fila["stake"] is not None else None,
             "ganancia_registrada": str(fila["ganancia"]) if fila["ganancia"] is not None else None,
             "resultado": fila["resultado"],
+            "partido_cero_cero": bool(fila["partido_cero_cero"]),
             "ganancia_esperada": str(evaluacion["ganancia_esperada"]) if evaluacion["ganancia_esperada"] is not None else None,
             "estado_pnl": evaluacion["estado_pnl"],
             "motivo": evaluacion["motivo"],
@@ -145,6 +152,7 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         "patron_mitad_hipotetico": sum(d["patron_hipotetico"] is not None for d in detalle),
         "cuota_lado_discrepante": sum(d["cuota_lado_discrepante"] for d in detalle),
         "partido_id_ausente": sum(not d["partido_id_presente"] for d in detalle),
+        "resultado_partido_cero_cero_no_acreditado": sum(d["partido_cero_cero"] for d in detalle),
         "fuente_cuota": "NO_REGISTRADA",
         "unidad_stake": "NO_REGISTRADA",
         "roi_certificado": None,
