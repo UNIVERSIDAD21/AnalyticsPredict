@@ -38,7 +38,7 @@ class FakeCursor:
                 filtradas.append(
                     (
                         fila["p_raw"],
-                        fila["p_calibrada"],
+                        fila["p_calibrada"] if fila.get("calibrador_id") else None,
                         fila["outcome_binario"],
                         fila["media_predicha"],
                         fila["valor_real"],
@@ -106,7 +106,7 @@ class FakePool:
 
 
 def _rows_base():
-    return [
+    rows = [
         {
             "mercado": "Q1",
             "origen": "API_USUARIO",
@@ -178,6 +178,9 @@ def _rows_base():
             "nivel_intervalo": 90,
         },
     ]
+    for row in rows:
+        row["calibrador_id"] = uuid4()
+    return rows
 
 
 def test_calculador_metricas_basicas_y_filtros():
@@ -372,6 +375,21 @@ def test_calibracion_ausente_no_se_reemplaza_por_raw():
     assert resultado["ece_calibrada"] is None
     assert resultado["brier_score"] is None
     assert resultado["alertas"] == ["CALIBRACION_NO_DISPONIBLE"]
+
+
+def test_calibracion_poblada_sin_id_no_se_atribuye():
+    rows = _rows_base()
+    for row in rows:
+        row["calibrador_id"] = None
+    resultado = calcular_metricas_calibracion(
+        mercado="Q1", origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1), fecha_fin=date(2024, 1, 5),
+        pool=FakePool(rows, {}),
+    )
+    assert resultado["n_predicciones"] == 3
+    assert resultado["n_calibradas"] == 0
+    assert resultado["brier_score_raw"] is not None
+    assert resultado["brier_score_calibrado"] is None
 
 
 def test_calibracion_parcial_expone_su_cobertura():

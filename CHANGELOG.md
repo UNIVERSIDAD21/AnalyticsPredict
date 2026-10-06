@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — consumidores de vista NBA con procedencia
+- Curvas, calculador y reporte de backtest no usan `p_efectiva`/`p_calibrada` legacy sin `calibrador_id`; parámetro opcional de versión tipado para PostgreSQL. La vista productiva no se alteró.
+- Cotejo Neon read-only: 0 pares calibrados con ID en ambos deportes; 81 pares raw fútbol entre 24 mercados. Suite local PostgreSQL sintético: 629 passed, 0 failed, 9 skipped. H9 y dictamen analítico siguen abiertos.
+
 ## 2026-10-06 — consumidores H9 sin atribución falsa de calibración
 - Gates y métricas operativas NBA/fútbol, explicación, auditoría de decisiones y reportes fútbol usan raw si falta ID de calibrador; N/D sustituye métricas ausentes y el ECE retrospectivo bajo no declara aptitud de producción.
 - Suite global con PostgreSQL sintético: 627 passed, 0 failed, 9 skipped; frontend 16 tests, lint y build verdes. H9 sigue abierto por vista/consumidores históricos y cotejo con datos actuales.

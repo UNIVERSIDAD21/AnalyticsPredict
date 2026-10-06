@@ -21,3 +21,5 @@ Los nueve skips restantes **no** son aprobaciones tácitas: cinco casos de `moto
 ## Verificación posterior
 
 CI del HEAD `23a554e` pasó **4/4 jobs**, incluido el runner global con PostgreSQL efímera. En el lote H9 siguiente, la suite local pasó **627/0/9** (14 warnings) tras ampliar el esquema y comprobar consumidores con SQL real; el frontend pasó 16 tests, lint y build. El lote H9 aún necesita su propia ejecución alojada. Los nueve skips mantienen la clasificación anterior y no cuentan como aprobaciones.
+
+CI del lote H9 `d3cfd83` pasó **4/4 jobs**. Un cotejo adicional contra la definición read-only de la vista NBA produjo un test SQL real nuevo y **629/0/9** en PostgreSQL local; ese segundo lote aún requiere CI de su propio HEAD. Ninguna de estas ejecuciones recertifica datos o modelos.

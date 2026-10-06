@@ -37,3 +37,9 @@ En el primer corte: 66 pruebas dirigidas pasaron con `DATABASE_URL` vacío; esa 
 - CI del HEAD anterior `23a554e` pasó 4/4 jobs; este lote aún requiere CI de su propio HEAD. Las nueve omisiones de suite están detalladas en `AUDITORIA_SUITE_GLOBAL_2026-10-06.md`.
 
 **H9 permanece abierto:** la vista `vista_predicciones_para_calibracion` y scripts históricos B16/B17/B20 aún necesitan cotejo de procedencia/semántica; los datos actuales y cada mercado requieren contraste read-only, sin alterar el histórico 567/567 de fútbol. Un gate SQL sintético no demuestra calibración prospectiva ni resuelve frescura, temporalidad u outcomes.
+
+## Cotejo read-only de Neon y vista — 2026-10-06
+
+La conexión se abrió con transacción `READ ONLY`; no hubo ingesta ni escrituras. En este corte, NBA registra 2.934 predicciones y 2.582 pares raw válidos; fútbol 567 predicciones y 81 pares raw válidos. **Cero pares calibrados con ID** en ambos deportes. Las 567 filas de fútbol mantienen una columna calibrada poblada sin ID. Los pares fútbol se distribuyen entre 24 mercados con apenas 3–4 por mercado; los NBA raw por mercado son COMPLETO 1.650, Q1 376, Q2 224, Q3 182 y Q4 150. Son conteos históricos disponibles, no validación prospectiva.
+
+La definición vigente de `vista_predicciones_para_calibracion` usa `COALESCE(pr.p_calibrada, pr.p_raw)` para `p_efectiva` y su bin, sin comprobar `calibrador_id`. Los consumidores de aplicación (calculador, curvas de métricas/backtest y filas del reporte) ahora reconstruyen la probabilidad efectiva o calibrada con ID. Una prueba PostgreSQL crea deliberadamente una vista legacy que devuelve 0,9 sin ID y demuestra que los consumidores usan raw 0,2; detectó y corrigió también el tipo del parámetro opcional de modelo. Suite local: **629 passed, 0 failed, 9 skipped, 14 warnings**. La vista productiva **no se modificó** y sigue siendo deuda para consultas SQL directas o consumidores externos.

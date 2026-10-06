@@ -719,13 +719,14 @@ def _obtener_predicciones_para_curva(
 ) -> List[Dict[str, object]]:
     pool = obtener_pool()
     consulta = """
-        SELECT p_efectiva, outcome_binario
+        SELECT COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) AS p_efectiva,
+               outcome_binario
         FROM vista_predicciones_para_calibracion
         WHERE mercado = %s
           AND origen = %s
           AND fecha_partido >= %s
           AND fecha_partido <= %s
-          AND p_efectiva IS NOT NULL
+          AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) IS NOT NULL
         ORDER BY fecha_partido
     """
     params = [mercado, origen, desde, hasta]

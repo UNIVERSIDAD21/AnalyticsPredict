@@ -592,7 +592,7 @@ def _obtener_predicciones_backtest(
             pr.linea,
             pr.linea_es_sintetica,
             pr.p_raw,
-            pr.p_calibrada,
+            CASE WHEN pr.calibrador_id IS NOT NULL THEN pr.p_calibrada END AS p_calibrada,
             pr.media_predicha,
             pr.desviacion_predicha,
             pr.valor_real,
@@ -648,13 +648,14 @@ def _obtener_predicciones_para_curva(
 ) -> list[tuple[float, bool]]:
     pool = obtener_pool()
     consulta = """
-        SELECT p_efectiva, outcome_binario
+        SELECT COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) AS p_efectiva,
+               outcome_binario
         FROM vista_predicciones_para_calibracion
         WHERE mercado = %s
           AND origen = %s
           AND fecha_partido >= %s
           AND fecha_partido <= %s
-          AND p_efectiva IS NOT NULL
+          AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) IS NOT NULL
           AND outcome_binario IS NOT NULL
         ORDER BY fecha_partido
     """

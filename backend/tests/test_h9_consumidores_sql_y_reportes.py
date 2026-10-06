@@ -1,15 +1,22 @@
 """Superficies H9 no convierten ausencia de calibración en 0 o aptitud."""
 
 import os
+from datetime import date
 from uuid import uuid4
 
 import pytest
 from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
 
-from api.rutas_backtest import _generar_recomendaciones
+from api.rutas_backtest import (
+    _generar_recomendaciones,
+    _obtener_predicciones_backtest,
+    _obtener_predicciones_para_curva as _curva_backtest,
+)
 from api.rutas_explicabilidad import _fetch_prediccion
+from api.rutas_metricas import _obtener_predicciones_para_curva as _curva_metricas
 from api.rutas_metricas_futbol import _estado_mercados_futbol
+from backtesting.metricas.calculador import _obtener_predicciones
 from db import obtener_pool
 from metricas_probabilisticas import expresiones_sql_probabilidad_futbol
 from motor_futbol.evaluacion.backtesting import BacktesterFutbol, ResultadoBacktest
@@ -130,3 +137,50 @@ def test_expresion_reportes_futbol_se_ejecuta_en_postgres_efimero():
             (uuid4(),),
         ).fetchall()
     assert [(float(p), flag) for p, flag in filas] == [(0.2, 1), (0.9, 0)]
+
+
+def test_consumidores_vista_legacy_ignoran_calibrada_sin_id_en_postgres_efimero():
+    cfg = conninfo_to_dict(os.environ.get("DATABASE_URL") or "")
+    if not str(cfg.get("dbname", "")).startswith("ap_suite_test_"):
+        pytest.skip("Solo se ejecuta en la base sintética del runner global")
+
+    id_raw, id_calibrada, calibrador_id = uuid4(), uuid4(), uuid4()
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conn:
+            conn.execute(
+                "INSERT INTO predicciones_registradas "
+                "(id, mercado, origen, fecha_partido, p_raw, p_calibrada, outcome_binario, calibrador_id) "
+                "VALUES (%s, 'H9_VIEW', 'H9_TEST', '2026-01-01', 0.2, 0.9, true, NULL), "
+                "(%s, 'H9_VIEW', 'H9_TEST', '2026-01-02', 0.2, 0.9, false, %s)",
+                (id_raw, id_calibrada, calibrador_id),
+            )
+            # La vista de prueba replica el COALESCE legacy observado en Neon.
+            view_values = conn.execute(
+                "SELECT p_efectiva FROM vista_predicciones_para_calibracion "
+                "WHERE mercado = 'H9_VIEW' ORDER BY fecha_partido"
+            ).fetchall()
+            assert [float(fila[0]) for fila in view_values] == [0.9, 0.9]
+
+        desde, hasta = date(2026, 1, 1), date(2026, 1, 2)
+        filas = _obtener_predicciones(
+            pool, mercado="H9_VIEW", origen="H9_TEST", fecha_inicio=desde,
+            fecha_fin=hasta, modelo_version_id=None,
+        )
+        assert len(filas) == 2
+        assert sum(fila[1] is None for fila in filas) == 1
+        assert any(float(fila[1]) == pytest.approx(0.9) for fila in filas if fila[1] is not None)
+
+        curva_metricas = _curva_metricas(mercado="H9_VIEW", origen="H9_TEST", desde=desde, hasta=hasta)
+        curva_backtest = _curva_backtest(mercado="H9_VIEW", origen="H9_TEST", desde=desde, hasta=hasta)
+        assert [fila["p_efectiva"] for fila in curva_metricas] == pytest.approx([0.2, 0.9])
+        assert [fila[0] for fila in curva_backtest] == pytest.approx([0.2, 0.9])
+
+        predicciones = _obtener_predicciones_backtest(
+            {"fecha_inicio_eval": desde, "fecha_fin_eval": hasta}, ["H9_VIEW"], ["H9_TEST"]
+        )
+        assert predicciones[0]["p_calibrada"] is None
+        assert float(predicciones[1]["p_calibrada"]) == pytest.approx(0.9)
+    finally:
+        with pool.connection() as conn:
+            conn.execute("DELETE FROM predicciones_registradas WHERE id IN (%s, %s)", (id_raw, id_calibrada))

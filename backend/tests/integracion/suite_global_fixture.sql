@@ -5,9 +5,11 @@ CREATE TABLE predicciones_registradas (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     partido_id uuid,
     mercado text,
+    origen text,
+    fecha_partido date,
+    modelo_version_id integer,
     linea numeric,
     lado text,
-    origen text,
     p_raw numeric,
     p_calibrada numeric,
     calibrador_id uuid,
@@ -37,9 +39,11 @@ CREATE TABLE predicciones_futbol (
 );
 
 CREATE TABLE modelo_versiones (
+    id integer,
     version text,
     fecha_entrenamiento timestamptz,
-    partidos_entrenamiento integer
+    partidos_entrenamiento integer,
+    cutoff_entrenamiento timestamptz
 );
 
 CREATE TABLE modelo_versiones_futbol (
@@ -65,6 +69,25 @@ CREATE TABLE partidos_baloncesto (
     equipo_local_id uuid,
     equipo_visitante_id uuid
 );
+
+-- Replica a propósito el COALESCE legacy de Neon: los consumidores deben
+-- ignorar p_efectiva/p_calibrada de la vista si falta calibrador_id.
+CREATE VIEW vista_predicciones_para_calibracion AS
+SELECT id, mercado, origen, fecha_partido, modelo_version_id,
+       NULL::text AS equipo_local,
+       NULL::text AS equipo_visitante,
+       lado, linea,
+       false AS linea_es_sintetica,
+       p_raw, p_calibrada, calibrador_id,
+       COALESCE(p_calibrada, p_raw) AS p_efectiva,
+       outcome_binario,
+       NULL::numeric AS media_predicha,
+       NULL::numeric AS desviacion_predicha,
+       NULL::numeric AS valor_real,
+       NULL::numeric AS intervalo_inferior,
+       NULL::numeric AS intervalo_superior,
+       NULL::integer AS nivel_intervalo
+FROM predicciones_registradas;
 
 CREATE TABLE apuestas_analizadas (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

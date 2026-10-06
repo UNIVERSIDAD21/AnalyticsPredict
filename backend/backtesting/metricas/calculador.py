@@ -229,7 +229,7 @@ def _obtener_predicciones(
     consulta = """
         SELECT
             p_raw,
-            p_calibrada,
+            CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END AS p_calibrada,
             outcome_binario,
             media_predicha,
             valor_real,
@@ -241,7 +241,7 @@ def _obtener_predicciones(
           AND origen = %s
           AND fecha_partido >= %s
           AND fecha_partido <= %s
-          AND (%s IS NULL OR modelo_version_id = %s)
+          AND (%s::integer IS NULL OR modelo_version_id = %s)
     """
     params = [
         mercado,
