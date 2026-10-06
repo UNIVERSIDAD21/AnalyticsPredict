@@ -133,10 +133,20 @@ def event_to_record(event: dict[str, Any], ctx: DbContext) -> dict[str, Any]:
     away_ls = linescores(away)
     home_total = safe_int(home.get("score"))
     away_total = safe_int(away.get("score"))
-    home_ot = max(0, home_total - sum(home_ls[:4]))
-    away_ot = max(0, away_total - sum(away_ls[:4]))
-    if sum(home_ls[:4]) + home_ot != home_total or sum(away_ls[:4]) + away_ot != away_total:
+    if home_total <= 0 or away_total <= 0:
+        raise ValueError("marcador final NBA no positivo/no acreditado")
+    if len(home.get("linescores") or []) < 4 or len(away.get("linescores") or []) < 4:
+        raise ValueError("faltan cuartos del partido finalizado")
+    if any(puntos < 0 for puntos in (*home_ls, *away_ls)):
+        raise ValueError("puntos por cuarto negativos")
+    home_ot = home_total - sum(home_ls[:4])
+    away_ot = away_total - sum(away_ls[:4])
+    if home_ot < 0 or away_ot < 0:
         raise ValueError("cuartos/totales inconsistentes")
+    if (home_ot > 0 and len(home_ls) == 4) or (away_ot > 0 and len(away_ls) == 4):
+        raise ValueError("overtime sin líneas de puntos de prórroga")
+    if (len(home_ls) > 4 and sum(home_ls[4:]) != home_ot) or (len(away_ls) > 4 and sum(away_ls[4:]) != away_ot):
+        raise ValueError("overtime/totales inconsistentes")
 
     event_date = datetime.fromisoformat(str(event["date"]).replace("Z", "+00:00")).date()
     winner_id = home_id if home_total > away_total else away_id if away_total > home_total else None

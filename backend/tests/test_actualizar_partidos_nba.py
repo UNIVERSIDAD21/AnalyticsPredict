@@ -17,6 +17,31 @@ def test_espn_403_se_detiene_sin_reintentos(monkeypatch):
     assert len(llamadas) == 1
 
 
+def test_final_nba_exige_marcador_y_cuartos_acreditados():
+    ctx = ingesta.DbContext('comp', 'temporada', '2026-27', {'LCL': 'local', 'VIS': 'visitante'}, {})
+    evento = {
+        'id': 'espn-1', 'date': '2026-10-06T23:00Z', 'season': {'type': 1},
+        'competitions': [{'competitors': [
+            {'homeAway': 'home', 'team': {'abbreviation': 'LCL'}, 'score': '0',
+             'linescores': [{'value': 0}] * 4},
+            {'homeAway': 'away', 'team': {'abbreviation': 'VIS'}, 'score': '99',
+             'linescores': [{'value': 25}, {'value': 25}, {'value': 25}, {'value': 24}]},
+        ]}],
+    }
+    with pytest.raises(ValueError, match='no positivo'):
+        ingesta.event_to_record(evento, ctx)
+    evento['competitions'][0]['competitors'][0]['score'] = '100'
+    evento['competitions'][0]['competitors'][0]['linescores'] = [{'value': 25}] * 4
+    assert ingesta.event_to_record(evento, ctx)['tipo_partido'] == 'PRE'
+    evento['competitions'][0]['competitors'][0]['linescores'] = [{'value': 25}] * 3
+    with pytest.raises(ValueError, match='faltan cuartos'):
+        ingesta.event_to_record(evento, ctx)
+    evento['competitions'][0]['competitors'][0]['linescores'] = [{'value': 25}] * 4
+    evento['competitions'][0]['competitors'][0]['score'] = '101'
+    with pytest.raises(ValueError, match='overtime sin líneas'):
+        ingesta.event_to_record(evento, ctx)
+
+
 def test_scoreboard_consulta_dias_individuales_y_descarta_no_finalizados(monkeypatch):
     consultas = []
 

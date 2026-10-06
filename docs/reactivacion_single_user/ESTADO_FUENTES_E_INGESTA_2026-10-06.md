@@ -14,7 +14,7 @@ Un 200 con JSON válido y lista vacía después de consulta completa significa `
 
 ## Calidad de mapeo pendiente
 
-NBA conserva clave `source=ESPN`/`source_game_id`, separa `PRE/REG/POST`, valida totales/cuarto/OT e idempotencia. La fecha del evento proviene de ISO de ESPN; requiere cotejo independiente de timezone del partido y resultado antes de usarlo como outcome científico. Football conserva ID Sofascore y estados de proveedor; el cliente ahora usa UTC y preserva marcador **cero** cuando `current=0` (antes la expresión `or` lo reemplazaba). Solo marca completos corners y disparos cuando ambos equipos aportan los campos requeridos. Estas correcciones de código no rellenan los 25 finalizados incompletos ni prueban cobertura de competiciones.
+NBA conserva clave `source=ESPN`/`source_game_id`, separa `PRE/REG/POST`, rechaza 0–0, exige cuatro cuartos y confronta líneas de OT con totales; mantiene idempotencia. La fecha del evento proviene de ISO de ESPN; requiere cotejo independiente de timezone del partido y resultado antes de usarlo como outcome científico. Football conserva ID Sofascore y estados de proveedor; el cliente ahora usa UTC y preserva marcador **cero** cuando `current=0` (antes la expresión `or` lo reemplazaba). Solo marca completos corners y disparos cuando ambos equipos aportan los campos requeridos. Estas correcciones de código no rellenan los 25 finalizados incompletos ni prueban cobertura de competiciones.
 
 ## Checklist y criterio de aceptación
 

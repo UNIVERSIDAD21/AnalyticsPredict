@@ -2,7 +2,7 @@
 
 ## 2026-10-06 — diagnóstico seguro de fuentes deportivas
 
-- Dry-run NBA exige transacción read-only y detiene HTTP 401/403 sin reintentos; ESPN devolvió 8 partidos ya presentes en la ventana 1–6 de octubre. El sincronizador fútbol abandona impersonación/recuperación de 403, incorpora dry-run read-only, distingue fuente caída de cero eventos, usa UTC, preserva goles 0 y no marca estadísticas parciales como completas. Sofascore respondió 403, sin ingesta.
+- Dry-run NBA exige transacción read-only, detiene HTTP 401/403 sin reintentos y rechaza marcadores 0–0 o cuartos/OT no acreditados; ESPN devolvió 8 partidos ya presentes en la ventana 1–6 de octubre. El sincronizador fútbol abandona impersonación/recuperación de 403, incorpora dry-run read-only, distingue fuente caída de cero eventos, usa UTC, preserva goles 0 y no marca estadísticas parciales como completas. Sofascore respondió 403, sin ingesta.
 
 ## 2026-10-06 — datos históricos dudosos y guard de resolución
 
