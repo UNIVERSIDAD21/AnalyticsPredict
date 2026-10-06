@@ -1,9 +1,9 @@
 # CHANGELOG
 
-## 2026-10-06 — vista agregada NBA sin outcomes 0–0 (preparación)
+## 2026-10-06 — vista agregada NBA sin outcomes 0–0
 
-- Se prepara migración transaccional e idempotente de `vista_resumen_calibracion` para no computar pares de partidos 0–0, sin cambiar sus 12 columnas ni ocultar filas de la vista base. No aplicada a Neon en este cambio.
-- Lecturas de reporte de backtest y drift calculan con `persistir=False`; no generan precálculos implícitos. El corte read-only de Neon mostró cero filas en `metricas_calibracion`; el resumen SQL actual aún cuenta 2.582 pares, de los que 24 deben excluirse. H9 científico y bloque E siguen abiertos.
+- Se aplicó migración transaccional e idempotente de `vista_resumen_calibracion` para no computar pares de partidos 0–0. Postflight Neon: 2.582→2.558 pares; 12 columnas, owner/grants, vista base y 2.934 predicciones históricas intactos. Rollback preparado y ensayo en PostgreSQL efímero; no se usó en Neon.
+- Lecturas de reporte de backtest y drift calculan con `persistir=False`; no generan precálculos implícitos. `metricas_calibracion` y `alertas_calibracion` tenían cero filas en el corte read-only. H9 científico y bloque E siguen abiertos por verificación independiente de outcomes y prospectiva.
 
 ## 2026-10-06 — propagación de outcomes NBA 0–0 a KPI y backtest
 
