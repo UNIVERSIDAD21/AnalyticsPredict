@@ -9,7 +9,7 @@
 | Duplicados por ID de fuente NBA / fútbol | 0 / 0 | OK solo en IDs no nulos |
 | NBA sin `source` / 0–0 por clasificar | 219 (1,7154 %) / 231 | OBSERVAR; no borrar ni imputar |
 | Fútbol corners/disparos completos entre finalizados | 18.300 (77,421 %) / 18.896 (79,943 %) | OBSERVAR; bajo 95 % inicial por mercado |
-| P&L NBA incompatible con stake/cuota | 102 (79 GANADA + 23 PERDIDA) de 181 resultados binarios | CRITICO; ROI/profit no certificados |
+| P&L NBA no evaluable | 102 incompatibles con fórmula (79 GANADA + 23 PERDIDA) y 1 adicional con cuota del lado discrepante, de 181 resultados binarios | CRITICO; ROI/profit globales N/D/no certificados |
 | Cutoff NBA posterior al día de generación | 2.136 de 2.934 predicciones | CRITICO; no afirmar no-leakage |
 | Predicciones fútbol sin versión modelo/calibrador | 567 / 567 de 567 | CRITICO/OBSERVAR; no atribuir calibración |
 | Probabilidades fuera [0,1] NBA/fútbol | 0 / 0 | OK en columnas auditadas |

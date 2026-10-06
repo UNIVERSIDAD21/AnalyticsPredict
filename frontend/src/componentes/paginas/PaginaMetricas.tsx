@@ -278,7 +278,7 @@ export function PaginaMetricas() {
                 Métricas de bitácora
               </h3>
               <p className="text-xs text-texto-terciario">
-                Resumen histórico registrado; ROI y ganancia aún no certificados por inconsistencias entre stake, cuota e importe.
+                Resumen histórico registrado; ganancia no certificada. ROI N/D en cortes con P&amp;L incompatible.
               </p>
             </div>
             {metricasBitacora?.periodo && (
@@ -324,12 +324,14 @@ export function PaginaMetricas() {
                 </p>
               </div>
               <div className="tarjeta p-4 space-y-2">
-                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI registrado</p>
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI conciliable</p>
                 <p className="text-2xl font-mono text-neon-amarillo">
                   {formatearPorcentaje(resumenBitacora.roi)}
                 </p>
                 <p className="text-[11px] text-texto-terciario">
-                  Edge prom.: {formatearPorcentaje(resumenBitacora.edge_promedio, 2)}
+                  {resumenBitacora.n_pnl_no_evaluable > 0
+                    ? `${resumenBitacora.n_pnl_no_evaluable} filas P&L no evaluables en este corte`
+                    : `Edge prom.: ${formatearPorcentaje(resumenBitacora.edge_promedio, 2)}`}
                 </p>
               </div>
             </div>

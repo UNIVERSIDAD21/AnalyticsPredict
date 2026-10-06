@@ -6,7 +6,7 @@ import { Boton, Spinner } from '../atomos';
 import { obtenerResumenApuestas } from '../../servicios/bitacora';
 import { obtenerResumenCalidad1x2, type ResumenCalidad1x2Futbol } from '../../servicios/futbol/metricas';
 
-type Segmento = { deporte: string; total: number; pendientes: number; ganadas: number; perdidas: number; winrate: number | null; roi: number | null };
+type Segmento = { deporte: string; total: number; pendientes: number; ganadas: number; perdidas: number; winrate: number | null; roi: number | null; n_pnl_no_evaluable_nba?: number };
 
 export function PaginaDashboardUsuario() {
   const navegar = useNavigate();
@@ -46,7 +46,8 @@ export function PaginaDashboardUsuario() {
               <div key={dato.deporte} className="tarjeta p-6 space-y-2">
                 <h2 className="text-lg font-semibold text-texto-principal">{dato.deporte}</h2>
                 <p className="text-sm text-texto-secundario">{dato.total} registros · {dato.pendientes} pendientes · {dato.ganadas} ganadas · {dato.perdidas} perdidas</p>
-                <p className="text-sm text-texto-secundario">Win rate registrado: {dato.winrate == null ? 'N/D' : `${dato.winrate.toFixed(1)}%`} · ROI registrado: {dato.roi == null ? 'N/D' : `${dato.roi.toFixed(1)}%`}</p>
+                <p className="text-sm text-texto-secundario">Win rate registrado: {dato.winrate == null ? 'N/D' : `${dato.winrate.toFixed(1)}%`} · ROI conciliable: {dato.roi == null ? 'N/D' : `${dato.roi.toFixed(1)}%`}</p>
+                {dato.n_pnl_no_evaluable_nba ? <p className="text-xs text-neon-amarillo">{dato.n_pnl_no_evaluable_nba} registros NBA excluidos del ROI.</p> : null}
               </div>
             )) : <p className="text-texto-secundario">No hay resumen segmentado disponible.</p>}
           </section>

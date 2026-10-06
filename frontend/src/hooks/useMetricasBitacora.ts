@@ -15,6 +15,7 @@ interface MetricaMercadoBitacora {
   stake_total: number;
   ganancia_total: number;
   roi: number | null;
+  n_pnl_no_evaluable: number;
   edge_promedio: number | null;
   probabilidad_promedio: number | null;
 }
@@ -28,6 +29,7 @@ interface MetricaConfianzaBitacora {
   stake_total: number;
   ganancia_total: number;
   roi: number | null;
+  n_pnl_no_evaluable: number;
 }
 
 interface MetricaTemporalBitacora {
@@ -38,6 +40,7 @@ interface MetricaTemporalBitacora {
   win_rate: number | null;
   ganancia: number;
   roi: number | null;
+  n_pnl_no_evaluable: number;
 }
 
 interface RespuestaMetricasBitacora {
@@ -55,6 +58,7 @@ interface RespuestaMetricasBitacora {
     stake_total: number;
     ganancia_total: number;
     roi: number | null;
+    n_pnl_no_evaluable: number;
     edge_promedio: number | null;
     probabilidad_promedio: number | null;
   };

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — clasificación P&L NBA y ROI condicionado
+- Auditoría read-only y reproducible de 182 apuestas/181 resultados binarios: 102 importes incompatibles con fórmula neta y una fila adicional con cuota del lado discrepante; 103 no evaluables para ROI, 78 binarias aritméticamente conciliables pero no certificadas. Valores históricos intactos.
+- API de resumen y métricas devuelve ROI `null` en segmentos con P&L NBA no evaluable, expone conteos y conserva ganancia como importe registrado. Dashboard/Bitácora/Métricas muestran N/D y exclusiones. GET de bitácora deja de escribir contadores locales de contrato.
+- Suite backend Python 3.12/PostgreSQL sintético 657 passed, 0 failed, 0 skipped; frontend 16 tests, lint y build verdes. Dictamen analítico sigue **NO CERTIFICADO** por procedencia y temporalidad.
+
 ## 2026-10-06 — serving NBA sin entrenamiento implícito
 - Startup/reload y GET de salud/modelo cargan solo artefacto versionado fuera del repositorio; entrenamiento, registro y recarga son operaciones explícitas. GET de explicación deja de escribir telemetría en BD.
 - Suite local Python 3.12/PG sintético 651 passed, 0 failed, 0 skipped; CI de PR #167 (`37534587737`) y rama (`37534829259`) 4/4 verdes.

@@ -90,6 +90,23 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 
+# Auditoría aritmética, no certificación de cuota/stake/outcome. Sin DML.
+_PNL_NBA_NO_EVALUABLE_SQL = """(
+    resultado IN ('GANADA', 'PERDIDA', 'PUSH', 'ANULADA')
+    AND NOT COALESCE(
+        stake > 0 AND ganancia IS NOT NULL
+        AND (resultado NOT IN ('GANADA', 'PERDIDA') OR cuota > 1)
+        AND ABS(ganancia - CASE
+            WHEN resultado = 'GANADA' THEN stake * (cuota - 1)
+            WHEN resultado = 'PERDIDA' THEN -stake ELSE 0 END) <= 0.02
+        AND (resultado NOT IN ('GANADA', 'PERDIDA')
+             OR CASE WHEN lado = 'OVER' THEN cuota_over
+                     WHEN lado = 'UNDER' THEN cuota_under END IS NULL
+             OR ABS(cuota - CASE WHEN lado = 'OVER' THEN cuota_over
+                                 WHEN lado = 'UNDER' THEN cuota_under END) <= 0.02),
+        FALSE)
+)"""
+
 BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
 
 BITACORA_USAGE_PATH = Path(
@@ -98,25 +115,6 @@ BITACORA_USAGE_PATH = Path(
         os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "bitacora_contract_usage.json")),
     )
 )
-
-
-def _registrar_uso_contrato(version: str) -> None:
-    """Telemetría simple de uso de contrato bitácora (v2 vs legacy)."""
-    try:
-        BITACORA_USAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        today = date.today().isoformat()
-        if BITACORA_USAGE_PATH.exists():
-            data = json.loads(BITACORA_USAGE_PATH.read_text(encoding="utf-8"))
-        else:
-            data = {"by_date": {}}
-
-        by_date = data.setdefault("by_date", {})
-        row = by_date.setdefault(today, {"legacy": 0, "v2": 0})
-        row["legacy" if version == "legacy" else "v2"] += 1
-
-        BITACORA_USAGE_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        return
 
 
 def _leer_uso_contrato() -> dict:
@@ -139,8 +137,6 @@ def _aplicar_headers_deprecacion(response: Response, endpoint: str) -> None:
 
 
 def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, endpoint: str) -> dict:
-    _registrar_uso_contrato(version)
-
     if version == "legacy":
         _aplicar_headers_deprecacion(response, endpoint)
         return payload_legacy
@@ -446,15 +442,18 @@ async def resumen_apuestas(
             with conexion.cursor(row_factory=dict_row) as cursor:
                 # Consulta unificada que combina apuestas NBA/base, fútbol y combinadas.
                 cursor.execute(
-                    """
+                    f"""
                     WITH apuestas_unificadas AS (
-                        SELECT 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
+                        SELECT 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado,
+                               {_PNL_NBA_NO_EVALUABLE_SQL} AS pnl_no_evaluable_nba
                         FROM apuestas
                         UNION ALL
-                        SELECT 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia, resultado::text AS resultado
+                        SELECT 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia,
+                               resultado::text AS resultado, false AS pnl_no_evaluable_nba
                         FROM apuestas_futbol
                         UNION ALL
-                        SELECT 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
+                        SELECT 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia,
+                               resultado, false AS pnl_no_evaluable_nba
                         FROM apuestas_combinadas
                     ),
                     resumen_global AS (
@@ -468,6 +467,7 @@ async def resumen_apuestas(
                             COUNT(*) FILTER (WHERE resultado = 'ANULADA') AS anuladas,
                             COALESCE(SUM(stake), 0) AS stake_total,
                             COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                            COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
                             CASE
                                 WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
                                 THEN ROUND(
@@ -478,6 +478,7 @@ async def resumen_apuestas(
                                 ELSE NULL
                             END AS winrate,
                             CASE
+                                WHEN COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) > 0 THEN NULL
                                 WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
                                 THEN ROUND(
                                     100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
@@ -497,6 +498,7 @@ async def resumen_apuestas(
                             COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
                             COALESCE(SUM(stake), 0) AS stake_total,
                             COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                            COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
                             CASE
                                 WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
                                 THEN ROUND(
@@ -507,6 +509,7 @@ async def resumen_apuestas(
                                 ELSE NULL
                             END AS winrate,
                             CASE
+                                WHEN COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) > 0 THEN NULL
                                 WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
                                 THEN ROUND(
                                     100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
@@ -526,6 +529,7 @@ async def resumen_apuestas(
                             COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
                             COALESCE(SUM(stake), 0) AS stake_total,
                             COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                            COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
                             CASE
                                 WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
                                 THEN ROUND(
@@ -536,6 +540,7 @@ async def resumen_apuestas(
                                 ELSE NULL
                             END AS winrate,
                             CASE
+                                WHEN COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) > 0 THEN NULL
                                 WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
                                 THEN ROUND(
                                     100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
@@ -1173,6 +1178,7 @@ class MetricaMercadoBitacora(BaseModel):
     stake_total: float
     ganancia_total: float
     roi: Optional[float] = None
+    n_pnl_no_evaluable: int = 0
     edge_promedio: Optional[float] = None
     probabilidad_promedio: Optional[float] = None
 
@@ -1188,6 +1194,7 @@ class MetricaConfianzaBitacora(BaseModel):
     stake_total: float
     ganancia_total: float
     roi: Optional[float] = None
+    n_pnl_no_evaluable: int = 0
 
 
 class MetricaTemporalBitacora(BaseModel):
@@ -1200,6 +1207,7 @@ class MetricaTemporalBitacora(BaseModel):
     win_rate: Optional[float] = None
     ganancia: float
     roi: Optional[float] = None
+    n_pnl_no_evaluable: int = 0
 
 
 class RespuestaMetricasBitacora(BaseModel):
@@ -1279,6 +1287,7 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
                         COALESCE(SUM(stake), 0) AS stake_total,
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable,
                         AVG(edge_real) FILTER (WHERE edge_real IS NOT NULL) AS edge_promedio,
                         AVG(probabilidad_sistema) FILTER (WHERE probabilidad_sistema IS NOT NULL) AS prob_promedio
                     FROM apuestas
@@ -1293,6 +1302,7 @@ async def obtener_metricas_bitacora(
                 perdidas = resumen_row.get("perdidas", 0)
                 stake_total = float(resumen_row.get("stake_total", 0))
                 ganancia_total = float(resumen_row.get("ganancia_total", 0))
+                no_evaluable = int(resumen_row.get("n_pnl_no_evaluable") or 0)
 
                 resumen_global = {
                     "total": total,
@@ -1302,13 +1312,19 @@ async def obtener_metricas_bitacora(
                     "win_rate": round(ganadas / (ganadas + perdidas), 4) if (ganadas + perdidas) > 0 else None,
                     "stake_total": stake_total,
                     "ganancia_total": ganancia_total,
-                    "roi": round(ganancia_total / stake_total, 4) if stake_total > 0 else None,
+                    "roi": round(ganancia_total / stake_total, 4) if stake_total > 0 and no_evaluable == 0 else None,
+                    "n_pnl_no_evaluable": no_evaluable,
                     "edge_promedio": round(float(resumen_row.get("edge_promedio") or 0), 4) or None,
                     "probabilidad_promedio": round(float(resumen_row.get("prob_promedio") or 0), 4) or None,
                 }
 
                 if total < 30:
                     advertencias.append(f"Solo {total} apuestas resueltas. Mínimo recomendado: 30.")
+                if no_evaluable:
+                    advertencias.append(
+                        f"{no_evaluable} filas NBA tienen P&L no evaluable; ROI del corte es N/D. "
+                        "Ganancia total conserva importes registrados, no certificados."
+                    )
 
                 # 2. Por mercado
                 cursor.execute(
@@ -1321,6 +1337,7 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
                         COALESCE(SUM(stake), 0) AS stake_total,
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable,
                         AVG(edge_real) FILTER (WHERE edge_real IS NOT NULL) AS edge_promedio,
                         AVG(probabilidad_sistema) FILTER (WHERE probabilidad_sistema IS NOT NULL) AS prob_promedio
                     FROM apuestas
@@ -1336,6 +1353,7 @@ async def obtener_metricas_bitacora(
                     m_perdidas = row["perdidas"]
                     m_stake = float(row["stake_total"])
                     m_ganancia = float(row["ganancia_total"])
+                    m_no_evaluable = int(row.get("n_pnl_no_evaluable") or 0)
                     por_mercado.append(
                         MetricaMercadoBitacora(
                             mercado=row["mercado"],
@@ -1346,7 +1364,8 @@ async def obtener_metricas_bitacora(
                             win_rate=round(m_ganadas / (m_ganadas + m_perdidas), 4) if (m_ganadas + m_perdidas) > 0 else None,
                             stake_total=m_stake,
                             ganancia_total=m_ganancia,
-                            roi=round(m_ganancia / m_stake, 4) if m_stake > 0 else None,
+                            roi=round(m_ganancia / m_stake, 4) if m_stake > 0 and m_no_evaluable == 0 else None,
+                            n_pnl_no_evaluable=m_no_evaluable,
                             edge_promedio=round(float(row["edge_promedio"] or 0), 4) or None,
                             probabilidad_promedio=round(float(row["prob_promedio"] or 0), 4) or None,
                         )
@@ -1361,7 +1380,8 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
                         COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
                         COALESCE(SUM(stake), 0) AS stake_total,
-                        COALESCE(SUM(ganancia), 0) AS ganancia_total
+                        COALESCE(SUM(ganancia), 0) AS ganancia_total,
+                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable
                     FROM apuestas
                     WHERE {where_sql} AND confianza_sistema IS NOT NULL
                     GROUP BY confianza_sistema
@@ -1380,6 +1400,7 @@ async def obtener_metricas_bitacora(
                     c_perdidas = row["perdidas"]
                     c_stake = float(row["stake_total"])
                     c_ganancia = float(row["ganancia_total"])
+                    c_no_evaluable = int(row.get("n_pnl_no_evaluable") or 0)
                     por_confianza.append(
                         MetricaConfianzaBitacora(
                             confianza=row["confianza"],
@@ -1389,7 +1410,8 @@ async def obtener_metricas_bitacora(
                             win_rate=round(c_ganadas / (c_ganadas + c_perdidas), 4) if (c_ganadas + c_perdidas) > 0 else None,
                             stake_total=c_stake,
                             ganancia_total=c_ganancia,
-                            roi=round(c_ganancia / c_stake, 4) if c_stake > 0 else None,
+                            roi=round(c_ganancia / c_stake, 4) if c_stake > 0 and c_no_evaluable == 0 else None,
+                            n_pnl_no_evaluable=c_no_evaluable,
                         )
                     )
 
@@ -1402,7 +1424,8 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
                         COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
                         COALESCE(SUM(ganancia), 0) AS ganancia,
-                        COALESCE(SUM(stake), 0) AS stake_total
+                        COALESCE(SUM(stake), 0) AS stake_total,
+                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable
                     FROM apuestas
                     WHERE {where_sql} AND fecha_partido IS NOT NULL
                     GROUP BY TO_CHAR(fecha_partido, 'YYYY-MM')
@@ -1417,6 +1440,7 @@ async def obtener_metricas_bitacora(
                     t_perdidas = row["perdidas"]
                     t_ganancia = float(row["ganancia"])
                     t_stake = float(row["stake_total"])
+                    t_no_evaluable = int(row.get("n_pnl_no_evaluable") or 0)
                     por_mes.append(
                         MetricaTemporalBitacora(
                             periodo=row["periodo"],
@@ -1425,7 +1449,8 @@ async def obtener_metricas_bitacora(
                             perdidas=t_perdidas,
                             win_rate=round(t_ganadas / (t_ganadas + t_perdidas), 4) if (t_ganadas + t_perdidas) > 0 else None,
                             ganancia=t_ganancia,
-                            roi=round(t_ganancia / t_stake, 4) if t_stake > 0 else None,
+                            roi=round(t_ganancia / t_stake, 4) if t_stake > 0 and t_no_evaluable == 0 else None,
+                            n_pnl_no_evaluable=t_no_evaluable,
                         )
                     )
 

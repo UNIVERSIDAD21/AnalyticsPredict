@@ -27,7 +27,8 @@
 - [x] Verificar CI del commit de código y frontend/Compose: PR run `37534587737` y rama run `37534829259`, ambos 4/4.
 - [x] Crear artefacto operativo por entrenamiento explícito y comprobar reload real sin nueva versión en Neon: modelo ID 2122, versión 2111; tabla pasó 2.121→2.122 por CLI y permaneció en 2.122 tras reload.
 - [x] Eliminar escritura de telemetría en `GET /api/prediccion/{id}/explicacion`; `Sunset` conserva lectura de los contadores legados y la emisión registra un log estructurado local.
-- [ ] Completar auditoría de llamadas indirectas de todos los GET del sistema; las pruebas actuales cubren salud/estado/equipos, explicación y contratos de bitácora existentes.
+- [x] Eliminar el incremento de telemetría a archivo invocado por cada GET de bitácora; el endpoint de consulta de uso conserva lectura histórica. Rutas activas auditadas por DML/archivo en GET y helpers locales; no se encontraron otras escrituras persistentes alcanzables.
+- [ ] Extender la auditoría a dependencias externas/dinámicas antes de afirmar ausencia absoluta de cualquier side effect; observabilidad en memoria sí registra latencia HTTP.
 - [x] Registrar hora real del inicio/fin del ajuste explícito, separada de fechas de partidos.
 - [ ] Demostrar `training_outcomes_available_at` y validación out-of-sample antes de considerar el modelo científicamente reproducible.
 

@@ -64,13 +64,8 @@ def test_respuesta_contrato_bitacora_v2_y_legacy(tmp_path, monkeypatch):
     )
     assert "/api/bitacora/00000000-0000-0000-0000-000000000000/resultado?version=v2" in response_resultado.headers["Link"]
 
-    import json
-
-    raw = usage_path.read_text(encoding="utf-8")
-    data = json.loads(raw)
-    today_row = next(iter(data["by_date"].values()))
-    assert today_row["v2"] >= 1
-    assert today_row["legacy"] >= 1
+    assert not usage_path.exists(), "GET no debe persistir telemetría al serializar contrato"
+    assert rutas_bitacora._leer_uso_contrato() == {"by_date": {}}
 
 
 def test_leer_uso_contrato_bitacora_vacio(tmp_path, monkeypatch):
