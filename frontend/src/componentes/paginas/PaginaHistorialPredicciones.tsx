@@ -21,7 +21,7 @@ type PeriodoSeleccion = '7' | '30' | '90' | 'rango';
 const TAMANO_PAGINA = 10;
 const MERCADOS: MercadoMetricas[] = ['Q1', 'Q2', 'Q3', 'Q4', 'COMPLETO'];
 
-const ESTADOS: EstadoPrediccion[] = ['GANADA', 'PERDIDA', 'PUSH', 'PENDIENTE'];
+const ESTADOS: EstadoPrediccion[] = ['GANADA', 'PERDIDA', 'PUSH', 'PENDIENTE', 'NO_EVALUABLE'];
 
 function formatearFechaISO(fecha: Date): string {
   return fecha.toISOString().slice(0, 10);
@@ -42,6 +42,7 @@ const badgeEstado: Record<EstadoPrediccion, string> = {
   PERDIDA: 'text-neon-rojo border-neon-rojo/40',
   PUSH: 'text-advertencia-500 border-advertencia-500/40',
   PENDIENTE: 'text-texto-terciario border-neon-cyan/20',
+  NO_EVALUABLE: 'text-amber-300 border-amber-500/40',
 };
 
 export function PaginaHistorialPredicciones() {
@@ -262,7 +263,7 @@ export function PaginaHistorialPredicciones() {
 
         {estadoPeticion === 'exito' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="tarjeta p-4 space-y-1">
                 <p className="text-xs uppercase tracking-widest text-texto-secundario">Total</p>
                 <p className="text-2xl font-mono text-neon-cyan">{resumen?.total ?? 0}</p>
@@ -278,6 +279,10 @@ export function PaginaHistorialPredicciones() {
               <div className="tarjeta p-4 space-y-1">
                 <p className="text-xs uppercase tracking-widest text-texto-secundario">Pendientes</p>
                 <p className="text-2xl font-mono text-advertencia-500">{resumen?.pendientes ?? 0}</p>
+              </div>
+              <div className="tarjeta p-4 space-y-1">
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">Sin resultado acreditado</p>
+                <p className="text-2xl font-mono text-amber-300">{resumen?.no_evaluables ?? 0}</p>
               </div>
               <div className="tarjeta p-4 space-y-1">
                 <p className="text-xs uppercase tracking-widest text-texto-secundario">Win rate</p>

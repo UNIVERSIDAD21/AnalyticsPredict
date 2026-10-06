@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — propagación de outcomes NBA 0–0 a KPI y backtest
+
+- Salud, calidad por mercado y drift distinguen outcome registrado de evaluable; historial muestra `NO_EVALUABLE` y excluye esos casos de ganadas/perdidas. El gate de calidad NBA, recalibración, resumen/curva/reporte de backtest y estadísticas de resolución ya no tratan 0–0 como resultado válido.
+- Reporte de backtest deja de consultar alias de equipos ausentes en la vista H9 productiva y conserva la fila dudosa rotulada, sin transformarla en PUSH. Cotejo read-only con Neon: 24 exclusiones en salud/historial/backtest; 2.558 outcomes NBA evaluables. Certificación y vista SQL agregada histórica siguen pendientes.
+
 ## 2026-10-06 — exclusión analítica parcial de resultados NBA 0–0
 
 - Auditor read-only conserva 2.934 predicciones, excluye 24 outcomes no acreditados y deja 2.558 pares raw descriptivos. Cálculo/curva de calibración enmascaran esos resultados, muestran su conteo y GET recalcula sin precálculo legacy ni UPSERT.
