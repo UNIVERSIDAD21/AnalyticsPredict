@@ -2,7 +2,7 @@
 
 **Estado:** diseño; ninguna migración aplicada a BD. La cifra local de usuarios de la auditoría no prueba que la BD operativa sea single-user.
 
-**Intento de inventario 2026-10-05:** `DATABASE_URL` del proyecto apunta a destino remoto; la conexión con `connect_timeout` y transacción de solo lectura falló por timeout antes de cualquier consulta. No se imprimió ni guardó la URL o valores de datos. Los conteos y FKs operativos siguen desconocidos.
+**Inventario 2026-10-05:** el primer intento a `DATABASE_URL` remota dio timeout; el segundo conectó en transacción de solo lectura. Se observaron 4 usuarios, 3 IDs con apuestas y 3 FKs de bitácora hacia `usuarios`; detalle seudonimizado en `INVENTARIO_DATOS_SINGLE_USER_2026-10-05.md`. No se imprimió ni guardó la URL o valores de filas. La propiedad de U1–U4 sigue sin determinarse.
 
 ## Descubrimiento de solo lectura
 

@@ -32,4 +32,4 @@
 
 ## Riesgo abierto
 
-La rama actual todavía monta auth y pagos; este documento no certifica conversión. Una conexión de solo lectura a la BD remota configurada dio timeout y no hubo inspección de tablas; tampoco se verificó topología de despliegue remoto. En el host local se observaron servicios ligados a `127.0.0.1:8000` y `:5173`; ello no acredita otros entornos. No desactivar auth en un servicio Internet hasta cerrar ambos puntos.
+La rama actual todavía monta auth y pagos; este documento no certifica conversión. Neon respondió después de un timeout transitorio: hay 4 usuarios y 3 IDs con apuestas, por lo que falta clasificar propiedad histórica y ensayar migración. No se verificó topología de despliegue remoto. En el host local se observaron servicios ligados a `127.0.0.1:8000` y `:5173`; ello no acredita otros entornos. No desactivar auth en un servicio Internet hasta cerrar el perímetro.

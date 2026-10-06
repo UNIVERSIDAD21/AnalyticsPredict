@@ -5,6 +5,7 @@
 - Creado snapshot de recuperación e inventario de auth, pagos, usuarios, rutas, datos y frontend; arquitectura y plan de migración documentados sin tocar BD.
 - Endurecidos defaults locales de desarrollo/Compose a loopback y desactivada la liberación automática de puertos en `dev.sh`.
 - La retirada de auth/pagos/tiers y la migración de datos siguen pendientes de perímetro privado comprobado y ensayo aislado; no se declaran resueltos H1–H3.
+- Inventario posterior de Neon en transacción de solo lectura: 4 usuarios, 3 IDs con apuestas y FKs de bitácora; la propiedad histórica continúa sin clasificar. Ver `docs/reactivacion_single_user/INVENTARIO_DATOS_SINGLE_USER_2026-10-05.md`.
 
 ## 2026-04-03
 - Bloque 20B fútbol (auditoría y priorización de la familia de GOLES):

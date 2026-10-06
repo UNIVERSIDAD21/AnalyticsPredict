@@ -6,7 +6,7 @@
 
 - Rama de recuperación `reactivacion/snapshot-2026-10-05` en el commit anterior; rama de trabajo `reactivacion/single-user` creada desde el mismo commit.
 - El árbol ya tenía **30 cambios exclusivos de modo** `100755 → 100644`, 0 líneas de contenido. No forman parte de esta reactivación y no se incluirán en sus commits.
-- Inventario por inspección de código, rutas, stores, ejemplos de entorno y tests. La conexión de solo lectura a la BD remota configurada terminó en **timeout**, sin ejecutar consultas; no se verificó despliegue remoto. La auditoría previa solo contó filas y leyó esquemas de SQLite local en modo inmutable.
+- Inventario por inspección de código, rutas, stores, ejemplos de entorno y tests. Tras un timeout transitorio, se completó inventario **solo lectura** de Neon: ver `INVENTARIO_DATOS_SINGLE_USER_2026-10-05.md`. No se verificó despliegue remoto. La auditoría previa solo contó filas y leyó esquemas de SQLite local en modo inmutable.
 - Las etiquetas describen **destino propuesto**, no una eliminación ya ejecutada. `MIGRAR` exige copia/verificación de datos; `REVISAR` exige prueba de consumidores o datos.
 
 ## Backend: rutas y servicios
@@ -66,7 +66,7 @@
 
 ## Bloqueos de verificación antes de eliminación física
 
-1. Inventariar en la BD operativa, **solo lectura**, número de IDs distintos, FKs, conteos por tabla, nulos y propiedad de registros. La SQLite versionada no prueba unicidad real.
+1. Completar clasificación de propiedad de los **4 usuarios y 3 IDs con apuestas** observados en Neon, más vistas/consumidores no cubiertos por el primer inventario. El conteo y FKs iniciales están documentados; la SQLite versionada no prueba unicidad real.
 2. Definir y comprobar perímetro privado en cada entorno activo. Sin esta evidencia, desmontar auth abriría escrituras sensibles públicamente.
 3. Ensayar migración sobre copia aislada, comparar conteos/checksums y referencias; no borrar tablas/archivos históricos en esta fase.
 4. Ejecutar contratos FE/BE y pruebas de NBA, fútbol y bitácora con dependencias reproducibles antes de publicar retirada de rutas.

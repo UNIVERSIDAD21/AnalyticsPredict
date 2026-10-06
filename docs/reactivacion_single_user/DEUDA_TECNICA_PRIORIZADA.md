@@ -5,7 +5,7 @@
 | Prioridad | Trabajo | Criterio verificable | Estado |
 |---|---|---|---|
 | P0 | Perímetro privado de cada entorno antes de retirar auth | Backend sensible inaccesible fuera de loopback/VPN/access proxy; topología y prueba registradas | Local observado en loopback; staging/remoto sin verificar |
-| P0 | Inventario y migración de `usuario_id`/FK | Cardinalidad/propiedad, ensayo aislado y conteos idénticos | BD remota timeout; pendiente |
+| P0 | Inventario y migración de `usuario_id`/FK | Cardinalidad/propiedad, ensayo aislado y conteos idénticos | Conteos/FKs Neon leídos; 4 usuarios y 3 IDs con apuestas, propiedad sin clasificar |
 | P0 | Retirar login/auth, pagos, MP, suscripciones y tiers sin perder análisis | OpenAPI/UI sin superficies comerciales, headers/tokens ni gates; NBA/fútbol/bitácora íntegros | Pendiente |
 | P1 | H6 escala `hit_rate_sin_push` | Casos 0/50/56/100%, backend/FE coherentes | Pendiente |
 | P1 | H7 envelopes y estados de bitácora | Lista y tarjetas no vacías, error no convertido a cero | Pendiente |

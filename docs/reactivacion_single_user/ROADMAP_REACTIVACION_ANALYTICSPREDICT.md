@@ -5,7 +5,7 @@
 | Bloque | Objetivo | Estado al 2026-10-05 | Gate para avanzar |
 |---|---|---|---|
 | A0 | Snapshot, mapa de impacto, arquitectura, endpoints y migración | Documentado; rama de recuperación creada | Verificar mapa contra código al ejecutar cambios |
-| A1 | Perímetro privado en todos los entornos y datos | Defaults de desarrollo/Compose ligados a loopback; BD remota timeout, despliegue no verificado | Topología comprobada + inventario read-only de FKs/cardinalidad |
+| A1 | Perímetro privado en todos los entornos y datos | Defaults de desarrollo/Compose ligados a loopback; inventario Neon read-only completado, despliegue no verificado | Topología comprobada + clasificación de propiedad U1–U4 |
 | A2 | Retirar auth/login y headers/tokens | Pendiente | API y UI sin sesión; operaciones sensibles privadas |
 | A3 | Retirar pagos, suscripciones y tiers; conservar profundidad analítica | Pendiente | Superficies comerciales ausentes, contratos analíticos pasan |
 | A4 | Migrar configuración, bitácora y datos históricos | Pendiente | Ensayo aislado, conteos/checksums y rollback; aplicar real solo autorizado |
@@ -16,7 +16,7 @@
 
 ## Dependencia inmediata
 
-La conexión de solo lectura al destino remoto configurado terminó en timeout; no hubo consultas. Es necesario restablecer acceso protegido a esa BD **o** aportar snapshot aislado verificable para confirmar propiedad histórica y FKs. También se debe verificar si existe despliegue accesible fuera del host local antes de desmontar auth. Ningún cobro, ingesta o despliegue se usa como prueba de arranque.
+El timeout inicial de Neon fue transitorio. El inventario de solo lectura detectó varias identidades históricas; falta clasificar propiedad de registros y ensayar una copia aislada. También se debe verificar si existe despliegue accesible fuera del host local antes de desmontar auth. Ningún cobro, ingesta o despliegue se usa como prueba de arranque.
 
 ## Forma de cierre por bloque
 
