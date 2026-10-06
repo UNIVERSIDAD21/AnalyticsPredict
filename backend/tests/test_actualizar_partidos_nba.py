@@ -1,6 +1,20 @@
 from datetime import date
 
+import pytest
+
 from scripts import actualizar_partidos_nba as ingesta
+
+
+def test_espn_403_se_detiene_sin_reintentos(monkeypatch):
+    llamadas = []
+
+    class Respuesta:
+        status_code = 403
+
+    monkeypatch.setattr(ingesta.requests, 'get', lambda *args, **kwargs: llamadas.append(args) or Respuesta())
+    with pytest.raises(RuntimeError, match='SOURCE_UNAVAILABLE'):
+        ingesta.request_json(ingesta.ESPN_SCOREBOARD, {'dates': '20261006'})
+    assert len(llamadas) == 1
 
 
 def test_scoreboard_consulta_dias_individuales_y_descarta_no_finalizados(monkeypatch):

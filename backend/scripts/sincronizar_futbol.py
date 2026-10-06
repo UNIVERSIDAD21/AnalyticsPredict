@@ -3,11 +3,8 @@
 """
 Script de sincronización continua de datos de fútbol desde Sofascore.
 
-VERSIÓN CORREGIDA con:
-- Cliente inteligente anti-bot (curl_cffi)
-- Manejo correcto de rate limiting
-- Corrección de errores de base de datos
-- Sincronización de partidos pasados y futuros
+La fuente debe responder sin eludir protecciones. Un 403 termina el intento;
+no equivale a una jornada sin partidos.
 
 Uso:
     # Sincronizar últimos 7 días + próximos 14 días
@@ -23,7 +20,7 @@ Uso:
     python sincronizar_futbol.py --liga premier --dias 15 --solo-resultados
 
 Requisitos:
-    pip install psycopg[binary] python-dotenv curl_cffi
+    pip install psycopg[binary] python-dotenv requests
 """
 
 from __future__ import annotations
@@ -34,8 +31,7 @@ import os
 import sys
 import time
 import json
-import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -82,65 +78,39 @@ MAPEO_ESTADOS = {
 SOFASCORE_API_BASE = "https://api.sofascore.com/api/v1"
 
 # ============================================================================
-# CLIENTE HTTP CON MANEJO INTELIGENTE ANTI-BOT
+# CLIENTE HTTP: RESPETAR BLOQUEOS Y DISTINGUIR ERROR DE CERO EVENTOS
 # ============================================================================
 
 class SofascoreClientInteligente:
-    """Cliente HTTP para Sofascore con bypass de protecciones anti-bot."""
+    """Cliente de lectura que no sortea ni reintenta un bloqueo 403."""
     
     def __init__(self, min_intervalo: float = 2.0, timeout_segundos: float = 30.0):
         self.min_intervalo = min_intervalo
         self.ultima_peticion = 0
         self.session = None
-        self.usar_curl_cffi = False
         self.timeout_segundos = timeout_segundos
-        
-        # Contadores
+
         self.bloqueos_consecutivos = 0
         self.total_bloqueos = 0
         self.total_peticiones = 0
-        
-        # Inicializar sesión
-        try:
-            from curl_cffi import requests as curl_requests
-            self.session = curl_requests.Session(impersonate="chrome")
-            self.usar_curl_cffi = True
-            logger.info("✅ Usando curl_cffi (bypass anti-bot)")
-        except ImportError:
-            import requests
-            self.session = requests.Session()
-            self.session.headers.update({
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'application/json',
-                'Referer': 'https://www.sofascore.com/',
-            })
-            logger.warning("⚠️ curl_cffi no instalado. Instalar con: pip install curl_cffi")
+        self.ultimo_http_status: int | None = None
+        self.ultima_respuesta_exitosa_utc: str | None = None
+        self.ultimo_dato_valido_utc: str | None = None
+        self.fuente_no_disponible = False
+        import requests
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'AnalyticsPredict-source-client/1.0',
+            'Accept': 'application/json',
+        })
     
     def _rate_limit(self):
         """Aplica rate limiting."""
         ahora = time.time()
         transcurrido = ahora - self.ultima_peticion
         if transcurrido < self.min_intervalo:
-            time.sleep(self.min_intervalo - transcurrido + random.uniform(0.05, 0.25))
+            time.sleep(self.min_intervalo - transcurrido)
         self.ultima_peticion = time.time()
-    
-    def _manejar_bloqueo(self):
-        """Maneja un bloqueo 403 con pausas progresivas."""
-        self.bloqueos_consecutivos += 1
-        self.total_bloqueos += 1
-        
-        if self.bloqueos_consecutivos >= 5:
-            pausa = 60 * self.bloqueos_consecutivos
-            logger.warning(f"🔴 Bloqueo severo. Pausando {pausa//60} minutos...")
-            time.sleep(pausa)
-        elif self.bloqueos_consecutivos >= 3:
-            pausa = 30
-            logger.warning(f"🟡 Múltiples 403. Pausando {pausa} segundos...")
-            time.sleep(pausa)
-    
-    def _reiniciar_contadores(self):
-        """Reinicia contadores después de éxito."""
-        self.bloqueos_consecutivos = 0
     
     def get(self, endpoint: str, reintentos: int = 3) -> Optional[Dict]:
         """Hace una petición GET con manejo inteligente de errores."""
@@ -149,41 +119,40 @@ class SofascoreClientInteligente:
         
         for intento in range(reintentos):
             self._rate_limit()
-            
             try:
-                if self.usar_curl_cffi:
-                    response = self.session.get(url, timeout=self.timeout_segundos)
-                else:
-                    response = self.session.get(url, timeout=(8, self.timeout_segundos))
-                
+                response = self.session.get(url, timeout=(8, self.timeout_segundos))
+                self.ultimo_http_status = response.status_code
                 if response.status_code == 200:
-                    self._reiniciar_contadores()
-                    return response.json()
-                    
-                elif response.status_code == 403:
-                    if intento == 0:
-                        logger.warning(f"⚠️ 403 en {endpoint}")
-                    self._manejar_bloqueo()
-                    time.sleep(2 ** intento)
-                    
-                elif response.status_code == 404:
+                    payload = response.json()
+                    if isinstance(payload, dict):
+                        self.ultima_respuesta_exitosa_utc = datetime.now(timezone.utc).isoformat()
+                        return payload
+                    logger.error("JSON no cumple contrato en %s", endpoint)
+                    self.fuente_no_disponible = True
                     return None
-                else:
-                    logger.warning(f"HTTP {response.status_code} en {endpoint}")
-                    
-            except TimeoutError:
-                logger.warning(f"⏱️ Timeout en {endpoint} (>{self.timeout_segundos}s)")
-                time.sleep(2 ** intento)
-            except Exception as e:
-                logger.error(f"Error en {endpoint}: {e}")
+                if response.status_code == 403:
+                    self.bloqueos_consecutivos += 1
+                    self.total_bloqueos += 1
+                    self.fuente_no_disponible = True
+                    logger.error("SOURCE_UNAVAILABLE: HTTP 403 en %s; no se reintenta", endpoint)
+                    return None
+                if response.status_code == 404:
+                    self.fuente_no_disponible = True
+                    logger.error("SOURCE_UNAVAILABLE: endpoint no encontrado %s", endpoint)
+                    return None
+                logger.warning("HTTP %s en %s", response.status_code, endpoint)
+            except Exception as exc:
+                logger.warning("Error consultando %s: %s", endpoint, type(exc).__name__)
+            if intento + 1 < reintentos:
                 time.sleep(2 ** intento)
         
+        self.fuente_no_disponible = True
         return None
     
     def verificar_acceso(self) -> bool:
         """Verifica si tenemos acceso a Sofascore."""
         logger.info("🔍 Verificando acceso a Sofascore...")
-        datos = self.get('/unique-tournament/8/seasons')
+        datos = self.get('/unique-tournament/8/seasons', reintentos=1)
         if datos:
             logger.info("✅ Acceso a Sofascore OK")
             return True
@@ -347,18 +316,22 @@ def insertar_o_actualizar_partido(
             return False, False
         
         timestamp = partido_data.get('startTimestamp', 0)
-        fecha_partido = datetime.fromtimestamp(timestamp) if timestamp else datetime.now()
+        fecha_partido = datetime.fromtimestamp(timestamp, timezone.utc) if timestamp else datetime.now(timezone.utc)
         
         home_score = partido_data.get('homeScore', {})
         away_score = partido_data.get('awayScore', {})
         
         local_goles_1t = home_score.get('period1')
         local_goles_2t = home_score.get('period2')
-        local_goles_total = home_score.get('current') or home_score.get('normaltime')
+        local_goles_total = home_score.get('current')
+        if local_goles_total is None:
+            local_goles_total = home_score.get('normaltime')
         
         visitante_goles_1t = away_score.get('period1')
         visitante_goles_2t = away_score.get('period2')
-        visitante_goles_total = away_score.get('current') or away_score.get('normaltime')
+        visitante_goles_total = away_score.get('current')
+        if visitante_goles_total is None:
+            visitante_goles_total = away_score.get('normaltime')
         
         estado = MAPEO_ESTADOS.get(status.get('type', 'notstarted').lower(), 'PROGRAMADO')
         jornada = partido_data.get('roundInfo', {}).get('round')
@@ -435,6 +408,8 @@ def insertar_o_actualizar_partido(
 def actualizar_estadisticas_partido(conn, sofascore_id: int, stats: Dict) -> bool:
     """Actualiza las estadísticas de un partido."""
     try:
+        corners_completos = all(stats.get(k) is not None for k in ('corners_local_total', 'corners_visitante_total'))
+        disparos_completos = all(stats.get(k) is not None for k in ('disparos_local_total', 'disparos_visitante_total', 'disparos_local_arco', 'disparos_visitante_arco'))
         with conn.cursor() as cur:
             cur.execute("""
                 UPDATE partidos_futbol SET
@@ -452,7 +427,8 @@ def actualizar_estadisticas_partido(conn, sofascore_id: int, stats: Dict) -> boo
                     visitante_posesion = COALESCE(%s, visitante_posesion),
                     local_xg = COALESCE(%s, local_xg),
                     visitante_xg = COALESCE(%s, visitante_xg),
-                    datos_corners_completos = TRUE,
+                    datos_corners_completos = COALESCE(datos_corners_completos, FALSE) OR %s,
+                    datos_disparos_completos = COALESCE(datos_disparos_completos, FALSE) OR %s,
                     actualizado_en = NOW()
                 WHERE sofascore_match_id = %s
             """, (
@@ -470,6 +446,8 @@ def actualizar_estadisticas_partido(conn, sofascore_id: int, stats: Dict) -> boo
                 stats.get('posesion_visitante'),
                 stats.get('xg_local'),
                 stats.get('xg_visitante'),
+                corners_completos,
+                disparos_completos,
                 sofascore_id
             ))
             
@@ -492,7 +470,7 @@ def obtener_partidos_pasados(
     max_paginas: int = 10
 ) -> List[Dict]:
     """Obtiene partidos de los últimos N días."""
-    desde_fecha = datetime.now() - timedelta(days=dias)
+    desde_fecha = datetime.now(timezone.utc) - timedelta(days=dias)
     logger.info(f"Obteniendo partidos desde {desde_fecha.strftime('%Y-%m-%d')}...")
     
     partidos = []
@@ -512,7 +490,7 @@ def obtener_partidos_pasados(
         # Filtrar por fecha
         for evento in eventos:
             timestamp = evento.get('startTimestamp', 0)
-            fecha_partido = datetime.fromtimestamp(timestamp)
+            fecha_partido = datetime.fromtimestamp(timestamp, timezone.utc)
             
             if fecha_partido >= desde_fecha:
                 partidos.append(evento)
@@ -524,6 +502,7 @@ def obtener_partidos_pasados(
             break
     
     logger.info(f"✅ {len(partidos)} partidos pasados encontrados")
+    registrar_ultimo_evento(cliente, partidos)
     return partidos
 
 
@@ -535,7 +514,7 @@ def obtener_partidos_futuros(
     max_paginas: int = 5
 ) -> List[Dict]:
     """Obtiene partidos futuros."""
-    hasta_fecha = datetime.now() + timedelta(days=dias)
+    hasta_fecha = datetime.now(timezone.utc) + timedelta(days=dias)
     logger.info(f"Obteniendo partidos hasta {hasta_fecha.strftime('%Y-%m-%d')}...")
     
     partidos = []
@@ -555,7 +534,7 @@ def obtener_partidos_futuros(
         # Filtrar por fecha
         for evento in eventos:
             timestamp = evento.get('startTimestamp', 0)
-            fecha_partido = datetime.fromtimestamp(timestamp)
+            fecha_partido = datetime.fromtimestamp(timestamp, timezone.utc)
             
             if fecha_partido <= hasta_fecha:
                 partidos.append(evento)
@@ -567,7 +546,19 @@ def obtener_partidos_futuros(
             break
     
     logger.info(f"✅ {len(partidos)} partidos futuros encontrados")
+    registrar_ultimo_evento(cliente, partidos)
     return partidos
+
+
+def registrar_ultimo_evento(cliente: SofascoreClientInteligente, partidos: List[Dict]) -> None:
+    """La fecha de dato válido es la del evento, no la del último HTTP 200."""
+    timestamps = [p.get('startTimestamp') for p in partidos if isinstance(p.get('startTimestamp'), (int, float))]
+    if not timestamps:
+        return
+    mas_reciente = datetime.fromtimestamp(max(timestamps), timezone.utc)
+    anterior = cliente.ultimo_dato_valido_utc
+    if anterior is None or mas_reciente > datetime.fromisoformat(anterior):
+        cliente.ultimo_dato_valido_utc = mas_reciente.isoformat()
 
 
 def obtener_estadisticas_partido(cliente: SofascoreClientInteligente, partido_id: int) -> Optional[Dict]:
@@ -638,7 +629,8 @@ def sincronizar_liga(
     dias_pasados: int,
     dias_futuros: int,
     incluir_futuros: bool,
-    solo_resultados: bool
+    solo_resultados: bool,
+    dry_run: bool = False,
 ) -> Dict[str, Any]:
     """Sincroniza una liga completa."""
     liga_id = LIGAS_SOFASCORE[codigo_liga]
@@ -653,12 +645,15 @@ def sincronizar_liga(
         'actualizados': 0,
         'con_estadisticas': 0,
         'errores': 0,
+        'estado_fuente': 'NO_DATA',
+        'eventos_observados': 0,
     }
     
     # Obtener competición
     competicion_id = obtener_competicion_id(conn, liga_id)
     if not competicion_id:
         logger.error(f"Competición no encontrada en BD")
+        resultado['estado_fuente'] = 'CONFIG_UNAVAILABLE'
         resultado['errores'] += 1
         return resultado
     
@@ -666,6 +661,7 @@ def sincronizar_liga(
     temporada = obtener_temporada_activa(conn, competicion_id)
     if not temporada:
         logger.error(f"No hay temporada activa")
+        resultado['estado_fuente'] = 'CONFIG_UNAVAILABLE'
         resultado['errores'] += 1
         return resultado
     
@@ -687,10 +683,21 @@ def sincronizar_liga(
         )
     
     todos_partidos = partidos_pasados + partidos_futuros
+    if cliente.fuente_no_disponible:
+        resultado['estado_fuente'] = 'SOURCE_UNAVAILABLE'
+        resultado['errores'] += 1
+        logger.error("SOURCE_UNAVAILABLE: no se ingiere un lote parcial")
+        return resultado
+    resultado['eventos_observados'] = len(todos_partidos)
     logger.info(f"Total: {len(todos_partidos)} partidos a procesar")
     
     if not todos_partidos:
-        logger.warning("No se encontraron partidos")
+        logger.warning("NO_DATA: respuesta válida sin partidos en la ventana")
+        return resultado
+
+    resultado['estado_fuente'] = 'OK'
+    if dry_run:
+        logger.info("DRY-RUN: %d eventos observados; cero escrituras", len(todos_partidos))
         return resultado
     
     # Sincronizar equipos
@@ -734,6 +741,11 @@ def sincronizar_liga(
                 if estado == 'finished':
                     sofascore_id = partido.get('id')
                     stats = obtener_estadisticas_partido(cliente, sofascore_id)
+                    if cliente.fuente_no_disponible:
+                        resultado['estado_fuente'] = 'SOURCE_UNAVAILABLE'
+                        resultado['errores'] += 1
+                        logger.error("SOURCE_UNAVAILABLE: se detiene lote parcial de estadísticas")
+                        return resultado
                     if stats and actualizar_estadisticas_partido(conn, sofascore_id, stats):
                         resultado['con_estadisticas'] += 1
         else:
@@ -790,6 +802,8 @@ def main():
         action='store_true',
         help='Solo actualizar resultados, no estadísticas detalladas'
     )
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Consultar fuente y catálogo sin escribir en BD')
     
     parser.add_argument(
         '--intervalo',
@@ -848,6 +862,8 @@ def main():
     # Conectar a BD
     try:
         conn = obtener_conexion()
+        if args.dry_run:
+            conn.execute('SET TRANSACTION READ ONLY')
         print("✅ Conexión a BD establecida")
     except Exception as e:
         print(f"❌ Error conectando a BD: {e}")
@@ -859,12 +875,7 @@ def main():
     # Verificar acceso
     if not cliente.verificar_acceso():
         print()
-        print("🔴 SOFASCORE ESTÁ BLOQUEANDO TUS PETICIONES")
-        print()
-        print("   SOLUCIONES:")
-        print("   1. Instala curl_cffi: pip install curl_cffi")
-        print("   2. Espera 1-2 horas e intenta de nuevo")
-        print("   3. Usa una VPN para cambiar tu IP")
+        print("SOURCE_UNAVAILABLE: acceso/contrato del proveedor no utilizable; sin ingesta.")
         print()
         cliente.cerrar()
         conn.close()
@@ -888,14 +899,18 @@ def main():
             resultado = sincronizar_liga(
                 conn, cliente, codigo_liga,
                 args.dias, args.dias_futuros,
-                incluir_futuros, args.solo_resultados
+                incluir_futuros, args.solo_resultados, args.dry_run
             )
+            print(f"{codigo_liga}: {resultado['estado_fuente']} "
+                  f"({resultado['eventos_observados']} eventos observados)")
             
             total['procesados'] += resultado['procesados']
             total['insertados'] += resultado['insertados']
             total['actualizados'] += resultado['actualizados']
             total['con_estadisticas'] += resultado['con_estadisticas']
             total['errores'] += resultado['errores']
+            if resultado['estado_fuente'] in ('SOURCE_UNAVAILABLE', 'CONFIG_UNAVAILABLE'):
+                break
             
             logger.info(
                 f"Resultados: +{resultado['insertados']} nuevos, "
@@ -927,6 +942,8 @@ def main():
     print()
     print(f"📡 Peticiones totales: {cliente.total_peticiones}")
     print(f"🔴 Bloqueos 403: {cliente.total_bloqueos}")
+    print(f"Última respuesta 200 UTC: {cliente.ultima_respuesta_exitosa_utc or 'N/D'}")
+    print(f"Último evento válido UTC: {cliente.ultimo_dato_valido_utc or 'N/D'}")
     print("=" * 70)
     
     return 0 if total['errores'] == 0 else 1

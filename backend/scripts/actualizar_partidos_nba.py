@@ -61,6 +61,8 @@ def request_json(url: str, params: dict[str, Any], retries: int = 5, sleep: floa
     for attempt in range(retries):
         try:
             resp = requests.get(url, params=params, headers=HEADERS, timeout=30)
+            if resp.status_code in {401, 403}:
+                raise RuntimeError(f"SOURCE_UNAVAILABLE: ESPN HTTP {resp.status_code}")
             if resp.status_code in {429, 500, 502, 503, 504}:
                 retry_after = resp.headers.get("Retry-After")
                 wait = float(retry_after) if retry_after else sleep * (2 ** attempt)
@@ -68,8 +70,13 @@ def request_json(url: str, params: dict[str, Any], retries: int = 5, sleep: floa
                 continue
             resp.raise_for_status()
             return resp.json()
+        except RuntimeError as exc:
+            if str(exc).startswith("SOURCE_UNAVAILABLE:"):
+                raise
+            last = exc
         except Exception as exc:  # noqa: BLE001
             last = exc
+        if attempt + 1 < retries:
             time.sleep(sleep * (2 ** attempt))
     raise RuntimeError(f"Fallo consultando ESPN params={params}: {last}")
 
@@ -370,6 +377,8 @@ def main() -> int:
     import psycopg
 
     with psycopg.connect(db_url()) as conn:
+        if args.dry_run:
+            conn.execute("SET TRANSACTION READ ONLY")
         ctx = load_context(conn, args.season)
         print(f"NBA {ctx.temporada_nombre}: consultando ESPN {start} → {end} (dry_run={args.dry_run})")
         events = fetch_events(start, end)
