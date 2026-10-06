@@ -14,6 +14,8 @@ Los directorios `docs/borlty-deliverables/`, arquitectura C0–C7 y ADR-005 son 
 
 `pip-audit -r backend/requirements.lock` en entorno temporal informó **0 vulnerabilidades conocidas** para el lock Python; ello no prueba ausencia de fallos no publicados ni sustituye actualización periódica.
 
+En el primer push de esta actualización, los jobs frontend y Compose fallaron en `npm ci`: el lock generado localmente con npm 12 omitía entradas opcionales de esbuild exigidas por npm 10 en Node 20. Se regeneró el lock con npm 10.8.2 y se verificó una instalación limpia seguida de lint, 11 tests, auditoría de producción y build con Node 20.20.2/npm 10.8.2. El fallo inicial no se cuenta como gate aprobado; el resultado del nuevo CI se registra por separado.
+
 CI fija Node 20 y Python 3.12. `backend/.env.example` ya no pide auth/pagos; el Compose privado usa loopback y la configuración comercial C0–C7 queda histórica. El salto a React Router 7 se verificó además en preview headless de `/`, `/dashboard`, `/app`, `/bitacora`, `/futbol` y `/configuracion`: HTTP 200, raíz no vacía, redirección de `/` a `/dashboard` y cero errores JavaScript de página. No se probó cada interacción profunda.
 
 ## APIs, scripts y artefactos

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 2026-10-06 — CI efímera y corte analítico sin certificación
+- Lock frontend regenerado con npm 10 para compatibilidad con Node 20/npm 10 de Docker y CI; validado con instalación limpia, lint, 11 tests, auditoría de producción y build bajo esa misma versión.
 - Ingesta ESPN por fecha individual con deduplicación por clave natural legacy; 8 partidos NBA de pretemporada ingresados en Neon tras dry-run, integridad e idempotencia verificadas. No certifica outcomes ni modelos.
 - Lecturas GET de bitácora desacopladas de auto-resolución y DDL. Esquemas comerciales sin consumidores retirados; reglas y scorecard local de calidad, catálogo semántico KPI v0, inventario legacy/rot y preflight H4 documentados. H4 no se declara purgado.
 - Suite backend global segura: 578 passed, 19 failed dependientes de PostgreSQL de pruebas no disponible en host, 11 skipped. Gates dirigidos, frontend lint/11 tests/build y auditoría de dependencias de producción en verde; 10 alertas de dependencias dev siguen abiertas.
