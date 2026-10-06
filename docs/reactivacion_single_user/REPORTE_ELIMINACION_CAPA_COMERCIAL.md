@@ -30,6 +30,7 @@ El propietario confirmó uso exclusivamente local y que todos los registros depo
 - Backend: 16 pruebas dirigidas aprobadas (unitarias analíticas, contratos bitácora/fútbol, OpenAPI y smoke), en venv temporal Python 3.14. Una advertencia de deprecación Starlette/httpx; CI usará Python 3.12.
 - Frontend: 11 pruebas en 4 archivos, lint y build aprobados. Las pruebas de bitácora cubren datos v2, error/contrato desconocido, estado y total.
 - OpenAPI inspeccionada sin arrancar lifespan/entrenamiento. `git diff --check` sin incidencias. No se ejecutó ingesta ni cobro.
+- Después del commit, se reanudó el entorno local en loopback. El startup del backend entrenó su modelo habitual desde BD; no se tomó ese hecho como recertificación analítica. `/salud`, OpenAPI y raíz frontend respondieron HTTP 200 y ambos sockets escucharon solo en `127.0.0.1`.
 
 ## Límites y siguientes pasos
 

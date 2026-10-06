@@ -31,4 +31,4 @@
 
 ## Estado actual conocido
 
-La CI se amplió a unitarias analíticas, contratos backend, tests frontend, lint y build. Aún no tiene PostgreSQL efímera ni test de integración de migración. `scripts/dev.sh` usa loopback por defecto y no libera puertos automáticamente; los procesos locales estaban detenidos en la comprobación posterior. No se certificó otro entorno.
+La CI se amplió a unitarias analíticas, contratos backend, tests frontend, lint y build. Aún no tiene PostgreSQL efímera ni test de integración de migración. `scripts/dev.sh` usa loopback por defecto, valida el intérprete y no libera puertos automáticamente. Backend y frontend se reanudaron en loopback; raíz FE, OpenAPI y `/salud` respondieron HTTP 200. No se certificó otro entorno.

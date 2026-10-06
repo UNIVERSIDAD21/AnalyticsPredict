@@ -32,4 +32,4 @@
 
 ## Riesgo abierto
 
-El propietario confirmó uso solo local. Backend y frontend están configurados para escuchar en `127.0.0.1:8000` y `:5173`; los procesos estaban detenidos en la comprobación posterior. Cualquier exposición futura requiere control de red privado independiente; no habilitar acceso público sin él.
+El propietario confirmó uso solo local. Backend y frontend están configurados y se observaron escuchando en `127.0.0.1:8000` y `:5173` después del reinicio de las 23:19. Cualquier exposición futura requiere control de red privado independiente; no habilitar acceso público sin él.
