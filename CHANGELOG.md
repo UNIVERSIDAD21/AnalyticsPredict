@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-05 — inicio de reactivación single-user
+- Aprobada dirección de producto privado personal; C0–C7 queda como historia, no objetivo vigente.
+- Creado snapshot de recuperación e inventario de auth, pagos, usuarios, rutas, datos y frontend; arquitectura y plan de migración documentados sin tocar BD.
+- Endurecidos defaults locales de desarrollo/Compose a loopback y desactivada la liberación automática de puertos en `dev.sh`.
+- La retirada de auth/pagos/tiers y la migración de datos siguen pendientes de perímetro privado comprobado y ensayo aislado; no se declaran resueltos H1–H3.
+
 ## 2026-04-03
 - Bloque 20B fútbol (auditoría y priorización de la familia de GOLES):
   - Nuevo pipeline reproducible: `backend/scripts/auditoria_goles_b20b.py` para mercados `GOLES_FT`, `GOLES_1T`, `GOLES_2T`, `GOLES_LOCAL_FT`, `GOLES_VISITANTE_FT`.

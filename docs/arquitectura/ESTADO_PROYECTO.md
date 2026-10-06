@@ -1,5 +1,7 @@
 # ESTADO_PROYECTO.md
 
+> **Transición 2026-10-05:** el propietario aprobó AnalyticsPredict como herramienta privada single-user. El objetivo comercial C0–C7 y el contenido histórico de este archivo dejan de gobernar el trabajo nuevo; ver `docs/reactivacion_single_user/` y el plan externo de reactivación. Snapshot y arquitectura definidos, simplificación funcional pendiente. No declarar H1–H3 cerrados hasta retirar y probar la superficie correspondiente.
+
 Estado global: EN EJECUCIÓN (pre-lanzamiento comercial)
 Última actualización: 2026-04-03 (bloque 20B auditoría goles + bloque 20A/19.7/19.6/19.5/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5)
 Responsable operativo: UNIVERSIDAD21

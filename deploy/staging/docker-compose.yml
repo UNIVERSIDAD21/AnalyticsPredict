@@ -9,7 +9,7 @@ services:
     depends_on:
       - mailhog
     ports:
-      - "${STAGING_BACKEND_PORT:-18000}:8000"
+      - "127.0.0.1:${STAGING_BACKEND_PORT:-18000}:8000"
     restart: unless-stopped
 
   analytics-frontend:
@@ -20,12 +20,12 @@ services:
     depends_on:
       - analytics-backend
     ports:
-      - "${STAGING_FRONTEND_PORT:-15173}:80"
+      - "127.0.0.1:${STAGING_FRONTEND_PORT:-15173}:80"
     restart: unless-stopped
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
     container_name: analytics-mailhog-staging
     ports:
-      - "${STAGING_SMTP_UI_PORT:-18025}:8025"
+      - "127.0.0.1:${STAGING_SMTP_UI_PORT:-18025}:8025"
     restart: unless-stopped

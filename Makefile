@@ -17,10 +17,10 @@ dev:
 	bash scripts/dev.sh
 
 backend:
-	cd backend && python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+	cd backend && python3 -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
 
 frontend:
-	cd frontend && npm run dev -- --host 0.0.0.0 --port 5173
+	cd frontend && npm run dev -- --host 127.0.0.1 --port 5173
 
 calidad-ciclo:
 	bash scripts/ciclo_calidad.sh

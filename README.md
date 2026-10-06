@@ -1,5 +1,7 @@
 # AnalyticsPredict
 
+> Transición single-user aprobada el 2026-10-05: la plataforma pasa a ser una herramienta privada personal, sin SaaS, login, pagos ni suscripciones como objetivo. **La retirada funcional aún está en curso**; ver `docs/reactivacion_single_user/`. Los flujos comerciales existentes no deben considerarse el objetivo vigente.
+
 Proyecto de análisis deportivo con:
 - **Backend** en FastAPI
 - **Frontend** en React + Vite
@@ -30,11 +32,11 @@ Esto levanta:
 - Swagger: `http://localhost:8000/docs`
 - Frontend: `http://localhost:5173`
 
-`dev.sh` libera automáticamente los puertos `8000` y `5173` antes de iniciar.
-Si no quieres ese comportamiento:
+`dev.sh` usa `127.0.0.1` y no detiene procesos existentes por defecto.
+Para liberar puertos existentes de forma explícita:
 
 ```bash
-AUTO_KILL_PORTS=false bash scripts/dev.sh
+AUTO_KILL_PORTS=true bash scripts/dev.sh
 ```
 
 ## Arranque manual
@@ -46,7 +48,7 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### Backend (sin venv, bajo tu responsabilidad)
@@ -54,7 +56,7 @@ python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```bash
 cd backend
 python3 -m pip install --break-system-packages -r requirements.txt
-python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+python3 -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### Frontend
@@ -62,7 +64,7 @@ python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```bash
 cd frontend
 npm install
-npm run dev -- --host 0.0.0.0 --port 5173
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
 ## Comandos útiles

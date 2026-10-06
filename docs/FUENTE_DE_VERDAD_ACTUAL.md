@@ -2,6 +2,8 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
+> **Transición aprobada 2026-10-05:** el propietario sustituyó el objetivo SaaS/comercial por una herramienta privada single-user sin login, pagos, suscripciones ni tiers. El plan externo `PLAN_REACTIVACION_SINGLE_USER_ANALYTICSPREDICT.md` y `docs/reactivacion_single_user/` gobiernan esta transición. El estado C0–C7 y la estrategia comercial descritos debajo son **históricos hasta su actualización integral**; no deben iniciar cobros, despliegues ni nuevos gates. La retirada funcional aún no está implementada.
+
 ## Qué es AnalyticsPredict hoy
 Plataforma analítica de decisiones deportivas con foco operativo (calidad de datos, contratos API, métricas, política de operación y trazabilidad), no una app de picks masivos.
 
