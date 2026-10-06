@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — vista agregada NBA sin outcomes 0–0 (preparación)
+
+- Se prepara migración transaccional e idempotente de `vista_resumen_calibracion` para no computar pares de partidos 0–0, sin cambiar sus 12 columnas ni ocultar filas de la vista base. No aplicada a Neon en este cambio.
+- Lecturas de reporte de backtest y drift calculan con `persistir=False`; no generan precálculos implícitos. El corte read-only de Neon mostró cero filas en `metricas_calibracion`; el resumen SQL actual aún cuenta 2.582 pares, de los que 24 deben excluirse. H9 científico y bloque E siguen abiertos.
+
 ## 2026-10-06 — propagación de outcomes NBA 0–0 a KPI y backtest
 
 - Salud, calidad por mercado y drift distinguen outcome registrado de evaluable; historial muestra `NO_EVALUABLE` y excluye esos casos de ganadas/perdidas. El gate de calidad NBA, recalibración, resumen/curva/reporte de backtest y estadísticas de resolución ya no tratan 0–0 como resultado válido.

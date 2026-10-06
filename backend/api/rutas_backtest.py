@@ -338,6 +338,7 @@ def _obtener_metricas_backtest(
                 origen=origen,
                 fecha_inicio=inicio,
                 fecha_fin=fin,
+                persistir=False,
             )
             metricas.append(
                 {
