@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — exclusión analítica parcial de resultados NBA 0–0
+
+- Auditor read-only conserva 2.934 predicciones, excluye 24 outcomes no acreditados y deja 2.558 pares raw descriptivos. Cálculo/curva de calibración enmascaran esos resultados, muestran su conteo y GET recalcula sin precálculo legacy ni UPSERT.
+- Bitácora conserva cinco apuestas vinculadas a 0–0 pero las excluye del gate ROI; 107/181 binarias quedan no evaluables (103 previas y cuatro adicionales). CLI P&L deja 74 binarias solo aritméticamente coherentes, todavía no certificadas. Salud/calidad/drift y otros consumidores siguen pendientes de auditoría.
+
 ## 2026-10-06 — diagnóstico seguro de fuentes deportivas
 
 - Dry-run NBA exige transacción read-only, detiene HTTP 401/403 sin reintentos y rechaza marcadores 0–0 o cuartos/OT no acreditados; ESPN devolvió 8 partidos ya presentes en la ventana 1–6 de octubre. El sincronizador fútbol abandona impersonación/recuperación de 403, incorpora dry-run read-only, distingue fuente caída de cero eventos, usa UTC, preserva goles 0 y no marca estadísticas parciales como completas. Sofascore respondió 403, sin ingesta.

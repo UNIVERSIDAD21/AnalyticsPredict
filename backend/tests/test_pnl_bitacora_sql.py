@@ -6,7 +6,7 @@ import psycopg
 import pytest
 from psycopg.conninfo import conninfo_to_dict
 
-from api.rutas_bitacora import _PNL_NBA_NO_EVALUABLE_SQL
+from api.rutas_bitacora import _PNL_NBA_NO_EVALUABLE_SQL, _NBA_NO_EVALUABLE_SQL
 
 
 def test_regla_sql_pnl_no_evaluable_sin_escrituras():
@@ -37,3 +37,27 @@ def test_regla_sql_pnl_no_evaluable_sin_escrituras():
                        "cuota_lado": True, "perdida_valida": False,
                        "anulada_sin_cuota": False,
                        "sin_stake": True}
+
+
+def test_resultado_cero_cero_excluye_pnl_aunque_concilie():
+    url = os.environ.get("DATABASE_URL") or ""
+    if not conninfo_to_dict(url).get("dbname", "").startswith("ap_suite_test_"):
+        pytest.skip("Solo en PostgreSQL sintético desechable")
+    consulta = f"""
+        WITH partidos_baloncesto(id, local_total, visitante_total) AS (
+            VALUES (1, 0, 0), (2, 95, 98)
+        ), apuestas(partido_id, resultado, stake, cuota, ganancia,
+                    lado, cuota_over, cuota_under) AS (
+            VALUES
+                (1, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
+                 'OVER', 1.8::numeric, NULL::numeric),
+                (2, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
+                 'OVER', 1.8::numeric, NULL::numeric),
+                (NULL::integer, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
+                 'OVER', 1.8::numeric, NULL::numeric)
+        )
+        SELECT partido_id, {_NBA_NO_EVALUABLE_SQL} FROM apuestas
+    """
+    with psycopg.connect(url) as conn:
+        conn.execute("SET TRANSACTION READ ONLY")
+        assert conn.execute(consulta).fetchall() == [(1, True), (2, False), (None, False)]

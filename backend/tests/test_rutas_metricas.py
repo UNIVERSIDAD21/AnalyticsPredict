@@ -34,7 +34,8 @@ def test_origen_obligatorio_metricas():
     assert response.status_code == 422
 
 
-def test_metricas_respuesta_basica():
+@patch("api.rutas_metricas._contar_outcomes_nba_cero_cero", return_value=2)
+def test_metricas_respuesta_basica(_conteo_dudosos):
     client = _crear_cliente()
     resultado = {
         "n_predicciones": 45,
@@ -75,12 +76,15 @@ def test_metricas_respuesta_basica():
     assert data["origen"] == "API_USUARIO"
     metrica = data["metricas_por_mercado"][0]
     assert metrica["n_excluidos_push"] == 5
+    assert metrica["n_excluidos_outcome_dudoso"] == 2
+    assert any("2 outcomes NBA 0–0" in aviso for aviso in metrica["advertencias"])
     assert metrica["suficiente_data"] is False
     assert metrica["calibrador_activo"] == "platt"
     assert metrica["mejora_vs_raw"] == pytest.approx(0.02)
 
 
-def test_curva_bins_y_excluidos():
+@patch("api.rutas_metricas._contar_outcomes_nba_cero_cero", return_value=1)
+def test_curva_bins_y_excluidos(_conteo_dudosos):
     client = _crear_cliente()
     periodo = date(2024, 2, 1), date(2024, 2, 28)
     predicciones = [
@@ -102,6 +106,7 @@ def test_curva_bins_y_excluidos():
     assert response.status_code == 200
     data = response.json()
     assert data["n_excluidos_push"] == 1
+    assert data["n_excluidos_outcome_dudoso"] == 1
     assert sum(bin_info["n"] for bin_info in data["bins"]) == data["n_predicciones_total"]
 
 

@@ -217,6 +217,18 @@ def test_calculador_metricas_basicas_y_filtros():
     assert resultado["alertas"] == []
 
 
+def test_calculo_de_lectura_no_persiste_metricas():
+    store = {}
+    resultado = calcular_metricas_calibracion(
+        mercado="Q1", origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1), fecha_fin=date(2024, 1, 5),
+        pool=FakePool(_rows_base(), store), persistir=False,
+    )
+    assert resultado["n_predicciones"] == 3
+    assert resultado["persistida"] is False
+    assert store == {}
+
+
 def test_calculador_excluye_pushes():
     rows = _rows_base()
     store = {}

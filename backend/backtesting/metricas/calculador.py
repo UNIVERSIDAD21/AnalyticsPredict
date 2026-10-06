@@ -37,13 +37,14 @@ def calcular_metricas_calibracion(
     min_por_bin: int = 10,
     eps_log_loss: float = 1e-15,
     pool: Optional["ConnectionPool"] = None,
+    persistir: bool = True,
 ) -> dict[str, object]:
     """
     Calcula métricas de calibración y distribución para un periodo.
 
     - Usa vista_predicciones_para_calibracion para extraer datos.
     - Excluye PUSHes en métricas probabilísticas.
-    - Persiste una fila en metricas_calibracion con UPSERT.
+    - Persiste una fila en metricas_calibracion con UPSERT salvo `persistir=False`.
     """
     if pool is None:
         from db import obtener_pool
@@ -201,6 +202,9 @@ def calcular_metricas_calibracion(
         metricas_id=None,
     )
 
+    if not persistir:
+        return resultado
+
     metricas_id = _persistir_metricas(
         pool,
         resultado=resultado,
@@ -228,20 +232,24 @@ def _obtener_predicciones(
 ) -> list[tuple[object, ...]]:
     consulta = """
         SELECT
-            p_raw,
-            CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END AS p_calibrada,
-            outcome_binario,
-            media_predicha,
-            valor_real,
-            intervalo_inferior,
-            intervalo_superior,
-            nivel_intervalo
-        FROM vista_predicciones_para_calibracion
-        WHERE mercado = %s
-          AND origen = %s
-          AND fecha_partido >= %s
-          AND fecha_partido <= %s
-          AND (%s::integer IS NULL OR modelo_version_id = %s)
+            v.p_raw,
+            CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END AS p_calibrada,
+            CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
+                 THEN NULL ELSE v.outcome_binario END AS outcome_binario,
+            v.media_predicha,
+            CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
+                 THEN NULL ELSE v.valor_real END AS valor_real,
+            v.intervalo_inferior,
+            v.intervalo_superior,
+            v.nivel_intervalo
+        FROM vista_predicciones_para_calibracion v
+        LEFT JOIN predicciones_registradas pr ON pr.id = v.id
+        LEFT JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
+        WHERE v.mercado = %s
+          AND v.origen = %s
+          AND v.fecha_partido >= %s
+          AND v.fecha_partido <= %s
+          AND (%s::integer IS NULL OR v.modelo_version_id = %s)
     """
     params = [
         mercado,

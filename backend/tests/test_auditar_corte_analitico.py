@@ -25,9 +25,26 @@ def test_prediccion_sin_procedencia_no_figura_como_calibrada():
             assert "FROM predicciones_futbol" in query
 
         def fetchall(self):
-            return [(0.2, 0.2, False, True, None, None, 1, None, "GOLES_FT")]
+            return [(0.2, 0.2, False, True, None, None, 1, None, "GOLES_FT", None)]
 
     resultado = predicciones(Cursor(), "predicciones_futbol", "prob_over", "prob_over_calibrada")
     assert resultado["raw"]["n"] == 1
     assert resultado["calibrada"]["n"] == 0
     assert resultado["calibrada_resuelta_sin_calibrador_id"] == 1
+
+
+def test_outcome_nba_cero_cero_no_entra_en_metricas():
+    class Cursor:
+        def execute(self, query):
+            assert "LEFT JOIN partidos_baloncesto" in query
+
+        def fetchall(self):
+            return [
+                (0.8, None, True, True, None, None, 1, None, "COMPLETO", True),
+                (0.2, None, False, True, None, None, 1, None, "COMPLETO", False),
+            ]
+
+    resultado = predicciones(Cursor(), "predicciones_registradas", "p_raw", "p_calibrada")
+    assert resultado["resueltas"] == 2
+    assert resultado["outcomes_cero_cero_no_acreditados"] == 1
+    assert resultado["raw"]["n"] == 1

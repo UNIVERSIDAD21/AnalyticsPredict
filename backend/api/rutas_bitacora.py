@@ -107,6 +107,19 @@ _PNL_NBA_NO_EVALUABLE_SQL = """(
         FALSE)
 )"""
 
+# Un importe conciliable no acredita el resultado de un partido registrado 0–0.
+# Mantener las filas en la bitácora, pero impedir que su ROI se presente como evaluable.
+_RESULTADO_NBA_NO_EVALUABLE_SQL = """EXISTS (
+    SELECT 1 FROM partidos_baloncesto pb
+    WHERE pb.id = apuestas.partido_id
+      AND pb.local_total = 0 AND pb.visitante_total = 0
+)"""
+_NBA_NO_EVALUABLE_SQL = (
+    f"({_PNL_NBA_NO_EVALUABLE_SQL} OR "
+    f"(resultado IN ('GANADA', 'PERDIDA', 'PUSH', 'ANULADA') "
+    f"AND {_RESULTADO_NBA_NO_EVALUABLE_SQL}))"
+)
+
 BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
 
 BITACORA_USAGE_PATH = Path(
@@ -445,7 +458,7 @@ async def resumen_apuestas(
                     f"""
                     WITH apuestas_unificadas AS (
                         SELECT 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado,
-                               {_PNL_NBA_NO_EVALUABLE_SQL} AS pnl_no_evaluable_nba
+                               {_NBA_NO_EVALUABLE_SQL} AS pnl_no_evaluable_nba
                         FROM apuestas
                         UNION ALL
                         SELECT 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia,
@@ -1287,7 +1300,7 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
                         COALESCE(SUM(stake), 0) AS stake_total,
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable,
+                        COUNT(*) FILTER (WHERE {_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable,
                         AVG(edge_real) FILTER (WHERE edge_real IS NOT NULL) AS edge_promedio,
                         AVG(probabilidad_sistema) FILTER (WHERE probabilidad_sistema IS NOT NULL) AS prob_promedio
                     FROM apuestas
@@ -1337,7 +1350,7 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
                         COALESCE(SUM(stake), 0) AS stake_total,
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable,
+                        COUNT(*) FILTER (WHERE {_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable,
                         AVG(edge_real) FILTER (WHERE edge_real IS NOT NULL) AS edge_promedio,
                         AVG(probabilidad_sistema) FILTER (WHERE probabilidad_sistema IS NOT NULL) AS prob_promedio
                     FROM apuestas
@@ -1381,7 +1394,7 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
                         COALESCE(SUM(stake), 0) AS stake_total,
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable
+                        COUNT(*) FILTER (WHERE {_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable
                     FROM apuestas
                     WHERE {where_sql} AND confianza_sistema IS NOT NULL
                     GROUP BY confianza_sistema
@@ -1425,7 +1438,7 @@ async def obtener_metricas_bitacora(
                         COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
                         COALESCE(SUM(ganancia), 0) AS ganancia,
                         COALESCE(SUM(stake), 0) AS stake_total,
-                        COUNT(*) FILTER (WHERE {_PNL_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable
+                        COUNT(*) FILTER (WHERE {_NBA_NO_EVALUABLE_SQL}) AS n_pnl_no_evaluable
                     FROM apuestas
                     WHERE {where_sql} AND fecha_partido IS NOT NULL
                     GROUP BY TO_CHAR(fecha_partido, 'YYYY-MM')
