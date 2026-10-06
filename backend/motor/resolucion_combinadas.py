@@ -194,6 +194,11 @@ def resolver_combinadas(
                 _fecha_partido,
             ) in pendientes:
                 try:
+                    # Un 0–0 en ambos totales no acredita partido disputado.
+                    # Mantener la selección pendiente, también en esta ruta legacy.
+                    if local_total == 0 and visitante_total == 0:
+                        resumen.selecciones_pendientes += 1
+                        continue
                     valor_real = _calcular_valor_real(
                         mercado,
                         local_q1,
