@@ -267,7 +267,6 @@ def resolver_apuestas_analizadas(pool=None) -> dict:
 
 def resumen_apuestas_analizadas(pool=None) -> dict:
     pool = pool or obtener_pool()
-    asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -376,7 +375,6 @@ def obtener_auditoria_decisiones_futbol(
     pool=None,
 ) -> dict:
     pool = pool or obtener_pool()
-    asegurar_tabla_apuestas_analizadas(pool)
     where_sql, params = _armar_where_auditoria_futbol(
         mercado=mercado,
         fuente=fuente,

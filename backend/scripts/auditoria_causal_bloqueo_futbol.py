@@ -74,23 +74,27 @@ def main() -> None:
         if c2 > 0:
             causes.append({"causa": "coverage_lineas_insuficiente", "severidad": sev(c2), "evidencia": {"lineas": lineas, "umbral": TH["min_lineas_validacion"]}})
 
-        brier = float(s.get("brier") or 0)
-        logl = float(s.get("log_loss") or 0)
-        ece = float(s.get("ece") or 0)
-        c3 = max(brier / TH["max_brier_promocion"], logl / TH["max_logloss_promocion"], ece / TH["max_ece_promocion"]) - 1.0
-        if c3 > 0:
-            causes.append({"causa": "calibracion_fuera_tolerancia", "severidad": sev(min(1.0, c3)), "evidencia": {"brier": brier, "log_loss": logl, "ece": ece}})
+        if any(s.get(k) is None for k in ("brier", "log_loss", "ece")):
+            causes.append({"causa": "calibracion_no_evaluable", "severidad": "ALTA", "evidencia": {"brier": s.get("brier"), "log_loss": s.get("log_loss"), "ece": s.get("ece")}})
+        else:
+            brier = float(s["brier"])
+            logl = float(s["log_loss"])
+            ece = float(s["ece"])
+            c3 = max(brier / TH["max_brier_promocion"], logl / TH["max_logloss_promocion"], ece / TH["max_ece_promocion"]) - 1.0
+            if c3 > 0:
+                causes.append({"causa": "calibracion_fuera_tolerancia", "severidad": sev(min(1.0, c3)), "evidencia": {"brier": brier, "log_loss": logl, "ece": ece}})
 
-        drift = abs(float(s.get("window_drift_brier") or 0))
-        c4 = max(0.0, drift / TH["max_drift"] - 1.0)
-        if c4 > 0:
-            causes.append({"causa": "inestabilidad_ventanas", "severidad": sev(min(1.0, c4)), "evidencia": {"drift": drift, "umbral": TH["max_drift"]}})
+        if s.get("window_drift_brier") is None:
+            causes.append({"causa": "drift_no_evaluable", "severidad": "MEDIA", "evidencia": {"window_drift_brier": None}})
+        else:
+            drift = abs(float(s["window_drift_brier"]))
+            c4 = max(0.0, drift / TH["max_drift"] - 1.0)
+            if c4 > 0:
+                causes.append({"causa": "inestabilidad_ventanas", "severidad": sev(min(1.0, c4)), "evidencia": {"drift": drift, "umbral": TH["max_drift"]}})
 
         tasa_op = float(m13.get("tasa_resolucion") or 0)
         tasa_eval = float((m12.get("metricas") or {}).get("resolved_rate") or 0)
-        tasa = min(tasa_op if tasa_op > 0 else 1.0, tasa_eval if tasa_eval > 0 else 1.0)
-        if tasa <= 0:
-            tasa = max(tasa_op, tasa_eval)
+        tasa = min(tasa_op, tasa_eval)
         c5 = max(0.0, (TH["min_resolution_rate"] - tasa) / TH["min_resolution_rate"])
         if c5 > 0:
             causes.append({"causa": "tasa_resolucion_operativa_baja", "severidad": sev(c5), "evidencia": {"tasa_operativa": tasa_op, "tasa_eval": tasa_eval, "umbral": TH["min_resolution_rate"]}})

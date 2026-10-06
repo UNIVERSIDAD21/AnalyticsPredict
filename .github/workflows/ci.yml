@@ -37,6 +37,8 @@ jobs:
           tests/test_nba_ganador_probable.py
           tests/test_metricas_1x2_futbol.py
           tests/test_auditar_corte_analitico.py
+          tests/calidad/test_reglas_single_user.py
+          tests/test_actualizar_partidos_nba.py
 
       - name: Contratos API sin BD
         run: >-
@@ -71,6 +73,9 @@ jobs:
 
       - name: Frontend tests
         run: npm test
+
+      - name: Dependencias de producción sin vulnerabilidades conocidas
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Build
         run: npm run build

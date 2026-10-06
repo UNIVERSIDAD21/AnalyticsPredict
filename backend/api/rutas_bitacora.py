@@ -7,7 +7,6 @@ from datetime import date, datetime
 import json
 import logging
 import os
-import time
 from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
@@ -22,7 +21,6 @@ from motor.resolucion_apuestas import (
     obtener_estadisticas_apuestas,
     obtener_apuestas_pendientes_por_mercado,
 )
-from servicios.apuestas_analizadas import resolver_apuestas_analizadas
 
 # Importar Jsonb para serializar correctamente campos JSON en la base de datos.
 try:
@@ -93,10 +91,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 
 BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
-BITACORA_AUTO_RESOLVE_INTERVAL_SEC = int(os.getenv("BITACORA_AUTO_RESOLVE_INTERVAL_SEC", "300"))
-BITACORA_AUTO_RESOLVE_LIMIT = int(os.getenv("BITACORA_AUTO_RESOLVE_LIMIT", "800"))
-_AUTO_RESOLVE_LAST_RUN: float = 0.0
-_AUTO_RESOLVE_LAST_RUN_ANALIZADAS: float = 0.0
 
 BITACORA_USAGE_PATH = Path(
     os.getenv(
@@ -161,29 +155,6 @@ def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, 
             "legacy_supported": True,
         },
     }
-
-
-def _auto_resolver_bitacoras() -> None:
-    """Actualiza automáticamente apuestas/analizados ya finalizados con throttling.
-
-    Evita recalcular en cada request de lectura para no degradar UX (timeouts en bitácora).
-    """
-    global _AUTO_RESOLVE_LAST_RUN, _AUTO_RESOLVE_LAST_RUN_ANALIZADAS
-
-    ahora = time.time()
-    if (ahora - _AUTO_RESOLVE_LAST_RUN) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
-        try:
-            resolver_apuestas(limite=BITACORA_AUTO_RESOLVE_LIMIT)
-            _AUTO_RESOLVE_LAST_RUN = ahora
-        except Exception:
-            logger.exception("Auto-resolución de apuestas falló")
-
-    if (ahora - _AUTO_RESOLVE_LAST_RUN_ANALIZADAS) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
-        try:
-            resolver_apuestas_analizadas()
-            _AUTO_RESOLVE_LAST_RUN_ANALIZADAS = ahora
-        except Exception:
-            logger.exception("Auto-resolución de análisis falló")
 
 
 def _serializar_jsonb(valor: object | None) -> object | None:
@@ -409,7 +380,6 @@ async def listar_apuestas(
     tamano: int = Query(10, ge=1, le=50),
 ) -> RespuestaListaApuestas:
     """Lista apuestas con filtros y paginación."""
-    _auto_resolver_bitacoras()
 
     where_sql, parametros = _construir_where(
         resultado=resultado,
@@ -470,7 +440,6 @@ async def resumen_apuestas(
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
 ):
     """Retorna el resumen agregado de apuestas (simples y combinadas)."""
-    _auto_resolver_bitacoras()
 
     try:
         with obtener_pool().connection() as conexion:
@@ -665,7 +634,6 @@ async def listar_bitacora_unificada(
     tamano: int = Query(20, ge=1, le=50),
 ):
     """Lista la bitácora unificada de apuestas simples y combinadas."""
-    _auto_resolver_bitacoras()
 
     condiciones: List[str] = []
     parametros: List[object] = []
@@ -866,11 +834,8 @@ async def listar_apuestas_analizadas(
     offset: int = 0,
 ):
     """Lista apuestas analizadas automáticas (bitácora de análisis del sistema)."""
-    from servicios.apuestas_analizadas import asegurar_tabla_apuestas_analizadas, resolver_apuestas_analizadas
     from psycopg.rows import dict_row
-    resolver_apuestas_analizadas()
     pool = obtener_pool()
-    asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute("SELECT COUNT(*) AS total FROM apuestas_analizadas")
@@ -1171,7 +1136,6 @@ async def obtener_estadisticas(
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
 ):
     """Obtiene estadísticas de apuestas."""
-    _auto_resolver_bitacoras()
 
     try:
         estadisticas = obtener_estadisticas_apuestas()
@@ -1283,7 +1247,6 @@ async def obtener_metricas_bitacora(
     ),
 ):
     """Calcula métricas desde la bitácora de apuestas."""
-    _auto_resolver_bitacoras()
 
     advertencias: List[str] = []
 

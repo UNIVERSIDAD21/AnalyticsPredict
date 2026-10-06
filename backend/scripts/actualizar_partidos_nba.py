@@ -56,14 +56,6 @@ def parse_date(value: str) -> date:
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
-def daterange_chunks(start: date, end: date, chunk_days: int = 30):
-    cur = start
-    while cur <= end:
-        chunk_end = min(end, cur + timedelta(days=chunk_days - 1))
-        yield cur, chunk_end
-        cur = chunk_end + timedelta(days=1)
-
-
 def request_json(url: str, params: dict[str, Any], retries: int = 5, sleep: float = 0.8) -> dict[str, Any]:
     last: Exception | None = None
     for attempt in range(retries):
@@ -222,8 +214,11 @@ def load_context(conn, season_year: int | None) -> DbContext:
 
 def fetch_events(start: date, end: date) -> list[dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
-    for a, b in daterange_chunks(start, end):
-        params = {"dates": f"{a:%Y%m%d}-{b:%Y%m%d}", "limit": 500}
+    # Scoreboard NBA devuelve 400 para dates=YYYYMMDD-YYYYMMDD;
+    # una fecha individual es el contrato HTTP verificado.
+    for offset in range((end - start).days + 1):
+        dia = start + timedelta(days=offset)
+        params = {"dates": f"{dia:%Y%m%d}", "limit": 500}
         data = request_json(ESPN_SCOREBOARD, params)
         for ev in data.get("events", []) or []:
             if is_completed(ev):
@@ -259,7 +254,11 @@ def upsert_records(conn, records: list[dict[str, Any]], dry_run: bool) -> dict[s
     existing_source, existing_exact = existing_keys(conn, records)
     stats = {"found": len(records), "inserted": 0, "existing": 0, "updated": 0, "failed": 0}
     if dry_run:
-        stats["existing"] = sum(1 for r in records if r["source_game_id"] in existing_source)
+        stats["existing"] = sum(
+            1 for r in records if r["source_game_id"] in existing_source or
+            (r["temporada_id"], r["fecha_partido"], r["tipo_partido"],
+             r["equipo_local_id"], r["equipo_visitante_id"]) in existing_exact
+        )
         stats["inserted"] = len(records) - stats["existing"]
         return stats
 
@@ -300,7 +299,12 @@ def upsert_records(conn, records: list[dict[str, Any]], dry_run: bool) -> dict[s
         for r in records:
             try:
                 natural = (r["temporada_id"], r["fecha_partido"], r["tipo_partido"], r["equipo_local_id"], r["equipo_visitante_id"])
-                existed = r["source_game_id"] in existing_source or natural in existing_exact
+                # Una fila legacy sin ID de ESPN puede tener la misma clave natural.
+                # No insertar un duplicado ni sobrescribirla sin reconciliación explícita.
+                if natural in existing_exact and r["source_game_id"] not in existing_source:
+                    stats["existing"] += 1
+                    continue
+                existed = r["source_game_id"] in existing_source
                 cur.execute(sql, r)
                 if existed:
                     stats["existing"] += 1

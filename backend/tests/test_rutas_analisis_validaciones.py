@@ -1,16 +1,13 @@
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from api.modelos_peticion import PeticionAnalisis
 from api.rutas_analisis import _validar_peticion_analisis
-from api.excepciones import ErrorValidacion
 
 
-def test_validar_peticion_requiere_lado_con_cuotas():
+def test_validar_peticion_legacy_usa_lado_over_por_defecto():
     peticion = PeticionAnalisis(
         equipo_local="Lakers",
         equipo_visitante="Heat",
@@ -19,8 +16,8 @@ def test_validar_peticion_requiere_lado_con_cuotas():
         cuota=1.9,
     )
 
-    with pytest.raises(ErrorValidacion):
-        _validar_peticion_analisis(peticion)
+    assert peticion.lado == "OVER"
+    assert "DEVIG_ESTRICTO_REQUIERE_AMBAS_CUOTAS" in _validar_peticion_analisis(peticion)
 
 
 def test_validar_peticion_advierte_devig_estricto_con_una_cuota():

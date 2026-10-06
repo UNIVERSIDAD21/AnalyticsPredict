@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, List, Literal
+import math
 
 NivelMadurez = Literal["NO_APTO", "EXPERIMENTAL", "VALIDACION", "PROMOCIONABLE"]
 StatusPromocion = Literal["BLOQUEADO", "LABORATORIO", "VALIDACION", "PROMOCIONABLE"]
@@ -26,21 +27,33 @@ class CriteriosMadurezMercado:
 CRITERIOS_DEFAULT = CriteriosMadurezMercado()
 
 
-def clasificar_madurez_mercado(metricas: Dict[str, float], estado_mercado: str | None, criterios: CriteriosMadurezMercado = CRITERIOS_DEFAULT) -> tuple[NivelMadurez, List[str]]:
+def _metrica_valida(metricas: Dict[str, float | None], nombre: str) -> float | None:
+    valor = metricas.get(nombre)
+    if valor is None:
+        return None
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return None
+    return numero if math.isfinite(numero) else None
+
+
+def clasificar_madurez_mercado(metricas: Dict[str, float | None], estado_mercado: str | None, criterios: CriteriosMadurezMercado = CRITERIOS_DEFAULT) -> tuple[NivelMadurez, List[str]]:
     n = int(metricas.get("n_resueltas", 0) or 0)
     lineas = int(metricas.get("lineas_cubiertas", 0) or 0)
-    brier = float(metricas.get("brier", 1.0) or 1.0)
-    logloss = float(metricas.get("log_loss", 2.0) or 2.0)
-    ece = float(metricas.get("ece", 1.0) or 1.0)
-    resolved_rate = float(metricas.get("resolved_rate", 0.0) or 0.0)
-    fallback_rate = float(metricas.get("fallback_rate", 1.0) or 1.0)
-    drift = abs(float(metricas.get("window_drift_brier", 1.0) or 1.0))
+    brier = _metrica_valida(metricas, "brier")
+    logloss = _metrica_valida(metricas, "log_loss")
+    ece = _metrica_valida(metricas, "ece")
+    resolved_rate = _metrica_valida(metricas, "resolved_rate")
+    fallback_rate = _metrica_valida(metricas, "fallback_rate")
+    drift_raw = _metrica_valida(metricas, "window_drift_brier")
+    drift = abs(drift_raw) if drift_raw is not None else None
 
     razones: List[str] = []
 
     if estado_mercado in (None, "", "rojo"):
         razones.append("estado_mercado_no_estable")
-    if n < 50 or resolved_rate < 0.50:
+    if n < 50 or resolved_rate is None or resolved_rate < 0.50:
         razones.append("volumen_o_resolucion_critica")
     if len(razones) > 0:
         return "NO_APTO", razones
@@ -49,12 +62,12 @@ def clasificar_madurez_mercado(metricas: Dict[str, float], estado_mercado: str |
         estado_mercado == "verde",
         n >= criterios.min_resueltas_promocion,
         lineas >= criterios.min_lineas_promocion,
-        brier <= criterios.max_brier_promocion,
-        logloss <= criterios.max_logloss_promocion,
-        ece <= criterios.max_ece_promocion,
+        brier is not None and brier <= criterios.max_brier_promocion,
+        logloss is not None and logloss <= criterios.max_logloss_promocion,
+        ece is not None and ece <= criterios.max_ece_promocion,
         resolved_rate >= criterios.min_resolved_rate_promocion,
-        fallback_rate <= criterios.max_fallback_rate_promocion,
-        drift <= criterios.max_window_drift_promocion,
+        fallback_rate is not None and fallback_rate <= criterios.max_fallback_rate_promocion,
+        drift is not None and drift <= criterios.max_window_drift_promocion,
     ])
     if promo_ok:
         return "PROMOCIONABLE", ["cumple_umbral_promocion"]
@@ -64,11 +77,13 @@ def clasificar_madurez_mercado(metricas: Dict[str, float], estado_mercado: str |
         n >= criterios.min_resueltas_validacion,
         lineas >= criterios.min_lineas_validacion,
         resolved_rate >= criterios.min_resolved_rate_validacion,
-        fallback_rate <= criterios.max_fallback_rate_validacion,
+        fallback_rate is not None and fallback_rate <= criterios.max_fallback_rate_validacion,
     ])
     if valid_ok:
         razones.append("cumple_base_validacion_pero_no_promocion")
-        if brier > criterios.max_brier_promocion or ece > criterios.max_ece_promocion:
+        if brier is None or logloss is None or ece is None or drift is None:
+            razones.append("metricas_calibracion_no_disponibles")
+        elif brier > criterios.max_brier_promocion or ece > criterios.max_ece_promocion:
             razones.append("calibracion_aun_no_promocionable")
         return "VALIDACION", razones
 

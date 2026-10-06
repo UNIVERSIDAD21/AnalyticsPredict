@@ -117,8 +117,11 @@ def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
         def connection(self):
             return Conexion()
 
-    monkeypatch.setattr(apuestas_analizadas, "resolver_apuestas_analizadas", lambda: None)
-    monkeypatch.setattr(apuestas_analizadas, "asegurar_tabla_apuestas_analizadas", lambda _pool: None)
+    def escritura_inesperada(*_args, **_kwargs):
+        raise AssertionError("GET /apuestas-analizadas no debe escribir en la base")
+
+    monkeypatch.setattr(apuestas_analizadas, "resolver_apuestas_analizadas", escritura_inesperada)
+    monkeypatch.setattr(apuestas_analizadas, "asegurar_tabla_apuestas_analizadas", escritura_inesperada)
     monkeypatch.setattr(rutas_bitacora, "obtener_pool", Pool)
     monkeypatch.setattr(rutas_bitacora, "BITACORA_USAGE_PATH", tmp_path / "usage.json")
 

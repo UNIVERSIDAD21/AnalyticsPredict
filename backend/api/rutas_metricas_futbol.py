@@ -447,12 +447,12 @@ async def obtener_madurez_beta_futbol(
                     metricas = {
                         "n_resueltas": n_res,
                         "lineas_cubiertas": len(acc["lineas"]),
-                        "brier": brier if brier is not None else 1.0,
-                        "log_loss": logloss if logloss is not None else 2.0,
-                        "ece": ece if ece is not None else 1.0,
+                        "brier": brier,
+                        "log_loss": logloss,
+                        "ece": ece,
                         "resolved_rate": (n_res / n_total) if n_total > 0 else 0.0,
                         "fallback_rate": (acc["fallback_n"] / n_total) if n_total > 0 else 1.0,
-                        "window_drift_brier": drift if drift is not None else 1.0,
+                        "window_drift_brier": drift,
                     }
                     nivel, motivos = clasificar_madurez_mercado(metricas, estado_mercados.get(mercado))
                     mercados_resp.append(MadurezMercadoFutbol(

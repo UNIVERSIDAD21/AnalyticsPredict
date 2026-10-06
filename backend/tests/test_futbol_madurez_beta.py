@@ -36,6 +36,26 @@ def test_promocionable_si_cumple_todos_umbral():
     assert nivel == "PROMOCIONABLE"
 
 
+def test_ceros_validos_no_se_convierten_en_proxies():
+    metricas = {
+        "n_resueltas": 320,
+        "lineas_cubiertas": 6,
+        "brier": 0.0,
+        "log_loss": 0.0,
+        "ece": 0.0,
+        "resolved_rate": 1.0,
+        "fallback_rate": 0.0,
+        "window_drift_brier": 0.0,
+    }
+    nivel, _ = clasificar_madurez_mercado(metricas, "verde")
+    assert nivel == "PROMOCIONABLE"
+
+    metricas["ece"] = None
+    nivel, razones = clasificar_madurez_mercado(metricas, "verde")
+    assert nivel == "VALIDACION"
+    assert "metricas_calibracion_no_disponibles" in razones
+
+
 def test_mapear_status_promocion():
     assert mapear_status_promocion("NO_APTO") == "BLOQUEADO"
     assert mapear_status_promocion("EXPERIMENTAL") == "LABORATORIO"

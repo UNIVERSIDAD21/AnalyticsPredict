@@ -131,6 +131,36 @@ def main() -> None:
                 SELECT count(*) n FROM partidos_futbol WHERE sofascore_match_id IS NOT NULL
                 GROUP BY sofascore_match_id HAVING count(*)>1) x""")
             reporte["futbol_datos"]["duplicados_sofascore_id"] = int(cur.fetchone()[0])
+            cur.execute("""SELECT
+                count(*) FILTER (WHERE p_raw < 0 OR p_raw > 1 OR p_calibrada < 0 OR p_calibrada > 1)
+                FROM predicciones_registradas""")
+            nba_prob_fuera_rango = cur.fetchone()[0]
+            cur.execute("""SELECT
+                count(*) FILTER (WHERE prob_over < 0 OR prob_over > 1 OR prob_over_calibrada < 0 OR prob_over_calibrada > 1),
+                count(*) FILTER (WHERE pf.id IS NULL)
+                FROM predicciones_futbol p LEFT JOIN partidos_futbol pf ON pf.id=p.partido_id""")
+            futbol_prob_fuera_rango, futbol_partido_huerfano = cur.fetchone()
+            cur.execute("""SELECT count(*) FILTER (WHERE local_total < 0 OR visitante_total < 0
+                OR local_total > 250 OR visitante_total > 250) FROM partidos_baloncesto""")
+            nba_marcador_outlier = cur.fetchone()[0]
+            cur.execute("""SELECT
+                count(*) FILTER (WHERE estado='FINALIZADO' AND (local_goles_total IS NULL OR visitante_goles_total IS NULL)),
+                count(*) FILTER (WHERE local_goles_total < 0 OR visitante_goles_total < 0
+                    OR local_goles_total > 30 OR visitante_goles_total > 30)
+                FROM partidos_futbol""")
+            futbol_goles_finalizados_nulos, futbol_goles_outlier = cur.fetchone()
+            cur.execute("""SELECT count(*) FILTER (WHERE stake IS NULL OR stake <= 0 OR cuota IS NULL OR cuota <= 1)
+                FROM apuestas WHERE resultado IN ('GANADA','PERDIDA')""")
+            nba_stake_cuota_invalidos = cur.fetchone()[0]
+            reporte["null_outliers_integridad"] = {
+                "nba_prob_fuera_rango": nba_prob_fuera_rango,
+                "futbol_prob_fuera_rango": futbol_prob_fuera_rango,
+                "nba_marcador_outlier_revision": nba_marcador_outlier,
+                "futbol_goles_outlier_revision": futbol_goles_outlier,
+                "futbol_finalizados_goles_nulos": futbol_goles_finalizados_nulos,
+                "futbol_predicciones_partido_huerfano": futbol_partido_huerfano,
+                "nba_stake_cuota_invalidos": nba_stake_cuota_invalidos,
+            }
             reporte["predicciones_nba"] = predicciones(cur, "predicciones_registradas", "p_raw", "p_calibrada")
             reporte["predicciones_futbol"] = predicciones(cur, "predicciones_futbol", "prob_over", "prob_over_calibrada")
             cur.execute("""SELECT count(*) FILTER (WHERE m.id IS NULL),

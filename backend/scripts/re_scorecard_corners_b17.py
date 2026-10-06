@@ -96,12 +96,12 @@ def main() -> None:
         metricas_gate = {
             "n_resueltas": now["resueltos_binarios"],
             "lineas_cubiertas": now["lineas_cubiertas"],
-            "brier": now["brier"] if now["brier"] is not None else 1.0,
-            "log_loss": now["log_loss"] if now["log_loss"] is not None else 2.0,
-            "ece": 1.0 if now["resueltos_binarios"] < 20 else 0.06,
+            "brier": now["brier"],
+            "log_loss": now["log_loss"],
+            "ece": None,
             "resolved_rate": now["resolved_rate"],
             "fallback_rate": now["fallback_rate"],
-            "window_drift_brier": 0.0,
+            "window_drift_brier": None,
         }
         nivel, motivos = clasificar_madurez_mercado(metricas_gate, estado_mercado="verde")
         status = mapear_status_promocion(nivel)

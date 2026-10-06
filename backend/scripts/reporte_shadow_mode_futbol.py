@@ -26,7 +26,14 @@ def _collect(cur, days: int) -> List[Dict[str, Any]]:
     )
     cols = {r["column_name"] for r in cur.fetchall()}
     fecha_col = "timestamp_generacion" if "timestamp_generacion" in cols else "creado_en"
-    p_col = "prob_over_calibrada" if "prob_over_calibrada" in cols else "prob_over"
+    columnas_prob = [col for col in ("prob_over_calibrada", "prob_over_raw", "prob_over") if col in cols]
+    if not columnas_prob:
+        raise RuntimeError("predicciones_futbol sin probabilidad utilizable")
+    p_col = "COALESCE(" + ", ".join(columnas_prob) + ")"
+    fallback_expr = (
+        "AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric"
+        if "prob_over_calibrada" in cols else "NULL::numeric"
+    )
 
     cur.execute(
         f"""
@@ -34,10 +41,11 @@ def _collect(cur, days: int) -> List[Dict[str, Any]]:
           mercado::text AS mercado,
           COUNT(*) AS emitidos,
           COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS resueltos,
+          COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL AND {p_col} IS NOT NULL) AS pares_metricos,
           COUNT(*) FILTER (WHERE outcome_binario IS NULL) AS pendientes,
           COUNT(DISTINCT linea) AS lineas,
-          AVG(POWER(COALESCE({p_col},0)-COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
-          AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate
+          AVG(POWER({p_col}-outcome_binario::int,2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+          {fallback_expr} AS fallback_rate
         FROM predicciones_futbol
         WHERE {fecha_col} >= %s
         GROUP BY mercado

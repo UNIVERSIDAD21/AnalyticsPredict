@@ -49,7 +49,12 @@ def main() -> None:
             cur.execute("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='predicciones_futbol'")
             cols = {r["column_name"] for r in cur.fetchall()}
 
-            p_col = "prob_over_calibrada" if "prob_over_calibrada" in cols else ("prob_over" if "prob_over" in cols else None)
+            columnas_prob = [col for col in ("prob_over_calibrada", "prob_over_raw", "prob_over") if col in cols]
+            p_col = "COALESCE(" + ", ".join(columnas_prob) + ")" if columnas_prob else None
+            fallback_expr = (
+                "AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric"
+                if "prob_over_calibrada" in cols else "NULL::numeric"
+            )
             fecha_col = "timestamp_generacion" if "timestamp_generacion" in cols else ("creado_en" if "creado_en" in cols else None)
             if p_col is None or fecha_col is None or "outcome_binario" not in cols:
                 raise RuntimeError("predicciones_futbol sin columnas mínimas para monitoreo")
@@ -59,16 +64,17 @@ def main() -> None:
                 SELECT mercado::text AS mercado,
                        COUNT(*) AS n_total,
                        COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_res,
+                       COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL AND {p_col} IS NOT NULL) AS n_pares_metricos,
                        COUNT(DISTINCT linea) AS lineas,
-                       AVG(POWER(COALESCE({p_col},0)-COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+                       AVG(POWER({p_col}-outcome_binario::int,2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
                        AVG(CASE
-                         WHEN outcome_binario IS NULL THEN NULL
+                         WHEN outcome_binario IS NULL OR {p_col} IS NULL THEN NULL
                          ELSE -(
-                           outcome_binario::int * LN(GREATEST(COALESCE({p_col}, 0), 1e-9))
-                           + (1 - outcome_binario::int) * LN(GREATEST(1 - COALESCE({p_col},0), 1e-9))
+                           outcome_binario::int * LN(GREATEST(LEAST({p_col}, 1 - 1e-9), 1e-9))
+                           + (1 - outcome_binario::int) * LN(GREATEST(LEAST(1 - {p_col}, 1 - 1e-9), 1e-9))
                          )
                        END) AS log_loss,
-                       AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate
+                       {fallback_expr} AS fallback_rate
                 FROM predicciones_futbol
                 WHERE {fecha_col} >= %s
                 GROUP BY mercado
@@ -102,12 +108,13 @@ def main() -> None:
                 metricas = {
                     "n_resueltas": n_res,
                     "lineas_cubiertas": int(r["lineas"] or 0),
-                    "brier": float(r["brier"] or 1.0),
-                    "log_loss": float(r["log_loss"] or 2.0),
-                    "ece": 1.0,
+                    "n_pares_metricos": int(r["n_pares_metricos"] or 0),
+                    "brier": float(r["brier"]) if r["brier"] is not None else None,
+                    "log_loss": float(r["log_loss"]) if r["log_loss"] is not None else None,
+                    "ece": None,
                     "resolved_rate": resolved_rate,
-                    "fallback_rate": float(r["fallback_rate"] or 1.0),
-                    "window_drift_brier": 0.0,
+                    "fallback_rate": float(r["fallback_rate"]) if r["fallback_rate"] is not None else None,
+                    "window_drift_brier": None,
                 }
                 nivel, motivos = clasificar_madurez_mercado(metricas, estado_mercado="verde")
                 objetivo = mapear_status_promocion(nivel)
