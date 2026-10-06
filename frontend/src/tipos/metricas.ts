@@ -12,6 +12,7 @@ export interface MetricaMercado {
   mercado: MercadoMetricas;
   n_predicciones: number;
   n_excluidos_push: number;
+  n_excluidos_outcome_dudoso: number;
   brier_score: number | null;
   brier_score_raw: number | null;
   brier_score_calibrado: number | null;
@@ -71,6 +72,7 @@ export interface RespuestaCurvaCalibracion {
   n_bins: number;
   n_predicciones_total: number;
   n_excluidos_push: number;
+  n_excluidos_outcome_dudoso: number;
   bins: BinCalibracion[];
   ece: number;
   mce: number;
