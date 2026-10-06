@@ -6,6 +6,7 @@
 - CI incorpora pruebas dirigidas backend y tests frontend. Bases SQLite comerciales y telemetría runtime salen del índice Git sin borrar copias locales; scripts de backup/restore SQLite comercial y variables obsoletas del ejemplo de entorno se retiran.
 - Ver `docs/reactivacion_single_user/REPORTE_ELIMINACION_CAPA_COMERCIAL.md` para evidencia y límites. Integración con BD efímera y recertificación analítica siguen pendientes.
 - Entorno local reanudado en loopback; `/salud`, OpenAPI y raíz frontend respondieron HTTP 200. El arranque entrenó el modelo habitual, sin que ello certifique rendimiento o datos.
+- Compose local opcional deja de depender de SMTP/MailHog y credenciales comerciales; su smoke consulta solo salud/OpenAPI. Validación estática, sin Docker ni despliegue.
 
 ## 2026-10-05 — inicio de reactivación single-user
 - Aprobada dirección de producto privado personal; C0–C7 queda como historia, no objetivo vigente.

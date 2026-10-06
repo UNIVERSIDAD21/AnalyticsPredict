@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Uso:
-#   STAGING_BASE_URL="http://localhost:18000" ./scripts/a1_smoke_staging.sh
+#   STAGING_BASE_URL="http://127.0.0.1:18000" ./scripts/a1_smoke_staging.sh
 
-BASE_URL="${STAGING_BASE_URL:-http://localhost:18000}"
+BASE_URL="${STAGING_BASE_URL:-http://127.0.0.1:18000}"
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 OUT_DIR="docs/reportes"
 OUT_FILE="${OUT_DIR}/A1_SMOKE_STAGING_${TS}.md"
@@ -18,17 +18,16 @@ check_status() {
   local path="$1"
   local expected="$2"
   local code
-  code=$(curl -s -o /tmp/a1_smoke_resp.txt -w "%{http_code}" "${BASE_URL}${path}" || true)
+  code=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}${path}" || true)
   if [[ "$code" == "$expected" ]]; then
     pass "${path} -> HTTP ${code}"
   else
-    echo "Respuesta: $(cat /tmp/a1_smoke_resp.txt 2>/dev/null || true)" | tee -a "$OUT_FILE"
     fail "${path} -> esperado ${expected}, recibido ${code}"
   fi
 }
 
 cat > "$OUT_FILE" <<EOF
-# A1 Smoke Staging
+# Smoke HTTP de Compose local single-user
 
 Fecha (UTC): ${TS}
 Base URL: ${BASE_URL}
@@ -37,14 +36,12 @@ Base URL: ${BASE_URL}
 EOF
 
 check_status "/salud" "200"
-check_status "/api/pagos/matriz-estados" "200"
-check_status "/api/onboarding/estado" "401"
+check_status "/openapi.json" "200"
 
 cat >> "$OUT_FILE" <<EOF
 
 ## Resultado
-- Smoke staging completado.
-- Nota: endpoints autenticados pueden devolver 401 sin token válido (esperado en smoke sin sesión).
+- Smoke HTTP local completado. No certifica BD, entrenamiento ni analítica.
 EOF
 
 echo "Reporte generado: $OUT_FILE"
