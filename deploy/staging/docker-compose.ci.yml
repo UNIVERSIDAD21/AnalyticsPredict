@@ -1,0 +1,20 @@
+# Override exclusivo de CI: PostgreSQL aislado, sin datos ni secretos productivos.
+services:
+  analytics-postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: analytics_test
+      POSTGRES_PASSWORD: analytics_test
+      POSTGRES_DB: analytics_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytics_test -d analytics_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  analytics-backend:
+    environment:
+      DATABASE_URL: postgresql://analytics_test:analytics_test@analytics-postgres-test:5432/analytics_test?sslmode=disable
+    depends_on:
+      analytics-postgres-test:
+        condition: service_healthy

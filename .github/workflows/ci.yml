@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "reactivacion/implementacion-single-user"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "reactivacion/implementacion-single-user"]
 
 jobs:
   backend-unit-and-contract:
@@ -24,7 +24,7 @@ jobs:
       - name: Install backend deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.lock
 
       - name: Unitarias analíticas y contratos sin BD
         run: >-
@@ -63,3 +63,58 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  postgres-migration-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: analytics_test
+          POSTGRES_PASSWORD: analytics_test
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U analytics_test -d postgres"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    env:
+      TEST_PG_ADMIN_URL: postgresql://analytics_test:analytics_test@127.0.0.1:5432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar driver y pytest
+        run: python -m pip install -r backend/requirements.lock
+      - name: Migración single-user en base efímera
+        working-directory: backend
+        run: python -m pytest -q tests/integracion/test_migracion_single_user_pg.py
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir y arrancar Compose contra PostgreSQL desechable
+        run: |
+          printf 'ENTORNO=desarrollo\nDEBUG=false\nHOST=0.0.0.0\nPUERTO=8000\nSTAGING_BACKEND_PORT=18000\nSTAGING_FRONTEND_PORT=15173\nDATABASE_URL=postgresql://analytics_test:analytics_test@analytics-postgres-test:5432/analytics_test?sslmode=disable\n' > deploy/staging/staging.env
+          trap 'docker compose -f deploy/staging/docker-compose.yml -f deploy/staging/docker-compose.ci.yml --env-file deploy/staging/staging.env down --volumes; rm -f deploy/staging/staging.env' EXIT
+          docker compose -f deploy/staging/docker-compose.yml -f deploy/staging/docker-compose.ci.yml --env-file deploy/staging/staging.env config --quiet
+          docker compose -f deploy/staging/docker-compose.yml -f deploy/staging/docker-compose.ci.yml --env-file deploy/staging/staging.env up -d --build --wait
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18000/openapi.json > /tmp/analytics-openapi.json && curl --fail --silent http://127.0.0.1:15173/ > /tmp/analytics-front.html; then break; fi
+            sleep 2
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          paths = json.loads(Path('/tmp/analytics-openapi.json').read_text())['paths']
+          assert '/salud' in paths
+          assert not any(p.startswith(('/api/auth', '/api/pagos', '/api/premium')) for p in paths)
+          assert '<html' in Path('/tmp/analytics-front.html').read_text().lower()
+          PY
+          curl --fail --silent http://127.0.0.1:18000/salud > /dev/null
+          test "$(docker inspect -f '{{range .NetworkSettings.Ports}}{{range .}}{{.HostIp}} {{end}}{{end}}' analytics-backend-staging | xargs)" = "127.0.0.1"
+          test "$(docker inspect -f '{{range .NetworkSettings.Ports}}{{range .}}{{.HostIp}} {{end}}{{end}}' analytics-frontend-staging | xargs)" = "127.0.0.1"
