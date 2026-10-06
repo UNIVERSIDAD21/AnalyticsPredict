@@ -142,6 +142,7 @@ def _generar_reporte_csv(backtest_id: str, backtest: dict) -> StreamingResponse:
         "desviacion_predicha",
         "valor_real",
         "outcome",
+        "outcome_no_evaluable",
         "modelo_version_id",
         "cutoff_entrenamiento",
     ]
@@ -165,7 +166,9 @@ def _generar_reporte_csv(backtest_id: str, backtest: dict) -> StreamingResponse:
                 pred.get("media_predicha"),
                 pred.get("desviacion_predicha"),
                 pred.get("valor_real"),
-                _outcome_to_string(pred.get("outcome_binario")),
+                "NO_EVALUABLE" if pred.get("outcome_no_evaluable")
+                else _outcome_to_string(pred.get("outcome_binario")),
+                pred.get("outcome_no_evaluable", False),
                 pred.get("modelo_version_id"),
                 pred.get("cutoff_entrenamiento"),
             ]
@@ -534,15 +537,21 @@ def _calcular_resumen_global(
     consulta = """
         SELECT
             COUNT(*) AS total_predicciones,
-            SUM(CASE WHEN resuelto THEN 1 ELSE 0 END) AS total_resueltas,
-            SUM(CASE WHEN outcome_binario IS NULL THEN 1 ELSE 0 END) AS total_pushes,
-            MIN(fecha_partido) AS primera_prediccion,
-            MAX(fecha_partido) AS ultima_prediccion
-        FROM predicciones_registradas
-        WHERE fecha_partido >= %s
-          AND fecha_partido <= %s
-          AND mercado = ANY(%s)
-          AND origen = ANY(%s)
+            SUM(CASE WHEN pr.resuelto AND NOT COALESCE(pb.local_total = 0 AND pb.visitante_total = 0, false)
+                     THEN 1 ELSE 0 END) AS total_resueltas,
+            SUM(CASE WHEN pr.resuelto AND pr.outcome_binario IS NULL
+                     THEN 1 ELSE 0 END) AS total_pushes,
+            MIN(pr.fecha_partido) AS primera_prediccion,
+            MAX(pr.fecha_partido) AS ultima_prediccion,
+            COUNT(*) FILTER (WHERE pr.outcome_binario IS NOT NULL
+                             AND pb.local_total = 0 AND pb.visitante_total = 0)
+                AS n_excluidos_outcome_dudoso
+        FROM predicciones_registradas pr
+        LEFT JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
+        WHERE pr.fecha_partido >= %s
+          AND pr.fecha_partido <= %s
+          AND pr.mercado = ANY(%s)
+          AND pr.origen = ANY(%s)
     """
 
     with pool.connection() as conn:
@@ -562,6 +571,7 @@ def _calcular_resumen_global(
         "total_predicciones": total_predicciones,
         "total_resueltas": total_resueltas,
         "total_pushes": total_pushes,
+        "n_excluidos_outcome_dudoso": int(fila[5] or 0),
         "tasa_push": round(tasa_push, 4),
         "periodo_efectivo": {
             "primera_prediccion": fila[3],
@@ -586,8 +596,8 @@ def _obtener_predicciones_backtest(
             pr.id,
             pr.fecha_partido,
             pr.mercado,
-            pr.equipo_local,
-            pr.equipo_visitante,
+            el.nombre AS equipo_local,
+            ev.nombre AS equipo_visitante,
             pr.lado,
             pr.linea,
             pr.linea_es_sintetica,
@@ -595,11 +605,19 @@ def _obtener_predicciones_backtest(
             CASE WHEN pr.calibrador_id IS NOT NULL THEN pr.p_calibrada END AS p_calibrada,
             pr.media_predicha,
             pr.desviacion_predicha,
-            pr.valor_real,
-            pr.outcome_binario,
+            CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
+                 THEN NULL ELSE pr.valor_real END AS valor_real,
+            CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
+                 THEN NULL ELSE pr.outcome_binario END AS outcome_binario,
             pr.modelo_version_id,
-            mv.cutoff_entrenamiento
+            mv.cutoff_entrenamiento,
+            (pr.outcome_binario IS NOT NULL AND pb.local_total = 0
+             AND pb.visitante_total = 0) AS outcome_no_evaluable
         FROM vista_predicciones_para_calibracion pr
+        LEFT JOIN predicciones_registradas reg ON reg.id = pr.id
+        LEFT JOIN partidos_baloncesto pb ON pb.id = reg.partido_id
+        LEFT JOIN equipos el ON el.id = pb.equipo_local_id
+        LEFT JOIN equipos ev ON ev.id = pb.equipo_visitante_id
         LEFT JOIN modelo_versiones mv ON mv.id = pr.modelo_version_id
         WHERE pr.fecha_partido >= %s
           AND pr.fecha_partido <= %s
@@ -633,6 +651,7 @@ def _obtener_predicciones_backtest(
                 "outcome_binario": fila[13],
                 "modelo_version_id": fila[14],
                 "cutoff_entrenamiento": fila[15],
+                "outcome_no_evaluable": bool(fila[16]),
             }
         )
 
@@ -648,16 +667,19 @@ def _obtener_predicciones_para_curva(
 ) -> list[tuple[float, bool]]:
     pool = obtener_pool()
     consulta = """
-        SELECT COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) AS p_efectiva,
-               outcome_binario
-        FROM vista_predicciones_para_calibracion
-        WHERE mercado = %s
-          AND origen = %s
-          AND fecha_partido >= %s
-          AND fecha_partido <= %s
-          AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) IS NOT NULL
-          AND outcome_binario IS NOT NULL
-        ORDER BY fecha_partido
+        SELECT COALESCE(CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END, v.p_raw) AS p_efectiva,
+               v.outcome_binario
+        FROM vista_predicciones_para_calibracion v
+        LEFT JOIN predicciones_registradas reg ON reg.id = v.id
+        LEFT JOIN partidos_baloncesto pb ON pb.id = reg.partido_id
+        WHERE v.mercado = %s
+          AND v.origen = %s
+          AND v.fecha_partido >= %s
+          AND v.fecha_partido <= %s
+          AND COALESCE(CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END, v.p_raw) IS NOT NULL
+          AND v.outcome_binario IS NOT NULL
+          AND NOT COALESCE(pb.local_total = 0 AND pb.visitante_total = 0, false)
+        ORDER BY v.fecha_partido
     """
     params = [mercado, origen, desde, hasta]
 

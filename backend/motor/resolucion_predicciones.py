@@ -440,14 +440,19 @@ def obtener_estadisticas_predicciones(pool=None) -> Dict[str, Any]:
                         COUNT(*) FILTER (WHERE resuelto = true) AS resueltas,
                         COUNT(*) FILTER (WHERE resuelto = false) AS pendientes,
                         COUNT(*) FILTER (WHERE outcome_binario IS NULL AND resuelto = true) AS push,
-                        COUNT(*) FILTER (WHERE outcome_binario = true) AS aciertos,
-                        COUNT(*) FILTER (WHERE outcome_binario = false) AS fallos
-                    FROM predicciones_registradas
+                        COUNT(*) FILTER (WHERE pr.outcome_binario = true
+                            AND NOT COALESCE(pb.local_total = 0 AND pb.visitante_total = 0, false)) AS aciertos,
+                        COUNT(*) FILTER (WHERE pr.outcome_binario = false
+                            AND NOT COALESCE(pb.local_total = 0 AND pb.visitante_total = 0, false)) AS fallos,
+                        COUNT(*) FILTER (WHERE pr.outcome_binario IS NOT NULL
+                            AND pb.local_total = 0 AND pb.visitante_total = 0) AS no_evaluables
+                    FROM predicciones_registradas pr
+                    LEFT JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
                     """
                 )
                 fila = cursor.fetchone()
                 if fila:
-                    total, resueltas, pendientes, push, aciertos, fallos = fila
+                    total, resueltas, pendientes, push, aciertos, fallos, no_evaluables = fila
                     return {
                         "total": total,
                         "resueltas": resueltas,
@@ -455,6 +460,7 @@ def obtener_estadisticas_predicciones(pool=None) -> Dict[str, Any]:
                         "push": push,
                         "aciertos": aciertos,
                         "fallos": fallos,
+                        "no_evaluables": no_evaluables,
                         "tasa_aciertos": (
                             round(aciertos / (aciertos + fallos), 4)
                             if (aciertos + fallos) > 0

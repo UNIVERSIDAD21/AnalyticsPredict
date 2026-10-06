@@ -44,6 +44,7 @@ class ResumenHistorial(BaseModel):
     perdidas: int
     push: int
     pendientes: int
+    no_evaluables: int = 0
     win_rate: Optional[float]
 
 
@@ -89,9 +90,11 @@ def _construir_filtros(
         elif estado == "PUSH":
             filtros.append("pr.resuelto = true AND pr.outcome_binario IS NULL")
         elif estado == "GANADA":
-            filtros.append("pr.outcome_binario = true")
+            filtros.append("pr.outcome_binario = true AND NOT COALESCE(p.local_total = 0 AND p.visitante_total = 0, false)")
         elif estado == "PERDIDA":
-            filtros.append("pr.outcome_binario = false")
+            filtros.append("pr.outcome_binario = false AND NOT COALESCE(p.local_total = 0 AND p.visitante_total = 0, false)")
+        elif estado == "NO_EVALUABLE":
+            filtros.append("pr.resuelto = true AND pr.outcome_binario IS NOT NULL AND p.local_total = 0 AND p.visitante_total = 0")
 
     where_sql = "WHERE " + " AND ".join(filtros) if filtros else ""
     return where_sql, params
@@ -109,7 +112,7 @@ async def obtener_historial_predicciones(
     ),
     estado: Optional[str] = Query(
         default=None,
-        pattern="^(GANADA|PERDIDA|PUSH|PENDIENTE)$",
+        pattern="^(GANADA|PERDIDA|PUSH|PENDIENTE|NO_EVALUABLE)$",
     ),
     origen: Optional[str] = Query(default=None),
     desde: Optional[date] = Query(default=None),
@@ -135,9 +138,13 @@ async def obtener_historial_predicciones(
         SELECT
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE pr.resuelto = false) AS pendientes,
-            COUNT(*) FILTER (WHERE pr.outcome_binario = true) AS ganadas,
-            COUNT(*) FILTER (WHERE pr.outcome_binario = false) AS perdidas,
-            COUNT(*) FILTER (WHERE pr.outcome_binario IS NULL AND pr.resuelto = true) AS push
+            COUNT(*) FILTER (WHERE pr.outcome_binario = true
+                             AND NOT COALESCE(p.local_total = 0 AND p.visitante_total = 0, false)) AS ganadas,
+            COUNT(*) FILTER (WHERE pr.outcome_binario = false
+                             AND NOT COALESCE(p.local_total = 0 AND p.visitante_total = 0, false)) AS perdidas,
+            COUNT(*) FILTER (WHERE pr.outcome_binario IS NULL AND pr.resuelto = true) AS push,
+            COUNT(*) FILTER (WHERE pr.resuelto = true AND pr.outcome_binario IS NOT NULL
+                             AND p.local_total = 0 AND p.visitante_total = 0) AS no_evaluables
         FROM predicciones_registradas pr
         JOIN partidos_baloncesto p ON pr.partido_id = p.id
         {where_sql}
@@ -156,10 +163,13 @@ async def obtener_historial_predicciones(
             pr.linea,
             pr.p_raw,
             pr.p_calibrada,
-            pr.valor_real,
+            CASE WHEN p.local_total = 0 AND p.visitante_total = 0
+                 THEN NULL ELSE pr.valor_real END AS valor_real,
             pr.origen,
             pr.resuelto,
-            pr.outcome_binario
+            pr.outcome_binario,
+            (pr.resuelto = true AND pr.outcome_binario IS NOT NULL
+             AND p.local_total = 0 AND p.visitante_total = 0) AS outcome_no_evaluable
         FROM predicciones_registradas pr
         JOIN partidos_baloncesto p ON pr.partido_id = p.id
         JOIN equipos el ON p.equipo_local_id = el.id
@@ -183,13 +193,16 @@ async def obtener_historial_predicciones(
     perdidas = int(resumen["perdidas"]) if resumen else 0
     pendientes = int(resumen["pendientes"]) if resumen else 0
     push = int(resumen["push"]) if resumen else 0
+    no_evaluables = int(resumen["no_evaluables"]) if resumen else 0
     win_rate = round(ganadas / (ganadas + perdidas), 4) if (ganadas + perdidas) else None
 
     predicciones = []
     for fila in filas:
         if not fila:
             continue
-        if not fila["resuelto"]:
+        if fila["outcome_no_evaluable"]:
+            estado_resumen = "NO_EVALUABLE"
+        elif not fila["resuelto"]:
             estado_resumen = "PENDIENTE"
         elif fila["outcome_binario"] is None:
             estado_resumen = "PUSH"
@@ -238,8 +251,8 @@ async def obtener_historial_predicciones(
             perdidas=perdidas,
             push=push,
             pendientes=pendientes,
+            no_evaluables=no_evaluables,
             win_rate=win_rate,
         ),
         predicciones=predicciones,
     )
-

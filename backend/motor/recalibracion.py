@@ -280,14 +280,19 @@ def _cargar_datos_entrenamiento(
     modelo_version_id: Optional[int],
 ) -> tuple[list[float], list[bool]]:
     consulta = """
-        SELECT p_raw, outcome_binario
-        FROM predicciones_registradas
-        WHERE mercado = %s
-          AND origen = %s
-          AND fecha_partido < %s
-          AND p_raw IS NOT NULL
-          AND outcome_binario IS NOT NULL
-          AND (%s::int IS NULL OR modelo_version_id = %s::int)
+        SELECT pr.p_raw, pr.outcome_binario
+        FROM predicciones_registradas pr
+        WHERE pr.mercado = %s
+          AND pr.origen = %s
+          AND pr.fecha_partido < %s
+          AND pr.p_raw IS NOT NULL
+          AND pr.outcome_binario IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM partidos_baloncesto pb
+              WHERE pb.id = pr.partido_id
+                AND pb.local_total = 0 AND pb.visitante_total = 0
+          )
+          AND (%s::int IS NULL OR pr.modelo_version_id = %s::int)
     """
     params = [mercado, origen, cutoff_datos, modelo_version_id, modelo_version_id]
 

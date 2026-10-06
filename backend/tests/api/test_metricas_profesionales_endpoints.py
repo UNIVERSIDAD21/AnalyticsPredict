@@ -55,6 +55,59 @@ def test_drift_mercados_contrato_basico():
     assert "resumen" in data
 
 
+def test_salud_calidad_y_drift_excluyen_outcome_nba_cero_cero():
+    cfg = conninfo_to_dict(os.environ.get("DATABASE_URL") or "")
+    if not str(cfg.get("dbname", "")).startswith("ap_suite_test_"):
+        pytest.skip("Solo se ejecuta en la base sintética del runner global")
+
+    partido_valido, partido_dudoso = uuid4(), uuid4()
+    mercado = "OUTCOME_EVALUABLE_TEST"
+    pool = obtener_pool()
+    try:
+        with pool.connection() as conn:
+            conn.execute(
+                "INSERT INTO partidos_baloncesto(id, local_total, visitante_total) "
+                "VALUES (%s, 110, 105), (%s, 0, 0)",
+                (partido_valido, partido_dudoso),
+            )
+            conn.execute(
+                """INSERT INTO predicciones_registradas
+                   (partido_id, mercado, origen, p_raw, outcome_binario, resuelto,
+                    timestamp_resolucion)
+                   SELECT %s, %s, 'OUTCOME_EVALUABLE_TEST', 0.8, true, true,
+                          now() - interval '1 day'
+                   FROM generate_series(1, 10)
+                   UNION ALL
+                   SELECT %s, %s, 'OUTCOME_EVALUABLE_TEST', 0.8, true, true,
+                          now() - interval '10 days'
+                   FROM generate_series(1, 10)
+                   UNION ALL
+                   SELECT %s, %s, 'OUTCOME_EVALUABLE_TEST', 0.8, true, true,
+                          now() - interval '1 day'
+                """,
+                (partido_valido, mercado, partido_valido, mercado,
+                 partido_dudoso, mercado),
+            )
+
+        salud = client.get("/api/metricas/tablero-salud")
+        calidad = client.get("/api/metricas/calidad-mercados?min_muestras=10&limite=100")
+        drift = client.get("/api/metricas/drift-mercados?min_muestras=10&limite=100")
+        assert salud.status_code == calidad.status_code == drift.status_code == 200
+        nba = next(x for x in salud.json()["deportes"] if x["deporte"] == "baloncesto")
+        assert nba["n_excluidos_outcome_dudoso"] >= 1
+        ranking = next(x for x in calidad.json()["ranking"] if x["mercado"] == mercado)
+        assert ranking["n_resueltas"] == 20
+        assert ranking["n_excluidos_outcome_dudoso"] == 1
+        item = next(x for x in drift.json()["items"] if x["mercado"] == mercado)
+        assert item["n_7d"] == 10 and item["n_prev_30d"] == 10
+        assert item["n_excluidos_outcome_dudoso"] == 1
+    finally:
+        with pool.connection() as conn:
+            conn.execute("DELETE FROM predicciones_registradas WHERE origen = 'OUTCOME_EVALUABLE_TEST'")
+            conn.execute("DELETE FROM partidos_baloncesto WHERE id IN (%s, %s)",
+                         (partido_valido, partido_dudoso))
+
+
 def test_politica_mercados_contrato_basico():
     resp = client.get("/api/metricas/politica-mercados?min_muestras=10")
     assert resp.status_code == 200

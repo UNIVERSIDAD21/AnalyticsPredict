@@ -39,6 +39,18 @@ _CACHE_TTL_SEGUNDOS = 300
 _cache_metricas: dict[Tuple[object, ...], Tuple[float, dict[str, object]]] = {}
 _cache_curvas: dict[Tuple[object, ...], Tuple[float, dict[str, object]]] = {}
 
+# Proyección de lectura: conserva el histórico y separa el outcome registrado
+# del outcome apto para métricas descriptivas cuando el partido figura 0–0.
+_NBA_OUTCOMES_EVALUABLES_SQL = """(
+    SELECT pr.*,
+           CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
+                THEN NULL ELSE pr.outcome_binario END AS outcome_evaluable,
+           (pr.outcome_binario IS NOT NULL AND pb.local_total = 0
+            AND pb.visitante_total = 0) AS outcome_excluido
+    FROM predicciones_registradas pr
+    LEFT JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
+)"""
+
 
 @dataclass(frozen=True)
 class PeriodoConsulta:
@@ -841,6 +853,7 @@ class MetricasDeporteAvanzadas(BaseModel):
     n_total: int
     n_resueltas: int
     n_pendientes: int
+    n_excluidos_outcome_dudoso: int = 0
     accuracy: Optional[float] = None
     brier: Optional[float] = None
     brier_7d: Optional[float] = None
@@ -917,32 +930,33 @@ async def obtener_tablero_salud() -> TableroSaludResponse:
             SELECT
                 %s::text AS deporte,
                 COUNT(*) AS n_total,
-                COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
+                COUNT(*) FILTER (WHERE {outcome_col} IS NOT NULL) AS n_resueltas,
                 COUNT(*) FILTER (WHERE outcome_binario IS NULL OR resuelto IS DISTINCT FROM true) AS n_pendientes,
                 AVG(CASE
-                    WHEN outcome_binario IS NULL THEN NULL
-                    WHEN (({prob_expr}) >= 0.5 AND outcome_binario = true)
-                      OR (({prob_expr}) < 0.5 AND outcome_binario = false) THEN 1.0
+                    WHEN {outcome_col} IS NULL THEN NULL
+                    WHEN (({prob_expr}) >= 0.5 AND {outcome_col} = true)
+                      OR (({prob_expr}) < 0.5 AND {outcome_col} = false) THEN 1.0
                     ELSE 0.0
                 END) AS accuracy,
-                AVG(POWER(({prob_expr}) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
-                    FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+                AVG(POWER(({prob_expr}) - CASE WHEN {outcome_col} THEN 1 ELSE 0 END, 2))
+                    FILTER (WHERE {outcome_col} IS NOT NULL) AS brier,
                 MAX(COALESCE(timestamp_generacion, creado_en)) AS ultima_prediccion,
-                MAX(timestamp_resolucion) AS ultima_resolucion
+                MAX(timestamp_resolucion) AS ultima_resolucion,
+                COUNT(*) FILTER (WHERE {excluido_col}) AS n_excluidos_outcome_dudoso
             FROM {tabla}
             WHERE {prob_expr} IS NOT NULL
         ),
         rec7 AS (
-            SELECT AVG(POWER(({prob_expr}) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2)) AS brier_7d
+            SELECT AVG(POWER(({prob_expr}) - CASE WHEN {outcome_col} THEN 1 ELSE 0 END, 2)) AS brier_7d
             FROM {tabla}
-            WHERE outcome_binario IS NOT NULL
+            WHERE {outcome_col} IS NOT NULL
               AND {prob_expr} IS NOT NULL
               AND COALESCE(timestamp_resolucion, timestamp_generacion, creado_en) >= (NOW() - INTERVAL '7 days')
         ),
         prev30 AS (
-            SELECT AVG(POWER(({prob_expr}) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2)) AS brier_prev_30d
+            SELECT AVG(POWER(({prob_expr}) - CASE WHEN {outcome_col} THEN 1 ELSE 0 END, 2)) AS brier_prev_30d
             FROM {tabla}
-            WHERE outcome_binario IS NOT NULL
+            WHERE {outcome_col} IS NOT NULL
               AND {prob_expr} IS NOT NULL
               AND COALESCE(timestamp_resolucion, timestamp_generacion, creado_en) >= (NOW() - INTERVAL '37 days')
               AND COALESCE(timestamp_resolucion, timestamp_generacion, creado_en) <  (NOW() - INTERVAL '7 days')
@@ -957,16 +971,21 @@ async def obtener_tablero_salud() -> TableroSaludResponse:
             rec7.brier_7d,
             prev30.brier_prev_30d,
             base.ultima_prediccion,
-            base.ultima_resolucion
+            base.ultima_resolucion,
+            base.n_excluidos_outcome_dudoso
         FROM base, rec7, prev30
     """
 
     query_nba = query_deporte.format(
-        tabla="predicciones_registradas",
+        tabla=_NBA_OUTCOMES_EVALUABLES_SQL,
+        outcome_col="outcome_evaluable",
+        excluido_col="outcome_excluido",
         prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)",
     )
     query_fut = query_deporte.format(
         tabla="predicciones_futbol",
+        outcome_col="outcome_binario",
+        excluido_col="false",
         prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)",
     )
 
@@ -1019,6 +1038,7 @@ async def obtener_tablero_salud() -> TableroSaludResponse:
                 n_total=int(fila[1] or 0),
                 n_resueltas=int(fila[2] or 0),
                 n_pendientes=int(fila[3] or 0),
+                n_excluidos_outcome_dudoso=int(fila[10] or 0),
                 accuracy=float(fila[4]) if fila[4] is not None else None,
                 brier=float(fila[5]) if fila[5] is not None else None,
                 brier_7d=brier_7d,
@@ -1091,6 +1111,7 @@ class MetricaMercadoGlobal(BaseModel):
     deporte: str
     mercado: str
     n_resueltas: int
+    n_excluidos_outcome_dudoso: int = 0
     accuracy: Optional[float] = None
     brier: Optional[float] = None
     precision_label: str = "insuficiente"
@@ -1115,20 +1136,21 @@ async def obtener_calidad_mercados(
 ) -> CalidadMercadosResponse:
     pool = obtener_pool()
 
-    query_nba = """
+    query_nba = f"""
         SELECT
             'baloncesto'::text AS deporte,
             mercado::text AS mercado,
-            COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
+            COUNT(*) FILTER (WHERE outcome_evaluable IS NOT NULL) AS n_resueltas,
             AVG(CASE
-                WHEN outcome_binario IS NULL THEN NULL
-                WHEN ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)) >= 0.5 AND outcome_binario = true)
-                  OR ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)) < 0.5 AND outcome_binario = false) THEN 1.0
+                WHEN outcome_evaluable IS NULL THEN NULL
+                WHEN ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)) >= 0.5 AND outcome_evaluable = true)
+                  OR ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)) < 0.5 AND outcome_evaluable = false) THEN 1.0
                 ELSE 0.0
             END) AS accuracy,
-            AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
-                FILTER (WHERE outcome_binario IS NOT NULL) AS brier
-        FROM predicciones_registradas
+            AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) - CASE WHEN outcome_evaluable THEN 1 ELSE 0 END, 2))
+                FILTER (WHERE outcome_evaluable IS NOT NULL) AS brier,
+            COUNT(*) FILTER (WHERE outcome_excluido) AS n_excluidos_outcome_dudoso
+        FROM {_NBA_OUTCOMES_EVALUABLES_SQL}
         GROUP BY mercado
     """
 
@@ -1144,7 +1166,8 @@ async def obtener_calidad_mercados(
                 ELSE 0.0
             END) AS accuracy,
             AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
-                FILTER (WHERE outcome_binario IS NOT NULL) AS brier
+                FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+            0::bigint AS n_excluidos_outcome_dudoso
         FROM predicciones_futbol
         GROUP BY mercado
     """
@@ -1159,7 +1182,7 @@ async def obtener_calidad_mercados(
     filas = rows_nba + rows_fut
 
     ranking: List[MetricaMercadoGlobal] = []
-    for deporte, mercado, n_resueltas, accuracy, brier in filas:
+    for deporte, mercado, n_resueltas, accuracy, brier, n_excluidos in filas:
         n = int(n_resueltas or 0)
         if n < min_muestras:
             continue
@@ -1176,6 +1199,7 @@ async def obtener_calidad_mercados(
                 deporte=str(deporte),
                 mercado=str(mercado),
                 n_resueltas=n,
+                n_excluidos_outcome_dudoso=int(n_excluidos or 0),
                 accuracy=float(accuracy) if accuracy is not None else None,
                 brier=float(brier) if brier is not None else None,
                 precision_label=precision,
@@ -1362,6 +1386,7 @@ class DriftMercadoItem(BaseModel):
     mercado: str
     n_7d: int
     n_prev_30d: int
+    n_excluidos_outcome_dudoso: int = 0
     brier_7d: Optional[float] = None
     brier_prev_30d: Optional[float] = None
     drift_pct: Optional[float] = None
@@ -1425,7 +1450,11 @@ async def obtener_drift_mercados(
                     WHERE {outcome_col} IS NOT NULL
                       AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) >= (NOW() - INTERVAL '37 days')
                       AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) <  (NOW() - INTERVAL '7 days')
-                ) AS brier_prev_30d
+                ) AS brier_prev_30d,
+                COUNT(*) FILTER (
+                    WHERE {excluido_col}
+                      AND COALESCE({ts_res_col}, {ts_gen_col}, {ts_alt_col}) >= (NOW() - INTERVAL '37 days')
+                ) AS n_excluidos_outcome_dudoso
             FROM {tabla}
             WHERE {prob_expr} IS NOT NULL
             GROUP BY {mercado_col}
@@ -1436,18 +1465,20 @@ async def obtener_drift_mercados(
     query_nba = query_template.format(
         deporte="baloncesto",
         mercado_col="mercado",
-        outcome_col="outcome_binario",
+        outcome_col="outcome_evaluable",
+        excluido_col="outcome_excluido",
         ts_res_col="timestamp_resolucion",
         ts_gen_col="timestamp_generacion",
         ts_alt_col="creado_en",
         prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)",
-        tabla="predicciones_registradas",
+        tabla=_NBA_OUTCOMES_EVALUABLES_SQL,
     )
 
     query_fut = query_template.format(
         deporte="futbol",
         mercado_col="mercado",
         outcome_col="outcome_binario",
+        excluido_col="false",
         ts_res_col="timestamp_resolucion",
         ts_gen_col="timestamp_generacion",
         ts_alt_col="creado_en",
@@ -1464,7 +1495,7 @@ async def obtener_drift_mercados(
 
     items: List[DriftMercadoItem] = []
     for r in rows_nba + rows_fut:
-        deporte, mercado, n_7d, n_prev_30d, brier_7d, brier_prev_30d = r
+        deporte, mercado, n_7d, n_prev_30d, brier_7d, brier_prev_30d, n_excluidos = r
         n7 = int(n_7d or 0)
         n30 = int(n_prev_30d or 0)
         if n7 < min_muestras or n30 < min_muestras:
@@ -1482,6 +1513,7 @@ async def obtener_drift_mercados(
                 mercado=str(mercado),
                 n_7d=n7,
                 n_prev_30d=n30,
+                n_excluidos_outcome_dudoso=int(n_excluidos or 0),
                 brier_7d=b7,
                 brier_prev_30d=b30,
                 drift_pct=drift_pct,

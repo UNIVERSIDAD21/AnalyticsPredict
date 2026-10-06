@@ -4,7 +4,7 @@
 
 import type { MercadoMetricas, OrigenMetricas } from './metricas';
 
-export type EstadoPrediccion = 'GANADA' | 'PERDIDA' | 'PUSH' | 'PENDIENTE';
+export type EstadoPrediccion = 'GANADA' | 'PERDIDA' | 'PUSH' | 'PENDIENTE' | 'NO_EVALUABLE';
 
 export interface PrediccionHistorial {
   id: string;
@@ -29,6 +29,7 @@ export interface ResumenHistorialPredicciones {
   perdidas: number;
   push: number;
   pendientes: number;
+  no_evaluables: number;
   win_rate: number | null;
 }
 

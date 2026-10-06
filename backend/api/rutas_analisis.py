@@ -228,6 +228,11 @@ def _obtener_mercados_bloqueados_nba(
                     SELECT mercado
                     FROM predicciones_registradas
                     WHERE outcome_binario IS NOT NULL
+                      AND NOT EXISTS (
+                          SELECT 1 FROM partidos_baloncesto pb
+                          WHERE pb.id = predicciones_registradas.partido_id
+                            AND pb.local_total = 0 AND pb.visitante_total = 0
+                      )
                       AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) IS NOT NULL
                     GROUP BY mercado
                     HAVING COUNT(*) >= %s
@@ -257,7 +262,12 @@ def _modo_estricto_nba_activo(minimo_predicciones: int = 100) -> bool:
                     """
                     SELECT
                       COUNT(*) AS total,
-                      COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS resueltas
+                      COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL
+                          AND NOT EXISTS (
+                              SELECT 1 FROM partidos_baloncesto pb
+                              WHERE pb.id = predicciones_registradas.partido_id
+                                AND pb.local_total = 0 AND pb.visitante_total = 0
+                          )) AS resueltas
                     FROM predicciones_registradas
                     """
                 )
