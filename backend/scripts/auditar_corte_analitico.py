@@ -7,8 +7,8 @@ DATABASE_URL se carga de backend/.env sin imprimirla. El JSON no contiene filas 
 from __future__ import annotations
 
 import json
-import math
 import os
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,22 +16,19 @@ from pathlib import Path
 import psycopg
 from dotenv import load_dotenv
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from metricas_probabilisticas import resumir_pares_binarios
+
 
 def metricas_binarias(pares: list[tuple[float, int]]) -> dict:
-    if not pares:
-        return {"n": 0, "brier": None, "log_loss": None, "ece_10": None}
-    n = len(pares)
-    brier = sum((p - y) ** 2 for p, y in pares) / n
-    log_loss = -sum(y * math.log(max(1e-12, min(1 - 1e-12, p))) +
-                    (1 - y) * math.log(max(1e-12, min(1 - 1e-12, 1 - p)))
-                    for p, y in pares) / n
-    buckets: dict[int, list[tuple[float, int]]] = defaultdict(list)
-    for p, y in pares:
-        buckets[min(9, int(p * 10))].append((p, y))
-    ece = sum(len(b) / n * abs(sum(p for p, _ in b) / len(b) -
-                              sum(y for _, y in b) / len(b)) for b in buckets.values())
-    return {"n": n, "brier": round(brier, 6), "log_loss": round(log_loss, 6),
-            "ece_10": round(ece, 6)}
+    resultado = resumir_pares_binarios(pares)
+    return {"n": resultado["n"],
+            "brier": round(resultado["brier"], 6) if resultado["brier"] is not None else None,
+            "log_loss": round(resultado["log_loss"], 6) if resultado["log_loss"] is not None else None,
+            "ece_10": round(resultado["ece"], 6) if resultado["ece"] is not None else None}
 
 
 def resumen_bets(filas: list[tuple]) -> dict:
@@ -68,7 +65,7 @@ def predicciones(cur, tabla: str, raw: str, calibrada: str) -> dict:
     filas = cur.fetchall()
     raw_pares, cal_pares = [], []
     mercados: dict[str, list[tuple[float, int]]] = defaultdict(list)
-    sin_modelo = sin_calibrador = violaciones = 0
+    sin_modelo = sin_calibrador = violaciones = cal_sin_procedencia = 0
     resueltas = 0
     for p_raw, p_cal, y, resuelto, generado, resuelto_en, modelo, calibrador, mercado in filas:
         sin_modelo += modelo is None
@@ -82,10 +79,13 @@ def predicciones(cur, tabla: str, raw: str, calibrada: str) -> dict:
         if p_raw is not None and 0 <= p_raw <= 1:
             raw_pares.append((float(p_raw), yi))
             mercados[str(mercado)].append((float(p_raw), yi))
-        if p_cal is not None and 0 <= p_cal <= 1:
+        if p_cal is not None and calibrador is None:
+            cal_sin_procedencia += 1
+        if p_cal is not None and calibrador is not None and 0 <= p_cal <= 1:
             cal_pares.append((float(p_cal), yi))
     return {"total": len(filas), "resueltas": resueltas, "sin_modelo_id": sin_modelo,
             "sin_calibrador_id": sin_calibrador, "generacion_no_anterior_a_resolucion": violaciones,
+            "calibrada_resuelta_sin_calibrador_id": cal_sin_procedencia,
             "raw": metricas_binarias(raw_pares), "calibrada": metricas_binarias(cal_pares),
             "por_mercado_raw": {m: metricas_binarias(p) for m, p in sorted(mercados.items())}}
 

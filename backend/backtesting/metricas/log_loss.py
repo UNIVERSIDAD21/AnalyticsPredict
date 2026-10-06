@@ -13,7 +13,7 @@ def calcular_log_loss(
     predicciones: Iterable[tuple[float, Optional[bool]]],
     *,
     eps: float = 1e-15,
-) -> dict[str, float | int]:
+) -> dict[str, float | int | None]:
     """
     Calcula el Log Loss para predicciones binarias.
 
@@ -48,10 +48,10 @@ def calcular_log_loss(
         valores.append(loss)
 
     n = len(valores)
-    log_loss = sum(valores) / n if n else 0.0
+    log_loss = sum(valores) / n if n else None
     if n == 0:
-        p_min = 0.0
-        p_max = 0.0
+        p_min = None
+        p_max = None
     return {
         "log_loss": log_loss,
         "n": n,

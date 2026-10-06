@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+from metricas_probabilisticas import resumir_pares_binarios
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, CRITERIOS_DEFAULT
 from .schemas_futbol import (
     MetricasCalibracion,
@@ -131,58 +132,17 @@ def _resolver_columna_modelo(cursor, columnas: List[str]) -> Optional[str]:  # C
 
 
 def _ece_binario(probabilidades: List[float], outcomes: List[int], bins: int = 10) -> Optional[float]:
-    if not probabilidades:
-        return None
-    buckets: Dict[int, List[int]] = defaultdict(list)
-    bucket_prob: Dict[int, List[float]] = defaultdict(list)
-    for p, y in zip(probabilidades, outcomes):
-        idx = min(bins - 1, max(0, int(math.floor(float(p) * bins))))
-        buckets[idx].append(int(y))
-        bucket_prob[idx].append(float(p))
-
-    n = len(probabilidades)
-    ece = 0.0
-    for idx in range(bins):
-        ys = buckets.get(idx, [])
-        ps = bucket_prob.get(idx, [])
-        if not ys:
-            continue
-        avg_y = sum(ys) / len(ys)
-        avg_p = sum(ps) / len(ps)
-        ece += (len(ys) / n) * abs(avg_y - avg_p)
-    return float(ece)
+    if len(probabilidades) != len(outcomes):
+        raise ValueError("Probabilidades y outcomes deben corresponder uno a uno")
+    return resumir_pares_binarios(zip(probabilidades, outcomes), n_bins=bins)["ece"]
 
 
 def _metricas_probabilidades_binarias(probabilidades: List[float], outcomes: List[int]) -> dict:
     """Brier, ECE y Log Loss empíricos sobre pares resueltos válidos."""
     if len(probabilidades) != len(outcomes):
         raise ValueError("Probabilidades y outcomes deben corresponder uno a uno")
-    pares = []
-    for probabilidad, outcome in zip(probabilidades, outcomes):
-        if probabilidad is None or outcome not in (0, 1):
-            continue
-        try:
-            p = float(probabilidad)
-        except (TypeError, ValueError):
-            continue
-        if math.isfinite(p) and 0 <= p <= 1:
-            pares.append((p, int(outcome)))
-    if not pares:
-        return {"n": 0, "brier": None, "ece": None, "log_loss": None}
-    ps = [p for p, _ in pares]
-    ys = [y for _, y in pares]
-    n = len(pares)
-    eps = 1e-12
-    return {
-        "n": n,
-        "brier": sum((p - y) ** 2 for p, y in pares) / n,
-        "ece": _ece_binario(ps, ys),
-        "log_loss": -sum(
-            y * math.log(min(1 - eps, max(eps, p))) +
-            (1 - y) * math.log(min(1 - eps, max(eps, 1 - p)))
-            for p, y in pares
-        ) / n,
-    }
+    resultado = resumir_pares_binarios(zip(probabilidades, outcomes))
+    return {clave: resultado[clave] for clave in ("n", "brier", "ece", "log_loss")}
 
 
 def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: float = 0.24, bloquear_brier: float = 0.28) -> Dict[str, str]:
@@ -423,15 +383,10 @@ async def obtener_madurez_beta_futbol(
                     n_res = int(acc["n_resueltas"])
                     prob = acc["prob"]
                     ys = acc["y"]
-                    if n_res > 0:
-                        brier = sum((p - y) ** 2 for p, y in zip(prob, ys)) / n_res
-                        eps = 1e-9
-                        logloss = -sum(y * math.log(max(p, eps)) + (1 - y) * math.log(max(1 - p, eps)) for p, y in zip(prob, ys)) / n_res
-                        ece = _ece_binario(prob, ys, bins=10)
-                    else:
-                        brier = None
-                        logloss = None
-                        ece = None
+                    calculadas = _metricas_probabilidades_binarias(prob, ys)
+                    brier = calculadas["brier"]
+                    logloss = calculadas["log_loss"]
+                    ece = calculadas["ece"]
 
                     brier_w1 = None
                     if len(acc["prob_w1"]) > 0:
@@ -554,6 +509,9 @@ async def obtener_metricas_calibracion(
                 usa_prob_calibrada = _columna_existe(
                     cursor, "predicciones_futbol", "prob_over_calibrada"
                 )
+                tiene_calibrador_id = _columna_existe(
+                    cursor, "predicciones_futbol", "calibrador_id"
+                )
 
                 calibradores = {}
                 if _tabla_existe(cursor, "calibradores_futbol"):
@@ -570,8 +528,8 @@ async def obtener_metricas_calibracion(
                     WHERE p.outcome_binario IS NOT NULL
                       AND p.prob_over_raw IS NOT NULL
                 """.format(prob_calibrada=(
-                    "COALESCE(p.prob_over_calibrada, p.prob_over_raw)"
-                    if usa_prob_calibrada else "p.prob_over_raw"
+                    "CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada ELSE NULL::numeric END"
+                    if usa_prob_calibrada and tiene_calibrador_id else "NULL::numeric"
                 ))
                 params: List = []
 
@@ -587,21 +545,25 @@ async def obtener_metricas_calibracion(
                 filas = cursor.fetchall()
                 por_mercado: Dict[str, dict] = {}
                 for fila in filas:
-                    datos = por_mercado.setdefault(str(fila["mercado"]), {"raw": [], "cal": [], "y": []})
+                    datos = por_mercado.setdefault(str(fila["mercado"]), {"raw": [], "raw_pareada": [], "cal": [], "y": [], "y_pareada": []})
                     datos["raw"].append(fila["p_raw"])
                     datos["cal"].append(fila["p_cal"])
                     datos["y"].append(fila["y"])
+                    if fila["p_cal"] is not None:
+                        datos["raw_pareada"].append(fila["p_raw"])
+                        datos["y_pareada"].append(fila["y"])
 
                 metricas = []
                 for mercado_nombre in sorted(set(por_mercado) | set(calibradores)):
                     if mercado and mercado != "todos" and mercado_nombre != mercado.upper():
                         continue
-                    datos = por_mercado.get(mercado_nombre, {"raw": [], "cal": [], "y": []})
+                    datos = por_mercado.get(mercado_nombre, {"raw": [], "raw_pareada": [], "cal": [], "y": [], "y_pareada": []})
                     raw = _metricas_probabilidades_binarias(datos["raw"], datos["y"])
+                    raw_pareada = _metricas_probabilidades_binarias(datos["raw_pareada"], datos["y_pareada"])
                     cal = _metricas_probabilidades_binarias(datos["cal"], datos["y"])
                     mejora = (
-                        100 * (raw["brier"] - cal["brier"]) / raw["brier"]
-                        if raw["brier"] is not None and raw["brier"] > 0 and cal["brier"] is not None
+                        100 * (raw_pareada["brier"] - cal["brier"]) / raw_pareada["brier"]
+                        if raw_pareada["brier"] is not None and raw_pareada["brier"] > 0 and cal["brier"] is not None
                         else None
                     )
                     metricas.append(MetricasCalibracion(
@@ -1105,16 +1067,17 @@ def _clasificar_estabilidad_b3(
     for fila in filas_actual:
         comp_id = str(fila["competicion_id"])
         n_actual = int(fila.get("n") or 0)
-        brier_actual = float(fila.get("brier") or 0)
+        brier_actual = float(fila["brier"]) if fila.get("brier") is not None else None
 
         prev = prev_map.get(comp_id)
         n_prev = int((prev or {}).get("n") or 0)
-        brier_prev = float((prev or {}).get("brier") or 0)
+        brier_prev = float(prev["brier"]) if prev and prev.get("brier") is not None else None
 
-        delta_abs = brier_actual - brier_prev if n_prev > 0 else None
-        delta_rel = (delta_abs / brier_prev) if (delta_abs is not None and brier_prev > 0) else None
+        delta_abs = brier_actual - brier_prev if brier_actual is not None and brier_prev is not None else None
+        delta_rel = (delta_abs / brier_prev) if (delta_abs is not None and brier_prev is not None and brier_prev > 0) else None
 
-        if n_actual < MIN_MUESTRA_SEMANAL_B3 or n_prev < MIN_MUESTRA_SEMANAL_B3:
+        if (n_actual < MIN_MUESTRA_SEMANAL_B3 or n_prev < MIN_MUESTRA_SEMANAL_B3
+                or brier_actual is None or brier_prev is None):
             estado = "insuficiente"
         elif (
             delta_abs is not None
@@ -1135,8 +1098,8 @@ def _clasificar_estabilidad_b3(
                 "competicion_nombre": fila.get("competicion_nombre"),
                 "n_actual": n_actual,
                 "n_previo": n_prev,
-                "brier_actual": round(brier_actual, 4),
-                "brier_previo": round(brier_prev, 4) if n_prev > 0 else None,
+                "brier_actual": round(brier_actual, 4) if brier_actual is not None else None,
+                "brier_previo": round(brier_prev, 4) if brier_prev is not None else None,
                 "delta_abs": round(delta_abs, 4) if delta_abs is not None else None,
                 "delta_rel_pct": round((delta_rel or 0) * 100, 2) if delta_rel is not None else None,
                 "estado": estado,
@@ -1144,7 +1107,9 @@ def _clasificar_estabilidad_b3(
         )
 
     ciclos_validos = sum(
-        1 for l in ligas if l["n_actual"] >= MIN_MUESTRA_SEMANAL_B3 and l["n_previo"] >= MIN_MUESTRA_SEMANAL_B3
+        1 for l in ligas if l["n_actual"] >= MIN_MUESTRA_SEMANAL_B3
+        and l["n_previo"] >= MIN_MUESTRA_SEMANAL_B3
+        and l["brier_actual"] is not None and l["brier_previo"] is not None
     )
 
     gate_aprobado = criticas == 0 and ciclos_validos > 0

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from calidad.recalibracion import evaluar_calibracion_mercado, proponer_metodo_calibracion
+from calidad.recalibracion import _ece_from_buckets, evaluar_calibracion_mercado, proponer_metodo_calibracion
 
 
 class _Cursor:
@@ -50,3 +50,27 @@ def test_proponer_metodo_en_catalogo() -> None:
         {"ece": 0.061, "calibration_gap": 0.04, "n_total": 900}
     )
     assert metodo in ["isotonic", "platt", "beta", "ninguno"]
+
+
+def test_baseline_sin_pares_no_simula_calibracion_perfecta() -> None:
+    class CursorVacio(_Cursor):
+        def fetchone(self):
+            return (0, None, None, None)
+
+        def fetchall(self):
+            return []
+
+    class ConnVacia:
+        def cursor(self):
+            return CursorVacio()
+
+    out = evaluar_calibracion_mercado(ConnVacia(), "Q1")
+    assert out["n_total"] == 0
+    assert out["brier"] is None
+    assert out["logloss"] is None
+    assert out["ece"] is None
+    assert proponer_metodo_calibracion(out) == "ninguno"
+
+
+def test_ece_buckets_sin_promedios_no_imputa_cero() -> None:
+    assert _ece_from_buckets([{"n": 100, "hit_rate": None, "prob_media": 0.5}]) is None

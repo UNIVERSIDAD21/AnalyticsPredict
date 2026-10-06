@@ -60,9 +60,9 @@ def calcular_metricas_calibracion(
     )
 
     predicciones_raw = []
-    predicciones_efectiva = []
+    predicciones_calibradas = []
     probabilidades_raw = []
-    probabilidades_efectiva = []
+    probabilidades_calibradas = []
     resultados = []
     distribucion = []
     niveles_intervalo = []
@@ -92,17 +92,17 @@ def calcular_metricas_calibracion(
             predicciones_raw.append((float(p_raw), bool(outcome_binario)))
             probabilidades_raw.append(float(p_raw))
 
-        p_efectiva = (
-            p_calibrada if usar_p_calibrada and p_calibrada is not None else p_raw
-        )
-        if p_efectiva is not None:
-            predicciones_efectiva.append((float(p_efectiva), bool(outcome_binario)))
-            probabilidades_efectiva.append(float(p_efectiva))
+        if p_calibrada is not None:
+            predicciones_calibradas.append((float(p_calibrada), bool(outcome_binario)))
+            probabilidades_calibradas.append(float(p_calibrada))
 
         resultados.append(bool(outcome_binario))
 
     n_predicciones = len(predicciones_raw)
+    n_calibradas = len(predicciones_calibradas)
     alertas: list[str] = []
+    if n_predicciones and n_calibradas < n_predicciones:
+        alertas.append("CALIBRACION_NO_DISPONIBLE" if n_calibradas == 0 else "COBERTURA_CALIBRACION_PARCIAL")
 
     if n_predicciones == 0:
         alertas.append("DATOS_INSUFICIENTES")
@@ -118,6 +118,7 @@ def calcular_metricas_calibracion(
             min_por_bin=min_por_bin,
             eps_log_loss=eps_log_loss,
             n_predicciones=0,
+            n_calibradas=0,
             alertas=alertas,
             brier_raw=None,
             brier_calibrado=None,
@@ -140,10 +141,10 @@ def calcular_metricas_calibracion(
         return resultado
 
     brier_raw = calcular_brier_score(predicciones_raw)
-    brier_calibrado = calcular_brier_score(predicciones_efectiva)
+    brier_calibrado = calcular_brier_score(predicciones_calibradas)
 
     log_loss_raw = calcular_log_loss(predicciones_raw, eps=eps_log_loss)
-    log_loss_calibrado = calcular_log_loss(predicciones_efectiva, eps=eps_log_loss)
+    log_loss_calibrado = calcular_log_loss(predicciones_calibradas, eps=eps_log_loss)
 
     ece_raw = calcular_ece(
         predicciones_raw,
@@ -152,14 +153,14 @@ def calcular_metricas_calibracion(
         min_por_bin=min_por_bin,
     )
     ece_calibrada = calcular_ece(
-        predicciones_efectiva,
+        predicciones_calibradas,
         n_bins=n_bins,
         tipo_bins=tipo_bins,
         min_por_bin=min_por_bin,
     )
 
     sharpness_raw = _calcular_sharpness(probabilidades_raw)
-    sharpness_calibrada = _calcular_sharpness(probabilidades_efectiva)
+    sharpness_calibrada = _calcular_sharpness(probabilidades_calibradas)
 
     base_rate = sum(1 for outcome in resultados if outcome) / len(resultados)
 
@@ -179,6 +180,7 @@ def calcular_metricas_calibracion(
         min_por_bin=min_por_bin,
         eps_log_loss=eps_log_loss,
         n_predicciones=n_predicciones,
+        n_calibradas=n_calibradas,
         alertas=alertas,
         brier_raw=brier_raw,
         brier_calibrado=brier_calibrado,
@@ -377,6 +379,7 @@ def _armar_resultado(
     min_por_bin: int,
     eps_log_loss: float,
     n_predicciones: int,
+    n_calibradas: int,
     alertas: list[str],
     brier_raw: Optional[dict[str, object]],
     brier_calibrado: Optional[dict[str, object]],
@@ -407,6 +410,7 @@ def _armar_resultado(
         "eps_log_loss": eps_log_loss,
         "usar_p_calibrada": usar_p_calibrada,
         "modelo_version_id": modelo_version_id,
+        "n_calibradas": n_calibradas,
     }
 
     resultado = {
@@ -416,6 +420,7 @@ def _armar_resultado(
         "origen": origen,
         "modelo_version_id": modelo_version_id,
         "n_predicciones": n_predicciones,
+        "n_calibradas": n_calibradas,
         "brier_score_raw": _extraer_metricas(brier_raw, "brier_score"),
         "brier_score_calibrado": _extraer_metricas(brier_calibrado, "brier_score"),
         "log_loss_raw": _extraer_metricas(log_loss_raw, "log_loss"),

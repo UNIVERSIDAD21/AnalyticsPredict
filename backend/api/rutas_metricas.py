@@ -250,6 +250,7 @@ async def obtener_metricas_calibracion(
             mejora = (
                 brier_raw - brier_calibrado
                 if brier_raw is not None and brier_calibrado is not None
+                and "COBERTURA_CALIBRACION_PARCIAL" not in (resultado.get("alertas") or [])
                 else None
             )
 

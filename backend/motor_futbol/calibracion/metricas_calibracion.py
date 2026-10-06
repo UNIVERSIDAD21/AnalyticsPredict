@@ -12,6 +12,7 @@ import math
 from typing import Dict, List, Tuple, Optional
 
 import numpy as np
+from metricas_probabilisticas import resumir_pares_binarios
 
 from ..tipos import DatosReliabilityDiagram
 
@@ -48,16 +49,16 @@ def calcular_brier_score(
         )
 
     if len(prob) == 0:
-        return 0.0
+        return None
 
     # Validar rangos
-    if np.any(prob < 0) or np.any(prob > 1):
+    if np.any(~np.isfinite(prob)) or np.any(prob < 0) or np.any(prob > 1):
         raise ValueError("Las probabilidades deben estar entre 0 y 1")
 
     if not np.all(np.isin(out, [0, 1])):
         raise ValueError("Los outcomes deben ser 0 o 1")
 
-    return float(np.mean((prob - out) ** 2))
+    return resumir_pares_binarios(zip(prob, out))["brier"]
 
 
 def calcular_log_loss(
@@ -93,18 +94,11 @@ def calcular_log_loss(
             f"probabilidades={len(prob)}, outcomes={len(out)}"
         )
 
-    if len(prob) == 0:
-        return 0.0
-
-    # Clip para evitar log(0)
-    prob_clipped = np.clip(prob, epsilon, 1 - epsilon)
-
-    # Calcular log loss
-    log_loss = -np.mean(
-        out * np.log(prob_clipped) + (1 - out) * np.log(1 - prob_clipped)
-    )
-
-    return float(log_loss)
+    if np.any(~np.isfinite(prob)) or np.any(prob < 0) or np.any(prob > 1):
+        raise ValueError("Las probabilidades deben estar entre 0 y 1")
+    if not np.all(np.isin(out, [0, 1])):
+        raise ValueError("Los outcomes deben ser 0 o 1")
+    return resumir_pares_binarios(zip(prob, out), eps_log_loss=epsilon)["log_loss"]
 
 
 def calcular_ece(
@@ -143,34 +137,11 @@ def calcular_ece(
             f"probabilidades={len(prob)}, outcomes={len(out)}"
         )
 
-    if len(prob) == 0:
-        return 0.0
-
-    n_total = len(prob)
-    ece = 0.0
-
-    # Definir bordes de bins
-    bin_edges = np.linspace(0, 1, n_bins + 1)
-
-    for i in range(n_bins):
-        # Encontrar muestras en este bin
-        in_bin = (prob > bin_edges[i]) & (prob <= bin_edges[i + 1])
-
-        # Caso especial para el primer bin (incluir 0)
-        if i == 0:
-            in_bin = (prob >= bin_edges[i]) & (prob <= bin_edges[i + 1])
-
-        n_in_bin = np.sum(in_bin)
-
-        if n_in_bin > 0:
-            # Promedio de probabilidades en el bin
-            avg_prob = np.mean(prob[in_bin])
-            # Frecuencia real de outcomes positivos en el bin
-            avg_outcome = np.mean(out[in_bin])
-            # Contribución al ECE ponderada por tamaño del bin
-            ece += (n_in_bin / n_total) * abs(avg_prob - avg_outcome)
-
-    return float(ece)
+    if np.any(~np.isfinite(prob)) or np.any(prob < 0) or np.any(prob > 1):
+        raise ValueError("Las probabilidades deben estar entre 0 y 1")
+    if not np.all(np.isin(out, [0, 1])):
+        raise ValueError("Los outcomes deben ser 0 o 1")
+    return resumir_pares_binarios(zip(prob, out), n_bins=n_bins)["ece"]
 
 
 def calcular_mce(

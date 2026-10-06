@@ -12,6 +12,7 @@ import logging
 from typing import Dict, List, Tuple, Any, Optional
 
 import numpy as np
+from metricas_probabilisticas import resumir_pares_binarios
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +155,9 @@ class CalculadorMetricas:
         Returns:
             Brier Score (menor es mejor, 0 es perfecto)
         """
-        return float(np.mean((probabilidades - resultados) ** 2))
+        if len(probabilidades) != len(resultados):
+            raise ValueError("Probabilidades y resultados deben tener la misma longitud")
+        return resumir_pares_binarios(zip(probabilidades, resultados))["brier"]
 
     @staticmethod
     def log_loss(
@@ -173,8 +176,9 @@ class CalculadorMetricas:
         Returns:
             Log Loss
         """
-        probs = np.clip(probabilidades, eps, 1 - eps)
-        return float(-np.mean(resultados * np.log(probs) + (1 - resultados) * np.log(1 - probs)))
+        if len(probabilidades) != len(resultados):
+            raise ValueError("Probabilidades y resultados deben tener la misma longitud")
+        return resumir_pares_binarios(zip(probabilidades, resultados), eps_log_loss=eps)["log_loss"]
 
     @staticmethod
     def ece(
@@ -195,23 +199,9 @@ class CalculadorMetricas:
         Returns:
             ECE (menor es mejor)
         """
-        bins = np.linspace(0, 1, n_bins + 1)
-        ece_value = 0.0
-        n_total = len(probabilidades)
-
-        for i in range(n_bins):
-            mask = (probabilidades >= bins[i]) & (probabilidades < bins[i + 1])
-            n_bin = np.sum(mask)
-
-            if n_bin == 0:
-                continue
-
-            acc_bin = np.mean(resultados[mask])
-            conf_bin = np.mean(probabilidades[mask])
-
-            ece_value += (n_bin / n_total) * np.abs(acc_bin - conf_bin)
-
-        return float(ece_value)
+        if len(probabilidades) != len(resultados):
+            raise ValueError("Probabilidades y resultados deben tener la misma longitud")
+        return resumir_pares_binarios(zip(probabilidades, resultados), n_bins=n_bins)["ece"]
 
     @staticmethod
     def mce(
@@ -232,11 +222,18 @@ class CalculadorMetricas:
         Returns:
             MCE (menor es mejor)
         """
+        if len(probabilidades) != len(resultados):
+            raise ValueError("Probabilidades y resultados deben tener la misma longitud")
+        if len(probabilidades) == 0:
+            return None
         bins = np.linspace(0, 1, n_bins + 1)
         max_error = 0.0
 
         for i in range(n_bins):
-            mask = (probabilidades >= bins[i]) & (probabilidades < bins[i + 1])
+            mask = (probabilidades >= bins[i]) & (
+                (probabilidades <= bins[i + 1]) if i == n_bins - 1 else
+                (probabilidades < bins[i + 1])
+            )
             n_bin = np.sum(mask)
 
             if n_bin == 0:

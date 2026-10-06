@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — avance H9 sin certificación
+- Fórmulas binarias canónicas y `null` sin muestra para Brier, Log Loss y ECE en calculadores principales; raw/calibrada separados, comparación sobre muestra pareada y alertas de cobertura.
+- Auditoría agregada exige `calibrador_id` para medir serie calibrada; scorecard fútbol deja de publicar tasa de resolución artificial y claim temporal no comprobado. H9 permanece abierto; ver `docs/reactivacion_single_user/H9_METRICAS_PROBABILISTICAS_2026-10-06.md`.
+
 ## 2026-10-06 — CI efímera y corte analítico sin certificación
 - Lock frontend regenerado con npm 10 para compatibilidad con Node 20/npm 10 de Docker y CI; validado con instalación limpia, lint, 11 tests, auditoría de producción y build bajo esa misma versión.
 - Ingesta ESPN por fecha individual con deduplicación por clave natural legacy; 8 partidos NBA de pretemporada ingresados en Neon tras dry-run, integridad e idempotencia verificadas. No certifica outcomes ni modelos.

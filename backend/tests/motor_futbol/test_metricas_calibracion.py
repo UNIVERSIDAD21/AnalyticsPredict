@@ -93,14 +93,14 @@ class TestBrierScore:
         with pytest.raises(ValueError, match="entre 0 y 1"):
             calcular_brier_score(prob, outcomes)
 
-    def test_array_vacio_retorna_cero(self):
-        """Array vacío debería retornar 0."""
+    def test_array_vacio_no_publica_metrica(self):
+        """Sin outcomes, cero sería una medición falsa."""
         prob = np.array([])
         outcomes = np.array([])
 
         brier = calcular_brier_score(prob, outcomes)
 
-        assert brier == 0.0
+        assert brier is None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -149,14 +149,14 @@ class TestLogLoss:
         # No debe ser infinito o NaN
         assert np.isfinite(log_loss)
 
-    def test_array_vacio_retorna_cero(self):
-        """Array vacío debería retornar 0."""
+    def test_array_vacio_no_publica_metrica(self):
+        """Sin outcomes, cero sería una medición falsa."""
         prob = np.array([])
         outcomes = np.array([])
 
         log_loss = calcular_log_loss(prob, outcomes)
 
-        assert log_loss == 0.0
+        assert log_loss is None
 
 
 # ══════════════════════════════════════════════════════════════════════════════

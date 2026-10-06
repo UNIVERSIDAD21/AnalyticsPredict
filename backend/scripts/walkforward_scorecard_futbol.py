@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import math
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -19,6 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from db import obtener_pool
+from metricas_probabilisticas import resumir_pares_binarios
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion, CRITERIOS_DEFAULT
 
 
@@ -33,24 +33,10 @@ class VentanaWF:
     fin_eval: datetime
 
 
-def ece_bin(prob: List[float], y: List[int], bins: int = 10) -> float:
-    if not prob:
-        return 1.0
-    acc = 0.0
-    n = len(prob)
-    bucket_p: Dict[int, List[float]] = defaultdict(list)
-    bucket_y: Dict[int, List[int]] = defaultdict(list)
-    for p, yi in zip(prob, y):
-        b = min(bins - 1, max(0, int(math.floor(p * bins))))
-        bucket_p[b].append(p)
-        bucket_y[b].append(yi)
-    for b in range(bins):
-        if not bucket_p[b]:
-            continue
-        mp = sum(bucket_p[b]) / len(bucket_p[b])
-        my = sum(bucket_y[b]) / len(bucket_y[b])
-        acc += (len(bucket_p[b]) / n) * abs(mp - my)
-    return float(acc)
+def ece_bin(prob: List[float], y: List[int], bins: int = 10) -> float | None:
+    if len(prob) != len(y):
+        raise ValueError("Probabilidades y outcomes deben corresponder uno a uno")
+    return resumir_pares_binarios(zip(prob, y), n_bins=bins)["ece"]
 
 
 def generar_ventanas(fin: datetime, train_days: int, cal_days: int, eval_days: int, n_windows: int) -> List[VentanaWF]:
@@ -86,7 +72,9 @@ def main() -> None:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='predicciones_futbol'")
             cols = {r['column_name'] for r in cur.fetchall()}
-            p_col = 'prob_over_calibrada' if 'prob_over_calibrada' in cols else ('prob_over' if 'prob_over' in cols else None)
+            raw_col = 'prob_over_raw' if 'prob_over_raw' in cols else ('prob_over' if 'prob_over' in cols else None)
+            p_col = (f'COALESCE(prob_over_calibrada, {raw_col})'
+                     if 'prob_over_calibrada' in cols and raw_col else raw_col)
             fecha_col = (
                 'fecha_prediccion' if 'fecha_prediccion' in cols else
                 ('timestamp_generacion' if 'timestamp_generacion' in cols else
@@ -97,37 +85,39 @@ def main() -> None:
                 raise RuntimeError('predicciones_futbol no tiene columnas mínimas para walk-forward')
 
             score_rows: List[Dict[str, Any]] = []
+            emitidas_por_mercado: Dict[str, int] = defaultdict(int)
             for w in ventanas:
                 cur.execute(
                     f"""
                     SELECT mercado::text AS mercado, linea, {p_col} AS p, outcome_binario::int AS y,
-                           CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END AS fallback
+                           {"CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END" if 'prob_over_calibrada' in cols else '1'} AS fallback
                     FROM predicciones_futbol
                     WHERE {fecha_col} >= %s AND {fecha_col} < %s
-                      AND outcome_binario IS NOT NULL
-                      AND {p_col} IS NOT NULL
                     """,
                     [w.inicio_eval, w.fin_eval],
                 )
                 rows = cur.fetchall()
-                acc: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"p": [], "y": [], "lineas": set(), "fallback": 0})
+                acc: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"p": [], "y": [], "lineas": set(), "fallback": 0, "emitidas": 0})
                 for r in rows:
                     m = str(r['mercado']).upper()
-                    acc[m]["p"].append(float(r['p']))
-                    acc[m]["y"].append(int(r['y']))
+                    acc[m]["emitidas"] += 1
+                    emitidas_por_mercado[m] += 1
+                    if r['y'] is not None and r['p'] is not None:
+                        acc[m]["p"].append(float(r['p']))
+                        acc[m]["y"].append(int(r['y']))
+                        if int(r.get('fallback') or 0) == 1:
+                            acc[m]["fallback"] += 1
                     if r.get('linea') is not None:
                         acc[m]["lineas"].add(float(r['linea']))
-                    if int(r.get('fallback') or 0) == 1:
-                        acc[m]["fallback"] += 1
 
                 for mercado, a in acc.items():
                     n = len(a['p'])
                     if n == 0:
                         continue
-                    brier = sum((p - y) ** 2 for p, y in zip(a['p'], a['y'])) / n
-                    eps = 1e-9
-                    logloss = -sum(y * math.log(max(p, eps)) + (1 - y) * math.log(max(1 - p, eps)) for p, y in zip(a['p'], a['y'])) / n
-                    ece = ece_bin(a['p'], a['y'])
+                    medidas = resumir_pares_binarios(zip(a['p'], a['y']))
+                    brier = medidas['brier']
+                    logloss = medidas['log_loss']
+                    ece = medidas['ece']
                     sharp = float(sum(abs(p - 0.5) for p in a['p']) / n)
                     fallback_rate = float(a['fallback'] / n)
 
@@ -141,6 +131,7 @@ def main() -> None:
                         'eval_inicio': w.inicio_eval.isoformat(),
                         'eval_fin': w.fin_eval.isoformat(),
                         'n_resueltas': n,
+                        'n_emitidas': a['emitidas'],
                         'lineas_cubiertas': len(a['lineas']),
                         'brier': brier,
                         'log_loss': logloss,
@@ -151,6 +142,8 @@ def main() -> None:
 
     # agregación final por mercado
     final: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"rows": []})
+    for mercado in emitidas_por_mercado:
+        final[mercado]
     for r in score_rows:
         final[r['mercado']]['rows'].append(r)
 
@@ -158,12 +151,13 @@ def main() -> None:
     for mercado, d in final.items():
         rows = d['rows']
         n_total = sum(int(x['n_resueltas']) for x in rows)
-        lineas = max(int(x['lineas_cubiertas']) for x in rows)
-        brier_avg = sum(float(x['brier']) for x in rows) / len(rows)
-        logloss_avg = sum(float(x['log_loss']) for x in rows) / len(rows)
-        ece_avg = sum(float(x['ece']) for x in rows) / len(rows)
-        fallback_avg = sum(float(x['fallback_rate']) for x in rows) / len(rows)
-        drift = 0.0
+        lineas = max((int(x['lineas_cubiertas']) for x in rows), default=0)
+        n_emitidas = emitidas_por_mercado[mercado]
+        brier_avg = sum(float(x['brier']) * x['n_resueltas'] for x in rows) / n_total if n_total else None
+        logloss_avg = sum(float(x['log_loss']) * x['n_resueltas'] for x in rows) / n_total if n_total else None
+        ece_avg = None  # ECE de ventanas no es aditiva sin pares/bins agregados.
+        fallback_avg = sum(float(x['fallback_rate']) * x['n_resueltas'] for x in rows) / n_total if n_total else None
+        drift = None
         if len(rows) > 1:
             drift = abs(float(rows[-1]['brier']) - float(rows[0]['brier']))
 
@@ -173,11 +167,14 @@ def main() -> None:
             'brier': brier_avg,
             'log_loss': logloss_avg,
             'ece': ece_avg,
-            'resolved_rate': 1.0,
+            'resolved_rate': n_total / n_emitidas if n_emitidas else None,
             'fallback_rate': fallback_avg,
             'window_drift_brier': drift,
         }
-        nivel, motivos = clasificar_madurez_mercado(metricas, estado_mercado='verde')
+        # Este script solo puntúa predicciones persistidas; no demuestra training
+        # temporal, artefactos congelados ni procedencia del estado operativo.
+        nivel, motivos = clasificar_madurez_mercado(metricas, estado_mercado=None)
+        motivos.append('walk_forward_y_estado_mercado_no_verificados')
         status = mapear_status_promocion(nivel)
         clasificados.append({
             'mercado': mercado,
@@ -200,7 +197,8 @@ def main() -> None:
             'eval_days': args.eval_days,
             'windows': args.windows,
             'criterios': CRITERIOS_DEFAULT.__dict__,
-            'sin_leakage': 'train/cal siempre anteriores a eval por ventana',
+            'sin_leakage_verificado': False,
+            'limitacion': 'Ventanas nominales; no verifica cutoff de entrenamiento ni artefactos congelados',
         },
         'ventanas': [w.__dict__ for w in ventanas],
         'scorecard_windows': score_rows,

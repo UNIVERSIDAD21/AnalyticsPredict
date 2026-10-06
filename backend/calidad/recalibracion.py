@@ -11,15 +11,17 @@ logger = logging.getLogger(__name__)
 METODOS_DISPONIBLES = ["isotonic", "platt", "beta", "ninguno"]
 
 
-def _ece_from_buckets(rows: List[Dict[str, Any]]) -> float:
-    total_n = float(sum(int(r.get("n", 0) or 0) for r in rows))
+def _ece_from_buckets(rows: List[Dict[str, Any]]) -> float | None:
+    validos = [r for r in rows if int(r.get("n", 0) or 0) > 0
+               and r.get("hit_rate") is not None and r.get("prob_media") is not None]
+    total_n = float(sum(int(r["n"]) for r in validos))
     if total_n <= 0:
-        return 0.0
+        return None
     ece = 0.0
-    for r in rows:
+    for r in validos:
         n = float(int(r.get("n", 0) or 0))
-        hit_rate = float(r.get("hit_rate", 0.0) or 0.0)
-        prob_media = float(r.get("prob_media", 0.0) or 0.0)
+        hit_rate = float(r["hit_rate"])
+        prob_media = float(r["prob_media"])
         ece += (n / total_n) * abs(hit_rate - prob_media)
     return float(round(ece, 6))
 
@@ -48,16 +50,16 @@ def evaluar_calibracion_mercado(conn: Any, mercado: str, n_samples: int = 5000) 
     )
     SELECT
       COALESCE(SUM(n),0)::bigint AS n_total,
-      COALESCE(AVG(brier_score),0)::numeric AS brier_prom,
-      COALESCE(AVG(log_loss),0)::numeric AS logloss_prom,
-      COALESCE(AVG(calibration_gap),0)::numeric AS gap_prom
+      (SUM(n * brier_score) / NULLIF(SUM(n) FILTER (WHERE brier_score IS NOT NULL),0))::numeric AS brier_prom,
+      (SUM(n * log_loss) / NULLIF(SUM(n) FILTER (WHERE log_loss IS NOT NULL),0))::numeric AS logloss_prom,
+      (SUM(n * calibration_gap) / NULLIF(SUM(n) FILTER (WHERE calibration_gap IS NOT NULL),0))::numeric AS gap_prom
     FROM base
     """
 
     sql_buckets = """
     SELECT confidence_bucket, SUM(n)::bigint AS n,
-           AVG(hit_rate)::numeric AS hit_rate,
-           AVG(prob_media)::numeric AS prob_media
+           (SUM(n * hit_rate) / NULLIF(SUM(n) FILTER (WHERE hit_rate IS NOT NULL),0))::numeric AS hit_rate,
+           (SUM(n * prob_media) / NULLIF(SUM(n) FILTER (WHERE prob_media IS NOT NULL),0))::numeric AS prob_media
     FROM analytics.vw_calibration_scorecard
     WHERE market_type = %s
     GROUP BY confidence_bucket
@@ -65,7 +67,7 @@ def evaluar_calibracion_mercado(conn: Any, mercado: str, n_samples: int = 5000) 
 
     with conn.cursor() as cur:
         cur.execute(sql, (mercado_up, n_samples))
-        row = cur.fetchone() or (0, 0, 0, 0)
+        row = cur.fetchone() or (0, None, None, None)
         cur.execute(sql_buckets, (mercado_up,))
         buckets_rows = cur.fetchall() or []
 
@@ -75,18 +77,18 @@ def evaluar_calibracion_mercado(conn: Any, mercado: str, n_samples: int = 5000) 
             {
                 "confidence_bucket": r[0],
                 "n": int(r[1] or 0),
-                "hit_rate": float(r[2] or 0.0),
-                "prob_media": float(r[3] or 0.0),
+                "hit_rate": float(r[2]) if r[2] is not None else None,
+                "prob_media": float(r[3]) if r[3] is not None else None,
             }
         )
 
     metricas = {
         "mercado": mercado_up,
         "n_total": int(row[0] or 0),
-        "brier": float(row[1] or 0.0),
+        "brier": float(row[1]) if row[1] is not None else None,
         "ece": _ece_from_buckets(buckets),
-        "logloss": float(row[2] or 0.0),
-        "calibration_gap": float(row[3] or 0.0),
+        "logloss": float(row[2]) if row[2] is not None else None,
+        "calibration_gap": float(row[3]) if row[3] is not None else None,
         "buckets": buckets,
     }
 
@@ -96,12 +98,14 @@ def evaluar_calibracion_mercado(conn: Any, mercado: str, n_samples: int = 5000) 
 
 def proponer_metodo_calibracion(metricas_baseline: Dict[str, Any]) -> str:
     """Propone método de calibración según severidad de descalibración."""
-    ece = float(metricas_baseline.get("ece", 0.0) or 0.0)
-    gap = abs(float(metricas_baseline.get("calibration_gap", 0.0) or 0.0))
     n = int(metricas_baseline.get("n_total", 0) or 0)
 
     if n < 200:
         return "ninguno"
+    if metricas_baseline.get("ece") is None or metricas_baseline.get("calibration_gap") is None:
+        return "ninguno"
+    ece = float(metricas_baseline["ece"])
+    gap = abs(float(metricas_baseline["calibration_gap"]))
     if ece >= 0.08 or gap >= 0.08:
         return "isotonic"
     if ece >= 0.05 or gap >= 0.05:

@@ -1,4 +1,4 @@
-from scripts.auditar_corte_analitico import metricas_binarias, resumen_bets
+from scripts.auditar_corte_analitico import metricas_binarias, predicciones, resumen_bets
 
 
 def test_metricas_binarias_known_pairs_y_sin_muestra():
@@ -17,3 +17,17 @@ def test_resumen_aparta_pendientes_y_muestra_pnl_registrado_no_certificado():
     assert resultado["global"] == {"n": 2, "ganadas": 1, "win_rate_pct": 50.0,
         "roi_registrado_no_certificado_pct": -10.0, "stake_total": 20.0, "ganancia_total": -2.0}
     assert resultado["cuota:>2"]["n"] == 1
+
+
+def test_prediccion_sin_procedencia_no_figura_como_calibrada():
+    class Cursor:
+        def execute(self, query):
+            assert "FROM predicciones_futbol" in query
+
+        def fetchall(self):
+            return [(0.2, 0.2, False, True, None, None, 1, None, "GOLES_FT")]
+
+    resultado = predicciones(Cursor(), "predicciones_futbol", "prob_over", "prob_over_calibrada")
+    assert resultado["raw"]["n"] == 1
+    assert resultado["calibrada"]["n"] == 0
+    assert resultado["calibrada_resuelta_sin_calibrador_id"] == 1

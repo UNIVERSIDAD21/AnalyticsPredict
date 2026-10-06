@@ -353,3 +353,37 @@ def test_calculador_distingue_modelo_version_id_null_vs_valor():
     )
 
     assert len(store) == 2
+
+
+def test_calibracion_ausente_no_se_reemplaza_por_raw():
+    rows = _rows_base()
+    for row in rows:
+        row["p_calibrada"] = None
+    resultado = calcular_metricas_calibracion(
+        mercado="Q1", origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1), fecha_fin=date(2024, 1, 5),
+        pool=FakePool(rows, {}),
+    )
+    assert resultado["n_predicciones"] == 3
+    assert resultado["n_calibradas"] == 0
+    assert resultado["brier_score_raw"] is not None
+    assert resultado["brier_score_calibrado"] is None
+    assert resultado["log_loss_calibrado"] is None
+    assert resultado["ece_calibrada"] is None
+    assert resultado["brier_score"] is None
+    assert resultado["alertas"] == ["CALIBRACION_NO_DISPONIBLE"]
+
+
+def test_calibracion_parcial_expone_su_cobertura():
+    rows = _rows_base()
+    rows[1]["p_calibrada"] = None
+    resultado = calcular_metricas_calibracion(
+        mercado="Q1", origen="API_USUARIO",
+        fecha_inicio=date(2024, 1, 1), fecha_fin=date(2024, 1, 5),
+        pool=FakePool(rows, {}),
+    )
+    assert resultado["n_predicciones"] == 3
+    assert resultado["n_calibradas"] == 2
+    assert resultado["configuracion_json"]["n_calibradas"] == 2
+    assert resultado["brier_score_calibrado"] == pytest.approx(((0.8 - 1) ** 2 + (0.55 - 1) ** 2) / 2)
+    assert resultado["alertas"] == ["COBERTURA_CALIBRACION_PARCIAL"]

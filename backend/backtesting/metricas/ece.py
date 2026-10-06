@@ -152,10 +152,10 @@ def _bins_cuantiles(
 
 def _resumen_bins(
     bins: list[dict[str, object]],
-) -> tuple[float, float, float, int]:
+) -> tuple[float | None, float | None, float | None, int]:
     n_total = sum(bin_info["n"] for bin_info in bins)
     if n_total == 0:
-        return 0.0, 0.0, 0.0, 0
+        return None, None, None, 0
 
     ece = 0.0
     gaps = []
@@ -171,5 +171,5 @@ def _resumen_bins(
             gaps_suficientes.append(gap)
 
     mce = max(gaps) if gaps else 0.0
-    mce_suficiente = max(gaps_suficientes) if gaps_suficientes else 0.0
+    mce_suficiente = max(gaps_suficientes) if gaps_suficientes else None
     return ece, mce, mce_suficiente, n_total

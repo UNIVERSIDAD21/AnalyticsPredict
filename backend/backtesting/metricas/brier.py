@@ -10,7 +10,7 @@ from typing import Iterable, Optional
 
 def calcular_brier_score(
     predicciones: Iterable[tuple[float, Optional[bool]]],
-) -> dict[str, float | int | str]:
+) -> dict[str, float | int | str | None]:
     """
     Calcula el Brier Score para predicciones binarias.
 
@@ -33,11 +33,11 @@ def calcular_brier_score(
         valores.append((p - y) ** 2)
 
     n = len(valores)
-    brier = sum(valores) / n if n else 0.0
+    brier = sum(valores) / n if n else None
     return {
         "brier_score": brier,
         "n": n,
-        "interpretacion": _interpretar_brier(brier),
+        "interpretacion": _interpretar_brier(brier) if brier is not None else "N/D",
     }
 
 
