@@ -148,6 +148,11 @@ export function GraficoCurvaCalibracion({ datos }: PropsGraficoCurvaCalibracion)
         <span className="px-2 py-1 rounded-full border border-neon-verde/30 text-neon-verde">
           N total: {datos.n_predicciones_total.toLocaleString('es-ES')}
         </span>
+        {datos.n_excluidos_outcome_dudoso > 0 && (
+          <span className="px-2 py-1 rounded-full border border-amber-500/30 text-amber-300">
+            0–0 sin resultado acreditado: {datos.n_excluidos_outcome_dudoso.toLocaleString('es-ES')} excluidos
+          </span>
+        )}
         <span className="px-2 py-1 rounded-full border border-neon-cyan/10">
           Peor bin: {datos.bin_peor_calibrado ?? '—'}
         </span>

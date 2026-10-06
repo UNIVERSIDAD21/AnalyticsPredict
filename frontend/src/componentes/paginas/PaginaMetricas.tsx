@@ -411,6 +411,7 @@ export function PaginaMetricas() {
                     <tr className="border-b border-neon-cyan/20">
                       <th className="py-2 text-left">Mercado</th>
                       <th className="py-2 text-right">N</th>
+                      <th className="py-2 text-right">0–0 excl.</th>
                       <th className="py-2 text-right">Brier</th>
                       <th className="py-2 text-right">ECE</th>
                       <th className="py-2 text-right">LogLoss</th>
@@ -426,6 +427,9 @@ export function PaginaMetricas() {
                           <td className="py-2 font-semibold text-texto-principal">{mercado}</td>
                           <td className="py-2 text-right text-texto-secundario">
                             {metrica?.suficiente_data ? formatearEntero(metrica.n_predicciones) : '—'}
+                          </td>
+                          <td className="py-2 text-right text-texto-secundario">
+                            {metrica ? formatearEntero(metrica.n_excluidos_outcome_dudoso) : '—'}
                           </td>
                           <td className="py-2 text-right text-texto-secundario">
                             {metrica?.suficiente_data ? formatearNumero(metrica.brier_score) : '—'}
