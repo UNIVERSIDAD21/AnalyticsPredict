@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — serving NBA sin entrenamiento implícito
+- Startup/reload y GET de salud/modelo cargan solo artefacto versionado fuera del repositorio; entrenamiento, registro y recarga son operaciones explícitas. GET de explicación deja de escribir telemetría en BD.
+- Suite local Python 3.12/PG sintético 651 passed, 0 failed, 0 skipped; CI de PR #167 (`37534587737`) y rama (`37534829259`) 4/4 verdes.
+- Un entrenamiento explícito publicó artefacto privado (modo 0600) del modelo ID 2122; tras reload del backend canónico siguieron 2.122 versiones en Neon. Dataset último partido 2026-05-05; modelo **NO CERTIFICADO**.
+
 ## 2026-10-06 — vistas H9 con procedencia en Neon
 - Neon auditada read-only: la vista NBA tiene 42 columnas y una vista resumen dependiente que también usaba probabilidad calibrada sin procedencia. Definiciones originales de ambas vistas guardadas para rollback externo.
 - Migración H9 ampliada para exigir calibrador resoluble del mismo mercado y probabilidad válida; prueba PostgreSQL efímera cubre nueve casos, contratos y rollback. Suite backend local: 646 passed, 0 failed, 0 skipped. CI de PR #167: 4/4 verde.

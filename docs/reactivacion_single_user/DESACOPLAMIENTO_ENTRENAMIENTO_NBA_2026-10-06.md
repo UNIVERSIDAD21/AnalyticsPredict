@@ -1,6 +1,6 @@
 # Bloque B — serving NBA sin entrenamiento implícito
 
-**Estado:** implementación en rama de trabajo; pendiente de CI del código y corte operativo. **Dictamen analítico:** NO CERTIFICADO.
+**Estado operativo:** integrado en `reactivacion/implementacion-single-user` (`8a7465c`), CI 4/4 y reload real sin autoentrenamiento. **Dictamen analítico:** NO CERTIFICADO.
 
 ## Diagnóstico
 
@@ -24,15 +24,15 @@
 - [x] Probar dos ciclos de startup/reload sin entrenamiento ni conexión de modelo a BD.
 - [x] Probar que solo una invocación explícita entrena y que el CLI exige `--entrenar`.
 - [x] Probar recarga de versión publicada sin otra versión.
-- [ ] Verificar CI del commit de código y frontend/Compose.
-- [ ] Crear artefacto operativo por entrenamiento explícito y comprobar reload real sin nueva versión en Neon.
+- [x] Verificar CI del commit de código y frontend/Compose: PR run `37534587737` y rama run `37534829259`, ambos 4/4.
+- [x] Crear artefacto operativo por entrenamiento explícito y comprobar reload real sin nueva versión en Neon: modelo ID 2122, versión 2111; tabla pasó 2.121→2.122 por CLI y permaneció en 2.122 tras reload.
 - [x] Eliminar escritura de telemetría en `GET /api/prediccion/{id}/explicacion`; `Sunset` conserva lectura de los contadores legados y la emisión registra un log estructurado local.
 - [ ] Completar auditoría de llamadas indirectas de todos los GET del sistema; las pruebas actuales cubren salud/estado/equipos, explicación y contratos de bitácora existentes.
 - [x] Registrar hora real del inicio/fin del ajuste explícito, separada de fechas de partidos.
 - [ ] Demostrar `training_outcomes_available_at` y validación out-of-sample antes de considerar el modelo científicamente reproducible.
 
-**Pruebas locales:** PostgreSQL sintético, Python 3.12: 651 passed, 0 failed, 0 skipped, 2 warnings. Dos intentos anteriores usaron esquemas locales erróneos y no se consideran gates válidos; la ejecución final usó `backend/tests/integracion/suite_global_fixture.sql` en una BD desechable `ap_suite_test_*`. Ninguna prueba backend escribió en Neon. La aplicación local del propietario sigue usando el código previo hasta el corte operativo.
+**Pruebas locales:** PostgreSQL sintético, Python 3.12: 651 passed, 0 failed, 0 skipped, 2 warnings. Dos intentos anteriores usaron esquemas locales erróneos y no se consideran gates válidos; la ejecución final usó `backend/tests/integracion/suite_global_fixture.sql` en una BD desechable `ap_suite_test_*`. Ninguna prueba backend escribió en Neon. Servidor canónico del Jefe: `/salud` 200 saludable, `/api/modelo/estado` 200 con ID 2122 y 58 equipos. El proceso del Jefe no se detuvo. Evidencia externa `OPERACION_MODELO_NBA_EXPLICITO_2026-10-06`.
 
 ## Siguiente acción
 
-Pasar CI del cambio, generar una versión/artifacto **explícitamente** para no degradar el servicio al sincronizar la ruta canónica, verificar que `--reload` no aumenta `modelo_versiones`, y luego continuar con reconciliación de P&L según el orden del plan.
+Continuar reconciliación de P&L, temporalidad y procedencia de outcomes según el orden del plan. Mantener N/D en validación temporal/out-of-sample: el último partido usado por este entrenador es del 2026-05-05.
