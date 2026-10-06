@@ -149,12 +149,12 @@ export function PaginaBitacora() {
   };
 
   const resumenDatos = {
-    total: resumen?.total_apuestas ?? 0,
-    pendientes: resumen?.pendientes ?? 0,
-    ganancia: resumen?.ganancia_total ?? 0,
-    winrate: resumen?.winrate ?? 0,
-    roi: resumen?.roi ?? 0,
-  } as unknown as Record<string, number>;
+    total: typeof resumen?.total_apuestas === 'number' ? resumen.total_apuestas : null,
+    pendientes: typeof resumen?.pendientes === 'number' ? resumen.pendientes : null,
+    ganancia: typeof resumen?.ganancia_total === 'number' ? resumen.ganancia_total : null,
+    winrate: typeof resumen?.winrate === 'number' ? resumen.winrate : null,
+    roi: typeof resumen?.roi === 'number' ? resumen.roi : null,
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -190,26 +190,28 @@ export function PaginaBitacora() {
           />
         )}
 
+        <p className="text-xs text-neon-amarillo">Ganancia y ROI son valores registrados, no certificados: el histórico contiene importes que no concilian con stake y cuota.</p>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="tarjeta p-4">
             <p className="text-xs text-texto-secundario uppercase tracking-widest">Total</p>
-            <p className="text-xl text-texto-principal font-bold">{resumenDatos.total}</p>
+            <p className="text-xl text-texto-principal font-bold">{resumenDatos.total ?? 'N/D'}</p>
           </div>
           <div className="tarjeta p-4">
             <p className="text-xs text-texto-secundario uppercase tracking-widest">Pendientes</p>
-            <p className="text-xl text-texto-principal font-bold">{resumenDatos.pendientes}</p>
+            <p className="text-xl text-texto-principal font-bold">{resumenDatos.pendientes ?? 'N/D'}</p>
           </div>
           <div className="tarjeta p-4">
-            <p className="text-xs text-texto-secundario uppercase tracking-widest">Ganancia</p>
-            <p className="text-xl font-bold text-neon-verde">{Number(resumenDatos.ganancia).toFixed(2)}</p>
+            <p className="text-xs text-texto-secundario uppercase tracking-widest">Ganancia registrada</p>
+            <p className="text-xl font-bold text-neon-amarillo">{resumenDatos.ganancia == null ? 'N/D' : resumenDatos.ganancia.toFixed(2)}</p>
           </div>
           <div className="tarjeta p-4">
             <p className="text-xs text-texto-secundario uppercase tracking-widest">Winrate</p>
-            <p className="text-xl text-texto-principal font-bold">{Number(resumenDatos.winrate).toFixed(2)}%</p>
+            <p className="text-xl text-texto-principal font-bold">{resumenDatos.winrate == null ? 'N/D' : `${resumenDatos.winrate.toFixed(2)}%`}</p>
           </div>
           <div className="tarjeta p-4">
-            <p className="text-xs text-texto-secundario uppercase tracking-widest">ROI</p>
-            <p className="text-xl text-texto-principal font-bold">{Number(resumenDatos.roi).toFixed(2)}%</p>
+            <p className="text-xs text-texto-secundario uppercase tracking-widest">ROI registrado</p>
+            <p className="text-xl text-texto-principal font-bold">{resumenDatos.roi == null ? 'N/D' : `${resumenDatos.roi.toFixed(2)}%`}</p>
           </div>
         </div>
 

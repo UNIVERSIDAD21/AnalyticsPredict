@@ -1,9 +1,9 @@
 # ESTADO_PROYECTO.md
 
-> **Estado actual 2026-10-05:** herramienta local single-user. Neon migrada después de backup verificado, con 182 NBA, 13 fútbol, 7 combinadas y 16 selecciones conservadas. Auth, pagos y tiers retirados de API/UI/esquema; OpenAPI sin rutas comerciales ni identidad y dashboard directo probados en el corte local. H6, H7 y la parte de calibración fútbol de H9 corregidos con pruebas dirigidas; CI ampliada, integración efímera y recertificación analítica pendientes. Backend y frontend se reanudaron en loopback; `/salud`, OpenAPI y raíz frontend respondieron 200 en el corte de las 23:19. El contenido C0–C7 debajo es histórico; rige `docs/reactivacion_single_user/ROADMAP_REACTIVACION_ANALYTICSPREDICT.md`.
+> **Estado actual 2026-10-06:** herramienta local single-user. Neon migrada después de backup verificado, con 182 NBA, 13 fútbol, 7 combinadas y 16 selecciones conservadas. Auth, pagos y tiers retirados de API/UI/esquema. H6/H7 y calibración fútbol H9 tienen pruebas dirigidas. CI alojada con Python 3.12 fijado, PostgreSQL efímera, Compose, frontend y backend pasó 4/4 jobs. Corte analítico read-only ejecutado: **NO CERTIFICADO** por falta de frescura, 102 P&L NBA inconsistentes y 2.136 cutoffs posteriores al día de predicción. Ver `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`. El contenido C0–C7 debajo es histórico; rige el roadmap single-user.
 
 Estado global: EN REACTIVACIÓN (herramienta personal; sin lanzamiento comercial)
-Última actualización del estado vigente: 2026-10-05. El historial C0–C7 siguiente conserva el corte de 2026-04-03.
+Última actualización del estado vigente: 2026-10-06. El historial C0–C7 siguiente conserva el corte de 2026-04-03.
 Responsable operativo: UNIVERSIDAD21
 
 ## Objetivo actual

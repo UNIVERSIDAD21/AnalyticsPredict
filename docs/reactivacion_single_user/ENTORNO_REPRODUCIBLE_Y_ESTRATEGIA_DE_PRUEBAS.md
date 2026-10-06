@@ -1,12 +1,12 @@
 # Entorno reproducible y estrategia de pruebas
 
-**Estado:** guía inicial H11, actualizada tras pruebas dirigidas; no certifica la suite global. Separar pruebas puras de pruebas con BD/ingesta/entrenamiento.
+**Estado:** Python 3.12 fijado, PostgreSQL efímera y Compose verificados en CI el 2026-10-06; no certifica la suite global ni los modelos. Separar pruebas puras de pruebas con BD/ingesta/entrenamiento.
 
 ## Versiones y dependencias observadas
 
-- CI usa Python **3.12**, Node **20**, `pip install -r backend/requirements.txt` y `npm ci` con `frontend/package-lock.json`. No hay lockfile Python completo comprobado; `requirements.txt` es la referencia actual.
+- CI usa Python **3.12**, Node **20**, `pip install -r backend/requirements.lock` y `npm ci` con `frontend/package-lock.json`. `requirements.txt` declara dependencias directas; `requirements.lock` fija las 51 dependencias resueltas para Python 3.12. Regenerar con `uv pip compile backend/requirements.txt --python-version 3.12 --output-file backend/requirements.lock` y probar antes de actualizar.
 - Host observado 2026-10-05: Python **3.14.4**, Node **24.21.0**, npm **11.19.0**. La venv heredada `backend/.venv` apunta a Python 3.12 ausente; se verificó en venv aislada temporal de Python 3.14. No se infiere reproducibilidad de un proceso local.
-- Verificar primero con `python3 -m venv .venv` en un checkout/copia aislada (Python 3.12 recomendado para igualar CI), `.venv/bin/python -m pip install -r backend/requirements.txt`, `cd frontend && npm ci`. No copiar una venv entre hosts.
+- Verificar primero con Python 3.12 en una venv aislada, `<venv>/bin/python -m pip install -r backend/requirements.lock`, `cd frontend && npm ci`. No copiar una venv entre hosts ni asumir que `python3` del host es 3.12.
 
 ## Comandos seguros y gates
 
@@ -31,4 +31,4 @@
 
 ## Estado actual conocido
 
-La CI se amplió a unitarias analíticas, contratos backend, tests frontend, lint y build. Aún no tiene PostgreSQL efímera ni test de integración de migración. `scripts/dev.sh` usa loopback por defecto, valida el intérprete y no libera puertos automáticamente. Backend y frontend se reanudaron en loopback; raíz FE, OpenAPI y `/salud` respondieron HTTP 200. No se certificó otro entorno.
+La CI de la rama `reactivacion/implementacion-single-user` pasó 4/4 jobs en [run 37481234870](https://github.com/UNIVERSIDAD21/AnalyticsPredict/actions/runs/37481234870): unitarias/contratos, frontend, migración PostgreSQL efímera con dos dueños sintéticos y smoke Docker Compose con PostgreSQL desechable. Compose comprobó OpenAPI, frontend, `/salud` y puertos host en `127.0.0.1`; **no** certifica análisis funcional con base vacía. `.dockerignore` impide copiar `.env`, DB locales y caches a imágenes. `scripts/dev.sh` usa loopback por defecto, valida el intérprete y no libera puertos automáticamente. El corte analítico de solo lectura está en `RECERTIFICACION_ANALITICA_2026-10-06.md`.

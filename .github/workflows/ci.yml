@@ -26,10 +26,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.lock
 
-      - name: Unitarias analíticas y contratos sin BD
+      - name: Unitarias analíticas sin BD
         run: >-
           python -m pytest -q
+          tests/test_walk_forward.py
+          tests/test_futbol_walkforward_scorecard.py
+          tests/test_futbol_madurez_beta.py
+          tests/test_selector_calibrador.py
+          tests/test_futbol_readiness_gate_b18.py
+          tests/test_nba_ganador_probable.py
           tests/test_metricas_1x2_futbol.py
+          tests/test_auditar_corte_analitico.py
+
+      - name: Contratos API sin BD
+        run: >-
+          python -m pytest -q
           tests/test_rutas_bitacora_payload.py
           tests/api/test_bitacora_contract.py
           tests/api/test_apuestas_futbol_contract.py

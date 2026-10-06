@@ -278,7 +278,7 @@ export function PaginaMetricas() {
                 Métricas de bitácora
               </h3>
               <p className="text-xs text-texto-terciario">
-                Rendimiento real de apuestas resueltas en la bitácora.
+                Resumen histórico registrado; ROI y ganancia aún no certificados por inconsistencias entre stake, cuota e importe.
               </p>
             </div>
             {metricasBitacora?.periodo && (
@@ -311,16 +311,12 @@ export function PaginaMetricas() {
                   {formatearPorcentaje(resumenBitacora.win_rate)}
                 </p>
                 <p className="text-[11px] text-texto-terciario">
-                  ROI estimado sobre apuestas resueltas.
+                  Resultado registrado en apuestas resueltas; no es accuracy prospectiva.
                 </p>
               </div>
               <div className="tarjeta p-4 space-y-2">
-                <p className="text-xs uppercase tracking-widest text-texto-secundario">Ganancia</p>
-                <p
-                  className={`text-2xl font-mono ${
-                    resumenBitacora.ganancia_total >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
-                  }`}
-                >
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">Ganancia registrada</p>
+                <p className="text-2xl font-mono text-neon-amarillo">
                   {formatearMoneda(resumenBitacora.ganancia_total)}
                 </p>
                 <p className="text-[11px] text-texto-terciario">
@@ -328,12 +324,8 @@ export function PaginaMetricas() {
                 </p>
               </div>
               <div className="tarjeta p-4 space-y-2">
-                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI</p>
-                <p
-                  className={`text-2xl font-mono ${
-                    (resumenBitacora.roi ?? 0) >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
-                  }`}
-                >
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI registrado</p>
+                <p className="text-2xl font-mono text-neon-amarillo">
                   {formatearPorcentaje(resumenBitacora.roi)}
                 </p>
                 <p className="text-[11px] text-texto-terciario">

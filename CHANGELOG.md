@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-06 — CI efímera y corte analítico sin certificación
+- Lock de 51 dependencias Python 3.12; CI de la rama con contratos, unitarias analíticas, frontend, migración PostgreSQL efímera y smoke Docker Compose privado (4/4 jobs verdes en run 37481234870).
+- `.dockerignore` excluye envs, DB locales y caches de las imágenes. La migración se probó con dos identidades sintéticas, conservación de histórico y rechazo/rollback de ganador incorrecto.
+- Corte read-only NBA/fútbol/confidence/odds/calidad: **NO CERTIFICADO**. No hay partidos finalizados recientes; 102/181 P&L NBA no cumplen fórmula decimal y 2.136/2.934 cutoffs NBA son posteriores al día de generación. Detalle y límites en `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`.
+- Smoke visual de rutas clave sin login con datos no vacíos; ROI/ganancia históricos rotulados como registrados/no certificados en dashboard, bitácora y métricas. Lectura read-only reveló intento de auto-resolución/escritura desde GET; no se completó ninguna escritura de esa prueba.
+
 ## 2026-10-05 — contratos, métricas y limpieza single-user
 - Bitácora frontend consume v2 explícito y valida envelopes; un error o payload desconocido no se interpreta como lista vacía. Analizadas usa `FINALIZADA` y total global independiente de la página.
 - Hit rate 1X2 conserva escala porcentual; sin muestra se publica `null`. Calibración fútbol calcula Brier, ECE y Log Loss desde outcomes válidos o publica `null`, sin multiplicadores proxy.

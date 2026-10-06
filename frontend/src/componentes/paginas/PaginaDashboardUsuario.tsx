@@ -46,10 +46,11 @@ export function PaginaDashboardUsuario() {
               <div key={dato.deporte} className="tarjeta p-6 space-y-2">
                 <h2 className="text-lg font-semibold text-texto-principal">{dato.deporte}</h2>
                 <p className="text-sm text-texto-secundario">{dato.total} registros · {dato.pendientes} pendientes · {dato.ganadas} ganadas · {dato.perdidas} perdidas</p>
-                <p className="text-sm text-texto-secundario">Win rate: {dato.winrate == null ? 'N/D' : `${dato.winrate.toFixed(1)}%`} · ROI: {dato.roi == null ? 'N/D' : `${dato.roi.toFixed(1)}%`}</p>
+                <p className="text-sm text-texto-secundario">Win rate registrado: {dato.winrate == null ? 'N/D' : `${dato.winrate.toFixed(1)}%`} · ROI registrado: {dato.roi == null ? 'N/D' : `${dato.roi.toFixed(1)}%`}</p>
               </div>
             )) : <p className="text-texto-secundario">No hay resumen segmentado disponible.</p>}
           </section>
+          <p className="text-xs text-neon-amarillo">ROI y ganancia históricos no certificados: hay resultados que no concilian con stake y cuota. No representan rendimiento futuro.</p>
           <section className="tarjeta p-6 space-y-2" aria-label="Calidad fútbol">
             <h2 className="text-lg font-semibold text-texto-principal">Calidad 1X2 fútbol</h2>
             <p className="text-sm text-texto-secundario">{calidad ? `${calidad.finalizadas} finalizadas de ${calidad.total}; ${calidad.ganadas} ganadas y ${calidad.perdidas} perdidas.` : 'Sin medición disponible.'}</p>

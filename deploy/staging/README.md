@@ -29,4 +29,4 @@ docker compose --env-file staging.env down
 
 ## Límite
 
-Docker no estaba instalado en el host observado, así que esta configuración se validó estáticamente, no ejecutando contenedores. No es una receta de despliegue público.
+Docker sigue sin estar instalado en el host local, pero la configuración se ejecutó en el runner de GitHub Actions con PostgreSQL desechable (`docker-compose.ci.yml`): build, arranque, OpenAPI, frontend, salud y binds de loopback en verde en el run `37481234870` del 2026-10-06. Este smoke no prueba modelos con datos reales ni constituye despliegue público.
