@@ -30,13 +30,13 @@ def _current(cur, mercado: str) -> Dict[str, Any]:
           COUNT(*) FILTER (WHERE resuelto = true) AS cerrados_operativos,
           COUNT(*) FILTER (WHERE resuelto = false OR resuelto IS NULL) AS pendientes,
           COUNT(DISTINCT linea) AS lineas_cubiertas,
-          AVG(CASE WHEN prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate,
-          AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+          AVG(CASE WHEN calibrador_id IS NULL OR prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate,
+          AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
           AVG(CASE
             WHEN outcome_binario IS NULL THEN NULL
             ELSE -(
-              outcome_binario::int * LN(GREATEST(COALESCE(prob_over_calibrada, prob_over), 1e-9))
-              + (1 - outcome_binario::int) * LN(GREATEST(1 - COALESCE(prob_over_calibrada, prob_over), 1e-9))
+              outcome_binario::int * LN(GREATEST(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over), 1e-15))
+              + (1 - outcome_binario::int) * LN(GREATEST(1 - COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over), 1e-15))
             )
           END) AS log_loss
         FROM predicciones_futbol

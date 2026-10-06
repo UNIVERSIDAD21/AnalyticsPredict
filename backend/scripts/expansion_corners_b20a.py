@@ -77,7 +77,7 @@ def main() -> None:
                       COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL)::int AS resueltos_binarios,
                       COUNT(*) FILTER (WHERE resuelto=true)::int AS cerrados_operativos,
                       COUNT(*) FILTER (WHERE resuelto=false OR resuelto IS NULL)::int AS pendientes,
-                      COUNT(*) FILTER (WHERE prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL)::int AS fallback_rows,
+                      COUNT(*) FILTER (WHERE calibrador_id IS NULL OR prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL)::int AS fallback_rows,
                       COUNT(DISTINCT linea)::int AS lineas_cubiertas,
                       COUNT(*) FILTER (WHERE pf.estado='FINALIZADO' AND (resuelto=false OR resuelto IS NULL))::int AS pendientes_finalizado,
                       COUNT(*) FILTER (WHERE pf.estado='FINALIZADO' AND (resuelto=false OR resuelto IS NULL)

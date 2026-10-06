@@ -57,7 +57,6 @@ class TestPredictorFutbolInit:
         assert predictor.modelo_disparos == mock_modelo_disparos
 
 
-@pytest.mark.skip(reason="requiere_refactor_predictor:salida_24_mercados_y_fecha_corte_obligatoria")
 class TestPredecirPartido:
     """Tests para predicción de partidos."""
 
@@ -68,7 +67,7 @@ class TestPredecirPartido:
         mock_generador = Mock()
 
         # Configurar generador para retornar features
-        mock_features = Mock()
+        mock_features = Mock(local_partidos_jugados=5, visitante_partidos_jugados=5)
         mock_features.to_array_corners.return_value = np.zeros(10)
         mock_features.to_array_goles.return_value = np.zeros(10)
         mock_features.to_array_disparos.return_value = np.zeros(10)
@@ -76,7 +75,10 @@ class TestPredecirPartido:
 
         # Crear modelos mock
         mock_modelo_corners = Mock()
-        mock_modelo_corners.esta_entrenado = True
+        mock_modelo_corners.entrenado = True
+        mock_modelo_corners.version_id = 1
+        mock_modelo_corners.metricas = {}
+        mock_modelo_corners.contiene_equipo.return_value = True
         mock_modelo_corners.predecir_completo.return_value = {
             TipoMercadoFutbol.CORNERS_LOCAL_1T.value: PrediccionMercado(
                 mercado=TipoMercadoFutbol.CORNERS_LOCAL_1T,
@@ -135,7 +137,9 @@ class TestPredecirPartido:
         }
 
         mock_modelo_goles = Mock()
-        mock_modelo_goles.esta_entrenado = True
+        mock_modelo_goles.entrenado = True
+        mock_modelo_goles.version_id = 1
+        mock_modelo_goles.metricas = {}
         mock_modelo_goles.predecir_completo.return_value = {
             TipoMercadoFutbol.GOLES_LOCAL_1T.value: PrediccionMercado(
                 mercado=TipoMercadoFutbol.GOLES_LOCAL_1T,
@@ -194,7 +198,9 @@ class TestPredecirPartido:
         }
 
         mock_modelo_disparos = Mock()
-        mock_modelo_disparos.esta_entrenado = True
+        mock_modelo_disparos.entrenado = True
+        mock_modelo_disparos.version_id = 1
+        mock_modelo_disparos.metricas = {}
         mock_modelo_disparos.predecir_completo.return_value = {
             TipoMercadoFutbol.DISPAROS_LOCAL_FT.value: PrediccionMercado(
                 mercado=TipoMercadoFutbol.DISPAROS_LOCAL_FT,
@@ -214,14 +220,14 @@ class TestPredecirPartido:
                 std=5.3,
                 intervalo_confianza_90=(14.6, 32.0),
             ),
-            TipoMercadoFutbol.DISPAROS_ARCO_LOCAL_FT.value: PrediccionMercado(
-                mercado=TipoMercadoFutbol.DISPAROS_ARCO_LOCAL_FT,
+            TipoMercadoFutbol.DISPAROS_LOCAL_ARCO_FT.value: PrediccionMercado(
+                mercado=TipoMercadoFutbol.DISPAROS_LOCAL_ARCO_FT,
                 media=5.2,
                 std=2.1,
                 intervalo_confianza_90=(1.7, 8.7),
             ),
-            TipoMercadoFutbol.DISPAROS_ARCO_VISITANTE_FT.value: PrediccionMercado(
-                mercado=TipoMercadoFutbol.DISPAROS_ARCO_VISITANTE_FT,
+            TipoMercadoFutbol.DISPAROS_VISITANTE_ARCO_FT.value: PrediccionMercado(
+                mercado=TipoMercadoFutbol.DISPAROS_VISITANTE_ARCO_FT,
                 media=4.5,
                 std=1.9,
                 intervalo_confianza_90=(1.4, 7.6),
@@ -241,6 +247,13 @@ class TestPredecirPartido:
             modelo_goles=mock_modelo_goles,
             modelo_disparos=mock_modelo_disparos,
         )
+
+        predictor._obtener_info_partido = Mock(return_value={
+            "equipo_local_nombre": "Local",
+            "equipo_visitante_nombre": "Visitante",
+            "competicion_nombre": "Liga",
+            "fecha_partido": datetime(2024, 3, 16),
+        })
 
         return predictor
 
@@ -291,12 +304,13 @@ class TestPredecirPartido:
         for mercado in mercados_esperados:
             assert mercado in prediccion.mercados, f"Falta mercado {mercado}"
 
-    def test_fecha_corte_obligatoria(self, predictor_mock):
-        """La fecha de corte es obligatoria."""
+    def test_fecha_corte_por_defecto_es_dia_anterior(self, predictor_mock):
+        """Sin corte explícito, las features se cortan el día anterior."""
         partido_id = uuid4()
-
-        with pytest.raises(TypeError):
-            predictor_mock.predecir_partido(partido_id)
+        predictor_mock.predecir_partido(partido_id)
+        predictor_mock.generador.generar.assert_called_once_with(
+            partido_id, datetime(2024, 3, 15)
+        )
 
     def test_predecir_partido_no_entrenado_lanza_error(self):
         """Si los modelos no están entrenados, lanza ModeloNoEntrenado."""
@@ -304,7 +318,7 @@ class TestPredecirPartido:
         mock_generador = Mock()
 
         mock_modelo = Mock()
-        mock_modelo.esta_entrenado = False
+        mock_modelo.entrenado = False
 
         predictor = PredictorFutbol(
             pool=mock_pool,

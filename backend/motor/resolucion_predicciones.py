@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional, List, Dict, Any, Literal
 from uuid import UUID
 
@@ -364,7 +364,7 @@ def resolver_predicciones(
                             [
                                 valor_real,
                                 outcome,
-                                datetime.utcnow(),
+                                datetime.now(timezone.utc),
                                 str(prediccion_id),
                             ],
                         )
@@ -485,4 +485,3 @@ def obtener_predicciones_pendientes_por_mercado(pool=None) -> Dict[str, int]:
     except Exception:
         logger.exception("Error obteniendo predicciones pendientes por mercado")
         return {}
-

@@ -11,3 +11,4 @@ requires-python = ">=3.9"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = ["integracion: requiere la base PostgreSQL sintética desechable del runner global"]

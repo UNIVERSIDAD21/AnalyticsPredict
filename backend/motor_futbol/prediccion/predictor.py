@@ -229,6 +229,9 @@ class PredictorFutbol:
         """
         logger.info(f"Generando predicción para partido {partido_id}")
 
+        if not self.modelos_entrenados:
+            raise ModeloNoEntrenado()
+
         # 1. Obtener información del partido
         info_partido = self._obtener_info_partido(partido_id)
 

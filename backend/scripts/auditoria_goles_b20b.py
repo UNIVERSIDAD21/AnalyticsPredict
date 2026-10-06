@@ -89,14 +89,14 @@ def main() -> None:
                       COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL)::int AS resueltos_binarios,
                       COUNT(*) FILTER (WHERE resuelto=true)::int AS cerrados_operativos,
                       COUNT(*) FILTER (WHERE resuelto=false OR resuelto IS NULL)::int AS pendientes,
-                      COUNT(*) FILTER (WHERE prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL)::int AS fallback_rows,
+                      COUNT(*) FILTER (WHERE calibrador_id IS NULL OR prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL)::int AS fallback_rows,
                       COUNT(DISTINCT linea)::int AS lineas_cubiertas,
-                      AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
+                      AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) - outcome_binario::int,2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier,
                       AVG(CASE
                         WHEN outcome_binario IS NULL THEN NULL
                         ELSE -(
-                          outcome_binario::int * LN(GREATEST(COALESCE(prob_over_calibrada, prob_over), 1e-9))
-                          + (1 - outcome_binario::int) * LN(GREATEST(1 - COALESCE(prob_over_calibrada, prob_over), 1e-9))
+                          outcome_binario::int * LN(GREATEST(LEAST(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over), 1 - 1e-15), 1e-15))
+                          + (1 - outcome_binario::int) * LN(GREATEST(LEAST(1 - COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over), 1 - 1e-15), 1e-15))
                         )
                       END) AS log_loss,
                       COUNT(*) FILTER (WHERE pf.estado='FINALIZADO' AND pfu.{fecha_col} >= %s)::int AS partidos_finalizados_30d,

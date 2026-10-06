@@ -733,158 +733,118 @@ class TestIdempotencia:
 
 
 # =============================================================================
-# TESTS DE INTEGRACIÓN (requieren Postgres real)
+# TESTS DE INTEGRACIÓN EN POSTGRESQL SINTÉTICO DESECHABLE
 # =============================================================================
-# Para ejecutar: pytest -m integracion backend/tests/test_resolucion_predicciones.py
 
-try:
-    import os
+import os
+from psycopg.conninfo import conninfo_to_dict
+from psycopg_pool import ConnectionPool
 
-    HAS_PYTEST = True
-except ImportError:
-    HAS_PYTEST = False
 
-if HAS_PYTEST:
-
-    @pytest.fixture(scope="module")
-    def pool_real():
-        """Pool de conexiones real para tests de integración."""
-        database_url = os.environ.get("DATABASE_URL")
-        if not database_url:
-            pytest.skip("DATABASE_URL no configurada")
-
-        from psycopg_pool import ConnectionPool
-
-        pool = ConnectionPool(database_url, min_size=1, max_size=2)
+@pytest.fixture(scope="module")
+def pool_real():
+    """Bloquea cualquier escritura de la suite sobre Neon u otra BD persistente."""
+    database_url = os.environ.get("DATABASE_URL") or ""
+    dbname = conninfo_to_dict(database_url).get("dbname", "") if database_url else ""
+    if not dbname.startswith("ap_suite_test_"):
+        pytest.skip("Integración solo en PostgreSQL sintético desechable del runner")
+    pool = ConnectionPool(database_url, min_size=1, max_size=2, open=True)
+    try:
         yield pool
+    finally:
         pool.close()
 
-    @pytest.fixture
-    def datos_resolucion_integracion(pool_real):
-        """Crea predicción de prueba para resolver."""
-        from motor.registro_predicciones import registrar_prediccion
 
-        with pool_real.connection() as conn:
-            with conn.cursor() as cur:
-                # Buscar partido CON resultados
-                cur.execute(
-                    """
-                    SELECT p.id, p.temporada_id, p.equipo_local_id,
-                           p.equipo_visitante_id, p.fecha_partido, p.tipo_partido,
-                           p.local_q1, p.visitante_q1, p.local_total, p.visitante_total
-                    FROM partidos p
-                    WHERE p.local_total IS NOT NULL
-                    LIMIT 1
-                    """
-                )
-                partido = cur.fetchone()
-                if not partido:
-                    pytest.skip("No hay partidos con resultados en BD")
+@pytest.fixture
+def datos_resolucion_integracion(pool_real):
+    """Partido finalizado y predicción propios: Q1=28+26=54."""
+    from motor.registro_predicciones import registrar_prediccion
 
-                # Crear modelo_version de prueba
-                cur.execute(
-                    """
-                    INSERT INTO modelo_versiones (version, partidos_entrenamiento, equipos,
-                        mae_q1, mae_q2, mae_q3, mae_q4, duracion_segundos, hash_datos)
-                    VALUES (88888, 100, 30, 2.5, 2.6, 2.7, 2.8, 1.5, 'test_resolucion')
-                    RETURNING id
-                    """
-                )
-                modelo_version_id = cur.fetchone()[0]
-                conn.commit()
-
-                # Registrar predicción pendiente
-                valor_real_esperado = partido[6] + partido[7]  # local_q1 + visitante_q1
-                linea = float(valor_real_esperado) - 2.5  # Línea menor para que OVER gane
-
-                pred_id = registrar_prediccion(
-                    pool=pool_real,
-                    partido_id=partido[0],
-                    temporada_id=partido[1],
-                    equipo_local_id=partido[2],
-                    equipo_visitante_id=partido[3],
-                    fecha_partido=partido[4],
-                    tipo_partido=partido[5],
-                    mercado="Q1",
-                    lado="OVER",
-                    linea=linea,
-                    linea_es_sintetica=False,
-                    origen="API_USUARIO",
-                    modelo_version_id=modelo_version_id,
-                    calibrador_id=None,
-                    media_predicha=28.0,
-                    desviacion_predicha=4.0,
-                    p_raw=0.6,
-                )
-
-                yield {
-                    "prediccion_id": pred_id,
-                    "partido_id": partido[0],
-                    "modelo_version_id": modelo_version_id,
-                    "valor_real_esperado": valor_real_esperado,
-                    "linea": linea,
-                }
-
-                # Limpieza
-                cur.execute(
-                    "DELETE FROM predicciones_registradas WHERE modelo_version_id = %s",
-                    [modelo_version_id],
-                )
-                cur.execute(
-                    "DELETE FROM modelo_versiones WHERE id = %s", [modelo_version_id]
-                )
-                conn.commit()
-
-    @pytest.mark.integracion
-    @pytest.mark.skip(reason="requiere_db_real:resolucion_integral_con_partidos_y_odds_reales")
-    def test_integracion_resolucion_completa(pool_real, datos_resolucion_integracion):
-        """
-        TEST DE INTEGRACIÓN: Verifica resolución completa con BD real.
-        """
-        pred_id = datos_resolucion_integracion["prediccion_id"]
-        valor_esperado = datos_resolucion_integracion["valor_real_esperado"]
-
-        # Ejecutar resolución
-        resumen = resolver_predicciones(
-            pool=pool_real,
-            mercado="Q1",
-            limite=100,
+    partido_id = uuid4()
+    temporada_id = uuid4()
+    competicion_id = uuid4()
+    equipo_local_id = uuid4()
+    equipo_visitante_id = uuid4()
+    fecha_partido = date(2024, 1, 1)
+    with pool_real.connection() as conn:
+        modelo_version_id = conn.execute(
+            "INSERT INTO modelo_versiones (version, partidos_entrenamiento) "
+            "VALUES (%s, %s) RETURNING id", ("test-resolucion", 100),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO partidos_baloncesto "
+            "(id, fecha_partido, temporada_id, competicion_id, equipo_local_id, equipo_visitante_id, "
+            "tipo_partido, local_q1, local_q2, local_q3, local_q4, local_total, "
+            "visitante_q1, visitante_q2, visitante_q3, visitante_q4, visitante_total) "
+            "VALUES (%s, %s, %s, %s, %s, %s, 'REG', 28, 30, 25, 27, 110, 26, 28, 29, 25, 108)",
+            (partido_id, fecha_partido, temporada_id, competicion_id,
+             equipo_local_id, equipo_visitante_id),
         )
-
-        assert resumen.resueltas >= 1, "Debe resolver al menos 1 predicción"
-
-        # Verificar que la predicción fue resuelta
+    pred_id = registrar_prediccion(
+        pool=pool_real,
+        partido_id=partido_id,
+        temporada_id=temporada_id,
+        competicion_id=competicion_id,
+        equipo_local_id=equipo_local_id,
+        equipo_visitante_id=equipo_visitante_id,
+        fecha_partido=fecha_partido,
+        tipo_partido="REG",
+        mercado="Q1",
+        lado="OVER",
+        linea=51.5,
+        linea_es_sintetica=False,
+        origen="TEST_H9_RESOLUCION",
+        modelo_version_id=modelo_version_id,
+        calibrador_id=None,
+        media_predicha=28.0,
+        desviacion_predicha=4.0,
+        p_raw=0.6,
+    )
+    assert pred_id is not None
+    try:
+        yield {"prediccion_id": pred_id, "partido_id": partido_id}
+    finally:
         with pool_real.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT resuelto, valor_real, outcome_binario, timestamp_resolucion
-                    FROM predicciones_registradas
-                    WHERE id = %s
-                    """,
-                    [str(pred_id)],
-                )
-                row = cur.fetchone()
-                assert row is not None, "Predicción debe existir"
-                resuelto, valor_real, outcome, ts = row
+            conn.execute("DELETE FROM predicciones_registradas WHERE id = %s", (pred_id,))
+            conn.execute("DELETE FROM partidos_baloncesto WHERE id = %s", (partido_id,))
+            conn.execute("DELETE FROM modelo_versiones WHERE id = %s", (modelo_version_id,))
 
-                assert resuelto is True, "Debe estar resuelta"
-                assert valor_real == valor_esperado, f"valor_real debe ser {valor_esperado}"
-                assert outcome is True, "OVER debe ganar (línea < valor_real)"
-                assert ts is not None, "timestamp_resolucion no debe ser NULL"
 
-    @pytest.mark.integracion
-    @pytest.mark.skip(reason="requiere_db_real:resolucion_integral_con_partidos_y_odds_reales")
-    def test_integracion_idempotencia_real(pool_real, datos_resolucion_integracion):
-        """
-        TEST DE INTEGRACIÓN: Verifica idempotencia con BD real.
-        """
-        # Primera ejecución
-        resumen1 = resolver_predicciones(pool=pool_real, limite=100)
-        resueltas_primera = resumen1.resueltas
+@pytest.mark.integracion
+def test_integracion_resolucion_completa(pool_real, datos_resolucion_integracion):
+    """Resuelve valor y outcome mediante la consulta/UPDATE reales."""
+    pred_id = datos_resolucion_integracion["prediccion_id"]
+    resumen = resolver_predicciones(pool=pool_real, mercado="Q1", origen="TEST_H9_RESOLUCION")
+    assert resumen.resueltas == 1
+    assert resumen.errores == 0
+    with pool_real.connection() as conn:
+        row = conn.execute(
+            "SELECT resuelto, valor_real, outcome_binario, timestamp_resolucion "
+            "FROM predicciones_registradas WHERE id = %s", (pred_id,),
+        ).fetchone()
+    assert row is not None
+    assert row[0] is True
+    assert row[1] == 54
+    assert row[2] is True
+    assert row[3] is not None
 
-        # Segunda ejecución - no debe resolver nada nuevo
-        resumen2 = resolver_predicciones(pool=pool_real, limite=100)
 
-        assert resumen2.resueltas == 0, "Segunda ejecución no debe resolver nada"
-        assert resumen2.ya_resueltas >= 0, "Debe contar las ya resueltas"
+@pytest.mark.integracion
+def test_integracion_idempotencia_real(pool_real, datos_resolucion_integracion):
+    """La segunda ejecución no reescribe el timestamp ni el resultado."""
+    pred_id = datos_resolucion_integracion["prediccion_id"]
+    primero = resolver_predicciones(pool=pool_real, mercado="Q1", origen="TEST_H9_RESOLUCION")
+    with pool_real.connection() as conn:
+        anterior = conn.execute(
+            "SELECT valor_real, outcome_binario, timestamp_resolucion "
+            "FROM predicciones_registradas WHERE id = %s", (pred_id,),
+        ).fetchone()
+    segundo = resolver_predicciones(pool=pool_real, mercado="Q1", origen="TEST_H9_RESOLUCION")
+    with pool_real.connection() as conn:
+        posterior = conn.execute(
+            "SELECT valor_real, outcome_binario, timestamp_resolucion "
+            "FROM predicciones_registradas WHERE id = %s", (pred_id,),
+        ).fetchone()
+    assert primero.resueltas == 1
+    assert segundo.resueltas == 0
+    assert anterior == posterior

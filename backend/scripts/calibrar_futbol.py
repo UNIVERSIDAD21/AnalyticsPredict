@@ -26,15 +26,17 @@ import sys
 import os
 import argparse
 import logging
+from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Dict, List, Any, Optional, Tuple
 
 import numpy as np
+from psycopg_pool import ConnectionPool
 
 # Agregar el directorio raíz al path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db import obtener_pool
+from db import obtener_database_url, obtener_pool
 from motor_futbol.tipos import TipoMercadoFutbol, ResultadoCalibracion
 from motor_futbol.calibracion import (
     CalibradorPlatt,
@@ -63,229 +65,91 @@ def obtener_todos_mercados() -> List[TipoMercadoFutbol]:
     )
 
 
+@dataclass(frozen=True)
+class ParTemporal:
+    fecha_partido: datetime
+    generacion: datetime
+    resolucion: datetime
+
+
 def obtener_datos_calibracion(
     pool,
     mercado: TipoMercadoFutbol,
-    min_muestras: int = 200,
-    excluir_backtest: bool = True,
-) -> Tuple[np.ndarray, np.ndarray, int]:
+) -> Tuple[np.ndarray, np.ndarray, List[ParTemporal]]:
+    """Pares reales, resueltos y anteriores al partido, ordenados por evento.
+
+    Nunca sustituye una consulta fallida o una muestra vacía por backtest ni
+    por datos sintéticos. La probabilidad raw persistida en Neon es prob_over.
     """
-    Obtiene datos históricos para calibración.
-
-    Busca predicciones resueltas en la base de datos y extrae
-    las probabilidades predichas vs los resultados reales.
-
-    Args:
-        pool: Pool de conexiones
-        mercado: Mercado a calibrar
-        min_muestras: Mínimo de muestras requeridas
-        excluir_backtest: Excluir predicciones de backtest sintético
-
-    Returns:
-        Tupla (prob_raw, outcomes, n_total)
-        - prob_raw: Array de probabilidades predichas
-        - outcomes: Array de resultados (0=under, 1=over)
-        - n_total: Total de muestras encontradas
-    """
-    # Determinar tipo de mercado para buscar la tabla correcta
-    mercado_str = mercado.value.upper()
-
-    # Query para obtener predicciones históricas
-    # Usa predicciones_futbol y obtiene resultados directamente de partidos_futbol
-    # (NO existe tabla resultados_futbol separada)
     query = """
-        SELECT
-            prob_over,
-            CASE
-                WHEN resultado_real > linea THEN 1
-                ELSE 0
-            END as outcome
-        FROM (
-            -- Subquery para obtener predicciones con resultados
-            SELECT
-                p.prob_over_raw as prob_over,
-                p.linea,
-                CASE
-                    -- Corners Full Time (totales)
-                    WHEN p.mercado = 'CORNERS_FT' THEN
-                        pf.local_corners_total + pf.visitante_corners_total
-                    WHEN p.mercado = 'CORNERS_1T' THEN
-                        pf.local_corners_1t + pf.visitante_corners_1t
-                    WHEN p.mercado = 'CORNERS_2T' THEN
-                        pf.local_corners_2t + pf.visitante_corners_2t
-                    WHEN p.mercado = 'CORNERS_LOCAL_FT' THEN
-                        pf.local_corners_total
-                    WHEN p.mercado = 'CORNERS_LOCAL_1T' THEN
-                        pf.local_corners_1t
-                    WHEN p.mercado = 'CORNERS_LOCAL_2T' THEN
-                        pf.local_corners_2t
-                    WHEN p.mercado = 'CORNERS_VISITANTE_FT' THEN
-                        pf.visitante_corners_total
-                    WHEN p.mercado = 'CORNERS_VISITANTE_1T' THEN
-                        pf.visitante_corners_1t
-                    WHEN p.mercado = 'CORNERS_VISITANTE_2T' THEN
-                        pf.visitante_corners_2t
-                    -- Goles
-                    WHEN p.mercado = 'GOLES_FT' THEN
-                        pf.local_goles_total + pf.visitante_goles_total
-                    WHEN p.mercado = 'GOLES_1T' THEN
-                        pf.local_goles_1t + pf.visitante_goles_1t
-                    WHEN p.mercado = 'GOLES_2T' THEN
-                        pf.local_goles_2t + pf.visitante_goles_2t
-                    WHEN p.mercado = 'GOLES_LOCAL_FT' THEN
-                        pf.local_goles_total
-                    WHEN p.mercado = 'GOLES_LOCAL_1T' THEN
-                        pf.local_goles_1t
-                    WHEN p.mercado = 'GOLES_LOCAL_2T' THEN
-                        pf.local_goles_2t
-                    WHEN p.mercado = 'GOLES_VISITANTE_FT' THEN
-                        pf.visitante_goles_total
-                    WHEN p.mercado = 'GOLES_VISITANTE_1T' THEN
-                        pf.visitante_goles_1t
-                    WHEN p.mercado = 'GOLES_VISITANTE_2T' THEN
-                        pf.visitante_goles_2t
-                    -- Disparos
-                    WHEN p.mercado = 'DISPAROS_FT' THEN
-                        pf.local_disparos_total + pf.visitante_disparos_total
-                    WHEN p.mercado = 'DISPAROS_ARCO_FT' THEN
-                        pf.local_disparos_arco + pf.visitante_disparos_arco
-                    WHEN p.mercado = 'DISPAROS_LOCAL_FT' THEN
-                        pf.local_disparos_total
-                    WHEN p.mercado = 'DISPAROS_LOCAL_ARCO_FT' THEN
-                        pf.local_disparos_arco
-                    WHEN p.mercado = 'DISPAROS_VISITANTE_FT' THEN
-                        pf.visitante_disparos_total
-                    WHEN p.mercado = 'DISPAROS_VISITANTE_ARCO_FT' THEN
-                        pf.visitante_disparos_arco
-                    ELSE NULL
-                END as resultado_real
-            FROM predicciones_futbol p
-            JOIN partidos_futbol pf ON p.partido_id = pf.id
-            WHERE p.mercado = %s
-              AND p.prob_over_raw IS NOT NULL
-              AND pf.estado = 'FINALIZADO'
+        SELECT p.prob_over, p.outcome_binario::int, pf.fecha_partido,
+               p.timestamp_generacion, p.timestamp_resolucion
+        FROM predicciones_futbol p
+        JOIN partidos_futbol pf ON pf.id = p.partido_id
+        WHERE p.mercado = %s
+          AND p.origen::text = 'API_USUARIO'
+          AND p.resuelto = true
+          AND p.outcome_binario IS NOT NULL
+          AND p.prob_over BETWEEN 0 AND 1
+          AND pf.estado = 'FINALIZADO'
+          AND p.timestamp_generacion IS NOT NULL
+          AND p.timestamp_resolucion IS NOT NULL
+          AND p.timestamp_generacion < pf.fecha_partido
+          AND p.timestamp_resolucion >= pf.fecha_partido
+          AND p.timestamp_generacion < p.timestamp_resolucion
     """
-
-    if excluir_backtest:
-        query += " AND (p.origen IS NULL OR p.origen != 'BACKTEST_SINTETICO')"
-
-    query += """
-            ORDER BY pf.fecha_partido ASC
-        ) sub
-        WHERE resultado_real IS NOT NULL
-    """
+    query += " ORDER BY pf.fecha_partido ASC, p.timestamp_generacion ASC, p.id ASC"
 
     try:
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(query, (mercado_str,))
+                cur.execute(query, (mercado.value,))
                 rows = cur.fetchall()
+    except Exception as exc:
+        raise RuntimeError(
+            f"No se pudieron consultar pares reales de {mercado.value} "
+            f"({type(exc).__name__}); calibración cancelada"
+        ) from None
 
-                if not rows:
-                    logger.warning(f"No se encontraron datos para {mercado_str}")
-                    return np.array([]), np.array([]), 0
-
-                prob_raw = np.array([float(row[0]) for row in rows])
-                outcomes = np.array([int(row[1]) for row in rows])
-
-                return prob_raw, outcomes, len(rows)
-
-    except Exception as e:
-        logger.error(f"Error obteniendo datos para {mercado_str}: {e}")
-        # Intentar con query alternativa usando backtest
-        return _obtener_datos_backtest(pool, mercado, min_muestras)
-
-
-def _obtener_datos_backtest(
-    pool,
-    mercado: TipoMercadoFutbol,
-    min_muestras: int,
-) -> Tuple[np.ndarray, np.ndarray, int]:
-    """
-    Obtiene datos de calibración desde resultados de backtest.
-
-    Fallback cuando no hay tabla de predicciones_mercado.
-    """
-    # Intentar obtener desde metricas de backtest
-    mercado_str = mercado.value.upper()
-
-    query = """
-        SELECT prob_predicha, resultado_real
-        FROM backtest_predicciones
-        WHERE mercado = %s
-        ORDER BY fecha_partido ASC
-    """
-
-    try:
-        with pool.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (mercado_str,))
-                rows = cur.fetchall()
-
-                if rows:
-                    prob_raw = np.array([float(row[0]) for row in rows])
-                    outcomes = np.array([int(row[1]) for row in rows])
-                    return prob_raw, outcomes, len(rows)
-
-    except Exception:
-        pass
-
-    # Si no hay datos, generar datos sintéticos para demostración
-    logger.warning(f"No hay datos reales para {mercado_str}, generando sintéticos")
-    return _generar_datos_sinteticos(min_muestras)
-
-
-def _generar_datos_sinteticos(n_muestras: int) -> Tuple[np.ndarray, np.ndarray, int]:
-    """
-    Genera datos sintéticos para pruebas cuando no hay datos reales.
-
-    Los datos simulan un modelo ligeramente descalibrado que:
-    - Tiene sobreconfianza en extremos
-    - Tiene un pequeño sesgo
-    """
-    np.random.seed(42)
-
-    # Generar probabilidades "raw" uniformes
-    prob_raw = np.random.beta(2, 2, n_muestras)
-
-    # Simular descalibración: el modelo tiene sobreconfianza
-    # Las probabilidades extremas son menos confiables
-    prob_real = 0.5 + 0.8 * (prob_raw - 0.5)  # Comprimir hacia 0.5
-    prob_real = np.clip(prob_real, 0.01, 0.99)
-
-    # Generar outcomes según probabilidad real
-    outcomes = (np.random.random(n_muestras) < prob_real).astype(int)
-
-    return prob_raw, outcomes, n_muestras
+    return (
+        np.asarray([float(row[0]) for row in rows], dtype=float),
+        np.asarray([int(row[1]) for row in rows], dtype=int),
+        [ParTemporal(row[2], row[3], row[4]) for row in rows],
+    )
 
 
 def dividir_train_validation(
     prob_raw: np.ndarray,
     outcomes: np.ndarray,
+    pares_temporales: List[ParTemporal],
     train_ratio: float = 0.8,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Divide datos en train/validation de forma temporal (no aleatoria).
-
-    Usa los primeros train_ratio% de datos para entrenar y el resto
-    para validación, respetando el orden cronológico.
-
-    Args:
-        prob_raw: Probabilidades sin calibrar
-        outcomes: Resultados reales
-        train_ratio: Proporción para entrenamiento
-
-    Returns:
-        (prob_train, out_train, prob_val, out_val)
-    """
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, date]:
+    """Holdout cronológico por día de partido, sin compartir día entre cortes."""
     n = len(prob_raw)
+    if not 0 < train_ratio < 1 or n != len(outcomes) or n != len(pares_temporales):
+        raise ValueError("Ratio o tamaños inválidos para holdout temporal")
+    if any(
+        a.fecha_partido > b.fecha_partido
+        for a, b in zip(pares_temporales, pares_temporales[1:])
+    ):
+        raise ValueError("Los pares deben estar ordenados por fecha de partido")
     n_train = int(n * train_ratio)
-
+    if not 0 < n_train < n:
+        raise ValueError("Sin masa suficiente para train y validación")
+    dia_corte = pares_temporales[n_train - 1].fecha_partido.date()
+    while n_train < n and pares_temporales[n_train].fecha_partido.date() <= dia_corte:
+        n_train += 1
+    if n_train == n:
+        raise ValueError("No hay fecha posterior independiente para validar")
+    ultima_resolucion_train = max(par.resolucion for par in pares_temporales[:n_train])
+    primera_generacion_val = min(par.generacion for par in pares_temporales[n_train:])
+    if ultima_resolucion_train >= primera_generacion_val:
+        raise ValueError(
+            "Resultados de train no disponibles antes de generar validación"
+        )
     return (
-        prob_raw[:n_train],
-        outcomes[:n_train],
-        prob_raw[n_train:],
-        outcomes[n_train:],
+        prob_raw[:n_train], outcomes[:n_train],
+        prob_raw[n_train:], outcomes[n_train:], ultima_resolucion_train.date(),
     )
 
 
@@ -446,6 +310,12 @@ def main():
     )
 
     args = parser.parse_args()
+    if args.min_muestras < 2 or not 0 < args.train_ratio < 1:
+        parser.error("min-muestras debe ser >= 2 y train-ratio debe estar entre 0 y 1")
+    if args.activar and not args.guardar:
+        parser.error("--activar requiere --guardar")
+    if args.guardar and args.min_muestras < 200:
+        parser.error("guardar requiere al menos 200 muestras por mercado")
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -455,7 +325,21 @@ def main():
     print("="*60)
 
     # Obtener pool de conexiones
-    pool = obtener_pool()
+    solo_lectura = args.dry_run or not args.guardar
+    pool = (
+        ConnectionPool(
+            conninfo=obtener_database_url(),
+            kwargs={"options": "-c default_transaction_read_only=on"},
+            min_size=1,
+            max_size=2,
+            open=True,
+        )
+        if solo_lectura else obtener_pool()
+    )
+    if solo_lectura:
+        with pool.connection() as conn:
+            if conn.execute("SHOW transaction_read_only").fetchone()[0] != "on":
+                raise RuntimeError("El modo diagnóstico debe usar una conexión read-only")
 
     # Determinar mercados a procesar
     if args.mercado.lower() == "todos":
@@ -480,9 +364,8 @@ def main():
         print(f"\n--- Procesando {mercado.value} ---")
 
         # Obtener datos
-        prob_raw, outcomes, n_total = obtener_datos_calibracion(
-            pool, mercado, args.min_muestras
-        )
+        prob_raw, outcomes, fechas_partido = obtener_datos_calibracion(pool, mercado)
+        n_total = len(prob_raw)
 
         if n_total < args.min_muestras:
             print(f"  Saltando: solo {n_total} muestras (mínimo: {args.min_muestras})")
@@ -491,9 +374,13 @@ def main():
         print(f"  Datos encontrados: {n_total}")
 
         # Dividir en train/validation
-        prob_train, out_train, prob_val, out_val = dividir_train_validation(
-            prob_raw, outcomes, args.train_ratio
-        )
+        try:
+            prob_train, out_train, prob_val, out_val, cutoff_datos = dividir_train_validation(
+                prob_raw, outcomes, fechas_partido, args.train_ratio
+            )
+        except ValueError as exc:
+            print(f"  Saltando: {exc}")
+            continue
 
         # Determinar métodos a probar
         if args.metodo == "auto":
@@ -536,7 +423,7 @@ def main():
                 calibrador_id = gestor.guardar_calibrador(
                     mejor_calibrador,
                     mejor_resultado,
-                    cutoff_datos=date.today(),
+                    cutoff_datos=cutoff_datos,
                     notas=f"Calibrado con {mejor_resultado.n_muestras} muestras",
                 )
                 print(f"\n  Calibrador guardado: {calibrador_id}")
@@ -573,6 +460,8 @@ def main():
         print(f"  ECE promedio: {ece_promedio_antes:.4f} -> {ece_promedio_despues:.4f}")
 
     print("\n" + "="*60 + "\n")
+    if solo_lectura:
+        pool.close()
 
 
 if __name__ == "__main__":

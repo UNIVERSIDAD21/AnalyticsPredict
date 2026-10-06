@@ -30,9 +30,9 @@ def _metricas(cur, mercados: List[str]) -> Dict[str, Dict[str, Any]]:
               COUNT(*) FILTER (WHERE resuelto = true) AS cerrados_operativos,
               COUNT(*) FILTER (WHERE (resuelto = false OR resuelto IS NULL)) AS pendientes_operativos,
               COUNT(*) FILTER (WHERE outcome_binario IS NULL) AS pendientes,
-              COUNT(*) FILTER (WHERE prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL) AS fallback_rows,
+              COUNT(*) FILTER (WHERE calibrador_id IS NULL OR prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL) AS fallback_rows,
               COUNT(DISTINCT linea) AS lineas,
-              AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier
+              AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier
             FROM predicciones_futbol
             WHERE mercado::text = %s
             """,

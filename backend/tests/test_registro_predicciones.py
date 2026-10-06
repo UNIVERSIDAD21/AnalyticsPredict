@@ -212,180 +212,118 @@ def test_registro_falla_si_modelo_version_id_no_es_entero():
 
 
 # =============================================================================
-# TESTS DE INTEGRACIÓN (requieren Postgres real)
+# TESTS DE INTEGRACIÓN EN POSTGRESQL SINTÉTICO DESECHABLE
 # =============================================================================
-# Para ejecutar: pytest -m integracion backend/tests/test_registro_predicciones.py
-#
-# Requieren:
-# 1. Variable de entorno DATABASE_URL configurada
-# 2. Ejecutar migración: scripts/migracion_idempotencia_predicciones.sql
-# 3. Tener datos de prueba (equipos, temporadas, partidos, modelo_versiones)
 
-try:
-    import pytest
+import os
+import pytest
+from psycopg.conninfo import conninfo_to_dict
+from psycopg_pool import ConnectionPool
 
-    HAS_PYTEST = True
-except ImportError:
-    HAS_PYTEST = False
 
-if HAS_PYTEST:
-    import os
-
-    @pytest.fixture(scope="module")
-    def pool_real():
-        """Pool de conexiones real para tests de integración."""
-        database_url = os.environ.get("DATABASE_URL")
-        if not database_url:
-            pytest.skip("DATABASE_URL no configurada")
-
-        from psycopg_pool import ConnectionPool
-
-        pool = ConnectionPool(database_url, min_size=1, max_size=2)
+@pytest.fixture(scope="module")
+def pool_real():
+    """Nunca permitir que estas pruebas escriban en una BD persistente/Neon."""
+    database_url = os.environ.get("DATABASE_URL") or ""
+    dbname = conninfo_to_dict(database_url).get("dbname", "") if database_url else ""
+    if not dbname.startswith("ap_suite_test_"):
+        pytest.skip("Integración solo en PostgreSQL sintético desechable del runner")
+    pool = ConnectionPool(database_url, min_size=1, max_size=2, open=True)
+    try:
         yield pool
+    finally:
         pool.close()
 
-    @pytest.fixture
-    def datos_prueba_integracion(pool_real):
-        """Crea datos de prueba y los limpia después."""
+
+@pytest.fixture
+def datos_prueba_integracion(pool_real):
+    """Crea partido/modelo propios; no depende de temporadas o datos reales."""
+    partido_id = uuid4()
+    competicion_id = uuid4()
+    datos = {
+        "partido_id": partido_id,
+        "temporada_id": uuid4(),
+        "competicion_id": competicion_id,
+        "equipo_local_id": uuid4(),
+        "equipo_visitante_id": uuid4(),
+        "fecha_partido": date(2024, 1, 1),
+        "tipo_partido": "REG",
+    }
+    with pool_real.connection() as conn:
+        modelo_id = conn.execute(
+            "INSERT INTO modelo_versiones (version, partidos_entrenamiento) "
+            "VALUES (%s, %s) RETURNING id", ("test-registro", 100),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO partidos_baloncesto "
+            "(id, fecha_partido, temporada_id, competicion_id, equipo_local_id, equipo_visitante_id, tipo_partido) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            tuple(datos[k] for k in (
+                "partido_id", "fecha_partido", "temporada_id", "competicion_id",
+                "equipo_local_id", "equipo_visitante_id", "tipo_partido",
+            )),
+        )
+    try:
+        yield {**datos, "modelo_version_id": modelo_id}
+    finally:
         with pool_real.connection() as conn:
-            with conn.cursor() as cur:
-                # Verificar que hay equipos
-                cur.execute("SELECT id FROM equipos LIMIT 2")
-                equipos = cur.fetchall()
-                if len(equipos) < 2:
-                    pytest.skip("No hay suficientes equipos en BD")
+            conn.execute("DELETE FROM predicciones_registradas WHERE partido_id = %s", (partido_id,))
+            conn.execute("DELETE FROM partidos_baloncesto WHERE id = %s", (partido_id,))
+            conn.execute("DELETE FROM modelo_versiones WHERE id = %s", (modelo_id,))
 
-                # Verificar que hay temporadas
-                cur.execute("SELECT id FROM temporadas LIMIT 1")
-                temporada = cur.fetchone()
-                if not temporada:
-                    pytest.skip("No hay temporadas en BD")
 
-                # Verificar que hay partidos
-                cur.execute(
-                    """
-                    SELECT p.id, p.temporada_id, p.equipo_local_id,
-                           p.equipo_visitante_id, p.fecha_partido, p.tipo_partido
-                    FROM partidos p
-                    LIMIT 1
-                    """
-                )
-                partido = cur.fetchone()
-                if not partido:
-                    pytest.skip("No hay partidos en BD")
+@pytest.mark.integracion
+def test_integracion_idempotencia_real(pool_real, datos_prueba_integracion):
+    """El constraint natural impide duplicados en SQL real, sin datos productivos."""
+    kwargs = {
+        **datos_prueba_integracion,
+        "mercado": "Q1",
+        "lado": "OVER",
+        "linea": 55.5,
+        "linea_es_sintetica": False,
+        "origen": "TEST_H9",
+        "calibrador_id": None,
+        "media_predicha": 28.5,
+        "desviacion_predicha": 4.2,
+        "p_raw": 0.58,
+        "cuota": 1.85,
+        "cuota_over": 1.85,
+        "cuota_under": 2.0,
+    }
+    primero = registrar_prediccion(pool=pool_real, **kwargs)
+    segundo = registrar_prediccion(pool=pool_real, **kwargs)
+    assert primero is not None
+    assert segundo is None
+    with pool_real.connection() as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM predicciones_registradas WHERE partido_id = %s AND mercado = %s",
+            (kwargs["partido_id"], kwargs["mercado"]),
+        ).fetchone()[0]
+    assert count == 1
 
-                # Crear modelo_version de prueba
-                cur.execute(
-                    """
-                    INSERT INTO modelo_versiones (version, partidos_entrenamiento, equipos,
-                        mae_q1, mae_q2, mae_q3, mae_q4, duracion_segundos, hash_datos)
-                    VALUES (99999, 100, 30, 2.5, 2.6, 2.7, 2.8, 1.5, 'test_hash')
-                    RETURNING id
-                    """
-                )
-                modelo_version_id = cur.fetchone()[0]
-                conn.commit()
 
-                yield {
-                    "partido_id": partido[0],
-                    "temporada_id": partido[1],
-                    "equipo_local_id": partido[2],
-                    "equipo_visitante_id": partido[3],
-                    "fecha_partido": partido[4],
-                    "tipo_partido": partido[5],
-                    "modelo_version_id": modelo_version_id,
-                }
-
-                # Limpieza
-                cur.execute(
-                    "DELETE FROM predicciones_registradas WHERE modelo_version_id = %s",
-                    [modelo_version_id],
-                )
-                cur.execute(
-                    "DELETE FROM modelo_versiones WHERE id = %s", [modelo_version_id]
-                )
-                conn.commit()
-
-    @pytest.mark.integracion
-    @pytest.mark.skip(reason="requiere_db_real:tabla_temporadas_no_disponible_en_entorno_actual")
-    def test_integracion_idempotencia_real(pool_real, datos_prueba_integracion):
-        """
-        TEST DE INTEGRACIÓN: Verifica idempotencia real con Postgres.
-
-        Este test DEBE ejecutarse contra una BD real con:
-        1. El constraint uq_prediccion_llave_natural creado
-        2. Datos reales de partidos, equipos, temporadas
-        """
-        kwargs = {
-            **datos_prueba_integracion,
-            "mercado": "Q1",
-            "lado": "OVER",
-            "linea": 55.5,
-            "linea_es_sintetica": False,
-            "origen": "API_USUARIO",
-            "calibrador_id": None,
-            "media_predicha": 28.5,
-            "desviacion_predicha": 4.2,
-            "p_raw": 0.58,
-            "cuota": 1.85,
-            "cuota_over": 1.85,
-            "cuota_under": 2.0,
-        }
-
-        # Primera inserción debe retornar ID
-        primero = registrar_prediccion(pool=pool_real, **kwargs)
-        assert primero is not None, "Primera inserción debe retornar ID"
-
-        # Segunda inserción debe retornar None (duplicado)
-        segundo = registrar_prediccion(pool=pool_real, **kwargs)
-        assert segundo is None, "Segunda inserción debe ser None (duplicado)"
-
-        # Verificar que solo hay un registro
-        with pool_real.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT COUNT(*) FROM predicciones_registradas
-                    WHERE partido_id = %s AND mercado = %s AND lado = %s
-                      AND linea = %s AND origen = %s
-                      AND modelo_version_id = %s
-                    """,
-                    [
-                        str(kwargs["partido_id"]),
-                        kwargs["mercado"],
-                        kwargs["lado"],
-                        kwargs["linea"],
-                        kwargs["origen"],
-                        kwargs["modelo_version_id"],
-                    ],
-                )
-                count = cur.fetchone()[0]
-                assert count == 1, f"Debe haber exactamente 1 registro, hay {count}"
-
-    @pytest.mark.integracion
-    @pytest.mark.skip(reason="requiere_db_real:tabla_temporadas_no_disponible_en_entorno_actual")
-    def test_integracion_modelo_version_fk_valida(pool_real, datos_prueba_integracion):
-        """
-        TEST DE INTEGRACIÓN: Verifica que modelo_version_id debe ser FK válida.
-        """
-        kwargs = {
-            **datos_prueba_integracion,
-            "mercado": "Q2",
-            "lado": "UNDER",
-            "linea": 52.0,
-            "linea_es_sintetica": False,
-            "origen": "API_USUARIO",
-            "calibrador_id": None,
-            "media_predicha": 25.0,
-            "desviacion_predicha": 3.8,
-            "p_raw": 0.45,
-        }
-
-        # Con modelo_version_id válido debe funcionar
-        resultado_valido = registrar_prediccion(pool=pool_real, **kwargs)
-        assert resultado_valido is not None
-
-        # Con modelo_version_id inválido (no existe en BD) debe fallar
-        kwargs_invalido = {**kwargs, "modelo_version_id": 999999999, "linea": 53.0}
-        resultado_invalido = registrar_prediccion(pool=pool_real, **kwargs_invalido)
-        assert resultado_invalido is None
+@pytest.mark.integracion
+def test_integracion_modelo_version_valida(pool_real, datos_prueba_integracion):
+    """Un modelo existente registra; uno inexistente no deja fila huérfana."""
+    kwargs = {
+        **datos_prueba_integracion,
+        "mercado": "Q2",
+        "lado": "UNDER",
+        "linea": 52.0,
+        "linea_es_sintetica": False,
+        "origen": "TEST_H9",
+        "calibrador_id": None,
+        "media_predicha": 25.0,
+        "desviacion_predicha": 3.8,
+        "p_raw": 0.45,
+    }
+    assert registrar_prediccion(pool=pool_real, **kwargs) is not None
+    assert registrar_prediccion(
+        pool=pool_real, **{**kwargs, "modelo_version_id": 999999999, "linea": 53.0}
+    ) is None
+    with pool_real.connection() as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM predicciones_registradas WHERE partido_id = %s AND mercado = 'Q2'",
+            (kwargs["partido_id"],),
+        ).fetchone()[0]
+    assert count == 1
