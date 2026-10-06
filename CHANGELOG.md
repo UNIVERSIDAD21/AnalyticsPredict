@@ -2,7 +2,7 @@
 
 ## 2026-10-06 — H9 temporal y suite sin omisiones
 - Nueve tests omitidos pasan a ejecución en PostgreSQL sintético; calibración fútbol excluye backtest/sintéticos, fuga temporal y outcomes no disponibles. Diagnóstico usa conexión read-only; `GOLES_FT` mostró 0 pares elegibles en Neon, sin guardar calibrador.
-- B16/B17/B20A/B20B exigen ID para usar probabilidad calibrada. Migración compatible de vista NBA preparada y ensayada, **no aplicada a Neon**. Suite local Python 3.12: 646 passed, 0 failed, 0 skipped; frontend 16 tests, lint/build verdes. H9 y dictamen analítico siguen abiertos.
+- B16/B17/B20A/B20B exigen ID para usar probabilidad calibrada. Migración compatible de vista NBA preparada y ensayada, **no aplicada a Neon**. Suite local Python 3.12: 646 passed, 0 failed, 0 skipped; frontend 16 tests, lint/build verdes. CI `b8a6d74`: 4/4 jobs (run `37518301706`). H9 y dictamen analítico siguen abiertos.
 
 ## 2026-10-06 — consumidores de vista NBA con procedencia
 - Curvas, calculador y reporte de backtest no usan `p_efectiva`/`p_calibrada` legacy sin `calibrador_id`; parámetro opcional de versión tipado para PostgreSQL. La vista productiva no se alteró.
