@@ -116,7 +116,7 @@ export interface ApuestaAnalizada {
   linea?: number | null;
   probabilidad_sistema?: number | null;
   confianza?: string | null;
-  estado: string;
+  estado: 'PENDIENTE' | 'FINALIZADA';
   resultado_outcome?: 'GANADA' | 'PERDIDA' | 'PUSH' | null;
   valor_real?: number | null;
   resultado_resumen?: string | null;

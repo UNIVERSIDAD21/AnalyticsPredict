@@ -53,6 +53,7 @@ export function PaginaDashboardUsuario() {
           <section className="tarjeta p-6 space-y-2" aria-label="Calidad fútbol">
             <h2 className="text-lg font-semibold text-texto-principal">Calidad 1X2 fútbol</h2>
             <p className="text-sm text-texto-secundario">{calidad ? `${calidad.finalizadas} finalizadas de ${calidad.total}; ${calidad.ganadas} ganadas y ${calidad.perdidas} perdidas.` : 'Sin medición disponible.'}</p>
+            <p className="text-sm text-texto-secundario">Hit rate sin push: {calidad?.hitRateSinPush == null ? 'N/D' : `${calidad.hitRateSinPush.toFixed(2)}%`}</p>
             <p className="text-xs text-texto-terciario">La madurez de fútbol se evalúa por mercado y evidencia; esta tarjeta no implica promoción.</p>
           </section>
         </>}

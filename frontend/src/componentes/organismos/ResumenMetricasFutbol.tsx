@@ -336,20 +336,20 @@ function TarjetaCalibracion({ calibracion }: { calibracion: MetricasCalibracionF
       <div className="grid grid-cols-2 gap-2">
         <div>
           <div className="text-xs text-texto-terciario">Brier</div>
-          <div className={clsx('font-mono font-semibold', getColorBrier(calibracion.brierScore))}>
-            {calibracion.brierScore.toFixed(4)}
+          <div className={clsx('font-mono font-semibold', calibracion.brierScore === null ? 'text-texto-terciario' : getColorBrier(calibracion.brierScore))}>
+            {calibracion.brierScore === null ? 'N/D' : calibracion.brierScore.toFixed(4)}
           </div>
         </div>
         <div>
           <div className="text-xs text-texto-terciario">ECE</div>
-          <div className={clsx('font-mono font-semibold', getColorECE(calibracion.ece))}>
-            {(calibracion.ece * 100).toFixed(2)}%
+          <div className={clsx('font-mono font-semibold', calibracion.ece === null ? 'text-texto-terciario' : getColorECE(calibracion.ece))}>
+            {calibracion.ece === null ? 'N/D' : `${(calibracion.ece * 100).toFixed(2)}%`}
           </div>
         </div>
       </div>
       {calibracion.mejoraBrier !== undefined && calibracion.mejoraBrier > 0 && (
         <div className="mt-2 text-xs text-neon-verde">
-          +{(calibracion.mejoraBrier * 100).toFixed(1)}% mejora
+          +{calibracion.mejoraBrier.toFixed(1)}% mejora
         </div>
       )}
     </div>
@@ -435,12 +435,10 @@ export function ResumenMetricasFutbol({
     const stakeTotal = metricas.rendimiento.reduce((acc, r) => acc + r.stakeTotal, 0);
     const gananciaNeta = metricas.rendimiento.reduce((acc, r) => acc + r.gananciaNeta, 0);
 
-    const brierPromedio = metricas.calibracion.length > 0
-      ? metricas.calibracion.reduce((acc, c) => acc + c.brierScore, 0) / metricas.calibracion.length
-      : 0;
-    const ecePromedio = metricas.calibracion.length > 0
-      ? metricas.calibracion.reduce((acc, c) => acc + c.ece, 0) / metricas.calibracion.length
-      : 0;
+    const brierMedidos = metricas.calibracion.map((c) => c.brierScore).filter((n): n is number => n !== null);
+    const eceMedidos = metricas.calibracion.map((c) => c.ece).filter((n): n is number => n !== null);
+    const brierPromedio = brierMedidos.length ? brierMedidos.reduce((acc, n) => acc + n, 0) / brierMedidos.length : null;
+    const ecePromedio = eceMedidos.length ? eceMedidos.reduce((acc, n) => acc + n, 0) / eceMedidos.length : null;
 
     return {
       totalApuestas,
@@ -507,10 +505,10 @@ export function ResumenMetricasFutbol({
               <Activity size={14} />
               <span className="text-xs uppercase tracking-wider">Brier Score</span>
             </div>
-            <div className={clsx('text-3xl font-mono font-bold', getColorBrier(metricasGlobales.brierPromedio))}>
-              {metricasGlobales.brierPromedio.toFixed(4)}
+            <div className={clsx('text-3xl font-mono font-bold', metricasGlobales.brierPromedio === null ? 'text-texto-terciario' : getColorBrier(metricasGlobales.brierPromedio))}>
+              {metricasGlobales.brierPromedio === null ? 'N/D' : metricasGlobales.brierPromedio.toFixed(4)}
             </div>
-            <div className="text-xs text-texto-terciario mt-1">Promedio global</div>
+            <div className="text-xs text-texto-terciario mt-1">Promedio no ponderado de mercados medidos</div>
           </div>
 
           {/* ECE promedio */}
@@ -519,11 +517,11 @@ export function ResumenMetricasFutbol({
               <Percent size={14} />
               <span className="text-xs uppercase tracking-wider">ECE</span>
             </div>
-            <div className={clsx('text-3xl font-mono font-bold', getColorECE(metricasGlobales.ecePromedio))}>
-              {(metricasGlobales.ecePromedio * 100).toFixed(2)}%
+            <div className={clsx('text-3xl font-mono font-bold', metricasGlobales.ecePromedio === null ? 'text-texto-terciario' : getColorECE(metricasGlobales.ecePromedio))}>
+              {metricasGlobales.ecePromedio === null ? 'N/D' : `${(metricasGlobales.ecePromedio * 100).toFixed(2)}%`}
             </div>
             <div className="text-xs text-texto-terciario mt-1">
-              {metricasGlobales.calibradoresActivos}/{metricasGlobales.calibradoresTotal} activos
+              Promedio no ponderado · {metricasGlobales.calibradoresActivos}/{metricasGlobales.calibradoresTotal} calibradores activos
             </div>
           </div>
         </div>

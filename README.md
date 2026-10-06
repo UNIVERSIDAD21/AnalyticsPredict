@@ -1,6 +1,6 @@
 # AnalyticsPredict
 
-> Transición single-user aprobada el 2026-10-05: la plataforma pasa a ser una herramienta privada personal, sin SaaS, login, pagos ni suscripciones como objetivo. **La retirada funcional aún está en curso**; ver `docs/reactivacion_single_user/`. Los flujos comerciales existentes no deben considerarse el objetivo vigente.
+> Herramienta privada personal single-user desde el corte del 2026-10-05: sin login, pagos, suscripciones ni tiers en API/UI activos. El trabajo de confiabilidad y recertificación analítica continúa; ver `docs/reactivacion_single_user/`. No exponer la API sin protección de infraestructura.
 
 Proyecto de análisis deportivo con:
 - **Backend** en FastAPI
@@ -8,9 +8,10 @@ Proyecto de análisis deportivo con:
 
 ## Requisitos
 
-- Python 3.10+
-- Node.js 18+
-- npm 9+
+- Python 3.12 (versión de CI; 3.14 verificada en pruebas dirigidas)
+- Node.js 20 (versión de CI)
+- npm y `frontend/package-lock.json`
+- PostgreSQL configurado mediante `backend/.env` con `DATABASE_URL` protegida. No apuntar pruebas de integración a Neon.
 
 ## Estructura
 
@@ -23,7 +24,6 @@ Proyecto de análisis deportivo con:
 Desde root del repo:
 
 ```bash
-chmod +x scripts/dev.sh
 bash scripts/dev.sh
 ```
 
@@ -33,6 +33,7 @@ Esto levanta:
 - Frontend: `http://localhost:5173`
 
 `dev.sh` usa `127.0.0.1` y no detiene procesos existentes por defecto.
+Requiere `backend/.venv` válido o `BACKEND_PYTHON` con dependencias instaladas; valida el intérprete antes de arrancar. La aplicación puede consultar BD y entrenar al iniciar: no usar el arranque como prueba inocua.
 Para liberar puertos existentes de forma explícita:
 
 ```bash
@@ -51,19 +52,11 @@ pip install -r requirements.txt
 python -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### Backend (sin venv, bajo tu responsabilidad)
-
-```bash
-cd backend
-python3 -m pip install --break-system-packages -r requirements.txt
-python3 -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
-```
-
 ### Frontend
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
@@ -100,21 +93,26 @@ make operacion-diaria-full
 
 ## Configuración
 
-1. Copia variables de entorno:
+1. Copia el ejemplo privado de backend:
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
-2. Ajusta `.env` según tu entorno (DB, puertos, etc.).
+2. Configura `DATABASE_URL` en `backend/.env` mediante el mecanismo protegido del entorno. No publiques ese archivo.
 
-## Tests rápidos (Smoke)
+## Pruebas dirigidas sin BD
 
-Desde `backend/`:
+Desde la raíz, con la venv backend activa:
 
 ```bash
-pytest -q tests/test_smoke_api.py
+cd backend
+python -m pytest -q tests/test_metricas_1x2_futbol.py tests/test_rutas_bitacora_payload.py tests/api/test_bitacora_contract.py tests/api/test_apuestas_futbol_contract.py tests/api/test_single_user_contract.py tests/test_smoke_api.py
+cd ../frontend
+npm test && npm run lint && npm run build
 ```
+
+Estas pruebas no certifican la suite global ni la BD; la estrategia para integración aislada está en `docs/reactivacion_single_user/ENTORNO_REPRODUCIBLE_Y_ESTRATEGIA_DE_PRUEBAS.md`.
 
 Checklist local:
 - `docs/CHECKLIST_VALIDACION_LOCAL.md`

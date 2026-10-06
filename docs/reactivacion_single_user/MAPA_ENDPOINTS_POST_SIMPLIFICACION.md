@@ -1,6 +1,6 @@
 # Mapa de endpoints para transición single-user
 
-**Estado:** objetivo propuesto, no inventario de rutas ya eliminadas. Derivado de decoradores `@router` y montaje en `backend/app.py` al corte `0d75afa`. La API sigue en estado anterior hasta implementar y probar cada grupo.
+**Estado:** mapa de impacto histórico previo a la simplificación, derivado del corte `0d75afa`. La superficie actual fue modificada; ver `REPORTE_ELIMINACION_CAPA_COMERCIAL.md` y el test OpenAPI single-user. La tabla siguiente describe el destino planificado, no los endpoints activos.
 
 | Prefijo / ruta actual | Métodos / cantidad | Destino | Motivo / dependencia |
 |---|---|---|---|

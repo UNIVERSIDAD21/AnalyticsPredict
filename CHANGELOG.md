@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-05 — contratos, métricas y limpieza single-user
+- Bitácora frontend consume v2 explícito y valida envelopes; un error o payload desconocido no se interpreta como lista vacía. Analizadas usa `FINALIZADA` y total global independiente de la página.
+- Hit rate 1X2 conserva escala porcentual; sin muestra se publica `null`. Calibración fútbol calcula Brier, ECE y Log Loss desde outcomes válidos o publica `null`, sin multiplicadores proxy.
+- CI incorpora pruebas dirigidas backend y tests frontend. Bases SQLite comerciales y telemetría runtime salen del índice Git sin borrar copias locales; scripts de backup/restore SQLite comercial y variables obsoletas del ejemplo de entorno se retiran.
+- Ver `docs/reactivacion_single_user/REPORTE_ELIMINACION_CAPA_COMERCIAL.md` para evidencia y límites. Integración con BD efímera y recertificación analítica siguen pendientes.
+
 ## 2026-10-05 — inicio de reactivación single-user
 - Aprobada dirección de producto privado personal; C0–C7 queda como historia, no objetivo vigente.
 - Creado snapshot de recuperación e inventario de auth, pagos, usuarios, rutas, datos y frontend; arquitectura y plan de migración documentados sin tocar BD.

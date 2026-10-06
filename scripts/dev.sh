@@ -48,14 +48,17 @@ fi
 
 # Backend
 cd "$BACKEND_DIR"
-if [[ -f ".venv/bin/activate" ]]; then
-  echo "[dev] Usando backend/.venv"
-  # shellcheck disable=SC1091
-  source .venv/bin/activate
-  PYTHON_BIN="python"
+if [[ -n "${BACKEND_PYTHON:-}" ]]; then
+  PYTHON_BIN="$BACKEND_PYTHON"
+elif [[ -x ".venv/bin/python" ]]; then
+  PYTHON_BIN="$BACKEND_DIR/.venv/bin/python"
 else
-  echo "[dev] .venv inválido/no disponible, usando python3 del sistema"
   PYTHON_BIN="python3"
+fi
+if ! "$PYTHON_BIN" -c 'import fastapi, uvicorn, psycopg' >/dev/null 2>&1; then
+  echo "[dev] Python backend no disponible o sin dependencias: $PYTHON_BIN" >&2
+  echo "[dev] Crea backend/.venv e instala backend/requirements.txt, o define BACKEND_PYTHON." >&2
+  exit 1
 fi
 
 echo "[dev] Levantando backend en http://$BACKEND_HOST:$BACKEND_PORT"

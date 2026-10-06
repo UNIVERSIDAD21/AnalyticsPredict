@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
-  backend-tests:
+  backend-unit-and-contract:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,8 +26,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run smoke tests
-        run: pytest -q tests/test_smoke_api.py
+      - name: Unitarias analíticas y contratos sin BD
+        run: >-
+          python -m pytest -q
+          tests/test_metricas_1x2_futbol.py
+          tests/test_rutas_bitacora_payload.py
+          tests/api/test_bitacora_contract.py
+          tests/api/test_apuestas_futbol_contract.py
+          tests/api/test_single_user_contract.py
+          tests/test_smoke_api.py
 
   frontend-quality:
     runs-on: ubuntu-latest
@@ -50,6 +57,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Frontend tests
+        run: npm test
 
       - name: Build
         run: npm run build

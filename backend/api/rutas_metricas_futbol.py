@@ -74,72 +74,22 @@ def _obtener_metricas_desde_calibradores(
     mercado: Optional[str],
     periodo: Literal["semana", "mes", "temporada", "todo"],
 ) -> ListaMetricasCalibracionResponse:
-    """Obtiene métricas desde calibradores si no hay predicciones."""
-    columnas_calibrador = {  # CORREGIDO
-        "brier_antes": _columna_existe(cursor, "calibradores_futbol", "brier_antes"),
-        "brier_despues": _columna_existe(cursor, "calibradores_futbol", "brier_despues"),
-        "ece_antes": _columna_existe(cursor, "calibradores_futbol", "ece_antes"),
-        "ece_despues": _columna_existe(cursor, "calibradores_futbol", "ece_despues"),
-        "log_loss_antes": _columna_existe(cursor, "calibradores_futbol", "log_loss_antes"),
-        "log_loss_despues": _columna_existe(cursor, "calibradores_futbol", "log_loss_despues"),
-    }
-    n_muestras_col = None  # CORREGIDO
-    for candidato in ("n_muestras", "n_muestras_entrenamiento"):
-        if _columna_existe(cursor, "calibradores_futbol", candidato):
-            n_muestras_col = candidato
-            break
-
-    query = """
-        SELECT
-            mercado,
-            metodo,
-            {brier_antes} AS brier_antes,
-            {brier_despues} AS brier_despues,
-            {ece_antes} AS ece_antes,
-            {ece_despues} AS ece_despues,
-            {log_loss_antes} AS log_loss_antes,
-            {log_loss_despues} AS log_loss_despues,
-            {n_muestras} AS n_muestras
-        FROM calibradores_futbol
-        WHERE activo = true
-    """.format(
-        brier_antes="brier_antes" if columnas_calibrador["brier_antes"] else "NULL",  # CORREGIDO
-        brier_despues="brier_despues" if columnas_calibrador["brier_despues"] else "NULL",  # CORREGIDO
-        ece_antes="ece_antes" if columnas_calibrador["ece_antes"] else "NULL",  # CORREGIDO
-        ece_despues="ece_despues" if columnas_calibrador["ece_despues"] else "NULL",  # CORREGIDO
-        log_loss_antes="log_loss_antes" if columnas_calibrador["log_loss_antes"] else "NULL",  # CORREGIDO
-        log_loss_despues="log_loss_despues" if columnas_calibrador["log_loss_despues"] else "NULL",  # CORREGIDO
-        n_muestras=n_muestras_col if n_muestras_col else "NULL",  # CORREGIDO
-    )
+    """Sin outcomes verificables no se publican métricas de calibración."""
+    if not _tabla_existe(cursor, "calibradores_futbol"):
+        return ListaMetricasCalibracionResponse(exito=True, periodo=periodo, metricas=[])
+    query = "SELECT mercado, metodo FROM calibradores_futbol WHERE activo = true"
     params: List[str] = []
     if mercado and mercado != "todos":
         query += " AND mercado = %s"
         params.append(mercado.upper())
-
     cursor.execute(query, params)
-    filas = cursor.fetchall()
-
-    metricas = []
-    for fila in filas:
-        brier_antes = float(fila["brier_antes"] or 0)
-        brier_despues = float(fila["brier_despues"] or 0.22)
-        mejora = ((brier_antes - brier_despues) / brier_antes * 100) if brier_antes else None
-
-        metricas.append(MetricasCalibracion(
-            mercado=fila["mercado"],
-            brier_score=round(brier_despues, 4),
-            ece=round(float(fila["ece_despues"] or 0.09), 4),
-            log_loss=round(float(fila["log_loss_despues"] or 0.65), 4),
-            n_predicciones=fila["n_muestras"] or 0,
-            calibrador_activo=True,
-            metodo_calibrador=fila["metodo"],
-            mejora_brier=round(mejora, 2) if mejora is not None else None,
-        ))
-
     return ListaMetricasCalibracionResponse(
         exito=True,
         periodo=periodo,
-        metricas=metricas,
+        metricas=[MetricasCalibracion(
+            mercado=fila["mercado"], n_predicciones=0,
+            calibrador_activo=True, metodo_calibrador=fila["metodo"],
+        ) for fila in cursor.fetchall()],
     )
 
 
@@ -180,9 +130,9 @@ def _resolver_columna_modelo(cursor, columnas: List[str]) -> Optional[str]:  # C
     return None
 
 
-def _ece_binario(probabilidades: List[float], outcomes: List[int], bins: int = 10) -> float:
+def _ece_binario(probabilidades: List[float], outcomes: List[int], bins: int = 10) -> Optional[float]:
     if not probabilidades:
-        return 1.0
+        return None
     buckets: Dict[int, List[int]] = defaultdict(list)
     bucket_prob: Dict[int, List[float]] = defaultdict(list)
     for p, y in zip(probabilidades, outcomes):
@@ -201,6 +151,38 @@ def _ece_binario(probabilidades: List[float], outcomes: List[int], bins: int = 1
         avg_p = sum(ps) / len(ps)
         ece += (len(ys) / n) * abs(avg_y - avg_p)
     return float(ece)
+
+
+def _metricas_probabilidades_binarias(probabilidades: List[float], outcomes: List[int]) -> dict:
+    """Brier, ECE y Log Loss empíricos sobre pares resueltos válidos."""
+    if len(probabilidades) != len(outcomes):
+        raise ValueError("Probabilidades y outcomes deben corresponder uno a uno")
+    pares = []
+    for probabilidad, outcome in zip(probabilidades, outcomes):
+        if probabilidad is None or outcome not in (0, 1):
+            continue
+        try:
+            p = float(probabilidad)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(p) and 0 <= p <= 1:
+            pares.append((p, int(outcome)))
+    if not pares:
+        return {"n": 0, "brier": None, "ece": None, "log_loss": None}
+    ps = [p for p, _ in pares]
+    ys = [y for _, y in pares]
+    n = len(pares)
+    eps = 1e-12
+    return {
+        "n": n,
+        "brier": sum((p - y) ** 2 for p, y in pares) / n,
+        "ece": _ece_binario(ps, ys),
+        "log_loss": -sum(
+            y * math.log(min(1 - eps, max(eps, p))) +
+            (1 - y) * math.log(min(1 - eps, max(eps, 1 - p)))
+            for p, y in pares
+        ) / n,
+    }
 
 
 def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: float = 0.24, bloquear_brier: float = 0.28) -> Dict[str, str]:
@@ -573,38 +555,24 @@ async def obtener_metricas_calibracion(
                     cursor, "predicciones_futbol", "prob_over_calibrada"
                 )
 
-                # Obtener calibradores activos
-                calibradores_query = """
-                    SELECT mercado, metodo, activo, brier_despues, mejora_validacion
-                    FROM calibradores_futbol
-                    WHERE activo = true
-                """
-                if mercado and mercado != "todos":
-                    calibradores_query += " AND mercado = %s"
-                    cursor.execute(calibradores_query, [mercado.upper()])
-                else:
-                    cursor.execute(calibradores_query)
+                calibradores = {}
+                if _tabla_existe(cursor, "calibradores_futbol"):
+                    cursor.execute("SELECT mercado, metodo FROM calibradores_futbol WHERE activo = true")
+                    calibradores = {row["mercado"]: row for row in cursor.fetchall()}
 
-                calibradores = {row["mercado"]: row for row in cursor.fetchall()}
-
-                # Obtener métricas de predicciones
+                # Solo outcomes realmente resueltos: nunca inferir un resultado
+                # negativo a partir de la ausencia de marcador o de resultado_real.
                 metricas_query = """
-                    SELECT
-                        p.mercado,
-                        COUNT(*) as n_predicciones,
-                        AVG(POWER(p.prob_over_raw - CASE WHEN resultado_real > p.linea THEN 1 ELSE 0 END, 2)) as brier_score,
-                        AVG(POWER(
-                            COALESCE({prob_calibrada}, p.prob_over_raw) -
-                            CASE WHEN resultado_real > p.linea THEN 1 ELSE 0 END, 2
-                        )) as brier_calibrado
+                    SELECT p.mercado, p.prob_over_raw AS p_raw,
+                           {prob_calibrada} AS p_cal, p.outcome_binario::int AS y
                     FROM predicciones_futbol p
                     JOIN partidos_futbol pf ON p.partido_id = pf.id
-                    WHERE pf.estado = 'FINALIZADO'
+                    WHERE p.outcome_binario IS NOT NULL
                       AND p.prob_over_raw IS NOT NULL
-                """
-                metricas_query = metricas_query.format(
-                    prob_calibrada="p.prob_over_calibrada" if usa_prob_calibrada else "p.prob_over_raw"
-                )
+                """.format(prob_calibrada=(
+                    "COALESCE(p.prob_over_calibrada, p.prob_over_raw)"
+                    if usa_prob_calibrada else "p.prob_over_raw"
+                ))
                 params: List = []
 
                 if fecha_inicio:
@@ -615,29 +583,36 @@ async def obtener_metricas_calibracion(
                     metricas_query += " AND p.mercado = %s"
                     params.append(mercado.upper())
 
-                metricas_query += " GROUP BY p.mercado"
-
                 cursor.execute(metricas_query, params)
                 filas = cursor.fetchall()
+                por_mercado: Dict[str, dict] = {}
+                for fila in filas:
+                    datos = por_mercado.setdefault(str(fila["mercado"]), {"raw": [], "cal": [], "y": []})
+                    datos["raw"].append(fila["p_raw"])
+                    datos["cal"].append(fila["p_cal"])
+                    datos["y"].append(fila["y"])
 
                 metricas = []
-                for fila in filas:
-                    mercado_nombre = fila["mercado"]
-                    cal = calibradores.get(mercado_nombre, {})
-
-                    brier = float(fila["brier_score"] or 0)
-                    brier_cal = float(fila["brier_calibrado"] or brier)
-                    mejora = ((brier - brier_cal) / brier * 100) if brier > 0 else 0
-
+                for mercado_nombre in sorted(set(por_mercado) | set(calibradores)):
+                    if mercado and mercado != "todos" and mercado_nombre != mercado.upper():
+                        continue
+                    datos = por_mercado.get(mercado_nombre, {"raw": [], "cal": [], "y": []})
+                    raw = _metricas_probabilidades_binarias(datos["raw"], datos["y"])
+                    cal = _metricas_probabilidades_binarias(datos["cal"], datos["y"])
+                    mejora = (
+                        100 * (raw["brier"] - cal["brier"]) / raw["brier"]
+                        if raw["brier"] is not None and raw["brier"] > 0 and cal["brier"] is not None
+                        else None
+                    )
                     metricas.append(MetricasCalibracion(
                         mercado=mercado_nombre,
-                        brier_score=round(brier_cal, 4),
-                        ece=round(brier_cal * 0.5, 4),  # Estimación simplificada
-                        log_loss=round(brier_cal * 1.5, 4),  # Estimación simplificada
-                        n_predicciones=fila["n_predicciones"],
-                        calibrador_activo=cal.get("activo", False),
-                        metodo_calibrador=cal.get("metodo"),
-                        mejora_brier=round(mejora, 2) if mejora else None,
+                        brier_score=round(cal["brier"], 4) if cal["brier"] is not None else None,
+                        ece=round(cal["ece"], 4) if cal["ece"] is not None else None,
+                        log_loss=round(cal["log_loss"], 4) if cal["log_loss"] is not None else None,
+                        n_predicciones=cal["n"],
+                        calibrador_activo=mercado_nombre in calibradores,
+                        metodo_calibrador=calibradores.get(mercado_nombre, {}).get("metodo"),
+                        mejora_brier=round(mejora, 2) if mejora is not None else None,
                     ))
 
                 return ListaMetricasCalibracionResponse(
@@ -1075,8 +1050,8 @@ async def obtener_resumen_sistema(
                     partidos_proximos=partidos_proximos,
                     predicciones_pendientes=predicciones_pendientes,
                     apuestas_activas=apuestas_activas,
-                    roi_global=round(roi, 2) if roi else None,
-                    win_rate_global=round(win_rate, 4) if win_rate else None,
+                    roi_global=round(roi, 2) if roi is not None else None,
+                    win_rate_global=round(win_rate, 4) if win_rate is not None else None,
                     modelo_activo=modelo_activo,
                     calibradores_activos=calibradores_activos,
                     alerta_calibracion=alerta_calibracion,
@@ -1107,14 +1082,15 @@ def _resumen_calidad_1x2_futbol(cursor) -> dict:
     ganadas = int(row[2] or 0)
     perdidas = int(row[3] or 0)
     push = int(row[4] or 0)
-    hit_rate = (ganadas / max(1, ganadas + perdidas)) * 100.0
+    resueltas_sin_push = ganadas + perdidas
+    hit_rate = (ganadas / resueltas_sin_push) * 100.0 if resueltas_sin_push else None
     return {
         'total': total,
         'finalizadas': finalizadas,
         'ganadas': ganadas,
         'perdidas': perdidas,
         'push': push,
-        'hit_rate_sin_push': round(hit_rate, 2),
+        'hit_rate_sin_push': round(hit_rate, 2) if hit_rate is not None else None,
     }
 
 

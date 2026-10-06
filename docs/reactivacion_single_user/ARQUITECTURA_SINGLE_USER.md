@@ -1,13 +1,13 @@
 # Arquitectura objetivo single-user
 
-**Estado:** diseño aprobado por la instrucción del propietario del 2026-10-05; **no implementado todavía**. Ver `IMPACTO_ELIMINACION_AUTH_PAGOS_USUARIOS.md` para evidencia y bloqueos.
+**Estado:** implementada en entorno local y Neon el 2026-10-05; el inventario y mapa de impacto documentan la situación anterior.
 
 ## Invariantes
 
 1. Un propietario, sin cuenta de producto, login, registro, token de usuario, `X-Usuario-Id`, selección de cuenta ni tier.
 2. Privacidad de infraestructura **antes** de quitar auth: uso local con backend ligado a `127.0.0.1` y frontend local; si se usa otro host, exigir VPN/access proxy o red privada verificada. No exponer `/api/*` de escritura en IP pública. El control de red no se confunde con auth comercial.
 3. NBA, fútbol, bitácora, dashboard, configuración y capas analíticas quedan disponibles directamente. El módulo NBA interno mantiene `no_picks`, `no_stake`, `no_betting_recommendations`.
-4. Datos deportivos y bitácora históricos se conservan; no se colapsan filas de propietarios distintos sin proveniencia. La retirada del campo `usuario_id` solo ocurre con migración comprobada.
+4. Todos los datos deportivos y la bitácora histórica se muestran como historial personal por decisión explícita posterior del propietario. La procedencia previa se conserva en el backup privado; `usuario_id` salió del esquema activo tras migración comprobada.
 5. Preferencias de bankroll/riesgo/stake/fuentes, si se conservan, pertenecen a una configuración global única (`configuracion_sistema`) y no a `usuarios`.
 6. Ningún cambio de modelos, features, umbrales, ROI o confidence forma parte de esta simplificación.
 
@@ -32,4 +32,4 @@
 
 ## Riesgo abierto
 
-La rama actual todavía monta auth y pagos; este documento no certifica conversión. Neon respondió después de un timeout transitorio: hay 4 usuarios y 3 IDs con apuestas, por lo que falta clasificar propiedad histórica y ensayar migración. No se verificó topología de despliegue remoto. En el host local se observaron servicios ligados a `127.0.0.1:8000` y `:5173`; ello no acredita otros entornos. No desactivar auth en un servicio Internet hasta cerrar el perímetro.
+El propietario confirmó uso solo local. Backend y frontend están configurados para escuchar en `127.0.0.1:8000` y `:5173`; los procesos estaban detenidos en la comprobación posterior. Cualquier exposición futura requiere control de red privado independiente; no habilitar acceso público sin él.

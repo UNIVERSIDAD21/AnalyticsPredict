@@ -3,6 +3,7 @@
  */
 
 import { clienteAPI } from './api';
+import { leerDatosBitacora } from './contratoBitacora';
 import {
   PeticionActualizarResultado,
   PeticionCrearApuesta,
@@ -21,19 +22,20 @@ export async function crearApuesta(payload: PeticionCrearApuesta): Promise<Respu
 }
 
 export async function listarApuestas(params: Record<string, string | number | undefined>): Promise<RespuestaListaApuestas> {
-  const respuesta = await clienteAPI.get<RespuestaListaApuestas>('/api/bitacora', { params });
-  if (!respuesta.data.exito) {
-    throw new Error('No se pudo obtener la bitácora');
-  }
-  return respuesta.data;
+  const respuesta = await clienteAPI.get('/api/bitacora', { params: { ...params, version: 'v2' } });
+  const data = leerDatosBitacora<Omit<RespuestaListaApuestas, 'exito'>>(respuesta.data, {
+    total: 'number', pagina: 'number', total_paginas: 'number', apuestas: 'array',
+  });
+  return { ...data, exito: true };
 }
 
 export async function obtenerResumenApuestas(): Promise<RespuestaResumenApuestas> {
-  const respuesta = await clienteAPI.get<RespuestaResumenApuestas>('/api/bitacora/resumen');
-  if (!respuesta.data.exito) {
-    throw new Error('No se pudo obtener el resumen de apuestas');
+  const respuesta = await clienteAPI.get('/api/bitacora/resumen', { params: { version: 'v2' } });
+  const data = leerDatosBitacora<Omit<RespuestaResumenApuestas, 'exito'>>(respuesta.data, { resumen: 'object' });
+  if (!Array.isArray(data.resumen.por_deporte) || !Array.isArray(data.resumen.por_mercado)) {
+    throw new Error('Contrato de resumen de bitácora inválido');
   }
-  return respuesta.data;
+  return { ...data, exito: true };
 }
 
 export async function actualizarResultadoApuesta(
@@ -58,9 +60,9 @@ export async function eliminarApuesta(apuestaId: string): Promise<void> {
 export async function listarApuestasAnalizadas(
   params: Record<string, string | number | undefined> = {}
 ): Promise<RespuestaApuestasAnalizadas> {
-  const respuesta = await clienteAPI.get<RespuestaApuestasAnalizadas>('/api/bitacora/apuestas-analizadas', { params });
-  if (!respuesta.data.exito) {
-    throw new Error('No se pudo obtener apuestas analizadas');
-  }
-  return respuesta.data;
+  const respuesta = await clienteAPI.get('/api/bitacora/apuestas-analizadas', { params: { ...params, version: 'v2' } });
+  const data = leerDatosBitacora<Omit<RespuestaApuestasAnalizadas, 'exito'>>(respuesta.data, {
+    total: 'number', items: 'array',
+  });
+  return { ...data, exito: true };
 }

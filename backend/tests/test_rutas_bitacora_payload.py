@@ -1,7 +1,6 @@
 import sys
 from decimal import Decimal
 from pathlib import Path
-from uuid import UUID
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -48,10 +47,7 @@ def test_construir_payload_apuesta_incluye_campos_profesionales():
         razones=[{"tipo": "modelo", "detalle": "prueba"}],
     )
 
-    payload = rutas_bitacora._construir_payload_apuesta(
-        peticion,
-        UUID("00000000-0000-0000-0000-000000000000"),
-    )
+    payload = rutas_bitacora._construir_payload_apuesta(peticion)
 
     claves_esperadas = {
         "devig_overround",

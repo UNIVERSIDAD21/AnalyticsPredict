@@ -533,9 +533,9 @@ export interface FiltrosEstadisticas {
  */
 export interface MetricasCalibracionFutbol {
   mercado: TipoMercadoFutbol;
-  brierScore: number;
-  ece: number;
-  logLoss: number;
+  brierScore: number | null;
+  ece: number | null;
+  logLoss: number | null;
   nPredicciones: number;
   calibradorActivo: boolean;
   metodoCalibrador?: string;

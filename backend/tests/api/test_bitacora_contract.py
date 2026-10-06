@@ -1,4 +1,5 @@
 from pathlib import Path
+import asyncio
 
 from fastapi import Response
 
@@ -78,3 +79,49 @@ def test_leer_uso_contrato_bitacora_vacio(tmp_path, monkeypatch):
 
     data = rutas_bitacora._leer_uso_contrato()
     assert data == {"by_date": {}}
+
+
+def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
+    from servicios import apuestas_analizadas
+
+    class Cursor:
+        def __init__(self):
+            self.consulta = ""
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def execute(self, consulta, *_args):
+            self.consulta = consulta
+
+        def fetchone(self):
+            return {"total": 16}
+
+        def fetchall(self):
+            return [{"id": 1, "estado": "FINALIZADA"}]
+
+    class Conexion:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def cursor(self, **_kwargs):
+            return Cursor()
+
+    class Pool:
+        def connection(self):
+            return Conexion()
+
+    monkeypatch.setattr(apuestas_analizadas, "resolver_apuestas_analizadas", lambda: None)
+    monkeypatch.setattr(apuestas_analizadas, "asegurar_tabla_apuestas_analizadas", lambda _pool: None)
+    monkeypatch.setattr(rutas_bitacora, "obtener_pool", Pool)
+    monkeypatch.setattr(rutas_bitacora, "BITACORA_USAGE_PATH", tmp_path / "usage.json")
+
+    payload = asyncio.run(rutas_bitacora.listar_apuestas_analizadas(Response(), version="v2", limite=1, offset=0))
+    assert payload["data"]["total"] == 16
+    assert payload["data"]["items"] == [{"id": 1, "estado": "FINALIZADA"}]

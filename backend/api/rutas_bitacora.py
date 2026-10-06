@@ -506,7 +506,7 @@ async def resumen_apuestas(
                                     COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
                                     2
                                 )
-                                ELSE 0
+                                ELSE NULL
                             END AS winrate,
                             CASE
                                 WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
@@ -515,7 +515,7 @@ async def resumen_apuestas(
                                     COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
                                     2
                                 )
-                                ELSE 0
+                                ELSE NULL
                             END AS roi
                         FROM apuestas_unificadas
                     ),
@@ -535,7 +535,7 @@ async def resumen_apuestas(
                                     COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
                                     2
                                 )
-                                ELSE 0
+                                ELSE NULL
                             END AS winrate,
                             CASE
                                 WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
@@ -544,7 +544,7 @@ async def resumen_apuestas(
                                     COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
                                     2
                                 )
-                                ELSE 0
+                                ELSE NULL
                             END AS roi
                         FROM apuestas_unificadas
                         GROUP BY deporte
@@ -564,7 +564,7 @@ async def resumen_apuestas(
                                     COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
                                     2
                                 )
-                                ELSE 0
+                                ELSE NULL
                             END AS winrate,
                             CASE
                                 WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
@@ -573,7 +573,7 @@ async def resumen_apuestas(
                                     COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
                                     2
                                 )
-                                ELSE 0
+                                ELSE NULL
                             END AS roi
                         FROM apuestas_unificadas
                         WHERE mercado IS NOT NULL
@@ -873,6 +873,8 @@ async def listar_apuestas_analizadas(
     asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM apuestas_analizadas")
+            total = cur.fetchone()["total"]
             cur.execute(
                 """
                 SELECT id, deporte, partido_id, mercado, lado, linea,
@@ -885,7 +887,7 @@ async def listar_apuestas_analizadas(
                 [max(1, min(limite, 1000)), max(0, offset)],
             )
             filas = cur.fetchall() or []
-    payload_legacy = {"exito": True, "total": len(filas), "items": filas}
+    payload_legacy = {"exito": True, "total": total, "items": filas}
     return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas")
 
 

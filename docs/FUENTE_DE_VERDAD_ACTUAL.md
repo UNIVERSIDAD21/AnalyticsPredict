@@ -2,7 +2,7 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
-> **Transición aprobada 2026-10-05:** el propietario sustituyó el objetivo SaaS/comercial por una herramienta privada single-user sin login, pagos, suscripciones ni tiers. El plan externo `PLAN_REACTIVACION_SINGLE_USER_ANALYTICSPREDICT.md` y `docs/reactivacion_single_user/` gobiernan esta transición. El estado C0–C7 y la estrategia comercial descritos debajo son **históricos hasta su actualización integral**; no deben iniciar cobros, despliegues ni nuevos gates. La retirada funcional aún no está implementada.
+> **Estado operativo 2026-10-05:** AnalyticsPredict funciona localmente como herramienta personal single-user, sin login, pagos, suscripciones ni tiers. Neon fue migrada tras backup verificado: 182 apuestas NBA, 13 de fútbol, 7 combinadas y 16 selecciones conservadas. La configuración proviene de la cuenta con mayor actividad; por instrucción posterior del propietario, **todos** los registros deportivos son historial personal visible. La procedencia original permanece en el backup privado. `docs/reactivacion_single_user/` gobierna el trabajo nuevo. C0–C7 y la estrategia comercial descritos debajo son históricos, no tareas vigentes.
 
 ## Qué es AnalyticsPredict hoy
 Plataforma analítica de decisiones deportivas con foco operativo (calidad de datos, contratos API, métricas, política de operación y trazabilidad), no una app de picks masivos.
@@ -10,18 +10,16 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 ## Qué documento manda
 1. `docs/FUENTE_DE_VERDAD_ACTUAL.md` (este archivo)
 2. `docs/arquitectura/ESTADO_PROYECTO.md` (estado formal por bloques)
-3. `docs/arquitectura/PLAN_BLOQUES_C0_C7_LANZAMIENTO_PROFESIONAL.md` (plan estratégico vigente)
-4. `docs/work_orders/c0_c7/00_INDICE_WORK_ORDERS_C0_C7.md` (órdenes operativas por bloque)
-5. `docs/borlty-context/` (contexto activo mínimo)
+3. `docs/reactivacion_single_user/ROADMAP_REACTIVACION_ANALYTICSPREDICT.md` (plan vigente)
+4. `docs/reactivacion_single_user/DEUDA_TECNICA_PRIORIZADA.md` (prioridades técnicas)
+5. `docs/borlty-context/` (contexto histórico complementario)
 
 ## Prioridades activas
-- Ejecutar en repo según bloque activo definido por Jefe.
-- Mantener contrato, calidad y trazabilidad antes de expansión comercial.
-- Actualizar siempre estado y changelog al cerrar bloques.
-- Prioridades públicas de negocio vigentes en `docs/comercial/publico/00_INDICE_PLAN_PUBLICO_NEGOCIO.md` (Olas P1/P2/P3 → P4/P6/P8 → P7/P9).
-- Panel operativo permanente para ejecución inmediata: `docs/roadmap_inmediato/00_INDICE_EJECUCION_INMEDIATA.md`.
+- Seguir las instrucciones más recientes del propietario y el roadmap single-user.
+- Cerrar H7, reproducibilidad/CI y recertificación analítica con datos actuales, muestras y límites.
+- Mantener estado y changelog al cerrar bloques; el plan comercial y sus órdenes son históricos.
 
-## Estrategia comercial vigente (C0)
+## Estrategia comercial histórica (C0; no vigente)
 - Camino principal de caja: `C0 -> C1 -> C2 -> C3 -> C4 -> C7`.
 - Camino paralelo controlado: `C5 -> C6` (no bloquea primer peso).
 - NBA = frente comercial principal.
@@ -30,7 +28,7 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 - Estado de cierre de etapa (bloques 10-14): **0 mercados promocionables** en la evidencia actual, por lo que fútbol mantiene beta global.
 - No se posiciona el producto como app masiva de picks ni promesa de ganancias fáciles.
 
-## Bloqueo comercial explícito (auditoría)
+## Bloqueo comercial histórico (auditoría; no aplica al producto actual)
 - C1 permanece **EN_CURSO** hasta ejecutar validación manual real de MercadoPago con dominio/URL pública final y callback estable.
 - C7 permanece **PENDIENTE** y no se abre hasta cierre manual real de C1 (no aplica cierre por validación equivalente únicamente).
 

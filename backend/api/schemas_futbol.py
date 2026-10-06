@@ -535,9 +535,9 @@ class ResolucionResponse(BaseModel):
 class MetricasCalibracion(BaseModel):
     """Métricas de calibración para un mercado."""
     mercado: str
-    brier_score: float
-    ece: float
-    log_loss: float
+    brier_score: Optional[float] = None
+    ece: Optional[float] = None
+    log_loss: Optional[float] = None
     n_predicciones: int
     calibrador_activo: bool = False
     metodo_calibrador: Optional[str] = None

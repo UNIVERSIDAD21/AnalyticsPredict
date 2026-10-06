@@ -24,14 +24,14 @@ function transformarMetricasCalibracion(
 ): MetricasCalibracionFutbol {
   return {
     mercado: String(data.mercado || '') as TipoMercadoFutbol,
-    brierScore: Number(data.brier_score || data.brierScore || 0),
-    ece: Number(data.ece || 0),
-    logLoss: Number(data.log_loss || data.logLoss || 0),
+    brierScore: data.brier_score == null && data.brierScore == null ? null : Number(data.brier_score ?? data.brierScore),
+    ece: data.ece == null ? null : Number(data.ece),
+    logLoss: data.log_loss == null && data.logLoss == null ? null : Number(data.log_loss ?? data.logLoss),
     nPredicciones: Number(data.n_predicciones || data.nPredicciones || 0),
     calibradorActivo: Boolean(data.calibrador_activo || data.calibradorActivo),
     metodoCalibrador: data.metodo_calibrador as string | undefined,
     mejoraBrier:
-      data.mejora_brier !== undefined ? Number(data.mejora_brier) : undefined,
+      data.mejora_brier == null ? undefined : Number(data.mejora_brier),
   };
 }
 
@@ -194,10 +194,10 @@ export interface ResumenCalidad1x2Futbol {
   ganadas: number;
   perdidas: number;
   push: number;
-  hitRateSinPush: number;
+  hitRateSinPush: number | null;
 }
 
-const CACHE_KEY_RESUMEN_1X2 = 'futbol.metricas.resumenCalidad1x2';
+const CACHE_KEY_RESUMEN_1X2 = 'futbol.metricas.resumenCalidad1x2.v2';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 function leerCacheResumen1x2(): ResumenCalidad1x2Futbol | null {
@@ -237,7 +237,7 @@ export async function obtenerResumenCalidad1x2(forceRefresh = false): Promise<Re
       ganadas: Number(r.ganadas || 0),
       perdidas: Number(r.perdidas || 0),
       push: Number(r.push || 0),
-      hitRateSinPush: Number(r.hit_rate_sin_push || 0),
+      hitRateSinPush: r.hit_rate_sin_push == null ? null : Number(r.hit_rate_sin_push),
     };
     guardarCacheResumen1x2(parsed);
     return parsed;

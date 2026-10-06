@@ -1,11 +1,11 @@
 # Entorno reproducible y estrategia de pruebas
 
-**Estado:** inventario inicial H11; no es certificación de suite. Separar pruebas puras de pruebas con BD/ingesta/entrenamiento.
+**Estado:** guía inicial H11, actualizada tras pruebas dirigidas; no certifica la suite global. Separar pruebas puras de pruebas con BD/ingesta/entrenamiento.
 
 ## Versiones y dependencias observadas
 
 - CI usa Python **3.12**, Node **20**, `pip install -r backend/requirements.txt` y `npm ci` con `frontend/package-lock.json`. No hay lockfile Python completo comprobado; `requirements.txt` es la referencia actual.
-- Host observado 2026-10-05: Python **3.14.4**, Node **24.21.0**, npm **11.19.0**, frontend `node_modules` presente; intérprete del servidor en `/home/erik-fuentes/.venvs/analyticspredict/bin/python`. No se infiere reproducibilidad a partir de esos procesos.
+- Host observado 2026-10-05: Python **3.14.4**, Node **24.21.0**, npm **11.19.0**. La venv heredada `backend/.venv` apunta a Python 3.12 ausente; se verificó en venv aislada temporal de Python 3.14. No se infiere reproducibilidad de un proceso local.
 - Verificar primero con `python3 -m venv .venv` en un checkout/copia aislada (Python 3.12 recomendado para igualar CI), `.venv/bin/python -m pip install -r backend/requirements.txt`, `cd frontend && npm ci`. No copiar una venv entre hosts.
 
 ## Comandos seguros y gates
@@ -31,4 +31,4 @@
 
 ## Estado actual conocido
 
-La CI vigente solo ejecuta `backend/tests/test_smoke_api.py` y lint/build FE; no ejecuta `npm test`. Hay procesos locales en `127.0.0.1:8000` y `127.0.0.1:5173` al inspeccionar, pero `scripts/dev.sh` aún usa `0.0.0.0` por defecto. No se inspeccionó configuración de un posible staging remoto.
+La CI se amplió a unitarias analíticas, contratos backend, tests frontend, lint y build. Aún no tiene PostgreSQL efímera ni test de integración de migración. `scripts/dev.sh` usa loopback por defecto y no libera puertos automáticamente; los procesos locales estaban detenidos en la comprobación posterior. No se certificó otro entorno.

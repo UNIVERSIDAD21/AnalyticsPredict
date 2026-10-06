@@ -3,6 +3,7 @@
  */
 
 import { clienteAPI, extraerMensajeError } from './api';
+import { leerDatosBitacora } from './contratoBitacora';
 import {
   PeticionCrearCombinada,
   RespuestaBitacoraUnificada,
@@ -59,37 +60,15 @@ export async function actualizarResultadoCombinada(
   return respuesta.data;
 }
 
-type EnvelopeV2<T> = {
-  ok: boolean;
-  data: T;
-  meta?: Record<string, unknown>;
-};
-
-function esEnvelopeV2<T>(data: unknown): data is EnvelopeV2<T> {
-  return !!data && typeof data === 'object' && 'data' in (data as Record<string, unknown>);
-}
-
-function normalizarBitacoraUnificada(payload: unknown): RespuestaBitacoraUnificada {
-  if (esEnvelopeV2<RespuestaBitacoraUnificada>(payload)) {
-    const data = payload.data;
-    return {
-      ...data,
-      exito: true,
-    } as RespuestaBitacoraUnificada;
-  }
-  return payload as RespuestaBitacoraUnificada;
-}
-
 export async function listarBitacoraUnificada(
   params: Record<string, string | number | undefined>
 ): Promise<RespuestaBitacoraUnificada> {
   try {
-    const respuesta = await clienteAPI.get('/api/bitacora/unificada', { params });
-    const normalizada = normalizarBitacoraUnificada(respuesta.data);
-    if (!normalizada.exito) {
-      throw new Error('No se pudo obtener la bitácora unificada');
-    }
-    return normalizada;
+    const respuesta = await clienteAPI.get('/api/bitacora/unificada', { params: { ...params, version: 'v2' } });
+    const data = leerDatosBitacora<Omit<RespuestaBitacoraUnificada, 'exito'>>(respuesta.data, {
+      total: 'number', pagina: 'number', total_paginas: 'number', registros: 'array',
+    });
+    return { ...data, exito: true };
   } catch (error) {
     throw new Error(extraerMensajeError(error));
   }
