@@ -201,16 +201,15 @@ def _generar_recomendaciones(metricas: list, alertas: list) -> list:
         ece_promedio = sum(eces) / len(eces)
         if ece_promedio < 0.03:
             recomendaciones.append(
-                f"Calibración EXCELENTE (ECE promedio {ece_promedio:.3f})"
+                f"ECE promedio del backtest {ece_promedio:.3f} (<0,03); no certifica calibración prospectiva"
             )
         elif ece_promedio < 0.05:
             recomendaciones.append(
-                f"Calibración BUENA (ECE promedio {ece_promedio:.3f})"
+                f"ECE promedio del backtest {ece_promedio:.3f} (<0,05); no certifica calibración prospectiva"
             )
         else:
             recomendaciones.append(
-                "Calibración REGULAR "
-                f"(ECE promedio {ece_promedio:.3f}) - Considerar recalibración"
+                f"ECE promedio del backtest {ece_promedio:.3f}; revisar calibración y muestra"
             )
 
     sesgos = [m.get("sesgo_media") for m in metricas if m.get("sesgo_media") is not None]
@@ -243,8 +242,10 @@ def _generar_recomendaciones(metricas: list, alertas: list) -> list:
             f"Mercados a revisar: {', '.join(sorted(mercados_problematicos))}"
         )
 
-    if not alertas_critical and all(ece < 0.05 for ece in eces if ece is not None):
-        recomendaciones.append("✅ Modelo apto para uso en producción con monitoreo estándar")
+    if not eces:
+        recomendaciones.append("ECE N/D: no se puede evaluar calibración con este backtest")
+    elif not alertas_critical and all(ece < 0.05 for ece in eces):
+        recomendaciones.append("ECE del backtest bajo; falta validación prospectiva antes de promover el modelo")
     else:
         recomendaciones.append("⚠️ Revisar alertas antes de usar en producción")
 

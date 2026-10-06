@@ -925,11 +925,11 @@ async def obtener_tablero_salud() -> TableroSaludResponse:
 
     query_nba = query_deporte.format(
         tabla="predicciones_registradas",
-        prob_expr="COALESCE(p_calibrada, p_raw)",
+        prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)",
     )
     query_fut = query_deporte.format(
         tabla="predicciones_futbol",
-        prob_expr="COALESCE(prob_over_calibrada, prob_over)",
+        prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)",
     )
 
     query_modelo_nba = """
@@ -1084,11 +1084,11 @@ async def obtener_calidad_mercados(
             COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
             AVG(CASE
                 WHEN outcome_binario IS NULL THEN NULL
-                WHEN ((COALESCE(p_calibrada, p_raw)) >= 0.5 AND outcome_binario = true)
-                  OR ((COALESCE(p_calibrada, p_raw)) < 0.5 AND outcome_binario = false) THEN 1.0
+                WHEN ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)) >= 0.5 AND outcome_binario = true)
+                  OR ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)) < 0.5 AND outcome_binario = false) THEN 1.0
                 ELSE 0.0
             END) AS accuracy,
-            AVG(POWER(COALESCE(p_calibrada, p_raw) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
+            AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
                 FILTER (WHERE outcome_binario IS NOT NULL) AS brier
         FROM predicciones_registradas
         GROUP BY mercado
@@ -1101,11 +1101,11 @@ async def obtener_calidad_mercados(
             COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS n_resueltas,
             AVG(CASE
                 WHEN outcome_binario IS NULL THEN NULL
-                WHEN ((COALESCE(prob_over_calibrada, prob_over)) >= 0.5 AND outcome_binario = true)
-                  OR ((COALESCE(prob_over_calibrada, prob_over)) < 0.5 AND outcome_binario = false) THEN 1.0
+                WHEN ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)) >= 0.5 AND outcome_binario = true)
+                  OR ((COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)) < 0.5 AND outcome_binario = false) THEN 1.0
                 ELSE 0.0
             END) AS accuracy,
-            AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
+            AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) - CASE WHEN outcome_binario THEN 1 ELSE 0 END, 2))
                 FILTER (WHERE outcome_binario IS NOT NULL) AS brier
         FROM predicciones_futbol
         GROUP BY mercado
@@ -1402,7 +1402,7 @@ async def obtener_drift_mercados(
         ts_res_col="timestamp_resolucion",
         ts_gen_col="timestamp_generacion",
         ts_alt_col="creado_en",
-        prob_expr="COALESCE(p_calibrada, p_raw)",
+        prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)",
         tabla="predicciones_registradas",
     )
 
@@ -1413,7 +1413,7 @@ async def obtener_drift_mercados(
         ts_res_col="timestamp_resolucion",
         ts_gen_col="timestamp_generacion",
         ts_alt_col="creado_en",
-        prob_expr="COALESCE(prob_over_calibrada, prob_over)",
+        prob_expr="COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)",
         tabla="predicciones_futbol",
     )
 

@@ -14,6 +14,24 @@ EPS_LOG_LOSS = 1e-15
 N_BINS_ECE = 10
 
 
+def expresiones_sql_probabilidad_futbol(columnas: set[str]) -> tuple[str, str]:
+    """Probabilidad efectiva y flag de fallback para reportes con esquema legacy.
+
+    Solo atribuye la columna calibrada cuando existe procedencia. Los nombres de
+    columna se eligen de una lista fija, nunca de datos proporcionados por usuarios.
+    """
+    raw = [col for col in ("prob_over_raw", "prob_over") if col in columnas]
+    if not raw:
+        raise ValueError("predicciones_futbol sin probabilidad raw utilizable")
+    raw_sql = raw[0] if len(raw) == 1 else f"COALESCE({', '.join(raw)})"
+    if {"calibrador_id", "prob_over_calibrada"} <= columnas:
+        return (
+            f"COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, {raw_sql})",
+            "CASE WHEN calibrador_id IS NULL OR prob_over_calibrada IS NULL THEN 1 ELSE 0 END",
+        )
+    return raw_sql, "1"
+
+
 def resumir_pares_binarios(
     pares: Iterable[tuple[Any, Any]], *, n_bins: int = N_BINS_ECE,
     eps_log_loss: float = EPS_LOG_LOSS,

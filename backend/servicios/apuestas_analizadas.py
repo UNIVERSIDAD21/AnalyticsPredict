@@ -432,7 +432,7 @@ def obtener_auditoria_decisiones_futbol(
                     AVG(
                         CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             POWER(
-                                COALESCE(decision_p_calibrada, probabilidad_sistema)
+                                COALESCE(CASE WHEN decision_calibrador_id IS NOT NULL THEN decision_p_calibrada END, probabilidad_sistema)
                                 - CASE WHEN resultado_outcome = 'GANADA' THEN 1 ELSE 0 END,
                                 2
                             )
@@ -442,8 +442,8 @@ def obtener_auditoria_decisiones_futbol(
                         CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             -(
                                 CASE WHEN resultado_outcome = 'GANADA'
-                                    THEN LN(GREATEST(LEAST(COALESCE(decision_p_calibrada, probabilidad_sistema), 0.999999), 0.000001))
-                                    ELSE LN(GREATEST(LEAST(1 - COALESCE(decision_p_calibrada, probabilidad_sistema), 0.999999), 0.000001))
+                                    THEN LN(GREATEST(LEAST(COALESCE(CASE WHEN decision_calibrador_id IS NOT NULL THEN decision_p_calibrada END, probabilidad_sistema), 0.999999999999999), 0.000000000000001))
+                                    ELSE LN(GREATEST(LEAST(1 - COALESCE(CASE WHEN decision_calibrador_id IS NOT NULL THEN decision_p_calibrada END, probabilidad_sistema), 0.999999999999999), 0.000000000000001))
                                 END
                             )
                         END
@@ -451,7 +451,7 @@ def obtener_auditoria_decisiones_futbol(
                     AVG(
                         CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             ABS(
-                                COALESCE(decision_p_calibrada, probabilidad_sistema)
+                                COALESCE(CASE WHEN decision_calibrador_id IS NOT NULL THEN decision_p_calibrada END, probabilidad_sistema)
                                 - CASE WHEN resultado_outcome = 'GANADA' THEN 1 ELSE 0 END
                             )
                         END
@@ -483,7 +483,7 @@ def obtener_auditoria_decisiones_futbol(
                     AVG(
                         CASE WHEN resultado_outcome IN ('GANADA','PERDIDA') THEN
                             POWER(
-                                COALESCE(decision_p_calibrada, probabilidad_sistema)
+                                COALESCE(CASE WHEN decision_calibrador_id IS NOT NULL THEN decision_p_calibrada END, probabilidad_sistema)
                                 - CASE WHEN resultado_outcome = 'GANADA' THEN 1 ELSE 0 END,
                                 2
                             )

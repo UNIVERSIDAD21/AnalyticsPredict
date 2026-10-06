@@ -3,9 +3,14 @@
 
 CREATE TABLE predicciones_registradas (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    partido_id uuid,
     mercado text,
+    linea numeric,
+    lado text,
+    origen text,
     p_raw numeric,
     p_calibrada numeric,
+    calibrador_id uuid,
     outcome_binario boolean,
     resuelto boolean,
     timestamp_generacion timestamptz,
@@ -17,8 +22,12 @@ CREATE TABLE predicciones_registradas (
 CREATE TABLE predicciones_futbol (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     mercado text,
+    linea numeric,
+    fecha_partido timestamptz,
     prob_over numeric,
+    prob_over_raw numeric,
     prob_over_calibrada numeric,
+    calibrador_id uuid,
     outcome_binario boolean,
     resuelto boolean,
     timestamp_generacion timestamptz,
@@ -43,6 +52,18 @@ CREATE TABLE modelo_versiones_futbol (
 CREATE TABLE partidos_futbol (
     id uuid PRIMARY KEY,
     fecha_partido timestamptz
+);
+
+CREATE TABLE equipos (
+    id uuid PRIMARY KEY,
+    nombre text
+);
+
+CREATE TABLE partidos_baloncesto (
+    id uuid PRIMARY KEY,
+    fecha_partido timestamptz,
+    equipo_local_id uuid,
+    equipo_visitante_id uuid
 );
 
 CREATE TABLE apuestas_analizadas (

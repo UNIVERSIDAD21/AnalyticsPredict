@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from db import obtener_pool
-from metricas_probabilisticas import resumir_pares_binarios
+from metricas_probabilisticas import expresiones_sql_probabilidad_futbol, resumir_pares_binarios
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion, CRITERIOS_DEFAULT
 
 
@@ -72,16 +72,14 @@ def main() -> None:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='predicciones_futbol'")
             cols = {r['column_name'] for r in cur.fetchall()}
-            raw_col = 'prob_over_raw' if 'prob_over_raw' in cols else ('prob_over' if 'prob_over' in cols else None)
-            p_col = (f'COALESCE(prob_over_calibrada, {raw_col})'
-                     if 'prob_over_calibrada' in cols and raw_col else raw_col)
+            p_col, fallback_expr = expresiones_sql_probabilidad_futbol(cols)
             fecha_col = (
                 'fecha_prediccion' if 'fecha_prediccion' in cols else
                 ('timestamp_generacion' if 'timestamp_generacion' in cols else
                  ('creado_en' if 'creado_en' in cols else
                   ('fecha_calculo' if 'fecha_calculo' in cols else None)))
             )
-            if p_col is None or fecha_col is None or 'outcome_binario' not in cols:
+            if fecha_col is None or 'outcome_binario' not in cols:
                 raise RuntimeError('predicciones_futbol no tiene columnas mínimas para walk-forward')
 
             score_rows: List[Dict[str, Any]] = []
@@ -90,7 +88,7 @@ def main() -> None:
                 cur.execute(
                     f"""
                     SELECT mercado::text AS mercado, linea, {p_col} AS p, outcome_binario::int AS y,
-                           {"CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END" if 'prob_over_calibrada' in cols else '1'} AS fallback
+                           {fallback_expr} AS fallback
                     FROM predicciones_futbol
                     WHERE {fecha_col} >= %s AND {fecha_col} < %s
                     """,

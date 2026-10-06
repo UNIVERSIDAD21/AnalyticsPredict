@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — consumidores H9 sin atribución falsa de calibración
+- Gates y métricas operativas NBA/fútbol, explicación, auditoría de decisiones y reportes fútbol usan raw si falta ID de calibrador; N/D sustituye métricas ausentes y el ECE retrospectivo bajo no declara aptitud de producción.
+- Suite global con PostgreSQL sintético: 627 passed, 0 failed, 9 skipped; frontend 16 tests, lint y build verdes. H9 sigue abierto por vista/consumidores históricos y cotejo con datos actuales.
+
 ## 2026-10-06 — suite global sobre PostgreSQL desechable
 - Runner local/CI crea una base aleatoria en PostgreSQL local, carga un esquema sintético sin datos productivos, ejecuta la suite backend y elimina la base. Rechaza hosts remotos y bases administradoras distintas de `postgres`.
 - Nueve tests NBA con mocks aíslan gates de BD ajenos a su objetivo. Gate local: 621 passed, 0 failed, 9 skipped; frontend: 16 tests, lint, build/typecheck y audit de producción pasaron. Los skips y la validación CI se registran en `docs/reactivacion_single_user/AUDITORIA_SUITE_GLOBAL_2026-10-06.md`.

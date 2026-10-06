@@ -17,3 +17,7 @@ Clasificación de los 19 fallos anteriores: nueve casos NBA tenían gates SQL no
 Los nueve skips restantes **no** son aprobaciones tácitas: cinco casos de `motor_futbol/test_predictor.py` requieren reconciliar el contrato legacy de 24 mercados/corte temporal; dos de `test_registro_predicciones.py` aún apuntan a tablas genéricas `temporadas/equipos/partidos` que el esquema activo separa por deporte; dos de `test_resolucion_predicciones.py` exigen fixtures sintéticas de partido/outcome/odds para ejecutar la resolución integral. Estas deudas deben repararse o retirarse justificadamente, no activarse contra Neon.
 
 **Criterio pendiente:** reproducir 0 fallos en CI con PostgreSQL 16 y Python 3.12, inspeccionar los nueve skips y comprobar que el esquema sintético cubre los contratos relevantes. El job de integración ahora invoca el runner global; todavía no se afirma resultado remoto de ese nuevo job.
+
+## Verificación posterior
+
+CI del HEAD `23a554e` pasó **4/4 jobs**, incluido el runner global con PostgreSQL efímera. En el lote H9 siguiente, la suite local pasó **627/0/9** (14 warnings) tras ampliar el esquema y comprobar consumidores con SQL real; el frontend pasó 16 tests, lint y build. El lote H9 aún necesita su propia ejecución alojada. Los nueve skips mantienen la clasificación anterior y no cuentan como aprobaciones.

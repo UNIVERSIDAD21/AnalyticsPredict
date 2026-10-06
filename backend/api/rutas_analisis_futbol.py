@@ -2140,14 +2140,14 @@ def _obtener_estado_mercados_futbol(
                    COUNT(*) AS n,
                    AVG(
                      POWER(
-                       COALESCE(prob_over_calibrada, prob_over)
+                       COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)
                        - CASE WHEN outcome_binario THEN 1 ELSE 0 END,
                        2
                      )
                    ) AS brier
             FROM predicciones_futbol
             WHERE outcome_binario IS NOT NULL
-              AND COALESCE(prob_over_calibrada, prob_over) IS NOT NULL
+              AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) IS NOT NULL
             GROUP BY mercado
             HAVING COUNT(*) >= %s
             """,
@@ -2184,12 +2184,12 @@ def _obtener_mercados_bloqueados_por_brier(
             SELECT mercado::text
             FROM predicciones_futbol
             WHERE outcome_binario IS NOT NULL
-              AND COALESCE(prob_over_calibrada, prob_over) IS NOT NULL
+              AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) IS NOT NULL
             GROUP BY mercado
             HAVING COUNT(*) >= %s
                AND AVG(
                     POWER(
-                      COALESCE(prob_over_calibrada, prob_over)
+                      COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over)
                       - CASE WHEN outcome_binario THEN 1 ELSE 0 END,
                       2
                     )

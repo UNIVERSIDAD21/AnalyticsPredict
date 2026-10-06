@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from db import obtener_pool
+from metricas_probabilisticas import expresiones_sql_probabilidad_futbol
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, mapear_status_promocion, aplicar_autodemotion
 from motor_futbol.readiness_gate import cargar_politica_readiness, evaluar_readiness_corners
 
@@ -49,14 +50,10 @@ def main() -> None:
             cur.execute("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='predicciones_futbol'")
             cols = {r["column_name"] for r in cur.fetchall()}
 
-            columnas_prob = [col for col in ("prob_over_calibrada", "prob_over_raw", "prob_over") if col in cols]
-            p_col = "COALESCE(" + ", ".join(columnas_prob) + ")" if columnas_prob else None
-            fallback_expr = (
-                "AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric"
-                if "prob_over_calibrada" in cols else "NULL::numeric"
-            )
+            p_col, fallback_flag = expresiones_sql_probabilidad_futbol(cols)
+            fallback_expr = f"AVG({fallback_flag})::numeric"
             fecha_col = "timestamp_generacion" if "timestamp_generacion" in cols else ("creado_en" if "creado_en" in cols else None)
-            if p_col is None or fecha_col is None or "outcome_binario" not in cols:
+            if fecha_col is None or "outcome_binario" not in cols:
                 raise RuntimeError("predicciones_futbol sin columnas mínimas para monitoreo")
 
             cur.execute(
@@ -70,8 +67,8 @@ def main() -> None:
                        AVG(CASE
                          WHEN outcome_binario IS NULL OR {p_col} IS NULL THEN NULL
                          ELSE -(
-                           outcome_binario::int * LN(GREATEST(LEAST({p_col}, 1 - 1e-9), 1e-9))
-                           + (1 - outcome_binario::int) * LN(GREATEST(LEAST(1 - {p_col}, 1 - 1e-9), 1e-9))
+                           outcome_binario::int * LN(GREATEST(LEAST({p_col}, 1 - 1e-15), 1e-15))
+                           + (1 - outcome_binario::int) * LN(GREATEST(LEAST(1 - {p_col}, 1 - 1e-15), 1e-15))
                          )
                        END) AS log_loss,
                        {fallback_expr} AS fallback_rate

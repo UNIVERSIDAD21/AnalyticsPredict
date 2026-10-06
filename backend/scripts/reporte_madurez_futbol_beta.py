@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from db import obtener_pool
+from metricas_probabilisticas import expresiones_sql_probabilidad_futbol
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, CRITERIOS_DEFAULT
 
 
@@ -39,16 +40,7 @@ def main() -> None:
             )
             cols = {r["column_name"] for r in cur.fetchall()}
 
-            if "prob_over_calibrada" in cols:
-                p_col = "COALESCE(" + ", ".join(
-                    col for col in ("prob_over_calibrada", "prob_over_raw", "prob_over") if col in cols
-                ) + ")"
-                fallback_expr = "CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END"
-            elif "prob_over_raw" in cols or "prob_over" in cols:
-                p_col = "prob_over_raw" if "prob_over_raw" in cols else "prob_over"
-                fallback_expr = "0"
-            else:
-                raise RuntimeError("predicciones_futbol no tiene columna de probabilidad utilizable")
+            p_col, fallback_expr = expresiones_sql_probabilidad_futbol(cols)
 
             if "outcome_binario" not in cols:
                 raise RuntimeError("predicciones_futbol no tiene outcome_binario; no se puede evaluar madurez")
@@ -69,8 +61,8 @@ def main() -> None:
                   AVG(CASE
                     WHEN outcome_binario IS NULL OR {p_col} IS NULL THEN NULL
                     ELSE -(
-                      outcome_binario::int * LN(GREATEST(LEAST({p_col}, 1 - 1e-9), 1e-9))
-                      + (1 - outcome_binario::int) * LN(GREATEST(LEAST(1 - {p_col}, 1 - 1e-9), 1e-9))
+                      outcome_binario::int * LN(GREATEST(LEAST({p_col}, 1 - 1e-15), 1e-15))
+                      + (1 - outcome_binario::int) * LN(GREATEST(LEAST(1 - {p_col}, 1 - 1e-15), 1e-15))
                     )
                   END) AS log_loss,
                   AVG({fallback_expr})::numeric AS fallback_rate

@@ -26,6 +26,14 @@
 
 ## Pruebas y límites
 
-En el checkout: 66 pruebas dirigidas pasan con `DATABASE_URL` vacío. Esto no incluye suite global, PostgreSQL efímera ni prueba de interfaz. El corte read-only previo documentó fútbol 567/567 `p_calibrada == p_raw` sin `calibrador_id`; no se han alterado esas filas. El análisis retrospectivo permanece **NO CERTIFICADO**.
+En el primer corte: 66 pruebas dirigidas pasaron con `DATABASE_URL` vacío; esa cifra no incluía suite global, PostgreSQL efímera ni prueba de interfaz. El corte read-only previo documentó fútbol 567/567 `p_calibrada == p_raw` sin `calibrador_id`; no se han alterado esas filas. El análisis retrospectivo permanece **NO CERTIFICADO**. Los gates actuales figuran en la actualización siguiente.
 
-**Siguiente acción:** reparar el flujo real de calibradores de fútbol (carga, ID, inferencia y persistencia), después recorrer los consumidores restantes y ejecutar gates completos. No promover mercado ni afirmar rentabilidad por estos cambios.
+## Continuación de consumidores — 2026-10-06
+
+- Los gates de bloqueo NBA/fútbol, tablero de salud, ranking de calidad, drift, madurez/estabilidad fútbol, auditoría de decisiones y explicación de predicción ahora seleccionan una columna calibrada solo si existe `calibrador_id`; en caso contrario usan raw. La explicación tampoco etiqueta como calibrada una fila sin procedencia.
+- Los reportes de walk-forward nominal, madurez, shadow y monitoreo de fútbol comparten una expresión SQL que exige ID, tolera variantes de columnas raw legacy y computa fallback incluso si la columna calibrada histórica está poblada sin ID. Madurez/monitoreo alinearon el clipping Log Loss a `1e-15`.
+- El backtest de fútbol muestra Brier/ECE como N/D sin muestra; sus recomendaciones ya no declaran aptitud de producción solo por ECE retrospectivo bajo o ausente.
+- Suite backend completa en PostgreSQL local desechable con esquema sintético: **627 passed, 0 failed, 9 skipped, 14 warnings**. Las nuevas pruebas ejecutan SQL real para procedencia en tablero, madurez, explicación, reportes y auditoría. Frontend: **16 tests**, lint y build/typecheck verdes. Los dos archivos de reporte que la suite regeneró se devolvieron exactamente a HEAD; no forman parte del cambio.
+- CI del HEAD anterior `23a554e` pasó 4/4 jobs; este lote aún requiere CI de su propio HEAD. Las nueve omisiones de suite están detalladas en `AUDITORIA_SUITE_GLOBAL_2026-10-06.md`.
+
+**H9 permanece abierto:** la vista `vista_predicciones_para_calibracion` y scripts históricos B16/B17/B20 aún necesitan cotejo de procedencia/semántica; los datos actuales y cada mercado requieren contraste read-only, sin alterar el histórico 567/567 de fútbol. Un gate SQL sintético no demuestra calibración prospectiva ni resuelve frescura, temporalidad u outcomes.

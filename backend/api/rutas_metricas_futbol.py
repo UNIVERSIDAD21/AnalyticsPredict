@@ -151,10 +151,10 @@ def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: floa
             """
             SELECT mercado::text,
                    COUNT(*) AS n,
-                   AVG(POWER(COALESCE(prob_over_calibrada, prob_over_raw, prob_over) - COALESCE(outcome_binario::int,0), 2)) AS brier
+                   AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over_raw, prob_over) - outcome_binario::int, 2)) AS brier
             FROM predicciones_futbol
             WHERE outcome_binario IS NOT NULL
-              AND COALESCE(prob_over_calibrada, prob_over_raw, prob_over) IS NOT NULL
+              AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over_raw, prob_over) IS NOT NULL
             GROUP BY mercado
             HAVING COUNT(*) >= %s
             """,
@@ -240,8 +240,8 @@ async def obtener_shadow_operativo_futbol(
                   COUNT(*) FILTER (WHERE outcome_binario IS NOT NULL) AS resueltos,
                   COUNT(*) FILTER (WHERE outcome_binario IS NULL) AS resolubles_pendientes,
                   COUNT(DISTINCT linea) AS lineas_cubiertas,
-                  AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate,
-                  AVG(POWER(COALESCE(prob_over_calibrada, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier
+                  AVG(CASE WHEN calibrador_id IS NULL OR prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric AS fallback_rate,
+                  AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over) - COALESCE(outcome_binario::int,0),2)) FILTER (WHERE outcome_binario IS NOT NULL) AS brier
                 FROM predicciones_futbol
                 WHERE {fecha_col} >= %s
                 GROUP BY mercado
@@ -325,10 +325,10 @@ async def obtener_madurez_beta_futbol(
                       mercado::text AS mercado,
                       linea,
                       {fecha_col} AS fecha_evento,
-                      COALESCE(prob_over_calibrada, prob_over_raw, prob_over) AS p,
+                      COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over_raw, prob_over) AS p,
                       outcome_binario::int AS y,
                       CASE WHEN outcome_binario IS NOT NULL THEN 1 ELSE 0 END AS resuelta,
-                      CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END AS fallback
+                      CASE WHEN calibrador_id IS NULL OR prob_over_calibrada IS NULL THEN 1 ELSE 0 END AS fallback
                     FROM predicciones_futbol
                     WHERE {fecha_col} >= %s
                     """,
@@ -1149,7 +1149,7 @@ async def obtener_estado_b3_estabilidad(
                         COUNT(*) AS n,
                         AVG(
                             POWER(
-                                COALESCE(p.prob_over_calibrada, p.prob_over)
+                                COALESCE(CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada END, p.prob_over)
                                 - CASE WHEN p.outcome_binario THEN 1 ELSE 0 END,
                                 2
                             )
@@ -1158,7 +1158,7 @@ async def obtener_estado_b3_estabilidad(
                     JOIN partidos_futbol pf ON pf.id = p.partido_id
                     JOIN competiciones_futbol c ON c.id = pf.competicion_id
                     WHERE p.outcome_binario IS NOT NULL
-                      AND COALESCE(p.prob_over_calibrada, p.prob_over) IS NOT NULL
+                      AND COALESCE(CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada END, p.prob_over) IS NOT NULL
                       AND pf.fecha_partido >= NOW() - INTERVAL '7 days'
                     GROUP BY pf.competicion_id, c.codigo, c.nombre
                 """
@@ -1173,7 +1173,7 @@ async def obtener_estado_b3_estabilidad(
                         COUNT(*) AS n,
                         AVG(
                             POWER(
-                                COALESCE(p.prob_over_calibrada, p.prob_over)
+                                COALESCE(CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada END, p.prob_over)
                                 - CASE WHEN p.outcome_binario THEN 1 ELSE 0 END,
                                 2
                             )
@@ -1182,7 +1182,7 @@ async def obtener_estado_b3_estabilidad(
                     JOIN partidos_futbol pf ON pf.id = p.partido_id
                     JOIN competiciones_futbol c ON c.id = pf.competicion_id
                     WHERE p.outcome_binario IS NOT NULL
-                      AND COALESCE(p.prob_over_calibrada, p.prob_over) IS NOT NULL
+                      AND COALESCE(CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada END, p.prob_over) IS NOT NULL
                       AND pf.fecha_partido >= NOW() - INTERVAL '14 days'
                       AND pf.fecha_partido < NOW() - INTERVAL '7 days'
                     GROUP BY pf.competicion_id, c.codigo, c.nombre

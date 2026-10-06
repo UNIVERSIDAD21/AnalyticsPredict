@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from db import obtener_pool
+from metricas_probabilisticas import expresiones_sql_probabilidad_futbol
 
 
 def _collect(cur, days: int) -> List[Dict[str, Any]]:
@@ -26,14 +27,8 @@ def _collect(cur, days: int) -> List[Dict[str, Any]]:
     )
     cols = {r["column_name"] for r in cur.fetchall()}
     fecha_col = "timestamp_generacion" if "timestamp_generacion" in cols else "creado_en"
-    columnas_prob = [col for col in ("prob_over_calibrada", "prob_over_raw", "prob_over") if col in cols]
-    if not columnas_prob:
-        raise RuntimeError("predicciones_futbol sin probabilidad utilizable")
-    p_col = "COALESCE(" + ", ".join(columnas_prob) + ")"
-    fallback_expr = (
-        "AVG(CASE WHEN prob_over_calibrada IS NULL THEN 1 ELSE 0 END)::numeric"
-        if "prob_over_calibrada" in cols else "NULL::numeric"
-    )
+    p_col, fallback_flag = expresiones_sql_probabilidad_futbol(cols)
+    fallback_expr = f"AVG({fallback_flag})::numeric"
 
     cur.execute(
         f"""

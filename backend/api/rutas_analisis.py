@@ -228,12 +228,12 @@ def _obtener_mercados_bloqueados_nba(
                     SELECT mercado
                     FROM predicciones_registradas
                     WHERE outcome_binario IS NOT NULL
-                      AND COALESCE(p_calibrada, p_raw) IS NOT NULL
+                      AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw) IS NOT NULL
                     GROUP BY mercado
                     HAVING COUNT(*) >= %s
                        AND AVG(
                             POWER(
-                              COALESCE(p_calibrada, p_raw)
+                              COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN p_calibrada END, p_raw)
                               - CASE WHEN outcome_binario THEN 1 ELSE 0 END,
                               2
                             )

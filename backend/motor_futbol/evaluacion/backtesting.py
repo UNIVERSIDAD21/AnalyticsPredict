@@ -62,8 +62,8 @@ class ResultadoBacktest:
 
     # Métricas globales
     mae_global: float = 0.0
-    brier_global: float = 0.0
-    ece_global: float = 0.0
+    brier_global: float | None = None
+    ece_global: float | None = None
 
     # Rentabilidad simulada
     roi_simulado: float = 0.0
@@ -77,6 +77,8 @@ class ResultadoBacktest:
 
     def resumen(self) -> str:
         """Genera resumen legible del backtest."""
+        brier = f"{self.brier_global:.4f}" if self.brier_global is not None else "N/D"
+        ece = f"{self.ece_global:.4f}" if self.ece_global is not None else "N/D"
         return f"""
 === RESUMEN BACKTEST ===
 Período: {self.fecha_inicio} a {self.fecha_fin}
@@ -85,8 +87,8 @@ Predicciones generadas: {self.n_predicciones}
 
 MÉTRICAS GLOBALES:
 - MAE promedio: {self.mae_global:.3f}
-- Brier Score: {self.brier_global:.4f}
-- ECE: {self.ece_global:.4f}
+- Brier Score: {brier}
+- ECE: {ece}
 
 RENTABILIDAD SIMULADA:
 - ROI: {self.roi_simulado:.2f}%
@@ -302,7 +304,7 @@ class BacktesterFutbol:
             )
 
             resultado.mae_global = metricas.get("mae_corners_ft", 0.0)
-            resultado.brier_global = metricas.get("brier_corners_ft", 0.0)
+            resultado.brier_global = metricas.get("brier_corners_ft")
             resultado.metricas_corners = metricas.get("corners", {})
             resultado.metricas_goles = metricas.get("goles", {})
 
@@ -530,6 +532,8 @@ class BacktesterFutbol:
         resultado: ResultadoBacktest,
     ) -> str:
         """Genera reporte en markdown."""
+        brier = f"{resultado.brier_global:.4f}" if resultado.brier_global is not None else "N/D"
+        ece = f"{resultado.ece_global:.4f}" if resultado.ece_global is not None else "N/D"
         return f"""# Reporte de Backtest - Motor de Fútbol
 
 ## Información General
@@ -546,8 +550,8 @@ class BacktesterFutbol:
 | Métrica | Valor |
 |---------|-------|
 | MAE | {resultado.mae_global:.3f} |
-| Brier Score | {resultado.brier_global:.4f} |
-| ECE | {resultado.ece_global:.4f} |
+| Brier Score | {brier} |
+| ECE | {ece} |
 
 ## Rentabilidad Simulada
 
