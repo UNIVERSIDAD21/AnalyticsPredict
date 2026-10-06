@@ -63,9 +63,12 @@ class Configuracion:
     # ══════════════════════════════════════════════════════════
 
     ruta_modelo: str = field(
-        default_factory=lambda: os.getenv("RUTA_MODELO", "datos/modelo_entrenado.npz")
+        default_factory=lambda: os.getenv(
+            "ANALYTICSPREDICT_MODELO_NBA_ACTIVO",
+            os.path.expanduser("~/.local/share/analyticspredict/modelo_nba_activo.npz"),
+        )
     )
-    """Ruta al archivo del modelo entrenado"""
+    """Artefacto NBA de serving fuera del checkout; solo training explícito lo publica."""
 
     ruta_equipos: str = field(
         default_factory=lambda: os.getenv("RUTA_EQUIPOS", "datos/equipos_nba.json")

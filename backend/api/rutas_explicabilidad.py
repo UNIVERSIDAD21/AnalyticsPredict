@@ -107,28 +107,6 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
         return None
 
 
-def _registrar_uso_contrato(conn: Any, domain: str, es_legacy: bool) -> None:
-    """Persistencia de telemetría por dominio/día para contrato v1/legacy."""
-    sql = """
-    INSERT INTO analytics.contrato_uso_log (fecha, domain, total_llamadas_v1, total_llamadas_legacy)
-    VALUES (CURRENT_DATE, %s, %s, %s)
-    ON CONFLICT (fecha, domain)
-    DO UPDATE SET
-      total_llamadas_v1 = analytics.contrato_uso_log.total_llamadas_v1 + EXCLUDED.total_llamadas_v1,
-      total_llamadas_legacy = analytics.contrato_uso_log.total_llamadas_legacy + EXCLUDED.total_llamadas_legacy,
-      updated_at = NOW()
-    """
-    inc_v1 = 0 if es_legacy else 1
-    inc_legacy = 1 if es_legacy else 0
-    try:
-      with conn.cursor() as cur:
-          cur.execute(sql, (domain, inc_v1, inc_legacy))
-      conn.commit()
-    except Exception:
-      conn.rollback()
-      logger.warning("No fue posible registrar telemetría de contrato", extra={"domain": domain, "legacy": es_legacy})
-
-
 def _calcular_sunset(conn: Any, domain: str) -> str:
     """Sunset = hoy+30d si legacy<5% por 7 días, si no fecha tope bloque 10."""
     sql = """
@@ -267,7 +245,6 @@ async def get_explicacion_prediccion(
     es_legacy = version == "legacy" or accept_legacy
 
     with pool.connection() as conn2:
-        _registrar_uso_contrato(conn2, domain, es_legacy)
         sunset_date = _calcular_sunset(conn2, domain)
 
     logger.info(

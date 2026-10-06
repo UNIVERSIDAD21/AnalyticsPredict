@@ -329,20 +329,12 @@ class AutoReentrenador:
     
     async def iniciar(self) -> None:
         """
-        Inicia el sistema completo de auto-reentrenamiento.
-        
-        1. Inicializa el gestor de modelo
-        2. Inicia la escucha de eventos
+        Compatibilidad legacy: carga artefacto, sin activar listener ni entrenamiento.
+
+        La ingesta y el entrenamiento ahora son operaciones separadas y explícitas.
         """
-        logger.info("🚀 Iniciando sistema de auto-reentrenamiento...")
-        
-        # Inicializar gestor (entrena modelo inicial)
+        logger.info("Cargando artefacto NBA sin iniciar auto-reentrenamiento")
         await self._gestor.inicializar_async()
-        
-        # Iniciar escucha de eventos
-        await self._listener.iniciar()
-        
-        logger.info("✅ Sistema de auto-reentrenamiento activo")
     
     async def detener(self) -> None:
         """Detiene el sistema de auto-reentrenamiento."""

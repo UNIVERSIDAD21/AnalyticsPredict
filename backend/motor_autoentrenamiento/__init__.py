@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Motor de Auto-Entrenamiento NBA
-===============================
+Motor NBA de serving y entrenamiento explícito
+==============================================
 
-Este paquete proporciona entrenamiento automático del modelo de predicción
-NBA desde la base de datos PostgreSQL.
+El startup solo carga un artefacto versionado; la BD se usa para entrenar
+únicamente desde una operación explícita del operador.
 
 Componentes principales:
 - EntrenadorBD: Entrena el modelo directamente desde la tabla `partidos`
-- GestorModelo: Singleton que gestiona el modelo en memoria
-- EscuchaEventosPartidos: Escucha cambios en BD para reentrenar
-- AutoReentrenador: Integra todo para reentrenamiento automático
+- GestorModelo: Singleton que sirve el modelo en memoria
+- EscuchaEventosPartidos/AutoReentrenador: compatibilidad legacy sin arranque automático
 
 Uso básico:
 -----------
@@ -22,7 +21,7 @@ Uso básico:
     )
     
     # Inicializar con tu pool de conexiones
-    gestor = GestorModelo.obtener_instancia(pool)
+    gestor = GestorModelo.obtener_instancia()
     gestor.inicializar()
     
     # Usar el modelo para predicciones
@@ -32,25 +31,14 @@ Uso básico:
 Uso con FastAPI:
 ----------------
 
-    from motor_autoentrenamiento import AutoReentrenador
-    
-    auto_reentrenador = None
+    from motor_autoentrenamiento import GestorModelo
     
     @app.on_event("startup")
     async def startup():
-        global auto_reentrenador
-        auto_reentrenador = AutoReentrenador(obtener_pool())
-        await auto_reentrenador.iniciar()
-    
-    @app.on_event("shutdown")
-    async def shutdown():
-        if auto_reentrenador:
-            await auto_reentrenador.detener()
+        await GestorModelo.obtener_instancia().inicializar_async()
 
-El modelo se reentrenará automáticamente cuando:
-1. Se inicia el servidor
-2. Se insertan nuevos partidos en la BD
-3. Se actualiza/elimina un partido existente
+Una ingesta o un reload no entrenan. Usar
+`python scripts/entrenar_modelo_nba_explicito.py --entrenar` de forma deliberada.
 """
 
 from .entrenador_bd import EntrenadorBD, normalizar_nombre

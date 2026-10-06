@@ -44,10 +44,10 @@ class _DummyConn:
         return self._cursor
 
     def commit(self):
-        return None
+        raise AssertionError("GET no debe hacer commit")
 
     def rollback(self):
-        return None
+        raise AssertionError("GET no debe hacer rollback")
 
 
 class _DummyPool:
@@ -113,7 +113,7 @@ def test_header_deprecation_no_aparece_en_v1(monkeypatch):
     assert resp.headers.get("Deprecation") is None
 
 
-def test_contador_uso_se_registra(monkeypatch):
+def test_get_legacy_no_escribe_telemetria_en_bd(monkeypatch):
     from api import rutas_explicabilidad
 
     cursor = _DummyCursor()
@@ -125,5 +125,5 @@ def test_contador_uso_se_registra(monkeypatch):
     resp = client.get("/api/prediccion/abc/explicacion?version=legacy")
     assert resp.status_code == 200
 
-    inserts = [c for c in cursor.calls if "INSERT INTO analytics.contrato_uso_log" in c[0]]
-    assert len(inserts) >= 1
+    assert cursor.calls
+    assert all(c[0].lstrip().upper().startswith("SELECT") for c in cursor.calls)

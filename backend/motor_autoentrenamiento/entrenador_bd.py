@@ -5,10 +5,8 @@ entrenador_bd.py — Entrenador de modelo Ridge desde PostgreSQL.
 Este módulo entrena el modelo directamente desde la tabla `partidos` de la base de datos,
 eliminando la dependencia de archivos CSV.
 
-IMPORTANTE: El modelo se reentrena automáticamente cuando:
-1. Se inicia el servidor y no hay modelo en memoria
-2. Se detectan nuevos partidos en la BD
-3. Se llama explícitamente a reentrenar()
+IMPORTANTE: este entrenador solo se invoca desde una operación explícita.
+El startup, reload, GET e ingesta no deben llamarlo.
 
 CAMBIO CLAVE: Cada entrenamiento ahora registra una versión en `modelo_versiones`,
 garantizando que modelo_version_id sea una FK válida.
@@ -26,7 +24,7 @@ from __future__ import annotations
 import json
 import hashlib
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
@@ -553,6 +551,10 @@ class EntrenadorBD:
             "fecha_entrenamiento": self._ultima_fecha_entrenamiento.isoformat(),
             "hash_datos": self._ultimo_hash_datos,
             "modelo_version_id": modelo_version_id,
+            "fecha_min_entrenamiento": fecha_min.isoformat() if fecha_min else None,
+            "fecha_max_entrenamiento": fecha_max.isoformat() if fecha_max else None,
+            "granularidad_cutoff": "fecha_sin_hora",
+            "alpha": alpha,
         }
 
         logger.info(
@@ -643,6 +645,7 @@ class EntrenadorBD:
         """
         logger.info("🏀 Iniciando entrenamiento desde base de datos...")
         inicio = datetime.now()
+        fit_started_at = datetime.now(timezone.utc)
         
         # 1. Obtener partidos
         partidos = self._obtener_partidos(temporadas=temporadas)
@@ -704,6 +707,7 @@ class EntrenadorBD:
         
         pesos_equipo, std_equipo = ajustar_ridge(X, Y_equipo, alpha)
         pesos_rival, std_rival = ajustar_ridge(X, Y_rival, alpha)
+        fit_completed_at = datetime.now(timezone.utc)
         
         # 6. Calcular métricas
         pred_equipo = X @ pesos_equipo
@@ -740,6 +744,15 @@ class EntrenadorBD:
             temporadas_incluidas=temporadas,
             config_entrenamiento={"alpha": alpha},
         )
+        with self._pool.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT version, fecha_entrenamiento FROM modelo_versiones WHERE id = %s",
+                    (modelo_version_id,),
+                )
+                version_registrada = cursor.fetchone()
+        if version_registrada is None:
+            raise RuntimeError("La versión NBA registrada no puede releerse")
 
         self._metricas = {
             "partidos_entrenamiento": len(partidos),
@@ -748,9 +761,13 @@ class EntrenadorBD:
             "mae_equipo_por_cuarto": {q: float(m) for q, m in zip(CUARTOS, mae_equipo)},
             "mae_rival_por_cuarto": {q: float(m) for q, m in zip(CUARTOS, mae_rival)},
             "duracion_segundos": duracion,
-            "fecha_entrenamiento": self._ultima_fecha_entrenamiento.isoformat(),
+            "fecha_entrenamiento": version_registrada[1].isoformat(),
             "hash_datos": self._ultimo_hash_datos,
             "modelo_version_id": modelo_version_id,
+            "modelo_version": version_registrada[0],
+            "fit_started_at": fit_started_at.isoformat(),
+            "fit_completed_at": fit_completed_at.isoformat(),
+            "training_data_latest_game_date": fecha_max.isoformat() if fecha_max else None,
         }
 
         logger.info(f"Modelo entrenado en {duracion:.2f}s (modelo_version_id={modelo_version_id})")
@@ -802,4 +819,3 @@ class EntrenadorBD:
     def ultima_fecha_entrenamiento(self) -> Optional[datetime]:
         """Retorna la fecha del último entrenamiento."""
         return self._ultima_fecha_entrenamiento
-

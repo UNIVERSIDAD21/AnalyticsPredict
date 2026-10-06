@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-gestor_modelo.py — Gestor singleton del modelo con auto-reentrenamiento.
+gestor_modelo.py — Gestor singleton del modelo NBA para serving y entrenamiento explícito.
 
 Este módulo gestiona el ciclo de vida del modelo de predicción:
-- Carga inicial desde BD
-- Reentrenamiento automático cuando hay cambios
+- Carga inicial de un artefacto versionado, sin BD ni entrenamiento
+- Reentrenamiento únicamente mediante operación explícita
 - Acceso thread-safe al modelo
 - Integración con el sistema de eventos
 
@@ -12,11 +12,8 @@ ARQUITECTURA:
 El sistema usa el patrón Singleton para garantizar una única instancia del modelo
 en memoria, y un sistema de versiones para detectar cuándo reentrenar.
 
-Flujo de auto-reentrenamiento:
-1. Al iniciar el servidor → entrenar desde BD si no hay modelo
-2. Cada N minutos → verificar si hay partidos nuevos
-3. Si hay cambios → reentrenar en background
-4. Trigger de BD → notificar cuando se inserta partido (opcional)
+El startup y las lecturas no crean versiones del modelo. Una ingesta tampoco
+entrena: el operador debe ejecutar el comando o endpoint explícito.
 
 Uso:
     from gestor_modelo import GestorModelo, obtener_modelo
@@ -34,10 +31,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from .entrenador_bd import EntrenadorBD
+from .artefacto_nba import cargar_artefacto, guardar_artefacto
 
 if TYPE_CHECKING:
     from psycopg_pool import ConnectionPool
@@ -80,7 +78,8 @@ class ModeloEnMemoria:
         self.desviacion_rival = datos["desviacion_rival"]
         # CAMBIO: Usar modelo_version_id real de BD si está disponible
         self.version: int = datos.get("modelo_version_id", version)
-        self.fecha_entrenamiento: datetime = datetime.now()
+        fecha = datos.get("fecha_entrenamiento") or datos.get("metricas", {}).get("fecha_entrenamiento")
+        self.fecha_entrenamiento: datetime = datetime.fromisoformat(fecha) if fecha else datetime.now()
         self.metricas: Dict[str, Any] = datos.get("metricas", {})
     
     def contiene_equipo(self, nombre: str) -> bool:
@@ -108,17 +107,13 @@ class GestorModelo:
     Gestor singleton del modelo de predicción.
     
     Esta clase garantiza que solo exista una instancia del modelo en memoria
-    y maneja el reentrenamiento automático.
+    y solo entrena por una operación explícita.
     
     Características:
     - Singleton thread-safe
-    - Auto-reentrenamiento cuando hay cambios en la BD
-    - Verificación periódica de datos nuevos
+    - Carga de artefacto en startup sin BD ni entrenamiento
+    - Entrenamiento explícito con publicación atómica de artefacto
     - Métricas y logging detallado
-    
-    Configuración:
-    - INTERVALO_VERIFICACION: Cada cuánto verificar datos nuevos (minutos)
-    - REENTRENAR_AL_INICIAR: Si reentrenar aunque exista modelo previo
     
     Ejemplo:
         # Inicialización (al arrancar FastAPI)
@@ -135,11 +130,10 @@ class GestorModelo:
     _instancia: Optional["GestorModelo"] = None
     _lock = threading.Lock()
     
-    # Configuración
-    INTERVALO_VERIFICACION_MINUTOS: int = 30  # Verificar cada 30 minutos
-    REENTRENAR_AL_INICIAR: bool = True  # Siempre reentrenar al iniciar
+    INTERVALO_VERIFICACION_MINUTOS: int = 0
+    REENTRENAR_AL_INICIAR: bool = False
     
-    def __init__(self, pool: "ConnectionPool"):
+    def __init__(self, pool: Optional["ConnectionPool"] = None):
         """
         Constructor privado - usar obtener_instancia().
         
@@ -147,7 +141,7 @@ class GestorModelo:
             pool: ConnectionPool de psycopg para la base de datos
         """
         self._pool = pool
-        self._entrenador = EntrenadorBD(pool)
+        self._entrenador = EntrenadorBD(pool) if pool is not None else None
         self._modelo: Optional[ModeloEnMemoria] = None
         self._version: int = 0
         self._inicializado: bool = False
@@ -171,12 +165,10 @@ class GestorModelo:
         if cls._instancia is None:
             with cls._lock:
                 if cls._instancia is None:
-                    if pool is None:
-                        raise RuntimeError(
-                            "GestorModelo no inicializado. "
-                            "La primera llamada debe incluir el pool de conexiones."
-                        )
                     cls._instancia = cls(pool)
+        elif pool is not None and cls._instancia._pool is None:
+            cls._instancia._pool = pool
+            cls._instancia._entrenador = EntrenadorBD(pool)
         
         return cls._instancia
     
@@ -194,43 +186,40 @@ class GestorModelo:
     
     def inicializar(self) -> None:
         """
-        Inicializa el gestor entrenando el modelo desde la BD.
-        
-        Este método es síncrono y bloquea hasta que el modelo esté listo.
-        Para uso en FastAPI, preferir inicializar_async().
+        Carga el artefacto existente sin consultar BD ni crear versiones.
         """
         if self._inicializado and self._modelo is not None:
             logger.info("✅ Gestor ya inicializado, modelo en memoria")
             return
-        
-        logger.info("🚀 Inicializando GestorModelo...")
-        self._entrenar_modelo()
-        self._inicializado = True
-        logger.info(f"✅ GestorModelo listo - Modelo v{self._version} con {self._modelo.cantidad_equipos} equipos")
+        datos = cargar_artefacto()
+        if datos is None:
+            logger.warning("No hay artefacto NBA activo; API disponible, análisis NBA degradado")
+            return
+        self.cargar_modelo_publicado(datos)
+        logger.info("Modelo NBA versionado cargado sin entrenamiento: id=%s", self._version)
+
+    def cargar_modelo_publicado(self, datos: Optional[Dict[str, Any]] = None) -> ModeloEnMemoria:
+        """Recarga explícita del artefacto ya publicado; no consulta ni escribe BD."""
+        datos = datos if datos is not None else cargar_artefacto()
+        if datos is None:
+            raise RuntimeError("No existe artefacto NBA activo")
+        modelo = ModeloEnMemoria(datos)
+        with self._lock:
+            self._modelo = modelo
+            self._version = modelo.version
+            self._ultimo_conteo_partidos = int(modelo.metricas.get("partidos_entrenamiento", 0))
+            self._inicializado = True
+        return modelo
     
     async def inicializar_async(self) -> None:
         """
-        Inicializa el gestor de forma asíncrona.
-        
-        Entrena el modelo en un thread separado para no bloquear el event loop.
-        También inicia la tarea de verificación periódica.
+        Carga el artefacto sin lanzar jobs automáticos ni entrenar.
         """
         if self._inicializado and self._modelo is not None:
             logger.info("✅ Gestor ya inicializado")
             return
         
-        logger.info("🚀 Inicializando GestorModelo (async)...")
-        
-        # Entrenar en thread separado
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self._entrenar_modelo)
-        
-        self._inicializado = True
-        
-        # Iniciar verificación periódica
-        self._tarea_verificacion = asyncio.create_task(self._verificar_periodicamente())
-        
-        logger.info(f"✅ GestorModelo listo - Modelo v{self._version}")
+        self.inicializar()
     
     def _entrenar_modelo(self) -> None:
         """
@@ -241,10 +230,16 @@ class GestorModelo:
         with self._lock:
             try:
                 logger.info("🔄 Entrenando modelo desde BD...")
+                if self._entrenador is None:
+                    from db import obtener_pool
+                    self._pool = obtener_pool()
+                    self._entrenador = EntrenadorBD(self._pool)
                 datos_modelo = self._entrenador.entrenar()
-                
-                self._version += 1
-                self._modelo = ModeloEnMemoria(datos_modelo, self._version)
+                guardar_artefacto(datos_modelo)
+
+                self._modelo = ModeloEnMemoria(datos_modelo)
+                self._version = self._modelo.version
+                self._inicializado = True
                 self._ultimo_conteo_partidos = datos_modelo["metricas"].get("partidos_entrenamiento", 0)
                 
                 logger.info(
@@ -256,33 +251,6 @@ class GestorModelo:
             except Exception as e:
                 logger.error(f"❌ Error entrenando modelo: {e}")
                 raise
-    
-    async def _verificar_periodicamente(self) -> None:
-        """
-        Tarea que verifica periódicamente si hay datos nuevos.
-        
-        Corre en background y reentrena automáticamente cuando detecta
-        partidos nuevos en la BD.
-        """
-        while True:
-            try:
-                await asyncio.sleep(self.INTERVALO_VERIFICACION_MINUTOS * 60)
-                
-                logger.debug("🔍 Verificando datos nuevos...")
-                
-                if self._entrenador.hay_datos_nuevos():
-                    logger.info("📊 Detectados datos nuevos, reentrenando...")
-                    loop = asyncio.get_event_loop()
-                    await loop.run_in_executor(None, self._entrenar_modelo)
-                else:
-                    logger.debug("✓ No hay datos nuevos")
-                    
-            except asyncio.CancelledError:
-                logger.info("⏹️ Verificación periódica cancelada")
-                break
-            except Exception as e:
-                logger.error(f"❌ Error en verificación periódica: {e}")
-                await asyncio.sleep(60)  # Esperar antes de reintentar
     
     def reentrenar(self) -> None:
         """

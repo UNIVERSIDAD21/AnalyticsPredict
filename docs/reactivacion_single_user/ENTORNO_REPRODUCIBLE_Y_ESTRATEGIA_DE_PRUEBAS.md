@@ -17,7 +17,7 @@
 | Frontend tests | `cd frontend && npm test` | Vitest; jsdom requiere dependencias instaladas. |
 | Frontend build | `cd frontend && npm run build` | Escribe `dist/`; no despliega. |
 | Backend unitarias puras | `cd backend && <venv>/python -m pytest -q <tests seleccionados>` | Examinar fixtures/side effects de cada grupo antes de correr; no usar suite global ciegamente. |
-| Contratos API | `TestClient` con lifespan/BD simulados y stores temporales | No arrancar `app.py` contra BD operativa: su lifespan entrena al inicio. |
+| Contratos API | `TestClient` con lifespan/BD simulados y stores temporales | El lifespan ahora solo carga artefacto local; no entrenar en pruebas ni apuntar la suite a Neon. |
 | Integración BD | PostgreSQL/SQLite **efímera**, `DATABASE_URL` de test explícita y fixtures sintéticas | Prohibido apuntar a producción, escribir ingestas o entrenar modelos productivos. |
 
 ## Estrategia para la reactivación

@@ -33,7 +33,7 @@ Esto levanta:
 - Frontend: `http://localhost:5173`
 
 `dev.sh` usa `127.0.0.1` y no detiene procesos existentes por defecto.
-Requiere `backend/.venv` válido o `BACKEND_PYTHON` con dependencias instaladas; valida el intérprete antes de arrancar. La aplicación puede consultar BD y entrenar al iniciar: no usar el arranque como prueba inocua.
+Requiere `backend/.venv` válido o `BACKEND_PYTHON` con dependencias instaladas; valida el intérprete antes de arrancar. El arranque carga un artefacto NBA versionado fuera del repositorio, sin entrenar ni registrar una nueva versión. Sin artefacto, `/salud` responde en modo degradado y el análisis NBA espera una operación explícita. Otras rutas pueden consultar BD.
 Para liberar puertos existentes de forma explícita:
 
 ```bash
@@ -100,6 +100,14 @@ cp backend/.env.example backend/.env
 ```
 
 2. Configura `DATABASE_URL` en `backend/.env` mediante el mecanismo protegido del entorno. No publiques ese archivo.
+
+El entrenamiento NBA **es una operación con escritura**, separada del arranque y de la ingesta. Ejecutar solo deliberadamente desde `backend`:
+
+```bash
+python scripts/entrenar_modelo_nba_explicito.py --entrenar
+```
+
+El comando registra `modelo_version_id` en PostgreSQL y publica el artefacto activo en `~/.local/share/analyticspredict/modelo_nba_activo.npz` (o en `ANALYTICSPREDICT_MODELO_NBA_ACTIVO`). Si la API ya está abierta, cargar esa versión **sin entrenar de nuevo** mediante `curl -X POST http://127.0.0.1:8000/api/modelo/cargar` o reiniciarla de forma controlada. Esto no certifica el modelo ni su rendimiento futuro.
 
 ## Pruebas dirigidas sin BD
 

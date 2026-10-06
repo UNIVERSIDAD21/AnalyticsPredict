@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-app.py — Punto de entrada de la aplicación FastAPI con AUTO-ENTRENAMIENTO.
+app.py — Punto de entrada FastAPI; serving y entrenamiento NBA separados.
 
-CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
-- Integra el sistema de auto-entrenamiento desde base de datos
-- El modelo se entrena automáticamente al iniciar
-- Se reentrena cuando hay cambios en la tabla partidos
+El arranque solo carga un artefacto explícito. No entrena ni registra versiones.
 """
 
 from contextlib import asynccontextmanager
@@ -41,11 +38,11 @@ from api.rutas_analisis_futbol import router as router_analisis_futbol
 from api.rutas_apuestas_futbol import router as router_apuestas_futbol
 from api.rutas_metricas_futbol import router as router_metricas_futbol
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
-from db import obtener_pool, cerrar_pool
+from db import cerrar_pool
 from observabilidad_http import ObservabilidadHTTP
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# NUEVO: Importar sistema de auto-entrenamiento
+# Serving NBA y entrenamiento explícito
 # ═══════════════════════════════════════════════════════════════════════════════
 from motor_autoentrenamiento import (
     GestorModelo,
@@ -92,48 +89,20 @@ async def ciclo_de_vida(app: FastAPI):
     print()
     
     # ═══════════════════════════════════════════════════════════════════════════
-    # NUEVO: Inicializar auto-entrenamiento desde BD
+    # Cargar artefacto local sin BD, entrenamiento ni escritura.
     # ═══════════════════════════════════════════════════════════════════════════
     try:
-        print("🔄 Inicializando modelo desde base de datos...")
-        pool = obtener_pool()
-        
-        # Crear gestor y entrenar modelo
-        _gestor_modelo = GestorModelo.obtener_instancia(pool)
+        print("📦 Cargando artefacto NBA activo (sin entrenamiento)...")
+        _gestor_modelo = GestorModelo.obtener_instancia()
         await _gestor_modelo.inicializar_async()
-        
-        # Mostrar info del modelo
-        modelo = obtener_modelo()
-        print()
-        print("=" * 60)
-        print("✅ MODELO ENTRENADO DESDE BASE DE DATOS")
-        print("=" * 60)
-        print(f"   Equipos en modelo: {modelo.cantidad_equipos}")
-        print(f"   Versión: {modelo.version}")
-        print(f"   Fecha entrenamiento: {modelo.fecha_entrenamiento.strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        if modelo.cantidad_equipos < 30:
-            print()
-            print(f"⚠️  ADVERTENCIA: Solo {modelo.cantidad_equipos} equipos en el modelo")
-            print("   La tabla 'partidos' puede no tener datos de todos los equipos.")
-            print("   Ejecuta 'python poblar_partidos_completo.py' para solucionarlo.")
-        
-        print("=" * 60)
-        
+        if _gestor_modelo.esta_inicializado:
+            modelo = obtener_modelo()
+            print(f"✅ Modelo NBA cargado: ID {modelo.version}, {modelo.cantidad_equipos} equipos")
+        else:
+            print("⚠️ Sin artefacto NBA: API activa; análisis NBA no disponible hasta entrenamiento explícito")
     except Exception as e:
-        print()
-        print("=" * 60)
-        print("❌ ERROR INICIALIZANDO MODELO")
-        print("=" * 60)
-        print(f"   Error: {e}")
-        print()
-        print("   Posibles causas:")
-        print("   1. La tabla 'partidos' está vacía")
-        print("   2. No hay conexión a la base de datos")
-        print("   3. Las tablas no están creadas correctamente")
-        print()
-        print("   El servidor arrancará pero /api/analizar fallará.")
-        print("=" * 60)
+        logger.exception("No se pudo cargar el artefacto NBA: %s", e)
+        print("⚠️ Artefacto NBA no disponible; API activa en modo degradado")
 
     print()
     print("🚀 Servidor listo para recibir peticiones")
@@ -159,7 +128,7 @@ Esta API permite analizar partidos de NBA y calcular probabilidades
 de Over/Under para mercados por cuarto y juego completo.
 
 **Características:**
-- 🔄 Auto-entrenamiento desde base de datos
+- 📦 Serving desde artefacto versionado; entrenamiento solo explícito
 - 📊 30 equipos NBA soportados
 - ⚡ Modelo en memoria para respuestas rápidas
 """,
@@ -422,6 +391,25 @@ async def equipos_modelo():
 
 
 @app.post(
+    "/api/modelo/cargar",
+    tags=["Modelo"],
+    summary="Cargar artefacto NBA ya publicado",
+    description="Recarga un artefacto versionado sin entrenar ni escribir en la base de datos.",
+)
+async def cargar_modelo_publicado():
+    """Activa en memoria una versión publicada por el comando explícito."""
+    global _gestor_modelo
+    try:
+        if _gestor_modelo is None:
+            _gestor_modelo = GestorModelo.obtener_instancia()
+        modelo = _gestor_modelo.cargar_modelo_publicado()
+        return {"exito": True, "modelo_version_id": modelo.version,
+                "fecha_entrenamiento": modelo.fecha_entrenamiento.isoformat()}
+    except Exception as e:
+        return {"exito": False, "error": str(e)}
+
+
+@app.post(
     "/api/modelo/reentrenar",
     tags=["Modelo"],
     summary="Forzar reentrenamiento",
@@ -433,11 +421,8 @@ async def reentrenar_modelo():
     
     try:
         if _gestor_modelo is None:
-            return {
-                "exito": False,
-                "error": "Gestor de modelo no inicializado",
-            }
-        
+            _gestor_modelo = GestorModelo.obtener_instancia()
+
         await _gestor_modelo.reentrenar_async()
         modelo = obtener_modelo()
         
