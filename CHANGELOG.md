@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — datos históricos dudosos y guard de resolución
+
+- Corte read-only clasifica 219 NBA sin alias `source` (todos con ID ESPN), 231 marcadores 0–0 (81 en ambos grupos), 25 fútbol finalizados sin goles, 24 predicciones NBA resueltas y 5 apuestas enlazadas a 0–0. Los resolvedores NBA bloquean nuevas resoluciones desde 0–0; históricos intactos y KPIs aún no recertificados.
+
 ## 2026-10-06 — clasificación temporal histórica NBA
 
 - Auditor read-only clasifica 2.934 predicciones: 2.136 con cutoff posterior al día UTC de generación, 476 ambiguas y 322 no determinables. Ninguna tiene evidencia completa para certificación temporal; no se altera el histórico ni se atribuye ausencia de leakage. Suite backend local PostgreSQL desechable: 661 passed, 0 failed, 0 skipped.

@@ -156,6 +156,10 @@ def _partido_tiene_datos_completos(
     visitante_total: Optional[int],
 ) -> bool:
     """Verifica que el partido tiene los datos necesarios para resolver el mercado."""
+    # El 0–0 total del histórico NBA representa resultado no acreditado; no
+    # resolver tampoco mercados de cuartos usando esos mismos partidos.
+    if local_total == 0 and visitante_total == 0:
+        return False
     if mercado == "Q1":
         return local_q1 is not None and visitante_q1 is not None
 

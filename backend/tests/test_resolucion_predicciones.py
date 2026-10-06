@@ -252,6 +252,19 @@ class TestCalcularOutcomeBinario:
 class TestPartidoTieneDatosCompletos:
     """Tests para verificación de datos completos."""
 
+    def test_marcador_total_cero_cero_no_resuelve_ningun_mercado(self):
+        from motor.resolucion_apuestas import _partido_tiene_datos_completos as apuesta_completa
+
+        for mercado in ("Q1", "Q2", "Q3", "Q4", "COMPLETO"):
+            for verificador in (_partido_tiene_datos_completos, apuesta_completa):
+                assert verificador(
+                    mercado=mercado,
+                    local_q1=0, local_q2=0, local_q3=0, local_q4=0,
+                    local_total=0,
+                    visitante_q1=0, visitante_q2=0, visitante_q3=0, visitante_q4=0,
+                    visitante_total=0,
+                ) is False
+
     def test_q1_completo_retorna_true(self):
         resultado = _partido_tiene_datos_completos(
             mercado="Q1",
