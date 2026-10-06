@@ -195,7 +195,6 @@ def _partido_tiene_datos_completos(
 
 def resolver_apuestas(
     *,
-    usuario_id: Optional[str] = None,
     limite: int = 1000,
     mercado: Optional[str] = None,
     solo_hasta_fecha: Optional[date] = None,
@@ -206,7 +205,6 @@ def resolver_apuestas(
     Resuelve apuestas pendientes actualizando resultado, puntos_reales, ganancia.
 
     Parametros:
-    - usuario_id: Filtrar por usuario especifico (None = todos)
     - limite: Batch size maximo (default 1000)
     - mercado: Filtrar por mercado especifico (Q1, Q2, Q3, Q4, COMPLETO)
     - solo_hasta_fecha: Solo resolver apuestas hasta esta fecha
@@ -225,10 +223,6 @@ def resolver_apuestas(
     # Construir query con filtros
     condiciones = ["a.resultado = 'PENDIENTE'"] if not force else []
     parametros: List[Any] = []
-
-    if usuario_id:
-        condiciones.append("a.usuario_id = %s")
-        parametros.append(usuario_id)
 
     if mercado:
         condiciones.append("a.mercado = %s")
@@ -281,10 +275,6 @@ def resolver_apuestas(
                     "resultado IN ('GANADA','PERDIDA','PUSH')",
                     "fecha_partido >= %s",
                 ]
-                if usuario_id:
-                    revert_where.append("usuario_id = %s")
-                    revert_params.append(usuario_id)
-
                 cursor.execute(
                     f"""
                     UPDATE apuestas
@@ -307,10 +297,9 @@ def resolver_apuestas(
                     return resumen
 
                 logger.info(
-                    "Procesando %d apuestas (limite=%d usuario=%s mercado=%s hasta=%s force=%s)",
+                    "Procesando %d apuestas (limite=%d mercado=%s hasta=%s force=%s)",
                     len(filas),
                     limite,
-                    usuario_id,
                     mercado,
                     solo_hasta_fecha,
                     force,
@@ -496,7 +485,6 @@ def resolver_apuestas(
 
 def obtener_estadisticas_apuestas(
     *,
-    usuario_id: Optional[str] = None,
     pool=None,
 ) -> Dict[str, Any]:
     """
@@ -505,9 +493,6 @@ def obtener_estadisticas_apuestas(
     Util para monitoreo y debugging.
     """
     pool = pool or obtener_pool()
-
-    where_clause = "WHERE usuario_id = %s" if usuario_id else ""
-    params = [usuario_id] if usuario_id else []
 
     try:
         with pool.connection() as conexion:
@@ -525,9 +510,7 @@ def obtener_estadisticas_apuestas(
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
                         COALESCE(SUM(stake), 0) AS stake_total
                     FROM apuestas
-                    {where_clause}
                     """,
-                    params,
                 )
                 fila = cursor.fetchone()
                 if fila:
@@ -573,7 +556,6 @@ def obtener_estadisticas_apuestas(
 
 def obtener_apuestas_pendientes_por_mercado(
     *,
-    usuario_id: Optional[str] = None,
     pool=None,
 ) -> Dict[str, int]:
     """
@@ -582,11 +564,6 @@ def obtener_apuestas_pendientes_por_mercado(
     pool = pool or obtener_pool()
 
     where_clause = "resultado = 'PENDIENTE'"
-    params: List[Any] = []
-    if usuario_id:
-        where_clause += " AND usuario_id = %s"
-        params.append(usuario_id)
-
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
@@ -598,10 +575,8 @@ def obtener_apuestas_pendientes_por_mercado(
                     GROUP BY mercado
                     ORDER BY mercado
                     """,
-                    params,
                 )
                 return {fila[0]: fila[1] for fila in cursor.fetchall()}
     except Exception:
         logger.exception("Error obteniendo apuestas pendientes por mercado")
         return {}
-

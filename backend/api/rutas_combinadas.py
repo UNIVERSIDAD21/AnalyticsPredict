@@ -9,7 +9,7 @@ import logging
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from esquemas.combinadas import (
     PeticionActualizarResultadoCombinada,
@@ -24,7 +24,6 @@ from servicios.servicio_combinadas import (
     listar_combinadas_db,
     obtener_combinada_db,
 )
-from .dependencias import obtener_usuario_id
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,6 @@ router = APIRouter(prefix="/api/combinadas", tags=["Combinadas"])
 @router.post("", summary="Crear combinada", response_model=RespuestaCombinada)
 async def crear_combinada(
     peticion: PeticionCrearCombinada,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaCombinada:
     if len(peticion.selecciones) < 2:
         raise HTTPException(
@@ -42,19 +40,17 @@ async def crear_combinada(
             detail="Una combinada requiere mínimo 2 selecciones.",
         )
 
-    combinada = crear_combinada_db(peticion, usuario_id)
+    combinada = crear_combinada_db(peticion)
     return RespuestaCombinada(exito=True, combinada=combinada)
 
 
 @router.get("", summary="Listar combinadas", response_model=RespuestaListaCombinadas)
 async def listar_combinadas(
-    usuario_id: UUID = Depends(obtener_usuario_id),
     pagina: int = Query(1, ge=1),
     tamano: int = Query(20, ge=1, le=100),
     resultado: Optional[str] = None,
 ) -> RespuestaListaCombinadas:
     total, total_paginas, combinadas = listar_combinadas_db(
-        usuario_id=usuario_id,
         pagina=pagina,
         tamano=tamano,
         resultado=resultado,
@@ -71,10 +67,9 @@ async def listar_combinadas(
 @router.get("/{combinada_id}", summary="Detalle combinada", response_model=RespuestaCombinada)
 async def obtener_combinada(
     combinada_id: UUID,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaCombinada:
     try:
-        combinada = obtener_combinada_db(combinada_id, usuario_id)
+        combinada = obtener_combinada_db(combinada_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
@@ -85,13 +80,11 @@ async def obtener_combinada(
 async def actualizar_resultado_combinada(
     combinada_id: UUID,
     peticion: PeticionActualizarResultadoCombinada,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaCombinada:
     """Actualiza el resultado de una combinada pendiente."""
     try:
         combinada = actualizar_resultado_combinada_db(
             combinada_id=combinada_id,
-            usuario_id=usuario_id,
             resultado=peticion.resultado,
         )
     except ValueError as exc:
@@ -106,10 +99,9 @@ async def actualizar_resultado_combinada(
 @router.delete("/{combinada_id}", summary="Eliminar combinada")
 async def eliminar_combinada(
     combinada_id: UUID,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> dict:
     try:
-        eliminar_combinada_db(combinada_id, usuario_id)
+        eliminar_combinada_db(combinada_id)
     except ValueError as exc:
         mensaje = str(exc)
         if "pendientes" in mensaje.lower():

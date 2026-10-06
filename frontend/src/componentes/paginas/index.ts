@@ -15,9 +15,4 @@ export { PaginaHistorialPredicciones } from './PaginaHistorialPredicciones';
 
 export { PaginaFutbol } from './PaginaFutbol';
 export { AnalisisPartidoFutbol } from './AnalisisPartidoFutbol';
-export { PaginaLogin } from './PaginaLogin';
-export { PaginaLegal } from './PaginaLegal';
-export { PaginaOnboarding } from './PaginaOnboarding';
 export { PaginaDashboardUsuario } from './PaginaDashboardUsuario';
-export { PaginaCentroAnalitico } from './PaginaCentroAnalitico';
-export { PaginaPublicaProducto } from './PaginaPublicaProducto';

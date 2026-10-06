@@ -55,7 +55,6 @@ def _calcular_valor_esperado(probabilidad: float, cuota_total: float, stake: flo
 def _mapear_combinada(fila: dict, selecciones: Optional[List[dict]] = None) -> Combinada:
     return Combinada(
         id=fila["id"],
-        usuario_id=fila["usuario_id"],
         stake=float(fila["stake"]),
         cuota_total=float(fila["cuota_total"]),
         n_selecciones=int(fila["n_selecciones"]),
@@ -113,7 +112,7 @@ def _mapear_seleccion(fila: dict) -> SeleccionCombinada:
     )
 
 
-def crear_combinada_db(peticion: PeticionCrearCombinada, usuario_id: UUID) -> Combinada:
+def crear_combinada_db(peticion: PeticionCrearCombinada) -> Combinada:
     selecciones_dict = [seleccion.model_dump() for seleccion in peticion.selecciones]
     correlacion = calcular_correlacion_combinada(selecciones_dict)
 
@@ -133,7 +132,6 @@ def crear_combinada_db(peticion: PeticionCrearCombinada, usuario_id: UUID) -> Co
                 cursor.execute(
                     """
                     INSERT INTO apuestas_combinadas (
-                        usuario_id,
                         stake,
                         cuota_total,
                         n_selecciones,
@@ -159,12 +157,11 @@ def crear_combinada_db(peticion: PeticionCrearCombinada, usuario_id: UUID) -> Co
                     )
                     VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     RETURNING *
                     """,
                     (
-                        str(usuario_id),
                         peticion.stake,
                         peticion.cuota_total,
                         len(peticion.selecciones),
@@ -267,7 +264,6 @@ def crear_combinada_db(peticion: PeticionCrearCombinada, usuario_id: UUID) -> Co
 
 def listar_combinadas_db(
     *,
-    usuario_id: UUID,
     pagina: int,
     tamano: int,
     resultado: Optional[str] = None,
@@ -276,17 +272,17 @@ def listar_combinadas_db(
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
-            condiciones = ["usuario_id = %s"]
-            parametros: List[object] = [str(usuario_id)]
+            condiciones: List[str] = []
+            parametros: List[object] = []
 
             if resultado:
                 condiciones.append("resultado = %s")
                 parametros.append(resultado)
 
-            where_sql = " AND ".join(condiciones)
+            where_sql = " WHERE " + " AND ".join(condiciones) if condiciones else ""
 
             cursor.execute(
-                f"SELECT COUNT(*) as total FROM apuestas_combinadas WHERE {where_sql}",
+                f"SELECT COUNT(*) as total FROM apuestas_combinadas{where_sql}",
                 parametros,
             )
             total = cursor.fetchone()["total"]
@@ -294,7 +290,7 @@ def listar_combinadas_db(
             cursor.execute(
                 f"""
                 SELECT * FROM apuestas_combinadas
-                WHERE {where_sql}
+                {where_sql}
                 ORDER BY creado_en DESC
                 LIMIT %s OFFSET %s
                 """,
@@ -327,15 +323,15 @@ def listar_combinadas_db(
     return total, total_paginas, resultado_combinadas
 
 
-def obtener_combinada_db(combinada_id: UUID, usuario_id: UUID) -> Combinada:
+def obtener_combinada_db(combinada_id: UUID) -> Combinada:
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 SELECT * FROM apuestas_combinadas
-                WHERE id = %s AND usuario_id = %s
+                WHERE id = %s
                 """,
-                (str(combinada_id), str(usuario_id)),
+                (str(combinada_id),),
             )
             combinada = cursor.fetchone()
             if not combinada:
@@ -356,7 +352,6 @@ def obtener_combinada_db(combinada_id: UUID, usuario_id: UUID) -> Combinada:
 
 def actualizar_resultado_combinada_db(
     combinada_id: UUID,
-    usuario_id: UUID,
     resultado: str,
 ) -> Combinada:
     """
@@ -364,7 +359,6 @@ def actualizar_resultado_combinada_db(
 
     Args:
         combinada_id: ID de la combinada
-        usuario_id: ID del usuario propietario
         resultado: Nuevo resultado (GANADA, PERDIDA, PUSH, ANULADA)
 
     Returns:
@@ -372,13 +366,13 @@ def actualizar_resultado_combinada_db(
     """
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
-            # Verificar que existe y pertenece al usuario
+            # Verificar que existe la combinada.
             cursor.execute(
                 """
                 SELECT * FROM apuestas_combinadas
-                WHERE id = %s AND usuario_id = %s
+                WHERE id = %s
                 """,
-                (str(combinada_id), str(usuario_id)),
+                (str(combinada_id),),
             )
             combinada = cursor.fetchone()
             if not combinada:
@@ -408,10 +402,10 @@ def actualizar_resultado_combinada_db(
                     ganancia = %s,
                     fecha_resolucion = NOW(),
                     actualizado_en = NOW()
-                WHERE id = %s AND usuario_id = %s
+                WHERE id = %s
                 RETURNING *
                 """,
-                (resultado, ganancia, str(combinada_id), str(usuario_id)),
+                (resultado, ganancia, str(combinada_id)),
             )
             combinada_actualizada = cursor.fetchone()
 
@@ -429,15 +423,15 @@ def actualizar_resultado_combinada_db(
     return _mapear_combinada(combinada_actualizada, selecciones)
 
 
-def eliminar_combinada_db(combinada_id: UUID, usuario_id: UUID) -> None:
+def eliminar_combinada_db(combinada_id: UUID) -> None:
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 SELECT resultado FROM apuestas_combinadas
-                WHERE id = %s AND usuario_id = %s
+                WHERE id = %s
                 """,
-                (str(combinada_id), str(usuario_id)),
+                (str(combinada_id),),
             )
             combinada = cursor.fetchone()
             if not combinada:

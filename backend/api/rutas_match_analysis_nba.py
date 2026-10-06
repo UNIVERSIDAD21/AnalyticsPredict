@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, StrictFloat, StrictInt, field_validator
 
 from scripts.generar_analisis_partido_nba import build_analysis, render_markdown, validate_markets
-from .dependencias import UsuarioActual, obtener_usuario_actual
 
 router = APIRouter(prefix="/api/nba", tags=["NBA Match Analysis"])
 
@@ -44,7 +43,6 @@ class MatchAnalysisRequest(BaseModel):
 @router.post("/match-analysis")
 def generar_match_analysis(
     payload: MatchAnalysisRequest,
-    _usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> dict[str, Any]:
     """Genera análisis técnico interno sin picks, stakes ni recomendaciones."""
     try:

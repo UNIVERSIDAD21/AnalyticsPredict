@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field, field_validator
 from psycopg.rows import dict_row
 
@@ -31,7 +31,6 @@ try:
 except ImportError:
     # Fallback para versiones antiguas; si no está disponible, definiremos un wrapper
     Jsonb = None  # type: ignore
-from .dependencias import obtener_usuario_id
 from .modelos_peticion import PeticionActualizarResultado, PeticionCrearApuesta
 from .modelos_respuesta import RespuestaApuesta, RespuestaListaApuestas, RespuestaResumenApuestas
 
@@ -96,7 +95,7 @@ router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
 BITACORA_AUTO_RESOLVE_INTERVAL_SEC = int(os.getenv("BITACORA_AUTO_RESOLVE_INTERVAL_SEC", "300"))
 BITACORA_AUTO_RESOLVE_LIMIT = int(os.getenv("BITACORA_AUTO_RESOLVE_LIMIT", "800"))
-_AUTO_RESOLVE_LAST_RUN_BY_USER: dict[str, float] = {}
+_AUTO_RESOLVE_LAST_RUN: float = 0.0
 _AUTO_RESOLVE_LAST_RUN_ANALIZADAS: float = 0.0
 
 BITACORA_USAGE_PATH = Path(
@@ -164,22 +163,20 @@ def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, 
     }
 
 
-def _auto_resolver_bitacoras(usuario_id: UUID) -> None:
+def _auto_resolver_bitacoras() -> None:
     """Actualiza automáticamente apuestas/analizados ya finalizados con throttling.
 
     Evita recalcular en cada request de lectura para no degradar UX (timeouts en bitácora).
     """
-    global _AUTO_RESOLVE_LAST_RUN_ANALIZADAS
+    global _AUTO_RESOLVE_LAST_RUN, _AUTO_RESOLVE_LAST_RUN_ANALIZADAS
 
     ahora = time.time()
-    usuario_key = str(usuario_id)
-    ultimo_usuario = _AUTO_RESOLVE_LAST_RUN_BY_USER.get(usuario_key, 0.0)
-    if (ahora - ultimo_usuario) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
+    if (ahora - _AUTO_RESOLVE_LAST_RUN) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
         try:
-            resolver_apuestas(usuario_id=usuario_key, limite=BITACORA_AUTO_RESOLVE_LIMIT)
-            _AUTO_RESOLVE_LAST_RUN_BY_USER[usuario_key] = ahora
+            resolver_apuestas(limite=BITACORA_AUTO_RESOLVE_LIMIT)
+            _AUTO_RESOLVE_LAST_RUN = ahora
         except Exception:
-            logger.exception("Auto-resolución de apuestas falló para usuario=%s", usuario_id)
+            logger.exception("Auto-resolución de apuestas falló")
 
     if (ahora - _AUTO_RESOLVE_LAST_RUN_ANALIZADAS) >= BITACORA_AUTO_RESOLVE_INTERVAL_SEC:
         try:
@@ -197,7 +194,7 @@ def _serializar_jsonb(valor: object | None) -> object | None:
     return json.dumps(valor)
 
 
-def _construir_payload_apuesta(peticion: PeticionCrearApuesta, usuario_id: UUID) -> dict:
+def _construir_payload_apuesta(peticion: PeticionCrearApuesta) -> dict:
     cuota_over = peticion.cuota_over
     cuota_under = peticion.cuota_under
     if cuota_over is None and cuota_under is None and peticion.cuota is not None:
@@ -228,7 +225,6 @@ def _construir_payload_apuesta(peticion: PeticionCrearApuesta, usuario_id: UUID)
             )
 
     return {
-        "usuario_id": str(usuario_id),
         "partido_id": peticion.partido_id,
         "equipo_local": peticion.equipo_local,
         "equipo_visitante": peticion.equipo_visitante,
@@ -269,7 +265,6 @@ def _construir_payload_apuesta(peticion: PeticionCrearApuesta, usuario_id: UUID)
 
 
 def _construir_where(
-    usuario_id: UUID,
     resultado: Optional[str],
     mercado: Optional[str],
     confianza: Optional[str],
@@ -277,8 +272,7 @@ def _construir_where(
     hasta: Optional[date],
     busqueda: Optional[str],
 ) -> tuple[str, List[object]]:
-    _ = usuario_id
-    # Bitácora compartida: lectura global sin filtro por usuario.
+    # El histórico deportivo completo es personal en el esquema single-user.
     condiciones: List[str] = []
     parametros: List[object] = []
 
@@ -306,48 +300,18 @@ def _construir_where(
     return where_sql, parametros
 
 
-def _asegurar_usuario_para_fk(usuario_id: UUID) -> None:
-    """Garantiza que exista fila en usuarios para cumplir FK de apuestas.usuario_id."""
-    usuario_txt = str(usuario_id)
-    email_placeholder = f"usuario_{usuario_txt}@local.analyticspredict"
-
-    with obtener_pool().connection() as conexion:
-        with conexion.cursor() as cursor:
-            cursor.execute(
-                """
-                INSERT INTO usuarios (
-                    id,
-                    email,
-                    nombre,
-                    password_hash,
-                    fecha_creacion,
-                    creado_en,
-                    actualizado_en,
-                    activo,
-                    rol
-                )
-                VALUES (%s, %s, %s, %s, NOW(), NOW(), NOW(), TRUE, 'usuario')
-                ON CONFLICT (id) DO NOTHING
-                """,
-                [usuario_txt, email_placeholder, "usuario", "NO_LOGIN_PLACEHOLDER"],
-            )
-
-
 @router.post("", summary="Guardar apuesta", response_model=RespuestaApuesta)
 async def guardar_apuesta(
     peticion: PeticionCrearApuesta,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
-    datos_apuesta = _construir_payload_apuesta(peticion, usuario_id)
-    _asegurar_usuario_para_fk(usuario_id)
+    datos_apuesta = _construir_payload_apuesta(peticion)
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 INSERT INTO apuestas (
-                    usuario_id,
                     partido_id,
                     equipo_local,
                     equipo_visitante,
@@ -385,7 +349,6 @@ async def guardar_apuesta(
                     prediccion_desviacion,
                     razones
                 ) VALUES (
-                    %(usuario_id)s,
                     %(partido_id)s,
                     %(equipo_local)s,
                     %(equipo_visitante)s,
@@ -431,11 +394,10 @@ async def guardar_apuesta(
     return RespuestaApuesta(exito=True, apuesta=apuesta)
 
 
-@router.get("", summary="Listar apuestas")
+@router.get("", summary="Listar apuestas", response_model=None)
 async def listar_apuestas(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
     resultado: Optional[str] = Query(None),
     mercado: Optional[str] = Query(None),
     confianza: Optional[str] = Query(None),
@@ -447,10 +409,9 @@ async def listar_apuestas(
     tamano: int = Query(10, ge=1, le=50),
 ) -> RespuestaListaApuestas:
     """Lista apuestas con filtros y paginación."""
-    _auto_resolver_bitacoras(usuario_id)
+    _auto_resolver_bitacoras()
 
     where_sql, parametros = _construir_where(
-        usuario_id=usuario_id,
         resultado=resultado,
         mercado=mercado,
         confianza=confianza,
@@ -507,10 +468,9 @@ async def listar_apuestas(
 async def resumen_apuestas(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ):
-    """Retorna el resumen agregado de apuestas para el usuario (incluye simples y combinadas)."""
-    _auto_resolver_bitacoras(usuario_id)
+    """Retorna el resumen agregado de apuestas (simples y combinadas)."""
+    _auto_resolver_bitacoras()
 
     try:
         with obtener_pool().connection() as conexion:
@@ -519,18 +479,17 @@ async def resumen_apuestas(
                 cursor.execute(
                     """
                     WITH apuestas_unificadas AS (
-                        SELECT usuario_id, 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
+                        SELECT 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado
                         FROM apuestas
                         UNION ALL
-                        SELECT usuario_id, 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia, resultado::text AS resultado
+                        SELECT 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia, resultado::text AS resultado
                         FROM apuestas_futbol
                         UNION ALL
-                        SELECT usuario_id, 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
+                        SELECT 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia, resultado
                         FROM apuestas_combinadas
                     ),
                     resumen_global AS (
                         SELECT
-                            NULL::uuid AS usuario_id,
                             COUNT(*) AS total_apuestas,
                             COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
                             COUNT(*) FILTER (WHERE resultado <> 'PENDIENTE') AS cerradas,
@@ -631,24 +590,9 @@ async def resumen_apuestas(
                 resumen = fila_resumen.get("resumen_global") or {}
                 resumen["por_deporte"] = fila_resumen.get("por_deporte") or []
                 resumen["por_mercado"] = fila_resumen.get("por_mercado") or []
-    except Exception:
-        logger.exception("Fallo resumen de bitácora; devolviendo resumen en cero de contingencia")
-        resumen = {
-            "usuario_id": None,
-            "total_apuestas": 0,
-            "pendientes": 0,
-            "cerradas": 0,
-            "ganadas": 0,
-            "perdidas": 0,
-            "push": 0,
-            "anuladas": 0,
-            "stake_total": 0,
-            "ganancia_total": 0,
-            "winrate": 0,
-            "roi": 0,
-            "por_deporte": [],
-            "por_mercado": [],
-        }
+    except Exception as exc:
+        logger.exception("Fallo resumen de bitácora")
+        raise HTTPException(status_code=503, detail="Resumen de bitácora no disponible") from exc
 
     payload_legacy = RespuestaResumenApuestas(exito=True, resumen=resumen).model_dump(mode="json")
     return _respuesta_contrato(payload_legacy, version, response, "resumen")
@@ -708,7 +652,6 @@ async def contract_usage(days: int = Query(default=7, ge=1, le=90)):
 async def listar_bitacora_unificada(
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
     resultado: Optional[str] = Query(None),
     deporte: Optional[str] = Query(None),
     tipo_apuesta: Optional[str] = Query(None),
@@ -722,7 +665,7 @@ async def listar_bitacora_unificada(
     tamano: int = Query(20, ge=1, le=50),
 ):
     """Lista la bitácora unificada de apuestas simples y combinadas."""
-    _auto_resolver_bitacoras(usuario_id)
+    _auto_resolver_bitacoras()
 
     condiciones: List[str] = []
     parametros: List[object] = []
@@ -790,8 +733,7 @@ async def listar_bitacora_unificada(
                 a.confianza_sistema,
                 a.valor_esperado,
                 a.creado_en,
-                a.actualizado_en,
-                a.usuario_id
+                a.actualizado_en
             FROM apuestas a
             UNION ALL
             SELECT
@@ -820,8 +762,7 @@ async def listar_bitacora_unificada(
                 f.confianza_sistema::text AS confianza_sistema,
                 f.valor_esperado,
                 f.creado_en,
-                f.actualizado_en,
-                f.usuario_id
+                f.actualizado_en
             FROM apuestas_futbol f
             UNION ALL
             SELECT
@@ -850,8 +791,7 @@ async def listar_bitacora_unificada(
                 c.confianza_sistema,
                 c.valor_esperado,
                 c.creado_en,
-                c.actualizado_en,
-                c.usuario_id
+                c.actualizado_en
             FROM apuestas_combinadas c
         )
     """
@@ -896,11 +836,9 @@ async def listar_bitacora_unificada(
                     )
                     for fila in cursor.fetchall():
                         selecciones_por_combinada.setdefault(fila["combinada_id"], []).append(fila)
-    except Exception:
-        logger.exception("Fallo bitácora unificada; devolviendo respuesta vacía de contingencia")
-        total = 0
-        registros = []
-        selecciones_por_combinada = {}
+    except Exception as exc:
+        logger.exception("Fallo bitácora unificada")
+        raise HTTPException(status_code=503, detail="Bitácora unificada no disponible") from exc
 
     total_paginas = max(1, (total + tamano - 1) // tamano) if total else 0
 
@@ -1048,20 +986,6 @@ class AuditoriaDecisionFutbolResponse(BaseModel):
     paginacion: AuditoriaDecisionFutbolPaginacion
 
 
-def _exigir_admin_bitacora(usuario_id: UUID) -> None:
-    """Gobernanza explícita: auditoría global es admin-only."""
-    with obtener_pool().connection() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("SELECT rol FROM usuarios WHERE id = %s", [str(usuario_id)])
-            row = cur.fetchone() or {}
-            rol = str(row.get("rol") or "").lower()
-            if rol != "admin":
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Acceso restringido: auditoría de fútbol requiere rol admin.",
-                )
-
-
 @router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol (v2)', response_model=AuditoriaDecisionFutbolResponse)
 async def auditoria_apuestas_analizadas_futbol(
     limite: int = 200,
@@ -1080,13 +1004,11 @@ async def auditoria_apuestas_analizadas_futbol(
     calibrador_id: Optional[str] = None,
     estado: Optional[str] = None,
     resultado_outcome: Optional[str] = None,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ):
     """Reporte canónico v2 para auditoría/backtesting de decisiones fútbol.
 
-    Gobernanza aplicada: endpoint global admin-only.
+    La privacidad se controla en el perímetro de infraestructura.
     """
-    _exigir_admin_bitacora(usuario_id)
     from servicios.apuestas_analizadas import obtener_auditoria_decisiones_futbol
 
     payload = obtener_auditoria_decisiones_futbol(
@@ -1118,10 +1040,8 @@ async def auditoria_apuestas_analizadas_futbol_legacy(
     mercado: Optional[str] = None,
     fuente: Optional[str] = None,
     devig_metodo: Optional[str] = None,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ):
     """Compatibilidad legacy explícita (sin response_model v2)."""
-    _exigir_admin_bitacora(usuario_id)
     from servicios.apuestas_analizadas import obtener_auditoria_decisiones_futbol
 
     payload = obtener_auditoria_decisiones_futbol(
@@ -1141,10 +1061,8 @@ async def backfill_auditoria_futbol(
     batch_size: int = 500,
     checkpoint_id: Optional[int] = None,
     dry_run: bool = True,
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ):
     """Backfill de columnas canónicas desde payload histórico cuando exista metadata recuperable."""
-    _exigir_admin_bitacora(usuario_id)
     from servicios.apuestas_analizadas import backfill_decisiones_desde_payload_futbol
 
     resultado = backfill_decisiones_desde_payload_futbol(
@@ -1154,115 +1072,6 @@ async def backfill_auditoria_futbol(
         dry_run=dry_run,
     )
     return {"exito": True, **resultado}
-
-
-@router.get("/{apuesta_id}", summary="Detalle de apuesta")
-async def obtener_apuesta(
-    apuesta_id: UUID,
-    response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
-):
-    """Obtiene una apuesta por ID validando pertenencia."""
-    with obtener_pool().connection() as conexion:
-        with conexion.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                SELECT * FROM apuestas
-                WHERE id = %s AND usuario_id = %s
-                """,
-                [str(apuesta_id), str(usuario_id)],
-            )
-            apuesta = cursor.fetchone()
-
-    if not apuesta:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
-
-    payload_legacy = RespuestaApuesta(exito=True, apuesta=apuesta).model_dump(mode="json")
-    return _respuesta_contrato(payload_legacy, version, response, str(apuesta_id))
-
-
-@router.patch("/{apuesta_id}/resultado", summary="Actualizar resultado")
-async def actualizar_resultado(
-    apuesta_id: UUID,
-    peticion: PeticionActualizarResultado,
-    response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
-):
-    """Actualiza el resultado de una apuesta pendiente."""
-    with obtener_pool().connection() as conexion:
-        with conexion.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                SELECT resultado FROM apuestas
-                WHERE id = %s AND usuario_id = %s
-                """,
-                [str(apuesta_id), str(usuario_id)],
-            )
-            fila = cursor.fetchone()
-
-            if not fila:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
-            if fila["resultado"] != "PENDIENTE":
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Solo se pueden resolver apuestas pendientes.",
-                )
-
-            cursor.execute(
-                """
-                UPDATE apuestas
-                SET resultado = %s,
-                    puntos_reales = %s
-                WHERE id = %s AND usuario_id = %s
-                RETURNING *
-                """,
-                [peticion.resultado, peticion.puntos_reales, str(apuesta_id), str(usuario_id)],
-            )
-            apuesta = cursor.fetchone()
-
-    payload_legacy = RespuestaApuesta(exito=True, apuesta=apuesta).model_dump(mode="json")
-    return _respuesta_contrato(payload_legacy, version, response, f"{apuesta_id}/resultado")
-
-
-@router.delete("/{apuesta_id}", summary="Eliminar apuesta")
-async def eliminar_apuesta(
-    apuesta_id: UUID,
-    response: Response,
-    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
-):
-    """Elimina una apuesta pendiente."""
-    with obtener_pool().connection() as conexion:
-        with conexion.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                """
-                SELECT resultado FROM apuestas
-                WHERE id = %s AND usuario_id = %s
-                """,
-                [str(apuesta_id), str(usuario_id)],
-            )
-            fila = cursor.fetchone()
-
-            if not fila:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
-            if fila["resultado"] != "PENDIENTE":
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Solo se pueden eliminar apuestas pendientes.",
-                )
-
-            cursor.execute(
-                """
-                DELETE FROM apuestas
-                WHERE id = %s AND usuario_id = %s
-                """,
-                [str(apuesta_id), str(usuario_id)],
-            )
-
-    payload_legacy = {"exito": True, "mensaje": "Apuesta eliminada."}
-    return _respuesta_contrato(payload_legacy, version, response, str(apuesta_id))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1308,7 +1117,6 @@ class RespuestaEstadisticas(BaseModel):
     """,
 )
 async def resolver_apuestas_pendientes(
-    usuario_id: UUID = Depends(obtener_usuario_id),
     mercado: Optional[str] = Query(
         None,
         pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$",
@@ -1320,15 +1128,13 @@ async def resolver_apuestas_pendientes(
     """Resuelve apuestas pendientes automáticamente."""
     try:
         resumen = resolver_apuestas(
-            usuario_id=str(usuario_id),
             mercado=mercado,
             limite=limite,
             solo_hasta_fecha=hasta,
         )
 
         logger.info(
-            "Resolución completada para usuario=%s: %d resueltas, %d pendientes, %d errores",
-            usuario_id,
+            "Resolución completada: %d resueltas, %d pendientes, %d errores",
             resumen.resueltas,
             resumen.pendientes,
             resumen.errores,
@@ -1337,7 +1143,7 @@ async def resolver_apuestas_pendientes(
         return RespuestaResolucion(exito=True, resumen=resumen.to_dict())
 
     except Exception as e:
-        logger.exception("Error resolviendo apuestas para usuario=%s", usuario_id)
+        logger.exception("Error resolviendo apuestas")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error resolviendo apuestas: {str(e)}",
@@ -1348,7 +1154,7 @@ async def resolver_apuestas_pendientes(
     "/estadisticas",
     summary="Estadísticas de apuestas",
     description="""
-    Obtiene estadísticas completas de las apuestas del usuario.
+    Obtiene estadísticas completas de las apuestas personales.
 
     Incluye:
     - Total de apuestas
@@ -1361,16 +1167,13 @@ async def resolver_apuestas_pendientes(
 async def obtener_estadisticas(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
 ):
-    """Obtiene estadísticas de apuestas del usuario."""
-    _auto_resolver_bitacoras(usuario_id)
+    """Obtiene estadísticas de apuestas."""
+    _auto_resolver_bitacoras()
 
     try:
-        estadisticas = obtener_estadisticas_apuestas(usuario_id=str(usuario_id))
-        pendientes_por_mercado = obtener_apuestas_pendientes_por_mercado(
-            usuario_id=str(usuario_id)
-        )
+        estadisticas = obtener_estadisticas_apuestas()
+        pendientes_por_mercado = obtener_apuestas_pendientes_por_mercado()
 
         payload_legacy = RespuestaEstadisticas(
             exito=True,
@@ -1380,7 +1183,7 @@ async def obtener_estadisticas(
         return _respuesta_contrato(payload_legacy, version, response, "estadisticas")
 
     except Exception as e:
-        logger.exception("Error obteniendo estadísticas para usuario=%s", usuario_id)
+        logger.exception("Error obteniendo estadísticas")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error obteniendo estadísticas: {str(e)}",
@@ -1469,7 +1272,6 @@ class RespuestaMetricasBitacora(BaseModel):
 async def obtener_metricas_bitacora(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
-    usuario_id: UUID = Depends(obtener_usuario_id),
     desde: Optional[date] = Query(None, description="Fecha inicio"),
     hasta: Optional[date] = Query(None, description="Fecha fin"),
     mercado: Optional[str] = Query(
@@ -1477,9 +1279,9 @@ async def obtener_metricas_bitacora(
         pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$",
         description="Filtrar por mercado",
     ),
-) -> RespuestaMetricasBitacora:
+):
     """Calcula métricas desde la bitácora de apuestas."""
-    _auto_resolver_bitacoras(usuario_id)
+    _auto_resolver_bitacoras()
 
     advertencias: List[str] = []
 
@@ -1677,10 +1479,113 @@ async def obtener_metricas_bitacora(
         return _respuesta_contrato(payload_legacy, version, response, "metricas")
 
     except Exception as e:
-        logger.exception("Error calculando métricas de bitácora para usuario=%s", usuario_id)
+        logger.exception("Error calculando métricas de bitácora")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error calculando métricas: {str(e)}",
         )
 
+@router.get("/{apuesta_id}", summary="Detalle de apuesta")
+async def obtener_apuesta(
+    apuesta_id: UUID,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+):
+    """Obtiene una apuesta por ID validando pertenencia."""
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT * FROM apuestas
+                WHERE id = %s
+                """,
+                [str(apuesta_id)],
+            )
+            apuesta = cursor.fetchone()
 
+    if not apuesta:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
+
+    payload_legacy = RespuestaApuesta(exito=True, apuesta=apuesta).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, str(apuesta_id))
+
+
+@router.patch("/{apuesta_id}/resultado", summary="Actualizar resultado")
+async def actualizar_resultado(
+    apuesta_id: UUID,
+    peticion: PeticionActualizarResultado,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+):
+    """Actualiza el resultado de una apuesta pendiente."""
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT resultado FROM apuestas
+                WHERE id = %s
+                """,
+                [str(apuesta_id)],
+            )
+            fila = cursor.fetchone()
+
+            if not fila:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
+            if fila["resultado"] != "PENDIENTE":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Solo se pueden resolver apuestas pendientes.",
+                )
+
+            cursor.execute(
+                """
+                UPDATE apuestas
+                SET resultado = %s,
+                    puntos_reales = %s
+                WHERE id = %s
+                RETURNING *
+                """,
+                [peticion.resultado, peticion.puntos_reales, str(apuesta_id)],
+            )
+            apuesta = cursor.fetchone()
+
+    payload_legacy = RespuestaApuesta(exito=True, apuesta=apuesta).model_dump(mode="json")
+    return _respuesta_contrato(payload_legacy, version, response, f"{apuesta_id}/resultado")
+
+
+@router.delete("/{apuesta_id}", summary="Eliminar apuesta")
+async def eliminar_apuesta(
+    apuesta_id: UUID,
+    response: Response,
+    version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
+):
+    """Elimina una apuesta pendiente."""
+    with obtener_pool().connection() as conexion:
+        with conexion.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT resultado FROM apuestas
+                WHERE id = %s
+                """,
+                [str(apuesta_id)],
+            )
+            fila = cursor.fetchone()
+
+            if not fila:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
+            if fila["resultado"] != "PENDIENTE":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Solo se pueden eliminar apuestas pendientes.",
+                )
+
+            cursor.execute(
+                """
+                DELETE FROM apuestas
+                WHERE id = %s
+                """,
+                [str(apuesta_id)],
+            )
+
+    payload_legacy = {"exito": True, "mensaje": "Apuesta eliminada."}
+    return _respuesta_contrato(payload_legacy, version, response, str(apuesta_id))

@@ -1,34 +1,17 @@
-from uuid import UUID
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from api import rutas_bitacora
-from api.dependencias import obtener_usuario_id
 
 
 def _app_with_router():
     app = FastAPI()
     app.include_router(rutas_bitacora.router)
-    app.dependency_overrides[obtener_usuario_id] = lambda: UUID("00000000-0000-0000-0000-000000000001")
     return app
-
-
-def test_auditoria_v2_403_no_admin(monkeypatch):
-    app = _app_with_router()
-
-    def _deny(_uid):
-        raise HTTPException(status_code=403, detail="forbidden")
-
-    monkeypatch.setattr(rutas_bitacora, "_exigir_admin_bitacora", _deny)
-    client = TestClient(app)
-    r = client.get("/api/bitacora/apuestas-analizadas/auditoria-futbol")
-    assert r.status_code == 403
 
 
 def test_auditoria_v2_200_admin_contract(monkeypatch):
     app = _app_with_router()
-    monkeypatch.setattr(rutas_bitacora, "_exigir_admin_bitacora", lambda _uid: None)
 
     def _fake_obtener(**kwargs):
         assert "actualizado_desde" in kwargs
@@ -85,7 +68,6 @@ def test_auditoria_v2_200_admin_contract(monkeypatch):
 
 def test_auditoria_legacy_200(monkeypatch):
     app = _app_with_router()
-    monkeypatch.setattr(rutas_bitacora, "_exigir_admin_bitacora", lambda _uid: None)
     import servicios.apuestas_analizadas as svc
 
     monkeypatch.setattr(
@@ -108,7 +90,6 @@ def test_auditoria_legacy_200(monkeypatch):
 
 def test_backfill_endpoint_calls_service(monkeypatch):
     app = _app_with_router()
-    monkeypatch.setattr(rutas_bitacora, "_exigir_admin_bitacora", lambda _uid: None)
     import servicios.apuestas_analizadas as svc
 
     monkeypatch.setattr(

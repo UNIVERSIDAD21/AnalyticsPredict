@@ -71,7 +71,6 @@ class Combinada(BaseModel):
     """Modelo completo de combinada."""
 
     id: UUID
-    usuario_id: UUID
     stake: float
     cuota_total: float
     n_selecciones: int

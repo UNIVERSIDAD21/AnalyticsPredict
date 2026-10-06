@@ -6,7 +6,7 @@ test_rutas_futbol.py — Tests para la API de fútbol.
 import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 
@@ -23,23 +23,19 @@ def client():
 
 
 @pytest.fixture
-def mock_pool():
-    """Mock del pool de conexiones."""
-    with patch("db.obtener_pool") as mock:
-        pool = MagicMock()
-        mock.return_value = pool
-        yield pool
-
-
-@pytest.fixture
-def mock_usuario():
-    """Mock del usuario autenticado."""
-    with patch("api.dependencias.obtener_usuario_actual") as mock:
-        usuario = MagicMock()
-        usuario.id = uuid4()
-        usuario.email = "test@example.com"
-        mock.return_value = usuario
-        yield usuario
+def mock_pool(monkeypatch):
+    """Reemplaza el pool en los módulos que importan la función directamente."""
+    from api import (
+        rutas_competiciones_futbol, rutas_equipos_futbol, rutas_partidos_futbol,
+        rutas_analisis_futbol, rutas_apuestas_futbol, rutas_metricas_futbol,
+    )
+    pool = MagicMock()
+    for modulo in (
+        rutas_competiciones_futbol, rutas_equipos_futbol, rutas_partidos_futbol,
+        rutas_analisis_futbol, rutas_apuestas_futbol, rutas_metricas_futbol,
+    ):
+        monkeypatch.setattr(modulo, "obtener_pool", lambda: pool)
+    return pool
 
 
 @pytest.fixture
@@ -104,7 +100,7 @@ class TestCompeticiones:
                 "pais": "España",
                 "tipo": "liga",
                 "prioridad": 1,
-                "activa": True,
+                "activo": True,
             }
         ]
         conn_mock = MagicMock()
@@ -318,7 +314,7 @@ class TestPartidos:
 class TestAnalisis:
     """Tests para el endpoint de análisis."""
 
-    def test_analizar_partido_no_existente_404(self, client, mock_pool, mock_usuario):
+    def test_analizar_partido_no_existente_404(self, client, mock_pool):
         """Verifica 404 para partido inexistente en análisis."""
         cursor_mock = MagicMock()
         cursor_mock.fetchone.return_value = None
@@ -334,7 +330,7 @@ class TestAnalisis:
             json={"partido_id": str(uuid4())},
         )
 
-        assert response.status_code in [401, 404]
+        assert response.status_code == 404
 
     def test_probabilidades_suman_1(self):
         """Verifica que las probabilidades over + under sumen 1."""
@@ -353,7 +349,7 @@ class TestAnalisis:
 class TestApuestas:
     """Tests para endpoints de apuestas."""
 
-    def test_registrar_apuesta_mercado_invalido(self, client, mock_pool, mock_usuario):
+    def test_registrar_apuesta_mercado_invalido(self, client, mock_pool):
         """Verifica error para mercado inválido."""
         response = client.post(
             "/api/futbol/apuestas",
@@ -367,7 +363,7 @@ class TestApuestas:
             },
         )
 
-        assert response.status_code in [400, 401, 422]
+        assert response.status_code in [400, 422]
 
     def test_validar_mercados_corners(self):
         """Verifica que los mercados de corners son válidos."""
@@ -413,27 +409,6 @@ class TestApuestas:
         from api.rutas_apuestas_futbol import MERCADOS_VALIDOS
 
         assert len(MERCADOS_VALIDOS) == 24
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# TESTS DE MÉTRICAS
-# ═══════════════════════════════════════════════════════════════════════════════
-
-class TestMetricas:
-    """Tests para endpoints de métricas."""
-
-    def test_metricas_calibracion_requiere_auth(self, client):
-        """Verifica que métricas de calibración requieren autenticación."""
-        response = client.get("/api/futbol/metricas/calibracion")
-
-        # Debería requerir autenticación (401) o funcionar
-        assert response.status_code in [200, 401, 403]
-
-    def test_metricas_rendimiento_requiere_auth(self, client):
-        """Verifica que métricas de rendimiento requieren autenticación."""
-        response = client.get("/api/futbol/metricas/rendimiento")
-
-        assert response.status_code in [200, 401, 403]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -2,8 +2,6 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8000}"
-AUTH_TOKEN="${AUTH_TOKEN:-}"
-USER_ID="${USER_ID:-}"
 TS="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 OUT_DIR="docs/reportes"
 OUT_FILE="${OUT_DIR}/B3_CICLO_SEMANAL_${TS}.md"
@@ -11,15 +9,7 @@ TMP_JSON="/tmp/b3_estabilidad_${TS}.json"
 
 mkdir -p "$OUT_DIR"
 
-HDR=()
-if [[ -n "$AUTH_TOKEN" ]]; then
-  HDR+=(-H "Authorization: Bearer ${AUTH_TOKEN}")
-fi
-if [[ -n "$USER_ID" ]]; then
-  HDR+=(-H "X-Usuario-Id: ${USER_ID}")
-fi
-
-code=$(curl -sS "${HDR[@]}" -o "$TMP_JSON" -w "%{http_code}" "${BASE_URL}/api/futbol/metricas/b3-estabilidad" || true)
+code=$(curl -sS -o "$TMP_JSON" -w "%{http_code}" "${BASE_URL}/api/futbol/metricas/b3-estabilidad" || true)
 if [[ "$code" != "200" ]]; then
   echo "Error: endpoint b3-estabilidad devolvió HTTP $code"
   cat "$TMP_JSON" || true

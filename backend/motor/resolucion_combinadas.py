@@ -129,7 +129,6 @@ def _actualizar_estado_combinada(combinada_id: str) -> None:
 
 def resolver_combinadas(
     *,
-    usuario_id: Optional[str] = None,
     limite: int = 1000,
     solo_hasta_fecha: Optional[date] = None,
 ) -> Dict[str, Any]:
@@ -163,10 +162,6 @@ def resolver_combinadas(
     """
 
     parametros: List[Any] = []
-    if usuario_id:
-        query += " AND ac.usuario_id = %s"
-        parametros.append(usuario_id)
-
     if solo_hasta_fecha:
         query += " AND p.fecha_partido <= %s"
         parametros.append(solo_hasta_fecha)
@@ -241,4 +236,3 @@ def resolver_combinadas(
                     resumen.detalles_errores.append(str(exc))
 
     return resumen.to_dict()
-

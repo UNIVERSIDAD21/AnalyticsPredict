@@ -8,14 +8,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, BarChart3, Trophy } from 'lucide-react';
 import { CreadorCombinada, Encabezado, FormularioAnalisis, ModalGuardarApuestaFutbol } from '../organismos';
 import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
-import { MensajeError, PanelDepthPremium, ProgresoAnalisis, TarjetaCalidadDatosFutbol } from '../moleculas';
+import { MensajeError, ProgresoAnalisis, TarjetaCalidadDatosFutbol } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { usePartidosFutbol } from '../../hooks';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
-import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
 import { useToasts } from '../../contextos/Toasts';
-import { useGateNavigation } from '../../hooks/useGateNavigation';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
 import type {
   AnalisisFutbolResponse,
@@ -128,8 +126,6 @@ function EstadoVacioFutbol() {
 }
 
 export function PaginaFutbol() {
-  const { can } = useAccessPolicy();
-  const { navegarConGate } = useGateNavigation(navegar);
   const { agregarToast } = useToasts();
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
@@ -484,20 +480,6 @@ export function PaginaFutbol() {
       <Encabezado />
 
       <main className="flex-1 contenedor py-6 lg:py-8">
-        <div className="mb-6">
-          <PanelDepthPremium
-            modulo="futbol"
-            titulo="Depth premium Fútbol"
-            descripcion="Contrato operativo canónico de fútbol con selección y respuesta trazables de punta a punta."
-            bullets={[
-              'comparativas_multi_mercado por partido',
-              'contexto_historico_extendido de H2H e historial',
-              'priorizacion_operativa_avanzada sobre recomendaciones',
-            ]}
-            activo={can('premium.depth')}
-            onAbrirDepth={() => navegarConGate('/configuracion', 'premium.depth')}
-          />
-        </div>
 
         {(errorPartidos || errorContexto) && (
           <div className="mb-6">

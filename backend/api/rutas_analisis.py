@@ -13,9 +13,9 @@ from __future__ import annotations
 import json
 import logging
 from typing import Optional, List, Dict, Any
-from uuid import UUID, NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, uuid5
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from psycopg.rows import dict_row
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -33,7 +33,6 @@ from motor.tipos import ConfiguracionSizing, Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
 from db import obtener_pool
 from servicios.apuestas_analizadas import registrar_apuesta_analizada
-from .dependencias import obtener_usuario_id_opcional
 from .excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from .modelos_peticion import PeticionAnalisis, PeticionAnalisisEnVivo
 from .modelos_respuesta import RespuestaAnalisis
@@ -80,26 +79,21 @@ def validar_equipos(modelo, equipo_local: str, equipo_visitante: str) -> None:
         )
 
 
-def _obtener_config_usuario(usuario_id: Optional[UUID]) -> Optional[dict]:
-    if usuario_id is None:
-        return None
-
+def _obtener_config_usuario() -> Optional[dict]:
     try:
         with obtener_pool().connection() as conexion:
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     """
                     SELECT bankroll_actual, perfil_riesgo_default, config_sizing
-                    FROM usuarios
-                    WHERE id = %s
+                    FROM configuracion_sistema
+                    WHERE id = true
                     """,
-                    [str(usuario_id)],
                 )
                 return cursor.fetchone()
     except Exception:
         logger.exception(
-            "No se pudo obtener configuración de usuario para sizing (usuario_id=%s)",
-            usuario_id,
+            "No se pudo obtener la configuración de sizing",
         )
         return None
 
@@ -529,7 +523,6 @@ def ejecutar_analisis(
     marcador_q2: Optional[str] = None,
     marcador_q3: Optional[str] = None,
     peso_en_vivo: float = 0.5,
-    usuario_id: Optional[UUID] = None,
 ) -> RespuestaAnalisis:
     """Ejecuta el análisis y retorna la respuesta de API."""
     advertencias_entrada = _validar_peticion_analisis(peticion)
@@ -556,7 +549,7 @@ def ejecutar_analisis(
     # Validar equipos
     validar_equipos(modelo, peticion.equipo_local, peticion.equipo_visitante)
 
-    datos_usuario = _obtener_config_usuario(usuario_id)
+    datos_usuario = _obtener_config_usuario()
     bankroll_override = (
         peticion.bankroll if "bankroll" in peticion.model_fields_set else None
     )
@@ -726,7 +719,6 @@ def ejecutar_analisis(
 )
 async def analizar(
     peticion: PeticionAnalisis,
-    usuario_id: Optional[UUID] = Depends(obtener_usuario_id_opcional),
 ) -> RespuestaAnalisis:
     """
     Analiza un partido en modalidad pre-partido.
@@ -734,7 +726,7 @@ async def analizar(
     El modelo se entrena automáticamente desde la base de datos
     y siempre contiene los datos más recientes.
     """
-    return ejecutar_analisis(peticion, usuario_id=usuario_id)
+    return ejecutar_analisis(peticion)
 
 
 @router.post(
@@ -744,7 +736,6 @@ async def analizar(
 )
 async def analizar_en_vivo(
     peticion: PeticionAnalisisEnVivo,
-    usuario_id: Optional[UUID] = Depends(obtener_usuario_id_opcional),
 ) -> RespuestaAnalisis:
     """
     Analiza un partido usando marcadores reales de cuartos previos.
@@ -761,6 +752,4 @@ async def analizar_en_vivo(
         marcador_q2=peticion.marcador_q2,
         marcador_q3=peticion.marcador_q3,
         peso_en_vivo=peticion.peso_en_vivo,
-        usuario_id=usuario_id,
     )
-

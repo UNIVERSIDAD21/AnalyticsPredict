@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional, List, Literal, Dict, Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
 from db import obtener_pool
@@ -31,7 +31,6 @@ from .schemas_futbol import (
     MadurezMercadoFutbol,
     ErrorResponse,
 )
-from .dependencias import obtener_usuario_actual, UsuarioActual
 
 router = APIRouter(prefix="/api/futbol/metricas", tags=["Fútbol - Métricas"])
 logger = logging.getLogger(__name__)
@@ -243,7 +242,6 @@ def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: floa
     description="Retorna estado vigente por mercado desde tabla canónica si existe.",
 )
 async def obtener_estado_operativo_mercados(
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> Dict[str, Any]:
     pool = obtener_pool()
     with pool.connection() as conn:
@@ -284,7 +282,6 @@ def _days_by_window(window: str) -> int:
 )
 async def obtener_shadow_operativo_futbol(
     ventana: str = Query("mensual", description="semanal|quincenal|mensual"),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> Dict[str, Any]:
     days = _days_by_window(ventana)
     inicio = datetime.now() - timedelta(days=days)
@@ -341,7 +338,6 @@ async def obtener_shadow_operativo_futbol(
     description="Retorna la política canónica de estados operativos por mercado para fútbol.",
 )
 async def obtener_politica_promocion_futbol(
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> Dict[str, Any]:
     path = Path(__file__).resolve().parents[1] / "config" / "futbol_politica_promocion.json"
     if not path.exists():
@@ -357,7 +353,6 @@ async def obtener_politica_promocion_futbol(
 )
 async def obtener_madurez_beta_futbol(
     dias: int = Query(120, ge=30, le=720, description="Ventana principal de evaluación"),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ReporteMadurezFutbolResponse:
     pool = obtener_pool()
     fecha_fin = datetime.now()
@@ -550,7 +545,6 @@ async def obtener_madurez_beta_futbol(
 async def obtener_metricas_calibracion(
     mercado: Optional[str] = Query(None, description="Mercado específico o 'todos'"),
     periodo: Literal["semana", "mes", "temporada", "todo"] = Query("todo"),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ListaMetricasCalibracionResponse:
     """Obtiene métricas de calibración."""
     pool = obtener_pool()
@@ -666,7 +660,6 @@ async def obtener_metricas_calibracion(
 async def obtener_metricas_rendimiento(
     mercado: Optional[str] = Query(None),
     periodo: Literal["semana", "mes", "temporada", "todo"] = Query("todo"),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ListaMetricasRendimientoResponse:
     """Obtiene métricas de rendimiento."""
     pool = obtener_pool()
@@ -709,13 +702,12 @@ async def obtener_metricas_rendimiento(
                         SUM(stake) as stake_total,
                         SUM(COALESCE({ganancia_col}, 0)) as ganancia_neta
                     FROM apuestas_futbol
-                    WHERE usuario_id = %s
-                      AND {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
+                    WHERE {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
                 """.format(
                     estado_col=columna_estado,
                     ganancia_col=ganancia_col,  # CORREGIDO
                 )
-                params = [str(usuario.id)]
+                params = []
 
                 if fecha_inicio:
                     query += " AND fecha_creacion >= %s"
@@ -767,7 +759,6 @@ async def obtener_metricas_rendimiento(
 )
 async def obtener_roi_temporal(
     dias: int = Query(30, ge=7, le=90),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> dict:
     pool = obtener_pool()
     try:
@@ -792,8 +783,7 @@ async def obtener_roi_temporal(
                             SUM(COALESCE({ganancia_col}, 0)) AS delta_ganancia,
                             SUM(COALESCE(stake, 0)) AS delta_stake
                         FROM apuestas_futbol
-                        WHERE usuario_id = %s
-                          AND {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
+                        WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
                           AND fecha_creacion >= (CURRENT_DATE - (%s - 1) * INTERVAL '1 day')
                         GROUP BY DATE(fecha_creacion)
                     )
@@ -805,7 +795,7 @@ async def obtener_roi_temporal(
                     LEFT JOIN delta_diario d ON d.fecha = s.fecha
                     ORDER BY s.fecha ASC
                 """
-                cursor.execute(query, [dias, str(usuario.id), dias])
+                cursor.execute(query, [dias, dias])
                 filas = cursor.fetchall()
 
                 serie = []
@@ -840,7 +830,6 @@ async def obtener_roi_temporal(
     include_in_schema=False,
 )
 async def obtener_estado_modelos(
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> EstadoModelos:
     """Obtiene estado de los modelos."""
     pool = obtener_pool()
@@ -1002,7 +991,6 @@ async def obtener_estado_modelos(
     description="Obtiene un resumen ejecutivo del sistema de fútbol.",
 )
 async def obtener_resumen_sistema(
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ResumenSistema:
     """Obtiene resumen del sistema."""
     pool = obtener_pool()
@@ -1032,8 +1020,8 @@ async def obtener_resumen_sistema(
                 if columna_estado:  # CORREGIDO
                     cursor.execute(f"""
                         SELECT COUNT(*) FROM apuestas_futbol
-                        WHERE usuario_id = %s AND {columna_estado} = 'PENDIENTE'
-                    """, [str(usuario.id)])
+                        WHERE {columna_estado} = 'PENDIENTE'
+                    """)
                     apuestas_activas = cursor.fetchone()["count"]
                 else:
                     apuestas_activas = 0
@@ -1048,8 +1036,7 @@ async def obtener_resumen_sistema(
                             SUM(CASE WHEN {columna_estado} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
                             SUM(CASE WHEN {columna_estado} IN ('GANADA', 'PERDIDA') THEN 1 ELSE 0 END) as resueltas
                         FROM apuestas_futbol
-                        WHERE usuario_id = %s
-                    """, [str(usuario.id)])
+                    """)
                     stats = cursor.fetchone()
                 else:
                     stats = {
@@ -1200,7 +1187,6 @@ def _clasificar_estabilidad_b3(
     summary="Estado semanal de estabilidad B3 por liga",
 )
 async def obtener_estado_b3_estabilidad(
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> dict:
     pool = obtener_pool()
     try:

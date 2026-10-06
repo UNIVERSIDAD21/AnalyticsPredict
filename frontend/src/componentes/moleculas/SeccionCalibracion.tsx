@@ -6,8 +6,7 @@
  * Si no hay calibrador, muestra advertencia informativa.
  */
 
-import { Activity, AlertTriangle, HelpCircle, ArrowRight, Lock, Crown } from 'lucide-react';
-import { useAccessPolicy } from '../../contextos/AccessPolicyContext';
+import { Activity, AlertTriangle, HelpCircle, ArrowRight } from 'lucide-react';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -101,8 +100,6 @@ export function SeccionCalibracion({
   calibradorUsado,
   unidadDelta = 'pp',
 }: PropsSeccionCalibracion) {
-  const { can } = useAccessPolicy();
-  const tienePremium = can('premium.depth');
   const tieneCalibrador =
     pCalibrada !== null &&
     (calibradorUsado === null || calibradorUsado.toLowerCase() !== 'none');
@@ -112,35 +109,14 @@ export function SeccionCalibracion({
   const bloqueExplicacion = (
     <div className="mt-4 pt-4 border-t border-neon-cyan/10">
       <div className="flex items-center gap-2 mb-3">
-        <Crown className="w-4 h-4 text-neon-magenta" />
-        <span className="text-xs font-bold uppercase tracking-wider text-neon-magenta">
-          Explicación Técnica del Ajuste
-        </span>
+        <span className="text-xs font-bold uppercase tracking-wider text-neon-magenta">Explicación técnica del ajuste</span>
       </div>
 
-      {tienePremium ? (
-        <div className="space-y-2 text-xs text-texto-secundario leading-relaxed">
-          <p>{explicacion.resumen}</p>
-          <p>{explicacion.tecnico}</p>
-          <p>{explicacion.lecturaRiesgo}</p>
-        </div>
-      ) : (
-        <div className="relative rounded-lg border border-neon-magenta/30 bg-neon-magenta/5 p-3 overflow-hidden">
-          <div className="space-y-2 text-xs text-texto-secundario/60 blur-[2px] select-none pointer-events-none">
-            <p>{explicacion.resumen}</p>
-            <p>{explicacion.tecnico}</p>
-            <p>{explicacion.lecturaRiesgo}</p>
-          </div>
-          <div className="absolute inset-0 bg-futurista-oscuro/40 flex items-center justify-center">
-            <div className="px-3 py-2 rounded-lg border border-neon-magenta/40 bg-futurista-oscuro/90 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-neon-magenta" />
-              <span className="text-xs font-semibold text-neon-magenta">
-                Explicación premium bloqueada en plan base
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="space-y-2 text-xs text-texto-secundario leading-relaxed">
+        <p>{explicacion.resumen}</p>
+        <p>{explicacion.tecnico}</p>
+        <p>{explicacion.lecturaRiesgo}</p>
+      </div>
     </div>
   );
 

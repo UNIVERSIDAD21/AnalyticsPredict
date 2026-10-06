@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Optional, List, Literal, Dict, Any, Set
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Query, Depends, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from psycopg.rows import dict_row
 
 from db import obtener_pool
@@ -34,7 +34,6 @@ from .schemas_futbol import (
     ResolucionResponse,
     ErrorResponse,
 )
-from .dependencias import obtener_usuario_actual, UsuarioActual
 
 router = APIRouter(prefix="/api/futbol/apuestas", tags=["Fútbol - Apuestas"])
 logger = logging.getLogger(__name__)
@@ -276,7 +275,6 @@ def _determinar_confianza(probabilidad: float) -> str:
 )
 async def crear_apuesta(
     request: ApuestaRequest,
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ApuestaResponse:
     """Registra una nueva apuesta."""
     pool = obtener_pool()
@@ -369,7 +367,6 @@ async def crear_apuesta(
                 # Construir columnas e INSERT dinámicamente
                 columnas_insert = [
                     "id",
-                    "usuario_id",
                     "partido_id",
                     "mercado",
                     "lado",
@@ -378,7 +375,6 @@ async def crear_apuesta(
                 ]
                 valores_insert: List[Any] = [
                     str(apuesta_id),
-                    str(usuario.id),
                     str(request.partido_id),
                     mercado,
                     request.lado,
@@ -477,7 +473,7 @@ async def crear_apuesta(
     "",
     response_model=ListaApuestasResponse,
     summary="Listar apuestas",
-    description="Lista las apuestas del usuario con filtros.",
+    description="Lista las apuestas con filtros.",
 )
 async def listar_apuestas(
     estado: Optional[str] = Query(None, description="Filtrar por estado"),
@@ -488,9 +484,8 @@ async def listar_apuestas(
     tamano: int = Query(20, ge=1, le=100),
     limite: Optional[int] = Query(None, ge=1, le=100),
     offset: Optional[int] = Query(None, ge=0),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ListaApuestasResponse:
-    """Lista apuestas del usuario."""
+    """Lista apuestas."""
     pool = obtener_pool()
 
     try:
@@ -554,9 +549,9 @@ async def listar_apuestas(
                     LEFT JOIN competiciones_futbol c ON p.competicion_id = c.id
                     LEFT JOIN equipos_futbol el ON p.equipo_local_id = el.id
                     LEFT JOIN equipos_futbol ev ON p.equipo_visitante_id = ev.id
-                    WHERE a.usuario_id = %s
+                    WHERE TRUE
                 """
-                params: List[Any] = [str(usuario.id)]
+                params: List[Any] = []
 
                 if estado and col_estado:
                     query += f" AND a.{col_estado} = %s"
@@ -583,8 +578,8 @@ async def listar_apuestas(
                 params.extend([limite_final, offset_final])
 
                 # Contar total
-                count_query = "SELECT COUNT(*) as total FROM apuestas_futbol a WHERE a.usuario_id = %s"
-                count_params: List[Any] = [str(usuario.id)]
+                count_query = "SELECT COUNT(*) as total FROM apuestas_futbol a WHERE TRUE"
+                count_params: List[Any] = []
 
                 if estado and col_estado:
                     count_query += f" AND a.{col_estado} = %s"
@@ -645,9 +640,8 @@ async def listar_apuestas(
                         SUM(stake) as stake_total,
                         SUM(COALESCE({col_ganancia_real or '0'}, 0)) as ganancia_neta
                     FROM apuestas_futbol
-                    WHERE usuario_id = %s
                 """
-                cursor.execute(resumen_query, [str(usuario.id)])
+                cursor.execute(resumen_query)
                 res = cursor.fetchone()
 
                 total_resueltas = (res["ganadas"] or 0) + (res["perdidas"] or 0)
@@ -690,7 +684,6 @@ async def listar_apuestas(
 )
 async def obtener_apuesta(
     apuesta_id: UUID,
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ApuestaResponse:
     """Obtiene una apuesta por su ID."""
     pool = obtener_pool()
@@ -756,9 +749,9 @@ async def obtener_apuesta(
                     LEFT JOIN competiciones_futbol c ON p.competicion_id = c.id
                     LEFT JOIN equipos_futbol el ON p.equipo_local_id = el.id
                     LEFT JOIN equipos_futbol ev ON p.equipo_visitante_id = ev.id
-                    WHERE a.id = %s AND a.usuario_id = %s
+                    WHERE a.id = %s
                 """
-                cursor.execute(query, [str(apuesta_id), str(usuario.id)])
+                cursor.execute(query, [str(apuesta_id)])
                 fila = cursor.fetchone()
 
                 if not fila:
@@ -802,7 +795,6 @@ async def obtener_apuesta(
 async def actualizar_apuesta(
     apuesta_id: UUID,
     request: ApuestaUpdateRequest,
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> ApuestaResponse:
     """Actualiza una apuesta pendiente."""
     pool = obtener_pool()
@@ -823,8 +815,8 @@ async def actualizar_apuesta(
                     _sql_columna(col_estado, "estado"),
                 ]
                 cursor.execute(
-                    f"SELECT {', '.join(select_cols)} FROM apuestas_futbol a WHERE a.id = %s AND a.usuario_id = %s",
-                    [str(apuesta_id), str(usuario.id)],
+                    f"SELECT {', '.join(select_cols)} FROM apuestas_futbol a WHERE a.id = %s",
+                    [str(apuesta_id)],
                 )
                 apuesta = cursor.fetchone()
 
@@ -867,16 +859,15 @@ async def actualizar_apuesta(
                     raise HTTPException(status_code=400, detail="No hay campos para actualizar")
 
                 params_update.append(str(apuesta_id))
-                params_update.append(str(usuario.id))
 
                 cursor.execute(
-                    f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s AND usuario_id = %s",
+                    f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s",
                     params_update,
                 )
                 conn.commit()
 
                 # Obtener apuesta actualizada
-                return await obtener_apuesta(apuesta_id, usuario)
+                return await obtener_apuesta(apuesta_id)
 
     except HTTPException:
         raise
@@ -892,7 +883,6 @@ async def actualizar_apuesta(
 )
 async def cancelar_apuesta(
     apuesta_id: UUID,
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> dict:
     """Cancela una apuesta pendiente."""
     pool = obtener_pool()
@@ -909,8 +899,8 @@ async def cancelar_apuesta(
                 # Verificar que existe y está pendiente
                 estado_col = col_estado or "'PENDIENTE'"
                 cursor.execute(
-                    f"SELECT id, {estado_col} as estado FROM apuestas_futbol WHERE id = %s AND usuario_id = %s",
-                    [str(apuesta_id), str(usuario.id)],
+                    f"SELECT id, {estado_col} as estado FROM apuestas_futbol WHERE id = %s",
+                    [str(apuesta_id)],
                 )
                 apuesta = cursor.fetchone()
 
@@ -957,7 +947,6 @@ async def resolver_apuestas(
     request: ResolucionRequest = None,
     partido_id: Optional[UUID] = Query(None, description="ID del partido a resolver"),
     version: Literal["v2", "legacy"] = Query("legacy", description="Versión de contrato de respuesta"),
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> Dict[str, Any]:
     """Resuelve apuestas pendientes."""
     pool = obtener_pool()
@@ -1018,11 +1007,10 @@ async def resolver_apuestas(
                         p.visitante_disparos_arco
                     FROM apuestas_futbol a
                     JOIN partidos_futbol p ON a.partido_id = p.id
-                    WHERE a.usuario_id = %s
-                      AND a.{col_estado} = 'PENDIENTE'
+                    WHERE a.{col_estado} = 'PENDIENTE'
                       AND p.estado = 'FINALIZADO'
                 """
-                params: List[Any] = [str(usuario.id)]
+                params: List[Any] = []
 
                 if partido_id_final:
                     query += " AND a.partido_id = %s"

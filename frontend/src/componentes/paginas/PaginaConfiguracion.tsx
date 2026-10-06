@@ -2,23 +2,13 @@
  * PaginaConfiguracion.tsx — Página de configuración de usuario
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Shield, Wallet, SlidersHorizontal, Crown, Radar } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowLeft, Shield, Wallet, SlidersHorizontal, Radar } from 'lucide-react';
 import { Encabezado } from '../organismos';
 import { Boton } from '../atomos';
 import { useConfiguracionUsuario } from '../../contextos/ConfiguracionUsuario';
 import { useToasts } from '../../contextos/Toasts';
 import type { ConfiguracionUsuario, ModoDevig, PerfilRiesgo } from '../../tipos';
-import {
-  enviarPruebaNotificacion,
-  guardarPreferenciasNotificaciones,
-  obtenerMetricasEntrega,
-  obtenerPreferenciasNotificaciones,
-  type MetricasEntregaNotificaciones,
-  type PreferenciasNotificaciones,
-} from '../../servicios/notificaciones';
-import { obtenerEstadoPlan, type EstadoPlanUsuario } from '../../servicios/pagos';
-
 interface ErroresConfiguracion {
   bankroll?: string;
   capPorApuesta?: string;
@@ -45,22 +35,6 @@ export function PaginaConfiguracion() {
   const [capPorApuesta, setCapPorApuesta] = useState(configuracion.capPorApuesta.toString());
   const [capDiario, setCapDiario] = useState(configuracion.capDiario.toString());
   const [stakeMinimo, setStakeMinimo] = useState(configuracion.stakeMinimo.toString());
-  const [cargandoNotificaciones, setCargandoNotificaciones] = useState(true);
-  const [guardandoNotificaciones, setGuardandoNotificaciones] = useState(false);
-  const [metricasEntrega, setMetricasEntrega] = useState<MetricasEntregaNotificaciones | null>(null);
-  const [prefsNotificaciones, setPrefsNotificaciones] = useState<PreferenciasNotificaciones>({
-    email_habilitado: true,
-    alertas_partidos: true,
-    alertas_suscripcion: true,
-    resumen_semanal: false,
-  });
-  const [estadoPlan, setEstadoPlan] = useState<EstadoPlanUsuario>({
-    activo: false,
-    planId: null,
-    estado: null,
-    actualizadoEn: null,
-  });
-
   const { errores, valores, esValido } = useMemo(() => {
     const nuevosErrores: ErroresConfiguracion = {};
 
@@ -119,98 +93,6 @@ export function PaginaConfiguracion() {
       },
     };
   }, [bankrollInput, capDiario, capPorApuesta, sinBankroll, stakeMinimo]);
-
-  const recargarMetricasEntrega = async () => {
-    try {
-      const metricas = await obtenerMetricasEntrega(24);
-      setMetricasEntrega(metricas);
-    } catch {
-      setMetricasEntrega(null);
-    }
-  };
-
-  useEffect(() => {
-    const cargarPreferencias = async () => {
-      try {
-        const [prefs, metricas, plan] = await Promise.all([
-          obtenerPreferenciasNotificaciones(),
-          obtenerMetricasEntrega(24),
-          obtenerEstadoPlan(),
-        ]);
-        setPrefsNotificaciones(prefs.preferencias);
-        setMetricasEntrega(metricas);
-        setEstadoPlan(plan);
-      } catch (error) {
-        agregarToast({
-          titulo: 'No se pudieron cargar notificaciones',
-          mensaje: error instanceof Error ? error.message : 'Intenta nuevamente en unos segundos.',
-          tipo: 'error',
-        });
-      } finally {
-        setCargandoNotificaciones(false);
-      }
-    };
-
-    void cargarPreferencias();
-  }, [agregarToast]);
-
-  const actualizarPreferencia = (campo: keyof PreferenciasNotificaciones, valor: boolean) => {
-    setPrefsNotificaciones((prev) => ({ ...prev, [campo]: valor }));
-  };
-
-  const guardarNotificaciones = async () => {
-    try {
-      setGuardandoNotificaciones(true);
-      const data = await guardarPreferenciasNotificaciones(prefsNotificaciones);
-      setPrefsNotificaciones(data.preferencias);
-      agregarToast({
-        titulo: 'Notificaciones actualizadas',
-        mensaje: 'Tus preferencias de alertas fueron guardadas.',
-        tipo: 'success',
-      });
-      await recargarMetricasEntrega();
-    } catch (error) {
-      agregarToast({
-        titulo: 'Error guardando notificaciones',
-        mensaje: error instanceof Error ? error.message : 'Intenta de nuevo.',
-        tipo: 'error',
-      });
-    } finally {
-      setGuardandoNotificaciones(false);
-    }
-  };
-
-  const probarNotificaciones = async () => {
-    try {
-      const result = await enviarPruebaNotificacion('alertas_partidos');
-      agregarToast({
-        titulo: 'Prueba enviada',
-        mensaje: `Estado: ${result?.estado ?? 'desconocido'}`,
-        tipo: 'success',
-      });
-      await recargarMetricasEntrega();
-    } catch (error) {
-      agregarToast({
-        titulo: 'Falló la prueba',
-        mensaje: error instanceof Error ? error.message : 'No se pudo enviar la prueba.',
-        tipo: 'error',
-      });
-    }
-  };
-
-  const estadoEntrega = useMemo(() => {
-    const tasa = metricasEntrega?.tasa_entrega_pct;
-    if (tasa === null || tasa === undefined) {
-      return { etiqueta: 'Sin datos', color: 'text-texto-terciario border-neon-cyan/20' };
-    }
-    if (tasa >= 90) {
-      return { etiqueta: 'Verde', color: 'text-neon-verde border-neon-verde/40' };
-    }
-    if (tasa >= 70) {
-      return { etiqueta: 'Amarillo', color: 'text-yellow-400 border-yellow-400/40' };
-    }
-    return { etiqueta: 'Rojo', color: 'text-neon-rojo border-neon-rojo/40' };
-  }, [metricasEntrega]);
 
   const guardarConfiguracion = () => {
     if (!esValido) {
@@ -287,20 +169,6 @@ export function PaginaConfiguracion() {
             </ul>
           </div>
 
-          <div className="tarjeta p-6 space-y-3 border border-neon-magenta/30">
-            <div className="flex items-center gap-2 text-neon-magenta">
-              <Crown className="w-4 h-4" />
-              <h3 className="text-sm uppercase tracking-wider">Estado de plan y capa premium</h3>
-            </div>
-            <p className="text-sm text-texto-secundario">
-              Premium se define como profundidad operativa superior (seguimiento y análisis extendido), no solo eliminación de límites.
-            </p>
-            <div className="text-xs text-texto-terciario space-y-1">
-              <p>Estado actual: <span className="text-texto-principal font-semibold">{estadoPlan.activo ? 'Activo' : 'Base'}</span></p>
-              <p>Plan: <span className="text-texto-principal font-semibold">{estadoPlan.planId ?? 'N/A'}</span></p>
-              <p>Actualizado: <span className="text-texto-principal font-semibold">{estadoPlan.actualizadoEn ?? 'N/A'}</span></p>
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -444,97 +312,6 @@ export function PaginaConfiguracion() {
                 />
                 Estimado (permite una cuota, aplica penalización).
               </label>
-            </div>
-          </div>
-
-          {/* Notificaciones */}
-          <div className="tarjeta p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-neon-verde/10 border border-neon-verde/30 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-neon-verde" />
-              </div>
-              <div>
-                <h3 className="text-lg font-futurista text-texto-principal">Notificaciones</h3>
-                <p className="text-xs text-texto-secundario">
-                  Controla alertas por email para partidos, suscripción y resumen semanal.
-                </p>
-              </div>
-            </div>
-
-            {cargandoNotificaciones ? (
-              <p className="text-sm text-texto-secundario">Cargando preferencias…</p>
-            ) : (
-              <div className="space-y-3">
-                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
-                  <span>Email habilitado</span>
-                  <input
-                    type="checkbox"
-                    className="accent-neon-verde"
-                    checked={prefsNotificaciones.email_habilitado}
-                    onChange={(event) => actualizarPreferencia('email_habilitado', event.target.checked)}
-                  />
-                </label>
-
-                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
-                  <span>Alertas de partidos</span>
-                  <input
-                    type="checkbox"
-                    className="accent-neon-verde"
-                    checked={prefsNotificaciones.alertas_partidos}
-                    onChange={(event) => actualizarPreferencia('alertas_partidos', event.target.checked)}
-                  />
-                </label>
-
-                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
-                  <span>Alertas de suscripción</span>
-                  <input
-                    type="checkbox"
-                    className="accent-neon-verde"
-                    checked={prefsNotificaciones.alertas_suscripcion}
-                    onChange={(event) => actualizarPreferencia('alertas_suscripcion', event.target.checked)}
-                  />
-                </label>
-
-                <label className="flex items-center justify-between gap-3 text-sm text-texto-secundario">
-                  <span>Resumen semanal</span>
-                  <input
-                    type="checkbox"
-                    className="accent-neon-verde"
-                    checked={prefsNotificaciones.resumen_semanal}
-                    onChange={(event) => actualizarPreferencia('resumen_semanal', event.target.checked)}
-                  />
-                </label>
-              </div>
-            )}
-
-            <div className="rounded-lg border border-neon-cyan/20 bg-futurista-oscuro/40 p-3 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-wider text-texto-terciario">Entrega 24h</p>
-                <span className={`text-xs px-2 py-1 rounded border ${estadoEntrega.color}`}>{estadoEntrega.etiqueta}</span>
-              </div>
-              <p className="text-sm text-texto-secundario">
-                Tasa de entrega:{' '}
-                <span className="font-semibold text-texto-principal">
-                  {metricasEntrega?.tasa_entrega_pct === null || metricasEntrega?.tasa_entrega_pct === undefined
-                    ? 'N/D'
-                    : `${metricasEntrega.tasa_entrega_pct.toFixed(1)}%`}
-                </span>
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-texto-secundario">
-                <p>Enviados: {metricasEntrega?.totales.enviados ?? 0}</p>
-                <p>Fallidos: {metricasEntrega?.totales.fallidos ?? 0}</p>
-                <p>Omitidos: {metricasEntrega?.totales.omitidos ?? 0}</p>
-                <p>Reprogramados: {metricasEntrega?.totales.reprogramados ?? 0}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Boton variante="primario" onClick={() => void guardarNotificaciones()} disabled={guardandoNotificaciones || cargandoNotificaciones}>
-                {guardandoNotificaciones ? 'Guardando…' : 'Guardar notificaciones'}
-              </Boton>
-              <Boton variante="secundario" onClick={() => void probarNotificaciones()} disabled={cargandoNotificaciones}>
-                Enviar prueba
-              </Boton>
             </div>
           </div>
 

@@ -13,7 +13,6 @@ from datetime import datetime
 from time import perf_counter
 from uuid import uuid4
 import logging
-import os
 import traceback
 
 from fastapi import FastAPI, Request
@@ -32,14 +31,6 @@ from api.rutas_internas import router as router_interno
 from api.rutas_combinadas import router as router_combinadas
 from api.rutas_calidad import router as router_calidad
 from api.rutas_explicabilidad import router as router_explicabilidad
-from api.rutas_auth import router as router_auth
-from api.rutas_pagos import router as router_pagos
-from api.rutas_onboarding import router as router_onboarding
-from api.rutas_notificaciones import router as router_notificaciones
-from api.rutas_chat import router as router_chat
-from api.rutas_premium import router as router_premium
-from api.rutas_access import router as router_access
-from api.rutas_product_analytics import router as router_product_analytics
 from api.rutas_match_analysis_nba import router as router_match_analysis_nba
 
 # Routers de Fútbol
@@ -66,18 +57,6 @@ from motor_autoentrenamiento import (
 _gestor_modelo = None
 logger = logging.getLogger(__name__)
 observabilidad_http = ObservabilidadHTTP()
-
-
-def _flag_env_bool(nombre: str, default: bool) -> bool:
-    raw = os.getenv(nombre)
-    if raw is None:
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _chat_habilitado() -> bool:
-    # Decisión operativa actual: chat oculto por defecto hasta instrucción explícita.
-    return _flag_env_bool("CHAT_ENABLED", default=False)
 
 
 def _respuesta_error(request: Request, status_code: int, codigo: str, mensaje: str, detalle=None):
@@ -301,16 +280,7 @@ app.include_router(router_predicciones)
 app.include_router(router_combinadas)
 app.include_router(router_calidad)
 app.include_router(router_explicabilidad)
-app.include_router(router_auth)
-app.include_router(router_pagos)
-app.include_router(router_onboarding)
-app.include_router(router_notificaciones)
-app.include_router(router_premium)
-app.include_router(router_access)
-app.include_router(router_product_analytics)
 app.include_router(router_match_analysis_nba)
-if _chat_habilitado():
-    app.include_router(router_chat)
 
 # Routers de Fútbol
 app.include_router(router_competiciones_futbol)
@@ -372,7 +342,6 @@ async def verificar_salud():
         "configuracion": {
             "entorno": CONFIGURACION.entorno,
             "debug": CONFIGURACION.debug,
-            "chat_enabled": _chat_habilitado(),
         },
     }
 

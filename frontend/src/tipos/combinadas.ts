@@ -39,7 +39,6 @@ export interface SeleccionCombinada extends SeleccionCombinadaInput {
 
 export interface Combinada {
   id: string;
-  usuario_id: string;
   stake: number;
   cuota_total: number;
   n_selecciones: number;

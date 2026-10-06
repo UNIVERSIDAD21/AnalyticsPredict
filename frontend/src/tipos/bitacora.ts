@@ -9,7 +9,6 @@ export type ResultadoApuesta = 'PENDIENTE' | 'GANADA' | 'PERDIDA' | 'PUSH' | 'AN
 
 export interface Apuesta {
   id: string;
-  usuario_id: string;
   partido_id?: string | null;
   equipo_local: string;
   equipo_visitante: string;

@@ -18,7 +18,7 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 from uuid import UUID
 
 import numpy as np
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from psycopg.rows import dict_row
 from scipy import stats
 
@@ -55,7 +55,6 @@ from .schemas_futbol import (
     ObjetivoScoreRiesgoFutbol,
     ObjetivoDisponibilidadFutbol,
 )
-from .dependencias import obtener_usuario_actual, UsuarioActual
 from motor_futbol.madurez_beta import mapear_status_promocion
 
 router = APIRouter(prefix="/api/futbol", tags=["Fútbol - Análisis"])
@@ -2843,7 +2842,6 @@ def _resolver_objetivo_canonico(
 )
 async def analizar_partido(
     request: AnalisisRequest,
-    usuario: UsuarioActual = Depends(obtener_usuario_actual),
 ) -> AnalisisResponse:
     """
     Analiza un partido y genera predicciones para todos los mercados.
