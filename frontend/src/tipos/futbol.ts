@@ -243,9 +243,10 @@ export interface RazonAnalisisFutbol {
 export interface ProbabilidadLinea {
   linea: number;
   overRaw: number;
-  overCalibrada: number;
+  overCalibrada: number | null;
   underRaw: number;
-  underCalibrada: number;
+  underCalibrada: number | null;
+  calibradorId?: string | null;
   razones?: RazonAnalisisFutbol[];
 }
 
@@ -533,10 +534,13 @@ export interface FiltrosEstadisticas {
  */
 export interface MetricasCalibracionFutbol {
   mercado: TipoMercadoFutbol;
+  brierScoreRaw: number | null;
   brierScore: number | null;
   ece: number | null;
   logLoss: number | null;
   nPredicciones: number;
+  nRaw: number;
+  nCalibradas: number;
   calibradorActivo: boolean;
   metodoCalibrador?: string;
   mejoraBrier?: number;

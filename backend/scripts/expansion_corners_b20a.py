@@ -152,21 +152,8 @@ def main() -> None:
             # rescate focalizado solo si hay señal ALTA/MEDIA con casos resolubles
             candidatos = [m["mercado"] for m in mercados if m["pendientes_finalizado_con_datos"] > 0 and m["nivel_rescatabilidad"] in {"ALTA", "MEDIA"}]
 
-            cur.execute(
-                """
-                UPDATE predicciones_futbol
-                SET prob_over_calibrada = COALESCE(prob_over_calibrada, prob_over),
-                    prob_under_calibrada = COALESCE(prob_under_calibrada, prob_under),
-                    actualizado_en = NOW()
-                WHERE mercado::text = ANY(%s)
-                  AND (prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL)
-                  AND prob_over IS NOT NULL
-                  AND prob_under IS NOT NULL
-                """,
-                [TARGET_ALL],
-            )
-            backfill_calibradas = cur.rowcount
-            conn.commit()
+            # No convertir fallback raw en calibración persistida.
+            backfill_calibradas = 0
 
     rescate: Dict[str, Any] = {}
     for m in candidatos:
@@ -211,7 +198,7 @@ def main() -> None:
         "ranking_rescatabilidad": ranking,
         "rescate_aplicado": {
             "candidatos": candidatos,
-            "backfill_calibradas_desde_raw": backfill_calibradas,
+            "backfill_calibradas_desde_raw_deshabilitado": backfill_calibradas,
             "resultado_resolver": rescate,
         },
         "nota": "No se toca promoción/B20; solo expansión de marco y rescate técnico donde aplica.",
@@ -239,7 +226,7 @@ def main() -> None:
         "",
         "## Rescate técnico aplicado",
         f"- Candidatos: {', '.join(candidatos) if candidatos else 'ninguno'}",
-        f"- Backfill calibradas: {backfill_calibradas}",
+        "- Backfill raw→calibrada: deshabilitado (no demuestra calibración).",
         "",
         "## Regla",
         "- Este bloque no ejecuta B20 ni promoción automática.",

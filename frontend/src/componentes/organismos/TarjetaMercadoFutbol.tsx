@@ -24,6 +24,7 @@ import {
   ETIQUETAS_MERCADOS,
   NivelConfianza,
 } from '../../tipos/futbol';
+import { resolverProbabilidadFutbol } from '../../utilidades/probabilidadFutbol';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -100,9 +101,10 @@ function FilaProbabilidad({
   onSeleccionar?: (linea: number, lado: 'OVER' | 'UNDER') => void;
   destacada?: boolean;
 }) {
-  const esOverFavorito = probabilidad.overCalibrada > probabilidad.underCalibrada;
-  const porcentajeOver = probabilidad.overCalibrada * 100;
-  const porcentajeUnder = probabilidad.underCalibrada * 100;
+  const { over: pOver, under: pUnder, fuente } = resolverProbabilidadFutbol(probabilidad);
+  const esOverFavorito = pOver > pUnder;
+  const porcentajeOver = pOver * 100;
+  const porcentajeUnder = pUnder * 100;
 
   return (
     <div
@@ -158,13 +160,16 @@ function FilaProbabilidad({
       </div>
 
       {/* Barra de probabilidad visual */}
+      <div className="text-xs text-texto-terciario mb-1">
+        {fuente === 'CALIBRADA' ? 'Probabilidad calibrada' : 'Probabilidad raw · calibración no verificada'}
+      </div>
       <div className="relative h-8 rounded-lg overflow-hidden bg-futurista-negro/50 border border-futurista-medio/30">
         {/* Lado Over */}
         <div
           className={clsx(
             'absolute left-0 top-0 h-full transition-all duration-500',
             'bg-gradient-to-r',
-            getGradienteBarra(true, probabilidad.overCalibrada)
+            getGradienteBarra(true, pOver)
           )}
           style={{ width: `${porcentajeOver}%` }}
         />
@@ -174,7 +179,7 @@ function FilaProbabilidad({
           className={clsx(
             'absolute right-0 top-0 h-full transition-all duration-500',
             'bg-gradient-to-l',
-            getGradienteBarra(false, probabilidad.underCalibrada)
+            getGradienteBarra(false, pUnder)
           )}
           style={{ width: `${porcentajeUnder}%` }}
         />
@@ -336,11 +341,11 @@ export function TarjetaMercadoFutbol({
         <div className="flex items-center gap-4">
           <span>
             <TrendingUp size={12} className="inline text-neon-verde mr-1" />
-            Over favorito: {prediccion.probabilidades.filter(p => p.overCalibrada > 0.5).length} líneas
+            Over favorito: {prediccion.probabilidades.filter(p => resolverProbabilidadFutbol(p).over > 0.5).length} líneas
           </span>
           <span>
             <TrendingDown size={12} className="inline text-neon-rojo mr-1" />
-            Under favorito: {prediccion.probabilidades.filter(p => p.underCalibrada > 0.5).length} líneas
+            Under favorito: {prediccion.probabilidades.filter(p => resolverProbabilidadFutbol(p).under > 0.5).length} líneas
           </span>
         </div>
         <span className="text-neon-cyan/70">

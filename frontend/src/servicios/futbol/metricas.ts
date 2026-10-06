@@ -24,10 +24,13 @@ function transformarMetricasCalibracion(
 ): MetricasCalibracionFutbol {
   return {
     mercado: String(data.mercado || '') as TipoMercadoFutbol,
+    brierScoreRaw: data.brier_score_raw == null ? null : Number(data.brier_score_raw),
     brierScore: data.brier_score == null && data.brierScore == null ? null : Number(data.brier_score ?? data.brierScore),
     ece: data.ece == null ? null : Number(data.ece),
     logLoss: data.log_loss == null && data.logLoss == null ? null : Number(data.log_loss ?? data.logLoss),
     nPredicciones: Number(data.n_predicciones || data.nPredicciones || 0),
+    nRaw: Number(data.n_raw || 0),
+    nCalibradas: Number(data.n_calibradas || data.n_predicciones || 0),
     calibradorActivo: Boolean(data.calibrador_activo || data.calibradorActivo),
     metodoCalibrador: data.metodo_calibrador as string | undefined,
     mejoraBrier:

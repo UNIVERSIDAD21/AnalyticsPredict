@@ -165,30 +165,33 @@ def _convertir_mercado_ml_a_schema(
         prob_over_raw = float(probabilidades.get(f"over_{linea}", 0.5))
         prob_under_raw = float(probabilidades.get(f"under_{linea}", 1.0 - prob_over_raw))
 
-        prob_over_cal = prob_over_raw
-        prob_under_cal = prob_under_raw
+        prob_over_cal = None
+        prob_under_cal = None
+        calibrador_id = None
 
         if gestor_calibradores is not None and tipo_mercado is not None:
             try:
-                prob_over_cal = float(
-                    gestor_calibradores.calibrar_probabilidad(tipo_mercado, prob_over_raw)
+                prob_over_cal, calibrador_id = gestor_calibradores.calibrar_con_procedencia(
+                    tipo_mercado, prob_over_raw
                 )
-                prob_over_cal = float(max(0.0, min(1.0, prob_over_cal)))
-                prob_under_cal = 1.0 - prob_over_cal
+                if prob_over_cal is not None:
+                    prob_under_cal = 1.0 - prob_over_cal
             except Exception:
                 logger.exception(
                     "No se pudo calibrar probabilidad de fútbol (mercado=%s linea=%s)",
                     mercado_txt,
                     linea,
                 )
-                prob_over_cal = prob_over_raw
-                prob_under_cal = prob_under_raw
+                prob_over_cal = None
+                prob_under_cal = None
+                calibrador_id = None
 
         lineas[str(linea)] = ProbabilidadLinea(
             over_raw=round(prob_over_raw, 4),
-            over_calibrada=round(prob_over_cal, 4),
+            over_calibrada=round(prob_over_cal, 4) if prob_over_cal is not None else None,
             under_raw=round(prob_under_raw, 4),
-            under_calibrada=round(prob_under_cal, 4),
+            under_calibrada=round(prob_under_cal, 4) if prob_under_cal is not None else None,
+            calibrador_id=str(calibrador_id) if calibrador_id is not None else None,
             razones=None,
         )
 
@@ -223,28 +226,28 @@ def _recomendaciones_ml_a_api(
             lado = str(rec.get("tipo", "OVER")).upper()
             if lado not in {"OVER", "UNDER"}:
                 lado = "OVER"
-            p_cal = float(rec.get("probabilidad_modelo", 0.5))
-            p_raw = float(rec.get("p_raw", p_cal))
+            prob_modelo = float(rec.get("probabilidad_modelo", 0.5))
+            p_raw = float(rec.get("p_raw", prob_modelo))
             edge_raw = rec.get("edge_raw")
             edge_real = rec.get("edge_real")
             score = rec.get("score")
             sizing = rec.get("sizing")
-            calibracion_aplicada = rec.get("calibracion_aplicada")
-            if calibracion_aplicada is None:
-                calibracion_aplicada = abs(p_cal - p_raw) > 1e-6
+            calibrador_id = str(rec["calibrador_id"]) if rec.get("calibrador_id") else None
+            calibracion_aplicada = bool(rec.get("calibracion_aplicada") and calibrador_id)
+            p_cal = float(rec.get("p_calibrada", prob_modelo)) if calibracion_aplicada else None
             recomendaciones.append(
                 RecomendacionApuesta(
                     mercado=str(rec.get("mercado", "")),
                     lado=lado,
                     linea=float(rec.get("linea", 0.0)),
-                    probabilidad=p_cal,
+                    probabilidad=prob_modelo,
                     confianza=confianza_api,
                     valor_esperado=rec.get("valor_esperado"),
                     p_raw=p_raw,
                     p_calibrada=p_cal,
                     calibracion_aplicada=bool(calibracion_aplicada),
                     modelo_version_id=str(rec.get("modelo_version_id")) if rec.get("modelo_version_id") else None,
-                    calibrador_id=str(rec.get("calibrador_id")) if rec.get("calibrador_id") else None,
+                    calibrador_id=calibrador_id if calibracion_aplicada else None,
                     edge_raw=float(edge_raw) if edge_raw is not None else None,
                     edge_real=float(edge_real) if edge_real is not None else None,
                     score=float(score) if score is not None else None,
@@ -331,15 +334,13 @@ def _ensamblar_mercados(
             l_h = (heur.lineas or {}).get(linea)
             if l_ml and l_h:
                 over_raw = (peso_ml * float(l_ml.over_raw)) + (peso_heur * float(l_h.over_raw))
-                over_cal = (peso_ml * float(l_ml.over_calibrada)) + (peso_heur * float(l_h.over_calibrada))
                 under_raw = 1.0 - over_raw
-                under_cal = 1.0 - over_cal
                 razones = (l_ml.razones or []) + (l_h.razones or []) if (l_ml.razones or l_h.razones) else None
                 lineas_blend[linea] = ProbabilidadLinea(
                     over_raw=round(max(0.001, min(0.999, over_raw)), 4),
-                    over_calibrada=round(max(0.001, min(0.999, over_cal)), 4),
+                    over_calibrada=None,
                     under_raw=round(max(0.001, min(0.999, under_raw)), 4),
-                    under_calibrada=round(max(0.001, min(0.999, under_cal)), 4),
+                    under_calibrada=None,
                     razones=razones,
                 )
             elif l_ml:
@@ -601,8 +602,8 @@ def _arbitrar_recomendaciones(
                 continue
 
             # Blend sólo cuando no hay evidencia fuerte para selección dura
-            ml_cal = r_ml.p_calibrada is not None
-            h_cal = r_h.p_calibrada is not None
+            ml_cal = r_ml.p_calibrada is not None and r_ml.calibrador_id is not None
+            h_cal = r_h.p_calibrada is not None and r_h.calibrador_id is not None
             peso_ml = _calcular_peso_ml_dinamico(
                 mercado=str(base.mercado),
                 mercado_estado=mercado_estado,
@@ -612,8 +613,9 @@ def _arbitrar_recomendaciones(
             )
             peso_h = 1.0 - peso_ml
             p_raw = (peso_ml * float(r_ml.p_raw or r_ml.probabilidad)) + (peso_h * float(r_h.p_raw or r_h.probabilidad))
-            p_cal = (peso_ml * float(r_ml.p_calibrada or r_ml.probabilidad)) + (peso_h * float(r_h.p_calibrada or r_h.probabilidad))
-            calibracion_aplicada = abs(float(p_cal) - float(p_raw)) > 1e-6
+            # Una mezcla posterior a la calibración no es salida de un
+            # calibrador entrenado sobre esa mezcla: conservarla como raw.
+            calibracion_aplicada = False
 
             cuota_over_sel = r_ml.cuota_over if r_ml.cuota_over is not None else r_h.cuota_over
             cuota_under_sel = r_ml.cuota_under if r_ml.cuota_under is not None else r_h.cuota_under
@@ -623,7 +625,7 @@ def _arbitrar_recomendaciones(
             metricas = _calcular_metricas_mercado(
                 lado=str(base.lado),
                 prob_raw=float(p_raw),
-                prob_cal=float(p_cal),
+                prob_cal=float(p_raw),
                 calibracion_aplicada=calibracion_aplicada,
                 cuota_over=float(cuota_over_sel) if cuota_over_sel is not None else None,
                 cuota_under=float(cuota_under_sel) if cuota_under_sel is not None else None,
@@ -635,14 +637,14 @@ def _arbitrar_recomendaciones(
                 mercado=base.mercado,
                 lado=base.lado,
                 linea=base.linea,
-                probabilidad=float(p_cal if calibracion_aplicada else p_raw),
+                probabilidad=float(p_raw),
                 confianza=base.confianza,
                 valor_esperado=metricas["valor_esperado"],
                 p_raw=float(p_raw),
-                p_calibrada=float(p_cal),
+                p_calibrada=None,
                 calibracion_aplicada=calibracion_aplicada,
                 modelo_version_id=r_ml.modelo_version_id or r_h.modelo_version_id,
-                calibrador_id=r_ml.calibrador_id or r_h.calibrador_id,
+                calibrador_id=None,
                 edge_raw=metricas["edge_raw"],
                 edge_real=metricas["edge_real"],
                 score=metricas["score"],
@@ -1997,23 +1999,27 @@ def _generar_predicciones_mercado(
         prob_under_raw = 1.0 - prob_over_raw
 
         # Aplicar calibración si está disponible
-        if calibrador is not None:
+        calibrador_id = getattr(calibrador, "calibrador_id", None)
+        if calibrador is not None and calibrador_id is not None:
             try:
                 prob_over_cal = float(calibrador.transform([[prob_over_raw]])[0])
-                prob_over_cal = float(max(0.02, min(0.98, prob_over_cal)))
+                if not math.isfinite(prob_over_cal) or not 0 <= prob_over_cal <= 1:
+                    raise ValueError("Salida inválida del calibrador")
                 prob_under_cal = 1.0 - prob_over_cal
             except Exception:
-                prob_over_cal = prob_over_raw
-                prob_under_cal = prob_under_raw
+                prob_over_cal = None
+                prob_under_cal = None
+                calibrador_id = None
         else:
-            prob_over_cal = prob_over_raw
-            prob_under_cal = prob_under_raw
+            prob_over_cal = None
+            prob_under_cal = None
 
         lineas_dict[str(linea)] = ProbabilidadLinea(
             over_raw=round(prob_over_raw, 4),
-            over_calibrada=round(prob_over_cal, 4),
+            over_calibrada=round(prob_over_cal, 4) if prob_over_cal is not None else None,
             under_raw=round(prob_under_raw, 4),
-            under_calibrada=round(prob_under_cal, 4),
+            under_calibrada=round(prob_under_cal, 4) if prob_under_cal is not None else None,
+            calibrador_id=str(calibrador_id) if calibrador_id is not None else None,
         )
 
     return PrediccionMercado(
@@ -2245,11 +2251,15 @@ def _generar_recomendaciones(
                 linea,
             )
 
+            calibracion_aplicada_over = probs.over_calibrada is not None and probs.calibrador_id is not None
+            calibracion_aplicada_under = probs.under_calibrada is not None and probs.calibrador_id is not None
             prob_over_ajustada = ajustar_probabilidad_por_muestras(
-                probs.over_calibrada, n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes
+                probs.over_calibrada if calibracion_aplicada_over else probs.over_raw,
+                n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes,
             )
             prob_under_ajustada = ajustar_probabilidad_por_muestras(
-                probs.under_calibrada, n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes
+                probs.under_calibrada if calibracion_aplicada_under else probs.under_raw,
+                n_total=min(partidos_local, partidos_visitante), n_relevante=partidos_relevantes,
             )
 
             # Evaluar OVER
@@ -2257,7 +2267,6 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_over_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
-                calibracion_aplicada_over = abs(float(prob_over_ajustada) - float(probs.over_raw)) > 1e-6
                 m_over = _calcular_metricas_mercado(
                     lado="OVER",
                     prob_raw=float(probs.over_raw),
@@ -2276,10 +2285,10 @@ def _generar_recomendaciones(
                     confianza=confianza,
                     valor_esperado=m_over["valor_esperado"],
                     p_raw=float(probs.over_raw),
-                    p_calibrada=float(prob_over_ajustada),
+                    p_calibrada=float(probs.over_calibrada) if calibracion_aplicada_over else None,
                     calibracion_aplicada=m_over["calibracion_aplicada"],
                     modelo_version_id=modelo_version_id,
-                    calibrador_id=None,
+                    calibrador_id=probs.calibrador_id if calibracion_aplicada_over else None,
                     edge_raw=m_over["edge_raw"],
                     edge_real=m_over["edge_real"],
                     score=m_over["score"],
@@ -2300,7 +2309,6 @@ def _generar_recomendaciones(
                 confianza = _determinar_confianza(
                     prob_under_ajustada, partidos_local, partidos_visitante, partidos_relevantes
                 )
-                calibracion_aplicada_under = abs(float(prob_under_ajustada) - float(probs.under_raw)) > 1e-6
                 m_under = _calcular_metricas_mercado(
                     lado="UNDER",
                     prob_raw=float(probs.under_raw),
@@ -2319,10 +2327,10 @@ def _generar_recomendaciones(
                     confianza=confianza,
                     valor_esperado=m_under["valor_esperado"],
                     p_raw=float(probs.under_raw),
-                    p_calibrada=float(prob_under_ajustada),
+                    p_calibrada=float(probs.under_calibrada) if calibracion_aplicada_under else None,
                     calibracion_aplicada=m_under["calibracion_aplicada"],
                     modelo_version_id=modelo_version_id,
-                    calibrador_id=None,
+                    calibrador_id=probs.calibrador_id if calibracion_aplicada_under else None,
                     edge_raw=m_under["edge_raw"],
                     edge_real=m_under["edge_real"],
                     score=m_under["score"],
@@ -2424,11 +2432,12 @@ def _registrar_predicciones_futbol(
                     float(prediccion.std),
                     float(probs.over_raw),
                     float(probs.under_raw),
-                    float(probs.over_calibrada),
-                    float(probs.under_calibrada),
+                    float(probs.over_calibrada) if probs.over_calibrada is not None and probs.calibrador_id else None,
+                    float(probs.under_calibrada) if probs.under_calibrada is not None and probs.calibrador_id else None,
                     float(prediccion.media - 1.96 * prediccion.std),
                     float(prediccion.media + 1.96 * prediccion.std),
                     95,
+                    str(probs.calibrador_id) if probs.calibrador_id and probs.over_calibrada is not None else None,
                 ]
             )
 
@@ -2459,11 +2468,12 @@ def _registrar_predicciones_futbol(
             prob_under_calibrada,
             intervalo_inferior,
             intervalo_superior,
-            nivel_intervalo
+            nivel_intervalo,
+            calibrador_id
         ) VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
             %s::mercado_futbol, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s, %s
+            %s, %s, %s, %s, %s, %s, %s, %s
         )
         ON CONFLICT ON CONSTRAINT uq_prediccion_futbol DO UPDATE SET
             modelo_version_id = EXCLUDED.modelo_version_id,
@@ -2481,6 +2491,7 @@ def _registrar_predicciones_futbol(
             prob_under = EXCLUDED.prob_under,
             prob_over_calibrada = EXCLUDED.prob_over_calibrada,
             prob_under_calibrada = EXCLUDED.prob_under_calibrada,
+            calibrador_id = EXCLUDED.calibrador_id,
             intervalo_inferior = EXCLUDED.intervalo_inferior,
             intervalo_superior = EXCLUDED.intervalo_superior,
             nivel_intervalo = EXCLUDED.nivel_intervalo
@@ -2698,8 +2709,8 @@ def _resolver_objetivo_canonico(
         degradacion.append("muestra_insuficiente")
         no_disponibles.append("muestra_contextual")
 
-    p_over = float(prob_linea.over_calibrada) if prob_linea is not None else None
-    p_under = float(prob_linea.under_calibrada) if prob_linea is not None else None
+    p_over = float(prob_linea.over_calibrada if prob_linea.over_calibrada is not None and prob_linea.calibrador_id else prob_linea.over_raw) if prob_linea is not None else None
+    p_under = float(prob_linea.under_calibrada if prob_linea.under_calibrada is not None and prob_linea.calibrador_id else prob_linea.under_raw) if prob_linea is not None else None
 
     devig_estado = "no_disponible"
     calibracion_estado = "no_disponible"
@@ -2720,7 +2731,7 @@ def _resolver_objetivo_canonico(
             devig_estado = "no_disponible"
             no_disponibles.append("devig")
 
-        if recomendacion.p_raw is not None and recomendacion.p_calibrada is not None:
+        if recomendacion.p_raw is not None and recomendacion.p_calibrada is not None and recomendacion.calibrador_id:
             calibracion_estado = "disponible"
         else:
             calibracion_estado = "datos_insuficientes"
@@ -2760,7 +2771,10 @@ def _resolver_objetivo_canonico(
             estado="disponible" if pred_mercado is not None and prob_linea is not None else "datos_insuficientes",
             media=float(pred_mercado.media) if pred_mercado is not None else None,
             desviacion=float(pred_mercado.std) if pred_mercado is not None else None,
-            probabilidades=ObjetivoProbabilidadesFutbol(over=p_over, under=p_under),
+            probabilidades=ObjetivoProbabilidadesFutbol(
+                over=float(prob_linea.over_raw) if prob_linea is not None else None,
+                under=float(prob_linea.under_raw) if prob_linea is not None else None,
+            ),
         ),
         bloque_ajustado=ObjetivoBloqueFutbol(
             estado="disponible" if recomendacion is not None else "no_disponible",
@@ -2781,7 +2795,7 @@ def _resolver_objetivo_canonico(
         calibracion=ObjetivoCalibracionFutbol(
             estado=calibracion_estado,
             p_raw=float(recomendacion.p_raw) if recomendacion is not None and recomendacion.p_raw is not None else None,
-            p_calibrada=float(recomendacion.p_calibrada) if recomendacion is not None and recomendacion.p_calibrada is not None else None,
+            p_calibrada=float(recomendacion.p_calibrada) if recomendacion is not None and recomendacion.p_calibrada is not None and recomendacion.calibrador_id else None,
             calibracion_aplicada=(
                 bool(recomendacion.calibracion_aplicada)
                 if recomendacion is not None and recomendacion.calibracion_aplicada is not None

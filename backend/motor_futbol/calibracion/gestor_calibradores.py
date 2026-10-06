@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from datetime import datetime, date
 from typing import Dict, Any, Optional, Union
 from uuid import UUID, uuid4
@@ -103,7 +104,7 @@ class GestorCalibradores:
                         return None
 
                     # Preparar datos para reconstrucción
-                    data = parametros_json if parametros_json else {}
+                    data = dict(parametros_json or {})
                     data["mercado"] = mercado.value
                     data["metodo"] = metodo
                     data["entrenado"] = True
@@ -111,6 +112,7 @@ class GestorCalibradores:
                         data["fecha_entrenamiento"] = fecha_entrenamiento.isoformat()
 
                     calibrador = clase.from_dict(data)
+                    calibrador.calibrador_id = calibrador_id
 
                     # Guardar en cache
                     self.calibradores_cache[mercado] = calibrador
@@ -337,20 +339,20 @@ class GestorCalibradores:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT mercado, metodo, parametros_json, fecha_entrenamiento
+                        SELECT id, mercado, metodo, parametros_json, fecha_entrenamiento
                         FROM calibradores_futbol
                         WHERE activo = TRUE
                         """
                     )
 
                     for row in cur.fetchall():
-                        mercado_str, metodo, parametros_json, fecha_ent = row
+                        calibrador_id, mercado_str, metodo, parametros_json, fecha_ent = row
 
                         mercado = TipoMercadoFutbol(mercado_str)
                         clase = CALIBRADORES_DISPONIBLES.get(metodo)
 
                         if clase:
-                            data = parametros_json if parametros_json else {}
+                            data = dict(parametros_json or {})
                             data["mercado"] = mercado_str
                             data["metodo"] = metodo
                             data["entrenado"] = True
@@ -358,6 +360,7 @@ class GestorCalibradores:
                                 data["fecha_entrenamiento"] = fecha_ent.isoformat()
 
                             calibrador = clase.from_dict(data)
+                            calibrador.calibrador_id = calibrador_id
                             calibradores[mercado] = calibrador
                             self.calibradores_cache[mercado] = calibrador
 
@@ -394,6 +397,24 @@ class GestorCalibradores:
             return prob_raw
 
         return calibrador.calibrar(prob_raw)
+
+    def calibrar_con_procedencia(
+        self, mercado: TipoMercadoFutbol, prob_raw: float,
+    ) -> tuple[float | None, UUID | None]:
+        """Devuelve una calibrada solo si se cargó y aplicó un artefacto identificado."""
+        calibrador = self.cargar_calibrador_activo(mercado)
+        calibrador_id = getattr(calibrador, "calibrador_id", None)
+        if calibrador is None or calibrador_id is None:
+            return None, None
+        try:
+            prob_calibrada = float(calibrador.calibrar(float(prob_raw)))
+        except Exception:
+            logger.exception("Falló calibrador activo para %s", mercado.value)
+            return None, None
+        if not math.isfinite(prob_calibrada) or not 0 <= prob_calibrada <= 1:
+            logger.warning("Salida inválida del calibrador activo para %s", mercado.value)
+            return None, None
+        return prob_calibrada, calibrador_id
 
     def limpiar_cache(self) -> None:
         """Limpia el cache de calibradores."""

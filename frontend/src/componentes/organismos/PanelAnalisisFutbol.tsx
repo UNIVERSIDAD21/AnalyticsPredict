@@ -28,6 +28,7 @@ import {
   MERCADOS_GOLES,
   MERCADOS_DISPAROS,
 } from '../../tipos/futbol';
+import { resolverProbabilidadFutbol } from '../../utilidades/probabilidadFutbol';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -177,7 +178,8 @@ function TablaProbabilidades({
         </thead>
         <tbody>
           {prediccion.probabilidades.map((prob, idx) => {
-            const esOverFavorito = prob.overCalibrada > prob.underCalibrada;
+            const { over: pOver, under: pUnder, fuente } = resolverProbabilidadFutbol(prob);
+            const esOverFavorito = pOver > pUnder;
             return (
               <tr
                 key={prob.linea}
@@ -189,6 +191,9 @@ function TablaProbabilidades({
               >
                 <td className="px-3 py-2 font-mono font-semibold text-neon-cyan">
                   {prob.linea.toFixed(1)}
+                  <div className="text-[10px] font-normal text-texto-terciario">
+                    {fuente === 'CALIBRADA' ? 'calibrada' : 'raw · sin calibración verificada'}
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-center">
                   <div className="flex flex-col items-center">
@@ -198,13 +203,13 @@ function TablaProbabilidades({
                         esOverFavorito ? 'text-neon-verde' : 'text-texto-secundario'
                       )}
                     >
-                      {(prob.overCalibrada * 100).toFixed(1)}%
+                      {(pOver * 100).toFixed(1)}%
                     </span>
                     {/* Barra visual */}
                     <div className="w-full h-1 mt-1 rounded-full bg-futurista-medio/30">
                       <div
                         className="h-full rounded-full bg-neon-verde/70 transition-all duration-300"
-                        style={{ width: `${prob.overCalibrada * 100}%` }}
+                        style={{ width: `${pOver * 100}%` }}
                       />
                     </div>
                   </div>
@@ -217,13 +222,13 @@ function TablaProbabilidades({
                         !esOverFavorito ? 'text-neon-rojo' : 'text-texto-secundario'
                       )}
                     >
-                      {(prob.underCalibrada * 100).toFixed(1)}%
+                      {(pUnder * 100).toFixed(1)}%
                     </span>
                     {/* Barra visual */}
                     <div className="w-full h-1 mt-1 rounded-full bg-futurista-medio/30">
                       <div
                         className="h-full rounded-full bg-neon-rojo/70 transition-all duration-300"
-                        style={{ width: `${prob.underCalibrada * 100}%` }}
+                        style={{ width: `${pUnder * 100}%` }}
                       />
                     </div>
                   </div>
@@ -326,8 +331,8 @@ function TarjetaMercadoItem({
               <IndicadorMercadoFutbol
                 mercado={prediccion.mercado}
                 linea={prediccion.probabilidades[0].linea}
-                probabilidadOver={prediccion.probabilidades[0].overCalibrada}
-                probabilidadUnder={prediccion.probabilidades[0].underCalibrada}
+                probabilidadOver={resolverProbabilidadFutbol(prediccion.probabilidades[0]).over}
+                probabilidadUnder={resolverProbabilidadFutbol(prediccion.probabilidades[0]).under}
                 compacto
               />
             )}

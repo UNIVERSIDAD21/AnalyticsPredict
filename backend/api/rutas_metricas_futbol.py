@@ -503,7 +503,12 @@ async def obtener_metricas_calibracion(
                 if not _tabla_existe(cursor, "predicciones_futbol"):
                     return _obtener_metricas_desde_calibradores(cursor, mercado, periodo)
 
-                if not _columna_existe(cursor, "predicciones_futbol", "prob_over_raw"):
+                raw_col = (
+                    "prob_over_raw" if _columna_existe(cursor, "predicciones_futbol", "prob_over_raw")
+                    else "prob_over" if _columna_existe(cursor, "predicciones_futbol", "prob_over")
+                    else None
+                )
+                if raw_col is None:
                     return _obtener_metricas_desde_calibradores(cursor, mercado, periodo)
 
                 usa_prob_calibrada = _columna_existe(
@@ -521,16 +526,16 @@ async def obtener_metricas_calibracion(
                 # Solo outcomes realmente resueltos: nunca inferir un resultado
                 # negativo a partir de la ausencia de marcador o de resultado_real.
                 metricas_query = """
-                    SELECT p.mercado, p.prob_over_raw AS p_raw,
+                    SELECT p.mercado, p.{raw_col} AS p_raw,
                            {prob_calibrada} AS p_cal, p.outcome_binario::int AS y
                     FROM predicciones_futbol p
                     JOIN partidos_futbol pf ON p.partido_id = pf.id
                     WHERE p.outcome_binario IS NOT NULL
-                      AND p.prob_over_raw IS NOT NULL
+                      AND p.{raw_col} IS NOT NULL
                 """.format(prob_calibrada=(
                     "CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada ELSE NULL::numeric END"
                     if usa_prob_calibrada and tiene_calibrador_id else "NULL::numeric"
-                ))
+                ), raw_col=raw_col)
                 params: List = []
 
                 if fecha_inicio:
@@ -568,10 +573,13 @@ async def obtener_metricas_calibracion(
                     )
                     metricas.append(MetricasCalibracion(
                         mercado=mercado_nombre,
+                        brier_score_raw=round(raw["brier"], 4) if raw["brier"] is not None else None,
                         brier_score=round(cal["brier"], 4) if cal["brier"] is not None else None,
                         ece=round(cal["ece"], 4) if cal["ece"] is not None else None,
                         log_loss=round(cal["log_loss"], 4) if cal["log_loss"] is not None else None,
                         n_predicciones=cal["n"],
+                        n_raw=raw["n"],
+                        n_calibradas=cal["n"],
                         calibrador_activo=mercado_nombre in calibradores,
                         metodo_calibrador=calibradores.get(mercado_nombre, {}).get("metodo"),
                         mejora_brier=round(mejora, 2) if mejora is not None else None,

@@ -371,7 +371,7 @@ class CalculadoraProbabilidad:
         lineas: List[float],
         mercado: "TipoMercadoFutbol",
         gestor_calibradores: Optional["GestorCalibradores"] = None,
-    ) -> Dict[str, Dict[str, float]]:
+    ) -> Dict[str, Dict[str, float | None]]:
         """
         Calcula probabilidades para múltiples líneas, con y sin calibración.
 
@@ -393,34 +393,34 @@ class CalculadoraProbabilidad:
                 ...
             }
         """
-        resultado: Dict[str, Dict[str, float]] = {}
+        resultado: Dict[str, Dict[str, float | None]] = {}
 
         for linea in lineas:
             prob_over = CalculadoraProbabilidad.prob_over(media, std, linea)
             prob_under = 1.0 - prob_over
 
             # Intentar calibrar si hay gestor disponible
-            prob_over_cal = prob_over
-            prob_under_cal = prob_under
+            prob_over_cal = None
+            prob_under_cal = None
 
             if gestor_calibradores is not None:
                 try:
-                    prob_over_cal = gestor_calibradores.calibrar_probabilidad(
+                    prob_over_cal, calibrador_id = gestor_calibradores.calibrar_con_procedencia(
                         mercado, prob_over
                     )
-                    # Asegurar que las probabilidades complementarias suman 1
-                    prob_under_cal = 1.0 - prob_over_cal
+                    if calibrador_id is not None and prob_over_cal is not None:
+                        prob_under_cal = 1.0 - prob_over_cal
                 except Exception:
-                    # Si falla la calibración, usar prob raw
-                    pass
+                    prob_over_cal = None
+                    prob_under_cal = None
 
             resultado[f"over_{linea}"] = {
                 "raw": round(prob_over, 4),
-                "calibrada": round(float(prob_over_cal), 4),
+                "calibrada": round(float(prob_over_cal), 4) if prob_over_cal is not None else None,
             }
             resultado[f"under_{linea}"] = {
                 "raw": round(prob_under, 4),
-                "calibrada": round(float(prob_under_cal), 4),
+                "calibrada": round(float(prob_under_cal), 4) if prob_under_cal is not None else None,
             }
 
         return resultado
@@ -430,7 +430,7 @@ class CalculadoraProbabilidad:
         prob_raw: float,
         mercado: "TipoMercadoFutbol",
         gestor_calibradores: Optional["GestorCalibradores"] = None,
-    ) -> Tuple[float, bool]:
+    ) -> Tuple[float | None, bool]:
         """
         Aplica calibración a una probabilidad raw.
 
@@ -441,18 +441,16 @@ class CalculadoraProbabilidad:
 
         Returns:
             Tupla (prob_calibrada, fue_calibrada)
-            - prob_calibrada: Probabilidad calibrada o raw si no hay calibrador
+            - prob_calibrada: Probabilidad calibrada o None si no hay calibrador
             - fue_calibrada: True si se aplicó calibración
         """
         if gestor_calibradores is None:
-            return (prob_raw, False)
+            return (None, False)
 
         try:
-            prob_calibrada = gestor_calibradores.calibrar_probabilidad(
+            prob_calibrada, calibrador_id = gestor_calibradores.calibrar_con_procedencia(
                 mercado, prob_raw
             )
-            # Verificar que es diferente de raw (indica que hubo calibración)
-            fue_calibrada = abs(float(prob_calibrada) - prob_raw) > 1e-9
-            return (float(prob_calibrada), fue_calibrada)
+            return (prob_calibrada, calibrador_id is not None)
         except Exception:
-            return (prob_raw, False)
+            return (None, False)

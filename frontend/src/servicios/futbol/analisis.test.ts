@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { transformarObjetivoAnalisis } from './analisis';
+import { transformarObjetivoAnalisis, transformarProbabilidadLinea } from './analisis';
+
+describe('procedencia de probabilidades fútbol', () => {
+  it('conserva null cuando no hay salida calibrada', () => {
+    const linea = transformarProbabilidadLinea({ linea: 2.5, over_raw: 0.2, under_raw: 0.8 });
+    expect(linea.overCalibrada).toBeNull();
+    expect(linea.underCalibrada).toBeNull();
+    expect(linea.calibradorId).toBeNull();
+    expect(linea.overRaw).toBe(0.2);
+  });
+
+  it('conserva probabilidad e ID cuando existe procedencia', () => {
+    const linea = transformarProbabilidadLinea({ linea: 2.5, over_raw: 0.2, under_raw: 0.8,
+      over_calibrada: 0.5, under_calibrada: 0.5, calibrador_id: 'id-verificado' });
+    expect(linea.overCalibrada).toBe(0.5);
+    expect(linea.calibradorId).toBe('id-verificado');
+  });
+});
 
 describe('transformarObjetivoAnalisis', () => {
   it('mapea calidad_datos al contrato camelCase', () => {

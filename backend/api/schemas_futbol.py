@@ -252,9 +252,10 @@ class AnalisisRequest(BaseModel):
 class ProbabilidadLinea(BaseModel):
     """Probabilidades para una línea específica."""
     over_raw: float = Field(ge=0, le=1)
-    over_calibrada: float = Field(ge=0, le=1)
+    over_calibrada: Optional[float] = Field(default=None, ge=0, le=1)
     under_raw: float = Field(ge=0, le=1)
-    under_calibrada: float = Field(ge=0, le=1)
+    under_calibrada: Optional[float] = Field(default=None, ge=0, le=1)
+    calibrador_id: Optional[str] = None
     razones: Optional[List[Dict[str, Any]]] = None
 
 
@@ -535,10 +536,13 @@ class ResolucionResponse(BaseModel):
 class MetricasCalibracion(BaseModel):
     """Métricas de calibración para un mercado."""
     mercado: str
+    brier_score_raw: Optional[float] = None
     brier_score: Optional[float] = None
     ece: Optional[float] = None
     log_loss: Optional[float] = None
     n_predicciones: int
+    n_raw: int = 0
+    n_calibradas: int = 0
     calibrador_activo: bool = False
     metodo_calibrador: Optional[str] = None
     mejora_brier: Optional[float] = None

@@ -84,127 +84,37 @@ def obtener_predicciones_periodo(
     pool,
     mercado: TipoMercadoFutbol,
     fecha_inicio: Optional[date] = None,
-) -> tuple:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Pares resueltos; p_cal solo existe si hay calibrador_id persistido.
+
+    Las posiciones sin procedencia se representan con NaN exclusivamente para
+    construir la máscara pareada; jamás entran al cálculo de métricas.
     """
-    Obtiene predicciones y resultados para un período.
-
-    Args:
-        pool: Pool de conexiones
-        mercado: Mercado a evaluar
-        fecha_inicio: Fecha de inicio (None = todo)
-
-    Returns:
-        Tupla (prob_raw, prob_calibrada, outcomes)
-    """
-    mercado_str = mercado.value.upper()
-
-    # Query base - usa predicciones_futbol y obtiene resultados de partidos_futbol
-    # (NO existe tabla resultados_futbol separada)
     query = """
-        SELECT
-            prob_over_raw,
-            prob_over_calibrada,
-            CASE
-                WHEN resultado_real > linea THEN 1
-                ELSE 0
-            END as outcome
-        FROM (
-            SELECT
-                p.prob_over_raw,
-                COALESCE(p.prob_over_calibrada, p.prob_over_raw) as prob_over_calibrada,
-                p.linea,
-                CASE
-                    -- Corners Full Time (totales)
-                    WHEN p.mercado = 'CORNERS_FT' THEN
-                        pf.local_corners_total + pf.visitante_corners_total
-                    WHEN p.mercado = 'CORNERS_1T' THEN
-                        pf.local_corners_1t + pf.visitante_corners_1t
-                    WHEN p.mercado = 'CORNERS_2T' THEN
-                        pf.local_corners_2t + pf.visitante_corners_2t
-                    WHEN p.mercado = 'CORNERS_LOCAL_FT' THEN
-                        pf.local_corners_total
-                    WHEN p.mercado = 'CORNERS_LOCAL_1T' THEN
-                        pf.local_corners_1t
-                    WHEN p.mercado = 'CORNERS_LOCAL_2T' THEN
-                        pf.local_corners_2t
-                    WHEN p.mercado = 'CORNERS_VISITANTE_FT' THEN
-                        pf.visitante_corners_total
-                    WHEN p.mercado = 'CORNERS_VISITANTE_1T' THEN
-                        pf.visitante_corners_1t
-                    WHEN p.mercado = 'CORNERS_VISITANTE_2T' THEN
-                        pf.visitante_corners_2t
-                    -- Goles
-                    WHEN p.mercado = 'GOLES_FT' THEN
-                        pf.local_goles_total + pf.visitante_goles_total
-                    WHEN p.mercado = 'GOLES_1T' THEN
-                        pf.local_goles_1t + pf.visitante_goles_1t
-                    WHEN p.mercado = 'GOLES_2T' THEN
-                        pf.local_goles_2t + pf.visitante_goles_2t
-                    WHEN p.mercado = 'GOLES_LOCAL_FT' THEN
-                        pf.local_goles_total
-                    WHEN p.mercado = 'GOLES_LOCAL_1T' THEN
-                        pf.local_goles_1t
-                    WHEN p.mercado = 'GOLES_LOCAL_2T' THEN
-                        pf.local_goles_2t
-                    WHEN p.mercado = 'GOLES_VISITANTE_FT' THEN
-                        pf.visitante_goles_total
-                    WHEN p.mercado = 'GOLES_VISITANTE_1T' THEN
-                        pf.visitante_goles_1t
-                    WHEN p.mercado = 'GOLES_VISITANTE_2T' THEN
-                        pf.visitante_goles_2t
-                    -- Disparos
-                    WHEN p.mercado = 'DISPAROS_FT' THEN
-                        pf.local_disparos_total + pf.visitante_disparos_total
-                    WHEN p.mercado = 'DISPAROS_ARCO_FT' THEN
-                        pf.local_disparos_arco + pf.visitante_disparos_arco
-                    WHEN p.mercado = 'DISPAROS_LOCAL_FT' THEN
-                        pf.local_disparos_total
-                    WHEN p.mercado = 'DISPAROS_LOCAL_ARCO_FT' THEN
-                        pf.local_disparos_arco
-                    WHEN p.mercado = 'DISPAROS_VISITANTE_FT' THEN
-                        pf.visitante_disparos_total
-                    WHEN p.mercado = 'DISPAROS_VISITANTE_ARCO_FT' THEN
-                        pf.visitante_disparos_arco
-                    ELSE NULL
-                END as resultado_real,
-                pf.fecha_partido
-            FROM predicciones_futbol p
-            JOIN partidos_futbol pf ON p.partido_id = pf.id
-            WHERE p.mercado = %s
-              AND p.prob_over_raw IS NOT NULL
-              AND pf.estado = 'FINALIZADO'
+        SELECT p.prob_over,
+               CASE WHEN p.calibrador_id IS NOT NULL THEN p.prob_over_calibrada ELSE NULL END,
+               p.outcome_binario::int
+        FROM predicciones_futbol p
+        JOIN partidos_futbol pf ON pf.id = p.partido_id
+        WHERE p.mercado = %s
+          AND p.outcome_binario IS NOT NULL
+          AND p.prob_over IS NOT NULL
     """
-
-    params = [mercado_str]
-
-    if fecha_inicio:
+    params: list[object] = [mercado.value]
+    if fecha_inicio is not None:
         query += " AND pf.fecha_partido >= %s"
         params.append(fecha_inicio)
+    query += " ORDER BY pf.fecha_partido ASC"
 
-    query += """
-            ORDER BY pf.fecha_partido ASC
-        ) sub
-        WHERE resultado_real IS NOT NULL
-    """
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+            rows = cur.fetchall()
 
-    try:
-        with pool.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, params)
-                rows = cur.fetchall()
-
-                if not rows:
-                    return np.array([]), np.array([]), np.array([])
-
-                prob_raw = np.array([float(row[0]) for row in rows])
-                prob_cal = np.array([float(row[1]) if row[1] else row[0] for row in rows])
-                outcomes = np.array([int(row[2]) for row in rows])
-
-                return prob_raw, prob_cal, outcomes
-
-    except Exception as e:
-        logger.error(f"Error obteniendo predicciones: {e}")
-        return np.array([]), np.array([]), np.array([])
+    raw = np.array([float(row[0]) for row in rows], dtype=float)
+    cal = np.array([float(row[1]) if row[1] is not None else np.nan for row in rows], dtype=float)
+    outcomes = np.array([int(row[2]) for row in rows], dtype=int)
+    return raw, cal, outcomes
 
 
 def obtener_calibradores_activos_info(pool) -> Dict[str, Dict[str, Any]]:
@@ -274,10 +184,16 @@ def evaluar_mercado(
             "error": "Sin datos para el período",
         }
 
+    mascara_cal = np.isfinite(prob_cal)
+    raw_pareada = prob_raw[mascara_cal]
+    cal_pareada = prob_cal[mascara_cal]
+    outcomes_pareados = outcomes[mascara_cal]
+
     # Calcular métricas
     resultado = {
         "mercado": mercado.value,
         "n_muestras": len(outcomes),
+        "n_calibradas_con_procedencia": int(np.sum(mascara_cal)),
         "metricas_raw": {
             "brier_score": calcular_brier_score(prob_raw, outcomes),
             "log_loss": calcular_log_loss(prob_raw, outcomes),
@@ -285,38 +201,45 @@ def evaluar_mercado(
             "mce": calcular_mce(prob_raw, outcomes),
         },
         "metricas_calibradas": {
-            "brier_score": calcular_brier_score(prob_cal, outcomes),
-            "log_loss": calcular_log_loss(prob_cal, outcomes),
-            "ece": calcular_ece(prob_cal, outcomes),
-            "mce": calcular_mce(prob_cal, outcomes),
+            "brier_score": calcular_brier_score(cal_pareada, outcomes_pareados) if len(cal_pareada) else None,
+            "log_loss": calcular_log_loss(cal_pareada, outcomes_pareados) if len(cal_pareada) else None,
+            "ece": calcular_ece(cal_pareada, outcomes_pareados) if len(cal_pareada) else None,
+            "mce": calcular_mce(cal_pareada, outcomes_pareados) if len(cal_pareada) else None,
         },
     }
 
+    brier_raw_pareada = calcular_brier_score(raw_pareada, outcomes_pareados) if len(raw_pareada) else None
+    ece_raw_pareada = calcular_ece(raw_pareada, outcomes_pareados) if len(raw_pareada) else None
     # Calcular mejoras
     resultado["mejora"] = {
         "brier_score": (
-            (resultado["metricas_raw"]["brier_score"] - resultado["metricas_calibradas"]["brier_score"])
-            / resultado["metricas_raw"]["brier_score"] * 100
-            if resultado["metricas_raw"]["brier_score"] > 0 else 0
+            (brier_raw_pareada - resultado["metricas_calibradas"]["brier_score"])
+            / brier_raw_pareada * 100
+            if brier_raw_pareada is not None and brier_raw_pareada > 0 else None
         ),
         "ece": (
-            (resultado["metricas_raw"]["ece"] - resultado["metricas_calibradas"]["ece"])
-            / resultado["metricas_raw"]["ece"] * 100
-            if resultado["metricas_raw"]["ece"] > 0 else 0
+            (ece_raw_pareada - resultado["metricas_calibradas"]["ece"])
+            / ece_raw_pareada * 100
+            if ece_raw_pareada is not None and ece_raw_pareada > 0 else None
         ),
     }
 
     # Verificar alertas
     resultado["alertas"] = []
+    if not len(cal_pareada):
+        resultado["alertas"].append({
+            "tipo": "CALIBRACION_SIN_PROCEDENCIA", "mensaje": "No hay pares calibrados con calibrador_id",
+            "severidad": "WARNING",
+        })
 
-    if resultado["metricas_calibradas"]["ece"] > umbral_ece:
+    if resultado["metricas_calibradas"]["ece"] is not None and resultado["metricas_calibradas"]["ece"] > umbral_ece:
         resultado["alertas"].append({
             "tipo": "ECE_ALTO",
             "mensaje": f"ECE ({resultado['metricas_calibradas']['ece']:.4f}) supera umbral ({umbral_ece})",
             "severidad": "WARNING" if resultado["metricas_calibradas"]["ece"] < umbral_ece * 2 else "ERROR",
         })
 
-    if resultado["mejora"]["brier_score"] < 0:
+    if resultado["mejora"]["brier_score"] is not None and resultado["mejora"]["brier_score"] < 0:
         resultado["alertas"].append({
             "tipo": "BRIER_EMPEORO",
             "mensaje": f"Calibración empeoró Brier Score en {abs(resultado['mejora']['brier_score']):.2f}%",
@@ -324,8 +247,9 @@ def evaluar_mercado(
         })
 
     # Generar datos para reliability diagram
-    reliability = generar_reliability_diagram(prob_cal, outcomes)
-    resultado["reliability_diagram"] = reliability.to_dict()
+    if len(cal_pareada):
+        reliability = generar_reliability_diagram(cal_pareada, outcomes_pareados)
+        resultado["reliability_diagram"] = reliability.to_dict()
 
     return resultado
 
@@ -343,6 +267,7 @@ def imprimir_resultado(resultado: Dict[str, Any], verbose: bool = False) -> None
     print(f"  {mercado}")
     print(f"  {'='*50}")
     print(f"  Muestras evaluadas: {n:,}")
+    print(f"  Calibradas con procedencia: {resultado.get('n_calibradas_con_procedencia', 0):,}")
 
     # Métricas raw vs calibradas
     print(f"\n  {'Métrica':<15} {'Raw':>10} {'Calibrada':>10} {'Mejora':>10}")
@@ -358,7 +283,9 @@ def imprimir_resultado(resultado: Dict[str, Any], verbose: bool = False) -> None
             mejora_str = f"{mejora_pct:+.1f}%"
         else:
             mejora_str = "-"
-        print(f"  {metrica:<15} {raw[metrica]:>10.4f} {cal[metrica]:>10.4f} {mejora_str:>10}")
+        raw_str = f"{raw[metrica]:.4f}" if raw[metrica] is not None else "N/D"
+        cal_str = f"{cal[metrica]:.4f}" if cal[metrica] is not None else "N/D"
+        print(f"  {metrica:<15} {raw_str:>10} {cal_str:>10} {mejora_str:>10}")
 
     # Alertas
     if resultado.get("alertas"):
@@ -478,14 +405,21 @@ def main():
         print(f"  Total muestras: {total_muestras:,}")
 
         if resultados_validos:
-            avg_ece_raw = np.mean([r["metricas_raw"]["ece"] for r in resultados_validos])
-            avg_ece_cal = np.mean([r["metricas_calibradas"]["ece"] for r in resultados_validos])
-            avg_brier_raw = np.mean([r["metricas_raw"]["brier_score"] for r in resultados_validos])
-            avg_brier_cal = np.mean([r["metricas_calibradas"]["brier_score"] for r in resultados_validos])
+            def media_disponible(clave: str, grupo: str) -> float | None:
+                valores = [r[grupo][clave] for r in resultados_validos if r[grupo][clave] is not None]
+                return float(np.mean(valores)) if valores else None
 
-            print(f"\n  Promedios:")
-            print(f"    ECE:    {avg_ece_raw:.4f} -> {avg_ece_cal:.4f}")
-            print(f"    Brier:  {avg_brier_raw:.4f} -> {avg_brier_cal:.4f}")
+            avg_ece_raw = media_disponible("ece", "metricas_raw")
+            avg_ece_cal = media_disponible("ece", "metricas_calibradas")
+            avg_brier_raw = media_disponible("brier_score", "metricas_raw")
+            avg_brier_cal = media_disponible("brier_score", "metricas_calibradas")
+
+            def formato(valor: float | None) -> str:
+                return f"{valor:.4f}" if valor is not None else "N/D"
+
+            print("\n  Promedios no ponderados entre mercados con datos:")
+            print(f"    ECE:    {formato(avg_ece_raw)} -> {formato(avg_ece_cal)}")
+            print(f"    Brier:  {formato(avg_brier_raw)} -> {formato(avg_brier_cal)}")
 
         if alertas_totales:
             print(f"\n  ALERTAS TOTALES: {len(alertas_totales)}")

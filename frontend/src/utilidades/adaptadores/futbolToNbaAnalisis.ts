@@ -1,5 +1,6 @@
 import type { ResultadoAnalisis, PrediccionCuarto, NivelConfianza as NivelConfianzaNba, TipoRecomendacion } from '../../tipos/analisis';
 import type { AnalisisFutbolResponse, PrediccionMercadoFutbol, NivelConfianza as NivelConfianzaFutbol, PartidoFutbolEstadistico } from '../../tipos/futbol';
+import { resolverProbabilidadFutbol } from '../probabilidadFutbol';
 
 interface AdaptadorContextoFutbol {
   h2h?: PartidoFutbolEstadistico[];
@@ -186,10 +187,10 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   const probLineaObjetivo = lineaMain !== null ? buscarProbabilidadLinea(mercadoMain, lineaMain) : null;
 
   const pOverBase = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.over)
-    ?? numeroNullable(probLineaObjetivo?.overCalibrada)
+    ?? numeroNullable(probLineaObjetivo ? resolverProbabilidadFutbol(probLineaObjetivo).over : null)
     ?? (recObjetivo && recObjetivo.lado === 'OVER' ? numeroNullable(recObjetivo.probabilidad) : null);
   const pUnderBase = numeroNullable(analisis.objetivo?.probabilidadesObjetivo?.under)
-    ?? numeroNullable(probLineaObjetivo?.underCalibrada)
+    ?? numeroNullable(probLineaObjetivo ? resolverProbabilidadFutbol(probLineaObjetivo).under : null)
     ?? (recObjetivo && recObjetivo.lado === 'UNDER' ? numeroNullable(recObjetivo.probabilidad) : null);
 
   const mediaTotal = numeroNullable(analisis.objetivo?.mediaObjetivo) ?? numeroNullable(mercadoMain?.media);

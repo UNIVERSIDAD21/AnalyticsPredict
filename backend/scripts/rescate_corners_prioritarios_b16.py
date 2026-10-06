@@ -67,22 +67,8 @@ def main() -> None:
         with conn.cursor(row_factory=dict_row) as cur:
             before = _metricas(cur, TARGET)
 
-            # A) reducir fallback estructural en mercados objetivo (sin calibrador => usar p_raw como p_efectiva)
-            cur.execute(
-                """
-                UPDATE predicciones_futbol
-                SET prob_over_calibrada = COALESCE(prob_over_calibrada, prob_over),
-                    prob_under_calibrada = COALESCE(prob_under_calibrada, prob_under),
-                    actualizado_en = NOW()
-                WHERE mercado::text = ANY(%s)
-                  AND (prob_over_calibrada IS NULL OR prob_under_calibrada IS NULL)
-                  AND prob_over IS NOT NULL
-                  AND prob_under IS NOT NULL
-                """,
-                [TARGET],
-            )
-            backfill = cur.rowcount
-            conn.commit()
+            # Raw es fallback de lectura; nunca se escribe en columnas calibradas.
+            backfill = 0
 
     # B) resolver outcomes pendientes de forma focalizada
     res_resolver: Dict[str, Any] = {}
@@ -98,7 +84,7 @@ def main() -> None:
         "generated_at": now.isoformat(),
         "mercados_objetivo": TARGET,
         "acciones": {
-            "backfill_calibradas_desde_raw": backfill,
+            "backfill_calibradas_desde_raw_deshabilitado": backfill,
             "resolucion_pendientes": res_resolver,
         },
         "antes": before,

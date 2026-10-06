@@ -326,7 +326,7 @@ function TarjetaCalibracion({ calibracion }: { calibracion: MetricasCalibracionF
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-texto-secundario truncate max-w-[150px]">{etiqueta}</span>
         <div className="flex items-center gap-1">
-          {calibracion.calibradorActivo ? (
+          {calibracion.calibradorActivo && calibracion.nCalibradas > 0 ? (
             <CheckCircle size={14} className="text-neon-verde" />
           ) : (
             <AlertCircle size={14} className="text-neon-rojo/70" />
@@ -335,17 +335,20 @@ function TarjetaCalibracion({ calibracion }: { calibracion: MetricasCalibracionF
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <div className="text-xs text-texto-terciario">Brier</div>
+          <div className="text-xs text-texto-terciario">Brier calibrado</div>
           <div className={clsx('font-mono font-semibold', calibracion.brierScore === null ? 'text-texto-terciario' : getColorBrier(calibracion.brierScore))}>
             {calibracion.brierScore === null ? 'N/D' : calibracion.brierScore.toFixed(4)}
           </div>
         </div>
         <div>
-          <div className="text-xs text-texto-terciario">ECE</div>
+          <div className="text-xs text-texto-terciario">ECE calibrado</div>
           <div className={clsx('font-mono font-semibold', calibracion.ece === null ? 'text-texto-terciario' : getColorECE(calibracion.ece))}>
             {calibracion.ece === null ? 'N/D' : `${(calibracion.ece * 100).toFixed(2)}%`}
           </div>
         </div>
+      </div>
+      <div className="mt-2 text-xs text-texto-terciario">
+        {calibracion.nCalibradas}/{calibracion.nRaw} pares calibrados con procedencia · Brier raw: {calibracion.brierScoreRaw === null ? 'N/D' : calibracion.brierScoreRaw.toFixed(4)}
       </div>
       {calibracion.mejoraBrier !== undefined && calibracion.mejoraBrier > 0 && (
         <div className="mt-2 text-xs text-neon-verde">

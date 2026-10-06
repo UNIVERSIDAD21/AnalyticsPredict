@@ -13,7 +13,7 @@
 - [x] Separar series raw/calibrada del calculador NBA; ausencia de calibrada devuelve `null` y cobertura parcial genera alerta, no fallback silencioso.
 - [x] Impedir que el corte agregado llame calibrada a una predicción sin `calibrador_id`; el endpoint de calibración fútbol exige esa procedencia y compara Brier sobre pares coincidentes.
 - [x] Retirar del script de scorecard fútbol el ECE=1 sin datos, `resolved_rate=1` y el claim no comprobado de ausencia de leakage. Este script queda no promocionable mientras no demuestre corte temporal y estado operativo.
-- [ ] Corregir inferencia/persistencia fútbol que aún copia raw en campos `*_calibrada` y conserva ausencia de `calibrador_id`.
+- [x] Corregir inferencia/persistencia fútbol para que las rutas nuevas no copien raw en campos `*_calibrada`; exigir UUID del artefacto. Ver `CALIBRACION_FUTBOL_PROCEDENCIA_2026-10-06.md`.
 - [ ] Revisar y alinear consumidores SQL/reportes legacy que todavía aplican clipping distinto o `COALESCE` sin procedencia, y verificar todos los mercados NBA/fútbol con datos actuales.
 - [ ] Ejecutar pruebas completas backend y frontend y verificar representación N/D en todas las superficies antes de cerrar H9.
 

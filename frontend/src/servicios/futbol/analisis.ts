@@ -57,16 +57,17 @@ function transformarPartidoResumen(
 /**
  * Transforma una probabilidad de línea de snake_case a camelCase
  */
-function transformarProbabilidadLinea(
+export function transformarProbabilidadLinea(
   data: Record<string, unknown>
 ): ProbabilidadLinea {
   const razones = Array.isArray(data.razones) ? (data.razones as ProbabilidadLinea['razones']) : undefined;
   return {
     linea: numeroDesde(data, 'linea') ?? 0,
     overRaw: numeroDesde(data, 'over_raw', 'over') ?? Number.NaN,
-    overCalibrada: numeroDesde(data, 'over_calibrada', 'over') ?? Number.NaN,
+    overCalibrada: numeroDesde(data, 'over_calibrada', 'overCalibrada'),
     underRaw: numeroDesde(data, 'under_raw', 'under') ?? Number.NaN,
-    underCalibrada: numeroDesde(data, 'under_calibrada', 'under') ?? Number.NaN,
+    underCalibrada: numeroDesde(data, 'under_calibrada', 'underCalibrada'),
+    calibradorId: data.calibrador_id == null ? null : String(data.calibrador_id),
     razones,
   };
 }
