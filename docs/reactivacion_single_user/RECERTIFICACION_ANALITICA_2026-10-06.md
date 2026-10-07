@@ -1,6 +1,6 @@
 # Corte de recertificación analítica — 2026-10-06
 
-> **Adenda vigente de marcadores:** el corte y las adendas históricas de abajo preceden a la reconciliación en Neon. ESPN acreditó 81 finales NBA, quedaron 67 pospuestos 0–0 invalidados, y la fuente oficial Euroliga acreditó un final reprogramado; otros 82 registros Euroliga 0–0 quedaron invalidados sin imputación. Cinco apuestas y 66 vínculos de predicción no se reescribieron; ocho resultados de apuestas contradicen marcador/línea/lado. Gate actual: **111/181** binarias no evaluables, 2.558 pares NBA raw descriptivos, ROI **NO CERTIFICADO**. Ver `RECONCILIACION_MARCADORES_BALONCESTO_2026-10-06.md` y su evidencia externa.
+> **Adenda vigente de marcadores/P&L:** los cortes históricos de abajo preceden a la reconciliación y revisión de enlaces. ESPN acreditó 81 finales NBA y 67 pospuestos invalidados; Euroliga acreditó un final reprogramado y dejó 82 filas 0–0 inválidas sin imputación. Cinco apuestas y 66 predicciones ligadas a esos partidos no se reescribieron. Al detectar 40 apuestas sin `partido_id` (39 binarias y una anulada), el gate se amplió: **114/181** binarias (115/182 apuestas totales) no evaluables, 67 binarias solo aritméticamente coherentes y ocho resultados incompatibles con marcador. Se mantienen 2.558 pares NBA raw descriptivos. ROI **NO CERTIFICADO**. Ver `RECONCILIACION_MARCADORES_BALONCESTO_2026-10-06.md` y la entrega de revisión de pendientes.
 
 ## Objetivo y método
 

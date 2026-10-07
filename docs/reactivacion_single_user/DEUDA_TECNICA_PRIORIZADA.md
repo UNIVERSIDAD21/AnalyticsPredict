@@ -2,6 +2,8 @@
 
 **Corte:** 2026-10-05. Prioridades derivadas del plan del propietario y H1–H12 de la auditoría histórica; no equivalen a certificación actual.
 
+> **Adenda 2026-10-06:** la vista H9 ya fue migrada en Neon y su semántica técnica está cerrada; el H9 científico sigue abierto. H4 no está purgado: cuatro blobs SQLite comerciales siguen alcanzables en la historia/ref visibles. H7/side-effects GET y suite deben juzgarse con la evidencia posterior, no con el estado de los primeros smoke tests. El P&L vigente excluye 114/181 binarias (115/182 totales) y continúa NO CERTIFICADO. H12, independencia de outcomes, fútbol, temporalidad y prospectiva permanecen abiertos.
+
 | Prioridad | Trabajo | Criterio verificable | Estado |
 |---|---|---|---|
 | P0 | Perímetro privado antes de retirar auth | Backend sensible ligado a loopback | Cerrado para uso exclusivamente local confirmado; revalidar ante otra topología |

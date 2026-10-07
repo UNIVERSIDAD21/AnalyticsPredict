@@ -33,6 +33,9 @@ def clasificar_fila(fila: dict[str, Any]) -> dict[str, Any]:
         salida["estado_pnl"] = "PENDIENTE_O_DESCONOCIDO"
         salida["motivo"] = "RESULTADO_NO_FINAL"
         return salida
+    if fila.get("partido_id") is None:
+        salida["motivo"] = "APUESTA_SIN_PARTIDO_VINCULADO"
+        return salida
     if fila.get("partido_cero_cero"):
         salida["motivo"] = "RESULTADO_PARTIDO_CERO_CERO_NO_ACREDITADO"
         return salida
@@ -179,6 +182,8 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         "resultado_partido_cero_cero_no_acreditado": sum(d["partido_cero_cero"] for d in detalle),
         "resultado_incompatible_con_marcador": sum(
             d["motivo"] == "RESULTADO_INCOMPATIBLE_CON_MARCADOR" for d in detalle),
+        "resultado_sin_partido_vinculado": sum(
+            d["motivo"] == "APUESTA_SIN_PARTIDO_VINCULADO" for d in detalle),
         "fuente_cuota": "NO_REGISTRADA",
         "unidad_stake": "NO_REGISTRADA",
         "roi_certificado": None,

@@ -8,7 +8,8 @@ from scripts.auditar_pnl_nba import clasificar_fila, resumir_subconjunto_aritmet
 def _fila(resultado, stake="1000", cuota="1.80", ganancia="800"):
     return {"resultado": resultado, "stake": Decimal(stake) if stake else None,
             "cuota": Decimal(cuota) if cuota else None,
-            "ganancia": Decimal(ganancia) if ganancia else None}
+            "ganancia": Decimal(ganancia) if ganancia else None,
+            "partido_id": "partido-vinculado"}
 
 
 def test_ganada_y_perdida_solo_son_consistentes_con_profit_neto():
@@ -58,6 +59,12 @@ def test_resultado_incompatible_con_marcador_excluye_sin_reescribir_liquidacion(
     assert clasificar_fila(fila)["estado_pnl"] == "ARITMETICAMENTE_CONSISTENTE"
     fila["partido_valido"] = False
     assert clasificar_fila(fila)["motivo"] == "PARTIDO_INVALIDADO"
+
+
+def test_apuesta_sin_partido_vinculado_no_es_evaluable():
+    fila = _fila("GANADA")
+    fila["partido_id"] = None
+    assert clasificar_fila(fila)["motivo"] == "APUESTA_SIN_PARTIDO_VINCULADO"
 
 
 def test_roi_provisional_usa_exclusivamente_mismas_filas_conciliables():

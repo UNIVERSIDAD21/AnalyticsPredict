@@ -71,4 +71,4 @@ def test_resultado_cero_cero_excluye_pnl_aunque_concilie():
     with psycopg.connect(url) as conn:
         conn.execute("SET TRANSACTION READ ONLY")
         assert conn.execute(consulta).fetchall() == [
-            (1, True), (2, False), (2, True), (2, False), (3, True), (None, False)]
+            (1, True), (2, False), (2, True), (2, False), (3, True), (None, True)]
