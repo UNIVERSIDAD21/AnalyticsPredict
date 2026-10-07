@@ -3,7 +3,8 @@
 ## 2026-10-06 — resúmenes de fútbol y vistas ROI legacy
 
 - Los resúmenes API de apuestas/sistema fútbol calculan ROI registrado sobre stake resuelto únicamente y devuelven `null` si falta cualquier ganancia resuelta; el adaptador cliente conserva N/D. Pruebas dirigidas backend/frontend y build cubren el contrato sin DML.
-- Se identificaron tres vistas SQL legacy con ROI sin gate. Migración conservadora preparada para publicar `NULL` manteniendo columnas/tipos; ensayo en PostgreSQL desechable incorporado a CI. **No aplicada aún a Neon** ni equivale a vista KPI certificada.
+- Se identificaron tres vistas SQL legacy con ROI sin gate. La migración conservadora publica `NULL` manteniendo columnas/tipos; se ensayó en PostgreSQL desechable antes de aplicarse. No equivale a vista KPI certificada.
+- Tras CI 4/4 de `361e493`, la migración se aplicó a Neon con respaldo privado y postflight read-only: 182/1/7 filas, contratos, owner y ACL intactos; ROI no nulo = 0 en las tres vistas. El GET `/api/bitacora/estadisticas` también deja de publicar ROI bruto; conserva ganancia como importe registrado.
 
 ## 2026-10-06 — semántica analítica single-user vigente
 

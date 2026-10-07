@@ -545,11 +545,9 @@ def obtener_estadisticas_apuestas(
                         ),
                         "ganancia_total": float(ganancia_total),
                         "stake_total": float(stake_total),
-                        "roi": (
-                            round(float(ganancia_total) / float(stake_total), 4)
-                            if float(stake_total) > 0
-                            else None
-                        ),
+                        # La suma histórica no tiene procedencia completa de
+                        # stake/cuota/outcome. Este GET no publica ROI bruto.
+                        "roi": None,
                     }
                 return {}
     except Exception:
