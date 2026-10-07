@@ -2,6 +2,8 @@
 
 > **Adenda vigente de marcadores/P&L:** los cortes históricos de abajo preceden a la reconciliación y revisión de enlaces. ESPN acreditó 81 finales NBA y 67 pospuestos invalidados; Euroliga acreditó un final reprogramado y dejó 82 filas 0–0 inválidas sin imputación. Cinco apuestas y 66 predicciones ligadas a esos partidos no se reescribieron. Al detectar 40 apuestas sin `partido_id` (39 binarias y una anulada), el gate se amplió: **114/181** binarias (115/182 apuestas totales) no evaluables, 67 binarias solo aritméticamente coherentes y ocho resultados incompatibles con marcador. Se mantienen 2.558 pares NBA raw descriptivos. ROI **NO CERTIFICADO**. Ver `RECONCILIACION_MARCADORES_BALONCESTO_2026-10-06.md` y la entrega de revisión de pendientes.
 
+> **Contrato fútbol posterior:** `/api/futbol/metricas/rendimiento` y `roi-temporal` conservan ROI porcentual o `null` si falta stake/ganancia completa. La UI convierte porcentaje a razón para mostrarlo una vez y deja N/D ante ausencia de muestra/importe. Incluso con valor, es ROI **registrado, no certificado**: no acredita fuente independiente ni temporalidad prospectiva. No hubo DML.
+
 ## Objetivo y método
 
 Evaluar el estado **medido**, no proyectar rentabilidad ni declarar modelos listos para operar. Se ejecutó `backend/scripts/auditar_corte_analitico.py` contra Neon en transacción `READ ONLY`, sin ingestas, entrenamiento, cambios de datos ni publicación. Los tests de fórmulas usan pares sintéticos conocidos. El corte fue a las 14:40 UTC del 2026-10-06. Datos y fechas descritos son los observados en ese instante; no equivalen a disponibilidad de fuente en tiempo real.

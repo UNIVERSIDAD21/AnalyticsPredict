@@ -554,10 +554,10 @@ class MetricasRendimiento(BaseModel):
     n_apuestas: int = 0
     ganadas: int = 0
     perdidas: int = 0
-    roi: float = 0.0
-    win_rate: float = 0.0
+    roi: Optional[float] = None
+    win_rate: Optional[float] = None
     stake_total: float = 0.0
-    ganancia_neta: float = 0.0
+    ganancia_neta: Optional[float] = None
 
 
 class MetricasModelo(BaseModel):

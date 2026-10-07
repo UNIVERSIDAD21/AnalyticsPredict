@@ -97,7 +97,8 @@ function getColorECE(ece: number): string {
 /**
  * Obtiene el color basado en el ROI
  */
-function getColorROI(roi: number): string {
+function getColorROI(roi: number | null): string {
+  if (roi === null) return 'text-texto-terciario';
   if (roi >= 0.1) return 'text-neon-verde texto-glow-verde';
   if (roi >= 0.05) return 'text-neon-verde';
   if (roi >= 0) return 'text-neon-verde/70';
@@ -108,7 +109,8 @@ function getColorROI(roi: number): string {
 /**
  * Obtiene el color basado en Win Rate
  */
-function getColorWinRate(winRate: number): string {
+function getColorWinRate(winRate: number | null): string {
+  if (winRate === null) return 'text-texto-terciario';
   if (winRate >= 0.6) return 'text-neon-verde';
   if (winRate >= 0.55) return 'text-neon-verde/80';
   if (winRate >= 0.5) return 'text-neon-amarillo';
@@ -375,15 +377,15 @@ function TarjetaRendimiento({ rendimiento }: { rendimiento: MetricasRendimientoF
       {tieneApuestas ? (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <div className="text-xs text-texto-terciario">ROI</div>
+            <div className="text-xs text-texto-terciario">ROI registrado</div>
             <div className={clsx('font-mono font-semibold', getColorROI(rendimiento.roi))}>
-              {rendimiento.roi >= 0 ? '+' : ''}{(rendimiento.roi * 100).toFixed(1)}%
+              {rendimiento.roi === null ? 'N/D' : `${rendimiento.roi >= 0 ? '+' : ''}${(rendimiento.roi * 100).toFixed(1)}%`}
             </div>
           </div>
           <div>
             <div className="text-xs text-texto-terciario">Win Rate</div>
             <div className={clsx('font-mono font-semibold', getColorWinRate(rendimiento.winRate))}>
-              {(rendimiento.winRate * 100).toFixed(1)}%
+              {rendimiento.winRate === null ? 'N/D' : `${(rendimiento.winRate * 100).toFixed(1)}%`}
             </div>
           </div>
         </div>
@@ -436,7 +438,8 @@ export function ResumenMetricasFutbol({
     const totalGanadas = metricas.rendimiento.reduce((acc, r) => acc + r.ganadas, 0);
     const totalPerdidas = metricas.rendimiento.reduce((acc, r) => acc + r.perdidas, 0);
     const stakeTotal = metricas.rendimiento.reduce((acc, r) => acc + r.stakeTotal, 0);
-    const gananciaNeta = metricas.rendimiento.reduce((acc, r) => acc + r.gananciaNeta, 0);
+    const gananciasCompletas = metricas.rendimiento.length > 0 && metricas.rendimiento.every((r) => r.gananciaNeta !== null);
+    const gananciaNeta = gananciasCompletas ? metricas.rendimiento.reduce((acc, r) => acc + (r.gananciaNeta ?? 0), 0) : null;
 
     const brierMedidos = metricas.calibracion.map((c) => c.brierScore).filter((n): n is number => n !== null);
     const eceMedidos = metricas.calibracion.map((c) => c.ece).filter((n): n is number => n !== null);
@@ -447,8 +450,8 @@ export function ResumenMetricasFutbol({
       totalApuestas,
       totalGanadas,
       totalPerdidas,
-      winRate: totalApuestas > 0 ? totalGanadas / totalApuestas : 0,
-      roi: stakeTotal > 0 ? gananciaNeta / stakeTotal : 0,
+      winRate: totalGanadas + totalPerdidas > 0 ? totalGanadas / (totalGanadas + totalPerdidas) : null,
+      roi: stakeTotal > 0 && gananciaNeta !== null ? gananciaNeta / stakeTotal : null,
       stakeTotal,
       gananciaNeta,
       brierPromedio,
@@ -474,18 +477,18 @@ export function ResumenMetricasFutbol({
           <div className="text-center p-4 rounded-lg bg-futurista-oscuro/50 border border-neon-cyan/10">
             <div className="flex items-center justify-center gap-1 text-texto-terciario mb-2">
               <TrendingUp size={14} />
-              <span className="text-xs uppercase tracking-wider">ROI Global</span>
+              <span className="text-xs uppercase tracking-wider">ROI registrado</span>
             </div>
             <div className={clsx('text-3xl font-mono font-bold', getColorROI(metricasGlobales.roi))}>
-              {metricasGlobales.roi >= 0 ? '+' : ''}{(metricasGlobales.roi * 100).toFixed(1)}%
+              {metricasGlobales.roi === null ? 'N/D' : `${metricasGlobales.roi >= 0 ? '+' : ''}${(metricasGlobales.roi * 100).toFixed(1)}%`}
             </div>
-            <BarraProgreso
+            {metricasGlobales.roi !== null && <BarraProgreso
               valor={Math.abs(metricasGlobales.roi)}
               max={0.3}
               colorInicio={metricasGlobales.roi >= 0 ? 'from-neon-verde' : 'from-neon-rojo'}
               colorFin={metricasGlobales.roi >= 0 ? 'to-neon-verde/50' : 'to-neon-rojo/50'}
               className="mt-2"
-            />
+            />}
           </div>
 
           {/* Win Rate */}
@@ -495,7 +498,7 @@ export function ResumenMetricasFutbol({
               <span className="text-xs uppercase tracking-wider">Win Rate</span>
             </div>
             <div className={clsx('text-3xl font-mono font-bold', getColorWinRate(metricasGlobales.winRate))}>
-              {(metricasGlobales.winRate * 100).toFixed(1)}%
+              {metricasGlobales.winRate === null ? 'N/D' : `${(metricasGlobales.winRate * 100).toFixed(1)}%`}
             </div>
             <div className="text-xs text-texto-terciario mt-1">
               {metricasGlobales.totalGanadas}W / {metricasGlobales.totalPerdidas}L
@@ -581,14 +584,14 @@ export function ResumenMetricasFutbol({
         <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-amarillo mb-4 flex items-center gap-2">
           <span className="w-8 h-px bg-gradient-to-r from-neon-amarillo to-transparent" />
           <Award size={16} />
-          ROI por Categoría
+          ROI registrado por Categoría
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {metricasAgrupadas.map((grupo) => {
-            const roiCategoria = grupo.rendimiento.length > 0
-              ? grupo.rendimiento.reduce((acc, r) => acc + r.gananciaNeta, 0) /
-                Math.max(grupo.rendimiento.reduce((acc, r) => acc + r.stakeTotal, 0), 1)
-              : 0;
+            const stakeCategoria = grupo.rendimiento.reduce((acc, r) => acc + r.stakeTotal, 0);
+            const roiCategoria = stakeCategoria > 0 && grupo.rendimiento.every((r) => r.gananciaNeta !== null)
+              ? grupo.rendimiento.reduce((acc, r) => acc + (r.gananciaNeta ?? 0), 0) / stakeCategoria
+              : null;
             const totalApuestas = grupo.rendimiento.reduce((acc, r) => acc + r.nApuestas, 0);
 
             return (
@@ -605,15 +608,15 @@ export function ResumenMetricasFutbol({
                   )}
                 </div>
                 <div className={clsx('text-2xl font-mono font-bold mb-2', getColorROI(roiCategoria))}>
-                  {roiCategoria >= 0 ? '+' : ''}{(roiCategoria * 100).toFixed(1)}%
+                  {roiCategoria === null ? 'N/D' : `${roiCategoria >= 0 ? '+' : ''}${(roiCategoria * 100).toFixed(1)}%`}
                 </div>
-                <BarraProgreso
+                {roiCategoria !== null && <BarraProgreso
                   valor={Math.abs(roiCategoria)}
                   max={0.2}
                   colorInicio={roiCategoria >= 0 ? 'from-neon-verde' : 'from-neon-rojo'}
                   colorFin={roiCategoria >= 0 ? 'to-neon-verde/50' : 'to-neon-rojo/50'}
                   className="mb-2"
-                />
+                />}
                 <div className="flex items-center justify-between text-xs text-texto-terciario">
                   <span>{totalApuestas} apuestas</span>
                   <span>{grupo.rendimiento.length} mercados</span>

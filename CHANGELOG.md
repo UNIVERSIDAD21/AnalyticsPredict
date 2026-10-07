@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — ROI fútbol registrado sin cero ficticio
+
+- El endpoint de rendimiento deja ROI, ganancia y win rate en `null` si falta denominador o importe completo; la serie temporal deja ROI/ganancia en `null` hasta tener muestra y ganancias observadas. No se reescribió ninguna apuesta.
+- El cliente convierte el porcentaje de ROI de la API a razón una sola vez y muestra N/D si falta dato; los resúmenes globales/por categoría no convierten mercados incompletos en 0 %. El ROI que sí existe se rotula **registrado**, no certificado.
+
 ## 2026-10-06 — reconciliación oficial de marcadores NBA y Euroliga
 
 - Neon: 81 finales NBA y un final Euroliga reprogramado recuperaron marcador/cuartos oficiales; 67 pospuestos NBA y 82 filas Euroliga sin final en su registro 0–0 quedaron `valido=false`, preservados. Respaldo, ensayos transaccionales, postflight read-only y rollback ensayado fuera del repositorio. Cinco apuestas y 66 vínculos de predicción no cambiaron.

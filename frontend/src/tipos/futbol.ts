@@ -554,10 +554,11 @@ export interface MetricasRendimientoFutbol {
   nApuestas: number;
   ganadas: number;
   perdidas: number;
-  roi: number;
-  winRate: number;
+  /** Razón (0.10 = 10 %); null si no hay stake o ganancia completa. */
+  roi: number | null;
+  winRate: number | null;
   stakeTotal: number;
-  gananciaNeta: number;
+  gananciaNeta: number | null;
 }
 
 /**
@@ -576,9 +577,9 @@ export interface EstadoModeloFutbol {
 
 export interface PuntoROITemporalFutbol {
   fecha: string;
-  roi: number;
+  roi: number | null;
   stakeAcumulado: number;
-  gananciaAcumulada: number;
+  gananciaAcumulada: number | null;
 }
 
 /**

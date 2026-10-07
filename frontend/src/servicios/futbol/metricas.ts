@@ -49,10 +49,11 @@ function transformarMetricasRendimiento(
     nApuestas: Number(data.n_apuestas || data.nApuestas || 0),
     ganadas: Number(data.ganadas || 0),
     perdidas: Number(data.perdidas || 0),
-    roi: Number(data.roi || 0),
-    winRate: Number(data.win_rate || data.winRate || 0),
+    // La API expresa ROI en porcentaje; la UI trabaja con razón.
+    roi: data.roi == null ? null : Number(data.roi) / 100,
+    winRate: data.win_rate == null && data.winRate == null ? null : Number(data.win_rate ?? data.winRate),
     stakeTotal: Number(data.stake_total || data.stakeTotal || 0),
-    gananciaNeta: Number(data.ganancia_neta || data.gananciaNeta || 0),
+    gananciaNeta: data.ganancia_neta == null && data.gananciaNeta == null ? null : Number(data.ganancia_neta ?? data.gananciaNeta),
   };
 }
 
@@ -261,9 +262,9 @@ export async function obtenerRoiTemporal(
 
     return serie.map((p) => ({
       fecha: String(p.fecha || ''),
-      roi: Number(p.roi || 0),
+      roi: p.roi == null ? null : Number(p.roi) / 100,
       stakeAcumulado: Number(p.stake_acumulado || 0),
-      gananciaAcumulada: Number(p.ganancia_acumulada || 0),
+      gananciaAcumulada: p.ganancia_acumulada == null ? null : Number(p.ganancia_acumulada),
     }));
   } catch (error) {
     throw new Error(extraerMensajeError(error));

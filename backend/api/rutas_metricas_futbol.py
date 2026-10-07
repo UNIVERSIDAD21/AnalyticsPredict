@@ -637,7 +637,7 @@ async def obtener_metricas_rendimiento(
                         metricas=[],
                     )
 
-                ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "0"  # CORREGIDO
+                ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "NULL::numeric"
                 query = """
                     SELECT
                         mercado,
@@ -645,7 +645,8 @@ async def obtener_metricas_rendimiento(
                         SUM(CASE WHEN {estado_col} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
                         SUM(CASE WHEN {estado_col} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
                         SUM(stake) as stake_total,
-                        SUM(COALESCE({ganancia_col}, 0)) as ganancia_neta
+                        SUM({ganancia_col}) as ganancia_neta,
+                        COUNT({ganancia_col}) as n_ganancias
                     FROM apuestas_futbol
                     WHERE {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
                 """.format(
@@ -670,20 +671,21 @@ async def obtener_metricas_rendimiento(
                 metricas = []
                 for fila in filas:
                     total = (fila["ganadas"] or 0) + (fila["perdidas"] or 0)
-                    win_rate = (fila["ganadas"] or 0) / total if total > 0 else 0
+                    win_rate = (fila["ganadas"] or 0) / total if total > 0 else None
                     stake = float(fila["stake_total"] or 0)
-                    ganancia = float(fila["ganancia_neta"] or 0)
-                    roi = (ganancia / stake * 100) if stake > 0 else 0
+                    ganancias_completas = fila["n_ganancias"] == fila["n_apuestas"]
+                    ganancia = float(fila["ganancia_neta"]) if ganancias_completas and fila["ganancia_neta"] is not None else None
+                    roi = (ganancia / stake * 100) if ganancia is not None and stake > 0 else None
 
                     metricas.append(MetricasRendimiento(
                         mercado=fila["mercado"],
                         n_apuestas=fila["n_apuestas"],
                         ganadas=fila["ganadas"] or 0,
                         perdidas=fila["perdidas"] or 0,
-                        roi=round(roi, 2),
-                        win_rate=round(win_rate, 4),
+                        roi=round(roi, 2) if roi is not None else None,
+                        win_rate=round(win_rate, 4) if win_rate is not None else None,
                         stake_total=round(stake, 2),
-                        ganancia_neta=round(ganancia, 2),
+                        ganancia_neta=round(ganancia, 2) if ganancia is not None else None,
                     ))
 
                 return ListaMetricasRendimientoResponse(
@@ -725,8 +727,10 @@ async def obtener_roi_temporal(
                     delta_diario AS (
                         SELECT
                             DATE(fecha_creacion) AS fecha,
-                            SUM(COALESCE({ganancia_col}, 0)) AS delta_ganancia,
-                            SUM(COALESCE(stake, 0)) AS delta_stake
+                            SUM({ganancia_col}) AS delta_ganancia,
+                            SUM(COALESCE(stake, 0)) AS delta_stake,
+                            COUNT(*) AS n_apuestas,
+                            COUNT({ganancia_col}) AS n_ganancias
                         FROM apuestas_futbol
                         WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
                           AND fecha_creacion >= (CURRENT_DATE - (%s - 1) * INTERVAL '1 day')
@@ -735,7 +739,9 @@ async def obtener_roi_temporal(
                     SELECT
                         s.fecha,
                         SUM(COALESCE(d.delta_ganancia, 0)) OVER (ORDER BY s.fecha) AS ganancia_acumulada,
-                        SUM(COALESCE(d.delta_stake, 0)) OVER (ORDER BY s.fecha) AS stake_acumulado
+                        SUM(COALESCE(d.delta_stake, 0)) OVER (ORDER BY s.fecha) AS stake_acumulado,
+                        SUM(COALESCE(d.n_apuestas, 0)) OVER (ORDER BY s.fecha) AS n_apuestas,
+                        SUM(COALESCE(d.n_ganancias, 0)) OVER (ORDER BY s.fecha) AS n_ganancias
                     FROM serie_dias s
                     LEFT JOIN delta_diario d ON d.fecha = s.fecha
                     ORDER BY s.fecha ASC
@@ -746,14 +752,15 @@ async def obtener_roi_temporal(
                 serie = []
                 for fila in filas:
                     stake_acum = float(fila["stake_acumulado"] or 0)
-                    ganancia_acum = float(fila["ganancia_acumulada"] or 0)
-                    roi_pct = (ganancia_acum / stake_acum * 100.0) if stake_acum > 0 else 0.0
+                    ganancia_completa = fila["n_apuestas"] == fila["n_ganancias"] and fila["n_apuestas"] > 0
+                    ganancia_acum = float(fila["ganancia_acumulada"]) if ganancia_completa else None
+                    roi_pct = (ganancia_acum / stake_acum * 100.0) if ganancia_acum is not None and stake_acum > 0 else None
                     serie.append(
                         {
                             "fecha": fila["fecha"].isoformat(),
-                            "roi": round(roi_pct, 4),
+                            "roi": round(roi_pct, 4) if roi_pct is not None else None,
                             "stake_acumulado": round(stake_acum, 2),
-                            "ganancia_acumulada": round(ganancia_acum, 2),
+                            "ganancia_acumulada": round(ganancia_acum, 2) if ganancia_acum is not None else None,
                         }
                     )
 
