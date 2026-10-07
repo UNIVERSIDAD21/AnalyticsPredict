@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — semántica analítica single-user vigente
+
+- El catálogo KPI refleja el gate actual 114/181/67 del P&L. El mapa semántico y el inventario de vistas distinguen implementaciones reales de propuestas históricas; N/D, fuente, grano, exclusiones y límites prospectivos quedan explícitos. No se creó una vista física nueva ni se declaró rendimiento certificado.
+
 ## 2026-10-06 — probe controlado de ESPN Soccer
 
 - Se añadió auditor read-only de calendario/resultado mensual ESPN Soccer con kickoff UTC, marcador final explícito y corners/tiros solo con dos equipos completos. 403 o contrato roto detienen el lote sin retries ni escritura; 200 vacío produce `NO_DATA` solo para mes/liga consultados.

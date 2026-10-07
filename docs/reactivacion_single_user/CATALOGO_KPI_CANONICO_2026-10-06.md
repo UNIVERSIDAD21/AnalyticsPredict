@@ -1,6 +1,6 @@
 # Catálogo semántico de KPI — definición v0 (2026-10-06)
 
-**Estado de implementación:** fórmulas y guardas definidas; las vistas canónicas/materialización y su integración en UI siguen pendientes. Ningún ROI o win rate de este corte es rentabilidad certificada. Responsable lógico: analítica de AnalyticsPredict. Actualización prevista tras ingesta/resolución, con corte temporal explícito y `n` visible; los históricos nunca se interpretan como pronóstico de rendimiento.
+**Estado de implementación:** fórmulas y guardas definidas; las vistas canónicas/materialización y su integración en UI siguen pendientes. Ningún ROI o win rate de este corte es rentabilidad certificada. Responsable lógico: analítica de AnalyticsPredict. Actualización prevista tras ingesta/resolución, con corte temporal explícito y `n` visible; los históricos nunca se interpretan como pronóstico de rendimiento. **Adenda vigente:** 114/181 binarias NBA no evaluables (115/182 apuestas totales), 67 aritméticamente coherentes sin procedencia primaria y ocho discrepancias deportivas.
 
 ## Granos y contrato común
 
@@ -11,7 +11,7 @@ Grano de apuesta: `id`, deporte, mercado, lado, línea, cuota, stake, resultado 
 | Total Bets | `count(id)`; publicar además `n_resueltas` y `n_binarias` | conteo, bitácoras | No es n de predicciones; separar pendientes/anuladas. |
 | Win Rate | `ganadas / (ganadas + perdidas)` | %, bitácoras | `n_binarias>0`; muestra y ventana explícitas. 143/181 NBA es **registrado**, no validación temporal. |
 | Profit | `sum(ganancia_validada)` para ganadas/perdidas | moneda/unidad de stake, bitácoras | Fila ganada: `stake*(cuota-1)`; perdida: `-stake`, tolerancia 0,02, stake>0, cuota>1; si hay incompatibles en el corte, KPI certificado `NULL`, publicar conteo conflictivo. |
-| ROI | `Profit / sum(stake)` sobre exactamente las mismas filas resueltas y validadas | %, bitácoras | Denominador positivo y coherencia P&L de todas las filas del segmento; 102/181 NBA fallan la fórmula y una fila adicional tiene cuota del lado discrepante: **103 no evaluables**, ROI global `N/D` y no certificado. No usar `sum(ganancia)/sum(stake)` histórico como ROI validado. |
+| ROI | `Profit / sum(stake)` sobre exactamente las mismas filas resueltas y validadas | %, bitácoras | Denominador positivo y coherencia P&L de todas las filas del segmento. Gate vigente: **114/181** binarias NBA no evaluables; 67 solo aritméticas, sin fuente primaria de stake/cuota. ROI global `N/D` y no certificado. No usar `sum(ganancia)/sum(stake)` histórico como ROI validado. |
 | Average Stake | `sum(stake válido) / n(stake válido)` | moneda/unidad de stake, bitácoras | Excluir stake nulo/no positivo y mostrar n válido/excluido; no mezclar monedas. |
 | Accuracy | `sum((p>=0,5)==y) / n(p,y)` | %, predicciones resueltas | Solo outcome binario y p∈[0,1]; declarar política de empate p=0,5 y dependencia por partido. |
 | Brier Score | `sum((p-y)^2)/n(p,y)` | [0,1], predicciones resueltas | Raw y calibrada en series separadas; no inferir calibración de `p_cal=p_raw`; `n` por mercado/version. |
@@ -27,3 +27,5 @@ Grano de apuesta: `id`, deporte, mercado, lado, línea, cuota, stake, resultado 
 ## Contrato de calidad y publicación
 
 Un consumidor debe recibir `{valor, unidad, n, n_excluidas, ventana, deporte, mercado, version, estado_calidad, corte_utc}`. `estado_calidad` distingue `VALIDO_DESCRIPTIVO`, `NO_EVALUABLE` y `NO_CERTIFICADO`; no rellenar `NULL` con cero ni fusionar raw/calibrada. `DATA_QUALITY_RULES.md` y `SCORECARD_CALIDAD_DE_DATOS.md` son guards de publicación; `TRAZABILIDAD_CONFIDENCE_2026-10-06.md` registra la fórmula vigente sin validarla. Los tests `test_auditar_corte_analitico.py` prueban Brier/Log Loss/ECE con pares conocidos y exclusión de pendientes del win rate; faltan pruebas de vistas/granularidad e integración UI. Esta definición no debe marcar como terminada la capa canónica completa.
+
+**Contrato por dominio:** NBA interno no genera picks ni stakes. No trasladar KPI monetarios de bitácora al módulo de análisis NBA. En fútbol, el endpoint de rendimiento entrega ROI en porcentaje o `null`; el adaptador frontend convierte a razón y muestra N/D si falta stake/ganancia. Un valor aritmético de fútbol sigue siendo registrado/no certificado sin outcome y fuente temporalmente verificables.

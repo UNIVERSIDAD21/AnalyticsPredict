@@ -17,6 +17,7 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 ## Prioridades activas
 - Seguir las instrucciones más recientes del propietario y el roadmap single-user.
 - H7 y la base de reproducibilidad/CI se verificaron con pruebas dirigidas y CI alojada (4/4 jobs, 2026-10-06). La recertificación analítica **no pasó**: ver `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md` antes de citar métricas de rendimiento.
+- Para semántica analítica vigente, consultar `docs/reactivacion_single_user/CATALOGO_KPI_CANONICO_2026-10-06.md`, `VISTAS_ANALITICAS_CANONICAS.md` y `MAPA_SEMANTICO_DEL_SISTEMA.md`; los homónimos de `borlty-deliverables` son propuestas históricas.
 - Mantener estado y changelog al cerrar bloques; el plan comercial y sus órdenes son históricos.
 
 ## Estrategia comercial histórica (C0; no vigente)
