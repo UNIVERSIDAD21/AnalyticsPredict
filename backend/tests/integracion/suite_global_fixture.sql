@@ -107,6 +107,7 @@ CREATE TABLE partidos_baloncesto (
     local_q3 integer,
     local_q4 integer,
     local_total integer,
+    valido boolean DEFAULT true,
     visitante_q1 integer,
     visitante_q2 integer,
     visitante_q3 integer,

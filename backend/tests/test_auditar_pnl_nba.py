@@ -49,6 +49,17 @@ def test_partido_cero_cero_excluye_aunque_profit_concilie():
     assert salida["motivo"] == "RESULTADO_PARTIDO_CERO_CERO_NO_ACREDITADO"
 
 
+def test_resultado_incompatible_con_marcador_excluye_sin_reescribir_liquidacion():
+    fila = _fila("GANADA")
+    fila.update({"lado": "UNDER", "linea": Decimal("250.5"),
+                 "puntos_partido": 265, "partido_valido": True})
+    assert clasificar_fila(fila)["motivo"] == "RESULTADO_INCOMPATIBLE_CON_MARCADOR"
+    fila["puntos_partido"] = 240
+    assert clasificar_fila(fila)["estado_pnl"] == "ARITMETICAMENTE_CONSISTENTE"
+    fila["partido_valido"] = False
+    assert clasificar_fila(fila)["motivo"] == "PARTIDO_INVALIDADO"
+
+
 def test_roi_provisional_usa_exclusivamente_mismas_filas_conciliables():
     filas = [
         {"estado_pnl": "ARITMETICAMENTE_CONSISTENTE", "resultado": "GANADA", "stake": "100",

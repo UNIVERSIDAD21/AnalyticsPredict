@@ -36,6 +36,20 @@ def clasificar_fila(fila: dict[str, Any]) -> dict[str, Any]:
     if fila.get("partido_cero_cero"):
         salida["motivo"] = "RESULTADO_PARTIDO_CERO_CERO_NO_ACREDITADO"
         return salida
+    if fila.get("partido_valido") is False:
+        salida["motivo"] = "PARTIDO_INVALIDADO"
+        return salida
+    puntos = fila.get("puntos_partido")
+    linea = fila.get("linea")
+    lado = fila.get("lado")
+    if (resultado in {"GANADA", "PERDIDA", "PUSH"} and puntos is not None
+            and linea is not None and lado in {"OVER", "UNDER"}):
+        esperado_deportivo = ("PUSH" if puntos == linea else
+                              "GANADA" if (puntos > linea) == (lado == "OVER") else
+                              "PERDIDA")
+        if resultado != esperado_deportivo:
+            salida["motivo"] = "RESULTADO_INCOMPATIBLE_CON_MARCADOR"
+            return salida
     if stake is None or ganancia is None or stake <= 0:
         salida["motivo"] = "STAKE_O_GANANCIA_INVALIDO"
         return salida
@@ -109,7 +123,15 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             """SELECT a.id, a.partido_id, a.fecha_partido, a.mercado, a.lado,
                       a.cuota, a.stake, a.resultado, a.ganancia, a.creado_en,
                       a.fecha_resolucion, a.cuota_over, a.cuota_under,
-                      a.stake_porcentaje, a.bankroll_momento,
+                      a.stake_porcentaje, a.bankroll_momento, a.linea,
+                      pb.valido AS partido_valido,
+                      CASE a.mercado
+                        WHEN 'COMPLETO' THEN pb.local_total + pb.visitante_total
+                        WHEN 'Q1' THEN pb.local_q1 + pb.visitante_q1
+                        WHEN 'Q2' THEN pb.local_q2 + pb.visitante_q2
+                        WHEN 'Q3' THEN pb.local_q3 + pb.visitante_q3
+                        WHEN 'Q4' THEN pb.local_q4 + pb.visitante_q4
+                      END AS puntos_partido,
                       (pb.local_total = 0 AND pb.visitante_total = 0) AS partido_cero_cero
                FROM apuestas a LEFT JOIN partidos_baloncesto pb ON pb.id = a.partido_id
                ORDER BY a.creado_en, a.id"""
@@ -135,6 +157,8 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             "ganancia_registrada": str(fila["ganancia"]) if fila["ganancia"] is not None else None,
             "resultado": fila["resultado"],
             "partido_cero_cero": bool(fila["partido_cero_cero"]),
+            "partido_valido": fila["partido_valido"],
+            "puntos_partido": fila["puntos_partido"],
             "ganancia_esperada": str(evaluacion["ganancia_esperada"]) if evaluacion["ganancia_esperada"] is not None else None,
             "estado_pnl": evaluacion["estado_pnl"],
             "motivo": evaluacion["motivo"],
@@ -153,6 +177,8 @@ def auditar(url: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         "cuota_lado_discrepante": sum(d["cuota_lado_discrepante"] for d in detalle),
         "partido_id_ausente": sum(not d["partido_id_presente"] for d in detalle),
         "resultado_partido_cero_cero_no_acreditado": sum(d["partido_cero_cero"] for d in detalle),
+        "resultado_incompatible_con_marcador": sum(
+            d["motivo"] == "RESULTADO_INCOMPATIBLE_CON_MARCADOR" for d in detalle),
         "fuente_cuota": "NO_REGISTRADA",
         "unidad_stake": "NO_REGISTRADA",
         "roi_certificado": None,
