@@ -1,18 +1,19 @@
 # Clasificación de datos deportivos dudosos — corte read-only 2026-10-06
 
-**Estado:** categorías y exclusión preventiva de nuevas resoluciones NBA 0–0 implementadas; métricas históricas aún requieren filtro canónico. **No certifica** marcador ni resultado de proveedor.
+**Estado:** exclusión preventiva y filtros principales de outcomes NBA 0–0 implementados. El contraste externo posterior distingue NBA de Euroliga; **no** certifica desempeño de modelos ni habilita imputación automática.
 
 ## Hallazgos en Neon
 
 | Grupo | n | Hecho observable | Clasificación operativa |
 |---|---:|---|---|
 | NBA sin `source` normalizado | 219 | Los 219 tienen `fuente_datos=ESPN`, `espn_game_id` y tipo REG; 138 muestran ambos totales positivos y 81 muestran 0–0. | `SOURCE_ALIAS_LEGACY`: procedencia parcial recuperable por ID ESPN, sin equiparar el alias faltante con verificación de resultado. |
-| NBA 0–0 | 231 | 83 `source=SOFASCORE`, 81 `source=NULL` y 67 `source=ESPN` (58 REG, 9 POST); todos `valido=true` pero sin ganador ni puntos en cuartos. Intersección con grupo anterior: 81. | `ZERO_ZERO_NO_OUTCOME`: resultado no acreditado. Sin campo de estado original suficiente para distinguir programado, cancelado o error. |
+| NBA 0–0 | 148 | 81 `source=NULL` y 67 `source=ESPN` (58 REG, 9 POST); todos `valido=true` pero sin ganador ni puntos en cuartos. Intersección con grupo anterior: 81. | `ZERO_ZERO_NO_OUTCOME`: resultado almacenado no acreditado. El contraste ESPN posterior diferencia pospuestos de marcadores finales omitidos. |
+| Euroliga 0–0 | 83 | `source=SOFASCORE`, competición `euroleague`, sin ID ESPN. | Resultado no acreditado; no sumarlos al KPI NBA ni inferir estado final desde 0–0. |
 | Predicciones NBA enlazadas a 0–0 | 66 | 42 pendientes; **24 ya resueltas** con outcome binario (12 COMPLETO, 8 Q1, 2 Q2, 2 Q3), fechas 2026-01-24/25. | Las 24 no son pares de resultado defendibles. No reescribir sin fuente primaria; excluir de métricas evaluables. |
 | Apuestas NBA enlazadas a 0–0 | 5 | 4 GANADA y 1 PERDIDA, con ganancia registrada. | No atribuir P&L/ROI certificado a ese evento. Conservación y exclusión analítica pendientes de consolidar en KPI canónico. |
 | Fútbol FINALIZADO sin goles completos | 25 | Los 25 tienen `fuente_datos=SOFASCORE`, ID de fuente, `datos_completos=false`; 3 registran corners/disparos. Fechas 2019-05-01 a 2023-11-18; cero predicciones enlazadas. | `FINALIZADO_SIN_GOLES`: no resolver 1X2 o mercados de goles; corners/disparos solo con completitud propia por mercado. No convertir NULL en 0. |
 
-Los 219 y 231 **se superponen**; sumarlos como si fueran partidos distintos inflaría el problema. `valido=true`, `estado=FINALIZADO` o un ID de proveedor no demuestran por sí solos que haya marcador final íntegro. Ninguna fila fue actualizada, borrada o imputada.
+Los 219 alias de fuente y los 148 NBA 0–0 **se superponen** en 81 filas. El antiguo total 231 era de toda `partidos_baloncesto`: 148 NBA + 83 Euroliga. `valido=true`, `estado=FINALIZADO` o un ID de proveedor no demuestran por sí solos que haya marcador final íntegro. Ninguna fila fue actualizada, borrada o imputada.
 
 ## Regla de consumo y límites
 
@@ -23,16 +24,17 @@ Las métricas históricas NBA publicadas antes de un filtro canónico de los 24 
 ## Checklist y criterio de aceptación
 
 - [x] Clasificar 219 alias de fuente sin borrar identificadores.
-- [x] Clasificar 231 marcadores 0–0 y el solapamiento de 81.
+- [x] Separar 231 marcadores 0–0 por competición (148 NBA, 83 Euroliga) y el solapamiento de 81 NBA sin `source`.
 - [x] Clasificar 25 finalizados fútbol con goles nulos y mercados afectados.
 - [x] Identificar 24 outcomes NBA y 5 apuestas ligados a 0–0.
 - [x] Impedir nuevas resoluciones NBA basadas en 0–0.
 - [x] Mantener Neon/histórico intactos.
-- [ ] Confirmar estado final de los 231 eventos contra fuente primaria independiente; el campo local no lo demuestra.
+- [x] Contrastar los 148 NBA por ID con ESPN: 67 pospuestos y 81 finales con marcador positivo; es verificación externa de ESPN, no segundo proveedor independiente.
+- [ ] Contrastar los 83 Euroliga con fuente accesible; Sofascore sigue bloqueado y el 0–0 local no acredita estado.
 - [ ] Excluir y contar los 24 pares y las 5 apuestas en **todos** los KPI/caches consumidores; pendiente capa canónica.
 - [ ] Verificar resultados de los 25 partidos fútbol contra proveedor permitido o dejar formalmente sin outcome.
 
-**Aceptación parcial:** clasificación técnica documentada y prevención futura; **no** hay certificación de resultados históricos ni cierre global del bloque E hasta propagar exclusiones a métricas. Siguiente acción: cotejo permitido de proveedores y filtro KPI central con pruebas SQL/API/UI.
+**Aceptación parcial:** clasificación y exclusión preventiva documentadas. El bloque E sigue abierto por Euroliga, consumidores residuales y reconciliación controlada del histórico NBA; las métricas permanecen no certificadas.
 
 ## Adenda: exclusión en consumidores principales
 
@@ -46,7 +48,7 @@ La siguiente pasada de código también separa el outcome registrado del evaluab
 
 El reporte de backtest mantiene las filas para trazabilidad, con `outcome_no_evaluable=true`, outcome/valor real `NULL` y CSV rotulado `NO_EVALUABLE` en vez de PUSH. Resumen y curva los excluyen; el alias de nombres de equipos se resuelve contra `equipos`, compatible con la vista H9 productiva. **No** convierte el backtest histórico en walk-forward ni lo certifica.
 
-La vista SQL directa `vista_resumen_calibracion`, precálculos antiguos en `metricas_calibracion` y otros consumidores legacy aún requieren inventario/versión o invalidación explícita. La verificación independiente del resultado de los 231 partidos sigue sin fuente primaria; por ello el bloque E permanece abierto. La nota anterior que menciona salud/calidad/drift como pendientes describe el corte previo a esta propagación.
+La vista SQL directa y los precálculos se atendieron en la pasada posterior descrita abajo. La verificación por competición se registra en la adenda final; el bloque E permanece abierto. La nota anterior que menciona salud/calidad/drift como pendientes describe el corte previo a esta propagación.
 
 ## Preflight de vista agregada y precálculos
 
@@ -54,8 +56,18 @@ La lectura Neon del 2026-10-06 encontró **0 filas** en `metricas_calibracion`: 
 
 La vista directa `vista_resumen_calibracion` conservó 12 columnas y cinco grupos de mercado; antes del cambio contaba **2.582 pares**: COMPLETO 1.650, Q1 376, Q2 224, Q3 182 y Q4 150. Un join read-only identificó respectivamente 12, 8, 2, 2 y 0 pares ligados a 0–0. `backend/migrations/2026-10-06_resumen_calibracion_sin_outcome_cero_cero.sql` fue aplicada a Neon tras CI 4/4 verde (PR #174, run 37542252315; rama canónica run 37542400840); su rollback exacto quedó preparado y ensayado en PostgreSQL efímero. El postflight transaccional e independiente read-only confirmó **2.558 pares**: COMPLETO 1.638, Q1 368, Q2 222, Q3 180 y Q4 150. Se conservaron contrato, owner/grants, vista base de 2.582 filas y 2.934 predicciones históricas. El rollback no fue necesario en Neon. La suite alojada de PostgreSQL sintético reportó 677 passed, 0 failed, 0 skipped.
 
-El filtro 0–0 corrige solo la validez de outcome; no convierte 2.558 pares en datos temporales válidos ni independientes. Quedan pendientes la verificación primaria de los 231 partidos y la cadena prospectiva.
+El filtro 0–0 corrige solo la validez de outcome; no convierte 2.558 pares en datos temporales válidos ni independientes. Quedan pendientes Euroliga, reconciliación de marcadores NBA y cadena prospectiva.
 
 ## Ruta legacy de combinadas
 
-El inventario residual encontró que `resolver_combinadas` podía resolver una selección nueva desde los mismos totales 0–0 aunque los resolvedores de predicciones y apuestas ya estaban protegidos. Se añadió el guard equivalente: la selección permanece `PENDIENTE` y no ejecuta `UPDATE`. El cotejo Neon read-only mostró **0 selecciones de combinadas** enlazadas a los 231 partidos 0–0 (0 resueltas); no hubo reparaciones históricas. La selección automática de calibradores en `backtesting/calibradores/selector.py` recibe una secuencia suministrada por el llamador y no se invoca desde rutas activas del backend en este corte; no se usa para justificar métricas históricas. Las vistas de bitácora conservan registros sin convertir el detalle en un KPI certificado.
+El inventario residual encontró que `resolver_combinadas` podía resolver una selección nueva desde los mismos totales 0–0 aunque los resolvedores de predicciones y apuestas ya estaban protegidos. Se añadió el guard equivalente: la selección permanece `PENDIENTE` y no ejecuta `UPDATE`. El cotejo Neon read-only mostró **0 selecciones de combinadas** enlazadas a los 231 partidos de baloncesto 0–0 (0 resueltas); no hubo reparaciones históricas. La selección automática de calibradores en `backtesting/calibradores/selector.py` recibe una secuencia suministrada por el llamador y no se invoca desde rutas activas del backend en este corte; no se usa para justificar métricas históricas. Las vistas de bitácora conservan registros sin convertir el detalle en un KPI certificado.
+
+## Fe de erratas y contraste externo por competición
+
+El auditor anterior rotuló como NBA toda `partidos_baloncesto`. El corte read-only corregido delimita `competiciones_baloncesto.codigo='nba'`: **10.286 partidos NBA**, 219 sin `source`, **148 NBA 0–0**, 8 en los últimos 30 días y cero duplicados por ID de fuente no nulo. La tabla completa tiene 12.775 partidos: 10.286 NBA y 2.489 Euroliga. Por tanto, 12.775 y 231 en informes previos son conteos de **baloncesto agregado**, no de NBA.
+
+Una consulta HTTP fresca a ESPN `summary?event=<espn_game_id>` de los **148 NBA 0–0** obtuvo 148 respuestas 200 e identidad de evento concordante; las fechas coinciden o difieren un día por UTC. **67** figuran `STATUS_POSTPONED`, no completados. Los **81** restantes figuran finalizados con puntos positivos en ESPN mientras Neon conserva 0–0: son marcadores locales desactualizados, no evidencia para rellenar cuartos, OT u outcomes sin un proceso de reconciliación. Las diferencias de abreviatura observadas (`GSW/GS`, `WAS/WSH`, etc.) son alias de equipos y no se usaron para asignar resultados.
+
+Los 24 outcomes binarios excluidos pertenecen a tres eventos pospuestos; cinco apuestas ligadas a 0–0 se distribuyen en uno de esos eventos y cuatro de los 81 ya finalizados en ESPN. Permanecen visibles y **no evaluables** por la incoherencia del resultado almacenado. Los **83 Euroliga 0–0** proceden de Sofascore y no tienen ID ESPN; su verificación sigue pendiente por fuente bloqueada. La evidencia deportiva por evento está en la entrega externa `VERIFICACION_ESPN_EVENTOS_NBA_CERO_CERO_2026-10-06`, sin credenciales. Ninguna fila de Neon fue alterada en este contraste y el dictamen permanece **NO CERTIFICADO**.
+
+Un dry-run de ingesta NBA 2026-04-03→12 mostró **81 eventos** de esos días, pero proponía 39 inserciones nuevas y 42 existentes porque 39 fechas locales difieren un día de la fecha UTC usada en la clave natural. Los 81 IDs ESPN ya estaban en filas legacy `source=NULL`; una ingesta real habría creado duplicados. La detección de existencia ahora consulta también `espn_game_id` sin importar el alias `source` y nunca actualiza automáticamente esas filas legacy. Dry-run repetido: **81 existentes, 0 por insertar, 0 fallos**. La reconciliación de marcadores/cuarto/OT sigue siendo tarea separada.

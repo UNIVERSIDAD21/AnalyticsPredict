@@ -14,6 +14,8 @@
 | C | NBA, fútbol, walk-forward, confidence, odds, data quality, KPIs y observabilidad | 8 partidos NBA de pretemporada ingresados/verificados en Neon; reglas, scorecard local y catálogo KPI v0 publicados. P&L de 181 binarios clasificado read-only: 103 no evaluables para ROI, 78 conciliables solo aritméticamente; API/UI muestran N/D en cortes afectados. Dictamen **NO CERTIFICADO** por P&L inconsistente, metadatos temporales incompatibles y fútbol sin frescura | Ver `RECERTIFICACION_ANALITICA_2026-10-06.md`; contrastar outcomes independientemente y completar validación temporal antes de promoción o claims |
 | D | Explicabilidad avanzada, gobierno de modelos y evolución | Fuera del bloque inmediato | Solo tras recertificación C |
 
+**Corte de calidad por competición (2026-10-06):** el total 12.775 usado en algunos informes era baloncesto agregado. NBA tiene 10.286 partidos y 148 marcadores 0–0; Euroliga, 2.489 y 83. La consulta ESPN de los 148 NBA encontró 67 pospuestos y 81 finales no reflejados en los totales locales. Se corrigió el auditor/scorecard NBA; no se repararon filas históricas ni se certificó rendimiento. Bloque C/E sigue abierto por reconciliación, Euroliga y validación prospectiva.
+
 ## Dependencia inmediata
 
 El propietario confirmó uso exclusivamente local y decidió mostrar **todos** los registros deportivos como historial personal. La cuenta de mayor actividad aportó la configuración única; la procedencia original quedó en los backups privados. La migración fue ensayada en restauración aislada y aplicada a Neon tras un segundo backup verificado. Ningún cobro ni ingesta se utilizó como prueba de arranque.

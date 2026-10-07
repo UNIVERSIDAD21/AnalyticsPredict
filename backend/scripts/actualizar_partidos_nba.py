@@ -243,16 +243,21 @@ def fetch_events(start: date, end: date) -> list[dict[str, Any]]:
     return sorted(out.values(), key=lambda e: e.get("date", ""))
 
 
-def existing_keys(conn, records: list[dict[str, Any]]) -> tuple[set[str], set[tuple[Any, ...]]]:
+def existing_keys(conn, records: list[dict[str, Any]]) -> tuple[set[str], set[str], set[tuple[Any, ...]]]:
     source_ids = [r["source_game_id"] for r in records]
     exacts = [(r["temporada_id"], r["fecha_partido"], r["tipo_partido"], r["equipo_local_id"], r["equipo_visitante_id"]) for r in records]
     existing_source: set[str] = set()
+    existing_espn: set[str] = set()
     existing_exact: set[tuple[Any, ...]] = set()
     if not records:
-        return existing_source, existing_exact
+        return existing_source, existing_espn, existing_exact
     with conn.cursor() as cur:
         cur.execute("select source_game_id from partidos_baloncesto where source=%s and source_game_id = any(%s)", (SOURCE, source_ids))
         existing_source = {str(x[0]) for x in cur.fetchall()}
+        # Los registros legacy conservan espn_game_id aunque source sea NULL.
+        # Su fecha local puede diferir un día de la fecha UTC del proveedor.
+        cur.execute("select espn_game_id from partidos_baloncesto where espn_game_id = any(%s)", (source_ids,))
+        existing_espn = {str(x[0]) for x in cur.fetchall()}
         cur.execute(
             """
             select temporada_id::text, fecha_partido, tipo_partido, equipo_local_id::text, equipo_visitante_id::text
@@ -264,15 +269,16 @@ def existing_keys(conn, records: list[dict[str, Any]]) -> tuple[set[str], set[tu
             [item for tup in exacts for item in tup],
         )
         existing_exact = set(cur.fetchall())
-    return existing_source, existing_exact
+    return existing_source, existing_espn, existing_exact
 
 
 def upsert_records(conn, records: list[dict[str, Any]], dry_run: bool) -> dict[str, int]:
-    existing_source, existing_exact = existing_keys(conn, records)
+    existing_source, existing_espn, existing_exact = existing_keys(conn, records)
     stats = {"found": len(records), "inserted": 0, "existing": 0, "updated": 0, "failed": 0}
     if dry_run:
         stats["existing"] = sum(
             1 for r in records if r["source_game_id"] in existing_source or
+            r["source_game_id"] in existing_espn or
             (r["temporada_id"], r["fecha_partido"], r["tipo_partido"],
              r["equipo_local_id"], r["equipo_visitante_id"]) in existing_exact
         )
@@ -316,9 +322,12 @@ def upsert_records(conn, records: list[dict[str, Any]], dry_run: bool) -> dict[s
         for r in records:
             try:
                 natural = (r["temporada_id"], r["fecha_partido"], r["tipo_partido"], r["equipo_local_id"], r["equipo_visitante_id"])
-                # Una fila legacy sin ID de ESPN puede tener la misma clave natural.
-                # No insertar un duplicado ni sobrescribirla sin reconciliación explícita.
-                if natural in existing_exact and r["source_game_id"] not in existing_source:
+                # Una fila legacy puede tener ID ESPN pero carecer de source.
+                # No insertarla de nuevo ni sobrescribirla sin reconciliación explícita.
+                if (
+                    r["source_game_id"] not in existing_source
+                    and (r["source_game_id"] in existing_espn or natural in existing_exact)
+                ):
                     stats["existing"] += 1
                     continue
                 existed = r["source_game_id"] in existing_source

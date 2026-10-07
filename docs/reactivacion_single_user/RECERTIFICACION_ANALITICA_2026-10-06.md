@@ -4,6 +4,8 @@
 
 Evaluar el estado **medido**, no proyectar rentabilidad ni declarar modelos listos para operar. Se ejecutó `backend/scripts/auditar_corte_analitico.py` contra Neon en transacción `READ ONLY`, sin ingestas, entrenamiento, cambios de datos ni publicación. Los tests de fórmulas usan pares sintéticos conocidos. El corte fue a las 14:40 UTC del 2026-10-06. Datos y fechas descritos son los observados en ese instante; no equivalen a disponibilidad de fuente en tiempo real.
 
+> **Fe de erratas de alcance (contraste posterior):** el auditor original rotuló como NBA conteos de toda `partidos_baloncesto`. En la tabla histórica de abajo, 12.767 y 231 incluyen Euroliga. Antes de la ingesta eran **10.278 NBA** y **148 NBA 0–0**; después de ocho partidos ingresados son **10.286 NBA** y 148 NBA 0–0. Los 83 restantes son Euroliga. El auditor ya filtra `competiciones_baloncesto.codigo='nba'`. Los otros indicadores no cambian de dictamen por esta corrección.
+
 ## Resultado formal
 
 **NO CERTIFICADO** para rendimiento actual NBA, fútbol, calibración aplicada, ROI y walk-forward sin leakage. La auditoría produjo una línea de base reproducible y detectó bloqueos cuantificables. No se cambian umbrales, stakes ni políticas de promoción por este corte.
@@ -61,3 +63,5 @@ Con backend en `127.0.0.1:8000` con lifespan desactivado y conexión read-only, 
 **Adenda de outcomes 0–0:** los 24 outcomes binarios NBA ligados a marcadores 0–0 no acreditan resultado y se excluyen del auditor probabilístico y del cálculo/curva de calibración; quedan **2.558 pares raw** descriptivos. En P&L, el gate combinado deja **107/181** binarias no evaluables y 74 solo aritméticamente coherentes. Las cifras originales de esta página son el corte previo a la exclusión; el dictamen sigue **NO CERTIFICADO**. Ver `CLASIFICACION_DATOS_DUDOSOS_2026-10-06.md`.
 
 La vista SQL agregada `vista_resumen_calibracion` también se alineó en Neon: 2.582→2.558 pares tras excluir los 24 ligados a 0–0, sin reescribir predicciones ni cambiar sus 12 columnas. `metricas_calibracion` y `alertas_calibracion` estaban vacías en la lectura de control. Esto no repara las 2.136 violaciones temporales ni sustituye resultados de fuente independiente o prospectiva.
+
+**Contraste ESPN posterior:** los 148 partidos NBA 0–0 con ID ESPN se consultaron en vivo: 67 constan pospuestos y 81 finalizados con marcador positivo fuera de Neon. Los 24 outcomes binarios apartados corresponden a tres pospuestos. Las 81 filas locales 0–0 requieren reconciliación controlada; no se imputaron scores, cuartos u outcomes. Los 83 Euroliga no tienen ID ESPN y Sofascore permanece bloqueado. Es comparación contra el proveedor de origen, **no** validación entre proveedores ni prospectiva; ver `CLASIFICACION_DATOS_DUDOSOS_2026-10-06.md`.
