@@ -5,6 +5,11 @@
 - Neon: 81 finales NBA y un final Euroliga reprogramado recuperaron marcador/cuartos oficiales; 67 pospuestos NBA y 82 filas Euroliga sin final en su registro 0–0 quedaron `valido=false`, preservados. Respaldo, ensayos transaccionales, postflight read-only y rollback ensayado fuera del repositorio. Cinco apuestas y 66 vínculos de predicción no cambiaron.
 - El P&L excluye resultados que contradicen marcador/línea/lado: 111/181 binarias no evaluables, ocho discrepancias deportivas, ROI no certificado. PR #177 y CI 4/4 verde en PR y rama canónica. Ver `docs/reactivacion_single_user/RECONCILIACION_MARCADORES_BALONCESTO_2026-10-06.md`.
 
+## 2026-10-06 — apuestas sin evento vinculado y alias ESPN legacy
+
+- Auditoría read-only detectó 40 apuestas sin `partido_id` (39 binarias y una anulada); tres binarias y la anulada eran aritméticamente coherentes, pero carecían de un evento que permita cotejar el outcome. El gate de bitácora/auditoría las excluye: **114/181 binarias** (115/182 filas totales) no evaluables y **67 binarias** solo aritméticamente coherentes. Ocho resultados son incompatibles con marcador.
+- Neon normalizó `source/source_game_id` en 219 NBA desde `fuente_datos=ESPN` y `espn_game_id`: 219 IDs únicos, sin colisiones ni cambios de marcador. Backup/postflight SHA-256 y rollback ensayado fuera del repo. ROI sigue NO CERTIFICADO.
+
 ## 2026-10-06 — alcance NBA y estados externos de partidos 0–0
 
 - El auditor y scorecard NBA delimitan la competición: 10.286 partidos NBA y 148 NBA 0–0, frente a 12.775/231 de baloncesto agregado en informes previos. Contraste read-only de 148 IDs ESPN: 67 pospuestos y 81 finalizados con marcador positivo ausente en Neon. La ingesta detecta ID ESPN legacy aunque `source` sea nulo: dry-run de abril pasó de 39 inserciones duplicadas previstas a 0. Los 83 0–0 Euroliga siguen sin verificación externa. No se alteraron filas históricas ni el dictamen NO CERTIFICADO.
