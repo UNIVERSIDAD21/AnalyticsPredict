@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — probe controlado de ESPN Soccer
+
+- Se añadió auditor read-only de calendario/resultado mensual ESPN Soccer con kickoff UTC, marcador final explícito y corners/tiros solo con dos equipos completos. 403 o contrato roto detienen el lote sin retries ni escritura; 200 vacío produce `NO_DATA` solo para mes/liga consultados.
+- Probe La Liga: 36 finales en marzo 2026 (dos boxscores completos en muestra) y 36 programados en octubre 2026, cero finales al corte. Quedan pendientes mapeo de equipos/IDs, cobertura por liga, ingesta a Neon y outcomes prospectivos.
+
 ## 2026-10-06 — mantenimiento H12 y scripts legacy
 
 - Se retiró del Makefile el target de notificaciones B4, cuyo script ya no existe en la herramienta single-user. El resto de targets conserva scripts presentes.
