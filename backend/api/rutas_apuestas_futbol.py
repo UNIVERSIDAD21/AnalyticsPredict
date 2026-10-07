@@ -638,7 +638,10 @@ async def listar_apuestas(
                         SUM(CASE WHEN {col_estado or "''"} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
                         SUM(CASE WHEN {col_estado or "''"} = 'PUSH' THEN 1 ELSE 0 END) as push,
                         SUM(stake) as stake_total,
-                        SUM(COALESCE({col_ganancia_real or '0'}, 0)) as ganancia_neta
+                        SUM(stake) FILTER (WHERE {col_estado or "''"} IN ('GANADA', 'PERDIDA', 'PUSH')) as stake_resuelto,
+                        SUM({col_ganancia_real or 'NULL'}) FILTER (WHERE {col_estado or "''"} IN ('GANADA', 'PERDIDA', 'PUSH')) as ganancia_neta,
+                        COUNT(*) FILTER (WHERE {col_estado or "''"} IN ('GANADA', 'PERDIDA', 'PUSH')
+                                         AND {col_ganancia_real or 'NULL'} IS NULL) as ganancias_faltantes
                     FROM apuestas_futbol
                 """
                 cursor.execute(resumen_query)
@@ -647,8 +650,13 @@ async def listar_apuestas(
                 total_resueltas = (res["ganadas"] or 0) + (res["perdidas"] or 0)
                 win_rate = (res["ganadas"] or 0) / total_resueltas * 100 if total_resueltas > 0 else None
                 stake_total = float(res["stake_total"] or 0)
-                ganancia_neta = float(res["ganancia_neta"] or 0)
-                roi = (ganancia_neta / stake_total * 100) if stake_total > 0 else None
+                stake_resuelto = float(res["stake_resuelto"] or 0)
+                ganancia_neta = (float(res["ganancia_neta"])
+                                 if res["ganancia_neta"] is not None and not res["ganancias_faltantes"] else None)
+                roi = (
+                    ganancia_neta / stake_resuelto * 100
+                    if ganancia_neta is not None and stake_resuelto > 0 else None
+                )
 
                 resumen = ResumenApuestas(
                     total=res["total"] or 0,

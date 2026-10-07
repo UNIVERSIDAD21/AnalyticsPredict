@@ -979,12 +979,14 @@ async def obtener_resumen_sistema(
                     apuestas_activas = 0
 
                 # ROI y win rate global
-                ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "0"  # CORREGIDO
+                ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "NULL"
                 if columna_estado:
                     cursor.execute(f"""
                         SELECT
-                            SUM(stake) as stake_total,
-                            SUM(COALESCE({ganancia_col}, 0)) as ganancia_neta,
+                            SUM(stake) FILTER (WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')) as stake_resuelto,
+                            SUM({ganancia_col}) FILTER (WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')) as ganancia_neta,
+                            COUNT(*) FILTER (WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
+                                             AND {ganancia_col} IS NULL) as ganancias_faltantes,
                             SUM(CASE WHEN {columna_estado} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
                             SUM(CASE WHEN {columna_estado} IN ('GANADA', 'PERDIDA') THEN 1 ELSE 0 END) as resueltas
                         FROM apuestas_futbol
@@ -992,16 +994,18 @@ async def obtener_resumen_sistema(
                     stats = cursor.fetchone()
                 else:
                     stats = {
-                        "stake_total": 0,
-                        "ganancia_neta": 0,
+                        "stake_resuelto": None,
+                        "ganancia_neta": None,
+                        "ganancias_faltantes": 0,
                         "ganadas": 0,
                         "resueltas": 0,
                     }
 
                 roi = None
                 win_rate = None
-                if stats["stake_total"] and float(stats["stake_total"]) > 0:
-                    roi = (float(stats["ganancia_neta"] or 0) / float(stats["stake_total"])) * 100
+                if (stats["ganancia_neta"] is not None and not stats["ganancias_faltantes"]
+                        and stats["stake_resuelto"] and float(stats["stake_resuelto"]) > 0):
+                    roi = float(stats["ganancia_neta"]) / float(stats["stake_resuelto"]) * 100
 
                 if stats["resueltas"] and stats["resueltas"] > 0:
                     win_rate = (stats["ganadas"] or 0) / stats["resueltas"]

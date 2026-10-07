@@ -490,4 +490,4 @@ class TestSchemas:
         assert resumen.perdidas == 0
         assert resumen.push == 0
         assert resumen.stake_total == 0.0
-        assert resumen.ganancia_neta == 0.0
+        assert resumen.ganancia_neta is None

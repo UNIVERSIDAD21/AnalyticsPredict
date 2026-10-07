@@ -501,7 +501,7 @@ class ResumenApuestas(BaseModel):
     roi: Optional[float] = None
     win_rate: Optional[float] = None
     stake_total: float = 0.0
-    ganancia_neta: float = 0.0
+    ganancia_neta: Optional[float] = None
 
 
 class ListaApuestasResponse(BaseModel):

@@ -12,6 +12,7 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = Path(__file__).with_name("single_user_legacy_fixture.sql")
 MIGRATION = ROOT / "migrations/2026-10-05_single_user.sql"
+MIGRATION_ROI = ROOT / "migrations/2026-10-06_roi_legacy_no_certificado.sql"
 
 
 @pytest.fixture
@@ -42,6 +43,27 @@ def test_migracion_conserva_historial_y_elimina_identidad(db_efimera):
                           "partidos_baloncesto", "partidos_futbol")
         }
         conn.execute(MIGRATION.read_text(encoding="utf-8"))
+        conn.execute("UPDATE apuestas SET ganancia = 9 WHERE equipo_local = 'A'")
+        conn.execute("UPDATE apuestas_futbol SET stake = 10, ganancia = 2")
+        assert conn.execute("SELECT roi FROM vista_resumen_apuestas").fetchone()[0] is not None
+        assert conn.execute("SELECT roi FROM vista_resumen_apuestas_futbol").fetchone()[0] is not None
+        columnas_vistas = {
+            vista: conn.execute(
+                "SELECT attname, atttypid FROM pg_attribute WHERE attrelid = %s::regclass "
+                "AND attnum > 0 AND NOT attisdropped ORDER BY attnum", (vista,),
+            ).fetchall()
+            for vista in ("vista_analisis_apuestas", "vista_resumen_apuestas",
+                          "vista_resumen_apuestas_futbol")
+        }
+        conn.execute(MIGRATION_ROI.read_text(encoding="utf-8"))
+        for vista, columnas in columnas_vistas.items():
+            assert conn.execute(
+                "SELECT attname, atttypid FROM pg_attribute WHERE attrelid = %s::regclass "
+                "AND attnum > 0 AND NOT attisdropped ORDER BY attnum", (vista,),
+            ).fetchall() == columnas
+        assert conn.execute("SELECT roi_porcentaje FROM vista_analisis_apuestas").fetchall() == [(None,), (None,)]
+        assert conn.execute("SELECT roi FROM vista_resumen_apuestas").fetchone() == (None,)
+        assert conn.execute("SELECT roi FROM vista_resumen_apuestas_futbol").fetchone() == (None,)
         for tabla, esperado in antes.items():
             assert conn.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(tabla))).fetchone()[0] == esperado
         assert conn.execute("SELECT count(*) FROM vista_bitacora_unificada").fetchone()[0] == 4

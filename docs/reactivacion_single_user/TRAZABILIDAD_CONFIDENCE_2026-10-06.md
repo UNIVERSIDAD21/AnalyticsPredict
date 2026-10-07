@@ -2,6 +2,8 @@
 
 **Estado: fórmula trazada; validación predictiva pendiente.** No se alteran thresholds ni sizing en este corte. `confidence` es una etiqueta heurística, no una probabilidad calibrada ni garantía de ROI.
 
+> **Adenda vigente:** las 94/53/34 categorías NBA siguen siendo conteos registrados, pero el gate P&L posterior deja **114/181 binarias no evaluables** y 67 solo aritméticamente compatibles, sin procedencia de stake/cuota. La observación histórica cuota >2 (n=5) tampoco tiene muestra prospectiva ni ROI defendible. Confidence se mantiene fuera de conclusiones de sizing/ROI; las cifras 102/181 citadas abajo son el corte previo.
+
 ## NBA — ruta principal
 
 1. `backend/motor/nba_predictor_cuartos.py::determinar_confianza` suma tres puntajes (0–2 cada uno): desviación total `<5,5` = 2, `<7,5` = 1, resto = 0; probabilidad `>=0,70` = 2, `>=0,60` = 1, resto = 0; distancia normalizada `|media−línea|/max(desviación,1e-9)` `>=1,5` = 2, `>=1,0` = 1, resto = 0. Total posible 0–6. **La tercera variable se llama `puntaje_edge` en código pero no es edge de cuota.**

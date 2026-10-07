@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-06 — resúmenes de fútbol y vistas ROI legacy
+
+- Los resúmenes API de apuestas/sistema fútbol calculan ROI registrado sobre stake resuelto únicamente y devuelven `null` si falta cualquier ganancia resuelta; el adaptador cliente conserva N/D. Pruebas dirigidas backend/frontend y build cubren el contrato sin DML.
+- Se identificaron tres vistas SQL legacy con ROI sin gate. Migración conservadora preparada para publicar `NULL` manteniendo columnas/tipos; ensayo en PostgreSQL desechable incorporado a CI. **No aplicada aún a Neon** ni equivale a vista KPI certificada.
+
 ## 2026-10-06 — semántica analítica single-user vigente
 
 - El catálogo KPI refleja el gate actual 114/181/67 del P&L. El mapa semántico y el inventario de vistas distinguen implementaciones reales de propuestas históricas; N/D, fuente, grano, exclusiones y límites prospectivos quedan explícitos. No se creó una vista física nueva ni se declaró rendimiento certificado.

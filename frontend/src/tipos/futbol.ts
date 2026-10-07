@@ -502,7 +502,7 @@ export interface ResumenApuestasFutbol {
   roi: number | null;
   winRate: number | null;
   stakeTotal: number;
-  gananciaNeta: number;
+  gananciaNeta: number | null;
 }
 
 /**
