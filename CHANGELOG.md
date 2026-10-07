@@ -2,7 +2,7 @@
 
 ## 2026-10-06 — alcance NBA y estados externos de partidos 0–0
 
-- El auditor y scorecard NBA delimitan la competición: 10.286 partidos NBA y 148 NBA 0–0, frente a 12.775/231 de baloncesto agregado en informes previos. Contraste read-only de 148 IDs ESPN: 67 pospuestos y 81 finalizados con marcador positivo ausente en Neon. Los 83 0–0 Euroliga siguen sin verificación externa. No se alteraron filas históricas ni el dictamen NO CERTIFICADO.
+- El auditor y scorecard NBA delimitan la competición: 10.286 partidos NBA y 148 NBA 0–0, frente a 12.775/231 de baloncesto agregado en informes previos. Contraste read-only de 148 IDs ESPN: 67 pospuestos y 81 finalizados con marcador positivo ausente en Neon. La ingesta detecta ID ESPN legacy aunque `source` sea nulo: dry-run de abril pasó de 39 inserciones duplicadas previstas a 0. Los 83 0–0 Euroliga siguen sin verificación externa. No se alteraron filas históricas ni el dictamen NO CERTIFICADO.
 
 ## 2026-10-06 — guard de 0–0 en combinadas legacy
 

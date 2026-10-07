@@ -9,3 +9,5 @@ Verificación read-only posterior: 8 filas ESPN de 2026-10-03 a 2026-10-06, 8 ID
 No se certificó contraste independiente de marcador, timezone ni outcome: el intento de obtener NBA CDN devolvió HTTP 403. Tampoco se entrenó ni recalibró un modelo. Las 102 inconsistencias P&L y 2.136 incompatibilidades temporales permanecen. Fútbol continúa sin frescura y Sofascore respondió 403. **Dictamen global: NO CERTIFICADO.**
 
 **Fe de erratas de denominador:** el total 12.767→12.775 citado arriba corresponde a toda `partidos_baloncesto`; incluía 2.489 Euroliga sin cambios. El total exclusivo NBA fue **10.278→10.286**. Los ocho eventos de pretemporada ingresados y la verificación de idempotencia no cambian.
+
+**Guard legacy adicional:** al probar en seco 2026-04-03→12, 39/81 eventos existentes con `espn_game_id` y `source=NULL` parecían nuevos porque la fecha local difiere de UTC. `existing_keys` consulta ahora también `espn_game_id` para evitar la inserción duplicada sin sobrescribir filas. Nuevo dry-run read-only: **81 existentes, 0 inserciones**, frente a 42/39 antes del cambio. Esto no repara los 81 marcadores locales 0–0; requiere reconciliación explícita.

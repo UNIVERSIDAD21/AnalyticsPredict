@@ -63,7 +63,7 @@ def test_dry_run_reconoce_clave_natural_sin_id_espn(monkeypatch):
             "equipo_local_id": "local-1", "equipo_visitante_id": "visitante-1"}
     clave = (fila["temporada_id"], fila["fecha_partido"], fila["tipo_partido"],
              fila["equipo_local_id"], fila["equipo_visitante_id"])
-    monkeypatch.setattr(ingesta, "existing_keys", lambda _conn, _records: (set(), {clave}))
+    monkeypatch.setattr(ingesta, "existing_keys", lambda _conn, _records: (set(), set(), {clave}))
     assert ingesta.upsert_records(None, [fila], dry_run=True) == {
         "found": 1, "inserted": 0, "existing": 1, "updated": 0, "failed": 0,
     }
@@ -75,7 +75,7 @@ def test_ingesta_no_sobrescribe_partido_legacy_con_clave_natural(monkeypatch):
             "equipo_local_id": "local-1", "equipo_visitante_id": "visitante-1"}
     clave = (fila["temporada_id"], fila["fecha_partido"], fila["tipo_partido"],
              fila["equipo_local_id"], fila["equipo_visitante_id"])
-    monkeypatch.setattr(ingesta, "existing_keys", lambda _conn, _records: (set(), {clave}))
+    monkeypatch.setattr(ingesta, "existing_keys", lambda _conn, _records: (set(), set(), {clave}))
 
     class Conexion:
         def cursor(self):
@@ -96,3 +96,31 @@ def test_ingesta_no_sobrescribe_partido_legacy_con_clave_natural(monkeypatch):
     assert ingesta.upsert_records(Conexion(), [fila], dry_run=False) == {
         "found": 1, "inserted": 0, "existing": 1, "updated": 0, "failed": 0,
     }
+
+
+def test_ingesta_no_duplica_id_espn_legacy_si_fecha_natural_difiere(monkeypatch):
+    fila = {"source_game_id": "401810975", "temporada_id": "temporada-1",
+            "fecha_partido": date(2026, 4, 4), "tipo_partido": "REG",
+            "equipo_local_id": "local-1", "equipo_visitante_id": "visitante-1"}
+    # La fila legacy es del 3 de abril, pero ESPN la fecha en UTC el día 4.
+    monkeypatch.setattr(ingesta, "existing_keys", lambda _conn, _records: (set(), {"401810975"}, set()))
+
+    class Conexion:
+        def cursor(self):
+            return self
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def execute(self, *_args):
+            raise AssertionError("No insertar ni modificar fila legacy con ID ESPN")
+
+        def commit(self):
+            raise AssertionError("No abrir escritura")
+
+    esperado = {"found": 1, "inserted": 0, "existing": 1, "updated": 0, "failed": 0}
+    assert ingesta.upsert_records(None, [fila], dry_run=True) == esperado
+    assert ingesta.upsert_records(Conexion(), [fila], dry_run=False) == esperado
