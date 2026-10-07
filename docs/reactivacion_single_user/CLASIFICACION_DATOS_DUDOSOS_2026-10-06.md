@@ -1,5 +1,7 @@
 # Clasificación de datos deportivos dudosos — corte read-only 2026-10-06
 
+> **Actualización posterior con DML autorizado:** los 148 NBA 0–0 y 83 Euroliga 0–0 de las tablas históricas de abajo son el **corte previo**. Tras contraste con ESPN y Euroliga oficial se corrigieron 81 finales NBA y uno Euroliga; quedan 67 NBA 0–0 y 82 Euroliga 0–0, todos `valido=false`. La bitácora conserva apuestas, pero excluye ocho resultados incompatibles con marcador: 111/181 binarias no evaluables. Ver `RECONCILIACION_MARCADORES_BALONCESTO_2026-10-06.md`; el dictamen sigue **NO CERTIFICADO**.
+
 **Estado:** exclusión preventiva y filtros principales de outcomes NBA 0–0 implementados. El contraste externo posterior distingue NBA de Euroliga; **no** certifica desempeño de modelos ni habilita imputación automática.
 
 ## Hallazgos en Neon

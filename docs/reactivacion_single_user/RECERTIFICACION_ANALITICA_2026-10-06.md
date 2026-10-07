@@ -1,5 +1,7 @@
 # Corte de recertificación analítica — 2026-10-06
 
+> **Adenda vigente de marcadores:** el corte y las adendas históricas de abajo preceden a la reconciliación en Neon. ESPN acreditó 81 finales NBA, quedaron 67 pospuestos 0–0 invalidados, y la fuente oficial Euroliga acreditó un final reprogramado; otros 82 registros Euroliga 0–0 quedaron invalidados sin imputación. Cinco apuestas y 66 vínculos de predicción no se reescribieron; ocho resultados de apuestas contradicen marcador/línea/lado. Gate actual: **111/181** binarias no evaluables, 2.558 pares NBA raw descriptivos, ROI **NO CERTIFICADO**. Ver `RECONCILIACION_MARCADORES_BALONCESTO_2026-10-06.md` y su evidencia externa.
+
 ## Objetivo y método
 
 Evaluar el estado **medido**, no proyectar rentabilidad ni declarar modelos listos para operar. Se ejecutó `backend/scripts/auditar_corte_analitico.py` contra Neon en transacción `READ ONLY`, sin ingestas, entrenamiento, cambios de datos ni publicación. Los tests de fórmulas usan pares sintéticos conocidos. El corte fue a las 14:40 UTC del 2026-10-06. Datos y fechas descritos son los observados en ese instante; no equivalen a disponibilidad de fuente en tiempo real.
