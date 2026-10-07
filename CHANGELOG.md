@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-06 — guard de 0–0 en combinadas legacy
+
+- La ruta de resolución de selecciones de combinadas conserva pendiente un evento NBA con ambos totales 0, sin calcular resultado ni actualizar la selección. Neon read-only mostró 0 selecciones combinadas enlazadas a esos partidos en este corte; el cambio evita nuevas resoluciones espurias.
+
 ## 2026-10-06 — vista agregada NBA sin outcomes 0–0
 
 - Se aplicó migración transaccional e idempotente de `vista_resumen_calibracion` para no computar pares de partidos 0–0. Postflight Neon: 2.582→2.558 pares; 12 columnas, owner/grants, vista base y 2.934 predicciones históricas intactos. Rollback preparado y ensayo en PostgreSQL efímero; no se usó en Neon.
