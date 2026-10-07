@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Ejecutor reproducible de validación cuantitativa de baselines NBA.
+Ejecutor descriptivo de baselines NBA. ROI histórico no certificado = N/D.
 
 Uso:
   cd backend
@@ -69,11 +69,7 @@ def _q_global() -> str:
         / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),
         4
       ) AS win_rate_pct,
-      ROUND(
-        100.0 * COALESCE(SUM(ganancia), 0)
-        / NULLIF(COALESCE(SUM(stake), 0), 0),
-        4
-      ) AS roi_pct,
+      NULL::numeric AS roi_pct,
       ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,
       ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total
     FROM base;
@@ -98,7 +94,7 @@ def _q_confidence() -> str:
         / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),
         4
       ) AS win_rate_pct,
-      ROUND(100.0 * COALESCE(SUM(ganancia),0) / NULLIF(COALESCE(SUM(stake),0),0), 4) AS roi_pct,
+      NULL::numeric AS roi_pct,
       ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,
       ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total
     FROM base
@@ -130,7 +126,7 @@ def _q_odds() -> str:
         / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),
         4
       ) AS win_rate_pct,
-      ROUND(100.0 * COALESCE(SUM(ganancia),0) / NULLIF(COALESCE(SUM(stake),0),0), 4) AS roi_pct,
+      NULL::numeric AS roi_pct,
       ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,
       ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total
     FROM base
@@ -160,7 +156,7 @@ def _q_markets() -> str:
         / NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0),
         4
       ) AS win_rate_pct,
-      ROUND(100.0 * COALESCE(SUM(ganancia),0) / NULLIF(COALESCE(SUM(stake),0),0), 4) AS roi_pct,
+      NULL::numeric AS roi_pct,
       ROUND(COALESCE(SUM(stake),0), 2) AS stake_total,
       ROUND(COALESCE(SUM(ganancia),0), 2) AS ganancia_total
     FROM base
@@ -187,6 +183,7 @@ def run(inicio: str, fin: str) -> Path:
 
     resultados: list[QueryResult] = []
     with psycopg.connect(url) as conn:
+        conn.execute("SET TRANSACTION READ ONLY")
         with conn.cursor(row_factory=dict_row) as cur:
             for nombre, sql in queries:
                 cur.execute(sql, {"inicio": inicio, "fin": fin})

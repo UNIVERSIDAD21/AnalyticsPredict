@@ -5,6 +5,7 @@
 - Los resúmenes API de apuestas/sistema fútbol calculan ROI registrado sobre stake resuelto únicamente y devuelven `null` si falta cualquier ganancia resuelta; el adaptador cliente conserva N/D. Pruebas dirigidas backend/frontend y build cubren el contrato sin DML.
 - Se identificaron tres vistas SQL legacy con ROI sin gate. La migración conservadora publica `NULL` manteniendo columnas/tipos; se ensayó en PostgreSQL desechable antes de aplicarse. No equivale a vista KPI certificada.
 - Tras CI 4/4 de `361e493`, la migración se aplicó a Neon con respaldo privado y postflight read-only: 182/1/7 filas, contratos, owner y ACL intactos; ROI no nulo = 0 en las tres vistas. El GET `/api/bitacora/estadisticas` también deja de publicar ROI bruto; conserva ganancia como importe registrado.
+- El CLI descriptivo `validar_baselines_nba.py` mantiene n, win rate y montos registrados, pero publica ROI N/D hasta certificar procedencia; sus SELECT ahora corren bajo transacción read-only. La prueba de integración usa datos sintéticos.
 
 ## 2026-10-06 — semántica analítica single-user vigente
 

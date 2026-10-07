@@ -7,6 +7,7 @@ import psycopg
 import pytest
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
+from scripts.validar_baselines_nba import _q_global
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +65,9 @@ def test_migracion_conserva_historial_y_elimina_identidad(db_efimera):
         assert conn.execute("SELECT roi_porcentaje FROM vista_analisis_apuestas").fetchall() == [(None,)] * 3
         assert conn.execute("SELECT roi FROM vista_resumen_apuestas").fetchone() == (None,)
         assert conn.execute("SELECT roi FROM vista_resumen_apuestas_futbol").fetchone() == (None,)
+        baseline = conn.execute(_q_global(), {"inicio": "2020-01-01", "fin": "2030-12-31"}).fetchone()
+        assert baseline[0] >= 1  # filas resueltas en fixture
+        assert baseline[4] is None  # ROI baseline no se publica sin certificación
         for tabla, esperado in antes.items():
             assert conn.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(tabla))).fetchone()[0] == esperado
         assert conn.execute("SELECT count(*) FROM vista_bitacora_unificada").fetchone()[0] == 4
