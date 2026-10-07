@@ -61,7 +61,7 @@ def test_migracion_conserva_historial_y_elimina_identidad(db_efimera):
                 "SELECT attname, atttypid FROM pg_attribute WHERE attrelid = %s::regclass "
                 "AND attnum > 0 AND NOT attisdropped ORDER BY attnum", (vista,),
             ).fetchall() == columnas
-        assert conn.execute("SELECT roi_porcentaje FROM vista_analisis_apuestas").fetchall() == [(None,), (None,)]
+        assert conn.execute("SELECT roi_porcentaje FROM vista_analisis_apuestas").fetchall() == [(None,)] * 3
         assert conn.execute("SELECT roi FROM vista_resumen_apuestas").fetchone() == (None,)
         assert conn.execute("SELECT roi FROM vista_resumen_apuestas_futbol").fetchone() == (None,)
         for tabla, esperado in antes.items():
