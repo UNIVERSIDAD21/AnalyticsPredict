@@ -107,12 +107,30 @@ _PNL_NBA_NO_EVALUABLE_SQL = """(
         FALSE)
 )"""
 
-# Un importe conciliable no acredita el resultado de un partido registrado 0–0.
-# Mantener las filas en la bitácora, pero impedir que su ROI se presente como evaluable.
+# Un importe conciliable no acredita el resultado de un partido inválido, 0–0
+# o incompatible con la línea y el marcador. Se preserva la fila histórica.
 _RESULTADO_NBA_NO_EVALUABLE_SQL = """EXISTS (
     SELECT 1 FROM partidos_baloncesto pb
+    CROSS JOIN LATERAL (SELECT CASE apuestas.mercado
+        WHEN 'COMPLETO' THEN pb.local_total + pb.visitante_total
+        WHEN 'Q1' THEN pb.local_q1 + pb.visitante_q1
+        WHEN 'Q2' THEN pb.local_q2 + pb.visitante_q2
+        WHEN 'Q3' THEN pb.local_q3 + pb.visitante_q3
+        WHEN 'Q4' THEN pb.local_q4 + pb.visitante_q4
+    END AS puntos) marcador
     WHERE pb.id = apuestas.partido_id
-      AND pb.local_total = 0 AND pb.visitante_total = 0
+      AND (pb.valido IS NOT TRUE
+           OR (pb.local_total = 0 AND pb.visitante_total = 0)
+           OR (apuestas.resultado IN ('GANADA', 'PERDIDA', 'PUSH')
+               AND apuestas.lado IN ('OVER', 'UNDER')
+               AND apuestas.linea IS NOT NULL
+               AND marcador.puntos IS NOT NULL
+               AND CASE
+                   WHEN marcador.puntos = apuestas.linea THEN 'PUSH'
+                   WHEN (marcador.puntos > apuestas.linea) = (apuestas.lado = 'OVER')
+                       THEN 'GANADA'
+                   ELSE 'PERDIDA'
+               END IS DISTINCT FROM apuestas.resultado))
 )"""
 _NBA_NO_EVALUABLE_SQL = (
     f"({_PNL_NBA_NO_EVALUABLE_SQL} OR "

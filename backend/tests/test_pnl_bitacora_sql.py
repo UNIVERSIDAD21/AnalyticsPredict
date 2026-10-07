@@ -44,20 +44,31 @@ def test_resultado_cero_cero_excluye_pnl_aunque_concilie():
     if not conninfo_to_dict(url).get("dbname", "").startswith("ap_suite_test_"):
         pytest.skip("Solo en PostgreSQL sintético desechable")
     consulta = f"""
-        WITH partidos_baloncesto(id, local_total, visitante_total) AS (
-            VALUES (1, 0, 0), (2, 95, 98)
+        WITH partidos_baloncesto(id, local_total, visitante_total, valido,
+             local_q1, visitante_q1, local_q2, visitante_q2, local_q3, visitante_q3,
+             local_q4, visitante_q4) AS (
+            VALUES (1, 0, 0, true, 0, 0, 0, 0, 0, 0, 0, 0),
+                   (2, 95, 98, true, 25, 23, 23, 25, 25, 25, 22, 25),
+                   (3, 95, 98, false, 25, 23, 23, 25, 25, 25, 22, 25)
         ), apuestas(partido_id, resultado, stake, cuota, ganancia,
-                    lado, cuota_over, cuota_under) AS (
+                    lado, cuota_over, cuota_under, mercado, linea) AS (
             VALUES
                 (1, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
-                 'OVER', 1.8::numeric, NULL::numeric),
+                 'OVER', 1.8::numeric, NULL::numeric, 'COMPLETO', 190::numeric),
                 (2, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
-                 'OVER', 1.8::numeric, NULL::numeric),
+                 'OVER', 1.8::numeric, NULL::numeric, 'COMPLETO', 190::numeric),
+                (2, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
+                 'UNDER', NULL::numeric, 1.8::numeric, 'COMPLETO', 190::numeric),
+                (2, 'PERDIDA', 100::numeric, 1.8::numeric, -100::numeric,
+                 'UNDER', NULL::numeric, 1.8::numeric, 'COMPLETO', 190::numeric),
+                (3, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
+                 'OVER', 1.8::numeric, NULL::numeric, 'COMPLETO', 190::numeric),
                 (NULL::integer, 'GANADA', 100::numeric, 1.8::numeric, 80::numeric,
-                 'OVER', 1.8::numeric, NULL::numeric)
+                 'OVER', 1.8::numeric, NULL::numeric, 'COMPLETO', 190::numeric)
         )
         SELECT partido_id, {_NBA_NO_EVALUABLE_SQL} FROM apuestas
     """
     with psycopg.connect(url) as conn:
         conn.execute("SET TRANSACTION READ ONLY")
-        assert conn.execute(consulta).fetchall() == [(1, True), (2, False), (None, False)]
+        assert conn.execute(consulta).fetchall() == [
+            (1, True), (2, False), (2, True), (2, False), (3, True), (None, False)]
