@@ -12,6 +12,7 @@
 ## 2026-10-06 — mantenimiento H12 y scripts legacy
 
 - Se retiró del Makefile el target de notificaciones B4, cuyo script ya no existe en la herramienta single-user. El resto de targets conserva scripts presentes.
+- El script RC-A comercial que referenciaba un test de auth retirado se archivó sin borrar su contenido; la CI vigente sustituye ese gate.
 - Tres capturas JSON de 2026-02-22 de cero bytes salieron del índice Git y permanecen en copias locales/historia. `reports/README.md` documenta que son capturas fallidas, no datos vacíos válidos; no se imputaron valores.
 - La CI fija `ubuntu-24.04` y usa acciones oficiales `checkout/setup-python/setup-node@v6` para evitar el salto implícito de imagen y la deprecación de runtime Node 20 de las acciones previas. Mantiene Node 20 para la app hasta validar una migración de dependencias separada.
 

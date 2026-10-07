@@ -7,7 +7,7 @@ Objetivo: validar de forma integral que A2+A3+A4+A5 no tienen bloqueantes P0/P1 
 Desde la raíz del repo:
 
 ```bash
-scripts/validar_a6_rca.sh
+`docs/archive/scripts/validar_a6_rca.sh` (histórico; no ejecutable como gate single-user vigente)
 ```
 
 ## Qué valida el script
