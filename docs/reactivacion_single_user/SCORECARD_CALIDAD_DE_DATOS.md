@@ -2,6 +2,8 @@
 
 **Estado: NO CERTIFICADO.** Corte de Neon `2026-10-06T15:37:17Z`, generado con `backend/scripts/auditar_corte_analitico.py` y evaluado con `backend/scripts/scorecard_calidad_single_user.py`. No hubo ingesta, entrenamiento, backfill ni escritura en BD durante el corte. Este archivo registra agregados; no contiene filas ni IDs personales.
 
+> **Fe de erratas:** este corte anterior a la corrección usó toda `partidos_baloncesto` como si fuera NBA. Los 12.767 de la tabla son **10.278 NBA + 2.489 Euroliga**; los 231 0–0 son **148 NBA + 83 Euroliga**. La tasa NBA sin `source` debe usar 219/10.278, no 219/12.767. El auditor fue corregido y el dictamen continúa NO CERTIFICADO.
+
 | Control | Valor observado | Dictamen |
 |---|---:|---|
 | NBA partidos / últimos 30 días | 12.767 / 0 | OBSERVAR; último 2026-05-05, revisar calendario y feed |
@@ -28,3 +30,5 @@ El dictamen solo cambia tras reconciliar histórico, corregir procedencia tempor
 A las `2026-10-06T15:47:56Z` se repitió la auditoría read-only tras insertar 8 partidos de pretemporada ESPN (ver `INGESTA_NBA_CONTROLADA_2026-10-06.md`). NBA: **12.775 partidos**, último 2026-10-06, **8** en últimos 30 días; `NBA-FRESH-30` pasa a `OK` como observación de BD. Duplicados por ID de fuente 0, sin source 219 y 0–0 231 sin cambio. El scorecard sigue **NO_CERTIFICADO** con 10 alertas locales. La tabla anterior es el corte previo, no el estado posterior.
 
 Al integrar el probe HTTP read-only separado, ESPN `200`/JSON válido figura `OK` y Sofascore `403` figura `CRITICO` por fuente bloqueada. El scorecard combinado tiene **11 alertas locales** y sigue NO_CERTIFICADO. Sin probe, ambas reglas permanecen `NO_EVALUABLE`; no se imputan estados desde la fecha del último partido.
+
+**Corte corregido posterior (read-only):** `NBA-SCORE-00` observa **148** casos, no 231; `NBA-SOURCE-NULL` usa **219/10.286** y sigue en OBSERVAR. Los 8 partidos recientes y los 0 duplicados de fuente se mantienen. Los 81 NBA 0–0 con `source=NULL` figuran finalizados con puntos positivos en ESPN, mientras 67 con `source=ESPN` constan pospuestos. No se modificaron filas ni se levantó el gate de certificación.

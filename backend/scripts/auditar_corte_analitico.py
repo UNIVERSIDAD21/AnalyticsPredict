@@ -105,6 +105,30 @@ def predicciones(cur, tabla: str, raw: str, calibrada: str) -> dict:
             "por_mercado_raw": {m: metricas_binarias(p) for m, p in sorted(mercados.items())}}
 
 
+def resumen_partidos_nba(cur) -> dict:
+    """Cuenta únicamente NBA; `partidos_baloncesto` también contiene Euroliga."""
+    cur.execute("""SELECT count(*), max(p.fecha_partido),
+        count(*) FILTER (WHERE p.source IS NULL),
+        count(*) FILTER (WHERE p.local_total=0 AND p.visitante_total=0),
+        count(*) FILTER (WHERE p.local_q1 IS NULL OR p.visitante_q1 IS NULL
+                          OR p.local_q4 IS NULL OR p.visitante_q4 IS NULL),
+        count(*) FILTER (WHERE p.fecha_partido >= current_date-30)
+        FROM partidos_baloncesto p
+        JOIN competiciones_baloncesto c ON c.id=p.competicion_id
+        WHERE c.codigo='nba'""")
+    n, ultima, sin_fuente, cero_cero, sin_cuartos, ultimos_30 = cur.fetchone()
+    cur.execute("""SELECT coalesce(sum(n-1),0) FROM (
+        SELECT count(*) n FROM partidos_baloncesto p
+        JOIN competiciones_baloncesto c ON c.id=p.competicion_id
+        WHERE c.codigo='nba' AND p.source_game_id IS NOT NULL
+        GROUP BY p.source,p.source_game_id HAVING count(*)>1) x""")
+    duplicados = cur.fetchone()[0]
+    return {"partidos": n, "fecha_max": ultima, "sin_source": sin_fuente,
+            "cero_cero": cero_cero, "sin_cuartos_q1_q4": sin_cuartos,
+            "partidos_ultimos_30_dias": ultimos_30,
+            "duplicados_source_id": int(duplicados)}
+
+
 def main() -> None:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
     url = os.getenv("DATABASE_URL")
@@ -118,20 +142,7 @@ def main() -> None:
             if cur.fetchone()[0] != "on":
                 raise RuntimeError("La conexión no es read-only")
             cur.execute("SET LOCAL statement_timeout = '30s'")
-            cur.execute("""SELECT count(*), max(fecha_partido),
-                count(*) FILTER (WHERE source IS NULL),
-                count(*) FILTER (WHERE local_total=0 AND visitante_total=0),
-                count(*) FILTER (WHERE local_q1 IS NULL OR visitante_q1 IS NULL OR local_q4 IS NULL OR visitante_q4 IS NULL),
-                count(*) FILTER (WHERE fecha_partido >= current_date-30)
-                FROM partidos_baloncesto""")
-            n, ultima, sin_fuente, cero_cero, sin_cuartos, ultimos_30 = cur.fetchone()
-            cur.execute("""SELECT coalesce(sum(n-1),0) FROM (
-                SELECT count(*) n FROM partidos_baloncesto
-                WHERE source_game_id IS NOT NULL GROUP BY source,source_game_id HAVING count(*)>1) x""")
-            duplicados = cur.fetchone()[0]
-            reporte["nba_datos"] = {"partidos": n, "fecha_max": ultima, "sin_source": sin_fuente,
-                "cero_cero": cero_cero, "sin_cuartos_q1_q4": sin_cuartos,
-                "partidos_ultimos_30_dias": ultimos_30, "duplicados_source_id": int(duplicados)}
+            reporte["nba_datos"] = resumen_partidos_nba(cur)
             cur.execute("""SELECT count(*), max(fecha_partido) FILTER (WHERE estado='FINALIZADO'),
                 count(*) FILTER (WHERE estado='FINALIZADO'),
                 count(*) FILTER (WHERE estado='FINALIZADO' AND fecha_partido >= now()-interval '30 days'),
@@ -155,8 +166,11 @@ def main() -> None:
                 count(*) FILTER (WHERE pf.id IS NULL)
                 FROM predicciones_futbol p LEFT JOIN partidos_futbol pf ON pf.id=p.partido_id""")
             futbol_prob_fuera_rango, futbol_partido_huerfano = cur.fetchone()
-            cur.execute("""SELECT count(*) FILTER (WHERE local_total < 0 OR visitante_total < 0
-                OR local_total > 250 OR visitante_total > 250) FROM partidos_baloncesto""")
+            cur.execute("""SELECT count(*) FILTER (WHERE p.local_total < 0 OR p.visitante_total < 0
+                OR p.local_total > 250 OR p.visitante_total > 250)
+                FROM partidos_baloncesto p
+                JOIN competiciones_baloncesto c ON c.id=p.competicion_id
+                WHERE c.codigo='nba'""")
             nba_marcador_outlier = cur.fetchone()[0]
             cur.execute("""SELECT
                 count(*) FILTER (WHERE estado='FINALIZADO' AND (local_goles_total IS NULL OR visitante_goles_total IS NULL)),
