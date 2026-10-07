@@ -16,6 +16,8 @@
 
 **Corte de calidad por competición (2026-10-06):** el total 12.775 usado en algunos informes era baloncesto agregado. La reconciliación con ESPN y Euroliga oficial dejó 10.286 NBA (67 marcadores 0–0 invalidados) y 2.489 Euroliga (82 marcadores 0–0 invalidados); corrigió 81 finales NBA y un final Euroliga reprogramado sin borrar filas. Bloque C/E sigue abierto por P&L, trazabilidad temporal, fútbol y validación prospectiva; no se certificó rendimiento.
 
+**Avance de mantenimiento del mismo día:** el ROI de fútbol ya conserva N/D y porcentaje coherente (CI 4/4, `0fd896c`); las PR #150/#23 se cerraron. H12/A5 retiraron tres capturas JSON inválidas del índice, un target B4 roto y prepararon la CI en Ubuntu 24.04/acciones v6; no equivalen a certificación ni cierran H4. H4 sigue pendiente por 13 refs de PR administrados por GitHub que retienen los blobs junto a 12 ramas.
+
 ## Dependencia inmediata
 
 El propietario confirmó uso exclusivamente local y decidió mostrar **todos** los registros deportivos como historial personal. La cuenta de mayor actividad aportó la configuración única; la procedencia original quedó en los backups privados. La migración fue ensayada en restauración aislada y aplicada a Neon tras un segundo backup verificado. Ningún cobro ni ingesta se utilizó como prueba de arranque.

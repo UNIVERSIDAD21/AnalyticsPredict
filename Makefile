@@ -1,4 +1,4 @@
-.PHONY: help dev backend frontend calidad-ciclo calidad-ciclo-fast reporte-ejecutivo qa-preflight reporte-semanal-template reporte-semanal-auto export-metricas-csv snapshot-tendencias revision-politica check-modo-estricto cierre-operativo estado-unificado operacion-diaria-full reporte-b3-estabilidad notificaciones-scheduler-tick
+.PHONY: help dev backend frontend calidad-ciclo calidad-ciclo-fast reporte-ejecutivo qa-preflight reporte-semanal-template reporte-semanal-auto export-metricas-csv snapshot-tendencias revision-politica check-modo-estricto cierre-operativo estado-unificado operacion-diaria-full reporte-b3-estabilidad
 
 help:
 	@echo "Targets disponibles:"
@@ -11,7 +11,6 @@ help:
 	@echo "  make qa-preflight         # Validaciones previas"
 	@echo "  make operacion-diaria-full# Pipeline diaria completa"
 	@echo "  make reporte-b3-estabilidad# Reporte semanal B3 por liga"
-	@echo "  make notificaciones-scheduler-tick # Ejecuta tick B4 (scheduler+cola)"
 
 dev:
 	bash scripts/dev.sh
@@ -63,6 +62,3 @@ operacion-diaria-full:
 
 reporte-b3-estabilidad:
 	bash scripts/reporte_b3_estabilidad.sh
-
-notificaciones-scheduler-tick:
-	bash scripts/notificaciones_scheduler_tick.sh

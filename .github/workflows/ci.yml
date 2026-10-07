@@ -8,16 +8,16 @@ on:
 
 jobs:
   backend-unit-and-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -50,16 +50,16 @@ jobs:
           tests/test_smoke_api.py
 
   frontend-quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
@@ -81,7 +81,7 @@ jobs:
         run: npm run build
 
   postgres-migration-integration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16-alpine
@@ -99,8 +99,8 @@ jobs:
     env:
       TEST_PG_ADMIN_URL: postgresql://analytics_test:analytics_test@127.0.0.1:5432/postgres?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Instalar driver y pytest
@@ -113,9 +113,9 @@ jobs:
         run: python scripts/run_suite_global_testdb.py
 
   compose-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Construir y arrancar Compose contra PostgreSQL desechable
         run: |
           printf 'ENTORNO=desarrollo\nDEBUG=false\nHOST=0.0.0.0\nPUERTO=8000\nSTAGING_BACKEND_PORT=18000\nSTAGING_FRONTEND_PORT=15173\nDATABASE_URL=postgresql://analytics_test:analytics_test@analytics-postgres-test:5432/analytics_test?sslmode=disable\n' > deploy/staging/staging.env

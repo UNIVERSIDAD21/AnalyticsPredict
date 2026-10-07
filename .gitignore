@@ -58,3 +58,7 @@ frontend/node_modules
 frontend/.vite/
 backend/.vite/
 *.tsbuildinfo
+# Capturas heredadas vacías: conservadas localmente, no son JSON válido.
+/reports/csv/2026-02-22_021415/calidad_mercados.json
+/reports/ejecutivo/2026-02-22_021251/resumen_compacto.json
+/reports/ejecutivo/2026-02-22_021509/resumen_compacto.json
