@@ -39,6 +39,8 @@ jobs:
           tests/test_auditar_corte_analitico.py
           tests/calidad/test_reglas_single_user.py
           tests/test_actualizar_partidos_nba.py
+          tests/test_auditar_fuente_espn_soccer.py
+          tests/test_capturas_espn_soccer.py -m "not integracion"
 
       - name: Contratos API sin BD
         run: >-

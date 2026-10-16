@@ -76,3 +76,13 @@ def test_200_vacio_vs_contrato_roto():
     assert auditar_mes("laliga", "202603", session=_Session(_Response(200, {"events": []})))["estado"] == "NO_DATA"
     with pytest.raises(FuenteNoDisponible):
         auditar_mes("laliga", "202603", session=_Session(_Response(200, {})))
+
+
+def test_boxscore_rechaza_evento_y_equipos_ajenos():
+    evento = interpretar_evento(_evento(), "esp.1")
+    with pytest.raises(FuenteNoDisponible, match="otro evento"):
+        interpretar_estadisticas({"header": {"id": "otro"}}, evento)
+    with pytest.raises(FuenteNoDisponible, match="otros equipos"):
+        interpretar_estadisticas({"boxscore": {"teams": [
+            {"team": {"id": "3"}}, {"team": {"id": "4"}},
+        ]}}, evento)

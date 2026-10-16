@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-15 — capturas ESPN Soccer independientes
+
+- Se completa el WIP de capturas por liga/mes, con observación UTC, hashes scoreboard/boxscore, ingesta atómica idempotente y revisiones conservadas. GET read-only del último lote; `SIN_CAPTURA`, `NO_DATA` y almacén no disponible diferenciados. No modifica el catálogo canónico ni resuelve apuestas.
+- Nueva captura delimitada: 337 eventos de cinco ligas en septiembre/octubre, 200 finales con goles/corners/tiros completos. Suite backend sintética: 733 passed, cero fallos/omitidas. Ver `docs/reactivacion_single_user/CAPTURAS_ESPN_SOCCER_2026-10-15.md`; recertificación y mapeo canónico pendientes.
+
 ## 2026-10-06 — resúmenes de fútbol y vistas ROI legacy
 
 - Los resúmenes API de apuestas/sistema fútbol calculan ROI registrado sobre stake resuelto únicamente y devuelven `null` si falta cualquier ganancia resuelta; el adaptador cliente conserva N/D. Pruebas dirigidas backend/frontend y build cubren el contrato sin DML.

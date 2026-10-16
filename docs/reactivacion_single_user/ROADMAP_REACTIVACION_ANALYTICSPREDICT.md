@@ -20,6 +20,12 @@
 
 ## Dependencia inmediata
 
+**Avance 2026-10-15:** capa de capturas ESPN Soccer aislada completada y probada
+(733 pruebas backend sintéticas verdes). Diez lotes frescos: 337 eventos, 200 finales
+con estadísticas completas. El vínculo al catálogo canónico no está acreditado;
+bloque C sigue abierto. Ver `CAPTURAS_ESPN_SOCCER_2026-10-15.md` y acta externa
+para publicación/CI/aplicación en Neon.
+
 El propietario confirmó uso exclusivamente local y decidió mostrar **todos** los registros deportivos como historial personal. La cuenta de mayor actividad aportó la configuración única; la procedencia original quedó en los backups privados. La migración fue ensayada en restauración aislada y aplicada a Neon tras un segundo backup verificado. Ningún cobro ni ingesta se utilizó como prueba de arranque.
 
 ## Forma de cierre por bloque

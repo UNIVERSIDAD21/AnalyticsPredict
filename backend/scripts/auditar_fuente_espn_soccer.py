@@ -82,6 +82,9 @@ def interpretar_evento(evento: dict[str, Any], liga: str) -> dict[str, Any]:
 
 def interpretar_estadisticas(payload: dict[str, Any], evento: dict[str, Any]) -> dict[str, Any]:
     """Corners/tiros solo cuando ambos equipos aportan el campo; faltante es NULL."""
+    header_id = (payload.get("header") or {}).get("id")
+    if header_id is not None and str(header_id) != evento["id_fuente"]:
+        raise FuenteNoDisponible("Boxscore de otro evento")
     equipos = (payload.get("boxscore") or {}).get("teams")
     if not isinstance(equipos, list) or len(equipos) != 2:
         raise FuenteNoDisponible("Boxscore incompleto")
@@ -92,6 +95,8 @@ def interpretar_estadisticas(payload: dict[str, Any], evento: dict[str, Any]) ->
             raise FuenteNoDisponible("Identidad de boxscore ambigua")
         por_id[equipo_id] = {s.get("name"): _entero_no_negativo(s.get("displayValue"))
                              for s in item.get("statistics", []) if isinstance(s, dict)}
+    if set(por_id) != {evento["local_id_fuente"], evento["visitante_id_fuente"]}:
+        raise FuenteNoDisponible("Boxscore de otros equipos")
     salida = {}
     for campo, clave in (("corners", "wonCorners"), ("disparos", "totalShots"),
                          ("disparos_arco", "shotsOnTarget")):
@@ -138,8 +143,12 @@ def auditar_mes(liga: str, mes: str, max_finales: int = 0,
     for evento in finales[:max_finales]:
         boxscore = _obtener_json(s, f"{BASE}/{codigo}/summary", {"event": evento["id_fuente"]})
         evento.update(interpretar_estadisticas(boxscore, evento))
+        evento["sha256_boxscore"] = hashlib.sha256(
+            json.dumps(boxscore, sort_keys=True, ensure_ascii=False).encode()
+        ).hexdigest()
     digest = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     return {"estado": "NO_DATA" if not eventos else "OK", "fuente": "ESPN_SOCCER",
+            "observado_en": datetime.now(timezone.utc).isoformat(),
             "liga": codigo, "mes": mes, "n_eventos": len(eventos), "n_finales": len(finales),
             "n_resumenes_consultados": min(len(finales), max_finales),
             "sha256_scoreboard": digest, "eventos": interpretados}
