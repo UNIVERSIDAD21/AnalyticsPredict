@@ -314,7 +314,8 @@ class EntrenadorBD:
             {"dominio": DOMINIO, "politica_datos": POLITICA_DATOS, "partidos": datos_ordenados},
             sort_keys=True, default=str, separators=(",", ":"),
         )
-        return hashlib.sha256(datos_str.encode()).hexdigest()
+        # Contrato persistido hash_datos varchar(32): 128 bits de SHA-256.
+        return hashlib.sha256(datos_str.encode()).hexdigest()[:32]
 
     def _obtener_temporadas_hasta_cutoff(
         self,
@@ -494,6 +495,7 @@ class EntrenadorBD:
             "alpha": alpha,
         }
         metadata = {
+            "hash_algoritmo": "sha256_truncado_128",
             "dominio": DOMINIO,
             "politica_datos": POLITICA_DATOS,
             "cutoff_entrenamiento": cutoff_fecha.isoformat(),
@@ -720,6 +722,7 @@ class EntrenadorBD:
             temporadas_incluidas=temporadas,
             config_entrenamiento={"alpha": alpha},
             metadata={"dominio": DOMINIO, "politica_datos": POLITICA_DATOS,
+                      "hash_algoritmo": "sha256_truncado_128",
                       "fit_started_at": fit_started_at.isoformat(),
                       "fit_completed_at": fit_completed_at.isoformat()},
         )

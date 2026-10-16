@@ -6,6 +6,7 @@
 - Entrenamiento/backtest/conteos comparten filtro NBA explícito, `valido=true`, marcador positivo y cuartos no negativos/coherentes. El hash incluye dominio, política e identidad completa de entradas. El serving formato 2 rechaza artefactos legacy sin dominio/calidad acreditados, incluido el mixto de 58 entidades.
 - Ingesta NBA rechaza el lote entero ante fallos de parseo y escribe atómicamente; permite exclusión manual por ID con motivo (exhibición Portland–London Lions 401914130). Dry-run: 40 finales candidatos/0 fallos/1 exclusión, aún sin DML.
 - El CLI de análisis permite salida externa; sus tests dejan de regenerar reportes históricos rastreados. El arranque frontend instala con `npm ci` y exige puerto estricto.
+- Ajuste de compatibilidad: `hash_datos` conserva el contrato PostgreSQL `varchar(32)` mediante SHA-256 truncado a 128 bits, con algoritmo explícito en metadata. La primera operación detectó la longitud incompatible antes de registrar versión/publicar artefacto; los 73 partidos ingresados no se repiten.
 
 ## 2026-10-15 — capturas ESPN Soccer independientes
 

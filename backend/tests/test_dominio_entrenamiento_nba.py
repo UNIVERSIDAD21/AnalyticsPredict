@@ -28,7 +28,7 @@ def test_artefacto_mixto_legacy_se_rechaza_antes_de_servir(tmp_path):
 def test_hash_incluye_identidad_de_equipos_y_dominio():
     base = {'id': '1', 'fecha_partido': date(2026, 1, 1), 'equipo_local': 'A'}
     entrenador = EntrenadorBD(None)
-    assert len(entrenador._calcular_hash_datos([base])) == 64
+    assert len(entrenador._calcular_hash_datos([base])) == 32
     assert entrenador._calcular_hash_datos([base]) != entrenador._calcular_hash_datos([{**base, 'equipo_local': 'B'}])
 
 
