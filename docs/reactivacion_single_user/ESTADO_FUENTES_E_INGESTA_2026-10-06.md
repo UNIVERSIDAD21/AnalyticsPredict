@@ -1,5 +1,12 @@
 # Estado de fuentes e ingesta controlada — 2026-10-06
 
+> **Actualización 2026-10-15:** ESPN Soccer tiene ahora captura aislada implementada,
+> publicada con CI 4/4 y aplicada a Neon: diez lotes Sep/Oct, 337 eventos y 200 finales
+> con goles/corners/tiros completos; once huellas canónicas intactas. Esto sustituye
+> la ausencia de ingesta de capturas que se describe debajo, pero **no** el bloqueo
+> Sofascore ni el mapeo al catálogo canónico. Sin proveedor independiente validado,
+> recertificación ni activación en modelos. Ver `CAPTURAS_ESPN_SOCCER_2026-10-15.md`.
+
 **Estado:** NBA tiene flujo diario idempotente en ESPN; fútbol Sofascore está `SOURCE_UNAVAILABLE` (HTTP 403), **no** `NO_DATA`. Ninguna fuente/resultado está certificado por comparación independiente. No se lanzó ingesta fútbol con escritura.
 
 > **Probe posterior sin DML:** `backend/scripts/auditar_fuente_espn_soccer.py` valida contrato read-only de scoreboard mensual ESPN Soccer y de boxscore por evento. La Liga `esp.1` 2026-03 devolvió 36 finales con identidad, kickoff UTC y goles; dos boxscores muestreados tenían corners, tiros y tiros a puerta completos para ambos equipos. Octubre 2026 devolvió 36 eventos programados, cero finales al corte: los scores pregame no se imputan. El cliente no reintenta HTTP 403, distingue `NO_DATA` de `SOURCE_UNAVAILABLE` y falla ante lista/identidad incompleta. Esto prueba factibilidad parcial de una fuente alternativa, **no** adaptación a IDs Sofascore/Neon, cobertura de otras ligas, ingesta reciente ni outcome independiente de ESPN NBA. Evidencia JSON fuera del repo en `CIERRE_PENDIENTES_ANALYTICSPREDICT_2026-10-06`.

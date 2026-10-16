@@ -14,7 +14,7 @@ estaban en GitHub (`5167597`); se actualizó la referencia remota sin reescribir
 - `capturas_espn_soccer_lotes`: identidad liga/mes/hash, observación UTC explícita,
   hash del scoreboard y fecha de ingesta separada. No se inventa frescura al importar.
 - `capturas_espn_soccer_eventos`: snapshot completo vinculado a su lote. Reimportar
-  el mismo lote no escribe; una observación nueva conserva una revisión incluso
+  el mismo lote no añade filas; una observación nueva conserva una revisión incluso
   si vuelve a un contenido anterior. La aplicación no actualiza ni borra capturas.
 - Se validan todos los archivos antes del DML; el grupo se aplica atómicamente.
   IDs duplicados, estados ambiguos, fechas sin zona, conteos incorrectos,
@@ -71,9 +71,27 @@ orden, lote vacío, rollback total y GET read-only. La CI añade estos contratos
 ejecuta la integración también con PostgreSQL 16. Evidencias fuera del repositorio
 en `Carpeta de Entregas de Borlty/CAPTURAS_ESPN_SOCCER_2026-10-15`.
 
+## Aplicación y publicación verificadas
+
+Código `5647c79`, CI [38835743258](https://github.com/UNIVERSIDAD21/AnalyticsPredict/actions/runs/38835743258)
+**4/4 verde** (contratos backend, PostgreSQL 16, frontend y Compose).
+Antes de Neon se ensayaron los diez lotes en PostgreSQL exclusivo: inserción
+10/337, reimportación 0/0 y rollback de DDL+DML verificados.
+
+Las dos tablas no existían en el preflight. Tras registrar su ausencia y las
+huellas de once tablas canónicas, se aplicó DDL+DML en una transacción, con
+validación de datos e idempotencia antes del commit. Postflight independiente
+read-only: **10 lotes, 337 eventos, 200 finales**, datos recuperados idénticos a
+los archivos validados y huellas canónicas intactas. Se conservan 23.919 partidos
+fútbol, 12.775 baloncesto, 2.934/567 predicciones NBA/fútbol y 182/13/7/16 apuestas
+y selecciones. Owner de las tablas nuevas y ACL constan en el acta privada.
+
+No se inició/reinició ningún servidor. La prueba HTTP del contrato usa ASGI
+en proceso con el router y Neon; no acredita un despliegue ni un servidor local
+en ejecución. Evidencias de CI, ensayo, pre/postflight y API fuera del repo.
+
 ## Pendiente
 
-Publicación/CI y aplicación controlada se registran en el acta de entrega al
-terminar. El vínculo ESPN↔catálogo requiere acreditar competiciones, temporadas,
+El vínculo ESPN↔catálogo requiere acreditar competiciones, temporadas,
 IDs de clubes y ascendidos. No enlazar por similitud de nombres. La recertificación
 P&L/temporal/prospectiva, H4 y H12 siguen abiertos.

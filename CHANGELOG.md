@@ -4,6 +4,7 @@
 
 - Se completa el WIP de capturas por liga/mes, con observación UTC, hashes scoreboard/boxscore, ingesta atómica idempotente y revisiones conservadas. GET read-only del último lote; `SIN_CAPTURA`, `NO_DATA` y almacén no disponible diferenciados. No modifica el catálogo canónico ni resuelve apuestas.
 - Nueva captura delimitada: 337 eventos de cinco ligas en septiembre/octubre, 200 finales con goles/corners/tiros completos. Suite backend sintética: 733 passed, cero fallos/omitidas. Ver `docs/reactivacion_single_user/CAPTURAS_ESPN_SOCCER_2026-10-15.md`; recertificación y mapeo canónico pendientes.
+- CI de código `5647c79` 4/4 verde; tablas/capturas aplicadas a Neon tras ensayo con rollback y preflight. Postflight independiente: 10 lotes/337 eventos/200 finales, reimportación 0/0, once huellas canónicas intactas. Sin inicio de servicios ni enlace al modelo.
 
 ## 2026-10-06 — resúmenes de fútbol y vistas ROI legacy
 
