@@ -9,10 +9,10 @@ Mezclar métricas de API_USUARIO con BACKTEST_* invalida el análisis.
 from __future__ import annotations
 
 import logging
-import time
+import math
 from dataclasses import dataclass
-from datetime import date, datetime
-from typing import Dict, List, Optional, Tuple
+from datetime import date, datetime, timezone
+from typing import Dict, List, Literal, Optional, Tuple
 
 from fastapi import APIRouter, HTTPException, Path, Query
 from pydantic import BaseModel, Field
@@ -34,10 +34,10 @@ router = APIRouter(prefix="/api/metricas", tags=["Métricas de Calibración"])
 
 MIN_PREDICCIONES_MERCADO = 100
 MIN_POR_BIN = 30
-_CACHE_TTL_SEGUNDOS = 300
+SerieProbabilidad = Literal["raw", "calibrada"]
 
-_cache_metricas: dict[Tuple[object, ...], Tuple[float, dict[str, object]]] = {}
-_cache_curvas: dict[Tuple[object, ...], Tuple[float, dict[str, object]]] = {}
+# Sin cache TTL: no existe una revisión de datos que lo invalide de forma fiable.
+# Cada GET consulta datos actuales sin crear precálculos ni afirmar certificación.
 
 # Proyección de lectura: conserva el histórico y separa el outcome registrado
 # del outcome apto para métricas descriptivas cuando el partido figura 0–0.
@@ -64,7 +64,13 @@ class MetricaMercado(BaseModel):
     """Métricas de calibración para un mercado específico."""
 
     mercado: str = Field(..., description="Q1/Q2/Q3/Q4/COMPLETO")
-    n_predicciones: int = Field(..., description="Total de predicciones evaluadas")
+    n_predicciones: int = Field(..., description="Pares evaluados de la serie seleccionada")
+    n_excluidas_probabilidad: int = 0
+    n_raw: int = 0
+    n_calibradas: int = 0
+    serie: SerieProbabilidad = "raw"
+    estado_calidad: Literal["VALIDO_DESCRIPTIVO", "NO_EVALUABLE"] = "NO_EVALUABLE"
+    periodo: dict = Field(default_factory=dict)
     n_excluidos_push: int = Field(0, description="Predicciones excluidas por PUSH")
     n_excluidos_outcome_dudoso: int = Field(0, description="Outcomes NBA 0–0 sin resultado acreditado")
 
@@ -103,6 +109,9 @@ class RespuestaMetricasCalibracion(BaseModel):
     metricas_por_mercado: List[MetricaMercado]
     alertas_activas: List[dict] = Field(default_factory=list)
     timestamp_calculo: str
+    serie: SerieProbabilidad = "raw"
+    certificacion: Literal["NO_CERTIFICADO"] = "NO_CERTIFICADO"
+    cache: Literal["SIN_CACHE"] = "SIN_CACHE"
 
 
 class BinCalibracionResponse(BaseModel):
@@ -130,9 +139,15 @@ class RespuestaCurvaCalibracion(BaseModel):
     n_predicciones_total: int
     n_excluidos_push: int
     n_excluidos_outcome_dudoso: int = 0
+    n_excluidas_probabilidad: int = 0
     bins: List[BinCalibracionResponse]
-    ece: float
-    mce: float
+    ece: Optional[float]
+    mce: Optional[float]
+    serie: SerieProbabilidad = "raw"
+    modelo_version_id: Optional[int] = None
+    estado_calidad: Literal["VALIDO_DESCRIPTIVO", "NO_EVALUABLE"] = "NO_EVALUABLE"
+    certificacion: Literal["NO_CERTIFICADO"] = "NO_CERTIFICADO"
+    cache: Literal["SIN_CACHE"] = "SIN_CACHE"
     bin_peor_calibrado: Optional[str]
     linea_perfecta: List[dict] = Field(
         ..., description="Puntos para dibujar línea de calibración perfecta"
@@ -164,7 +179,7 @@ class ResumenDeportesResponse(BaseModel):
     **CRÍTICO:** El parámetro `origen` es OBLIGATORIO.
 
     ## Orígenes válidos:
-    - `API_USUARIO`: Predicciones reales de usuarios (VERDAD del producto)
+    - `API_USUARIO`: Predicciones registradas (no certificadas)
     - `BACKTEST_SINTETICO`: Predicciones de backtest (validación estadística)
     - `BACKTEST_BATCH`: Predicciones de backtest batch
     """,
@@ -187,7 +202,8 @@ async def obtener_metricas_calibracion(
     ),
     desde: Optional[date] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     hasta: Optional[date] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
-    modelo_version_id: Optional[int] = Query(None, description="Filtrar por versión de modelo"),
+    modelo_version_id: Optional[int] = Query(None, ge=1, description="Filtrar por versión de modelo"),
+    serie: SerieProbabilidad = Query("raw", description="Serie homogénea, sin fallback raw/calibrada"),
 ) -> RespuestaMetricasCalibracion:
     """Calcula y retorna métricas de calibración."""
     if desde and hasta and desde > hasta:
@@ -200,36 +216,26 @@ async def obtener_metricas_calibracion(
     metricas_resultado: list[MetricaMercado] = []
 
     for mercado_actual in mercados:
-        periodo = _resolver_periodo(
-            mercado_actual,
-            origen,
-            desde=desde,
-            hasta=hasta,
-            modelo_version_id=modelo_version_id,
-        )
+        try:
+            periodo = _resolver_periodo(
+                mercado_actual, origen, desde=desde, hasta=hasta,
+                modelo_version_id=modelo_version_id,
+            )
+        except Exception as exc:
+            raise _error_lectura_metricas(exc) from exc
         if periodo is None:
             metricas_resultado.append(
                 MetricaMercado(
                     mercado=mercado_actual,
                     n_predicciones=0,
+                    serie=serie,
+                    periodo={"inicio": desde.isoformat() if desde else "sin_limite",
+                             "fin": hasta.isoformat() if hasta else "sin_limite"},
                     n_excluidos_push=0,
                     suficiente_data=False,
                     advertencias=["Sin datos para el periodo solicitado."],
                 )
             )
-            continue
-
-        cache_key = (
-            "metricas",
-            origen,
-            mercado_actual,
-            periodo.inicio,
-            periodo.fin,
-            modelo_version_id,
-        )
-        cacheada = _obtener_cache(_cache_metricas, cache_key)
-        if cacheada:
-            metricas_resultado.append(MetricaMercado(**cacheada))
             continue
 
         try:
@@ -241,7 +247,7 @@ async def obtener_metricas_calibracion(
                 fecha_inicio=periodo.inicio,
                 fecha_fin=periodo.fin,
                 modelo_version_id=modelo_version_id,
-                usar_p_calibrada=True,
+                usar_p_calibrada=serie == "calibrada",
                 persistir=False,
             )
 
@@ -276,20 +282,23 @@ async def obtener_metricas_calibracion(
                 if calibrador is not None:
                     calibrador_activo = calibrador.metodo
                     calibrador_id = str(calibrador.id)
-            except Exception:
-                logger.exception(
-                    "Error obteniendo calibrador activo (mercado=%s origen=%s).",
-                    mercado_actual,
-                    origen,
-                )
+            except Exception as exc:
+                raise _error_lectura_metricas(exc) from exc
 
             advertencias = list(resultado.get("alertas", [])) if resultado else []
             if n_dudosos:
                 advertencias.append(f"{n_dudosos} outcomes NBA 0–0 excluidos por resultado no acreditado.")
 
+            n_raw = resultado.get("n_predicciones", 0)
+            n_calibradas = resultado.get("n_calibradas", 0)
+            n_serie = n_calibradas if serie == "calibrada" else n_raw
             metrica = MetricaMercado(
                 mercado=mercado_actual,
-                n_predicciones=resultado.get("n_predicciones", 0),
+                n_predicciones=n_serie,
+                n_raw=n_raw, n_calibradas=n_calibradas, serie=serie,
+                n_excluidas_probabilidad=resultado.get("n_excluidas_calibradas" if serie == "calibrada" else "n_excluidas_raw", 0),
+                estado_calidad="VALIDO_DESCRIPTIVO" if n_serie else "NO_EVALUABLE",
+                periodo={"inicio": periodo.inicio.isoformat(), "fin": periodo.fin.isoformat()},
                 n_excluidos_push=n_excluidos,
                 n_excluidos_outcome_dudoso=n_dudosos,
                 brier_score=resultado.get("brier_score"),
@@ -306,7 +315,7 @@ async def obtener_metricas_calibracion(
                 mejora_vs_raw=mejora,
                 base_rate=resultado.get("base_rate"),
                 sharpness=resultado.get("sharpness"),
-                suficiente_data=resultado.get("n_predicciones", 0) >= MIN_PREDICCIONES_MERCADO,
+                suficiente_data=n_serie >= MIN_PREDICCIONES_MERCADO,
                 advertencias=advertencias,
             )
 
@@ -316,32 +325,17 @@ async def obtener_metricas_calibracion(
                     f"Mínimo recomendado: {MIN_PREDICCIONES_MERCADO}."
                 )
 
-            _guardar_cache(_cache_metricas, cache_key, metrica.model_dump())
             metricas_resultado.append(metrica)
         except Exception as exc:
-            logger.exception(
-                "Error calculando métricas de calibración (mercado=%s origen=%s).",
-                mercado_actual,
-                origen,
-            )
-            metricas_resultado.append(
-                MetricaMercado(
-                    mercado=mercado_actual,
-                    n_predicciones=0,
-                    n_excluidos_push=0,
-                    suficiente_data=False,
-                    advertencias=[f"Error calculando métricas: {exc}"],
-                )
-            )
+            raise _error_lectura_metricas(exc) from exc
 
-    alertas = listar_alertas_calibracion(
-        mercado=mercado,
-        origen=origen,
-        resuelta=False,
-    )
-    alertas_filtradas = _filtrar_alertas_periodo(alertas, desde, hasta)
+    try:
+        alertas = listar_alertas_calibracion(mercado=mercado, origen=origen, resuelta=False)
+        alertas_filtradas = _filtrar_alertas_periodo(alertas, desde, hasta)
+    except Exception as exc:
+        raise _error_lectura_metricas(exc) from exc
 
-    timestamp = datetime.now().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     return RespuestaMetricasCalibracion(
         exito=True,
         origen=origen,
@@ -351,6 +345,7 @@ async def obtener_metricas_calibracion(
         },
         modelo_version_id=modelo_version_id,
         metricas_por_mercado=metricas_resultado,
+        serie=serie,
         alertas_activas=alertas_filtradas,
         timestamp_calculo=timestamp,
     )
@@ -440,6 +435,8 @@ async def obtener_curva_calibracion(
     n_bins: int = Query(10, ge=5, le=20),
     desde: Optional[date] = Query(None),
     hasta: Optional[date] = Query(None),
+    modelo_version_id: Optional[int] = Query(None, ge=1),
+    serie: SerieProbabilidad = Query("raw"),
 ) -> RespuestaCurvaCalibracion:
     """Calcula y retorna la curva de calibración para un mercado."""
     if desde and hasta and desde > hasta:
@@ -448,50 +445,45 @@ async def obtener_curva_calibracion(
             detail="Fecha 'desde' no puede ser posterior a 'hasta'",
         )
 
-    periodo = _resolver_periodo(
-        mercado,
-        origen,
-        desde=desde,
-        hasta=hasta,
-        modelo_version_id=None,
-    )
-    if periodo is None:
-        raise HTTPException(status_code=404, detail="No hay predicciones para el periodo.")
+    try:
+        periodo = _resolver_periodo(
+            mercado,
+            origen,
+            desde=desde,
+            hasta=hasta,
+            modelo_version_id=modelo_version_id,
+        )
+        if periodo is None:
+            raise HTTPException(status_code=404, detail="No hay predicciones para el periodo.")
 
-    cache_key = (
-        "curva",
-        mercado,
-        origen,
-        tipo_bins,
-        n_bins,
-        periodo.inicio,
-        periodo.fin,
-    )
-    cacheada = _obtener_cache(_cache_curvas, cache_key)
-    if cacheada:
-        return RespuestaCurvaCalibracion(**cacheada)
+        predicciones = _obtener_predicciones_para_curva(
+            mercado=mercado,
+            origen=origen,
+            desde=periodo.inicio,
+            hasta=periodo.fin,
+            serie=serie, modelo_version_id=modelo_version_id,
+        )
+        predicciones_filtradas = [
+            (p["p_efectiva"], p["outcome_binario"])
+            for p in predicciones
+            if p["outcome_binario"] is not None and p["p_efectiva"] is not None
+        ]
+        n_prob_ausentes = sum(p["outcome_binario"] is not None and p["p_efectiva"] is None for p in predicciones)
+        n_excluidos = _contar_excluidos_push(
+            mercado,
+            origen,
+            periodo.inicio,
+            periodo.fin,
+            modelo_version_id=modelo_version_id,
+        )
+        n_dudosos = _contar_outcomes_nba_cero_cero(
+            mercado, origen, periodo.inicio, periodo.fin, modelo_version_id=modelo_version_id,
+        )
 
-    predicciones = _obtener_predicciones_para_curva(
-        mercado=mercado,
-        origen=origen,
-        desde=periodo.inicio,
-        hasta=periodo.fin,
-    )
-    predicciones_filtradas = [
-        (p["p_efectiva"], p["outcome_binario"])
-        for p in predicciones
-        if p["outcome_binario"] is not None
-    ]
-    n_excluidos = _contar_excluidos_push(
-        mercado,
-        origen,
-        periodo.inicio,
-        periodo.fin,
-        modelo_version_id=None,
-    )
-    n_dudosos = _contar_outcomes_nba_cero_cero(
-        mercado, origen, periodo.inicio, periodo.fin, modelo_version_id=None,
-    )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error_lectura_metricas(exc) from exc
 
     resultado = _calcular_curva(tipo_bins, predicciones_filtradas, n_bins=n_bins)
 
@@ -516,19 +508,21 @@ async def obtener_curva_calibracion(
         n_predicciones_total=resultado.n_total,
         n_excluidos_push=n_excluidos,
         n_excluidos_outcome_dudoso=n_dudosos,
+        n_excluidas_probabilidad=n_prob_ausentes,
         bins=_mapear_bins_respuesta(resultado.bins),
-        ece=resultado.ece,
-        mce=resultado.mce,
+        ece=resultado.ece if resultado.n_total else None,
+        mce=resultado.mce if resultado.n_total else None,
+        serie=serie, modelo_version_id=modelo_version_id,
+        estado_calidad="VALIDO_DESCRIPTIVO" if resultado.n_total else "NO_EVALUABLE",
         bin_peor_calibrado=resultado.bin_peor,
         linea_perfecta=linea_perfecta,
         periodo={
             "inicio": periodo.texto_inicio,
             "fin": periodo.texto_fin,
         },
-        timestamp_calculo=datetime.now().isoformat(),
+        timestamp_calculo=datetime.now(timezone.utc).isoformat(),
     )
 
-    _guardar_cache(_cache_curvas, cache_key, respuesta.model_dump())
     return respuesta
 
 
@@ -757,38 +751,31 @@ def _contar_outcomes_nba_cero_cero(
 
 
 def _obtener_predicciones_para_curva(
-    *,
-    mercado: str,
-    origen: str,
-    desde: date,
-    hasta: date,
+    *, mercado: str, origen: str, desde: date, hasta: date,
+    serie: SerieProbabilidad = "raw", modelo_version_id: Optional[int] = None,
 ) -> List[Dict[str, object]]:
-    pool = obtener_pool()
-    consulta = """
-        SELECT COALESCE(CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END, v.p_raw) AS p_efectiva,
+    if serie not in ("raw", "calibrada"):
+        raise ValueError("Serie no soportada")
+    # Expresiones de una lista fija; nunca se interpolan identificadores del cliente.
+    p_sql = "v.p_raw" if serie == "raw" else "CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END"
+    consulta = f"""
+        SELECT {p_sql} AS p_efectiva,
                CASE WHEN pb.local_total = 0 AND pb.visitante_total = 0
                     THEN NULL ELSE v.outcome_binario END AS outcome_binario
         FROM vista_predicciones_para_calibracion v
         LEFT JOIN predicciones_registradas pr ON pr.id = v.id
         LEFT JOIN partidos_baloncesto pb ON pb.id = pr.partido_id
-        WHERE v.mercado = %s
-          AND v.origen = %s
-          AND v.fecha_partido >= %s
-          AND v.fecha_partido <= %s
-          AND COALESCE(CASE WHEN v.calibrador_id IS NOT NULL THEN v.p_calibrada END, v.p_raw) IS NOT NULL
-        ORDER BY v.fecha_partido
+        WHERE v.mercado = %s AND v.origen = %s
+          AND v.fecha_partido >= %s AND v.fecha_partido <= %s
+          AND (%s::integer IS NULL OR v.modelo_version_id = %s)
+        ORDER BY v.fecha_partido, v.id
     """
-    params = [mercado, origen, desde, hasta]
-
-    with pool.connection() as conn:
+    with obtener_pool().connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(consulta, params)
+            cursor.execute(consulta, [mercado, origen, desde, hasta, modelo_version_id, modelo_version_id])
             filas = cursor.fetchall()
-
-    return [
-        {"p_efectiva": float(fila[0]), "outcome_binario": fila[1]}
-        for fila in filas
-    ]
+    return [{"p_efectiva": float(p) if p is not None and math.isfinite(float(p)) and 0 <= float(p) <= 1 else None,
+             "outcome_binario": outcome} for p, outcome in filas]
 
 
 def _filtrar_alertas_periodo(
@@ -820,27 +807,10 @@ def _filtrar_alertas_periodo(
     return filtradas
 
 
-def _obtener_cache(
-    cache: dict[Tuple[object, ...], Tuple[float, dict[str, object]]],
-    key: Tuple[object, ...],
-) -> Optional[dict[str, object]]:
-    ahora = time.monotonic()
-    item = cache.get(key)
-    if not item:
-        return None
-    timestamp, data = item
-    if ahora - timestamp > _CACHE_TTL_SEGUNDOS:
-        cache.pop(key, None)
-        return None
-    return data
-
-
-def _guardar_cache(
-    cache: dict[Tuple[object, ...], Tuple[float, dict[str, object]]],
-    key: Tuple[object, ...],
-    data: dict[str, object],
-) -> None:
-    cache[key] = (time.monotonic(), data)
+def _error_lectura_metricas(exc):
+    # Ni la respuesta ni este log incluyen DSN, SQL, importes o texto del driver.
+    logger.error("Métricas no disponibles: %s", type(exc).__name__)
+    return HTTPException(status_code=503, detail="Métricas no disponibles; reintenta más tarde.")
 
 
 # ══════════════════════════════════════════════════════════════════════

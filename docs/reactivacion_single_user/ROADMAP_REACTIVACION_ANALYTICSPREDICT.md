@@ -20,7 +20,8 @@ el propietario, sin copiar memoria/configuración del agente al producto.
 ## Pendientes ejecutables del agente
 
 1. **KPI/caches:** grano, ventanas, denominadores, exclusiones y procedencia comunes
-   SQL→API→UI; N/D y motivos, raw/calibrado separados, caches observables.
+   SQL→API→UI; N/D y motivos, raw/calibrado separados, caches observables. Subbloque
+   calibración cerrado en [KPI16/10](KPI_CALIBRACION_2026-10-16.md); no cierra P&L/otrosKPI.
 2. **Observabilidad/GET:** inventario transitivo y pruebas de ausencia de escrituras;
    fallos de datos/entrenamiento/calibrador/cadena sin ceros o éxitos ficticios.
 3. **H12:** resolver auditoría dev, permisos específicos y rot con evidencia,

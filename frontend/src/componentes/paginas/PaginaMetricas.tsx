@@ -2,7 +2,7 @@
  * PaginaMetricas.tsx — Dashboard de métricas de calibración
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, BarChart3, Calendar, RotateCw } from 'lucide-react';
 import { Encabezado, GraficoCurvaCalibracion } from '../organismos';
 import { Boton, Spinner } from '../atomos';
@@ -13,6 +13,7 @@ import type {
   MercadoMetricas,
   MetricaMercado,
   OrigenMetricas,
+  SerieProbabilidad,
   RespuestaCurvaCalibracion,
   RespuestaMetricasCalibracion,
 } from '../../tipos';
@@ -54,20 +55,27 @@ function formatearMoneda(valor: number | null, decimales = 2): string {
 }
 
 function obtenerEstadoCalibracion(metrica?: MetricaMercado) {
-  if (!metrica || !metrica.suficiente_data || metrica.ece === null) {
+  if (!metrica || metrica.n_predicciones === 0 || metrica.ece === null) {
     return { texto: 'Sin datos', clase: 'text-texto-terciario border-neon-cyan/20' };
   }
+  if (!metrica.suficiente_data) {
+    return { texto: 'Muestra pequeña', clase: 'text-advertencia-500 border-advertencia-500/40' };
+  }
   if (metrica.ece <= 0.02) {
-    return { texto: 'Bueno', clase: 'text-neon-verde border-neon-verde/40' };
+    return { texto: 'ECE bajo', clase: 'text-neon-verde border-neon-verde/40' };
   }
   if (metrica.ece <= 0.05) {
-    return { texto: 'Aceptable', clase: 'text-advertencia-500 border-advertencia-500/40' };
+    return { texto: 'ECE medio', clase: 'text-advertencia-500 border-advertencia-500/40' };
   }
-  return { texto: 'Regular', clase: 'text-neon-rojo border-neon-rojo/40' };
+  return { texto: 'ECE alto', clase: 'text-neon-rojo border-neon-rojo/40' };
 }
 
 export function PaginaMetricas() {
   const [origen, setOrigen] = useState<OrigenMetricas>('API_USUARIO');
+  const [serie, setSerie] = useState<SerieProbabilidad>('raw');
+  const [versionModelo, setVersionModelo] = useState('');
+  const solicitudMetricas = useRef(0);
+  const solicitudCurva = useRef(0);
   const [periodo, setPeriodo] = useState<PeriodoSeleccion>('30');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -106,44 +114,50 @@ export function PaginaMetricas() {
     if (!rangoValido) {
       return;
     }
+    const solicitud = ++solicitudMetricas.current;
     setEstado('cargando');
     setError(null);
     try {
       const data = await obtenerMetricasCalibracion({
-        origen,
+        origen, serie, modelo_version_id: versionModelo ? Number(versionModelo) : undefined,
         desde: parametrosPeriodo.desde,
         hasta: parametrosPeriodo.hasta,
       });
+      if (solicitud !== solicitudMetricas.current) return;
       setMetricas(data);
       setEstado('exito');
     } catch (err) {
+      if (solicitud !== solicitudMetricas.current) return;
       setError(err instanceof Error ? err.message : 'No se pudieron cargar las métricas.');
       setEstado('error');
     }
-  }, [origen, parametrosPeriodo, rangoValido]);
+  }, [origen, parametrosPeriodo, rangoValido, serie, versionModelo]);
 
   const cargarCurva = useCallback(async () => {
     if (!rangoValido) {
       return;
     }
+    const solicitud = ++solicitudCurva.current;
     setEstadoCurva('cargando');
     setErrorCurva(null);
     try {
       const data = await obtenerCurvaCalibracion({
         mercado: mercadoCurva,
-        origen,
+        origen, serie, modelo_version_id: versionModelo ? Number(versionModelo) : undefined,
         tipo_bins: tipoBins,
         n_bins: nBins,
         desde: parametrosPeriodo.desde,
         hasta: parametrosPeriodo.hasta,
       });
+      if (solicitud !== solicitudCurva.current) return;
       setCurva(data);
       setEstadoCurva('exito');
     } catch (err) {
+      if (solicitud !== solicitudCurva.current) return;
       setErrorCurva(err instanceof Error ? err.message : 'No se pudo cargar la curva.');
       setEstadoCurva('error');
     }
-  }, [mercadoCurva, nBins, origen, parametrosPeriodo, rangoValido, tipoBins]);
+  }, [mercadoCurva, nBins, origen, parametrosPeriodo, rangoValido, tipoBins, serie, versionModelo]);
 
   useEffect(() => {
     void cargarMetricas();
@@ -168,7 +182,7 @@ export function PaginaMetricas() {
 
   const metricasPorMercado = metricas?.metricas_por_mercado ?? [];
   const resumenGlobal = metricasPorMercado.find((item) => item.mercado === 'COMPLETO');
-  const resumenDisponible = Boolean(resumenGlobal?.suficiente_data);
+  const resumenDisponible = Boolean(resumenGlobal && resumenGlobal.n_predicciones > 0);
 
   const resumenBitacora = metricasBitacora?.resumen_global ?? null;
   const manejarActualizar = () => {
@@ -189,7 +203,7 @@ export function PaginaMetricas() {
               Métricas de calibración
             </h2>
             <p className="text-sm text-texto-secundario">
-              Audita la calidad probabilística (Brier, ECE, LogLoss) por mercado.
+              Métricas históricas descriptivas por mercado. No certifican eficacia prospectiva.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -203,6 +217,23 @@ export function PaginaMetricas() {
         </div>
 
         <div className="tarjeta p-4 flex flex-wrap items-end gap-4">
+          <div className="space-y-2">
+            <label htmlFor="serie-metricas" className="text-xs uppercase tracking-widest text-texto-secundario">Probabilidades</label>
+            <select id="serie-metricas" value={serie} onChange={(event) => setSerie(event.target.value as SerieProbabilidad)}
+              className="rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20 text-texto-principal">
+              <option value="raw">Raw (sin calibrar)</option>
+              <option value="calibrada">Calibradas (con procedencia)</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="version-metricas" className="text-xs uppercase tracking-widest text-texto-secundario">Versión de modelo (opcional)</label>
+            <input id="version-metricas" type="number" min="1" step="1" value={versionModelo}
+              onChange={(event) => {
+                const valor = event.target.value;
+                if (valor === '' || (Number.isInteger(Number(valor)) && Number(valor) >= 1)) setVersionModelo(valor);
+              }}
+              className="w-32 rounded-lg px-3 py-2 bg-futurista-oscuro/70 border border-neon-cyan/20 text-texto-principal" />
+          </div>
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-widest text-texto-secundario">Origen</label>
             <select
@@ -356,14 +387,18 @@ export function PaginaMetricas() {
 
         {estado === 'exito' && metricas && (
           <div className="space-y-6">
+            <p className="text-xs text-texto-secundario">
+              No certificado · Serie {metricas.serie} · Calculado {metricas.timestamp_calculo}
+              {metricas.modelo_version_id === null ? ' · Todas las versiones (agregado descriptivo)' : ` · Modelo ${metricas.modelo_version_id}`}
+            </p>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               <div className="tarjeta p-4 space-y-2">
                 <p className="text-xs uppercase tracking-widest text-texto-secundario">Predicciones</p>
                 <p className="text-2xl font-mono text-neon-cyan">
-                  {resumenDisponible ? formatearEntero(resumenGlobal?.n_predicciones ?? null) : '—'}
+                  {formatearEntero(resumenGlobal?.n_predicciones ?? null)}
                 </p>
                 <p className="text-[11px] text-texto-terciario">
-                  {resumenDisponible ? 'Mercado completo' : 'Sin datos suficientes'}
+                  {resumenDisponible ? `Mercado completo · ${resumenGlobal?.suficiente_data ? 'descriptivo' : 'muestra pequeña'}` : 'Sin pares válidos'}
                 </p>
               </div>
               <div className="tarjeta p-4 space-y-2">
@@ -401,7 +436,7 @@ export function PaginaMetricas() {
                   Métricas por mercado
                 </h3>
                 <div className="text-xs text-texto-terciario">
-                  Periodo: {metricas.periodo.inicio} → {metricas.periodo.fin}
+                  Serie: {metricas.serie} · Periodo: {metricas.periodo.inicio} → {metricas.periodo.fin}
                 </div>
               </div>
 
@@ -410,7 +445,9 @@ export function PaginaMetricas() {
                   <thead className="text-xs uppercase tracking-wider text-texto-terciario">
                     <tr className="border-b border-neon-cyan/20">
                       <th className="py-2 text-left">Mercado</th>
-                      <th className="py-2 text-right">N</th>
+                      <th className="py-2 text-right">N serie</th>
+                      <th className="py-2 text-right">N raw / calibradas</th>
+                      <th className="py-2 text-right">Sin prob. válida</th>
                       <th className="py-2 text-right">0–0 excl.</th>
                       <th className="py-2 text-right">Brier</th>
                       <th className="py-2 text-right">ECE</th>
@@ -426,19 +463,25 @@ export function PaginaMetricas() {
                         <tr key={mercado} className="border-b border-neon-cyan/10">
                           <td className="py-2 font-semibold text-texto-principal">{mercado}</td>
                           <td className="py-2 text-right text-texto-secundario">
-                            {metrica?.suficiente_data ? formatearEntero(metrica.n_predicciones) : '—'}
+                            {metrica ? formatearEntero(metrica.n_predicciones) : '—'}
+                          </td>
+                          <td className="py-2 text-right text-texto-secundario">
+                            {metrica ? `${metrica.n_raw} / ${metrica.n_calibradas}` : '—'}
+                          </td>
+                          <td className="py-2 text-right text-texto-secundario">
+                            {metrica ? formatearEntero(metrica.n_excluidas_probabilidad) : '—'}
                           </td>
                           <td className="py-2 text-right text-texto-secundario">
                             {metrica ? formatearEntero(metrica.n_excluidos_outcome_dudoso) : '—'}
                           </td>
                           <td className="py-2 text-right text-texto-secundario">
-                            {metrica?.suficiente_data ? formatearNumero(metrica.brier_score) : '—'}
+                            {metrica ? formatearNumero(metrica.brier_score) : '—'}
                           </td>
                           <td className="py-2 text-right text-texto-secundario">
-                            {metrica?.suficiente_data ? formatearNumero(metrica.ece) : '—'}
+                            {metrica ? formatearNumero(metrica.ece) : '—'}
                           </td>
                           <td className="py-2 text-right text-texto-secundario">
-                            {metrica?.suficiente_data ? formatearNumero(metrica.log_loss) : '—'}
+                            {metrica ? formatearNumero(metrica.log_loss) : '—'}
                           </td>
                           <td className="py-2 text-right">
                             <span className={`px-2 py-1 rounded-full text-[10px] uppercase border ${estadoCalibracion.clase}`}>
@@ -460,11 +503,11 @@ export function PaginaMetricas() {
                     Curva de calibración
                   </h3>
                   <p className="text-xs text-texto-terciario">
-                    Visualiza la confiabilidad del sistema por bins.
+                    Serie homogénea, sin sustituir calibradas ausentes por raw. No es validación prospectiva.
                   </p>
                 </div>
                 <div className="text-xs text-texto-terciario">
-                  Periodo: {metricas.periodo.inicio} → {metricas.periodo.fin}
+                  Serie: {metricas.serie} · Periodo: {metricas.periodo.inicio} → {metricas.periodo.fin}
                 </div>
               </div>
 

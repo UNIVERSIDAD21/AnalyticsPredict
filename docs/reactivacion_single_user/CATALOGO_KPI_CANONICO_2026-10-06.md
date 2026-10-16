@@ -29,3 +29,13 @@ Grano de apuesta: `id`, deporte, mercado, lado, línea, cuota, stake, resultado 
 Un consumidor debe recibir `{valor, unidad, n, n_excluidas, ventana, deporte, mercado, version, estado_calidad, corte_utc}`. `estado_calidad` distingue `VALIDO_DESCRIPTIVO`, `NO_EVALUABLE` y `NO_CERTIFICADO`; no rellenar `NULL` con cero ni fusionar raw/calibrada. `DATA_QUALITY_RULES.md` y `SCORECARD_CALIDAD_DE_DATOS.md` son guards de publicación; `TRAZABILIDAD_CONFIDENCE_2026-10-06.md` registra la fórmula vigente sin validarla. Los tests `test_auditar_corte_analitico.py` prueban Brier/Log Loss/ECE con pares conocidos y exclusión de pendientes del win rate; faltan pruebas de vistas/granularidad e integración UI. Esta definición no debe marcar como terminada la capa canónica completa.
 
 **Contrato por dominio:** NBA interno no genera picks ni stakes. No trasladar KPI monetarios de bitácora al módulo de análisis NBA. En fútbol, el endpoint de rendimiento entrega ROI en porcentaje o `null`; el adaptador frontend convierte a razón y muestra N/D si falta stake/ganancia. Un valor aritmético de fútbol sigue siendo registrado/no certificado sin outcome y fuente temporalmente verificables.
+
+## Integración parcial comprobada — 2026-10-16
+
+[Calibración SQL/API/UI](KPI_CALIBRACION_2026-10-16.md) separa series raw/calibrada,
+expone n/exclusiones/periodo/modelo, N/D sin muestra, sharpness como varianza y
+base_rate de la misma cohorte. Sin cacheTTL ni GET que persista precálculos;
+fallo503 no es n0.794backend/27frontend,4GETread-only reales200 y7huellas intactas.
+No crea vistas físicas cross-sport ni completa todos los KPI/P&L del catálogo.
+Confirmación del propietario: soportesP&L no existen; conservar exclusiones/ROI N/D,
+no mantener su recuperación como tarea humana pendiente.

@@ -29,33 +29,14 @@ const formatearNumero = (valor: number | null | undefined, decimales = 3) => {
   return valor.toFixed(decimales);
 };
 
-function obtenerInterpretacion(
-  ece: number,
-  mce: number,
-  bins: BinCalibracion[]
-): string {
-  const total = bins.reduce((acc, bin) => acc + bin.n, 0);
-  const sesgoPromedio = bins.reduce((acc, bin) => acc + bin.gap_con_signo * bin.n, 0) / (total || 1);
-
-  let estado = 'Bien calibrado';
-  if (ece > 0.08) {
-    estado = 'Calibración débil';
-  } else if (ece > 0.05) {
-    estado = 'Calibración aceptable';
-  } else if (ece <= 0.02) {
-    estado = 'Calibración excelente';
+function obtenerInterpretacion(datos: RespuestaCurvaCalibracion): string {
+  if (!datos.n_predicciones_total || datos.ece === null || datos.mce === null) {
+    return 'Sin pares válidos para esta serie y periodo. ECE y MCE no evaluables.';
   }
-
-  let sesgo = 'Sin sesgo evidente';
-  if (sesgoPromedio > 0.02) {
-    sesgo = 'Sobreestima (overconfidence)';
-  } else if (sesgoPromedio < -0.02) {
-    sesgo = 'Subestima (underconfidence)';
+  if (datos.n_predicciones_total < 100 || datos.bins.some((bin) => bin.n > 0 && !bin.suficiente_data)) {
+    return 'Muestra pequeña o bins insuficientes: métricas descriptivas, sin acreditar estabilidad de calibración.';
   }
-
-  const alerta = mce > 0.1 ? 'Alerta de drift probable.' : 'Sin señales fuertes de drift.';
-
-  return `${estado}. ${sesgo}. ${alerta}`;
+  return 'Métricas descriptivas del histórico. Un ECE bajo no acredita drift, independencia ni eficacia prospectiva.';
 }
 
 function TooltipBin({
@@ -85,7 +66,7 @@ function TooltipBin({
 export function GraficoCurvaCalibracion({ datos }: PropsGraficoCurvaCalibracion) {
   const puntosSistema = useMemo(
     () =>
-      datos.bins.map((bin) => ({
+      datos.bins.filter((bin) => bin.n > 0).map((bin) => ({
         ...bin,
         prob: bin.probabilidad_promedio,
         real: bin.frecuencia_real,
@@ -94,13 +75,17 @@ export function GraficoCurvaCalibracion({ datos }: PropsGraficoCurvaCalibracion)
   );
 
   const interpretacion = useMemo(
-    () => obtenerInterpretacion(datos.ece, datos.mce, datos.bins),
+    () => obtenerInterpretacion(datos),
     [datos]
   );
 
   return (
     <div className="space-y-4">
-      <div className="h-[320px] w-full">
+      <div className="text-xs text-texto-secundario">
+        Serie {datos.serie} · No certificado · Calculado {datos.timestamp_calculo}
+        {datos.modelo_version_id === null ? ' · Todas las versiones' : ` · Modelo ${datos.modelo_version_id}`}
+      </div>
+      {datos.n_predicciones_total > 0 && <div className="h-[320px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={puntosSistema} margin={{ top: 10, right: 20, left: -10, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 255, 255, 0.15)" />
@@ -136,7 +121,7 @@ export function GraficoCurvaCalibracion({ datos }: PropsGraficoCurvaCalibracion)
             <Tooltip content={<TooltipBin />} />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </div>}
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-texto-secundario">
         <span className="px-2 py-1 rounded-full border border-neon-cyan/30 text-neon-cyan">
@@ -153,6 +138,7 @@ export function GraficoCurvaCalibracion({ datos }: PropsGraficoCurvaCalibracion)
             0–0 sin resultado acreditado: {datos.n_excluidos_outcome_dudoso.toLocaleString('es-ES')} excluidos
           </span>
         )}
+        <span>Sin probabilidad válida: {datos.n_excluidas_probabilidad}</span>
         <span className="px-2 py-1 rounded-full border border-neon-cyan/10">
           Peor bin: {datos.bin_peor_calibrado ?? '—'}
         </span>

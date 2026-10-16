@@ -173,7 +173,10 @@ def test_consumidores_vista_legacy_ignoran_calibrada_sin_id_en_postgres_efimero(
 
         curva_metricas = _curva_metricas(mercado="H9_VIEW", origen="H9_TEST", desde=desde, hasta=hasta)
         curva_backtest = _curva_backtest(mercado="H9_VIEW", origen="H9_TEST", desde=desde, hasta=hasta)
-        assert [fila["p_efectiva"] for fila in curva_metricas] == pytest.approx([0.2, 0.9])
+        assert [fila["p_efectiva"] for fila in curva_metricas] == pytest.approx([0.2, 0.2])
+        calibradas = _curva_metricas(mercado="H9_VIEW", origen="H9_TEST", desde=desde, hasta=hasta, serie="calibrada")
+        assert calibradas[0]["p_efectiva"] is None
+        assert calibradas[1]["p_efectiva"] == pytest.approx(0.9)
         assert [fila[0] for fila in curva_backtest] == pytest.approx([0.2, 0.9])
 
         predicciones = _obtener_predicciones_backtest(

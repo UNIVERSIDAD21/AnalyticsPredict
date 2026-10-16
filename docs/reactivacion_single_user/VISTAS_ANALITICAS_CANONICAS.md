@@ -16,3 +16,10 @@
 Una nueva vista canónica de P&L debe conservar **una fila por apuesta** antes de agregar, exponer `motivo_no_evaluable`, `partido_id`, competición, fuente del outcome, stake/cuota/unidad y sus timestamps, y agrupar solo después de aplicar exactamente el mismo gate que `backend/scripts/auditar_pnl_nba.py` y `backend/api/rutas_bitacora.py`. Si faltan fuente/instante/unidad, `profit_certificado` y `roi_certificado` deben ser `NULL`; no convertir la coherencia aritmética en certificación. El join con predicciones nunca debe multiplicar apuestas. Primero probar sobre PostgreSQL desechable y comparar con el corte 182/181/114/67/8/40, luego migrar con rollback.
 
 La propuesta histórica `vw_perf_market_odds_confidence` y otras vistas 06 siguen **no implementadas**. No usarlas como fuente de UI ni afirmar que los KPI canónicos están completos.
+
+## Consumidor calibración — 2026-10-16
+
+Resumen/curva/pantalla seleccionan una serie homogénea y versión opcional, con
+igual n/exclusiones y N/D sin muestra. No se modifica la vista física ni se usan
+precálculos legacy para estos GET. Ver [cierre parcial](KPI_CALIBRACION_2026-10-16.md).
+Lo descrito como próxima vista física continúa pendiente.

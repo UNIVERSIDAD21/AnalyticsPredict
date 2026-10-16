@@ -6,7 +6,7 @@ comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 
 | Prioridad | Trabajo | Criterio de cierre | Estado real |
 |---|---|---|---|
-| P1 | KPI/caches coherentes | Grano/ventana/n/excluidos y N/D iguales en SQL/API/UI; raw/calibrado separados; frescura verificable | Abierto; vistasROIlegacy ya reparadas, no repetir su migración |
+| P1 | KPI/caches coherentes | Grano/ventana/n/excluidos y N/D iguales en SQL/API/UI; raw/calibrado separados; frescura verificable | Parcial: calibraciónAPI/UI reparada16/10; P&L/otrosKPI/caches aún abiertos. VistasROIlegacy ya reparadas, no repetir migración |
 | P1 | Auditoría GET y observabilidad | Llamadas transitivas sin escritura implícita, errores sanitizados, jobs/datos/modelos observables | Abierto; Estado/bitácora/loader ya tienen cierres específicos |
 | P1 | H4 historiaGit | Purga integral recuperable y ausencia acreditada en todas las refs relevantes | CuatroSQLite alcanzables; refsPR administradas por GitHub impiden cerrar con solo heads. No purga parcial |
 | P2 | H12 dev/permisos/rot | Versiones compatibles, lock/pruebas/lint/build/CI; permisos reparados solo con evidencia | Baseline15/10:10avisosdev,0prod.30cambios de modo del respaldo histórico preservados |

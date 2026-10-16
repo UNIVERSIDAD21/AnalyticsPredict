@@ -6,11 +6,19 @@ import type { AlertaCalibracion } from './alertas';
 
 export type OrigenMetricas = 'API_USUARIO' | 'BACKTEST_SINTETICO' | 'BACKTEST_BATCH';
 
+export type SerieProbabilidad = 'raw' | 'calibrada';
+
 export type MercadoMetricas = 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'COMPLETO';
 
 export interface MetricaMercado {
   mercado: MercadoMetricas;
   n_predicciones: number;
+  n_raw: number;
+  n_calibradas: number;
+  n_excluidas_probabilidad: number;
+  serie: SerieProbabilidad;
+  estado_calidad: 'VALIDO_DESCRIPTIVO' | 'NO_EVALUABLE';
+  periodo: { inicio?: string; fin?: string };
   n_excluidos_push: number;
   n_excluidos_outcome_dudoso: number;
   brier_score: number | null;
@@ -39,6 +47,9 @@ export interface RespuestaMetricasCalibracion {
     fin: string;
   };
   modelo_version_id: number | null;
+  serie: SerieProbabilidad;
+  certificacion: 'NO_CERTIFICADO';
+  cache: 'SIN_CACHE';
   metricas_por_mercado: MetricaMercado[];
   alertas_activas: AlertaCalibracion[];
   timestamp_calculo: string;
@@ -50,6 +61,7 @@ export interface ParametrosMetricasCalibracion {
   desde?: string;
   hasta?: string;
   modelo_version_id?: number;
+  serie?: SerieProbabilidad;
 }
 
 export interface BinCalibracion {
@@ -74,8 +86,14 @@ export interface RespuestaCurvaCalibracion {
   n_excluidos_push: number;
   n_excluidos_outcome_dudoso: number;
   bins: BinCalibracion[];
-  ece: number;
-  mce: number;
+  ece: number | null;
+  mce: number | null;
+  n_excluidas_probabilidad: number;
+  serie: SerieProbabilidad;
+  modelo_version_id: number | null;
+  estado_calidad: 'VALIDO_DESCRIPTIVO' | 'NO_EVALUABLE';
+  certificacion: 'NO_CERTIFICADO';
+  cache: 'SIN_CACHE';
   bin_peor_calibrado: string | null;
   linea_perfecta: Array<{ x: number; y: number }>;
   periodo: {
@@ -86,6 +104,8 @@ export interface RespuestaCurvaCalibracion {
 }
 
 export interface ParametrosCurvaCalibracion {
+  serie?: SerieProbabilidad;
+  modelo_version_id?: number;
   mercado: MercadoMetricas;
   origen: OrigenMetricas;
   tipo_bins?: 'fijos' | 'cuantiles';

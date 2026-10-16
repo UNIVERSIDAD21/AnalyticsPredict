@@ -39,6 +39,7 @@ def test_metricas_respuesta_basica(_conteo_dudosos):
     client = _crear_cliente()
     resultado = {
         "n_predicciones": 45,
+        "n_calibradas": 45,
         "brier_score": 0.21,
         "brier_score_raw": 0.23,
         "brier_score_calibrado": 0.21,
@@ -67,7 +68,7 @@ def test_metricas_respuesta_basica(_conteo_dudosos):
                             return_value=SimpleNamespace(metodo="platt", id="1234"),
                         ):
                             response = client.get(
-                                "/api/metricas/calibracion?origen=API_USUARIO&mercado=Q1"
+                                "/api/metricas/calibracion?origen=API_USUARIO&mercado=Q1&serie=calibrada"
                             )
 
     assert response.status_code == 200

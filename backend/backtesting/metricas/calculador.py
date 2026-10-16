@@ -64,7 +64,8 @@ def calcular_metricas_calibracion(
     predicciones_calibradas = []
     probabilidades_raw = []
     probabilidades_calibradas = []
-    resultados = []
+    n_binarias = 0
+    n_pareadas = 0
     distribucion = []
     niveles_intervalo = []
 
@@ -89,23 +90,26 @@ def calcular_metricas_calibracion(
         if outcome_binario is None:
             continue
 
-        if p_raw is not None:
-            predicciones_raw.append((float(p_raw), bool(outcome_binario)))
-            probabilidades_raw.append(float(p_raw))
-
-        if p_calibrada is not None:
-            predicciones_calibradas.append((float(p_calibrada), bool(outcome_binario)))
-            probabilidades_calibradas.append(float(p_calibrada))
-
-        resultados.append(bool(outcome_binario))
+        n_binarias += 1
+        p_raw = _normalizar_numero(p_raw)
+        p_calibrada = _normalizar_numero(p_calibrada)
+        raw_valida = p_raw is not None and 0 <= p_raw <= 1
+        cal_valida = p_calibrada is not None and 0 <= p_calibrada <= 1
+        if raw_valida:
+            predicciones_raw.append((p_raw, bool(outcome_binario)))
+            probabilidades_raw.append(p_raw)
+        if cal_valida:
+            predicciones_calibradas.append((p_calibrada, bool(outcome_binario)))
+            probabilidades_calibradas.append(p_calibrada)
+        n_pareadas += int(raw_valida and cal_valida)
 
     n_predicciones = len(predicciones_raw)
     n_calibradas = len(predicciones_calibradas)
     alertas: list[str] = []
-    if n_predicciones and n_calibradas < n_predicciones:
+    if n_predicciones != n_calibradas or n_pareadas != n_predicciones:
         alertas.append("CALIBRACION_NO_DISPONIBLE" if n_calibradas == 0 else "COBERTURA_CALIBRACION_PARCIAL")
 
-    if n_predicciones == 0:
+    if n_predicciones == 0 and n_calibradas == 0:
         alertas.append("DATOS_INSUFICIENTES")
         resultado = _armar_resultado(
             mercado=mercado,
@@ -120,6 +124,7 @@ def calcular_metricas_calibracion(
             eps_log_loss=eps_log_loss,
             n_predicciones=0,
             n_calibradas=0,
+            n_binarias=n_binarias, n_pareadas=n_pareadas,
             alertas=alertas,
             brier_raw=None,
             brier_calibrado=None,
@@ -163,7 +168,8 @@ def calcular_metricas_calibracion(
     sharpness_raw = _calcular_sharpness(probabilidades_raw)
     sharpness_calibrada = _calcular_sharpness(probabilidades_calibradas)
 
-    base_rate = sum(1 for outcome in resultados if outcome) / len(resultados)
+    seleccionadas = predicciones_calibradas if usar_p_calibrada else predicciones_raw
+    base_rate = sum(y for _, y in seleccionadas) / len(seleccionadas) if seleccionadas else None
 
     distribucion_metricas = calcular_metricas_distribucion(distribucion)
 
@@ -182,6 +188,7 @@ def calcular_metricas_calibracion(
         eps_log_loss=eps_log_loss,
         n_predicciones=n_predicciones,
         n_calibradas=n_calibradas,
+        n_binarias=n_binarias, n_pareadas=n_pareadas,
         alertas=alertas,
         brier_raw=brier_raw,
         brier_calibrado=brier_calibrado,
@@ -388,6 +395,8 @@ def _armar_resultado(
     eps_log_loss: float,
     n_predicciones: int,
     n_calibradas: int,
+    n_binarias: int,
+    n_pareadas: int,
     alertas: list[str],
     brier_raw: Optional[dict[str, object]],
     brier_calibrado: Optional[dict[str, object]],
@@ -419,6 +428,9 @@ def _armar_resultado(
         "usar_p_calibrada": usar_p_calibrada,
         "modelo_version_id": modelo_version_id,
         "n_calibradas": n_calibradas,
+        "n_pareadas": n_pareadas,
+        "n_excluidas_raw": n_binarias - n_predicciones,
+        "n_excluidas_calibradas": n_binarias - n_calibradas,
     }
 
     resultado = {
@@ -429,6 +441,9 @@ def _armar_resultado(
         "modelo_version_id": modelo_version_id,
         "n_predicciones": n_predicciones,
         "n_calibradas": n_calibradas,
+        "n_pareadas": n_pareadas,
+        "n_excluidas_raw": n_binarias - n_predicciones,
+        "n_excluidas_calibradas": n_binarias - n_calibradas,
         "brier_score_raw": _extraer_metricas(brier_raw, "brier_score"),
         "brier_score_calibrado": _extraer_metricas(brier_calibrado, "brier_score"),
         "log_loss_raw": _extraer_metricas(log_loss_raw, "log_loss"),
@@ -505,7 +520,7 @@ def _determinar_nivel_intervalo(niveles: list[int]) -> Optional[int]:
 def _calcular_sharpness(probabilidades: list[float]) -> Optional[float]:
     if not probabilidades:
         return None
-    return _normalizar_numero(statistics.pstdev(probabilidades))
+    return _normalizar_numero(statistics.pvariance(probabilidades))
 
 
 def _normalizar_numero(valor: Optional[float]) -> Optional[float]:

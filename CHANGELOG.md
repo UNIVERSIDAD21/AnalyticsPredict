@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-16 — coherencia de KPI de calibración
+
+- Resumen/curva/API/UI con serie raw o calibrada homogénea, n/exclusiones/modelo/periodo coherentes. Default raw, ECE/MCE nullable sin pares, muestra pequeña visible y sin falsa excelencia/drift. Sharpness como varianza y base_rate de la misma cohorte; mejora no atribuida entre muestras distintas.
+- Cachés300s retiradas de esos dos GET, cálculo UTC bajo demanda sin precálculos; errores503 sanitizados, no éxito/n0.794backend/27frontend/lint/build;4GETASGIreales200 enREADONLY y7huellas intactas. P&L/otrosKPI/caches/GETintegral siguen abiertos; NO CERTIFICADO.
+
 ## 2026-10-16 — evaluación temporal fútbol y continuidad consolidada
 
 - Evaluación Ridge read-only con protocolo predeclarado TRAIN/CAL/EVAL, alpha soloCAL, baseline e IC pareado por partido; fechas/IDs/equipos desconocidos y ventanas sinCAL explícitos. CV temporal no divide perspectivas ni presenta ajuste como validación cuando faltan folds.
