@@ -10,6 +10,7 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 - [Roadmap vigente](../reactivacion_single_user/ROADMAP_REACTIVACION_ANALYTICSPREDICT.md).
 - [Deuda priorizada](../reactivacion_single_user/DEUDA_TECNICA_PRIORIZADA.md).
 - [Checklist de uso](../reactivacion_single_user/CHECKLIST_PREPARACION_USO_2026-10-15.md).
+- [Siete frentes, fuentes por mitades y validación](../reactivacion_single_user/SIETE_FRENTES_2026-10-16.md).
 - [KPI/P&L y auditoría GET](../reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md).
 - [KPI de calibración](../reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md).
 - [Evaluación temporal fútbol](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
@@ -21,14 +22,14 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 | Single-user | Migración con backup, historial deportivo conservado; auth/pagos/tiers retirados de API/UI/BD activos | Revalidar perímetro si cambia topología; visual completo aún no acreditado |
 | Entorno y CI | Python3.12 persistente, lock, pruebas PostgreSQL sintéticas, frontend y Compose en CI | Estado de procesos se comprueba al operar; un HTTP200 anterior no demuestra que sigan activos |
 | NBA canónico/serving | Selector NBA válido, modelo2123 con30equipos, 73partidos añadidos; reload sin entrenar | No es validación de eficacia; PRE separado de regular |
-| Fútbol canónico | 337eventos ESPN vinculados, 200finales, 136programados, 1suspendido; 23.919históricos/apuestas/predicciones conservados, reimportación0/0 | No imputar tiempos a partir de FT; investigar fuente1T/2T |
+| Fútbol canónico | 337eventos ESPN vinculados, 200finales, 136programados, 1suspendido; 23.919históricos/apuestas/predicciones conservados, reimportación0/0 | 200finales completados con goles/córners1T/2T explícitos y evidencia separada, rollback/idempotencia/postflight. No imputar desdeFT |
 | ML fútbol técnico | Artefacto completo verificable, activación atómica y loader read-only, API/UI sin modelos/MAE/fechas ficticios;771backend/24frontend en ese corte | No hay modelo fútbol activo registrado en el último corte real |
-| ML fútbol temporal | Protocolo predeclarado, evaluación en memoria:581partidos corners/goles y618disparos;784backend en el WIP | Ninguna familia pasa todos los gates: frescura, target corners y cobertura disparos; no se activó ni guardó modelo en Neon |
+| ML fútbol temporal | Reevaluación tras completar tiempos:618EVAL por familia, política original; frescura reciente recuperada | Ninguna familia apta: cobertura79,13% en las tres y target corners peor. CensoCAL97finales<100mínimo; sin modelos/activación enNeon |
 | P&L histórico | Guardas y N/D;114/181binarias NBA no evaluables,67solo aritméticas,8discrepancias deportivas | Propietario confirma que NO existen soportes: no pedirlos ni inventarlos. Exclusión controlada; ROI no certificado |
 | Temporalidad histórica NBA | 2.934trazas auditadas:2.136inválidas,476ambiguas,322indeterminadas | 0certificables en ese corte; no convertir histórico en prospectiva |
-| Prospectiva NBA | 12capturas Q1raw PRE congeladas antes de inicio, hashes/horas/políticas verificados;0outcomes al último corte | Partidos16/10 23:00Z–17/10 02:30Z, resolución posterior porUUID y fuente independiente; no repetir capturas |
-| KPI/observabilidad | [M04/M05 técnico](../reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md): P&L común cross-sport/N/D, grano/cohortes, calibración con serie/n/modelo, sinTTL;78GET revisados y guardas READONLY/errores sanitizados | Validación científica/confidence/odds por versión y cohorte en M12; visual no acreditado; no certificación |
-| Mantenimiento | H6/H7 técnico y reproducibilidad/CI cerrados en sus alcances | H12parcial:10→5altasdev/0prod, residuobraces sin parche;0discrepanciasmodo yfavicon reparado. H4cuatroSQLite aún alcanzables, sin purga parcial |
+| Prospectiva NBA | 12capturas Q1raw PRE congeladas antes de inicio, hashes/horas/políticas verificados;0outcomes al último corte | Partidos16/10 23:00Z–17/10 02:30Z, resolución posterior porUUID y fuente independiente; CBScoincide12/12calendarios pero upstream sin acreditar. No repetir capturas |
+| KPI/observabilidad | [M04/M05 técnico](../reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md): P&L común cross-sport/N/D, grano/cohortes, calibración con serie/n/modelo, sinTTL;78GET revisados y guardas READONLY/errores sanitizados | M12 evaluado:1.303cohortesraw de2–4pares, cero calibradasID/elegibles temporales; confianza/cuotas descriptivas y P&LN/D. Certificación y visual pendientes |
+| Mantenimiento | H6/H7 técnico y reproducibilidad/CI cerrados en sus alcances | H12parcial:10→5altasdev/0prod, residuobraces sin parche;0discrepanciasmodo yfavicon reparado. H4ensayo357/357refs y4blobs fuera; remoto aún alcanzable por12heads/13refsPR y cachés, sin purga parcial |
 
 Las cifras de datos/DB corresponden a cortes identificados en sus informes, no a
 una consulta permanente. La evaluación temporal usa cinco ligas y desde2023-07;

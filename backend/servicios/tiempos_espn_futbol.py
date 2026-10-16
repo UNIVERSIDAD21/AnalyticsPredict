@@ -198,6 +198,8 @@ def construir_plan(conn, observaciones: list[dict], *, bloquear=False) -> list[d
                     or _instante_utc(fila['fecha_partido'].isoformat()) != obs['inicio_utc']):
                 raise ValueError('Cambio de identidad, fuente o estado canónico')
             for lado in ('local', 'visitante'):
+                if fila.get(f'{lado}_goles_et') not in (None, 0):
+                    raise ValueError('Prórroga canónica incompatible con final reglamentario')
                 if (ev[f'{lado}_id_fuente'] != obs[f'{lado}_id_fuente']
                         or fila[f'{lado}_goles_total'] != obs[f'{lado}_goles_total']):
                     raise ValueError('Cambio de equipos o marcador canónico')
@@ -214,6 +216,7 @@ def aplicar_observaciones(conn, observaciones: list[dict]) -> dict:
     """Transacción atómica/idempotente. La tabla de evidencia debe estar instalada.
 
     No cambia FT, tiros, equipos, datos_completos ni las capturas previas.
+    El trigger canónico deriva datos_corners_completos de las cuatro mitades.
     La evidencia original del vínculo y su hash permanecen íntegros.
     """
     cambios = evidencias = 0

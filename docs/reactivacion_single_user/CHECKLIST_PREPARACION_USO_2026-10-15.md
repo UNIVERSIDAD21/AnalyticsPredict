@@ -30,7 +30,8 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 - [x] Verificar modelos/calibradores de fútbol antes de actualizar. No hay versión activa registrada; predictor sin archivos inicializa modelos vacíos, gestor legacy espera columna inexistente. Los nuevos FT carecen de1T/2T: no se entrenó ni activó calibrador/modelo.
 - [x] Reparar persistencia/serving ML fútbol y verificar dataset por target antes de reentrenar. Artefacto completo en JSONB, activación/recarga verificadas en PG sintético, sin entrenamiento en serving;771backend/24frontend/lint/build. Diagnóstico real: corners14.136/goles10.716 hasta marzo, disparos14.379 hasta12/10. Sin DDL/DML ni versiones nuevas fútbol en Neon. Ver `PERSISTENCIA_ML_FUTBOL_2026-10-15.md`.
 - [x] Evaluación retrospectiva por familia y ventana con particiones por partido, baseline e intervalos ejecutada.581EVAL corners/goles y618disparos;784backend en el WIP. Ninguna familia pasa todos los gates; no se guardó/activó fútbol enNeon. Ver `EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md`.
-- [ ] Actualización de targets por tiempos/cobertura y activación fútbol solo tras evidencia apta. Corners/goles sin frescura, corners con un target peor y disparos con79,13%de cobertura;200FT no completan tiempos.
+- [x] Completar200finales con goles/córners1T/2T acreditados, sin repartirFT. Backup/rollback/CI/idempotencia/postflight; flag de córners derivado por trigger verificado. Ver `SIETE_FRENTES_2026-10-16.md`.
+- [ ] Activación fútbol solo tras aptitud. Reevaluación618EVAL/familia:79,13%cobertura en las tres y targetcorners peor; ninguna apta. CensoCAL97<100mínimo, no se aflojan gates.
 
 ## D. Operación y evidencia
 
@@ -38,9 +39,10 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 - [x] Cadena prospectiva instalada tras ensayo/rollback/CI2b142e0 4/4. Evento/mercado/hora UTC/features/coeficientes/dataset/modelo/raw/calibrador ausente explícito; reloj BD y registros inmutables. Nueve huellas históricas intactas. Resolución ESPN idempotente probada, no acredita independencia ni outcome real aún.
 - [x] E2E aislada y captura real anterior al inicio.12eventos NBA del scoreboard2026-10-16, todos de PRE, umbral técnicoQ1=55.5 predeclarado; congelados desde2026-10-16T02:09Z para inicios23:00Z–02:30Zdel17. Reimportación0,12hashes/horas/políticas verificados por lectura independiente.0outcomes reales; sin picks/stakes/recomendaciones, sin retrofechar ni mezclar con NBA descriptivo.
 - [x] Unificar gates de publicación SQL/API/UI de consumidores activos: P&L cross-sport sin soportes/N/D, grano/cohortes, calibración con muestras y sinTTL; auditar78GET, protegerGET/HEAD y sanitizar fallos. Ver `KPI_PNL_Y_GET_2026-10-16.md`. No reescribir apuestas dudosas. Subbloque ML fútbol cerrado: modelos y fechas ficticios retirados, N/D preservado y métricas in-sample explícitas; calibraciónAPI/UI16/10 separa series/n/modelo, N/D y frescura sinTTL (794backend/27frontend,4GETreales200/7huellasintactas). El cierre técnico residual se acredita16/10 en KPI_PNL_Y_GET; no cierra M12 científico.
+- [x] Evaluación científica descriptiva por modelo/mercado/origen/serie, n e IC y confidence/odds realizada;1.303cohortes n2–4, cero elegibilidad temporal/calibradasID. No calibrador ni certificación fabricados.
 - [ ] Acumular outcomes futuros y validar walk-forward/calibración/confidence con n e intervalos. **Pendiente temporal: requiere que ocurran partidos después del congelamiento.**
 - [x] Registrar la decisión definitiva del propietario: NO existen soportes originales de stake/cuota/ganancia. No hay recuperación documental pendiente suya. Conservar exclusiones/ROI N/D y filas; no certifica las67binarias solo aritméticas. Propagación integral se verifica en el bloqueKPI.
-- [ ] Verificar fuente permitida independiente para resultados/inicio. **Bloqueado:** ambos schedule públicos NBA CDN devolvieron403; sin evasión. Dos consultas ESPN no son independencia.
+- [ ] Verificar fuente permitida independiente para resultados/inicio. **Bloqueado:** ambos schedule públicos NBA CDN devolvieron403; sin evasión. Dos consultas ESPN no son independencia. CBS12/12calendarios y cuartos/FT de un finalprobe acreditan publicación distinta, no upstream independiente.
 
 ## E. Publicación y cierre
 

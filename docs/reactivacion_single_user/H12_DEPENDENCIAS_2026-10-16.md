@@ -57,3 +57,13 @@ Se sustituyó por override explícito `postcss-selector-parser:7.1.6`; no se vue
 a introducir la versión vulnerable. `npm10.8.2 ci` reproduce instalación limpia
 y27tests/lint/build vuelven a pasar. No se cambian verificaciones ni se omiteCI;
 la recuperación4/4del commitcorrector se comprueba en acta.
+
+## Revalidación bajo orden de los siete frentes
+
+Se confirmó nuevamente dev5altas/prod0: `braces`3.0.3 sigue última versión
+publicada y afectada por GHSA-vfj7-8cjw-p6xm. Cadena remanente Tailwind3 →
+chokidar/fast-glob/micromatch. npm propone Tailwind4.3.3 (major), no una
+actualización compatible trivial. Su revisión visual está bloqueada por M08;
+no se publicó migración con ese control omitido ni se fabricó un override.
+Dependencias intactas en este nuevo bloque. H12 permanece abierto.
+Evidencias: `CIERRE_SIETE_FRENTES_2026-10-16/M06_H12`.

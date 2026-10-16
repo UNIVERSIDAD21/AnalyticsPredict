@@ -67,6 +67,13 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
                 local_goles_2t int,visitante_goles_1t int,visitante_goles_2t int,local_corners_total int,actualizado_en timestamptz);
                 CREATE TABLE partidos_fuente_espn_futbol(liga text,id_fuente text,partido_id uuid UNIQUE,evidencia jsonb,PRIMARY KEY(liga,id_fuente))''')
             c.execute('ALTER TABLE partidos_futbol ADD COLUMN local_corners_1t int, ADD COLUMN local_corners_2t int, ADD COLUMN visitante_corners_1t int, ADD COLUMN visitante_corners_2t int, ADD COLUMN visitante_corners_total int DEFAULT 1')
+            c.execute("""ALTER TABLE partidos_futbol ADD COLUMN datos_corners_completos boolean DEFAULT false, ADD COLUMN local_goles_et int DEFAULT 0;
+                CREATE FUNCTION derivar_completitud() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN NEW.datos_corners_completos = NEW.local_corners_1t IS NOT NULL AND
+                  NEW.local_corners_2t IS NOT NULL AND NEW.visitante_corners_1t IS NOT NULL AND
+                  NEW.visitante_corners_2t IS NOT NULL; RETURN NEW; END; $$;
+                CREATE TRIGGER calcular_totales BEFORE UPDATE ON partidos_futbol
+                FOR EACH ROW EXECUTE FUNCTION derivar_completitud()""")
             c.execute("INSERT INTO partidos_futbol(id,fuente_datos,estado,valido,fecha_partido,local_goles_total,visitante_goles_total,local_goles_1t,local_goles_2t,visitante_goles_1t,visitante_goles_2t,local_corners_total,actualizado_en) VALUES(%s,'ESPN_SOCCER','FINALIZADO',true,%s,2,1,NULL,NULL,NULL,NULL,7,NULL)",[pid,ev['inicio_utc']])
             from psycopg.types.json import Jsonb
             c.execute("INSERT INTO partidos_fuente_espn_futbol VALUES('eng.1','123',%s,%s)",[pid,Jsonb(ev)])
@@ -87,7 +94,10 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
                     'local_corners_1t':3,'local_corners_2t':4,'visitante_corners_1t':0,'visitante_corners_2t':1}
                 assert aplicar_observaciones(c,[completa])['partidos_completados']==1
                 assert aplicar_observaciones(c,[completa])['partidos_completados']==0
-                assert c.execute('SELECT local_corners_total,local_corners_1t,visitante_corners_1t FROM partidos_futbol').fetchone()==(7,3,0)
+                assert c.execute('SELECT local_corners_total,local_corners_1t,visitante_corners_1t,datos_corners_completos FROM partidos_futbol').fetchone()==(7,3,0,True)
+                c.execute('UPDATE partidos_futbol SET local_goles_et=1')
+                with pytest.raises(ValueError,match='Prórroga'):aplicar_observaciones(c,[completa])
+                assert c.execute('SELECT local_goles_total FROM partidos_futbol').fetchone()==(2,)
         finally:pool.close()
     finally:
         with admin.connection() as c:c.execute(sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(sql.Identifier(schema)))

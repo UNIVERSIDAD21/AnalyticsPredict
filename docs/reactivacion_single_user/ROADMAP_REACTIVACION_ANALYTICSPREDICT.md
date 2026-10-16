@@ -14,30 +14,28 @@ el propietario, sin copiar memoria/configuración del agente al producto.
 | NBA dominio/calidad/serving | Selector común válido, artefacto2123 con30NBA,73partidos nuevos; reload no entrena |
 | Fútbol datos canónicos | Capturas337/200FT y vínculo explícito a catálogo, idempotencia0/0; histórico conservado |
 | Fútbol ciclo ML técnico | Persistencia/activación/loader reparados, JSON verificable, sin modelos/métricas ficticias |
-| Fútbol evaluación retrospectiva | Protocolo previo y baseline/IC por partido,581/581/618EVAL, ninguna familia apta para activar |
+| Fútbol evaluación retrospectiva | Política previa inalterada,618EVAL por familia tras200complementos por mitades; ninguna apta por cobertura/targetcorners |
 | KPI/P&L y GET técnicos | [Cierre16/10](KPI_PNL_Y_GET_2026-10-16.md): política monetaria cross-sport/N/D, cohortes/grano, sinTTL,78GET y protección read-only/observabilidad |
 | Prospectiva técnica NBA | 12snapshotsPRE inmutables anteriores al inicio; no equivalen a12outcomes ni a certificación |
 
 ## Pendientes ejecutables del agente
 
-1. **Validación analítica M12:** consumidores técnicos de KPI/caches y GET cerrados en sus alcances; queda evaluación científica/confidence/odds por versión/cohorte. El cierre técnico no valida el histórico.
+1. **Validación analítica M12:** evaluación descriptiva ejecutada por1.303cohortesraw de2–4pares; cero elegibilidad temporal histórica/calibradasID. Certificación y calibración requieren nuevas cadenas/muestra válidas, no agrupar versiones ni fabricar calibrador.
 3. **H12:** resolver auditoría dev, permisos específicos y rot con evidencia,
    preservando cambios previos; lock/tests/lint/build/CI. [Avance16/10](H12_DEPENDENCIAS_2026-10-16.md):
    dev10→5altas porbraces sin parche,prod0; no cerrarH12.
 4. **Visual:** diagnosticar el rechazo de navegación de la herramienta por vía
    soportada, sin eludir políticas; verificar flujos visibles y registrar evidencia.
-5. **Fuentes:** cobertura1T/2T y equipos de fútbol; proveedor NBA independiente
-   permitido. No evadir403 ni llamar independientes a dos endpoints ESPN.
+5. **Fuentes:** complemento200finales1T/2T aplicado/verificado; proveedor NBA independiente permitido aún sin acreditar. CBS12/12calendarios y finalprobe no demuestran upstream independiente. No evadir403 ni llamar independientes a dos endpoints ESPN.
 6. **Calibración/confidence/odds:** evaluar por versión/deporte/mercado con muestras
    válidas, intervalos y disponibilidad histórica explícita; no fabricar calibrador.
-7. **H4 integral:** actualizar preflight/backups/refs y recuperación antes de
-   reescritura autorizada; no ejecutar purga parcial si refsGitHub retienen blobs.
+7. **H4 integral:** preflight/backup/ensayo357/357refs realizado,4blobs fuera del ensayo y árboles restantes iguales. Remoto aún con13refsPR/cachés administrados porGitHub; no purga parcial ni contacto no autorizado.
 
 ## Dependencias medidas, no tareas humanas genéricas
 
 | Frente | Estado | Condición de reanudación |
 |---|---|---|
-| Activación fútbol | No apta según protocolo actual | Frescura de corners/goles, ningún target corners peor, cobertura disparos>=90%; nuevo protocolo declarado antes de medir si corresponde |
+| Activación fútbol | No apta según protocolo actual | Cobertura>=90% en las tres, ningún target corners peor. Actual79,13%; censoCALjunio-agosto97finales<100mínimo. No bajar gates/eliminar ventanas tras medir |
 | OutcomesNBA | Espera de evento | Resolver después de partidos16/10 23:00Z→17/10 02:30Z porUUID existente; no retrofechar |
 | IndependenciaNBA | No acreditada | Proveedor permitido con identidad/instantes/resultados trazables; CDN403 no se sortea |
 | P&L sin soportes | No recuperable controlado | Mantener exclusiones/ROI N/D; propietario confirma ausencia, no pedir pruebas inexistentes |
@@ -49,6 +47,7 @@ ni gestión personal GitHub identificada como requisito actual del propietario.
 
 ## Evidencias y antecedentes
 
+- [Siete frentes y dependencias](SIETE_FRENTES_2026-10-16.md).
 - [Evaluación temporal](EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
 - [Persistencia ML](PERSISTENCIA_ML_FUTBOL_2026-10-15.md).
 - [Operación/prospectiva](OPERACION_Y_PROSPECTIVA_2026-10-15.md).

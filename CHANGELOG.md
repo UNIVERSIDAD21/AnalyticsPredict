@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-16 — Ejecución de los siete frentes y límites medidos
+
+- Completar200finales con goles/córners por mitades, evidencia separada, rollback e idempotencia. Postflight detectó el flag derivado del trigger: reconciliado con backup/huellas sin DML adicional y prueba SQL incorporada; guardia de prórroga protege FT.
+- Reevaluar fútbol con política original:618EVAL/familia, ninguna apta por cobertura79,13% y targetcorners. Censo15lotesCAL arroja97finales<100mínimo, sin ingerirlos ni aflojar gates.
+- Ejecutar M12 descriptivo:1.303cohortesraw n2–4, cero cadenas certificables/calibradasID. Contrastar CBS12/12calendarios sin atribuir independencia primaria.
+- Ensayar H4privado357/357refs,4blobs fuera; remoto sin purga parcial. Confirmar bloqueo visual y residuoH12dev5altas/prod0. No cerrar prospectiva futura, deuda ni certificación por estos avances.
+
 ## 2026-10-16 — Córners por mitades acreditados
 
 - Extender el contrato ESPN con cronología completa, límites UTC, identidad/periodo y reconciliación FT. Aplicación atómica de ocho campos; evidencia separada y controles de idempotencia/contradicciones. No acredita aptitud ni independencia NBA.

@@ -8,12 +8,12 @@ comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 |---|---|---|---|
 | P1 | KPI/caches coherentes | Grano/ventana/n/excluidos y N/D iguales en SQL/API/UI; raw/calibrado separados; frescura verificable | Cierre técnico16/10: políticaP&Lcross-sport/N/D y cohortes/API/UI, calibración sinTTL. M12 científico separado; no crear vistas propuestas sin consumidor |
 | P1 | Auditoría GET y observabilidad | Llamadas transitivas sin escritura implícita, errores sanitizados, jobs/datos/modelos observables | Cierre técnico16/10:78GET revisados, protecciónGET/HEAD/errores sanitizados y pruebas. Nuevos endpoints requieren mantener los controles |
-| P1 | H4 historiaGit | Purga integral recuperable y ausencia acreditada en todas las refs relevantes | CuatroSQLite alcanzables; refsPR administradas por GitHub impiden cerrar con solo heads. No purga parcial |
+| P1 | H4 historiaGit | Purga integral recuperable y ausencia acreditada en todas las refs relevantes | Ensayo357/357refs y4blobs fuera con árboles restantes idénticos; backup privado. Remoto12heads/13refsPR contaminadas+cachésGitHub; no purga parcial |
 | P2 | H12 dev/permisos/rot | Versiones compatibles, lock/pruebas/lint/build/CI; permisos reparados solo con evidencia | 16/10:5altasdev porbraces sin parche,0prod;10→5tras Vite/overrides probados.0discrepanciasmodo/sin chmod, respaldo histórico preservado |
 | P2 | Visual/E2E | Flujo visible completo con evidencia, no solo HTTP200 | Herramienta rechazó navegación local; diagnóstico del agente, no falta de permiso del propietario |
-| P2 analítico | Actualización y activación fútbol | Gates predeclarados por familia; fuente por tiempos/cobertura; versión/calibrador vinculados | Evaluación retrospectiva cerrada, ninguna familia apta para activación; no es fallo de persistencia |
+| P2 analítico | Actualización y activación fútbol | Gates predeclarados por familia; fuente por tiempos/cobertura; versión/calibrador vinculados | 200complementos1T/2T aplicados;618EVAL/familia, ninguna apta:79,13%cobertura y targetcorners. CensoCAL97<100; no fallo de persistencia ni falta de permiso |
 | P2 analítico | H8/H9 científico y prospectiva | fit_end<prediction_time<outcome_time, datos disponibles, independencia y muestra suficiente | 0históricasNBAcertificables;12snapshotsPRE/0outcomes al último corte, eventos aún futuros |
-| P2 analítico | Confidence/odds/calibración | Cortes por deporte/mercado/versión, n/IC/baseline y elegibilidad temporal | Abierto, no probabilidades/ROI certificados |
+| P2 analítico | Confidence/odds/calibración | Cortes por deporte/mercado/versión, n/IC/baseline y elegibilidad temporal | Evaluación realizada:1.303cohortesraw n2–4,0calibradasID/pares temporales; confianza/cuotas descriptivas. Certificación abierta, sinprobabilidades/ROI certificados |
 | Control permanente | P&L sin soportes | Preservar filas, exclusiones y ROI N/D; propagar motivos | Ausencia definitiva confirmada por propietario;114/181binarias no evaluables,67solo aritméticas. Nada que pedirle |
 
 ## Cierres que no se reabren por leer históricos
