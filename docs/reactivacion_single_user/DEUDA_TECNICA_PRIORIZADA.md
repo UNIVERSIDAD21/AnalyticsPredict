@@ -1,23 +1,29 @@
-# Deuda técnica priorizada — reactivación single-user
+# Deuda técnica priorizada — AnalyticsPredict single-user
 
-**Corte:** 2026-10-05. Prioridades derivadas del plan del propietario y H1–H12 de la auditoría histórica; no equivalen a certificación actual.
+**Corte consolidado:2026-10-16.** No sustituye gates científicos ni reactiva planes
+comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
+[roadmap](ROADMAP_REACTIVACION_ANALYTICSPREDICT.md) gobiernan el trabajo nuevo.
 
-> **Adenda 2026-10-06:** la vista H9 ya fue migrada en Neon y su semántica técnica está cerrada; el H9 científico sigue abierto. H4 no está purgado: cuatro blobs SQLite comerciales siguen alcanzables en la historia/ref visibles. H7/side-effects GET y suite deben juzgarse con la evidencia posterior, no con el estado de los primeros smoke tests. El P&L vigente excluye 114/181 binarias (115/182 totales) y continúa NO CERTIFICADO. H12, independencia de outcomes, fútbol, temporalidad y prospectiva permanecen abiertos.
-
-> **Mantenimiento posterior:** H12 retiró tres JSON vacíos del índice Git sin fabricar datos, quitó un target B4 roto y fijó CI a Ubuntu 24.04 con acciones v6 (**4/4 verde** en 37571253610); sigue abierta la revisión restante de permisos/dependencias dev. H4 tiene mirror/bundle fresco: 12 heads y 13 refs `pull/167`–`pull/179` aún alcanzan los cuatro blobs; reescribir únicamente ramas sería una purga incompleta. Las PR #150 y #23 se cerraron por política 403 y obsolescencia, respectivamente.
-
-| Prioridad | Trabajo | Criterio verificable | Estado |
+| Prioridad | Trabajo | Criterio de cierre | Estado real |
 |---|---|---|---|
-| P0 | Perímetro privado antes de retirar auth | Backend sensible ligado a loopback | Cerrado para uso exclusivamente local confirmado; revalidar ante otra topología |
-| P0 | Inventario y migración de `usuario_id`/FK | Ensayo aislado y conteos idénticos | Cerrado: backup privado verificado, todos los registros deportivos conservados |
-| P0 | Retirar login/auth, pagos, MP, suscripciones y tiers sin perder análisis | OpenAPI/UI sin superficies comerciales, headers/tokens ni gates; NBA/fútbol/bitácora íntegros | Cerrado en código/API/UI/BD activos; smoke visual y HTTP |
-| P1 | H6 escala `hit_rate_sin_push` | Casos 0/50/56/100%, backend/FE coherentes | Corregido; tests numéricos y build |
-| P1 | H7 envelopes y estados de bitácora | Lista y tarjetas no vacías, error no convertido a cero | Clientes v2 y pruebas FE/BE; el GET de bitácora ya fue desacoplado de auto-resolución/escritura en cambios posteriores. Auditoría integral GET sigue abierta. |
-| P1 | H9 métricas Brier/ECE/LogLoss | Medición real o `null` explícito, tests numéricos | Vista NBA productiva migrada y procedencia técnica corregida; siguen sin certificarse pares prospectivos, fuente independiente y validez predictiva. |
-| P1 | H11 entorno reproducible y H10 CI | BD efímera, unit/contract/integration/FE/build en CI | Lock Python 3.12, suite PG global, frontend y smoke Compose alojados 4/4 verdes; no equivale a certificación científica. |
-| P1 | H4 SQLite versionadas | Retirar seguimiento sin borrar evidencia; clasificar credenciales | DB comerciales retiradas del índice Git e ignoradas; copias locales preservadas. Historial Git anterior aún contiene blobs. |
-| P1 analítico | H8 walk-forward real/no-leakage | `fit_end < prediction_time < outcome_time`, snapshots/model IDs | Bloqueado: 2.136/2.934 NBA enlazan a cutoff posterior al día de generación; no hay prueba de no-leakage. |
-| P2 analítico | Recertificar NBA/fútbol, confidence, odds, calidad y KPIs | Cortes actuales, n/método/limitaciones, sin rentabilidad futura | Corte read-only inicial ejecutado y 8 partidos NBA de pretemporada ingresados; gate posterior **114/181** binarias NBA no evaluables, fútbol sin frescura certificada y 3–4 pares/mercado. **NO CERTIFICADO**. |
-| P3 | H12 permisos/reportes vacíos y project rot | Reparación específica con evidencia, no limpieza estética | Pendiente; 30 cambios de modo preexistentes preservados |
+| P1 | KPI/caches coherentes | Grano/ventana/n/excluidos y N/D iguales en SQL/API/UI; raw/calibrado separados; frescura verificable | Abierto; vistasROIlegacy ya reparadas, no repetir su migración |
+| P1 | Auditoría GET y observabilidad | Llamadas transitivas sin escritura implícita, errores sanitizados, jobs/datos/modelos observables | Abierto; Estado/bitácora/loader ya tienen cierres específicos |
+| P1 | H4 historiaGit | Purga integral recuperable y ausencia acreditada en todas las refs relevantes | CuatroSQLite alcanzables; refsPR administradas por GitHub impiden cerrar con solo heads. No purga parcial |
+| P2 | H12 dev/permisos/rot | Versiones compatibles, lock/pruebas/lint/build/CI; permisos reparados solo con evidencia | Baseline15/10:10avisosdev,0prod.30cambios de modo del respaldo histórico preservados |
+| P2 | Visual/E2E | Flujo visible completo con evidencia, no solo HTTP200 | Herramienta rechazó navegación local; diagnóstico del agente, no falta de permiso del propietario |
+| P2 analítico | Actualización y activación fútbol | Gates predeclarados por familia; fuente por tiempos/cobertura; versión/calibrador vinculados | Evaluación retrospectiva cerrada, ninguna familia apta para activación; no es fallo de persistencia |
+| P2 analítico | H8/H9 científico y prospectiva | fit_end<prediction_time<outcome_time, datos disponibles, independencia y muestra suficiente | 0históricasNBAcertificables;12snapshotsPRE/0outcomes al último corte, eventos aún futuros |
+| P2 analítico | Confidence/odds/calibración | Cortes por deporte/mercado/versión, n/IC/baseline y elegibilidad temporal | Abierto, no probabilidades/ROI certificados |
+| Control permanente | P&L sin soportes | Preservar filas, exclusiones y ROI N/D; propagar motivos | Ausencia definitiva confirmada por propietario;114/181binarias no evaluables,67solo aritméticas. Nada que pedirle |
 
-H1–H3 no se cierran por decisión de producto sino al probar la desaparición de sus superficies. Fútbol permanece beta hasta evidencia cuantitativa actual; el análisis NBA interno mantiene política sin picks/stakes/recomendaciones.
+## Cierres que no se reabren por leer históricos
+
+H1–H3 single-user, H6 escalas, H7 técnico/envelopes, H10/H11 reproducibilidad/CI,
+H9 técnico de vistas, catálogo NBA/selector/modelo2123, fútbol canónico337/200,
+artefactos/loaderMLfútbol y12congelamientosNBA ya están acreditados en sus alcances.
+Esto no cierra auditoría GET integral ni H9 científico. Fútbol sigue beta.
+Análisis NBA interno: no picks, stakes ni recomendaciones de apuestas.
+
+[Deuda previa íntegra](../archive/DEUDA_ANTES_CONSOLIDACION_2026-10-16.md), con sus
+cortes y adendas, se preserva para trazabilidad; sus cifras antiguas no son nuevas
+mediciones ni órdenes de pedir comprobantes, logins, pagos o dominios.

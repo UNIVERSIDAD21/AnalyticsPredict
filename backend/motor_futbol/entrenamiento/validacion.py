@@ -19,6 +19,25 @@ from ..constantes import ALPHA_RIDGE_DEFAULT, ALPHAS_BUSQUEDA
 logger = logging.getLogger(__name__)
 
 
+def splits_por_fecha(fechas, n_splits, min_train=1, min_test=1):
+    """Ventanas disjuntas por fecha; nunca divide perspectivas/empates temporales."""
+    if n_splits < 1 or min_train < 1 or min_test < 1:
+        raise ValueError('Splits y mínimos deben ser positivos')
+    fechas = np.asarray(fechas)
+    unicas = np.unique(fechas)
+    if len(unicas) < 2:
+        return []
+    bloques = np.array_split(unicas, min(n_splits+1, len(unicas)))
+    orden = np.argsort(fechas, kind='stable')
+    resultado = []
+    for bloque in bloques[1:]:
+        train = orden[fechas[orden] < bloque[0]]
+        test = orden[(fechas[orden] >= bloque[0]) & (fechas[orden] <= bloque[-1])]
+        if len(train) >= min_train and len(test) >= min_test:
+            resultado.append((train, test))
+    return resultado
+
+
 class ValidacionCruzadaTemporal:
     """
     Validación cruzada temporal (TimeSeriesSplit).
@@ -69,39 +88,9 @@ class ValidacionCruzadaTemporal:
         Returns:
             Lista de tuplas (train_indices, test_indices)
         """
-        n = len(fechas)
-
-        if n < self.min_train_size + self.min_test_size:
-            logger.warning(f"Dataset muy pequeño ({n}), retornando split único")
-            mid = int(n * 0.8)
-            return [(np.arange(mid), np.arange(mid, n))]
-
-        # Ordenar por fecha
-        orden = np.argsort(fechas)
-
-        # Calcular tamaño de cada porción
-        total_test = n // (self.n_folds + 1)
-        splits = []
-
-        for fold in range(self.n_folds):
-            # Training: todo hasta cierto punto
-            train_end = (fold + 1) * total_test + self.min_train_size
-            train_end = min(train_end, n - self.min_test_size)
-
-            # Test: siguiente porción
-            test_start = train_end
-            test_end = min(test_start + total_test, n)
-
-            if test_end <= test_start or train_end <= self.min_train_size:
-                continue
-
-            train_indices = orden[:train_end]
-            test_indices = orden[test_start:test_end]
-
-            if len(train_indices) >= self.min_train_size and len(test_indices) >= self.min_test_size:
-                splits.append((train_indices, test_indices))
-
-        return splits
+        if len(X) != len(fechas):
+            raise ValueError('Features y fechas deben tener igual longitud')
+        return splits_por_fecha(fechas, self.n_folds, self.min_train_size, self.min_test_size)
 
     def evaluar_modelo(
         self,
@@ -208,17 +197,7 @@ class TimeSeriesSplitFutbol:
         self.n_splits = n_splits
 
     def split(self, fechas: np.ndarray):
-        n = len(fechas)
-        if n <= self.n_splits + 1:
-            yield np.arange(max(1, n - 1)), np.arange(max(1, n - 1), n)
-            return
-        fold = n // (self.n_splits + 1)
-        for i in range(self.n_splits):
-            train_end = (i + 1) * fold
-            test_end = min((i + 2) * fold, n)
-            if train_end < 1 or test_end <= train_end:
-                continue
-            yield np.arange(train_end), np.arange(train_end, test_end)
+        yield from splits_por_fecha(fechas, self.n_splits)
 
 
 class ValidacionTemporal:

@@ -25,3 +25,10 @@ Sin DDL ni dependencia de rutas locales de BD. Legacy incompleto deja de ser apt
 para serving. Un hash no prueba causalidad/disponibilidad histórica y una activación
 no certifica eficacia: evaluación temporal/calibración por versión siguen pendientes.
 Detalle y evidencia: `../reactivacion_single_user/PERSISTENCIA_ML_FUTBOL_2026-10-15.md`.
+
+## Evidencia posterior — 2026-10-16
+
+Evaluación temporal por partido ejecutada con política predeclarada; ninguna
+familia pasa todos los gates de activación. No se publicó modelo nuevo en Neon.
+Ver [evaluación](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
+La decisión de artefactos sigue ACEPTADA; no se confunde persistencia con eficacia.

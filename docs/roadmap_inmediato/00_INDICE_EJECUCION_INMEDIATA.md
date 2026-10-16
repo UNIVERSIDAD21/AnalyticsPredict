@@ -7,6 +7,10 @@ Este índice conserva el orden comercial histórico, **no** define tareas actual
 
 ## Continuidad técnica actual
 
+Corte consolidado2026-10-16 en el roadmap single-user y evaluación temporal
+`../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md`.
+Ninguna familia apta para activación; KPI/GET/H12/visual/fuentes siguen abiertos.
+
 El cierre de persistencia/serving ML fútbol del2026-10-15 está en
 `../reactivacion_single_user/PERSISTENCIA_ML_FUTBOL_2026-10-15.md`.
 No reactiva los bloques comerciales históricos ni certifica modelos.

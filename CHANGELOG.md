@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-16 — evaluación temporal fútbol y continuidad consolidada
+
+- Evaluación Ridge read-only con protocolo predeclarado TRAIN/CAL/EVAL, alpha soloCAL, baseline e IC pareado por partido; fechas/IDs/equipos desconocidos y ventanas sinCAL explícitos. CV temporal no divide perspectivas ni presenta ajuste como validación cuando faltan folds.
+- Resultado:581EVALcorners/goles y618disparos; MAE1,396/0,665/2,679 frente a1,426/0,686/2,907. Ninguna familia pasa todos los gates; no se guardaron ni activaron modelos fútbol enNeon. Backtesting no acredita disponibilidad histórica ni eficacia futura.
+- Estado/roadmap/deuda consolidados, versiones anteriores archivadas íntegras. Confirmación del propietario: soportesP&L no existen, exclusiones/ROI N/D sin tarea documental humana; no hay login/compra/GitHub personal identificados como requisitos.
+
 ## 2026-10-15 — ciclo ML fútbol verificable
 
 - Artefacto JSON Ridge completo por familia, contrato de features/targets, dataset efectivo y SHA-256; registro canónico sin DDL, lote atómico y activación validada antes de desactivar. Recarga SQL read-only sin entrenar, NPZ sin pickle y rechazo de versiones incompletas/ambiguas.

@@ -279,6 +279,16 @@ class EntrenadorFutbol:
 
         parametros: List[Any] = []
 
+        if self.config.fecha_minima:
+            desde = self.config.fecha_minima
+            if isinstance(desde, datetime):
+                if desde.tzinfo is None:
+                    raise ValueError('El inicio datetime requiere zona horaria')
+            else:
+                desde = datetime.combine(desde, time.min, tzinfo=timezone.utc)
+            query += " AND p.fecha_partido >= %s"
+            parametros.append(desde)
+
         if self.config.temporadas:
             query += " AND p.temporada_id::text = ANY(%s)"
             parametros.append(self.config.temporadas)

@@ -419,45 +419,13 @@ class ModeloPrediccionBase(ABC):
         Returns:
             MAE promedio
         """
-        n = len(fechas)
-        if n < n_folds * 10:  # Mínimo 10 muestras por fold
-            # Dataset muy pequeño, retornar MAE de entrenamiento
-            pesos, _ = ajustar_ridge(X, Y, alpha)
-            predicciones = X @ pesos
-            return float(np.mean(np.abs(Y - predicciones)))
-
-        # Ordenar por fecha
-        orden = np.argsort(fechas)
-        X_ordenado = X[orden]
-        Y_ordenado = Y[orden]
-
-        # Dividir en folds temporales
-        fold_size = n // (n_folds + 1)
+        from ..entrenamiento.validacion import splits_por_fecha
         maes = []
-
-        for fold in range(n_folds):
-            # Training: todo hasta cierto punto
-            # Validation: siguiente porción
-            train_end = (fold + 1) * fold_size
-            val_end = (fold + 2) * fold_size
-
-            if val_end > n:
-                break
-
-            X_train = X_ordenado[:train_end]
-            Y_train = Y_ordenado[:train_end]
-            X_val = X_ordenado[train_end:val_end]
-            Y_val = Y_ordenado[train_end:val_end]
-
-            if len(X_train) < 10 or len(X_val) < 5:
-                continue
-
-            pesos, _ = ajustar_ridge(X_train, Y_train, alpha)
-            predicciones = X_val @ pesos
-            mae = float(np.mean(np.abs(Y_val - predicciones)))
-            maes.append(mae)
-
-        return np.mean(maes) if maes else float("inf")
+        for train_idx, test_idx in splits_por_fecha(fechas, n_folds, 10, 5):
+            pesos, _ = ajustar_ridge(X[train_idx], Y[train_idx], alpha)
+            maes.append(float(np.mean(np.abs(Y[test_idx] - X[test_idx] @ pesos))))
+        # Sin folds válidos no se devuelve el error de ajuste como si fuera validación.
+        return float(np.mean(maes)) if maes else float('inf')
 
     def to_dict(self) -> Dict[str, Any]:
         from .artefacto import exportar

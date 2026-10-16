@@ -531,6 +531,7 @@ class ConfiguracionEntrenamiento:
     competiciones: Optional[List[str]] = None  # None = todas
     temporadas: Optional[List[str]] = None     # None = todas
     fecha_corte: Optional[date] = None
+    fecha_minima: Optional[date] = None
     n_folds_cv: int = 4
     alpha_ridge: Optional[float] = None  # None = buscar óptimo
     min_partidos_equipo: int = 5
@@ -542,6 +543,7 @@ class ConfiguracionEntrenamiento:
             "competiciones": self.competiciones,
             "temporadas": self.temporadas,
             "fecha_corte": self.fecha_corte.isoformat() if self.fecha_corte else None,
+            "fecha_minima": self.fecha_minima.isoformat() if self.fecha_minima else None,
             "n_folds_cv": self.n_folds_cv,
             "alpha_ridge": self.alpha_ridge,
             "min_partidos_equipo": self.min_partidos_equipo,

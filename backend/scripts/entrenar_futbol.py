@@ -24,6 +24,7 @@ def ejecutar(pool, args):
     config = ConfiguracionEntrenamiento(
         competiciones=args.competicion, temporadas=args.temporada_id,
         fecha_corte=args.fecha_corte, alpha_ridge=args.alpha,
+        fecha_minima=getattr(args, 'fecha_desde', None),
         min_partidos_equipo=args.min_partidos_equipo, incluir_copas=False,
     )
     entrenador = EntrenadorFutbol(pool, config=config, min_partidos=args.min_partidos)
@@ -56,6 +57,7 @@ def main(argv=None):
     parser.add_argument('--familia', action='append', choices=[t.value for t in TipoModelo], help='Entrena solo estas familias; repetible')
     parser.add_argument('--temporada-id', action='append', help='UUID canónico; repetible')
     parser.add_argument('--fecha-corte', type=date.fromisoformat, help='Límite exclusivo YYYY-MM-DD en UTC')
+    parser.add_argument('--fecha-desde', type=date.fromisoformat, help='Inicio inclusivo YYYY-MM-DD en UTC')
     parser.add_argument('--salida', type=Path)
     args = parser.parse_args(argv)
     if args.guardar and not args.entrenar or args.activar and not args.guardar:

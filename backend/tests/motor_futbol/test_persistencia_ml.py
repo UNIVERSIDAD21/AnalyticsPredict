@@ -235,6 +235,18 @@ def test_selector_sql_filtra_invalido_estado_cutoff_temporada_y_copa(registro_db
     assert {p['id'] for p in efectivos} == {partidos[i]['id'] for i in (0,5,6,7,8)}
     informe = e.diagnosticar_dataset()
     assert all(d['n_partidos'] == 5 for d in informe.values())
+    config.fecha_minima = datetime(2026,1,6).date()
+    assert {p['id'] for p in e._obtener_partidos_entrenamiento()} == {partidos[i]['id'] for i in (5,6,7,8)}
+
+
+@pytest.mark.integracion
+def test_pool_evaluacion_impide_dml_incluso_si_un_consumidor_lo_intenta(registro_db):
+    from scripts.evaluar_futbol_temporal import PoolSoloLectura
+    with pytest.raises(psycopg.errors.ReadOnlySqlTransaction):
+        with PoolSoloLectura(registro_db).connection() as c:
+            c.execute("INSERT INTO modelo_versiones_futbol(version) VALUES(1)")
+    with registro_db.connection() as c:
+        assert c.execute('SELECT count(*) FROM modelo_versiones_futbol').fetchone() == (0,)
 
 
 @pytest.mark.integracion
