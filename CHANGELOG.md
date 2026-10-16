@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-15 — vínculo canónico ESPN fútbol
+
+- Adaptador con manifiesto de identidades explícitas, sin fuzzy matching, y tablas separadas de IDs/procedencia ESPN. Alta controlada de temporada/clubes, anti-duplicados entre fuentes y DML atómico/idempotente; revisiones antiguas no sobrescriben datos nuevos ni degradan finales.
+- Manifiesto revisado contra catálogo y rosters ESPN2026: 96 clubes, dos altas nuevas (Hull/Coventry), cinco temporadas2026–27. Dry-run 337 eventos: 200 finales, 136 programados y un abandonado→suspendido, sin goles imputados. Cobertura FT no inventa métricas de primer/segundo tiempo.
+- Suite local sintética de este lote: 740 passed, sin fallos/omitidas. Aplicación canónica aún pendiente de CI/ensayo/postflight.
+
 ## 2026-10-15 — preparación para uso: entorno y dominio NBA
 
 - Checklist de ejecución con resultados y pendientes en `docs/reactivacion_single_user/CHECKLIST_PREPARACION_USO_2026-10-15.md`. Entorno Python 3.12 persistente con lock; frontend local Node 24: lint, 19 tests y build verdes, además de CI Node 20.
