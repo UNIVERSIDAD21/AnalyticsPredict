@@ -30,6 +30,8 @@ def leer_estado(conn):
         nba_job=None
         if c.execute("SELECT to_regclass('public.ingestion_state_baloncesto') AS tabla").fetchone()['tabla']:
             nba_job=c.execute("SELECT ultima_exito,ultima_error,ultimo_error,ultimo_insertados,ultimo_actualizados,cursor_fecha FROM ingestion_state_baloncesto WHERE clave='nba_partidos'").fetchone()
+        if nba_job is not None and nba_job.get('ultimo_error'):
+            nba_job['ultimo_error'] = 'FALLO_REGISTRADO_VER_LOG_LOCAL'
         prospectiva={'congeladas':None,'resueltas':None,'estado':'ALMACEN_NO_INSTALADO'}
         if c.execute("SELECT to_regclass('public.predicciones_prospectivas') AS tabla").fetchone()['tabla']:
             prospectiva['congeladas']=c.execute('SELECT count(*) n FROM predicciones_prospectivas').fetchone()['n']

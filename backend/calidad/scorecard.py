@@ -497,8 +497,7 @@ def obtener_scorecard_actual(conn: Any, domain: str) -> Optional[Dict[str, Any]]
             cur.execute(sql, (dom,))
             row = cur.fetchone()
     except Exception:
-        logger.warning("No fue posible leer dq_scorecard_daily (posible tabla no creada aún)")
-        return None
+        raise
 
     if not row:
         return None

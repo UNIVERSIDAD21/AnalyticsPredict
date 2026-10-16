@@ -35,7 +35,7 @@ class _CursorSistema(_CursorApuestas):
         query = self.consultas[-1]
         if "stake_resuelto" in query:
             return {"stake_resuelto": 20, "ganancia_neta": 2,
-                    "ganancias_faltantes": self.faltantes, "ganadas": 1, "resueltas": 2}
+                    "ganancias_faltantes": self.faltantes, "ganadas": 1, "resueltas": 2, "n_resueltas": 2, "n_no_conciliables": self.faltantes}
         if "SELECT mensaje" in query:
             return None
         return {"count": 0}
@@ -72,10 +72,10 @@ def test_listado_apuestas_roi_solo_resueltas_y_sin_ganancias_faltantes(monkeypat
         respuesta = asyncio.run(rutas_apuestas_futbol.listar_apuestas(
             estado=None, mercado=None, desde=None, hasta=None,
             pagina=1, tamano=20, limite=None, offset=None))
-        assert respuesta.resumen.roi == roi
-        assert respuesta.resumen.ganancia_neta == ganancia
-        assert respuesta.resumen.stake_total == 30
-        assert "SUM(stake) FILTER" in cursor.consultas[-1]
+        assert respuesta.resumen.roi is None
+        assert respuesta.resumen.ganancia_neta is None
+        assert respuesta.resumen.stake_total is None
+        assert "WHERE TRUE" in cursor.consultas[-1]
 
 
 def test_resumen_sistema_no_imputa_ganancia_faltante(monkeypatch):
@@ -88,7 +88,7 @@ def test_resumen_sistema_no_imputa_ganancia_faltante(monkeypatch):
         cursor = _CursorSistema(faltantes)
         monkeypatch.setattr(rutas_metricas_futbol, "obtener_pool", lambda: _Pool(cursor))
         respuesta = asyncio.run(rutas_metricas_futbol.obtener_resumen_sistema())
-        assert respuesta.roi_global == roi
+        assert respuesta.roi_global is None
         assert respuesta.win_rate_global == 0.5
         assert respuesta.modelo_activo is False
         assert any("SUM(stake) FILTER" in query for query in cursor.consultas)

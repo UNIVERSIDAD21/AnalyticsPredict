@@ -443,8 +443,8 @@ export function ResumenMetricasFutbol({
     const totalApuestas = metricas.rendimiento.reduce((acc, r) => acc + r.nApuestas, 0);
     const totalGanadas = metricas.rendimiento.reduce((acc, r) => acc + r.ganadas, 0);
     const totalPerdidas = metricas.rendimiento.reduce((acc, r) => acc + r.perdidas, 0);
-    const stakeTotal = metricas.rendimiento.reduce((acc, r) => acc + r.stakeTotal, 0);
-    const gananciasCompletas = metricas.rendimiento.length > 0 && metricas.rendimiento.every((r) => r.gananciaNeta !== null);
+    const stakeTotal = metricas.rendimiento.reduce((acc, r) => acc + (r.stakeTotal ?? 0), 0);
+    const gananciasCompletas = metricas.rendimiento.length > 0 && metricas.rendimiento.every((r) => r.gananciaNeta !== null && r.stakeTotal !== null);
     const gananciaNeta = gananciasCompletas ? metricas.rendimiento.reduce((acc, r) => acc + (r.gananciaNeta ?? 0), 0) : null;
 
     const brierMedidos = metricas.calibracion.map((c) => c.brierScore).filter((n): n is number => n !== null);
@@ -478,6 +478,7 @@ export function ResumenMetricasFutbol({
           Resumen de Rendimiento
         </h2>
 
+        <p className="text-xs text-texto-terciario mb-3">P&L N/D sin soportes originales ni unidad acreditada. Los conteos son resultados registrados, no rendimiento certificado.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* ROI Global */}
           <div className="text-center p-4 rounded-lg bg-futurista-oscuro/50 border border-neon-cyan/10">
@@ -594,8 +595,8 @@ export function ResumenMetricasFutbol({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {metricasAgrupadas.map((grupo) => {
-            const stakeCategoria = grupo.rendimiento.reduce((acc, r) => acc + r.stakeTotal, 0);
-            const roiCategoria = stakeCategoria > 0 && grupo.rendimiento.every((r) => r.gananciaNeta !== null)
+            const stakeCategoria = grupo.rendimiento.reduce((acc, r) => acc + (r.stakeTotal ?? 0), 0);
+            const roiCategoria = stakeCategoria > 0 && grupo.rendimiento.every((r) => r.gananciaNeta !== null && r.stakeTotal !== null)
               ? grupo.rendimiento.reduce((acc, r) => acc + (r.gananciaNeta ?? 0), 0) / stakeCategoria
               : null;
             const totalApuestas = grupo.rendimiento.reduce((acc, r) => acc + r.nApuestas, 0);

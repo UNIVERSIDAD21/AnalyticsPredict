@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import time
 from datetime import datetime, date
 from pathlib import Path
 from typing import Optional, List, Literal, Dict, Any, Set
@@ -23,6 +22,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+from servicios.politica_pnl import publicar_pnl, no_concilia_sql
 from .schemas_futbol import (
     ApuestaRequest,
     ApuestaResponse,
@@ -51,9 +51,6 @@ MERCADOS_VALIDOS = {
     "DISPAROS_VISITANTE_FT", "DISPAROS_VISITANTE_ARCO_FT",
 }
 
-_APUESTAS_COLUMNAS_CACHE: Dict[str, Any] = {"columnas": set(), "timestamp": 0.0}
-_APUESTAS_COLUMNAS_TTL = 300.0
-
 APUESTAS_FUTBOL_SUNSET_DATE = os.getenv("APUESTAS_FUTBOL_LEGACY_SUNSET", "2026-12-31")
 APUESTAS_FUTBOL_USAGE_PATH = Path(
     os.getenv(
@@ -63,28 +60,6 @@ APUESTAS_FUTBOL_USAGE_PATH = Path(
         ),
     )
 )
-
-
-def _registrar_uso_contrato(version: str) -> None:
-    """Telemetría simple de uso de contrato (v2 vs legacy)."""
-    try:
-        APUESTAS_FUTBOL_USAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        today = date.today().isoformat()
-        if APUESTAS_FUTBOL_USAGE_PATH.exists():
-            data = json.loads(APUESTAS_FUTBOL_USAGE_PATH.read_text(encoding="utf-8"))
-        else:
-            data = {"by_date": {}}
-
-        by_date = data.setdefault("by_date", {})
-        row = by_date.setdefault(today, {"legacy": 0, "v2": 0})
-        row["legacy" if version == "legacy" else "v2"] += 1
-
-        APUESTAS_FUTBOL_USAGE_PATH.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    except Exception:
-        return
 
 
 def _leer_uso_contrato() -> dict:
@@ -109,8 +84,6 @@ def _aplicar_headers_deprecacion(response: Response, endpoint: str) -> None:
 
 
 def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, endpoint: str) -> dict:
-    _registrar_uso_contrato(version)
-
     if version == "legacy":
         _aplicar_headers_deprecacion(response, endpoint)
         return payload_legacy
@@ -127,26 +100,13 @@ def _respuesta_contrato(payload_legacy: dict, version: str, response: Response, 
     }
 
 
-def _obtener_columnas_apuestas(cursor) -> Set[str]:
-    """Obtiene columnas existentes en apuestas_futbol con cache simple."""
-    ahora = time.time()
-    columnas_cache = _APUESTAS_COLUMNAS_CACHE.get("columnas", set())
-    timestamp = _APUESTAS_COLUMNAS_CACHE.get("timestamp", 0.0)
-
-    if columnas_cache and (ahora - timestamp) < _APUESTAS_COLUMNAS_TTL:
-        return columnas_cache
-
-    cursor.execute(
-        """
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'apuestas_futbol'
-        """
-    )
-    columnas = {row["column_name"] for row in cursor.fetchall()}
-    _APUESTAS_COLUMNAS_CACHE["columnas"] = columnas
-    _APUESTAS_COLUMNAS_CACHE["timestamp"] = ahora
-    logger.debug(f"Columnas apuestas_futbol cacheadas: {columnas}")
+def _obtener_columnas_apuestas(cursor) -> set[str]:
+    """Lee el contrato vigente, sin TTL desligado de esquema/conexión."""
+    cursor.execute("""SELECT column_name FROM information_schema.columns
+        WHERE table_schema = current_schema() AND table_name = 'apuestas_futbol'""")
+    columnas = {fila['column_name'] for fila in cursor.fetchall()}
+    if not columnas or not ({'resultado', 'estado', 'status'} & columnas):
+        raise HTTPException(503, detail='Almacén de apuestas no disponible')
     return columnas
 
 
@@ -340,7 +300,7 @@ async def crear_apuesta(
                 columnas = _obtener_columnas_apuestas(cursor)
                 logger.debug(f"Columnas disponibles: {columnas}")
                 
-                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_prob = _resolver_columna(columnas, "probabilidad_sistema", "probabilidad")
                 col_confianza = _resolver_columna(columnas, "confianza", "confianza_sistema")
                 col_valor = _resolver_columna(columnas, "valor_esperado")
@@ -492,7 +452,7 @@ async def listar_apuestas(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
                 col_prob = _resolver_columna(columnas, "probabilidad_sistema", "probabilidad")
                 col_confianza = _resolver_columna(columnas, "confianza", "confianza_sistema")
@@ -500,7 +460,7 @@ async def listar_apuestas(
                 col_ganancia_pot = _resolver_columna(
                     columnas, "ganancia_potencial", "ganancias_potenciales"
                 )
-                col_ganancia_real = _resolver_columna(columnas, "ganancia_real", "ganancia_neta")
+                col_ganancia_real = _resolver_columna(columnas, "ganancia", "ganancia_real", "ganancia_neta")
                 col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
                 col_fecha_creacion = _resolver_columna(
                     columnas, "fecha_creacion", "creado_en", "created_at"
@@ -566,7 +526,7 @@ async def listar_apuestas(
                     params.append(desde)
 
                 if hasta and col_fecha_creacion:
-                    query += f" AND a.{col_fecha_creacion} <= %s"
+                    query += f" AND a.{col_fecha_creacion} < %s::date + INTERVAL '1 day'"
                     params.append(hasta)
 
                 order_col = col_fecha_creacion or "id"
@@ -594,7 +554,7 @@ async def listar_apuestas(
                     count_params.append(desde)
 
                 if hasta and col_fecha_creacion:
-                    count_query += f" AND a.{col_fecha_creacion} <= %s"
+                    count_query += f" AND a.{col_fecha_creacion} < %s::date + INTERVAL '1 day'"
                     count_params.append(hasta)
 
                 cursor.execute(count_query, count_params)
@@ -629,24 +589,25 @@ async def listar_apuestas(
                         )
                     )
 
-                # Calcular resumen
-                resumen_query = f"""
-                    SELECT
-                        COUNT(*) as total,
-                        SUM(CASE WHEN {col_estado or "'PENDIENTE'"} = 'PENDIENTE' THEN 1 ELSE 0 END) as pendientes,
-                        SUM(CASE WHEN {col_estado or "''"} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
-                        SUM(CASE WHEN {col_estado or "''"} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
-                        SUM(CASE WHEN {col_estado or "''"} = 'PUSH' THEN 1 ELSE 0 END) as push,
-                        SUM(stake) as stake_total,
-                        SUM(stake) FILTER (WHERE {col_estado or "''"} IN ('GANADA', 'PERDIDA', 'PUSH')) as stake_resuelto,
-                        SUM({col_ganancia_real or 'NULL'}) FILTER (WHERE {col_estado or "''"} IN ('GANADA', 'PERDIDA', 'PUSH')) as ganancia_neta,
-                        COUNT(*) FILTER (WHERE {col_estado or "''"} IN ('GANADA', 'PERDIDA', 'PUSH')
-                                         AND {col_ganancia_real or 'NULL'} IS NULL) as ganancias_faltantes
-                    FROM apuestas_futbol
-                """
-                cursor.execute(resumen_query)
+                # Misma cohorte que el listado, sin LIMIT/OFFSET ni joins por selección.
+                where_resumen = query.split('WHERE TRUE', 1)[1].split('ORDER BY', 1)[0]
+                params_resumen = params[:-2]
+                invalido = no_concilia_sql(resultado=f'a.{col_estado}',
+                    cuota=f'a.{col_cuota}' if col_cuota else 'NULL::numeric',
+                    stake='a.stake', ganancia=f'a.{col_ganancia_real}' if col_ganancia_real else 'NULL::numeric')
+                cursor.execute(f"""
+                    SELECT COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE a.{col_estado} = 'PENDIENTE') as pendientes,
+                        COUNT(*) FILTER (WHERE a.{col_estado} = 'GANADA') as ganadas,
+                        COUNT(*) FILTER (WHERE a.{col_estado} = 'PERDIDA') as perdidas,
+                        COUNT(*) FILTER (WHERE a.{col_estado} = 'PUSH') as push,
+                        COUNT(*) FILTER (WHERE a.{col_estado}::text = 'ANULADA') as anuladas,
+                        COUNT(*) FILTER (WHERE {invalido}) as n_no_conciliables,
+                        NULL::numeric as stake_total, NULL::numeric as stake_resuelto,
+                        NULL::numeric as ganancia_neta, 0 as ganancias_faltantes
+                    FROM apuestas_futbol a WHERE TRUE {where_resumen}
+                """, params_resumen)
                 res = cursor.fetchone()
-
                 total_resueltas = (res["ganadas"] or 0) + (res["perdidas"] or 0)
                 win_rate = (res["ganadas"] or 0) / total_resueltas * 100 if total_resueltas > 0 else None
                 stake_total = float(res["stake_total"] or 0)
@@ -658,7 +619,7 @@ async def listar_apuestas(
                     if ganancia_neta is not None and stake_resuelto > 0 else None
                 )
 
-                resumen = ResumenApuestas(
+                resumen = ResumenApuestas(**publicar_pnl(dict(
                     total=res["total"] or 0,
                     pendientes=res["pendientes"] or 0,
                     ganadas=res["ganadas"] or 0,
@@ -668,7 +629,7 @@ async def listar_apuestas(
                     win_rate=round(win_rate, 2) if win_rate is not None else None,
                     stake_total=stake_total,
                     ganancia_neta=ganancia_neta,
-                )
+                ), n_resueltas=sum(int(res.get(k) or 0) for k in ('ganadas','perdidas','push','anuladas')), n_no_conciliables=res.get('n_no_conciliables')))
 
                 return ListaApuestasResponse(
                     exito=True,
@@ -682,6 +643,51 @@ async def listar_apuestas(
     except Exception as e:
         logger.error(f"Error listando apuestas: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get("/contract-usage", summary="Métricas de adopción contrato apuestas fútbol")
+async def obtener_metricas_contrato(days: int = Query(7, ge=1, le=90)) -> dict:
+    data = _leer_uso_contrato()
+    by_date = data.get("by_date", {})
+    fechas = sorted(by_date.keys())[-days:]
+
+    series = []
+    total_v2 = 0
+    total_legacy = 0
+    for fecha in fechas:
+        row = by_date.get(fecha, {})
+        v2 = int(row.get("v2", 0) or 0)
+        legacy = int(row.get("legacy", 0) or 0)
+        total_v2 += v2
+        total_legacy += legacy
+        total = v2 + legacy
+        series.append(
+            {
+                "date": fecha,
+                "v2": v2,
+                "legacy": legacy,
+                "legacy_ratio": round((legacy / total), 4) if total else 0.0,
+            }
+        )
+
+    total = total_v2 + total_legacy
+    return {
+        "ok": True,
+        "data": {
+            "days": days,
+            "series": series,
+            "summary": {
+                "v2": total_v2,
+                "legacy": total_legacy,
+                "legacy_ratio": round((total_legacy / total), 4) if total else 0.0,
+            },
+        },
+        "meta": {
+            "contract_version": "v2",
+            "domain": "futbol_apuestas_resolucion",
+        },
+    }
+
 
 
 @router.get(
@@ -700,7 +706,7 @@ async def obtener_apuesta(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
                 col_prob = _resolver_columna(columnas, "probabilidad_sistema", "probabilidad")
                 col_confianza = _resolver_columna(columnas, "confianza", "confianza_sistema")
@@ -708,7 +714,7 @@ async def obtener_apuesta(
                 col_ganancia_pot = _resolver_columna(
                     columnas, "ganancia_potencial", "ganancias_potenciales"
                 )
-                col_ganancia_real = _resolver_columna(columnas, "ganancia_real", "ganancia_neta")
+                col_ganancia_real = _resolver_columna(columnas, "ganancia", "ganancia_real", "ganancia_neta")
                 col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
                 col_fecha_creacion = _resolver_columna(
                     columnas, "fecha_creacion", "creado_en", "created_at"
@@ -811,7 +817,7 @@ async def actualizar_apuesta(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
                 col_fecha_resolucion = _resolver_columna(
                     columnas, "fecha_resolucion", "resuelto_en"
@@ -899,7 +905,7 @@ async def cancelar_apuesta(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_fecha_resolucion = _resolver_columna(
                     columnas, "fecha_resolucion", "resuelto_en"
                 )
@@ -970,9 +976,9 @@ async def resolver_apuestas(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "estado", "status")
+                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
-                col_ganancia_real = _resolver_columna(columnas, "ganancia_real", "ganancia_neta")
+                col_ganancia_real = _resolver_columna(columnas, "ganancia", "ganancia_real", "ganancia_neta")
                 col_fecha_resolucion = _resolver_columna(
                     columnas, "fecha_resolucion", "resuelto_en"
                 )
@@ -1111,47 +1117,3 @@ async def resolver_apuestas(
     except Exception as e:
         logger.error(f"Error resolviendo apuestas: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
-
-
-@router.get("/contract-usage", summary="Métricas de adopción contrato apuestas fútbol")
-async def obtener_metricas_contrato(days: int = Query(7, ge=1, le=90)) -> dict:
-    data = _leer_uso_contrato()
-    by_date = data.get("by_date", {})
-    fechas = sorted(by_date.keys())[-days:]
-
-    series = []
-    total_v2 = 0
-    total_legacy = 0
-    for fecha in fechas:
-        row = by_date.get(fecha, {})
-        v2 = int(row.get("v2", 0) or 0)
-        legacy = int(row.get("legacy", 0) or 0)
-        total_v2 += v2
-        total_legacy += legacy
-        total = v2 + legacy
-        series.append(
-            {
-                "date": fecha,
-                "v2": v2,
-                "legacy": legacy,
-                "legacy_ratio": round((legacy / total), 4) if total else 0.0,
-            }
-        )
-
-    total = total_v2 + total_legacy
-    return {
-        "ok": True,
-        "data": {
-            "days": days,
-            "series": series,
-            "summary": {
-                "v2": total_v2,
-                "legacy": total_legacy,
-                "legacy_ratio": round((total_legacy / total), 4) if total else 0.0,
-            },
-        },
-        "meta": {
-            "contract_version": "v2",
-            "domain": "futbol_apuestas_resolucion",
-        },
-    }

@@ -157,7 +157,8 @@ def test_db_no_disponible_503(monkeypatch):
     c = TestClient(app)
     r = c.get("/api/prediccion/x/explicacion?version=v1")
     assert r.status_code == 503
-    assert r.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+    assert r.json()["error"]["code"] == "LECTURA_NO_DISPONIBLE"
+    assert r.json()["error"]["trace_id"] == r.headers["x-trace-id"]
 
 
 def test_legacy_con_flag_off_retorna_200(monkeypatch):

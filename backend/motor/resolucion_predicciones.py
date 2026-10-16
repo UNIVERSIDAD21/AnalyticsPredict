@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 resolucion_predicciones.py — Resolvedor de outcomes para predicciones registradas.
 
@@ -469,8 +469,7 @@ def obtener_estadisticas_predicciones(pool=None) -> Dict[str, Any]:
                     }
                 return {}
     except Exception:
-        logger.exception("Error obteniendo estadísticas de predicciones")
-        return {}
+        raise
 
 
 def obtener_predicciones_pendientes_por_mercado(pool=None) -> Dict[str, int]:
@@ -493,5 +492,4 @@ def obtener_predicciones_pendientes_por_mercado(pool=None) -> Dict[str, int]:
                 )
                 return {fila[0]: fila[1] for fila in cursor.fetchall()}
     except Exception:
-        logger.exception("Error obteniendo predicciones pendientes por mercado")
-        return {}
+        raise

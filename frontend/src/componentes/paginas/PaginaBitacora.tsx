@@ -154,7 +154,7 @@ export function PaginaBitacora() {
     ganancia: typeof resumen?.ganancia_total === 'number' ? resumen.ganancia_total : null,
     winrate: typeof resumen?.winrate === 'number' ? resumen.winrate : null,
     roi: typeof resumen?.roi === 'number' ? resumen.roi : null,
-    pnlNoEvaluable: typeof resumen?.n_pnl_no_evaluable_nba === 'number' ? resumen.n_pnl_no_evaluable_nba : null,
+    pnlNoEvaluable: typeof resumen?.n_pnl_no_evaluable === 'number' ? resumen.n_pnl_no_evaluable : null,
   };
 
   return (
@@ -191,7 +191,7 @@ export function PaginaBitacora() {
           />
         )}
 
-        <p className="text-xs text-neon-amarillo">Ganancia histórica registrada, no certificada. {resumenDatos.pnlNoEvaluable ? `${resumenDatos.pnlNoEvaluable} filas NBA no evaluables impiden calcular el ROI del corte.` : 'El ROI requiere stake, cuota y resultado conciliables; N/D indica falta de base válida.'}</p>
+        <p className="text-xs text-neon-amarillo">Agregados monetarios N/D: no hay soportes originales ni unidad acreditada. Los importes individuales se conservan. {resumenDatos.pnlNoEvaluable ? `${resumenDatos.pnlNoEvaluable} apuestas resueltas excluidas de P&L en este corte.` : 'Los conteos y resultados son registrados, no rendimiento certificado.'}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="tarjeta p-4">
@@ -203,7 +203,7 @@ export function PaginaBitacora() {
             <p className="text-xl text-texto-principal font-bold">{resumenDatos.pendientes ?? 'N/D'}</p>
           </div>
           <div className="tarjeta p-4">
-            <p className="text-xs text-texto-secundario uppercase tracking-widest">Ganancia registrada</p>
+            <p className="text-xs text-texto-secundario uppercase tracking-widest">Ganancia agregada</p>
             <p className="text-xl font-bold text-neon-amarillo">{resumenDatos.ganancia == null ? 'N/D' : resumenDatos.ganancia.toFixed(2)}</p>
           </div>
           <div className="tarjeta p-4">
@@ -211,7 +211,7 @@ export function PaginaBitacora() {
             <p className="text-xl text-texto-principal font-bold">{resumenDatos.winrate == null ? 'N/D' : `${resumenDatos.winrate.toFixed(2)}%`}</p>
           </div>
           <div className="tarjeta p-4">
-            <p className="text-xs text-texto-secundario uppercase tracking-widest">ROI conciliable</p>
+            <p className="text-xs text-texto-secundario uppercase tracking-widest">ROI histórico</p>
             <p className="text-xl text-texto-principal font-bold">{resumenDatos.roi == null ? 'N/D' : `${resumenDatos.roi.toFixed(2)}%`}</p>
           </div>
         </div>

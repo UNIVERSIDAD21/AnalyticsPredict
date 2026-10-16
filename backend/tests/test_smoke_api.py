@@ -28,8 +28,11 @@ def test_salud_responde_200_y_servicios():
 
 def test_estado_modelo_responde_con_esquema_minimo():
     resp = client.get("/api/modelo/estado")
-    assert resp.status_code == 200
+    assert resp.status_code in (200, 503)
     data = resp.json()
+    if resp.status_code == 503:
+        assert data['error']['trace_id'] == resp.headers['x-trace-id']
+        return
     assert "exito" in data
     # Puede venir exito=False si no hay datos/modelo disponible en entorno local
     if data["exito"]:

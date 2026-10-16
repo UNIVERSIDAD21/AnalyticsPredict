@@ -12,8 +12,8 @@ interface MetricaMercadoBitacora {
   perdidas: number;
   push: number;
   win_rate: number | null;
-  stake_total: number;
-  ganancia_total: number;
+  stake_total: number | null;
+  ganancia_total: number | null;
   roi: number | null;
   n_pnl_no_evaluable: number;
   edge_promedio: number | null;
@@ -26,8 +26,8 @@ interface MetricaConfianzaBitacora {
   ganadas: number;
   perdidas: number;
   win_rate: number | null;
-  stake_total: number;
-  ganancia_total: number;
+  stake_total: number | null;
+  ganancia_total: number | null;
   roi: number | null;
   n_pnl_no_evaluable: number;
 }
@@ -38,7 +38,7 @@ interface MetricaTemporalBitacora {
   ganadas: number;
   perdidas: number;
   win_rate: number | null;
-  ganancia: number;
+  ganancia: number | null;
   roi: number | null;
   n_pnl_no_evaluable: number;
 }
@@ -55,8 +55,8 @@ interface RespuestaMetricasBitacora {
     perdidas: number;
     push: number;
     win_rate: number | null;
-    stake_total: number;
-    ganancia_total: number;
+    stake_total: number | null;
+    ganancia_total: number | null;
     roi: number | null;
     n_pnl_no_evaluable: number;
     edge_promedio: number | null;

@@ -34,8 +34,5 @@ def test_respuesta_contrato_apuestas_futbol_v2_y_legacy(tmp_path, monkeypatch):
     assert response_legacy.headers["Deprecation"] == "true"
     assert "/api/futbol/apuestas/resolver?version=v2" in response_legacy.headers["Link"]
 
-    data = rutas_apuestas_futbol._leer_uso_contrato()
-    assert len(data["by_date"]) == 1
-    today_row = next(iter(data["by_date"].values()))
-    assert today_row["v2"] >= 1
-    assert today_row["legacy"] >= 1
+    assert not usage_path.exists(), 'Serializar contrato no persiste telemetría'
+    assert rutas_apuestas_futbol._leer_uso_contrato() == {'by_date': {}}

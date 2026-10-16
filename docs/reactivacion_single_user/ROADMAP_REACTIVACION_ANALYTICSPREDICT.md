@@ -15,15 +15,12 @@ el propietario, sin copiar memoria/configuración del agente al producto.
 | Fútbol datos canónicos | Capturas337/200FT y vínculo explícito a catálogo, idempotencia0/0; histórico conservado |
 | Fútbol ciclo ML técnico | Persistencia/activación/loader reparados, JSON verificable, sin modelos/métricas ficticias |
 | Fútbol evaluación retrospectiva | Protocolo previo y baseline/IC por partido,581/581/618EVAL, ninguna familia apta para activar |
+| KPI/P&L y GET técnicos | [Cierre16/10](KPI_PNL_Y_GET_2026-10-16.md): política monetaria cross-sport/N/D, cohortes/grano, sinTTL,78GET y protección read-only/observabilidad |
 | Prospectiva técnica NBA | 12snapshotsPRE inmutables anteriores al inicio; no equivalen a12outcomes ni a certificación |
 
 ## Pendientes ejecutables del agente
 
-1. **KPI/caches:** grano, ventanas, denominadores, exclusiones y procedencia comunes
-   SQL→API→UI; N/D y motivos, raw/calibrado separados, caches observables. Subbloque
-   calibración cerrado en [KPI16/10](KPI_CALIBRACION_2026-10-16.md); no cierra P&L/otrosKPI.
-2. **Observabilidad/GET:** inventario transitivo y pruebas de ausencia de escrituras;
-   fallos de datos/entrenamiento/calibrador/cadena sin ceros o éxitos ficticios.
+1. **Validación analítica M12:** consumidores técnicos de KPI/caches y GET cerrados en sus alcances; queda evaluación científica/confidence/odds por versión/cohorte. El cierre técnico no valida el histórico.
 3. **H12:** resolver auditoría dev, permisos específicos y rot con evidencia,
    preservando cambios previos; lock/tests/lint/build/CI. [Avance16/10](H12_DEPENDENCIAS_2026-10-16.md):
    dev10→5altas porbraces sin parche,prod0; no cerrarH12.

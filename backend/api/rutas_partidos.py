@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 rutas_partidos.py — Endpoints para consultar partidos.
 
@@ -20,7 +20,7 @@ from typing import Optional, List
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Query as QueryParam
+from fastapi import APIRouter, HTTPException, Query as QueryParam
 from pydantic import BaseModel, Field
 from psycopg.rows import dict_row
 
@@ -227,13 +227,7 @@ def _consultar_partidos(
                 )
 
     except Exception as e:
-        logger.exception("Error listando partidos")
-        return RespuestaPartidos(
-            exito=False,
-            partidos=[],
-            total=0,
-            mensaje=f"Error: {str(e)}",
-        )
+        raise HTTPException(503, detail='Consulta de partidos no disponible') from e
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -436,13 +430,7 @@ async def buscar_partido(
                 )
 
     except Exception as e:
-        logger.exception("Error buscando partido")
-        return RespuestaPartidos(
-            exito=False,
-            partidos=[],
-            total=0,
-            mensaje=f"Error: {str(e)}",
-        )
+        raise HTTPException(503, detail='Consulta de partidos no disponible') from e
 
 
 @router.get(
@@ -532,10 +520,5 @@ async def obtener_partido(partido_id: str):
                 }
 
     except Exception as e:
-        logger.exception("Error obteniendo partido")
-        return {
-            "exito": False,
-            "partido": None,
-            "mensaje": f"Error: {str(e)}",
-        }
+        raise HTTPException(503, detail='Consulta de partidos no disponible') from e
 

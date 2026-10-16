@@ -10,11 +10,14 @@ from datetime import datetime
 from time import perf_counter
 from uuid import uuid4
 import logging
-import traceback
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exception_handlers import http_exception_handler
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from psycopg import Error as ErrorPostgres
+from psycopg.errors import ReadOnlySqlTransaction
 
 from configuracion import CONFIGURACION
 from api.rutas_analisis import router as router_analisis
@@ -41,6 +44,7 @@ from api.rutas_fuentes_futbol import router as router_fuentes_futbol
 from api.rutas_operacion import router as router_operacion
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from db import cerrar_pool
+from lecturas_http import LecturasHTTPMiddleware
 from observabilidad_http import ObservabilidadHTTP
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -165,15 +169,47 @@ async def middleware_trace_id(request: Request, call_next):
     request.state.trace_id = trace_id
 
     inicio = perf_counter()
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        logger.error('Error HTTP trace_id=%s clase=%s', trace_id, type(exc).__name__)
+        response = _respuesta_error(
+            request, 503 if isinstance(exc, ErrorPostgres) else 500,
+            'LECTURA_NO_DISPONIBLE', 'No fue posible completar la consulta.',
+        )
+        request.state.escritura_bloqueada = isinstance(exc, ReadOnlySqlTransaction)
+    if response.status_code >= 500:
+        headers_lectura = {k: v for k, v in response.headers.items()
+            if k.lower().startswith('access-control-') or k.lower() in {'vary', 'retry-after'}}
+        response = _respuesta_error(request, response.status_code,
+            'LECTURA_NO_DISPONIBLE', 'No fue posible completar la operación.')
+        response.headers.update(headers_lectura)
     latencia_ms = (perf_counter() - inicio) * 1000.0
 
     observabilidad_http.registrar(
         latencia_ms=latencia_ms,
         status_code=response.status_code,
+        escritura_bloqueada=getattr(request.state, 'escritura_bloqueada', False),
     )
     response.headers["X-Trace-Id"] = trace_id
     return response
+
+
+app.add_middleware(LecturasHTTPMiddleware)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def manejador_http(request: Request, exc: StarletteHTTPException):
+    if exc.status_code < 500:
+        return await http_exception_handler(request, exc)
+    causa = exc
+    while causa is not None:
+        if isinstance(causa, ReadOnlySqlTransaction):
+            request.state.escritura_bloqueada = True
+            break
+        causa = causa.__cause__ or causa.__context__
+    return _respuesta_error(request, 503, 'DATOS_NO_DISPONIBLES',
+                            'No fue posible consultar los datos solicitados.')
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -226,7 +262,7 @@ async def manejador_error_general(request: Request, exc: Exception):
     trace_id = getattr(request.state, "trace_id", "sin-trace")
     logger.exception("Error interno no controlado trace_id=%s", trace_id)
 
-    detalle = traceback.format_exc() if CONFIGURACION.debug else None
+    detalle = None  # Nunca publicar trazas ni configuración, tampoco con DEBUG.
     return _respuesta_error(
         request,
         status_code=500,
@@ -363,11 +399,8 @@ async def estado_modelo():
                 "metricas": metricas,
             }
         }
-    except Exception as e:
-        return {
-            "exito": False,
-            "error": str(e),
-        }
+    except Exception as exc:
+        raise HTTPException(503, detail='Modelo no disponible') from exc
 
 
 @app.get(
@@ -387,11 +420,8 @@ async def equipos_modelo():
             "cantidad": len(equipos),
             "equipos": sorted(equipos),
         }
-    except Exception as e:
-        return {
-            "exito": False,
-            "error": str(e),
-        }
+    except Exception as exc:
+        raise HTTPException(503, detail='Modelo no disponible') from exc
 
 
 @app.post(
@@ -439,11 +469,8 @@ async def reentrenar_modelo():
                 "fecha_entrenamiento": modelo.fecha_entrenamiento.isoformat(),
             }
         }
-    except Exception as e:
-        return {
-            "exito": False,
-            "error": str(e),
-        }
+    except Exception as exc:
+        raise HTTPException(503, detail='Modelo no disponible') from exc
 
 
 if __name__ == "__main__":

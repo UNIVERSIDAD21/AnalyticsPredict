@@ -67,10 +67,12 @@ def test_startup_y_get_sin_artefacto_no_entrenan_ni_abren_bd(monkeypatch, tmp_pa
                 salud = client.get("/salud")
                 estado = client.get("/api/modelo/estado")
                 equipos = client.get("/api/modelo/equipos")
-                assert salud.status_code == estado.status_code == 200
+                assert salud.status_code == 200
+                assert estado.status_code == 503
                 assert salud.json()["estado"] == "degradado"
-                assert estado.json()["exito"] is False
-                assert equipos.status_code == 200 and equipos.json()["exito"] is False
+                assert estado.json()["error"]["trace_id"] == estado.headers["x-trace-id"]
+                assert equipos.status_code == 503
+                assert equipos.json()["error"]["trace_id"] == equipos.headers["x-trace-id"]
     finally:
         GestorModelo.reiniciar()
 

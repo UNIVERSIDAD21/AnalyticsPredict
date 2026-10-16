@@ -346,7 +346,7 @@ export function PaginaMetricas() {
                 </p>
               </div>
               <div className="tarjeta p-4 space-y-2">
-                <p className="text-xs uppercase tracking-widest text-texto-secundario">Ganancia registrada</p>
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">Ganancia agregada</p>
                 <p className="text-2xl font-mono text-neon-amarillo">
                   {formatearMoneda(resumenBitacora.ganancia_total)}
                 </p>
@@ -355,7 +355,7 @@ export function PaginaMetricas() {
                 </p>
               </div>
               <div className="tarjeta p-4 space-y-2">
-                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI conciliable</p>
+                <p className="text-xs uppercase tracking-widest text-texto-secundario">ROI histórico</p>
                 <p className="text-2xl font-mono text-neon-amarillo">
                   {formatearPorcentaje(resumenBitacora.roi)}
                 </p>

@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+from servicios.politica_pnl import publicar_pnl, no_concilia_sql
 from motor.resolucion_apuestas import (
     resolver_apuestas,
     obtener_estadisticas_apuestas,
@@ -91,21 +92,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 
 # Auditoría aritmética, no certificación de cuota/stake/outcome. Sin DML.
-_PNL_NBA_NO_EVALUABLE_SQL = """(
-    resultado IN ('GANADA', 'PERDIDA', 'PUSH', 'ANULADA')
-    AND NOT COALESCE(
-        stake > 0 AND ganancia IS NOT NULL
-        AND (resultado NOT IN ('GANADA', 'PERDIDA') OR cuota > 1)
-        AND ABS(ganancia - CASE
-            WHEN resultado = 'GANADA' THEN stake * (cuota - 1)
-            WHEN resultado = 'PERDIDA' THEN -stake ELSE 0 END) <= 0.02
-        AND (resultado NOT IN ('GANADA', 'PERDIDA')
-             OR CASE WHEN lado = 'OVER' THEN cuota_over
-                     WHEN lado = 'UNDER' THEN cuota_under END IS NULL
-             OR ABS(cuota - CASE WHEN lado = 'OVER' THEN cuota_over
-                                 WHEN lado = 'UNDER' THEN cuota_under END) <= 0.02),
-        FALSE)
-)"""
+_PNL_NBA_NO_EVALUABLE_SQL = no_concilia_sql(
+    cuota_lado="CASE WHEN lado = 'OVER' THEN cuota_over WHEN lado = 'UNDER' THEN cuota_under END"
+)
 
 # Un importe conciliable no acredita el resultado de un partido inválido, 0–0
 # o incompatible con la línea y el marcador. Se preserva la fila histórica.
@@ -471,130 +460,55 @@ async def resumen_apuestas(
     try:
         with obtener_pool().connection() as conexion:
             with conexion.cursor(row_factory=dict_row) as cursor:
-                # Consulta unificada que combina apuestas NBA/base, fútbol y combinadas.
-                cursor.execute(
-                    f"""
+                aritmetica = no_concilia_sql()
+                agregados = """
+                    COUNT(*) AS total, COUNT(*) AS total_apuestas,
+                    COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
+                    COUNT(*) FILTER (WHERE resultado <> 'PENDIENTE') AS cerradas,
+                    COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
+                    COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
+                    COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
+                    COUNT(*) FILTER (WHERE resultado = 'ANULADA') AS anuladas,
+                    COUNT(*) FILTER (WHERE no_conciliable) AS n_no_conciliables,
+                    COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
+                    NULL::numeric AS stake_total, NULL::numeric AS ganancia_total,
+                    NULL::numeric AS roi,
+                    ROUND(100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
+                        NULLIF(COUNT(*) FILTER (WHERE resultado IN ('GANADA','PERDIDA')), 0), 2) AS winrate
+                """
+                cursor.execute(f"""
                     WITH apuestas_unificadas AS (
-                        SELECT 'baloncesto'::text AS deporte, mercado, stake, ganancia, resultado,
+                        SELECT 'baloncesto'::text AS deporte, mercado, resultado,
+                               {aritmetica} AS no_conciliable,
                                {_NBA_NO_EVALUABLE_SQL} AS pnl_no_evaluable_nba
                         FROM apuestas
                         UNION ALL
-                        SELECT 'futbol'::text AS deporte, mercado::text AS mercado, stake, ganancia,
-                               resultado::text AS resultado, false AS pnl_no_evaluable_nba
-                        FROM apuestas_futbol
+                        SELECT 'futbol', mercado::text, resultado::text,
+                               {aritmetica}, false FROM apuestas_futbol
                         UNION ALL
-                        SELECT 'baloncesto'::text AS deporte, NULL::text AS mercado, stake, ganancia,
-                               resultado, false AS pnl_no_evaluable_nba
-                        FROM apuestas_combinadas
-                    ),
-                    resumen_global AS (
-                        SELECT
-                            COUNT(*) AS total_apuestas,
-                            COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
-                            COUNT(*) FILTER (WHERE resultado <> 'PENDIENTE') AS cerradas,
-                            COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
-                            COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
-                            COUNT(*) FILTER (WHERE resultado = 'PUSH') AS push,
-                            COUNT(*) FILTER (WHERE resultado = 'ANULADA') AS anuladas,
-                            COALESCE(SUM(stake), 0) AS stake_total,
-                            COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                            COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
-                            CASE
-                                WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
-                                THEN ROUND(
-                                    100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
-                                    COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
-                                    2
-                                )
-                                ELSE NULL
-                            END AS winrate,
-                            CASE
-                                WHEN COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) > 0 THEN NULL
-                                WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
-                                THEN ROUND(
-                                    100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
-                                    COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
-                                    2
-                                )
-                                ELSE NULL
-                            END AS roi
-                        FROM apuestas_unificadas
-                    ),
-                    por_deporte AS (
-                        SELECT
-                            deporte,
-                            COUNT(*) AS total,
-                            COUNT(*) FILTER (WHERE resultado = 'PENDIENTE') AS pendientes,
-                            COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
-                            COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
-                            COALESCE(SUM(stake), 0) AS stake_total,
-                            COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                            COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
-                            CASE
-                                WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
-                                THEN ROUND(
-                                    100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
-                                    COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
-                                    2
-                                )
-                                ELSE NULL
-                            END AS winrate,
-                            CASE
-                                WHEN COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) > 0 THEN NULL
-                                WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
-                                THEN ROUND(
-                                    100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
-                                    COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
-                                    2
-                                )
-                                ELSE NULL
-                            END AS roi
-                        FROM apuestas_unificadas
-                        GROUP BY deporte
-                    ),
-                    por_mercado AS (
-                        SELECT
-                            mercado,
-                            COUNT(*) AS total,
-                            COUNT(*) FILTER (WHERE resultado = 'GANADA') AS ganadas,
-                            COUNT(*) FILTER (WHERE resultado = 'PERDIDA') AS perdidas,
-                            COALESCE(SUM(stake), 0) AS stake_total,
-                            COALESCE(SUM(ganancia), 0) AS ganancia_total,
-                            COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) AS n_pnl_no_evaluable_nba,
-                            CASE
-                                WHEN COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')) > 0
-                                THEN ROUND(
-                                    100.0 * COUNT(*) FILTER (WHERE resultado = 'GANADA') /
-                                    COUNT(*) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA')),
-                                    2
-                                )
-                                ELSE NULL
-                            END AS winrate,
-                            CASE
-                                WHEN COUNT(*) FILTER (WHERE pnl_no_evaluable_nba) > 0 THEN NULL
-                                WHEN COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) > 0
-                                THEN ROUND(
-                                    100.0 * COALESCE(SUM(ganancia) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 0) /
-                                    COALESCE(SUM(stake) FILTER (WHERE resultado IN ('GANADA', 'PERDIDA', 'PUSH')), 1),
-                                    2
-                                )
-                                ELSE NULL
-                            END AS roi
-                        FROM apuestas_unificadas
-                        WHERE mercado IS NOT NULL
-                        GROUP BY mercado
+                        SELECT 'baloncesto', NULL::text, resultado,
+                               {no_concilia_sql(cuota='cuota_total')}, false FROM apuestas_combinadas
+                    ), resumen_global AS (
+                        SELECT {agregados} FROM apuestas_unificadas
+                    ), por_deporte AS (
+                        SELECT deporte, {agregados} FROM apuestas_unificadas GROUP BY deporte
+                    ), por_mercado AS (
+                        SELECT deporte, mercado, {agregados} FROM apuestas_unificadas
+                        WHERE mercado IS NOT NULL GROUP BY deporte, mercado
                     )
-                    SELECT
-                        (SELECT row_to_json(rg) FROM resumen_global rg) AS resumen_global,
+                    SELECT (SELECT row_to_json(rg) FROM resumen_global rg) AS resumen_global,
                         (SELECT COALESCE(json_agg(pd ORDER BY pd.deporte), '[]'::json) FROM por_deporte pd) AS por_deporte,
                         (SELECT COALESCE(json_agg(pm ORDER BY pm.total DESC), '[]'::json) FROM por_mercado pm) AS por_mercado
-                    """,
-                    [],
-                )
+                """, [])
                 fila_resumen = cursor.fetchone() or {}
-                resumen = fila_resumen.get("resumen_global") or {}
-                resumen["por_deporte"] = fila_resumen.get("por_deporte") or []
-                resumen["por_mercado"] = fila_resumen.get("por_mercado") or []
+                def publicar(segmento):
+                    return publicar_pnl(segmento, n_no_conciliables=segmento.get('n_no_conciliables'))
+                resumen = publicar(fila_resumen.get('resumen_global') or {})
+                resumen['por_deporte'] = [publicar(x) for x in fila_resumen.get('por_deporte') or []]
+                resumen['por_mercado'] = [publicar(x) for x in fila_resumen.get('por_mercado') or []]
+                resumen['cohorte'] = {'grano': 'APUESTA', 'ventana': 'TODO',
+                    'fuentes': ['apuestas', 'apuestas_futbol', 'apuestas_combinadas'],
+                    'resultados': 'REGISTRADOS_NO_CERTIFICADOS', 'cache': 'SIN_CACHE'}
     except Exception as exc:
         logger.exception("Fallo resumen de bitácora")
         raise HTTPException(status_code=503, detail="Resumen de bitácora no disponible") from exc
@@ -895,6 +809,12 @@ async def listar_apuestas_analizadas(
 class AuditoriaDecisionFutbolItem(BaseModel):
     id: int
     partido_id: str
+
+    @field_validator('partido_id', mode='before')
+    @classmethod
+    def serializar_uuid_partido(cls, valor):
+        return str(valor) if isinstance(valor, UUID) else valor
+
     mercado: Optional[str] = None
     lado: Optional[str] = None
     linea: Optional[float] = None
@@ -1206,10 +1126,11 @@ class MetricaMercadoBitacora(BaseModel):
     perdidas: int
     push: int
     win_rate: Optional[float] = None
-    stake_total: float
-    ganancia_total: float
+    stake_total: Optional[float] = None
+    ganancia_total: Optional[float] = None
     roi: Optional[float] = None
     n_pnl_no_evaluable: int = 0
+    calidad_pnl: dict = Field(default_factory=dict)
     edge_promedio: Optional[float] = None
     probabilidad_promedio: Optional[float] = None
 
@@ -1222,10 +1143,11 @@ class MetricaConfianzaBitacora(BaseModel):
     ganadas: int
     perdidas: int
     win_rate: Optional[float] = None
-    stake_total: float
-    ganancia_total: float
+    stake_total: Optional[float] = None
+    ganancia_total: Optional[float] = None
     roi: Optional[float] = None
     n_pnl_no_evaluable: int = 0
+    calidad_pnl: dict = Field(default_factory=dict)
 
 
 class MetricaTemporalBitacora(BaseModel):
@@ -1236,9 +1158,10 @@ class MetricaTemporalBitacora(BaseModel):
     ganadas: int
     perdidas: int
     win_rate: Optional[float] = None
-    ganancia: float
+    ganancia: Optional[float] = None
     roi: Optional[float] = None
     n_pnl_no_evaluable: int = 0
+    calidad_pnl: dict = Field(default_factory=dict)
 
 
 class RespuestaMetricasBitacora(BaseModel):
@@ -1349,12 +1272,14 @@ async def obtener_metricas_bitacora(
                     "probabilidad_promedio": round(float(resumen_row.get("prob_promedio") or 0), 4) or None,
                 }
 
+                resumen_global = publicar_pnl(resumen_global, n_resueltas=total)
+
                 if total < 30:
                     advertencias.append(f"Solo {total} apuestas resueltas. Mínimo recomendado: 30.")
                 if no_evaluable:
                     advertencias.append(
                         f"{no_evaluable} filas NBA tienen P&L no evaluable; ROI del corte es N/D. "
-                        "Ganancia total conserva importes registrados, no certificados."
+                        "Los agregados monetarios no se publican sin soportes originales."
                     )
 
                 # 2. Por mercado
@@ -1386,7 +1311,7 @@ async def obtener_metricas_bitacora(
                     m_ganancia = float(row["ganancia_total"])
                     m_no_evaluable = int(row.get("n_pnl_no_evaluable") or 0)
                     por_mercado.append(
-                        MetricaMercadoBitacora(
+                        MetricaMercadoBitacora(**publicar_pnl(dict(
                             mercado=row["mercado"],
                             total=row["total"],
                             ganadas=m_ganadas,
@@ -1399,7 +1324,7 @@ async def obtener_metricas_bitacora(
                             n_pnl_no_evaluable=m_no_evaluable,
                             edge_promedio=round(float(row["edge_promedio"] or 0), 4) or None,
                             probabilidad_promedio=round(float(row["prob_promedio"] or 0), 4) or None,
-                        )
+                        ), n_resueltas=row['total']))
                     )
 
                 # 3. Por confianza
@@ -1433,7 +1358,7 @@ async def obtener_metricas_bitacora(
                     c_ganancia = float(row["ganancia_total"])
                     c_no_evaluable = int(row.get("n_pnl_no_evaluable") or 0)
                     por_confianza.append(
-                        MetricaConfianzaBitacora(
+                        MetricaConfianzaBitacora(**publicar_pnl(dict(
                             confianza=row["confianza"],
                             total=row["total"],
                             ganadas=c_ganadas,
@@ -1443,7 +1368,7 @@ async def obtener_metricas_bitacora(
                             ganancia_total=c_ganancia,
                             roi=round(c_ganancia / c_stake, 4) if c_stake > 0 and c_no_evaluable == 0 else None,
                             n_pnl_no_evaluable=c_no_evaluable,
-                        )
+                        ), n_resueltas=row['total']))
                     )
 
                 # 4. Por mes
@@ -1473,7 +1398,7 @@ async def obtener_metricas_bitacora(
                     t_stake = float(row["stake_total"])
                     t_no_evaluable = int(row.get("n_pnl_no_evaluable") or 0)
                     por_mes.append(
-                        MetricaTemporalBitacora(
+                        MetricaTemporalBitacora(**publicar_pnl(dict(
                             periodo=row["periodo"],
                             total=row["total"],
                             ganadas=t_ganadas,
@@ -1482,7 +1407,7 @@ async def obtener_metricas_bitacora(
                             ganancia=t_ganancia,
                             roi=round(t_ganancia / t_stake, 4) if t_stake > 0 and t_no_evaluable == 0 else None,
                             n_pnl_no_evaluable=t_no_evaluable,
-                        )
+                        ), n_resueltas=row['total']))
                     )
 
         payload_legacy = RespuestaMetricasBitacora(

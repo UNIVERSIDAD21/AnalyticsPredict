@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-16 — KPI/P&L común y auditoría GET
+
+- Política monetaria compartida NBA/fútbol/combinadas: agregados N/D sin soportes/unidad, n/exclusiones/motivos; individuales y filas preservados. Cohorte de resumen/listado fútbol igual antes de paginar, fechas y columnas canónicas, sinTTL. Combinadas no se multiplican por selecciones.
+- GET/HEAD protegidos con contexto y PostgreSQL READ ONLY, conexiones reutilizadas/concurrentes aisladas de POST. Serializador fútbol sin escrituras; fallos reales no se publican como éxitos vacíos. Errores sanitizados/trace_id/contadores, sin trazas DEBUG ni errores técnicos persistidos expuestos.
+- Auditoría78GET con grafo transitivo y contraste ASGI/huellas; corregidas ruta estática ocultada porUUID, UUID del driver, límite Query de resumen y columnas legacy de madurez sin cambiar sus gates. Sin DDL/DML productivo, ingestas, capturas ni modelos. Ver `docs/reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md`.
+
 ## 2026-10-16 — compatibilidad de instalación npm del runner
 
 - Override explícito selector-parser7.1.6 para npm10/11: el primer pushH12 falló instalaciónfrontend/Compose por interpretación del override condicionado. npm10.8.2ci/27tests/lint/build pasan con el mismo lock sin reintroducir parser vulnerable; no se omiten gates.

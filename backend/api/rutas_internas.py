@@ -401,11 +401,7 @@ async def estadisticas_predicciones_endpoint() -> RespuestaEstadisticas:
         )
 
     except Exception as e:
-        logger.exception("Error obteniendo estadísticas de predicciones")
-        return RespuestaEstadisticas(
-            exito=False,
-            estadisticas={"error": str(e)},
-        )
+        raise
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -456,20 +452,17 @@ async def iniciar_backtest_endpoint(peticion: PeticionBacktest) -> RespuestaBack
 async def estado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
     try:
         estado = obtener_estado_backtest(backtest_id)
+        estado = {k: v for k, v in estado.items() if k not in {"ultimo_error", "errores_json"}}
         return RespuestaBacktest(
             exito=True,
             backtest_id=str(estado["id"]),
             estado=estado["estado"],
             detalle=estado,
         )
+    except ValueError as exc:
+        raise HTTPException(404, detail="Backtest no encontrado") from exc
     except Exception as exc:
-        logger.exception("Error consultando estado de backtest")
-        return RespuestaBacktest(
-            exito=False,
-            backtest_id=backtest_id,
-            estado="ERROR",
-            detalle={"error": str(exc)},
-        )
+        raise HTTPException(503, detail="Backtest no disponible") from exc
 
 
 @router.get(
@@ -480,20 +473,17 @@ async def estado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
 async def resultado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
     try:
         resultado = obtener_resultado_backtest(backtest_id)
+        resultado = {k: v for k, v in resultado.items() if k not in {"ultimo_error", "errores_json"}}
         return RespuestaBacktest(
             exito=True,
             backtest_id=str(resultado["id"]),
             estado=resultado["estado"],
             detalle=resultado,
         )
+    except ValueError as exc:
+        raise HTTPException(404, detail="Backtest no encontrado") from exc
     except Exception as exc:
-        logger.exception("Error consultando resultado de backtest")
-        return RespuestaBacktest(
-            exito=False,
-            backtest_id=backtest_id,
-            estado="ERROR",
-            detalle={"error": str(exc)},
-        )
+        raise HTTPException(503, detail="Backtest no disponible") from exc
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -551,8 +541,7 @@ async def listar_alertas_calibracion_endpoint(
         )
         return RespuestaListadoAlertas(exito=True, alertas=alertas)
     except Exception as exc:
-        logger.exception("Error listando alertas de calibración")
-        return RespuestaListadoAlertas(exito=False, alertas=[])
+        raise
 
 
 @router.post(
@@ -662,5 +651,4 @@ async def listar_calibradores_endpoint(
         calibradores = listar_calibradores(mercado=mercado, activo=activo)
         return RespuestaListadoCalibradores(exito=True, calibradores=calibradores)
     except Exception as exc:
-        logger.exception("Error listando calibradores")
-        return RespuestaListadoCalibradores(exito=False, calibradores=[])
+        raise

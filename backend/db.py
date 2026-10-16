@@ -6,10 +6,37 @@ db.py — Utilidades de conexión a PostgreSQL.
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
 from typing import Optional
 
 from dotenv import load_dotenv
 from psycopg_pool import ConnectionPool
+from lecturas_http import solo_lectura_http
+
+
+class PoolAplicacion(ConnectionPool):
+    """Toda conexión abierta desde GET/HEAD opera en transacción READ ONLY.
+
+    La propiedad de conexión también protege transacciones que un consumidor
+    cierre/reabra explícitamente. Se restaura antes de devolverla al pool; POST y
+    tareas explícitas ajenas al contexto HTTP mantienen su comportamiento.
+    """
+
+    @contextmanager
+    def connection(self, timeout=None):
+        with super().connection(timeout=timeout) as conn:
+            if not solo_lectura_http.get():
+                yield conn
+                return
+            anterior = conn.read_only
+            conn.read_only = True
+            try:
+                with conn.transaction():
+                    conn.execute('SET TRANSACTION READ ONLY')
+                    yield conn
+            finally:
+                # transaction() ya dejó la conexión en reposo incluso ante error.
+                conn.read_only = anterior
 
 # Cargar variables de entorno desde .env
 # 1) intento estándar (cwd/parents)
@@ -45,7 +72,7 @@ def obtener_pool() -> ConnectionPool:
     """Obtiene el pool de conexiones, creándolo si no existe."""
     global _pool
     if _pool is None:
-        _pool = ConnectionPool(
+        _pool = PoolAplicacion(
             conninfo=obtener_database_url(),
             min_size=1,
             max_size=5,

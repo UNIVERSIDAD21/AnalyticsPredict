@@ -98,7 +98,7 @@ function transformarResumen(data: Record<string, unknown>): ResumenApuestasFutbo
     push: Number(data.push || 0),
     roi: data.roi !== null && data.roi !== undefined ? Number(data.roi) : null,
     winRate: data.win_rate !== null && data.win_rate !== undefined ? Number(data.win_rate) : null,
-    stakeTotal: Number(data.stake_total || 0),
+    stakeTotal: data.stake_total == null ? null : Number(data.stake_total),
     gananciaNeta: data.ganancia_neta == null ? null : Number(data.ganancia_neta),
   };
 }

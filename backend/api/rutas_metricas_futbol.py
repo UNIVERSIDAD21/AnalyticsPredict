@@ -18,7 +18,8 @@ from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
 from db import obtener_pool
-from metricas_probabilisticas import resumir_pares_binarios
+from servicios.politica_pnl import publicar_pnl, no_concilia_sql
+from metricas_probabilisticas import resumir_pares_binarios, expresiones_sql_probabilidad_futbol
 from motor_futbol.madurez_beta import clasificar_madurez_mercado, CRITERIOS_DEFAULT
 from .schemas_futbol import (
     MetricasCalibracion,
@@ -47,7 +48,7 @@ def _tabla_existe(cursor, tabla: str) -> bool:
         """
         SELECT EXISTS (
             SELECT FROM information_schema.tables
-            WHERE table_schema = 'public' AND table_name = %s
+            WHERE table_schema = current_schema() AND table_name = %s
         )
         """,
         [tabla],
@@ -60,7 +61,7 @@ def _columna_existe(cursor, tabla: str, columna: str) -> bool:
         """
         SELECT EXISTS (
             SELECT FROM information_schema.columns
-            WHERE table_schema = 'public'
+            WHERE table_schema = current_schema()
               AND table_name = %s
               AND column_name = %s
         )
@@ -95,8 +96,8 @@ def _obtener_metricas_desde_calibradores(
 
 
 def _resolver_columna_estado_apuestas(cursor) -> Optional[str]:
-    canonica = "estado"
-    for columna in ("estado", "resultado", "status"):
+    canonica = "resultado"
+    for columna in ("resultado", "estado", "status"):
         if _columna_existe(cursor, "apuestas_futbol", columna):
             if columna != canonica:
                 logger.warning(
@@ -124,6 +125,13 @@ def _resolver_columna_ganancia_apuestas(cursor) -> Optional[str]:  # CORREGIDO
     return None
 
 
+def _resolver_fecha_apuestas(cursor) -> str:
+    for columna in ('creado_en', 'fecha_creacion', 'created_at'):
+        if _columna_existe(cursor, 'apuestas_futbol', columna):
+            return columna
+    raise HTTPException(503, detail='Fecha de registro de apuestas no disponible')
+
+
 def _resolver_columna_modelo(cursor, columnas: List[str]) -> Optional[str]:  # CORREGIDO
     for columna in columnas:
         if _columna_existe(cursor, "modelo_versiones_futbol", columna):
@@ -145,16 +153,24 @@ def _metricas_probabilidades_binarias(probabilidades: List[float], outcomes: Lis
     return {clave: resultado[clave] for clave in ("n", "brier", "ece", "log_loss")}
 
 
+def _expresiones_probabilidad_futbol(cursor):
+    columnas = {c for c in ('prob_over_raw', 'prob_over', 'calibrador_id', 'prob_over_calibrada')
+                if _columna_existe(cursor, 'predicciones_futbol', c)}
+    return expresiones_sql_probabilidad_futbol(columnas)
+
+
 def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: float = 0.24, bloquear_brier: float = 0.28) -> Dict[str, str]:
+    # Misma política de serving, adaptada al esquema, sin cambiar gates.
+    prob, _ = _expresiones_probabilidad_futbol(cursor)
     try:
         cursor.execute(
-            """
+            f"""
             SELECT mercado::text,
                    COUNT(*) AS n,
-                   AVG(POWER(COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over_raw, prob_over) - outcome_binario::int, 2)) AS brier
+                   AVG(POWER({prob} - outcome_binario::int, 2)) AS brier
             FROM predicciones_futbol
             WHERE outcome_binario IS NOT NULL
-              AND COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over_raw, prob_over) IS NOT NULL
+              AND {prob} BETWEEN 0 AND 1
             GROUP BY mercado
             HAVING COUNT(*) >= %s
             """,
@@ -174,8 +190,7 @@ def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: floa
                 out[m] = "verde"
         return out
     except Exception:
-        logger.exception("No se pudo calcular estado de mercados en endpoint de madurez")
-        return {}
+        raise
 
 
 @router.get(
@@ -314,6 +329,7 @@ async def obtener_madurez_beta_futbol(
                     raise HTTPException(status_code=400, detail="No existe tabla predicciones_futbol")
 
                 estado_mercados = _estado_mercados_futbol(cursor)
+                prob_sql, fallback_sql = _expresiones_probabilidad_futbol(cursor)
 
                 fecha_col = "fecha_prediccion" if _columna_existe(cursor, "predicciones_futbol", "fecha_prediccion") else (
                     "timestamp_generacion" if _columna_existe(cursor, "predicciones_futbol", "timestamp_generacion") else "creado_en"
@@ -325,10 +341,10 @@ async def obtener_madurez_beta_futbol(
                       mercado::text AS mercado,
                       linea,
                       {fecha_col} AS fecha_evento,
-                      COALESCE(CASE WHEN calibrador_id IS NOT NULL THEN prob_over_calibrada END, prob_over_raw, prob_over) AS p,
+                      {prob_sql} AS p,
                       outcome_binario::int AS y,
                       CASE WHEN outcome_binario IS NOT NULL THEN 1 ELSE 0 END AS resuelta,
-                      CASE WHEN calibrador_id IS NULL OR prob_over_calibrada IS NULL THEN 1 ELSE 0 END AS fallback
+                      {fallback_sql} AS fallback
                     FROM predicciones_futbol
                     WHERE {fecha_col} >= %s
                     """,
@@ -623,24 +639,18 @@ async def obtener_metricas_rendimiento(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 if not _tabla_existe(cursor, "apuestas_futbol"):
-                    return ListaMetricasRendimientoResponse(
-                        exito=True,
-                        periodo=periodo,
-                        metricas=[],
-                    )
+                    raise HTTPException(503, detail="Almacén de apuestas no disponible")
 
                 columna_estado = _resolver_columna_estado_apuestas(cursor)
                 if not columna_estado:
-                    return ListaMetricasRendimientoResponse(
-                        exito=True,
-                        periodo=periodo,
-                        metricas=[],
-                    )
+                    raise HTTPException(503, detail="Almacén de apuestas no disponible")
 
                 ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "NULL::numeric"
+                invalido = no_concilia_sql(resultado=columna_estado, ganancia=ganancia_col)
                 query = """
                     SELECT
                         mercado,
+                        COUNT(*) FILTER (WHERE {invalido}) as n_no_conciliables,
                         COUNT(*) as n_apuestas,
                         SUM(CASE WHEN {estado_col} = 'GANADA' THEN 1 ELSE 0 END) as ganadas,
                         SUM(CASE WHEN {estado_col} = 'PERDIDA' THEN 1 ELSE 0 END) as perdidas,
@@ -650,13 +660,13 @@ async def obtener_metricas_rendimiento(
                     FROM apuestas_futbol
                     WHERE {estado_col} IN ('GANADA', 'PERDIDA', 'PUSH')
                 """.format(
-                    estado_col=columna_estado,
+                    estado_col=columna_estado, invalido=invalido,
                     ganancia_col=ganancia_col,  # CORREGIDO
                 )
                 params = []
 
                 if fecha_inicio:
-                    query += " AND fecha_creacion >= %s"
+                    query += f" AND {_resolver_fecha_apuestas(cursor)} >= %s"
                     params.append(fecha_inicio)
 
                 if mercado and mercado != "todos":
@@ -677,7 +687,7 @@ async def obtener_metricas_rendimiento(
                     ganancia = float(fila["ganancia_neta"]) if ganancias_completas and fila["ganancia_neta"] is not None else None
                     roi = (ganancia / stake * 100) if ganancia is not None and stake > 0 else None
 
-                    metricas.append(MetricasRendimiento(
+                    metricas.append(MetricasRendimiento(**publicar_pnl(dict(
                         mercado=fila["mercado"],
                         n_apuestas=fila["n_apuestas"],
                         ganadas=fila["ganadas"] or 0,
@@ -686,7 +696,7 @@ async def obtener_metricas_rendimiento(
                         win_rate=round(win_rate, 4) if win_rate is not None else None,
                         stake_total=round(stake, 2),
                         ganancia_neta=round(ganancia, 2) if ganancia is not None else None,
-                    ))
+                    ), n_resueltas=fila['n_apuestas'], n_no_conciliables=fila['n_no_conciliables'])))
 
                 return ListaMetricasRendimientoResponse(
                     exito=True,
@@ -712,13 +722,15 @@ async def obtener_roi_temporal(
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 if not _tabla_existe(cursor, "apuestas_futbol"):
-                    return {"exito": True, "dias": dias, "serie": []}
+                    raise HTTPException(503, detail="Almacén de apuestas no disponible")
 
                 columna_estado = _resolver_columna_estado_apuestas(cursor)
                 ganancia_col = _resolver_columna_ganancia_apuestas(cursor)
                 if not columna_estado or not ganancia_col:
-                    return {"exito": True, "dias": dias, "serie": []}
+                    raise HTTPException(503, detail="Almacén de apuestas no disponible")
 
+                invalido = no_concilia_sql(resultado=columna_estado, ganancia=ganancia_col)
+                fecha_col = _resolver_fecha_apuestas(cursor)
                 query = f"""
                     WITH serie_dias AS (
                         SELECT (CURRENT_DATE - offs)::date AS fecha
@@ -726,22 +738,24 @@ async def obtener_roi_temporal(
                     ),
                     delta_diario AS (
                         SELECT
-                            DATE(fecha_creacion) AS fecha,
+                            DATE({fecha_col}) AS fecha,
                             SUM({ganancia_col}) AS delta_ganancia,
                             SUM(COALESCE(stake, 0)) AS delta_stake,
                             COUNT(*) AS n_apuestas,
-                            COUNT({ganancia_col}) AS n_ganancias
+                            COUNT({ganancia_col}) AS n_ganancias,
+                            COUNT(*) FILTER (WHERE {invalido}) AS n_no_conciliables
                         FROM apuestas_futbol
                         WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
-                          AND fecha_creacion >= (CURRENT_DATE - (%s - 1) * INTERVAL '1 day')
-                        GROUP BY DATE(fecha_creacion)
+                          AND {fecha_col} >= (CURRENT_DATE - (%s - 1) * INTERVAL '1 day')
+                        GROUP BY DATE({fecha_col})
                     )
                     SELECT
                         s.fecha,
                         SUM(COALESCE(d.delta_ganancia, 0)) OVER (ORDER BY s.fecha) AS ganancia_acumulada,
                         SUM(COALESCE(d.delta_stake, 0)) OVER (ORDER BY s.fecha) AS stake_acumulado,
                         SUM(COALESCE(d.n_apuestas, 0)) OVER (ORDER BY s.fecha) AS n_apuestas,
-                        SUM(COALESCE(d.n_ganancias, 0)) OVER (ORDER BY s.fecha) AS n_ganancias
+                        SUM(COALESCE(d.n_ganancias, 0)) OVER (ORDER BY s.fecha) AS n_ganancias,
+                        SUM(COALESCE(d.n_no_conciliables, 0)) OVER (ORDER BY s.fecha) AS n_no_conciliables
                     FROM serie_dias s
                     LEFT JOIN delta_diario d ON d.fecha = s.fecha
                     ORDER BY s.fecha ASC
@@ -756,12 +770,12 @@ async def obtener_roi_temporal(
                     ganancia_acum = float(fila["ganancia_acumulada"]) if ganancia_completa else None
                     roi_pct = (ganancia_acum / stake_acum * 100.0) if ganancia_acum is not None and stake_acum > 0 else None
                     serie.append(
-                        {
+                        publicar_pnl({
                             "fecha": fila["fecha"].isoformat(),
                             "roi": round(roi_pct, 4) if roi_pct is not None else None,
                             "stake_acumulado": round(stake_acum, 2),
                             "ganancia_acumulada": round(ganancia_acum, 2) if ganancia_acum is not None else None,
-                        }
+                        }, n_resueltas=int(fila["n_apuestas"]), n_no_conciliables=int(fila["n_no_conciliables"]))
                     )
 
                 return {"exito": True, "dias": dias, "serie": serie}
@@ -873,8 +887,11 @@ async def obtener_resumen_sistema(
                 # ROI y win rate global
                 ganancia_col = _resolver_columna_ganancia_apuestas(cursor) or "NULL"
                 if columna_estado:
+                    invalido = no_concilia_sql(resultado=columna_estado, ganancia=ganancia_col)
                     cursor.execute(f"""
                         SELECT
+                            COUNT(*) FILTER (WHERE {columna_estado}::text IN ('GANADA','PERDIDA','PUSH','ANULADA')) AS n_resueltas,
+                            COUNT(*) FILTER (WHERE {invalido}) AS n_no_conciliables,
                             SUM(stake) FILTER (WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')) as stake_resuelto,
                             SUM({ganancia_col}) FILTER (WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')) as ganancia_neta,
                             COUNT(*) FILTER (WHERE {columna_estado} IN ('GANADA', 'PERDIDA', 'PUSH')
@@ -886,6 +903,7 @@ async def obtener_resumen_sistema(
                     stats = cursor.fetchone()
                 else:
                     stats = {
+                        "n_resueltas": 0, "n_no_conciliables": 0,
                         "stake_resuelto": None,
                         "ganancia_neta": None,
                         "ganancias_faltantes": 0,
@@ -919,7 +937,7 @@ async def obtener_resumen_sistema(
                 alerta = cursor.fetchone()
                 alerta_calibracion = alerta["mensaje"] if alerta else None
 
-                return ResumenSistema(
+                return ResumenSistema(**publicar_pnl(dict(
                     partidos_proximos=partidos_proximos,
                     predicciones_pendientes=predicciones_pendientes,
                     apuestas_activas=apuestas_activas,
@@ -928,7 +946,7 @@ async def obtener_resumen_sistema(
                     modelo_activo=modelo_activo,
                     calibradores_activos=calibradores_activos,
                     alerta_calibracion=alerta_calibracion,
-                )
+                ), n_resueltas=stats['n_resueltas'], n_no_conciliables=stats['n_no_conciliables']))
 
     except HTTPException:
         raise

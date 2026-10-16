@@ -7,11 +7,11 @@
 | `vista_predicciones_para_calibracion` | predicción NBA | Migrada en Neon, 42 columnas y semántica raw/calibrada con `calibrador_id` | 2.934 predicciones; 0 pares calibrados con ID. No certifica temporalidad. |
 | `vista_resumen_calibracion` | mercado NBA | Migrada en Neon, 12 columnas; excluye 24 outcomes ligados a 0–0 | 2.558 pares raw descriptivos; no son resultados independientes ni prospectivos. |
 | Auditor P&L y gate de bitácora | apuesta NBA | CLI y GET clasifican sin DML; ROI `NULL` si hay no evaluables en segmento | 114/181 binarias excluidas; 67 aritméticas sin certificación. No existe una vista SQL unificada de P&L certificado. |
-| Métricas fútbol | mercado/ventana | API calcula Brier/ECE/Log Loss con pares válidos y N/D sin muestra; rendimiento con ROI registrado nullable | Sin fuente reciente validada, solo 3–4 pares por mercado en corte anterior. No existe vista cross-sport certificada. |
+| Métricas fútbol | mercado/ventana | API calcula Brier/ECE/Log Loss con pares válidos y N/D sin muestra; rendimiento con ROI/ganancia/stake agregados N/D por falta de soportes/unidad (contrato16/10) | Sin fuente reciente validada, solo 3–4 pares por mercado en corte anterior. No existe vista cross-sport certificada. |
 
 **Inventario residual resuelto para ROI:** `vista_analisis_apuestas`, `vista_resumen_apuestas` y `vista_resumen_apuestas_futbol` fueron recreadas por la migración single-user con ROI sin gate. No tienen consumidor activo en backend/frontend según búsqueda de referencias, pero seguían consultables directamente. Tras ensayo PostgreSQL desechable y CI 4/4, `2026-10-06_roi_legacy_no_certificado.sql` se aplicó a Neon con respaldo de definiciones fuera del repo. Postflight independiente: 182/1/7 filas, columnas/tipos, owner y ACL preservados; cero ROI no nulos. Los resúmenes API de fútbol conservan N/D por importes faltantes, independientemente de esas vistas. **Esta despublicación no crea KPI certificado ni acredita cuota/stake/outcome.**
 
-## Próxima vista física admisible
+## Vista física futura, no requisito sin consumidor
 
 Una nueva vista canónica de P&L debe conservar **una fila por apuesta** antes de agregar, exponer `motivo_no_evaluable`, `partido_id`, competición, fuente del outcome, stake/cuota/unidad y sus timestamps, y agrupar solo después de aplicar exactamente el mismo gate que `backend/scripts/auditar_pnl_nba.py` y `backend/api/rutas_bitacora.py`. Si faltan fuente/instante/unidad, `profit_certificado` y `roi_certificado` deben ser `NULL`; no convertir la coherencia aritmética en certificación. El join con predicciones nunca debe multiplicar apuestas. Primero probar sobre PostgreSQL desechable y comparar con el corte 182/181/114/67/8/40, luego migrar con rollback.
 
@@ -22,4 +22,4 @@ La propuesta histórica `vw_perf_market_odds_confidence` y otras vistas 06 sigue
 Resumen/curva/pantalla seleccionan una serie homogénea y versión opcional, con
 igual n/exclusiones y N/D sin muestra. No se modifica la vista física ni se usan
 precálculos legacy para estos GET. Ver [cierre parcial](KPI_CALIBRACION_2026-10-16.md).
-Lo descrito como próxima vista física continúa pendiente.
+La propuesta física no se crea sin consumidor: la capa compartida de consulta/publicación gobierna los KPI activos. Ver [cierre técnico posterior](KPI_PNL_Y_GET_2026-10-16.md).

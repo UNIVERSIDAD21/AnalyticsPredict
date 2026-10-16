@@ -23,3 +23,14 @@ describe('Estado ML fútbol sin falsa validación', () => {
     expect(screen.queryByText(/Modelo cargado para análisis/)).toBeNull();
   });
 });
+
+it('muestra P&L N/D, no +0%, conservando los resultados registrados', () => {
+  render(<ResumenMetricasFutbol metricas={{ modelos: [], calibracion: [], rendimiento: [
+    { mercado: 'GOLES_FT', nApuestas: 2, ganadas: 1, perdidas: 1,
+      roi: null, winRate: .5, stakeTotal: null, gananciaNeta: null },
+  ] }} />);
+  expect(screen.getByText(/P&L N\/D sin soportes originales/)).toBeTruthy();
+  expect(screen.getAllByText('N/D').length).toBeGreaterThan(0);
+  expect(screen.queryByText('+0.0%')).toBeNull();
+  expect(screen.getByText('1W / 1L')).toBeTruthy();
+});

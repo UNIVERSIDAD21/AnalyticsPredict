@@ -1,0 +1,20 @@
+"""Contexto de lectura HTTP, aislado por tarea y sin modificar roles de la BD."""
+from contextvars import ContextVar
+
+solo_lectura_http = ContextVar('solo_lectura_http', default=False)
+
+
+class LecturasHTTPMiddleware:
+    """Conserva el contexto hasta terminar cuerpo/stream y tareas de la respuesta."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] != 'http':
+            return await self.app(scope, receive, send)
+        token = solo_lectura_http.set(scope['method'] in {'GET', 'HEAD'})
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            solo_lectura_http.reset(token)

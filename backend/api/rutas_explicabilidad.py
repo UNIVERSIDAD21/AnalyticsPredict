@@ -67,7 +67,7 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
     except OperationalError:
         raise
     except Exception:
-        pass
+        raise
 
     try:
         cursor.execute(
@@ -104,7 +104,7 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
     except OperationalError:
         raise
     except Exception:
-        return None
+        raise
 
 
 def _calcular_sunset(conn: Any, domain: str) -> str:
@@ -121,7 +121,7 @@ def _calcular_sunset(conn: Any, domain: str) -> str:
             cur.execute(sql, (domain,))
             rows = cur.fetchall() or []
     except Exception:
-        rows = []
+        raise
 
     if len(rows) >= 7:
         ok = True

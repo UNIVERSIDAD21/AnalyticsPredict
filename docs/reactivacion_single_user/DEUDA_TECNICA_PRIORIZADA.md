@@ -6,8 +6,8 @@ comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 
 | Prioridad | Trabajo | Criterio de cierre | Estado real |
 |---|---|---|---|
-| P1 | KPI/caches coherentes | Grano/ventana/n/excluidos y N/D iguales en SQL/API/UI; raw/calibrado separados; frescura verificable | Parcial: calibraciónAPI/UI reparada16/10; P&L/otrosKPI/caches aún abiertos. VistasROIlegacy ya reparadas, no repetir migración |
-| P1 | Auditoría GET y observabilidad | Llamadas transitivas sin escritura implícita, errores sanitizados, jobs/datos/modelos observables | Abierto; Estado/bitácora/loader ya tienen cierres específicos |
+| P1 | KPI/caches coherentes | Grano/ventana/n/excluidos y N/D iguales en SQL/API/UI; raw/calibrado separados; frescura verificable | Cierre técnico16/10: políticaP&Lcross-sport/N/D y cohortes/API/UI, calibración sinTTL. M12 científico separado; no crear vistas propuestas sin consumidor |
+| P1 | Auditoría GET y observabilidad | Llamadas transitivas sin escritura implícita, errores sanitizados, jobs/datos/modelos observables | Cierre técnico16/10:78GET revisados, protecciónGET/HEAD/errores sanitizados y pruebas. Nuevos endpoints requieren mantener los controles |
 | P1 | H4 historiaGit | Purga integral recuperable y ausencia acreditada en todas las refs relevantes | CuatroSQLite alcanzables; refsPR administradas por GitHub impiden cerrar con solo heads. No purga parcial |
 | P2 | H12 dev/permisos/rot | Versiones compatibles, lock/pruebas/lint/build/CI; permisos reparados solo con evidencia | 16/10:5altasdev porbraces sin parche,0prod;10→5tras Vite/overrides probados.0discrepanciasmodo/sin chmod, respaldo histórico preservado |
 | P2 | Visual/E2E | Flujo visible completo con evidencia, no solo HTTP200 | Herramienta rechazó navegación local; diagnóstico del agente, no falta de permiso del propietario |
@@ -21,7 +21,7 @@ comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 H1–H3 single-user, H6 escalas, H7 técnico/envelopes, H10/H11 reproducibilidad/CI,
 H9 técnico de vistas, catálogo NBA/selector/modelo2123, fútbol canónico337/200,
 artefactos/loaderMLfútbol y12congelamientosNBA ya están acreditados en sus alcances.
-Esto no cierra auditoría GET integral ni H9 científico. Fútbol sigue beta.
+M04/M05 técnico se cerraron16/10; H9/M12 científico siguen abiertos. Fútbol sigue beta.
 Análisis NBA interno: no picks, stakes ni recomendaciones de apuestas.
 
 [Deuda previa íntegra](../archive/DEUDA_ANTES_CONSOLIDACION_2026-10-16.md), con sus

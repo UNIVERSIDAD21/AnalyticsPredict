@@ -13,10 +13,10 @@ class _Cursor:
         return [
             {"mercado": "GOLES_FT", "n_apuestas": 2, "ganadas": 1,
              "perdidas": 1, "stake_total": 20, "ganancia_neta": 2,
-             "n_ganancias": 2},
+             "n_no_conciliables": 0, "n_ganancias": 2},
             {"mercado": "CORNERS_FT", "n_apuestas": 1, "ganadas": 0,
              "perdidas": 0, "stake_total": 10, "ganancia_neta": None,
-             "n_ganancias": 0},
+             "n_no_conciliables": 1, "n_ganancias": 0},
         ]
 
     def __enter__(self):
@@ -51,7 +51,8 @@ def test_roi_futbol_porcentaje_y_ausencia_de_ganancia(monkeypatch):
     respuesta = asyncio.run(rutas_metricas_futbol.obtener_metricas_rendimiento(
         mercado=None, periodo="todo"))
     medidas = {m.mercado: m for m in respuesta.metricas}
-    assert medidas["GOLES_FT"].roi == 10.0  # API en porcentaje
+    assert medidas["GOLES_FT"].roi is None
+    assert medidas["GOLES_FT"].calidad_pnl["n_excluidas"] == 2
     assert medidas["GOLES_FT"].win_rate == 0.5
     assert medidas["CORNERS_FT"].roi is None
     assert medidas["CORNERS_FT"].ganancia_neta is None

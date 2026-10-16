@@ -37,5 +37,6 @@ def test_estadisticas_no_publica_roi_aritmetico_sin_certificacion():
     resumen = obtener_estadisticas_apuestas(pool=_Pool())
     assert resumen["total"] == 182
     assert resumen["sin_partido_id"] == 40
-    assert resumen["ganancia_total"] == 999.0  # Importe registrado, no certificado.
+    assert resumen["ganancia_total"] is None
+    assert resumen["calidad_pnl"]["n_excluidas"] == 182
     assert resumen["roi"] is None

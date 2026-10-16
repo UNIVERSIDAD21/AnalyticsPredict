@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 resolucion_apuestas.py — Resolvedor de outcomes para apuestas de bitacora.
 
@@ -40,6 +40,7 @@ from typing import Optional, List, Dict, Any, Literal
 from uuid import UUID
 
 from db import obtener_pool
+from servicios.politica_pnl import publicar_pnl
 
 logger = logging.getLogger(__name__)
 
@@ -529,7 +530,7 @@ def obtener_estadisticas_apuestas(
                         stake_total,
                     ) = fila
                     resueltas = ganadas + perdidas + push
-                    return {
+                    return publicar_pnl({
                         "total": total,
                         "pendientes": pendientes,
                         "ganadas": ganadas,
@@ -548,11 +549,10 @@ def obtener_estadisticas_apuestas(
                         # La suma histórica no tiene procedencia completa de
                         # stake/cuota/outcome. Este GET no publica ROI bruto.
                         "roi": None,
-                    }
+                    })
                 return {}
     except Exception:
-        logger.exception("Error obteniendo estadisticas de apuestas")
-        return {}
+        raise
 
 
 def obtener_apuestas_pendientes_por_mercado(
@@ -579,5 +579,4 @@ def obtener_apuestas_pendientes_por_mercado(
                 )
                 return {fila[0]: fila[1] for fila in cursor.fetchall()}
     except Exception:
-        logger.exception("Error obteniendo apuestas pendientes por mercado")
-        return {}
+        raise

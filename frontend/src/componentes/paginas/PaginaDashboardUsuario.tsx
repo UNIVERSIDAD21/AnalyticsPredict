@@ -6,7 +6,7 @@ import { Boton, Spinner } from '../atomos';
 import { obtenerResumenApuestas } from '../../servicios/bitacora';
 import { obtenerResumenCalidad1x2, type ResumenCalidad1x2Futbol } from '../../servicios/futbol/metricas';
 
-type Segmento = { deporte: string; total: number; pendientes: number; ganadas: number; perdidas: number; winrate: number | null; roi: number | null; n_pnl_no_evaluable_nba?: number };
+type Segmento = { deporte: string; total: number; pendientes: number; ganadas: number; perdidas: number; winrate: number | null; roi: number | null; n_pnl_no_evaluable?: number };
 
 export function PaginaDashboardUsuario() {
   const navegar = useNavigate();
@@ -46,12 +46,12 @@ export function PaginaDashboardUsuario() {
               <div key={dato.deporte} className="tarjeta p-6 space-y-2">
                 <h2 className="text-lg font-semibold text-texto-principal">{dato.deporte}</h2>
                 <p className="text-sm text-texto-secundario">{dato.total} registros · {dato.pendientes} pendientes · {dato.ganadas} ganadas · {dato.perdidas} perdidas</p>
-                <p className="text-sm text-texto-secundario">Win rate registrado: {dato.winrate == null ? 'N/D' : `${dato.winrate.toFixed(1)}%`} · ROI conciliable: {dato.roi == null ? 'N/D' : `${dato.roi.toFixed(1)}%`}</p>
-                {dato.n_pnl_no_evaluable_nba ? <p className="text-xs text-neon-amarillo">{dato.n_pnl_no_evaluable_nba} registros NBA excluidos del ROI.</p> : null}
+                <p className="text-sm text-texto-secundario">Win rate registrado: {dato.winrate == null ? 'N/D' : `${dato.winrate.toFixed(1)}%`} · ROI histórico: {dato.roi == null ? 'N/D' : `${dato.roi.toFixed(1)}%`}</p>
+                {dato.n_pnl_no_evaluable ? <p className="text-xs text-neon-amarillo">{dato.n_pnl_no_evaluable} apuestas resueltas excluidas del P&L.</p> : null}
               </div>
             )) : <p className="text-texto-secundario">No hay resumen segmentado disponible.</p>}
           </section>
-          <p className="text-xs text-neon-amarillo">ROI y ganancia históricos no certificados: hay resultados que no concilian con stake y cuota. No representan rendimiento futuro.</p>
+          <p className="text-xs text-neon-amarillo">P&L histórico N/D: no existen soportes originales ni unidad acreditada. No representan rendimiento futuro.</p>
           <section className="tarjeta p-6 space-y-2" aria-label="Calidad fútbol">
             <h2 className="text-lg font-semibold text-texto-principal">Calidad 1X2 fútbol</h2>
             <p className="text-sm text-texto-secundario">{calidad ? `${calidad.finalizadas} finalizadas de ${calidad.total}; ${calidad.ganadas} ganadas y ${calidad.perdidas} perdidas.` : 'Sin medición disponible.'}</p>

@@ -7,7 +7,7 @@
 - **Evento:** `partidos_baloncesto` mezcla NBA y Euroliga; toda consulta NBA filtra `competiciones_baloncesto.codigo='nba'`. `partidos_futbol` contiene estado y completitud separados para goles/corners/tiros. Un 0–0 sin acreditación no es outcome.
 - **Predicción:** `predicciones_registradas` (NBA) y `predicciones_futbol` (fútbol), potencialmente muchas por evento/mercado. `modelo_version_id`, `calibrador_id` y timestamps deben tener procedencia; una probabilidad calibrada sin ID no se atribuye a calibración.
 - **Apuesta:** `apuestas`, `apuestas_futbol` y combinadas son registros operativos separados de la predicción. `ganancia` histórica NBA es importe registrado, no profit auditado. Una apuesta sin `partido_id` no puede certificar resultado deportivo.
-- **Fuente:** ESPN origina NBA; Euroliga tiene reconciliación oficial. Sofascore fútbol dio 403 y se etiqueta `SOURCE_UNAVAILABLE`; ESPN Soccer es alternativa de lectura probada parcialmente, no ingesta integrada. Fuente de origen no equivale a verificación independiente.
+- **Fuente:** ESPN origina NBA; Euroliga tiene reconciliación oficial. Sofascore fútbol dio 403 y se etiqueta `SOURCE_UNAVAILABLE`; ESPN Soccer ya tiene337eventos/200FT capturados y vinculados al canónico (cierre15/10); eso no completa tiempos ni acredita independencia. Fuente de origen no equivale a verificación independiente.
 
 ## Estados de calidad que no se deben fusionar
 
@@ -17,7 +17,7 @@
 4. `VALIDO_DESCRIPTIVO`: fórmula y outcome persistido compatibles para descripción, no para claim temporal ni prospectivo.
 5. `NO_CERTIFICADO`: dictamen global actual para ROI, calibración, confidence y walk-forward.
 
-**Granos y denominadores:** Win Rate registrado NBA usa 181 binarias, pero el gate monetario deja 114 no evaluables; `n` de Brier raw NBA es 2.558 pares descriptivos tras exclusiones de 0–0, no 2.558 juegos independientes. No sumar mercados del mismo partido como muestras independientes. ROI exige misma población en profit y stake, unidad conocida y ausencia de filas no evaluables. Sin denominador/evidencia, devolver `NULL` y UI `N/D`, nunca 0.
+**Granos y denominadores:** Win Rate registrado NBA usa 181 binarias, el diagnóstico aritmético/deportivo previo dejó114noevaluables; el gate de publicación16/10 excluye todas las resueltas sin soportes/unidad, incluidas las67soloaritméticas; `n` de Brier raw NBA es 2.558 pares descriptivos tras exclusiones de 0–0, no 2.558 juegos independientes. No sumar mercados del mismo partido como muestras independientes. ROI exige misma población en profit y stake, unidad conocida y ausencia de filas no evaluables. Sin denominador/evidencia, devolver `NULL` y UI `N/D`, nunca 0.
 
 ## Flujo prospectivo todavía abierto
 

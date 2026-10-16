@@ -1559,7 +1559,7 @@ def _ultima_fecha_columna(cursor, tabla: str, columnas_candidatas: List[str]):
                 cursor.execute(f"SELECT MAX({c}) FROM {tabla}")
                 return cursor.fetchone()[0], c
             except Exception:
-                continue
+                raise
     return None, None
 
 
@@ -1890,7 +1890,7 @@ async def obtener_resumen_ejecutivo_compacto(
         score_minimo=75,
         max_fuentes_stale_criticas=0,
     )
-    recomendaciones = await obtener_recomendaciones_accion(min_muestras=min_muestras)
+    recomendaciones = await obtener_recomendaciones_accion(min_muestras=min_muestras, max_acciones=15)
 
     alertas_criticas = sum(1 for a in tablero.alertas if "crít" in a.lower() or "crit" in a.lower())
     top_acciones = [f"[{a.prioridad}/{a.semaforo}] {a.accion}" for a in recomendaciones.acciones[:5]]

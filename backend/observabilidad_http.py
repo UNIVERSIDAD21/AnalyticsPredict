@@ -19,21 +19,25 @@ class ObservabilidadHTTP:
         self._latencias_ms: Deque[float] = deque(maxlen=max_muestras)
         self._total = 0
         self._errores_5xx = 0
+        self._escrituras_bloqueadas = 0
         self._lock = Lock()
 
-    def registrar(self, latencia_ms: float, status_code: int) -> None:
+    def registrar(self, latencia_ms: float, status_code: int, escritura_bloqueada: bool = False) -> None:
         latencia_sana = max(0.0, float(latencia_ms))
         with self._lock:
             self._latencias_ms.append(latencia_sana)
             self._total += 1
             if status_code >= 500:
                 self._errores_5xx += 1
+            if escritura_bloqueada:
+                self._escrituras_bloqueadas += 1
 
     def resumen(self, umbral_p95_ms: float = 800.0, umbral_error_rate: float = 0.05) -> dict:
         with self._lock:
             latencias = list(self._latencias_ms)
             total = self._total
             errores = self._errores_5xx
+            bloqueadas = self._escrituras_bloqueadas
 
         p95 = self._percentil(latencias, 95)
         error_rate = (errores / total) if total > 0 else 0.0
@@ -56,6 +60,7 @@ class ObservabilidadHTTP:
             "http": {
                 "requests_total": total,
                 "errors_5xx": errores,
+                "write_attempts_blocked": bloqueadas,
                 "error_rate": round(error_rate, 6),
                 "latency_p95_ms": None if p95 is None else round(p95, 2),
                 "samples": len(latencias),

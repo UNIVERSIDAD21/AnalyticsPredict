@@ -500,8 +500,11 @@ class ResumenApuestas(BaseModel):
     push: int = 0
     roi: Optional[float] = None
     win_rate: Optional[float] = None
-    stake_total: float = 0.0
+    stake_total: Optional[float] = None
     ganancia_neta: Optional[float] = None
+
+    n_pnl_no_evaluable: int = 0
+    calidad_pnl: dict = Field(default_factory=dict)
 
 
 class ListaApuestasResponse(BaseModel):
@@ -556,8 +559,11 @@ class MetricasRendimiento(BaseModel):
     perdidas: int = 0
     roi: Optional[float] = None
     win_rate: Optional[float] = None
-    stake_total: float = 0.0
+    stake_total: Optional[float] = None
     ganancia_neta: Optional[float] = None
+
+    n_pnl_no_evaluable: int = 0
+    calidad_pnl: dict = Field(default_factory=dict)
 
 
 class MetricasModelo(BaseModel):
@@ -594,6 +600,9 @@ class ResumenSistema(BaseModel):
     calibradores_activos: int = 0
     prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
     alerta_calibracion: Optional[str] = None
+
+    n_pnl_no_evaluable: int = 0
+    calidad_pnl: dict = Field(default_factory=dict)
 
 
 class ListaMetricasCalibracionResponse(BaseModel):

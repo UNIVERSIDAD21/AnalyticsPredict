@@ -332,8 +332,7 @@ def obtener_alertas_activas(conn: Any, domain: Optional[str] = None, severidad_m
             cur.execute(sql, tuple(params))
             rows = cur.fetchall() or []
     except Exception:
-        logger.warning("No fue posible leer dq_alerts (posible tabla no creada aún)")
-        return []
+        raise
 
     result: List[Dict[str, Any]] = []
     for row in rows:
