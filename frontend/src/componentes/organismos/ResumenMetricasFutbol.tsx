@@ -134,10 +134,13 @@ function formatearFecha(fechaISO: string): string {
  * Obtiene el estado de salud del modelo
  */
 function getEstadoSalud(modelo: EstadoModeloFutbol): {
-  estado: 'excelente' | 'bueno' | 'aceptable' | 'degradado';
+  estado: 'excelente' | 'bueno' | 'aceptable' | 'degradado' | 'no validado';
   color: string;
   icono: typeof CheckCircle;
 } {
+  if (modelo.ambitoMetricas !== 'VALIDACION_TEMPORAL' || modelo.r2 == null || modelo.mae == null) {
+    return { estado: 'no validado', color: 'text-texto-secundario', icono: AlertTriangle };
+  }
   if (modelo.r2 >= 0.7 && modelo.mae <= 1.5) {
     return { estado: 'excelente', color: 'text-neon-verde', icono: CheckCircle };
   }
@@ -288,19 +291,22 @@ function TarjetaEstadoModelo({ modelo }: { modelo: EstadoModeloFutbol }) {
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="text-center p-2 rounded bg-futurista-negro/30">
           <div className="text-xs text-texto-terciario">MAE</div>
-          <div className="font-mono font-semibold text-neon-cyan">{modelo.mae.toFixed(3)}</div>
+          <div className="font-mono font-semibold text-neon-cyan">{modelo.mae?.toFixed(3) ?? 'N/D'}</div>
         </div>
         <div className="text-center p-2 rounded bg-futurista-negro/30">
           <div className="text-xs text-texto-terciario">RMSE</div>
-          <div className="font-mono font-semibold text-neon-magenta">{modelo.rmse.toFixed(3)}</div>
+          <div className="font-mono font-semibold text-neon-magenta">{modelo.rmse?.toFixed(3) ?? 'N/D'}</div>
         </div>
         <div className="text-center p-2 rounded bg-futurista-negro/30">
           <div className="text-xs text-texto-terciario">R²</div>
-          <div className={clsx('font-mono font-semibold', modelo.r2 >= 0.5 ? 'text-neon-verde' : 'text-neon-amarillo')}>
-            {modelo.r2.toFixed(3)}
+          <div className="font-mono font-semibold text-texto-secundario">
+            {modelo.r2?.toFixed(3) ?? 'N/D'}
           </div>
         </div>
       </div>
+
+      <p className="text-xs text-texto-secundario mb-2">{modelo.ambitoMetricas === 'AJUSTE_IN_SAMPLE_NO_VALIDACION' ? 'Métricas de ajuste, no de validación temporal.' : 'Ámbito de evaluación: ' + (modelo.ambitoMetricas ?? 'no acreditado')}
+        {modelo.cargado ? ' Modelo cargado para análisis.' : ' La versión registrada no está cargada para análisis.'}</p>
 
       {/* Info adicional */}
       <div className="flex items-center justify-between text-xs text-texto-terciario">

@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, time, timezone
 from typing import Dict, List, Optional, Tuple, Any
 from uuid import UUID
 
@@ -35,6 +35,7 @@ from ..modelos.corners import ModeloCorners
 from ..modelos.goles import ModeloGoles
 from ..modelos.disparos import ModeloDisparos
 from ..modelos.base import construir_matriz_diseno, ajustar_ridge
+from .dataset import seleccionar, describir
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +102,8 @@ class EntrenadorFutbol:
 
         logger.info("Iniciando entrenamiento completo de modelos de fútbol...")
         inicio = datetime.now()
+        for tipo in TipoModelo:
+            setattr(self, '_modelo_' + tipo.value, None)
 
         # Obtener partidos
         partidos = self._normalizar_partidos(self._obtener_partidos_entrenamiento())
@@ -114,8 +117,7 @@ class EntrenadorFutbol:
 
         logger.info(f"Partidos obtenidos: {len(partidos)}")
 
-        # Calcular hash de datos
-        self._ultimo_hash_datos = self._calcular_hash_datos(partidos)
+        self._ultimo_hash_datos = None
 
         resultados = {}
 
@@ -227,9 +229,9 @@ class EntrenadorFutbol:
 
         return {
             "estado": "ok",
-            "modelo_corners": modelo_corners,
-            "modelo_goles": modelo_goles,
-            "modelo_disparos": modelo_disparos,
+            "modelo_corners": self.obtener_modelo_corners(),
+            "modelo_goles": self.obtener_modelo_goles(),
+            "modelo_disparos": self.obtener_modelo_disparos(),
             "partidos": len(partidos),
             "cutoff": cutoff_fecha,
         }
@@ -272,10 +274,14 @@ class EntrenadorFutbol:
             JOIN equipos_futbol el ON p.equipo_local_id = el.id
             JOIN equipos_futbol ev ON p.equipo_visitante_id = ev.id
             JOIN competiciones_futbol c ON p.competicion_id = c.id
-            WHERE p.estado = 'FINALIZADO'
+            WHERE p.estado = 'FINALIZADO' AND p.valido IS TRUE
         """
 
         parametros: List[Any] = []
+
+        if self.config.temporadas:
+            query += " AND p.temporada_id::text = ANY(%s)"
+            parametros.append(self.config.temporadas)
 
         # Filtrar por competiciones
         if self.config.competiciones:
@@ -285,7 +291,14 @@ class EntrenadorFutbol:
         # Filtrar por fecha de corte
         if self.config.fecha_corte:
             query += " AND p.fecha_partido < %s"
-            parametros.append(self.config.fecha_corte)
+            # Una fecha SQL depende del TimeZone de la conexión. El contrato es UTC.
+            corte = self.config.fecha_corte
+            if isinstance(corte, datetime):
+                if corte.tzinfo is None:
+                    raise ValueError('El cutoff datetime requiere zona horaria')
+            else:
+                corte = datetime.combine(corte, time.min, tzinfo=timezone.utc)
+            parametros.append(corte)
 
         # Excluir copas si se indica
         if not self.config.incluir_copas:
@@ -316,13 +329,7 @@ class EntrenadorFutbol:
     ) -> ResultadoEntrenamiento:
         """Entrena el modelo de corners."""
         # Filtrar partidos con datos de corners completos
-        partidos_validos = [
-            p for p in partidos
-            if p.get("local_corners_1t") is not None
-            and p.get("local_corners_2t") is not None
-            and p.get("visitante_corners_1t") is not None
-            and p.get("visitante_corners_2t") is not None
-        ]
+        partidos_validos, excluidos = seleccionar(partidos, TipoModelo.CORNERS, self.config.min_partidos_equipo)
 
         if len(partidos_validos) < self.min_partidos:
             raise DatosInsuficientes(
@@ -346,7 +353,7 @@ class EntrenadorFutbol:
 
         # Guardar modelo entrenado para uso posterior
         self._modelo_corners = modelo
-
+        self._completar_modelo(modelo, resultado, partidos_validos, excluidos)
         return resultado
 
     def _entrenar_modelo_goles(
@@ -354,13 +361,7 @@ class EntrenadorFutbol:
         partidos: List[Dict],
     ) -> ResultadoEntrenamiento:
         """Entrena el modelo de goles."""
-        partidos_validos = [
-            p for p in partidos
-            if p.get("local_goles_1t") is not None
-            and p.get("local_goles_2t") is not None
-            and p.get("visitante_goles_1t") is not None
-            and p.get("visitante_goles_2t") is not None
-        ]
+        partidos_validos, excluidos = seleccionar(partidos, TipoModelo.GOLES, self.config.min_partidos_equipo)
 
         if len(partidos_validos) < self.min_partidos:
             raise DatosInsuficientes(
@@ -381,6 +382,7 @@ class EntrenadorFutbol:
         )
 
         self._modelo_goles = modelo
+        self._completar_modelo(modelo, resultado, partidos_validos, excluidos)
         return resultado
 
     def _entrenar_modelo_disparos(
@@ -388,11 +390,7 @@ class EntrenadorFutbol:
         partidos: List[Dict],
     ) -> ResultadoEntrenamiento:
         """Entrena el modelo de disparos."""
-        partidos_validos = [
-            p for p in partidos
-            if p.get("local_disparos_total") is not None
-            and p.get("visitante_disparos_total") is not None
-        ]
+        partidos_validos, excluidos = seleccionar(partidos, TipoModelo.DISPAROS, self.config.min_partidos_equipo)
 
         if len(partidos_validos) < self.min_partidos:
             raise DatosInsuficientes(
@@ -413,7 +411,36 @@ class EntrenadorFutbol:
         )
 
         self._modelo_disparos = modelo
+        self._completar_modelo(modelo, resultado, partidos_validos, excluidos)
         return resultado
+
+    def diagnosticar_dataset(self) -> Dict[str, Any]:
+        """Solo lectura: mismos filtros de calidad y mínimos que el entrenamiento."""
+        partidos = self._normalizar_partidos(self._obtener_partidos_entrenamiento())
+        informe = {}
+        for tipo in TipoModelo:
+            efectivos, excluidos = seleccionar(partidos, tipo, self.config.min_partidos_equipo)
+            informe[tipo.value] = describir(efectivos, tipo, excluidos)
+            informe[tipo.value]['min_partidos'] = self.min_partidos
+            informe[tipo.value]['entrenable_tecnicamente'] = len(efectivos) >= self.min_partidos
+        return informe
+
+    def _completar_modelo(self, modelo, resultado, partidos, excluidos):
+        modelo.dataset = describir(partidos, modelo.tipo, excluidos)
+        modelo.dataset['config'] = self.config.to_dict()
+        resultado.hash_datos = modelo.dataset['hash_sha256']
+        modelo.metricas = {
+            'ambito': 'AJUSTE_IN_SAMPLE_NO_VALIDACION',
+            'mae_promedio': resultado.mae_promedio(),
+            'mae_por_target': resultado.mae_por_target,
+            'rmse_por_target': resultado.rmse_por_target,
+            'r2_por_target': resultado.r2_por_target,
+        }
+        # El diseño tiene dos perspectivas por partido; no son dos eventos.
+        resultado.n_partidos = len(partidos)
+        hashes = {tipo.value: getattr(self, '_modelo_' + tipo.value).dataset['hash_sha256']
+                  for tipo in TipoModelo if getattr(self, '_modelo_' + tipo.value, None) is not None}
+        self._ultimo_hash_datos = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
 
     def _preparar_datos_corners(
         self,
@@ -571,10 +598,10 @@ class EntrenadorFutbol:
             filas_es_local.append(1)
             fechas.append(fecha)
 
-            y_local_total.append(p.get("local_disparos_total", 0) or 0)
-            y_local_arco.append(p.get("local_disparos_arco", 0) or 0)
-            y_visitante_total.append(p.get("visitante_disparos_total", 0) or 0)
-            y_visitante_arco.append(p.get("visitante_disparos_arco", 0) or 0)
+            y_local_total.append(p["local_disparos_total"])
+            y_local_arco.append(p["local_disparos_arco"])
+            y_visitante_total.append(p["visitante_disparos_total"])
+            y_visitante_arco.append(p["visitante_disparos_arco"])
 
             # Perspectiva visitante
             filas_equipo.append(visitante)
@@ -582,10 +609,10 @@ class EntrenadorFutbol:
             filas_es_local.append(0)
             fechas.append(fecha)
 
-            y_local_total.append(p.get("visitante_disparos_total", 0) or 0)
-            y_local_arco.append(p.get("visitante_disparos_arco", 0) or 0)
-            y_visitante_total.append(p.get("local_disparos_total", 0) or 0)
-            y_visitante_arco.append(p.get("local_disparos_arco", 0) or 0)
+            y_local_total.append(p["visitante_disparos_total"])
+            y_local_arco.append(p["visitante_disparos_arco"])
+            y_visitante_total.append(p["local_disparos_total"])
+            y_visitante_arco.append(p["local_disparos_arco"])
 
         equipos_ordenados = sorted(equipos_set)
         entidad_a_indice = {nombre: i for i, nombre in enumerate(equipos_ordenados)}

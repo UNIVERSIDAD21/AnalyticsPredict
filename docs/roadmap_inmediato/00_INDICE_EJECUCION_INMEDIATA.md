@@ -5,6 +5,12 @@ Fecha de supersesión: 2026-10-05 (corte de revisión 2026-10-06)
 
 Este índice conserva el orden comercial histórico, **no** define tareas actuales. Para trabajo nuevo manda `docs/reactivacion_single_user/ROADMAP_REACTIVACION_ANALYTICSPREDICT.md`; ver evidencia y blockers en `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md`.
 
+## Continuidad técnica actual
+
+El cierre de persistencia/serving ML fútbol del2026-10-15 está en
+`../reactivacion_single_user/PERSISTENCIA_ML_FUTBOL_2026-10-15.md`.
+No reactiva los bloques comerciales históricos ni certifica modelos.
+
 ## Orden de ejecución aprobado
 1. A1 real (staging + smoke)
 2. B3 cierre formal (2 ciclos semanales)

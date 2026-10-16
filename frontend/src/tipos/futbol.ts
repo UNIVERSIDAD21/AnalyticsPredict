@@ -568,9 +568,11 @@ export interface EstadoModeloFutbol {
   tipoModelo: 'CORNERS' | 'GOLES' | 'DISPAROS';
   version: string;
   fechaEntrenamiento: string;
-  mae: number;
-  rmse: number;
-  r2: number;
+  mae: number | null;
+  rmse: number | null;
+  r2: number | null;
+  ambitoMetricas?: string;
+  cargado?: boolean;
   nPartidosEntrenamiento: number;
   nEquipos: number;
 }

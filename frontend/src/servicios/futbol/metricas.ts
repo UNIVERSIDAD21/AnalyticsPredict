@@ -67,9 +67,11 @@ function transformarEstadoModelo(
     tipoModelo: (data.tipo_modelo || data.tipoModelo) as EstadoModeloFutbol['tipoModelo'],
     version: String(data.version || ''),
     fechaEntrenamiento: String(data.fecha_entrenamiento || data.fechaEntrenamiento || ''),
-    mae: Number(data.mae || 0),
-    rmse: Number(data.rmse || 0),
-    r2: Number(data.r2 || 0),
+    mae: data.mae == null ? null : Number(data.mae),
+    rmse: data.rmse == null ? null : Number(data.rmse),
+    r2: data.r2 == null ? null : Number(data.r2),
+    ambitoMetricas: String(data.ambito_metricas || 'NO_ACREDITADO'),
+    cargado: data.cargado === true,
     nPartidosEntrenamiento: Number(
       data.n_partidos_entrenamiento || data.nPartidosEntrenamiento || 0
     ),

@@ -565,9 +565,11 @@ class MetricasModelo(BaseModel):
     tipo_modelo: str
     version: str
     fecha_entrenamiento: Optional[datetime] = None
-    mae: float = 0.0
-    rmse: float = 0.0
-    r2: float = 0.0
+    mae: Optional[float] = None
+    rmse: Optional[float] = None
+    r2: Optional[float] = None
+    ambito_metricas: str = 'NO_ACREDITADO'
+    cargado: bool = False
     n_partidos_entrenamiento: int = 0
     n_equipos: int = 0
 
@@ -577,6 +579,8 @@ class EstadoModelos(BaseModel):
     modelos: List[MetricasModelo]
     ultima_actualizacion: Optional[datetime] = None
     proximo_reentrenamiento: Optional[datetime] = None
+    estado: str = 'SIN_VERSION_ACTIVA'
+    artefactos_no_aptos: int = 0
 
 
 class ResumenSistema(BaseModel):

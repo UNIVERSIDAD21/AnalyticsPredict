@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clienteAPI } from '../api';
-import { obtenerMetricasRendimiento, obtenerRoiTemporal } from './metricas';
+import { obtenerMetricasRendimiento, obtenerRoiTemporal, obtenerEstadoModelos } from './metricas';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -22,5 +22,15 @@ describe('ROI fútbol: porcentaje de API, razón de UI y N/D', () => {
       { fecha: '2026-10-06', roi: null, stake_acumulado: 0, ganancia_acumulada: null },
     ] } });
     expect((await obtenerRoiTemporal())[0]).toMatchObject({ roi: null, gananciaAcumulada: null });
+  });
+
+  it('no inventa modelos y conserva N/D y ámbito del ajuste', async () => {
+    const get = vi.spyOn(clienteAPI, 'get').mockResolvedValueOnce({ data: { modelos: [] } })
+      .mockResolvedValueOnce({ data: { modelos: [{ tipo_modelo: 'goles', version: 1, mae: null, rmse: null, r2: 0,
+        ambito_metricas: 'AJUSTE_IN_SAMPLE_NO_VALIDACION', cargado: false }] } });
+    expect(await obtenerEstadoModelos()).toEqual([]);
+    const [modelo] = await obtenerEstadoModelos();
+    expect(modelo).toMatchObject({ mae: null, rmse: null, r2: 0, ambitoMetricas: 'AJUSTE_IN_SAMPLE_NO_VALIDACION', cargado: false });
+    expect(get).toHaveBeenCalledTimes(2);
   });
 });

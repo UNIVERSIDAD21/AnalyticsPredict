@@ -104,6 +104,8 @@ class PredictorFutbol:
             self._modelos_cargados = False
 
         self.version_activa: str = ""
+        self.estado_carga = {}
+        self._origen_persistido = False
 
         if custom_contract:
             self._actualizar_version()
@@ -125,35 +127,46 @@ class PredictorFutbol:
             ruta: Ruta base de archivos (opcional)
             version_id: ID de versión específica (opcional)
         """
-        if ruta:
-            # Cargar desde archivos
-            from ..modelos.base import ModeloPrediccionBase
+        from pathlib import Path
+        from ..modelos.base import ModeloPrediccionBase
+        from ..tipos import TipoModelo
+        from ..entrenamiento.gestor_versiones import GestorVersiones, MERCADOS
+        from ..modelos.artefacto import cargar_registro
 
+        if version_id is not None:
+            raise ValueError('Una predicción puede usar tres versiones; cargar por familia en GestorVersiones')
+        gestor = GestorVersiones(self._pool)
+        self._origen_persistido = True
+        try:
+            activas = gestor.obtener_activas() if not ruta else []
+        except Exception:
+            for tipo in TipoModelo:
+                setattr(self, 'modelo_' + tipo.value, None)
+                self.estado_carga[tipo.value] = {'estado':'ALMACEN_NO_DISPONIBLE','version_id':None}
+            self._modelos_cargados = False
+            self._actualizar_version()
+            return
+        for tipo in TipoModelo:
+            atributo = 'modelo_' + tipo.value
+            # Una recarga fallida retira el modelo anterior: no sirve una versión obsoleta.
+            setattr(self, atributo, None)
             try:
-                self.modelo_corners = ModeloCorners()
-                self.modelo_corners = ModeloPrediccionBase.cargar(f"{ruta}/corners.npz")
-            except FileNotFoundError:
-                logger.warning("No se encontró modelo de corners")
-
-            try:
-                self.modelo_goles = ModeloGoles()
-                self.modelo_goles = ModeloPrediccionBase.cargar(f"{ruta}/goles.npz")
-            except FileNotFoundError:
-                logger.warning("No se encontró modelo de goles")
-
-            try:
-                self.modelo_disparos = ModeloDisparos()
-                self.modelo_disparos = ModeloPrediccionBase.cargar(f"{ruta}/disparos.npz")
-            except FileNotFoundError:
-                logger.warning("No se encontró modelo de disparos")
-        else:
-            # Inicializar modelos vacíos (se entrenarán después)
-            self.modelo_corners = ModeloCorners()
-            self.modelo_goles = ModeloGoles()
-            self.modelo_disparos = ModeloDisparos()
-
-        self._modelos_cargados = True
-        logger.info("Modelos inicializados")
+                candidatas = [v for v in activas if v['mercado_principal'] == MERCADOS[tipo]]
+                if len(candidatas) > 1:
+                    raise ValueError('Más de una versión activa para la misma familia')
+                modelo = ModeloPrediccionBase.cargar(str(Path(ruta) / (tipo.value + '.npz'))) if ruta else cargar_registro(candidatas[0]) if candidatas else None
+                if modelo is not None and modelo.tipo != tipo:
+                    raise ValueError('Familia del archivo incompatible')
+                setattr(self, atributo, modelo)
+                self.estado_carga[tipo.value] = {'estado': 'CARGADO' if modelo else 'SIN_VERSION_ACTIVA', 'version_id': modelo.version_id if modelo else None}
+            except (ValueError, KeyError, TypeError, OSError):
+                self.estado_carga[tipo.value] = {'estado': 'ARTEFACTO_NO_APTO', 'version_id': None}
+                logger.warning('Artefacto fútbol %s no apto; no se servirá', tipo.value)
+            except Exception:
+                self.estado_carga[tipo.value] = {'estado': 'ALMACEN_NO_DISPONIBLE', 'version_id': None}
+                logger.warning('No se pudo consultar el modelo fútbol %s', tipo.value)
+        self._modelos_cargados = bool(self.modelos_entrenados)
+        self._actualizar_version()
 
     def establecer_modelos(
         self,
@@ -235,6 +248,17 @@ class PredictorFutbol:
         # 1. Obtener información del partido
         info_partido = self._obtener_info_partido(partido_id)
 
+        if self._origen_persistido:
+            inicio = info_partido['fecha_partido']
+            if inicio.tzinfo is None:
+                raise ErrorPrediccion('Inicio sin zona horaria; no se acredita elegibilidad temporal', str(partido_id))
+            limite = fecha_corte or inicio
+            if limite.tzinfo is None:
+                raise ErrorPrediccion('Cutoff sin zona horaria', str(partido_id))
+            for modelo in (self.modelo_corners, self.modelo_goles, self.modelo_disparos):
+                if modelo is not None and (modelo.fecha_entrenamiento.tzinfo is None or modelo.fecha_entrenamiento >= min(inicio, limite)):
+                    raise ErrorPrediccion('El artefacto persistido no existía antes del cutoff del partido', str(partido_id))
+
         equipo_local = info_partido["equipo_local_nombre"]
         equipo_visitante = info_partido["equipo_visitante_nombre"]
         competicion = info_partido.get("competicion_nombre", "")
@@ -286,6 +310,9 @@ class PredictorFutbol:
                 metricas["mae_disparos"] = self.modelo_disparos.metricas.get("mae_promedio", 0)
             except Exception as e:
                 logger.warning(f"Error prediciendo disparos: {e}")
+
+        if not any((mercados_corners, mercados_goles, mercados_disparos)):
+            raise ErrorPrediccion('Ninguna familia ML cubre este partido', str(partido_id))
 
         # 6. Determinar confianza
         nivel_confianza = self._determinar_confianza(features)
@@ -511,7 +538,7 @@ class PredictorFutbol:
     @property
     def modelos_entrenados(self) -> bool:
         """Indica si hay al menos un modelo entrenado."""
-        return (
+        return bool(
             (self.modelo_corners and self.modelo_corners.entrenado) or
             (self.modelo_goles and self.modelo_goles.entrenado) or
             (self.modelo_disparos and self.modelo_disparos.entrenado)

@@ -94,13 +94,13 @@ def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
     if not MOTOR_DISPONIBLE:
         return None
 
-    if _predictor_futbol_ml is None:
-        try:
-            _predictor_futbol_ml = PredictorFutbol(pool=pool, cargar_modelos=True)
-            logger.info("PredictorFutbol ML inicializado para /api/futbol/analizar")
-        except Exception:
-            logger.exception("No se pudo inicializar PredictorFutbol ML")
-            _predictor_futbol_ml = None
+    try:
+        # Objeto nuevo por análisis: no muta modelos usados por otra petición.
+        # Cada loader observa todas las activas en un único snapshot SQL read-only.
+        _predictor_futbol_ml = PredictorFutbol(pool=pool, cargar_modelos=True)
+    except Exception:
+        logger.warning("No se pudo cargar PredictorFutbol ML")
+        _predictor_futbol_ml = None
 
     return _predictor_futbol_ml
 
@@ -2937,7 +2937,9 @@ async def analizar_partido(
                     if predictor_ml is not None and predictor_ml.modelos_entrenados:
                         try:
                             pred_ml = predictor_ml.predecir_partido(request.partido_id)
-                            gestor_calibradores = _obtener_gestor_calibradores_futbol(pool)
+                            # El contrato Ridge persistido es raw y no vincula calibrador.
+                            # No reutilizar uno de otra versión solo por coincidir mercado.
+                            gestor_calibradores = None
 
                             mercados_corners_ml = {
                                 k: _convertir_mercado_ml_a_schema(v, lineas_corners, gestor_calibradores)

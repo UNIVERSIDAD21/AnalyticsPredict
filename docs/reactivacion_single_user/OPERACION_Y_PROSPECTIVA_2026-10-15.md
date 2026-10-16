@@ -12,6 +12,15 @@ artefacto NBA, último job, capturas fútbol y conteos prospectivos. Un fallo de
 es 503, no un conjunto de ceros. Almacén ausente es N/D, distinto de cero capturas.
 La fecha sin hora NBA no se convierte a una fecha anterior en UTC−5.
 
+## ML fútbol: actualización técnica posterior
+
+La persistencia/recarga está implementada sin entrenar en serving. El diagnóstico
+por defecto usa `scripts/entrenar_futbol.py` sin flags de escritura. Registro,
+artefacto y carga se distinguen; no hay versión fútbol activa en el corte real.
+Ver `PERSISTENCIA_ML_FUTBOL_2026-10-15.md` para familias, ventanas, comandos,
+codec, resultados y límites. No reutilizar calibrador de otra versión ni interpretar
+MAE de ajuste como validación temporal.
+
 ## Rutina manual explícita
 
 Usar `backend/.venv/bin/python`; no copiar la configuración protegida al terminal.

@@ -28,14 +28,15 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 - [x] Implementar vínculo/ingesta canónica con procedencia, NULL, anti-duplicados y preservación del histórico; rollback DDL+DML sobre contrato/datos reales y CI2378058 4/4.
 - [x] Aplicar con backup/postflight y conectar calendario/estadísticas al flujo API/UI. Neon337 eventos/200finales/136programados/1suspendido; dos clubes/cinco temporadas nuevas;23.919 históricos y seis huellas de apuestas/predicciones intactas, reimportación0/0;49 próximos en API del frontend.
 - [x] Verificar modelos/calibradores de fútbol antes de actualizar. No hay versión activa registrada; predictor sin archivos inicializa modelos vacíos, gestor legacy espera columna inexistente. Los nuevos FT carecen de1T/2T: no se entrenó ni activó calibrador/modelo.
-- [ ] Reparar persistencia/serving ML fútbol y verificar dataset por target antes de reentrenar. La cobertura FT no completa los modelos por tiempos; no basta con guardar una versión en BD.
+- [x] Reparar persistencia/serving ML fútbol y verificar dataset por target antes de reentrenar. Artefacto completo en JSONB, activación/recarga verificadas en PG sintético, sin entrenamiento en serving;771backend/24frontend/lint/build. Diagnóstico real: corners14.136/goles10.716 hasta marzo, disparos14.379 hasta12/10. Sin DDL/DML ni versiones nuevas fútbol en Neon. Ver `PERSISTENCIA_ML_FUTBOL_2026-10-15.md`.
+- [ ] Entrenar/evaluar explícitamente por familia y ventana, con particiones por partido, baseline e intervalos; activar solo como estado técnico separado de promoción/calibración. Recencia 1T/2T sigue pendiente:200FT no completan tiempos.
 
 ## D. Operación y evidencia
 
 - [x] Rutina manual explícita/idempotente y estado read-only de fuentes, frescura, modelos y jobs, sin notificaciones externas. API/UI Estado más runbook `OPERACION_Y_PROSPECTIVA_2026-10-15.md`; ausencia/fallo no convertidos en cero.
 - [x] Cadena prospectiva instalada tras ensayo/rollback/CI2b142e0 4/4. Evento/mercado/hora UTC/features/coeficientes/dataset/modelo/raw/calibrador ausente explícito; reloj BD y registros inmutables. Nueve huellas históricas intactas. Resolución ESPN idempotente probada, no acredita independencia ni outcome real aún.
 - [x] E2E aislada y captura real anterior al inicio.12eventos NBA del scoreboard2026-10-16, todos de PRE, umbral técnicoQ1=55.5 predeclarado; congelados desde2026-10-16T02:09Z para inicios23:00Z–02:30Zdel17. Reimportación0,12hashes/horas/políticas verificados por lectura independiente.0outcomes reales; sin picks/stakes/recomendaciones, sin retrofechar ni mezclar con NBA descriptivo.
-- [ ] Unificar gates de métricas SQL/API/UI, conservar N/D y motivos de exclusión; no reescribir apuestas dudosas.
+- [ ] Unificar gates de métricas SQL/API/UI, conservar N/D y motivos de exclusión; no reescribir apuestas dudosas. Subbloque ML fútbol cerrado: modelos y fechas ficticios retirados, N/D preservado y métricas in-sample explícitas; no cierra KPI probabilísticos/P&L residuales.
 - [ ] Acumular outcomes futuros y validar walk-forward/calibración/confidence con n e intervalos. **Pendiente temporal: requiere que ocurran partidos después del congelamiento.**
 - [ ] Acreditar unidad/fuente/instante de stake/cuota/ganancia históricos. **Bloqueo de procedencia: no se inventa información irrecuperable; se mantiene excluida.**
 - [ ] Verificar fuente permitida independiente para resultados/inicio. **Bloqueado:** ambos schedule públicos NBA CDN devolvieron403; sin evasión. Dos consultas ESPN no son independencia.

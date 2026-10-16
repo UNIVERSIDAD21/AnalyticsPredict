@@ -140,4 +140,4 @@ def test_estado_operativo_respeta_contrato_sql_y_no_escribe(prospectiva_db):
         assert estado['nba']['ultimo_final'].isoformat() == '2026-10-10'
         assert estado['capturas_futbol']['lotes'] is None
         assert estado['prospectiva']['congeladas'] == 0
-        assert estado['predictor_ml_futbol']['estado'] == 'SIN_CARGA_PERSISTIDA_IMPLEMENTADA'
+        assert estado['predictor_ml_futbol']['estado'] == 'SIN_VERSION_ACTIVA'

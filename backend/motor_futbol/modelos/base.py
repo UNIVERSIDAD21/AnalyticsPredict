@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
@@ -23,7 +23,7 @@ from ..tipos import (
     normalizar_nombre_equipo,
 )
 from ..constantes import ALPHA_RIDGE_DEFAULT, ALPHAS_BUSQUEDA
-from ..excepciones import ModeloNoEntrenado, ErrorEntrenamiento
+from ..excepciones import ModeloNoEntrenado, ErrorEntrenamiento, EquipoNoEncontrado
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ class ModeloPrediccionBase(ABC):
             logger.info(f"  {target}: MAE={mae:.3f}, RMSE={rmse:.3f}, R²={r2:.3f}")
 
         self._entrenado = True
-        self.fecha_entrenamiento = datetime.now()
+        self.fecha_entrenamiento = datetime.now(timezone.utc)
 
         duracion = (datetime.now() - inicio).total_seconds()
         logger.info(f"Entrenamiento completado en {duracion:.2f}s")
@@ -337,6 +337,9 @@ class ModeloPrediccionBase(ABC):
             raise ModeloNoEntrenado(self.tipo.value)
 
         # Construir matriz de diseño para 1 partido
+        for nombre in (equipo, rival):
+            if not self.contiene_equipo(nombre):
+                raise EquipoNoEncontrado(nombre, self.cantidad_equipos)
         X = construir_matriz_diseno(
             nombres_equipo=[equipo],
             nombres_rival=[rival],
@@ -456,72 +459,24 @@ class ModeloPrediccionBase(ABC):
 
         return np.mean(maes) if maes else float("inf")
 
+    def to_dict(self) -> Dict[str, Any]:
+        from .artefacto import exportar
+        return exportar(self)
+
     def guardar(self, ruta: str) -> None:
-        """
-        Guarda modelo en formato .npz.
-
-        Args:
-            ruta: Ruta del archivo
-        """
-        import os
-        os.makedirs(os.path.dirname(ruta) or ".", exist_ok=True)
-
-        datos = {
-            "tipo": np.array([self.tipo.value]),
-            "alfa": np.array([self.alfa]),
-            "entidad_json": np.array([json.dumps(self.entidad_a_indice)]),
-            "targets": np.array(self.targets),
-            "std_residuales": np.array([json.dumps(self.std_residuales)]),
-        }
-
-        # Agregar pesos por target
-        for target, pesos in self.pesos.items():
-            datos[f"pesos_{target}"] = pesos
-
-        np.savez_compressed(ruta, **datos)
-        logger.info(f"Modelo guardado en: {ruta}")
+        """NPZ con JSON y arrays no ejecutables; mismo contrato que BD."""
+        from pathlib import Path
+        payload = self.to_dict()
+        Path(ruta).parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(ruta, artefacto_json=np.array([json.dumps(payload, allow_nan=False)]))
 
     @classmethod
     def cargar(cls, ruta: str) -> "ModeloPrediccionBase":
-        """
-        Carga modelo desde archivo .npz.
-
-        Args:
-            ruta: Ruta del archivo
-
-        Returns:
-            Instancia del modelo
-        """
-        with np.load(ruta, allow_pickle=True) as datos:
-            tipo = TipoModelo(str(datos["tipo"][0]))
-            targets = list(datos["targets"])
-
-            # Crear instancia del tipo correcto
-            from .corners import ModeloCorners
-            from .goles import ModeloGoles
-            from .disparos import ModeloDisparos
-
-            if tipo == TipoModelo.CORNERS:
-                modelo = ModeloCorners()
-            elif tipo == TipoModelo.GOLES:
-                modelo = ModeloGoles()
-            else:
-                modelo = ModeloDisparos()
-
-            modelo.alfa = float(datos["alfa"][0])
-            modelo.entidad_a_indice = json.loads(str(datos["entidad_json"][0]))
-            modelo.std_residuales = json.loads(str(datos["std_residuales"][0]))
-
-            # Cargar pesos
-            for target in targets:
-                clave = f"pesos_{target}"
-                if clave in datos:
-                    modelo.pesos[target] = datos[clave]
-
-            modelo._entrenado = True
-
-        logger.info(f"Modelo cargado desde: {ruta}")
-        return modelo
+        from .artefacto import cargar
+        with np.load(ruta, allow_pickle=False) as datos:
+            if 'artefacto_json' not in datos:
+                raise ValueError('Artefacto legacy sin contrato verificable; requiere reentrenamiento explícito')
+            return cargar(json.loads(str(datos['artefacto_json'][0])))
 
     def a_modelo_ridge_futbol(self) -> ModeloRidgeFutbol:
         """Convierte a ModeloRidgeFutbol."""

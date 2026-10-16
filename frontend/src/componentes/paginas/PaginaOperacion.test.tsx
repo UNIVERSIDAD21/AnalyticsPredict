@@ -13,6 +13,7 @@ describe('Estado operativo', () => {
       nba: { n: 30, ultimo_final: '2026-10-15' }, futbol: { n: 200, ultimo_final: null },
       modelo_nba: { estado: 'DISPONIBLE', version: 2123, equipos: 30 },
       capturas_futbol: { lotes: 10, observado_en: null },
+      predictor_ml_futbol: { estado: 'SIN_VERSION_ACTIVA', familias: {}, carga_en_proceso: { estado: 'NO_INICIALIZADO', familias: {} } },
       prospectiva: { congeladas: null, resueltas: null, estado: 'ALMACEN_NO_INSTALADO' }, notas: [],
     } });
     render(<PaginaOperacion />);

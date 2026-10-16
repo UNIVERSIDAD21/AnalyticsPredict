@@ -7,6 +7,8 @@ from psycopg.rows import dict_row
 from db import obtener_pool
 from motor_autoentrenamiento.artefacto_nba import cargar_artefacto
 from motor_autoentrenamiento.dominio_nba import FILTRO_NBA_ENTRENABLE
+from motor_futbol.modelos.artefacto import cargar_registro
+from motor_futbol.entrenamiento.gestor_versiones import MERCADOS
 
 router=APIRouter(prefix='/api/operacion',tags=['Operación local'])
 
@@ -35,11 +37,26 @@ def leer_estado(conn):
             prospectiva['estado']='ESPERANDO_OUTCOMES' if prospectiva['congeladas']>prospectiva['resueltas'] else 'SIN_CAPTURAS' if not prospectiva['congeladas'] else 'EVALUACION_PENDIENTE'
         modelos_futbol=[]
         if c.execute("SELECT to_regclass('public.modelo_versiones_futbol') AS tabla").fetchone()['tabla']:
-            modelos_futbol=c.execute('SELECT id,mercado_principal,version,fecha_entrenamiento,cutoff_entrenamiento,partidos_entrenamiento FROM modelo_versiones_futbol WHERE activo=true ORDER BY fecha_entrenamiento DESC LIMIT 20').fetchall()
+            modelos_futbol=c.execute('SELECT * FROM modelo_versiones_futbol WHERE activo=true ORDER BY id DESC').fetchall()
+        familias={}
+        for tipo, mercado in MERCADOS.items():
+            versiones=[v for v in modelos_futbol if v['mercado_principal']==mercado]
+            estado='SIN_VERSION_ACTIVA'
+            if versiones:
+                try:
+                    if len(versiones)!=1:
+                        raise ValueError('Activas ambiguas')
+                    cargar_registro(versiones[0])
+                    estado='VERIFICADA_PARA_CARGA'
+                except (ValueError,KeyError,TypeError):
+                    estado='ARTEFACTO_NO_APTO'
+            familias[tipo.value]={'estado':estado,'version_id':versiones[0]['id'] if len(versiones)==1 else None}
+        resumen=[{k:v.get(k) for k in ('id','mercado_principal','version','fecha_entrenamiento','cutoff_entrenamiento','partidos_entrenamiento')} for v in modelos_futbol]
+        estado_ml='SIN_VERSION_ACTIVA' if not modelos_futbol else 'VERSIONES_REGISTRADAS'
         return {'nba':dict(nba),'futbol':dict(futbol),'capturas_futbol':capturas,
-                'ultimo_job_nba':nba_job,'prospectiva':prospectiva,'versiones_futbol_registradas':modelos_futbol,
-                'predictor_ml_futbol': {'estado':'SIN_CARGA_PERSISTIDA_IMPLEMENTADA',
-                    'motivo':'La ruta sin archivos inicializa modelos vacíos; no recarga versiones de BD.'}}
+                'ultimo_job_nba':nba_job,'prospectiva':prospectiva,'versiones_futbol_registradas':resumen,
+                'predictor_ml_futbol': {'estado':estado_ml,'familias':familias,
+                    'motivo':'La consulta verifica artefactos registrados; no inicializa el predictor ni activa modelos.'}}
 
 
 @router.get('/estado')
@@ -51,6 +68,11 @@ def estado_operacion():
             datos=leer_estado(conn)
     except Exception as exc:
         raise HTTPException(503,detail={'estado':'ALMACEN_NO_DISPONIBLE','mensaje':'No se pudo consultar el estado operativo'}) from exc
+    from api.rutas_analisis_futbol import _predictor_futbol_ml
+    datos['predictor_ml_futbol']['carga_en_proceso'] = (
+        {'estado':'NO_INICIALIZADO','familias':{}} if _predictor_futbol_ml is None else
+        {'estado':'CARGADO' if _predictor_futbol_ml.modelos_entrenados else 'NO_CARGADO',
+         'familias':_predictor_futbol_ml.estado_carga.copy()})
     try:
         modelo=cargar_artefacto()
         datos['modelo_nba']={'estado':'DISPONIBLE','version':modelo['modelo_version_id'],

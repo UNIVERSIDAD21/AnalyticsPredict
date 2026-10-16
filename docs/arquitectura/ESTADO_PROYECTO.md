@@ -1,5 +1,15 @@
 # ESTADO_PROYECTO.md
 
+> **Cierre técnico ML fútbol 2026-10-15:** persistencia de coeficientes y dataset
+> efectivo por familia reparada contra esquema canónico, activación transaccional
+> y recarga read-only sin entrenamiento. API/UI sin modelos/MAE/fechas de ejemplo,
+> N/D e in-sample diferenciados de validación. Diagnóstico real: corners14.136 y
+> goles10.716 hasta2026-03-22; disparos14.379 hasta2026-10-12. Sin entrenamiento,
+> DDL/DML ni activación de fútbol en Neon (0versiones).771backend/24frontend,
+> lint/build; cinco GETAPI y rutaEstado200, nueve huellas intactas. Detalle en
+> `docs/reactivacion_single_user/PERSISTENCIA_ML_FUTBOL_2026-10-15.md`.
+> Pendiente evaluación/actualización por familia y ventanas; NO CERTIFICADO.
+
 > **Verificación posterior del mismo día:** `2b142e0` CI38838845268 **4/4 verde**. Cadena prospectiva instalada tras ensayo/rollback;12capturas reales Q1raw de toda la cohorte NBA2026-10-16 PRE antes del inicio,0outcomes, reimportación0,12hashes/horas/políticas verificados independientemente y nueve huellas históricas intactas. EstadoHTTP200 refleja12/0. No se certifica eficacia ni independencia; el pendiente de instalación del corte de código siguiente queda superado. Los demás pendientes se conservan.
 
 > **Continuación de uso local 2026-10-15:** entorno persistente, NBA delimitado a30equipos,73partidos añadidos y modelo2123 explícito (último dato2026-06-14). Fútbol canónico2378058 aplicado tras CI4/4/ensayo:337eventos/200finales, histórico23.919/apuestas/predicciones intactos. Calendario49próximos y Estado API/UI HTTP200. Operación/prospectiva751pruebas backend y21frontend/lint/build; instalación/captura prospectiva pendiente de CI al corte de código. ML fútbol no carga parámetros persistidos y nuevos FT no completan targets por tiempos; no se entrenó. Siguen abiertos visual, persistencia ML fútbol, KPI residuales, outcomes futuros/independientes y procedencia P&L. Ver `docs/reactivacion_single_user/CHECKLIST_PREPARACION_USO_2026-10-15.md` y `OPERACION_Y_PROSPECTIVA_2026-10-15.md`. **NO CERTIFICADO**.

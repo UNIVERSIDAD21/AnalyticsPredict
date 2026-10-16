@@ -25,7 +25,7 @@ def test_consulta_read_only_y_ausencia_de_artefacto(monkeypatch):
         @contextmanager
         def connection(self): yield Conn()
     monkeypatch.setattr(rutas, 'obtener_pool', Pool)
-    monkeypatch.setattr(rutas, 'leer_estado', lambda conn: {'prospectiva': {'congeladas': None}})
+    monkeypatch.setattr(rutas, 'leer_estado', lambda conn: {'prospectiva': {'congeladas': None}, 'predictor_ml_futbol': {}})
     monkeypatch.setattr(rutas, 'cargar_artefacto', lambda: None)
     respuesta = rutas.estado_operacion()
     assert comandos[0] == 'SET TRANSACTION READ ONLY'

@@ -781,159 +781,50 @@ async def obtener_roi_temporal(
     response_model=EstadoModelos,
     include_in_schema=False,
 )
-async def obtener_estado_modelos(
-) -> EstadoModelos:
-    """Obtiene estado de los modelos."""
-    pool = obtener_pool()
+async def obtener_estado_modelos() -> EstadoModelos:
+    """Artefactos activos verificados, nunca ejemplos ni reentrenamiento ficticio."""
+    from motor_futbol.modelos.artefacto import cargar_registro
+    from api.rutas_analisis_futbol import _predictor_futbol_ml
 
     try:
-        with pool.connection() as conn:
+        with obtener_pool().connection() as conn:
+            conn.execute('SET TRANSACTION READ ONLY')
             with conn.cursor(row_factory=dict_row) as cursor:
-                if not _tabla_existe(cursor, "modelo_versiones_futbol"):
-                    return EstadoModelos(
-                        modelos=[
-                            MetricasModelo(
-                                tipo_modelo="corners",
-                                version="1.0",
-                                mae=1.371,
-                                n_partidos_entrenamiento=5196,
-                                n_equipos=28,
-                            ),
-                            MetricasModelo(
-                                tipo_modelo="goles",
-                                version="1.0",
-                                mae=0.632,
-                                n_partidos_entrenamiento=3840,
-                                n_equipos=28,
-                            ),
-                            MetricasModelo(
-                                tipo_modelo="disparos",
-                                version="1.0",
-                                mae=2.493,
-                                n_partidos_entrenamiento=5196,
-                                n_equipos=28,
-                            ),
-                        ],
-                        ultima_actualizacion=None,
-                        proximo_reentrenamiento=datetime.now() + timedelta(days=7),
-                    )
-                columna_tipo = _resolver_columna_modelo(cursor, ["tipo_modelo", "tipo", "modelo"])
-                columna_version = _resolver_columna_modelo(cursor, ["version"])
-                columna_fecha = _resolver_columna_modelo(cursor, ["fecha_entrenamiento", "creado_en"])
-                if not all([columna_tipo, columna_version, columna_fecha]):  # CORREGIDO
-                    return EstadoModelos(
-                        modelos=[
-                            MetricasModelo(
-                                tipo_modelo="corners",
-                                version="1.0",
-                                mae=1.371,
-                                n_partidos_entrenamiento=5196,
-                                n_equipos=28,
-                            ),
-                            MetricasModelo(
-                                tipo_modelo="goles",
-                                version="1.0",
-                                mae=0.632,
-                                n_partidos_entrenamiento=3840,
-                                n_equipos=28,
-                            ),
-                            MetricasModelo(
-                                tipo_modelo="disparos",
-                                version="1.0",
-                                mae=2.493,
-                                n_partidos_entrenamiento=5196,
-                                n_equipos=28,
-                            ),
-                        ],
-                        ultima_actualizacion=None,
-                        proximo_reentrenamiento=datetime.now() + timedelta(days=7),
-                    )
-                columna_mae = _resolver_columna_modelo(cursor, ["mae", "mae_total", "mae_promedio"])
-                columna_rmse = _resolver_columna_modelo(cursor, ["rmse", "rmse_total"])
-                columna_r2 = _resolver_columna_modelo(cursor, ["r2", "r2_total"])
-                columna_partidos = _resolver_columna_modelo(
-                    cursor, ["n_partidos_entrenamiento", "partidos_entrenamiento", "n_partidos"]
-                )
-                columna_equipos = _resolver_columna_modelo(cursor, ["n_equipos", "equipos"])
-                # Obtener versiones de modelos
-                cursor.execute("""
-                    SELECT
-                        {columna_tipo} as tipo_modelo,
-                        {columna_version} as version,
-                        {columna_fecha} as fecha_entrenamiento,
-                        {columna_mae} as mae,
-                        {columna_rmse} as rmse,
-                        {columna_r2} as r2,
-                        {columna_partidos} as n_partidos_entrenamiento,
-                        {columna_equipos} as n_equipos
-                    FROM modelo_versiones_futbol
-                    ORDER BY {columna_fecha} DESC
-                    LIMIT 3
-                """.format(
-                    columna_tipo=columna_tipo,
-                    columna_version=columna_version,
-                    columna_fecha=columna_fecha,
-                    columna_mae=columna_mae or "NULL",  # CORREGIDO
-                    columna_rmse=columna_rmse or "NULL",  # CORREGIDO
-                    columna_r2=columna_r2 or "NULL",  # CORREGIDO
-                    columna_partidos=columna_partidos or "NULL",  # CORREGIDO
-                    columna_equipos=columna_equipos or "NULL",  # CORREGIDO
-                ))
+                if not _tabla_existe(cursor, 'modelo_versiones_futbol'):
+                    return EstadoModelos(modelos=[], estado='ALMACEN_NO_INSTALADO')
+                cursor.execute('SELECT * FROM modelo_versiones_futbol WHERE activo IS TRUE ORDER BY id DESC')
                 filas = cursor.fetchall()
-
-                modelos = []
-                ultima_actualizacion = None
-
-                for fila in filas:
-                    if ultima_actualizacion is None:
-                        ultima_actualizacion = fila["fecha_entrenamiento"]
-
-                    modelos.append(MetricasModelo(
-                        tipo_modelo=fila["tipo_modelo"],
-                        version=str(fila["version"]),
-                        fecha_entrenamiento=fila["fecha_entrenamiento"],
-                        mae=float(fila["mae"] or 0),
-                        rmse=float(fila["rmse"] or 0),
-                        r2=float(fila["r2"] or 0),
-                        n_partidos_entrenamiento=fila["n_partidos_entrenamiento"] or 0,
-                        n_equipos=fila["n_equipos"] or 0,
-                    ))
-
-                # Si no hay modelos en BD, crear datos por defecto
-                if not modelos:
-                    modelos = [
-                        MetricasModelo(
-                            tipo_modelo="corners",
-                            version="1.0",
-                            mae=1.371,
-                            n_partidos_entrenamiento=5196,
-                            n_equipos=28,
-                        ),
-                        MetricasModelo(
-                            tipo_modelo="goles",
-                            version="1.0",
-                            mae=0.632,
-                            n_partidos_entrenamiento=3840,
-                            n_equipos=28,
-                        ),
-                        MetricasModelo(
-                            tipo_modelo="disparos",
-                            version="1.0",
-                            mae=2.493,
-                            n_partidos_entrenamiento=5196,
-                            n_equipos=28,
-                        ),
-                    ]
-
-                return EstadoModelos(
-                    modelos=modelos,
-                    ultima_actualizacion=ultima_actualizacion,
-                    proximo_reentrenamiento=datetime.now() + timedelta(days=7),
-                )
-
-    except Exception as e:
-        logger.error(f"Error obteniendo estado de modelos: {e}")
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        modelos, rechazados = [], 0
+        mercados = [v['mercado_principal'] for v in filas]
+        for fila in filas:
+            try:
+                if mercados.count(fila['mercado_principal']) != 1:
+                    raise ValueError('Más de una activa')
+                m = cargar_registro(fila)
+            except (ValueError, KeyError, TypeError):
+                rechazados += 1
+                continue
+            runtime = getattr(_predictor_futbol_ml, 'modelo_' + m.tipo.value, None)
+            metricas = m.metricas
+            def promedio(clave):
+                valores = list(metricas.get(clave, {}).values())
+                return sum(valores)/len(valores) if valores else None
+            modelos.append(MetricasModelo(
+                tipo_modelo=m.tipo.value, version=str(fila['version']),
+                fecha_entrenamiento=m.fecha_entrenamiento,
+                mae=metricas.get('mae_promedio'), rmse=promedio('rmse_por_target'), r2=promedio('r2_por_target'),
+                n_partidos_entrenamiento=m.dataset['n_partidos'], n_equipos=m.cantidad_equipos,
+                ambito_metricas=metricas.get('ambito', 'NO_ACREDITADO'),
+                cargado=runtime is not None and runtime.version_id == m.version_id,
+            ))
+        return EstadoModelos(
+            modelos=modelos, ultima_actualizacion=max((m.fecha_entrenamiento for m in modelos), default=None),
+            proximo_reentrenamiento=None, artefactos_no_aptos=rechazados,
+            estado='CON_ARTEFACTOS_NO_APTOS' if rechazados else 'ARTEFACTOS_VERIFICADOS' if modelos else 'SIN_VERSION_ACTIVA',
+        )
+    except Exception as exc:
+        logger.warning('No se pudo consultar el almacén de modelos fútbol')
+        raise HTTPException(503, detail='Almacén de modelos no disponible') from exc
 
 
 @router.get(
@@ -948,6 +839,7 @@ async def obtener_resumen_sistema(
     pool = obtener_pool()
 
     try:
+        estado_modelos = await obtener_estado_modelos()
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 # Partidos próximos
@@ -1015,7 +907,7 @@ async def obtener_resumen_sistema(
                 calibradores_activos = cursor.fetchone()["count"]
 
                 # Verificar modelo activo
-                modelo_activo = True  # Asumimos que está activo si existe
+                modelo_activo = any(m.cargado for m in estado_modelos.modelos)
 
                 # Alertas de calibración
                 cursor.execute("""
@@ -1038,6 +930,8 @@ async def obtener_resumen_sistema(
                     alerta_calibracion=alerta_calibracion,
                 )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error obteniendo resumen del sistema: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")

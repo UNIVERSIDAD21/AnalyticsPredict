@@ -20,6 +20,14 @@
 
 ## Dependencia inmediata
 
+**Continuación posterior — ML fútbol:** ciclo de artefactos/persistencia/activación/
+recarga reparado y verificado en PostgreSQL sintético, sin DDL/DML ni entrenamiento
+fútbol en Neon. API/UI sin métricas/modelos/fechas ficticios. Dataset real por
+familia verificado; desgloses hasta marzo vs tirosFT hasta12/10.771backend y24frontend,
+lint/build, cinco GETAPI+Estadofront200 y nueve huellas intactas. Ver
+`PERSISTENCIA_ML_FUTBOL_2026-10-15.md`. Falta evaluación/entrenamiento explícitos
+por familia y ventana; no es bloqueo de persistencia ni una recertificación.
+
 **Continuación autorizada 2026-10-15:** preparación para uso según
 `CHECKLIST_PREPARACION_USO_2026-10-15.md`. NBA30equipos/modelo2123;73finales
 añadidos y reimportación0. Fútbol canónico337eventos/200finales aplicado con CI4/4,

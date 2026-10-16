@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-15 — ciclo ML fútbol verificable
+
+- Artefacto JSON Ridge completo por familia, contrato de features/targets, dataset efectivo y SHA-256; registro canónico sin DDL, lote atómico y activación validada antes de desactivar. Recarga SQL read-only sin entrenar, NPZ sin pickle y rechazo de versiones incompletas/ambiguas.
+- Selector válido/final por target, cutoffs UTC, NULL sin imputación, coherencia deportiva y mínimos por equipo; n de partidos separado de perspectivas. CLI diagnóstico por defecto y publicación/activación explícitas, con recarga verificadora y selección de familias.
+- API/UI dejan de fabricar modelos, MAE, estado activo o próximo entrenamiento. N/D se conserva; ajuste in-sample no recibe etiqueta de validación. Artefacto raw sin reutilizar calibrador de otra versión.
+- Diagnóstico Neon solo lectura: corners14.136/goles10.716 hasta marzo; disparos14.379 hasta12/10. Cero versiones fútbol/entrenamiento/activación, nueve huellas históricas y12capturasNBA/0outcomes intactos.771backend/24frontend/lint/build; cinco GETAPI+Estadofront200. ADR-006 aceptado; rendimiento NO CERTIFICADO.
+
 ## 2026-10-15 — operación local y cadena prospectiva NBA
 
 - Estado read-only API/UI, frescura por dominio, artefacto y último job; fallo503/ausenciaN/D, nunca ceros fabricados. Rutina manual explícita sin cron/notificaciones ni entrenamiento en GET.

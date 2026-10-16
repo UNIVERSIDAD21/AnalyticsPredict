@@ -74,8 +74,8 @@ class TestEntrenarCompleto:
                 "goles_local_2t": np.random.randint(0, 3),
                 "goles_visitante_1t": np.random.randint(0, 3),
                 "goles_visitante_2t": np.random.randint(0, 3),
-                "disparos_local": np.random.randint(5, 20),
-                "disparos_visitante": np.random.randint(5, 20),
+                "disparos_local": np.random.randint(10, 20),
+                "disparos_visitante": np.random.randint(10, 20),
                 "disparos_arco_local": np.random.randint(2, 10),
                 "disparos_arco_visitante": np.random.randint(2, 10),
             }
@@ -372,8 +372,8 @@ class TestGestorVersiones:
         assert version.startswith("v")
         assert "_" in version
 
-    def test_guardar_modelo_registra_metricas(self):
-        """Al guardar un modelo se registran sus métricas."""
+    def test_guardar_modelo_rechaza_resumen_sin_coeficientes(self):
+        """Un resumen sin modelo no debe crear un registro que parezca servible."""
         from motor_futbol.entrenamiento.gestor_versiones import GestorVersiones
 
         mock_pool = Mock()
@@ -387,19 +387,7 @@ class TestGestorVersiones:
 
         gestor = GestorVersiones(pool=mock_pool)
 
-        # Mock del modelo
-        mock_modelo = Mock()
-        mock_modelo.to_dict.return_value = {"pesos": [1, 2, 3]}
-
-        metricas = {"mae": 2.1, "r2": 0.65}
-
-        gestor.guardar_modelo(
-            modelo=mock_modelo,
-            tipo=TipoModelo.CORNERS,
-            version="v1.0.0_20240315",
-            metricas=metricas,
-        )
-
-        # Verificar que se ejecutó un INSERT
-        llamadas = mock_cursor.execute.call_args_list
-        assert any("INSERT" in str(llamada).upper() for llamada in llamadas)
+        # Un resumen de métricas sin coeficientes no es un modelo persistible.
+        with pytest.raises(ValueError, match="modelo entrenado"):
+            gestor.guardar_modelo(modelo=object())
+        mock_cursor.execute.assert_not_called()

@@ -9,7 +9,7 @@ type Estado = {
   modelo_nba: { estado: string; version?: number; equipos?: number; ultimo_dato?: string };
   capturas_futbol: { lotes: number | null; observado_en: string | null };
   prospectiva: { congeladas: number | null; resueltas: number | null; estado: string };
-  predictor_ml_futbol: { estado: string; motivo: string };
+  predictor_ml_futbol: { estado: string; motivo: string; familias: Record<string, { estado: string; version_id: number | null }>; carga_en_proceso: { estado: string; familias: Record<string, { estado: string; version_id: number | null }> } };
   notas: string[];
 };
 const fecha = (valor?: string | null) => !valor ? 'N/D' : /^\d{4}-\d{2}-\d{2}$/.test(valor)
@@ -35,7 +35,18 @@ export function PaginaOperacion() {
       <p className="text-texto-secundario">Consultado: {fecha(estado.observado_en)}{error ? ' · Se conserva la última respuesta; puede estar desactualizada.' : ''}</p>
       <div className="grid gap-4 md:grid-cols-2">
         <section className="border border-neon-cyan/20 rounded p-4"><h2 className="font-bold">NBA</h2><p>{estado.nba.n} partidos · último final: {fecha(estado.nba.ultimo_final)}</p><p>Modelo: {estado.modelo_nba.estado} · versión {estado.modelo_nba.version ?? 'N/D'} · {estado.modelo_nba.equipos ?? 'N/D'} equipos</p><p>Último dato de entrenamiento: {estado.modelo_nba.ultimo_dato ?? 'N/D'}</p></section>
-        <section className="border border-neon-cyan/20 rounded p-4"><h2 className="font-bold">Fútbol</h2><p>{estado.futbol.n} partidos · último final: {fecha(estado.futbol.ultimo_final)}</p><p>Capturas: {estado.capturas_futbol.lotes ?? 'N/D'} · última observación: {fecha(estado.capturas_futbol.observado_en)}</p><p>Modelo ML: no cargado desde BD. El análisis estadístico no equivale a un modelo entrenado activo.</p></section>
+        <section className="border border-neon-cyan/20 rounded p-4">
+          <h2 className="font-bold">Fútbol</h2>
+          <p>{estado.futbol.n} partidos · último final: {fecha(estado.futbol.ultimo_final)}</p>
+          <p>Capturas: {estado.capturas_futbol.lotes ?? 'N/D'} · última observación: {fecha(estado.capturas_futbol.observado_en)}</p>
+          <p>Modelo ML: {estado.predictor_ml_futbol.estado === 'SIN_VERSION_ACTIVA' ? 'sin versión activa' : 'versiones registradas; comprobar carga por familia'}.</p>
+          <p>La carga se actualiza al solicitar un análisis. El análisis estadístico no equivale a un modelo entrenado activo.</p>
+          <ul>{Object.entries(estado.predictor_ml_futbol.familias).map(([familia, modelo]) => {
+            const carga = estado.predictor_ml_futbol.carga_en_proceso.familias[familia];
+            const coincide = modelo.estado === 'VERIFICADA_PARA_CARGA' && modelo.version_id != null && carga?.estado === 'CARGADO' && carga.version_id === modelo.version_id;
+            return <li key={familia}>{familia}: {modelo.estado === 'VERIFICADA_PARA_CARGA' ? 'artefacto verificado' : modelo.estado === 'ARTEFACTO_NO_APTO' ? 'artefacto no apto' : 'sin versión activa'} · versión {modelo.version_id ?? 'N/D'} · {coincide ? 'cargado' : 'no cargado'}</li>;
+          })}</ul>
+        </section>
         <section className="border border-neon-cyan/20 rounded p-4"><h2 className="font-bold">Seguimiento prospectivo</h2><p>{estado.prospectiva.congeladas ?? 'N/D'} predicciones congeladas · {estado.prospectiva.resueltas ?? 'N/D'} resultados acreditados</p><p>{estado.prospectiva.estado === 'ALMACEN_NO_INSTALADO' ? 'Seguimiento aún no instalado' : estado.prospectiva.estado === 'ESPERANDO_OUTCOMES' ? 'Esperando resultados posteriores' : estado.prospectiva.estado === 'SIN_CAPTURAS' ? 'Sin predicciones congeladas' : 'Evaluación pendiente'}</p></section>
       </div>
       <ul className="list-disc pl-5 text-texto-secundario">{estado.notas.map(nota => <li key={nota}>{nota}</li>)}</ul>
