@@ -59,6 +59,15 @@ Migración `2026-10-15_cadena_prospectiva.sql`: dos tablas paralelas, sin modifi
 predicciones/apuestas históricas. Triggers rechazan UPDATE/DELETE/TRUNCATE; una
 corrección necesita evidencia separada y revisión, nunca sobrescritura automática.
 
+**Aplicación acreditada:** `2b142e0`, CI
+[38838845268](https://github.com/UNIVERSIDAD21/AnalyticsPredict/actions/runs/38838845268)
+4/4 verde; ensayo con rollback, preflight y aplicación transaccional. Los doce
+eventos NBA del scoreboard2026-10-16 (temporada2027/tipo1/preseason) quedaron
+congelados desde2026-10-16T02:09Z para inicios2026-10-16T23:00Z a17T02:30Z.
+Umbral técnicoQ1=55.5, sin selección por resultado/probabilidad. Reimportación0,
+12hashes/cadenas temporales verificados independientemente, nueve huellas del
+histórico intactas. EstadoHTTP200:12congeladas/0outcomes. No es evidencia de eficacia.
+
 CLI: `.venv/bin/python scripts/seguimiento_prospectivo_nba.py --fecha 2026-10-16`.
 Por defecto solo consulta/lista NBA ESPN. Una captura exige elegir un ID exacto:
 añadir `--evento ID --linea 55.5 --congelar`. La línea es un **umbral técnico**
@@ -88,8 +97,9 @@ volumen por mercado, dependencia por evento e intervalos antes de promoción.
 
 Suite sintética final: 751 passed, cero fallos/omitidas; 21 frontend tests,
 lint/build verdes. Una regresión SQL adicional protege el contrato real de modelos
-fútbol (no la columna legacy `tipo_modelo`). CI y aplicación de la cadena se
-anotan en checklist/acta tras verificación; la presencia del SQL no implica aplicación.
+fútbol (no la columna legacy `tipo_modelo`). Seis GET API, seis rutas frontend y
+detalle canónico de fútbol HTTP200. La presencia del SQL sola no implica aplicación;
+en esta entrega sí se acreditó la aplicación/captura indicada arriba.
 
 Navegación visual local pendiente por política del navegador registrada en la
 etapa anterior; no se elude. Los GET y pruebas de componentes no sustituyen ese smoke.

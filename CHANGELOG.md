@@ -3,7 +3,7 @@
 ## 2026-10-15 — operación local y cadena prospectiva NBA
 
 - Estado read-only API/UI, frescura por dominio, artefacto y último job; fallo503/ausenciaN/D, nunca ceros fabricados. Rutina manual explícita sin cron/notificaciones ni entrenamiento en GET.
-- Cadena Q1 Ridge raw en tablas paralelas: evento/features/coeficientes/hash/dataset/modelo, reloj BD anterior al inicio, snapshot inmutable y resolución final idempotente. Sin calibrador ficticio, picks, stakes, cuotas ni recomendaciones. SQL preparado, aplicación/captura real pendiente de CI al corte de código.
+- Cadena Q1 Ridge raw en tablas paralelas: evento/features/coeficientes/hash/dataset/modelo, reloj BD anterior al inicio, snapshot inmutable y resolución final idempotente. Sin calibrador ficticio, picks, stakes, cuotas ni recomendaciones. Tras CI2b142e0 4/4/ensayo: instalada en Neon,12capturas reales PRE futuras, reimportación0 y nueve huellas históricas intactas;0outcomes aún.
 - Fútbol2378058 CI4/4, ensayo real aislado y Neon aplicado:337 eventos,200 finales,136 programados,1suspendido; histórico23.919 y apuestas/predicciones intactos; reimportación0/0. API devuelve49 próximos.
 - Auditoría ML fútbol: sin modelo activo registrado y sin carga persistida implementada; gestor legacy incompatible con esquema actual. No se reentrenó/activó nada. FT no imputa tiempos.
 - Pruebas de este lote:751 backend sintéticas sin fallos/omitidas,21frontend/lint/build verdes. Smoke6GET API+6rutas frontend200; visual pendiente por política del navegador. NBA CDN alternativo403, no eludido. Rendimiento NO CERTIFICADO.

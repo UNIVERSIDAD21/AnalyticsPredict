@@ -29,6 +29,11 @@ No se activa ML fútbol: falta persistencia/serving apto y desgloses de targets.
 Mantener pendientes temporales, independencia, P&L y KPI residuales; no cerrar
 recertificación por disponibilidad técnica. Detalle en `OPERACION_Y_PROSPECTIVA_2026-10-15.md`.
 
+**Postflight posterior:**2b142e0 CI38838845268 4/4; cadena instalada y12capturas
+reales PRE congeladas antes de los partidos,0outcomes. Nueve huellas históricas
+intactas; no repetir migración/capturas. El pendiente de instalación de arriba
+queda superado; resta ocurrencia de partidos y verificación/evaluación posterior.
+
 **Avance 2026-10-15:** capa de capturas ESPN Soccer aislada completada, publicada
 con CI 4/4 y aplicada/verificada en Neon (733 pruebas backend sintéticas verdes).
 Diez lotes frescos: 337 eventos, 200 finales con estadísticas completas;

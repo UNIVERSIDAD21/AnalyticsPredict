@@ -33,8 +33,8 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 ## D. Operación y evidencia
 
 - [x] Rutina manual explícita/idempotente y estado read-only de fuentes, frescura, modelos y jobs, sin notificaciones externas. API/UI Estado más runbook `OPERACION_Y_PROSPECTIVA_2026-10-15.md`; ausencia/fallo no convertidos en cero.
-- [ ] Cadena prospectiva congelada: código/SQL y pruebas terminados; falta CI/aplicación controlada. Evento/mercado/hora UTC/features/dataset/modelo/raw/calibrador ausente explícito; reloj BD y registros inmutables. Outcome ESPN no independiente.
-- [ ] Prueba E2E aislada pasó con fixture temporal sintética; falta captura real anterior al inicio. Sin picks/stakes/recomendaciones; no retrofechar ni trasladar el Ridge al módulo NBA descriptivo.
+- [x] Cadena prospectiva instalada tras ensayo/rollback/CI2b142e0 4/4. Evento/mercado/hora UTC/features/coeficientes/dataset/modelo/raw/calibrador ausente explícito; reloj BD y registros inmutables. Nueve huellas históricas intactas. Resolución ESPN idempotente probada, no acredita independencia ni outcome real aún.
+- [x] E2E aislada y captura real anterior al inicio.12eventos NBA del scoreboard2026-10-16, todos de PRE, umbral técnicoQ1=55.5 predeclarado; congelados desde2026-10-16T02:09Z para inicios23:00Z–02:30Zdel17. Reimportación0,12hashes/horas/políticas verificados por lectura independiente.0outcomes reales; sin picks/stakes/recomendaciones, sin retrofechar ni mezclar con NBA descriptivo.
 - [ ] Unificar gates de métricas SQL/API/UI, conservar N/D y motivos de exclusión; no reescribir apuestas dudosas.
 - [ ] Acumular outcomes futuros y validar walk-forward/calibración/confidence con n e intervalos. **Pendiente temporal: requiere que ocurran partidos después del congelamiento.**
 - [ ] Acreditar unidad/fuente/instante de stake/cuota/ganancia históricos. **Bloqueo de procedencia: no se inventa información irrecuperable; se mantiene excluida.**
@@ -42,8 +42,8 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 
 ## E. Publicación y cierre
 
-- [ ] Tests proporcionales, diff/secretos, CI, commit/push de cada lote validado; estado/changelog/checklist actualizados.
-- [ ] Cierre HTTP/UI y reporte de lo terminado, pendiente y bloqueado; checkout limpio y memoria propia actualizada.
+- [x] Código2b142e0 publicado, diff/secretos revisados, CI38838845268 4/4,751backend/21frontend/lint/build. Estado/changelog/checklist actualizados; cierre documental se verifica por separado.
+- [x] Cierre HTTP y pruebas UI con informe/checklist/memoria actualizados; visual manual conserva su casilla bloqueada. Entrega `PREPARACION_USO_INTEGRAL_2026-10-15`; HEAD/CI documental y limpieza final se registran en su acta antes del cierre visible.
 
 H4 integral y H12 restantes conservan su plan previo; no iniciar purga parcial de
 historia ni cambios globales. El bloque D de evolución avanzada sigue fuera de alcance.
@@ -54,3 +54,4 @@ historia ni cambios globales. El bloque D de evolución avanzada sigue fuera de 
   No se inició entrenamiento ni se alteró Neon para probar el entorno.
 - 2026-10-15: CI337288d 4/4; detectado contrato hashvarchar32 al entrenar, corregido en852f4ba con CI38837332780 4/4, sin repetir73 filas deportivas ni publicar artefacto fallido. Modelo2123 ya activo,30 equipos. Datos ajenos/apuestas/predicciones intactos. Browser visual bloqueado por política de navegación local; HTTP comprobado, sin sortear la política.
 - 2026-10-15: fútbol2378058 CI38837743890 4/4 y aplicación verificada. Primer intento revirtió por lock sin residuos; segundo completo. Operación/prospectiva:751 backend,0fallos/omitidas,21frontend/lint/build. Captura real y CI de este último lote aún pendientes al registrar esta entrada.
+- 2026-10-15, posterior:2b142e0 CI38838845268 4/4; cadena instalada y12capturas reales prospectivas en Neon, sin afectar nueve huellas históricas. APIEstado200 y12/0. La entrada previa de pendientes es histórica; siguen abiertos outcomes futuros, independencia, KPI residual, ML fútbol, visual y procedencia P&L.
