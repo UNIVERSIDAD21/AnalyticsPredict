@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-16 — preparación de goles fútbol por mitades
+
+- Parser y CLI de tiempos explícitos ESPN, identidad/UTC/FT y dos periodos exactos, sin imputar a partir de FT; cohorte200/200 comprobada. Observaciones separadas, plan de solo lectura por defecto y aplicación atómica/idempotente sin sobrescribir contradicciones. Migración y pruebas SQL preparadas; aplicación/evaluación posterior se acreditan por separado.
+
 ## 2026-10-16 — KPI/P&L común y auditoría GET
 
 - Política monetaria compartida NBA/fútbol/combinadas: agregados N/D sin soportes/unidad, n/exclusiones/motivos; individuales y filas preservados. Cohorte de resumen/listado fútbol igual antes de paginar, fechas y columnas canónicas, sinTTL. Combinadas no se multiplican por selecciones.
