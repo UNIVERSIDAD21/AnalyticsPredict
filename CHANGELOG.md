@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-15 — preparación para uso: entorno y dominio NBA
+
+- Checklist de ejecución con resultados y pendientes en `docs/reactivacion_single_user/CHECKLIST_PREPARACION_USO_2026-10-15.md`. Entorno Python 3.12 persistente con lock; frontend local Node 24: lint, 19 tests y build verdes, además de CI Node 20.
+- Entrenamiento/backtest/conteos comparten filtro NBA explícito, `valido=true`, marcador positivo y cuartos no negativos/coherentes. El hash incluye dominio, política e identidad completa de entradas. El serving formato 2 rechaza artefactos legacy sin dominio/calidad acreditados, incluido el mixto de 58 entidades.
+- Ingesta NBA rechaza el lote entero ante fallos de parseo y escribe atómicamente; permite exclusión manual por ID con motivo (exhibición Portland–London Lions 401914130). Dry-run: 40 finales candidatos/0 fallos/1 exclusión, aún sin DML.
+- El CLI de análisis permite salida externa; sus tests dejan de regenerar reportes históricos rastreados. El arranque frontend instala con `npm ci` y exige puerto estricto.
+
 ## 2026-10-15 — capturas ESPN Soccer independientes
 
 - Se completa el WIP de capturas por liga/mes, con observación UTC, hashes scoreboard/boxscore, ingesta atómica idempotente y revisiones conservadas. GET read-only del último lote; `SIN_CAPTURA`, `NO_DATA` y almacén no disponible diferenciados. No modifica el catálogo canónico ni resuelve apuestas.

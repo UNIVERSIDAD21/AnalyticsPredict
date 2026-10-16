@@ -25,6 +25,8 @@ def _datos_modelo():
         "desviacion_rival": np.ones(4),
         "modelo_version_id": 17,
         "metricas": {
+            "dominio": "nba",
+            "politica_datos": "nba_finales_validos_v1",
             "modelo_version_id": 17,
             "modelo_version": 5,
             "hash_datos": "snapshot-prueba",

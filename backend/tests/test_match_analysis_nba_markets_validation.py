@@ -82,6 +82,7 @@ def test_cli_still_generates_analysis_with_valid_markets(tmp_path):
         "2026-05-05",
         "--markets",
         str(markets_path),
+        "--output-dir", str(tmp_path / "salidas"),
     ]
     proc = subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True, timeout=180)
     assert proc.returncode == 0, proc.stderr

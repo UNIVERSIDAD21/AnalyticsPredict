@@ -10,8 +10,10 @@ from typing import Any
 
 import numpy as np
 
+from .dominio_nba import DOMINIO, POLITICA_DATOS
 
-FORMATO = 1
+
+FORMATO = 2
 FEATURE_SET_VERSION = "nba_ridge_cuartos_v1"
 
 
@@ -26,6 +28,8 @@ def guardar_artefacto(datos: dict[str, Any], ruta: Path | None = None) -> Path:
     """Publica un snapshot atómico; nunca deja un archivo parcial como activo."""
     destino = ruta or ruta_artefacto()
     metricas = datos.get("metricas") or {}
+    if metricas.get("dominio") != DOMINIO or metricas.get("politica_datos") != POLITICA_DATOS:
+        raise ValueError("El artefacto requiere dominio NBA y política de datos acreditados")
     modelo_id = datos.get("modelo_version_id")
     if not isinstance(modelo_id, int) or modelo_id <= 0:
         raise ValueError("El artefacto requiere modelo_version_id persistido")
@@ -35,6 +39,8 @@ def guardar_artefacto(datos: dict[str, Any], ruta: Path | None = None) -> Path:
         raise ValueError("El artefacto requiere versión y timestamp registrados en BD")
     metadatos = {
         "formato": FORMATO,
+        "dominio": DOMINIO,
+        "politica_datos": POLITICA_DATOS,
         "modelo_version_id": modelo_id,
         "modelo_version": metricas["modelo_version"],
         "feature_set_version": FEATURE_SET_VERSION,
@@ -85,6 +91,10 @@ def cargar_artefacto(ruta: Path | None = None) -> dict[str, Any] | None:
         desviacion_rival = archivo["std_opp"].copy()
     if metadatos.get("formato") != FORMATO or metadatos.get("feature_set_version") != FEATURE_SET_VERSION:
         raise ValueError("Artefacto NBA con formato o feature set incompatible")
+    if (metadatos.get("dominio") != DOMINIO or metadatos.get("politica_datos") != POLITICA_DATOS
+            or metadatos.get("metricas_entrenamiento", {}).get("dominio") != DOMINIO
+            or metadatos.get("metricas_entrenamiento", {}).get("politica_datos") != POLITICA_DATOS):
+        raise ValueError("Artefacto sin dominio/calidad NBA acreditados")
     modelo_id = metadatos.get("modelo_version_id")
     if (not isinstance(modelo_id, int) or modelo_id <= 0
             or not metadatos.get("modelo_version") or not metadatos.get("dataset_hash")

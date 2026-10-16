@@ -318,31 +318,22 @@ def upsert_records(conn, records: list[dict[str, Any]], dry_run: bool) -> dict[s
       url_referencia=EXCLUDED.url_referencia,
       actualizado_en=now()
     """
-    with conn.cursor() as cur:
-        for r in records:
-            try:
-                natural = (r["temporada_id"], r["fecha_partido"], r["tipo_partido"], r["equipo_local_id"], r["equipo_visitante_id"])
-                # Una fila legacy puede tener ID ESPN pero carecer de source.
-                # No insertarla de nuevo ni sobrescribirla sin reconciliación explícita.
-                if (
-                    r["source_game_id"] not in existing_source
-                    and (r["source_game_id"] in existing_espn or natural in existing_exact)
-                ):
-                    stats["existing"] += 1
-                    continue
+    pendientes = []
+    for r in records:
+        natural = (r["temporada_id"], r["fecha_partido"], r["tipo_partido"], r["equipo_local_id"], r["equipo_visitante_id"])
+        if r["source_game_id"] not in existing_source and (r["source_game_id"] in existing_espn or natural in existing_exact):
+            stats["existing"] += 1
+        else:
+            pendientes.append(r)
+    if pendientes:
+        # Sin commits por fila: un error invalida todo el lote.
+        with conn.transaction(), conn.cursor() as cur:
+            for r in pendientes:
                 existed = r["source_game_id"] in existing_source
                 cur.execute(sql, r)
-                if existed:
-                    stats["existing"] += 1
-                    stats["updated"] += 1
-                else:
-                    stats["inserted"] += 1
-            except Exception as exc:  # noqa: BLE001
-                conn.rollback()
-                stats["failed"] += 1
-                print(f"ERROR event={r.get('source_game_id')}: {exc}", file=sys.stderr)
-            else:
-                conn.commit()
+                stats["existing"] += int(existed)
+                stats["updated"] += int(existed)
+                stats["inserted"] += int(not existed)
     return stats
 
 
@@ -386,7 +377,15 @@ def main() -> int:
     parser.add_argument("--days-back", type=int, default=45)
     parser.add_argument("--season", type=int, help="Año final ESPN/NBA, ej. 2026 para 2025-2026")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--excluir-evento", action="append", default=[], metavar="ID:MOTIVO",
+                        help="Excluir por ID acreditado una exhibición fuera de NBA; requiere motivo explícito")
     args = parser.parse_args()
+    exclusiones = {}
+    for entrada in args.excluir_evento:
+        ident, separador, motivo = entrada.partition(":")
+        if not separador or not ident.isdigit() or not motivo.strip():
+            parser.error("--excluir-evento requiere ID numérico y motivo")
+        exclusiones[ident] = motivo.strip()
 
     start = args.from_date or (args.to_date - timedelta(days=args.days_back))
     end = args.to_date
@@ -404,12 +403,19 @@ def main() -> int:
         records: list[dict[str, Any]] = []
         failed_parse = 0
         for ev in events:
+            if str(ev.get("id")) in exclusiones:
+                print(json.dumps({"excluido": str(ev["id"]), "motivo": exclusiones[str(ev["id"])]}))
+                continue
             try:
                 records.append(event_to_record(ev, ctx))
             except Exception as exc:  # noqa: BLE001
                 failed_parse += 1
                 print(f"WARN event={ev.get('id')}: {exc}", file=sys.stderr)
+        if failed_parse:
+            print(json.dumps({"failed": failed_parse, "escrituras": 0, "estado": "LOTE_RECHAZADO"}))
+            return 1
         stats = upsert_records(conn, records, args.dry_run)
+        stats["excluded"] = sum(str(ev.get("id")) in exclusiones for ev in events)
         stats["failed"] += failed_parse
         update_ingestion_state(conn, ctx, stats, start, end, args.dry_run)
         print(json.dumps(stats, indent=2, ensure_ascii=False, default=str))

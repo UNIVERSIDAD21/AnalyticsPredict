@@ -69,11 +69,11 @@ BACKEND_PID=$!
 cd "$FRONTEND_DIR"
 if [[ ! -d node_modules ]]; then
   echo "[dev] Instalando dependencias frontend..."
-  npm install
+  npm ci
 fi
 
 echo "[dev] Levantando frontend en http://$FRONTEND_HOST:$FRONTEND_PORT"
-npm run dev -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" &
+npm run dev -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --strictPort &
 FRONTEND_PID=$!
 
 echo "[dev] Backend PID:  $BACKEND_PID"

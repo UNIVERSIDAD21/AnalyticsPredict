@@ -21,6 +21,8 @@ Uso:
 
 from __future__ import annotations
 
+from .dominio_nba import DOMINIO, POLITICA_DATOS, FILTRO_NBA_ENTRENABLE
+
 import json
 import hashlib
 import logging
@@ -253,7 +255,7 @@ class EntrenadorBD:
         Returns:
             Lista de diccionarios con los datos de cada partido
         """
-        query = """
+        query = f"""
             SELECT 
                 p.id,
                 p.fecha_partido,
@@ -268,15 +270,7 @@ class EntrenadorBD:
             FROM partidos_baloncesto p
             JOIN equipos el ON p.equipo_local_id = el.id
             JOIN equipos ev ON p.equipo_visitante_id = ev.id
-            WHERE 
-                p.local_q1 IS NOT NULL 
-                AND p.local_q2 IS NOT NULL 
-                AND p.local_q3 IS NOT NULL 
-                AND p.local_q4 IS NOT NULL
-                AND p.visitante_q1 IS NOT NULL 
-                AND p.visitante_q2 IS NOT NULL 
-                AND p.visitante_q3 IS NOT NULL 
-                AND p.visitante_q4 IS NOT NULL
+            WHERE {FILTRO_NBA_ENTRENABLE}
         """
         
         if not incluir_pretemporada:
@@ -317,35 +311,20 @@ class EntrenadorBD:
             ),
         )
         datos_str = json.dumps(
-            [
-                (
-                    str(p["id"]),
-                    p["fecha_partido"].isoformat() if p.get("fecha_partido") else None,
-                    p["local_q1"],
-                    p["local_q2"],
-                    p["local_q3"],
-                    p["local_q4"],
-                    p["visitante_q1"],
-                    p["visitante_q2"],
-                    p["visitante_q3"],
-                    p["visitante_q4"],
-                )
-                for p in datos_ordenados
-            ],
-            sort_keys=True,
+            {"dominio": DOMINIO, "politica_datos": POLITICA_DATOS, "partidos": datos_ordenados},
+            sort_keys=True, default=str, separators=(",", ":"),
         )
-
-        return hashlib.sha256(datos_str.encode()).hexdigest()[:16]
+        return hashlib.sha256(datos_str.encode()).hexdigest()
 
     def _obtener_temporadas_hasta_cutoff(
         self,
         cutoff_fecha: date,
         incluir_pretemporada: bool,
     ) -> List[str]:
-        query = """
+        query = f"""
             SELECT DISTINCT p.temporada_id
             FROM partidos_baloncesto p
-            WHERE p.fecha_partido < %s
+            WHERE {FILTRO_NBA_ENTRENABLE} AND p.fecha_partido < %s
         """
         parametros: List[object] = [cutoff_fecha]
         if not incluir_pretemporada:
@@ -515,6 +494,8 @@ class EntrenadorBD:
             "alpha": alpha,
         }
         metadata = {
+            "dominio": DOMINIO,
+            "politica_datos": POLITICA_DATOS,
             "cutoff_entrenamiento": cutoff_fecha.isoformat(),
             "fecha_min_entrenamiento": fecha_min.isoformat() if fecha_min else None,
             "fecha_max_entrenamiento": fecha_max.isoformat() if fecha_max else None,
@@ -542,6 +523,8 @@ class EntrenadorBD:
         )
 
         self._metricas = {
+            "dominio": DOMINIO,
+            "politica_datos": POLITICA_DATOS,
             "partidos_entrenamiento": len(partidos),
             "filas_entrenamiento": len(filas_equipo),
             "equipos": len(equipos_ordenados),
@@ -582,17 +565,10 @@ class EntrenadorBD:
     
     def _obtener_conteo_partidos(self) -> int:
         """Obtiene el conteo actual de partidos válidos en la BD."""
-        query = """
-            SELECT COUNT(*) FROM partidos_baloncesto 
-            WHERE local_q1 IS NOT NULL 
-            AND local_q2 IS NOT NULL 
-            AND local_q3 IS NOT NULL 
-            AND local_q4 IS NOT NULL
-            AND visitante_q1 IS NOT NULL 
-            AND visitante_q2 IS NOT NULL 
-            AND visitante_q3 IS NOT NULL 
-            AND visitante_q4 IS NOT NULL
-            AND COALESCE(tipo_partido, 'REG') != 'PRE'
+        query = f"""
+            SELECT COUNT(*) FROM partidos_baloncesto p
+            WHERE {FILTRO_NBA_ENTRENABLE}
+            AND COALESCE(p.tipo_partido, 'REG') != 'PRE'
         """
         
         with self._pool.connection() as conn:
@@ -743,6 +719,9 @@ class EntrenadorBD:
             fecha_max_entrenamiento=fecha_max,
             temporadas_incluidas=temporadas,
             config_entrenamiento={"alpha": alpha},
+            metadata={"dominio": DOMINIO, "politica_datos": POLITICA_DATOS,
+                      "fit_started_at": fit_started_at.isoformat(),
+                      "fit_completed_at": fit_completed_at.isoformat()},
         )
         with self._pool.connection() as conn:
             with conn.cursor() as cursor:
@@ -755,6 +734,10 @@ class EntrenadorBD:
             raise RuntimeError("La versión NBA registrada no puede releerse")
 
         self._metricas = {
+            "dominio": DOMINIO,
+            "politica_datos": POLITICA_DATOS,
+            "fecha_min_entrenamiento": fecha_min.isoformat() if fecha_min else None,
+            "fecha_max_entrenamiento": fecha_max.isoformat() if fecha_max else None,
             "partidos_entrenamiento": len(partidos),
             "filas_entrenamiento": len(filas_equipo),
             "equipos": len(equipos_ordenados),

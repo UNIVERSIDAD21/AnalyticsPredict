@@ -29,6 +29,7 @@ from psycopg.rows import dict_row
 from motor import analizar_partido, resultado_a_dict
 from motor.registro_predicciones import registrar_prediccion
 from motor_autoentrenamiento import EntrenadorBD, ModeloEnMemoria, obtener_modelo  # ← NUEVO
+from motor_autoentrenamiento.dominio_nba import FILTRO_NBA
 from motor.tipos import ConfiguracionSizing, Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
 from db import obtener_pool
@@ -299,7 +300,7 @@ def _buscar_partido_por_equipos_fecha(
         with pool.connection() as conexion:
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
-                    """
+                    f"""
                     SELECT
                         p.id as partido_id,
                         p.temporada_id,
@@ -310,8 +311,8 @@ def _buscar_partido_por_equipos_fecha(
                     FROM partidos_baloncesto p
                     JOIN equipos el ON p.equipo_local_id = el.id
                     JOIN equipos ev ON p.equipo_visitante_id = ev.id
-                    WHERE
-                        LOWER(el.nombre) = LOWER(%s)
+                    WHERE {FILTRO_NBA}
+                        AND LOWER(el.nombre) = LOWER(%s)
                         AND LOWER(ev.nombre) = LOWER(%s)
                         AND p.fecha_partido = %s
                     LIMIT 1
@@ -417,7 +418,7 @@ def _buscar_partido_por_equipos_nba(
         with obtener_pool().connection() as conexion:
             with conexion.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
-                    """
+                    f"""
                     SELECT
                         p.id as partido_id,
                         p.temporada_id,
@@ -428,7 +429,7 @@ def _buscar_partido_por_equipos_nba(
                     FROM partidos_baloncesto p
                     JOIN equipos el ON p.equipo_local_id = el.id
                     JOIN equipos ev ON p.equipo_visitante_id = ev.id
-                    WHERE LOWER(el.nombre) = LOWER(%s)
+                    WHERE {FILTRO_NBA} AND LOWER(el.nombre) = LOWER(%s)
                       AND LOWER(ev.nombre) = LOWER(%s)
                     ORDER BY ABS(EXTRACT(EPOCH FROM (p.fecha_partido - CURRENT_DATE))) ASC
                     LIMIT 1

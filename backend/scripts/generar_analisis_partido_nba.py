@@ -687,6 +687,7 @@ def main() -> int:
     parser.add_argument("--date", required=True, help="Fecha del partido YYYY-MM-DD")
     parser.add_argument("--markets", help="JSON opcional con líneas de mercado")
     parser.add_argument("--recent-form", default=str(RECENT_FORM_PATH), help="JSON de forma reciente")
+    parser.add_argument("--output-dir", type=Path, help="Directorio externo para ambos reportes; útil para pruebas sin tocar históricos")
     args = parser.parse_args()
 
     RECENT_FORM_PATH = Path(args.recent_form)
@@ -696,13 +697,15 @@ def main() -> int:
         raise SystemExit(f"No existe archivo de mercados: {markets_path}")
 
     analysis, file_slug = build_analysis(args.home, args.away, args.date, markets_path)
-    DEFAULT_JSON_DIR.mkdir(parents=True, exist_ok=True)
-    DEFAULT_MD_DIR.mkdir(parents=True, exist_ok=True)
-    json_path = DEFAULT_JSON_DIR / f"{file_slug}.json"
-    md_path = DEFAULT_MD_DIR / f"{file_slug}.md"
+    json_dir = args.output_dir or DEFAULT_JSON_DIR
+    md_dir = args.output_dir or DEFAULT_MD_DIR
+    json_dir.mkdir(parents=True, exist_ok=True)
+    md_dir.mkdir(parents=True, exist_ok=True)
+    json_path = json_dir / f"{file_slug}.json"
+    md_path = md_dir / f"{file_slug}.md"
     json_path.write_text(json.dumps(analysis, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     md_path.write_text(render_markdown(analysis), encoding="utf-8")
-    print(json.dumps({"json": str(json_path.relative_to(ROOT)), "markdown": str(md_path.relative_to(ROOT))}, indent=2, ensure_ascii=False))
+    print(json.dumps({"json": display_path(json_path), "markdown": display_path(md_path)}, indent=2, ensure_ascii=False))
     return 0
 
 

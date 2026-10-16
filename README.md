@@ -34,6 +34,10 @@ Esto levanta:
 
 `dev.sh` usa `127.0.0.1` y no detiene procesos existentes por defecto.
 Requiere `backend/.venv` válido o `BACKEND_PYTHON` con dependencias instaladas; valida el intérprete antes de arrancar. El arranque carga un artefacto NBA versionado fuera del repositorio, sin entrenar ni registrar una nueva versión. Sin artefacto, `/salud` responde en modo degradado y el análisis NBA espera una operación explícita. Otras rutas pueden consultar BD.
+El artefacto de serving exige formato 2 y dominio/política `nba`/`nba_finales_validos_v1`.
+Los artefactos legacy mixtos se rechazan: actualizar datos y entrenar explícitamente
+después de validar el dataset, nunca como efecto de abrir la aplicación. Vite usa
+puerto estricto para no abrir silenciosamente otro checkout en 5174.
 Para liberar puertos existentes de forma explícita:
 
 ```bash
