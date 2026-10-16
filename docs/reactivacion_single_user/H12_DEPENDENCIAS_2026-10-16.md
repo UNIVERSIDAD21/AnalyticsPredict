@@ -47,3 +47,13 @@ pertenece al agente, no es falta de autorización del propietario.
 Evidencia externa `H12_DEPENDENCIAS_DESARROLLO_2026-10-16`: auditorías completas,
 copias package/lock anteriores, CSS antes/después, permisos/vacíos, npmci/tests/
 lint/build, favicon original y HTTP. CI/commit se verifican en acta externa.
+
+## Incidencia de CI y corrección
+
+El primer pushH12(`ba66d51`,run38943279088) pasó ambos jobsbackend pero falló
+instalaciónfrontend/Compose: npm del runner no aplicó como npm11 el override
+condicionado por rango del selector-parser, reclamando6.1.4ausente del lock.
+Se sustituyó por override explícito `postcss-selector-parser:7.1.6`; no se vuelve
+a introducir la versión vulnerable. `npm10.8.2 ci` reproduce instalación limpia
+y27tests/lint/build vuelven a pasar. No se cambian verificaciones ni se omiteCI;
+la recuperación4/4del commitcorrector se comprueba en acta.

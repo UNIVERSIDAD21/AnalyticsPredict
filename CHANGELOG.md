@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-16 — compatibilidad de instalación npm del runner
+
+- Override explícito selector-parser7.1.6 para npm10/11: el primer pushH12 falló instalaciónfrontend/Compose por interpretación del override condicionado. npm10.8.2ci/27tests/lint/build pasan con el mismo lock sin reintroducir parser vulnerable; no se omiten gates.
+
 ## 2026-10-16 — H12 parcial y dependencias de desarrollo
 
 - Vite7.3.7/pluginReact5.2 compatibles y Node mínimo declarado; overrides picomatch2.3.2/selector-parser7.1.6. Auditoríadev10→5altas,prod0, sin suprimir advisories ni forzarTailwind4. Residuo braces<=3.0.3sin parche publicado;H12abierto.
