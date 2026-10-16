@@ -15,6 +15,7 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 5. `docs/borlty-context/` (contexto histórico complementario)
 
 ## Prioridades activas
+- **Avances16/10:** [calibración](reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md) API/UI separa series/muestras/N/D sinTTL; [H12parcial](reactivacion_single_user/H12_DEPENDENCIAS_2026-10-16.md) reduce dev10→5altas/prod0. Ninguno cierra KPIintegral/H12 ni recertificación.
 - **Corte consolidado2026-10-16:** estado/roadmap/deuda distinguen cierres y pendientes sin adendas contradictorias. [Evaluación temporal fútbol](reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md) ejecutada; ninguna familia apta para activar, sin modelos nuevos enNeon. SoportesP&L no existen por confirmación del propietario: exclusión/N/D, no tarea humana. Seguir KPI/caches, GET/observabilidad, H12, visual y fuentes; prospectiva requiere outcomes posteriores.
 - Seguir las instrucciones más recientes del propietario y el roadmap single-user.
 - H7 y la base de reproducibilidad/CI se verificaron con pruebas dirigidas y CI alojada (4/4 jobs, 2026-10-06). La recertificación analítica **no pasó**: ver `docs/reactivacion_single_user/RECERTIFICACION_ANALITICA_2026-10-06.md` antes de citar métricas de rendimiento.

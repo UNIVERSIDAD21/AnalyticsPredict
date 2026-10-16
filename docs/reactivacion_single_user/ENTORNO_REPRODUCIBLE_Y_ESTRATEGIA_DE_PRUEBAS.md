@@ -32,3 +32,12 @@
 ## Estado actual conocido
 
 La CI de la rama `reactivacion/implementacion-single-user` pasó 4/4 jobs en [run 37481234870](https://github.com/UNIVERSIDAD21/AnalyticsPredict/actions/runs/37481234870): unitarias/contratos, frontend, migración PostgreSQL efímera con dos dueños sintéticos y smoke Docker Compose con PostgreSQL desechable. Compose comprobó OpenAPI, frontend, `/salud` y puertos host en `127.0.0.1`; **no** certifica análisis funcional con base vacía. `.dockerignore` impide copiar `.env`, DB locales y caches a imágenes. `scripts/dev.sh` usa loopback por defecto, valida el intérprete y no libera puertos automáticamente. El corte analítico de solo lectura está en `RECERTIFICACION_ANALITICA_2026-10-06.md`.
+
+## Actualización2026-10-16
+
+Frontend requiereNode^20.19.0 o>=22.12.0 (CI20actual cumple), Vite7.3.7 y pluginReact5.2.
+Overrides de picomatch2.3.2 y selector-parser7.1.6; CSS Tailwind idéntico byte a byte
+antes/después. npmci+27tests/lint/build verdes. Auditdev10→5altas porbraces sin
+versión corregida publicada;prod0. No declararH12cerrado ni forzarTailwind4.
+Backend actual usa `.venv` persistentePython3.12 reparada15/10; la descripción de
+venv rota del primer corte es histórica, no estado actual comprobado.

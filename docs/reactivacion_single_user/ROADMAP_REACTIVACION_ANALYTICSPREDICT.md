@@ -25,7 +25,8 @@ el propietario, sin copiar memoria/configuración del agente al producto.
 2. **Observabilidad/GET:** inventario transitivo y pruebas de ausencia de escrituras;
    fallos de datos/entrenamiento/calibrador/cadena sin ceros o éxitos ficticios.
 3. **H12:** resolver auditoría dev, permisos específicos y rot con evidencia,
-   preservando cambios previos; lock/tests/lint/build/CI.
+   preservando cambios previos; lock/tests/lint/build/CI. [Avance16/10](H12_DEPENDENCIAS_2026-10-16.md):
+   dev10→5altas porbraces sin parche,prod0; no cerrarH12.
 4. **Visual:** diagnosticar el rechazo de navegación de la herramienta por vía
    soportada, sin eludir políticas; verificar flujos visibles y registrar evidencia.
 5. **Fuentes:** cobertura1T/2T y equipos de fútbol; proveedor NBA independiente

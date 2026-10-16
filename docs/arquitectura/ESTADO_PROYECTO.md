@@ -27,7 +27,7 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 | Temporalidad histórica NBA | 2.934trazas auditadas:2.136inválidas,476ambiguas,322indeterminadas | 0certificables en ese corte; no convertir histórico en prospectiva |
 | Prospectiva NBA | 12capturas Q1raw PRE congeladas antes de inicio, hashes/horas/políticas verificados;0outcomes al último corte | Partidos16/10 23:00Z–17/10 02:30Z, resolución posterior porUUID y fuente independiente; no repetir capturas |
 | KPI/observabilidad | VistasROIlegacy/Estado read-only; calibración API/UI con serie/n/modelo coherentes, N/D, sinTTL y errores503;794backend/27frontend,4GETreales200 y7huellas intactas | P&L cross-sport/otrosKPI/caches y auditoría GET transitiva aún abiertas; no certificación |
-| Mantenimiento | H6/H7 técnico y reproducibilidad/CI cerrados en sus alcances | H12 dependenciasdev/permisos/rot; H4 cuatroSQLite aún alcanzables en historia, sin purga parcial |
+| Mantenimiento | H6/H7 técnico y reproducibilidad/CI cerrados en sus alcances | H12parcial:10→5altasdev/0prod, residuobraces sin parche;0discrepanciasmodo yfavicon reparado. H4cuatroSQLite aún alcanzables, sin purga parcial |
 
 Las cifras de datos/DB corresponden a cortes identificados en sus informes, no a
 una consulta permanente. La evaluación temporal usa cinco ligas y desde2023-07;

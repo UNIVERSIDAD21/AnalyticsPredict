@@ -9,7 +9,7 @@ Proyecto de análisis deportivo con:
 ## Requisitos
 
 - Python 3.12 (versión de CI; 3.14 verificada en pruebas dirigidas)
-- Node.js 20 (versión de CI)
+- Node.js 20.19+ (CI usa20); también22.12+ o24 según `frontend/package.json`
 - npm y `frontend/package-lock.json`
 - PostgreSQL configurado mediante `backend/.env` con `DATABASE_URL` protegida. No apuntar pruebas de integración a Neon.
 

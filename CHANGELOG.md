@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-16 — H12 parcial y dependencias de desarrollo
+
+- Vite7.3.7/pluginReact5.2 compatibles y Node mínimo declarado; overrides picomatch2.3.2/selector-parser7.1.6. Auditoríadev10→5altas,prod0, sin suprimir advisories ni forzarTailwind4. Residuo braces<=3.0.3sin parche publicado;H12abierto.
+- npmci/27tests/lint/build verdes y CSS Tailwind idéntico byte a byte. Cero discrepancias de modo/sin chmod; favicon vacío sustituido por SVG válido con MIME coherente. Serviciosloopback reanudados sin autoentrenar; visual sigue sin acreditarse por denegación de herramienta, no de propietario.
+
 ## 2026-10-16 — coherencia de KPI de calibración
 
 - Resumen/curva/API/UI con serie raw o calibrada homogénea, n/exclusiones/modelo/periodo coherentes. Default raw, ECE/MCE nullable sin pares, muestra pequeña visible y sin falsa excelencia/drift. Sharpness como varianza y base_rate de la misma cohorte; mejora no atribuida entre muestras distintas.
