@@ -227,10 +227,12 @@ def aplicar_observaciones(conn, observaciones: list[dict]) -> dict:
             cursor = conn.execute('''INSERT INTO observaciones_tiempos_espn_futbol
                 (liga,id_fuente,partido_id,observado_en,sha256_payload,contrato,evidencia)
                 VALUES(%s,%s,%s,%s,%s,%s,%s)
-                ON CONFLICT(liga,id_fuente,sha256_payload,contrato) DO NOTHING''',
+                ON CONFLICT(liga,id_fuente,sha256_payload,contrato) DO NOTHING RETURNING liga''',
                 (obs['liga'], obs['id_fuente'], obs['partido_id'], obs['observado_en'],
                  obs['sha256_payload'], obs['contrato'], Jsonb(obs)))
-            evidencias += cursor.rowcount
+            # fetchone sincroniza también en psycopg pipeline; rowcount puede
+            # seguir en -1 mientras el INSERT está pendiente de respuesta.
+            evidencias += int(cursor.fetchone() is not None)
             if item['cambia']:
                 campos = campos_observacion(obs)
                 # Lista fija interna de columnas, jamás interpolada desde el usuario.

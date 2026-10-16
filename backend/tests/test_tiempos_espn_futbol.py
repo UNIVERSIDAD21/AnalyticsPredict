@@ -83,8 +83,9 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
         try:
             with pool.connection() as c:
                 assert construir_plan(c,[obs])[0]['cambia'] is True
-                assert aplicar_observaciones(c,[obs])['partidos_completados']==1
-                assert aplicar_observaciones(c,[obs])=={'partidos_completados':0,'evidencias_insertadas':0,'eventos_verificados':1}
+                with c.pipeline():
+                    assert aplicar_observaciones(c,[obs])=={'partidos_completados':1,'evidencias_insertadas':1,'eventos_verificados':1}
+                    assert aplicar_observaciones(c,[obs])=={'partidos_completados':0,'evidencias_insertadas':0,'eventos_verificados':1}
                 assert c.execute('SELECT local_corners_total,local_goles_total,local_goles_1t FROM partidos_futbol').fetchone()==(7,2,0)
                 malo=deepcopy(obs);malo['local_goles_1t']=1;malo['local_goles_2t']=1
                 with pytest.raises(ValueError,match='contradictoria'):aplicar_observaciones(c,[malo])

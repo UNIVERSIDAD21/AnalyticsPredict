@@ -124,20 +124,22 @@ def test_estado_operativo_respeta_contrato_sql_y_no_escribe(prospectiva_db):
     c.execute('''CREATE TABLE competiciones_baloncesto(id int,codigo text);
         CREATE TABLE partidos_baloncesto(competicion_id int,fecha_partido date,valido boolean,
             local_total int,visitante_total int,local_q1 int,local_q2 int,local_q3 int,local_q4 int,
-            visitante_q1 int,visitante_q2 int,visitante_q3 int,visitante_q4 int);
+            visitante_q1 int,visitante_q2 int,visitante_q3 int,visitante_q4 int,tipo_partido text);
         CREATE TABLE partidos_futbol(fecha_partido timestamptz,estado text,valido boolean,
             local_goles_total int,visitante_goles_total int);
         CREATE TABLE modelo_versiones_futbol(id int,mercado_principal text,version text,activo boolean,
             fecha_entrenamiento timestamptz,cutoff_entrenamiento timestamptz,partidos_entrenamiento int);
         INSERT INTO competiciones_baloncesto VALUES(1,'nba'),(2,'euroleague');
-        INSERT INTO partidos_baloncesto VALUES(1,'2026-10-10',true,100,100,25,25,25,25,25,25,25,25),
-          (1,'2026-10-11',false,0,0,0,0,0,0,0,0,0,0),
-          (2,'2026-10-14',true,100,100,25,25,25,25,25,25,25,25);''')
+        INSERT INTO partidos_baloncesto VALUES(1,'2026-10-10',true,100,100,25,25,25,25,25,25,25,25,'PRE'),
+          (1,'2026-10-11',false,0,0,0,0,0,0,0,0,0,0,'REG'),
+          (2,'2026-10-14',true,100,100,25,25,25,25,25,25,25,25,'REG');''')
     with c.transaction():
         c.execute('SET TRANSACTION READ ONLY')
         estado = leer_estado(c)
         assert estado['nba']['n'] == 2
         assert estado['nba']['ultimo_final'].isoformat() == '2026-10-10'
+        assert [(r['fase'], r['n'], r['finales_validos']) for r in estado['nba']['por_fase']] == [('PRE', 1, 1), ('REG', 1, 0)]
         assert estado['capturas_futbol']['lotes'] is None
         assert estado['prospectiva']['congeladas'] == 0
+        assert estado['prospectiva']['por_fase'] == []
         assert estado['predictor_ml_futbol']['estado'] == 'SIN_VERSION_ACTIVA'

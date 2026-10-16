@@ -116,9 +116,9 @@ def aplicar_plan(conn, plan):
             if not existe:
                 c.execute('INSERT INTO equipos_futbol(id,nombre,nombre_corto,pais_id,competicion_principal_id,activo) VALUES(%s,%s,%s,%s,%s,true)',
                           (e['equipo_id'],e['nombre_canonico'],e['nombre_espn'],comp['pais_id'],comp['id']))
-            else:
-                c.execute('UPDATE equipos_futbol SET competicion_principal_id=%s WHERE id=%s AND competicion_principal_id IS DISTINCT FROM %s',
-                          (comp['id'],e['equipo_id'],comp['id']))
+            # Un partido histórico acredita su competición, no la afiliación
+            # ACTUAL del club. Ascensos/descensos se gestionan por separado.
+            # Conservar incluso NULL: un vínculo ESPN no autoriza completar catálogo.
             previo=c.execute('SELECT equipo_id FROM equipos_fuente_espn_futbol WHERE id_fuente=%s',(e['id_fuente'],)).fetchone()
             if previo and str(previo['equipo_id'])!=e['equipo_id']:
                 raise ValueError('Cambio de identidad de club')

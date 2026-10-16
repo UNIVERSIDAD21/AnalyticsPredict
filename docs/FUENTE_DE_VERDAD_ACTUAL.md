@@ -15,6 +15,7 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 5. `docs/borlty-context/` (contexto histórico complementario)
 
 ## Prioridades activas
+- **Paquete integral estacional16/10:** [V2 de laboratorio y fases NBA](reactivacion_single_user/VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md). Candidatos futuros separados de V1, abstenciones/mínimos y evidencia temporal; PRE conservada y visible. Recuperación histórica solo con respaldo/ensayo, colisiones retenidas. Visual/H12/Git y certificación no se cierran por preparación técnica.
 - **Siete frentes ejecutados16/10:** [resultados y dependencias](reactivacion_single_user/SIETE_FRENTES_2026-10-16.md). Complementados200finales con goles/córners1T/2T acreditados y postflight;618EVAL por familia, ninguna apta. M12 descriptivo ejecutado, no certificación. H4ensayo integral hecho, no purga remota; visual/H12 y outcomes conservan bloqueos explícitos.
 - **Cierre técnico M04/M05,16/10:** [KPI/P&L y GET](reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md): política monetaria común sin soportes/N/D, cohortes/grano, guardas GET/HEAD y fallos sanitizados; auditoría78GET. No certifica eficacia ni cierra M12, visual, fuentes, H4/H12 o prospectiva.
 - **Avances16/10:** [calibración](reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md) API/UI separa series/muestras/N/D sinTTL; [H12parcial](reactivacion_single_user/H12_DEPENDENCIAS_2026-10-16.md) reduce dev10→5altas/prod0. Ninguno cierra KPIintegral/H12 ni recertificación.

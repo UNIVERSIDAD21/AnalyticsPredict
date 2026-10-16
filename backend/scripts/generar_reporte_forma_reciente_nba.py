@@ -8,6 +8,7 @@ import json
 import math
 import os
 import statistics as stats
+import sys
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
@@ -16,6 +17,7 @@ from typing import Any
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'backend'))
 load_dotenv(ROOT / "backend" / ".env")
 
 
@@ -55,11 +57,24 @@ def split_summary(rows: list[dict[str, Any]], n: int) -> dict[str, Any]:
     }
 
 
-def build_reports(output_md: Path, output_json: Path) -> dict[str, Any]:
+def resumen_fases(rows):
+    grupos = defaultdict(list)
+    for row in rows:
+        grupos[row['tipo_partido'] or 'SIN_CLASIFICAR'].append(row)
+    return {tipo: {'n': len(filas), 'general': {str(n): split_summary(filas, n)
+            for n in (5, 10, 20, 30)}} for tipo, filas in sorted(grupos.items())}
+
+
+def build_reports(output_md: Path, output_json: Path, fase: str | None = None) -> dict[str, Any]:
     import psycopg
     from psycopg.rows import dict_row
+    from motor_autoentrenamiento.dominio_nba import FILTRO_NBA_ENTRENABLE
+
+    if fase not in {None, 'PRE', 'REG', 'POST'}:
+        raise ValueError('Fase NBA no soportada')
 
     with psycopg.connect(db_url(), row_factory=dict_row) as conn:
+        conn.execute('SET TRANSACTION READ ONLY')
         with conn.cursor() as cur:
             cur.execute("select id,nombre,codigo from competiciones_baloncesto where lower(codigo)='nba' limit 1")
             comp = cur.fetchone()
@@ -109,25 +124,25 @@ def build_reports(output_md: Path, output_json: Path) -> dict[str, Any]:
             duplicados = cur.fetchall()
 
             cur.execute(
-                """
+                f"""
                 WITH apariciones AS (
                   SELECT e.id equipo_id,e.abreviatura,e.nombre equipo,p.id partido_id,p.fecha_partido,'local' localia,p.tipo_partido,
                          p.local_q1 puntos_q1,p.local_q2 puntos_q2,p.local_q3 puntos_q3,p.local_q4 puntos_q4,p.local_total puntos_total,
                          p.visitante_q1 recibidos_q1,p.visitante_q2 recibidos_q2,p.visitante_q3 recibidos_q3,p.visitante_q4 recibidos_q4,p.visitante_total recibidos_total,
                          p.hubo_overtime,p.source,p.source_game_id
-                  FROM partidos_baloncesto p JOIN equipos e ON e.id=p.equipo_local_id WHERE p.competicion_id=%s
+                  FROM partidos_baloncesto p JOIN equipos e ON e.id=p.equipo_local_id WHERE p.competicion_id=%s AND {FILTRO_NBA_ENTRENABLE}
                   UNION ALL
                   SELECT e.id,e.abreviatura,e.nombre,p.id,p.fecha_partido,'visitante',p.tipo_partido,
                          p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_total,
                          p.local_q1,p.local_q2,p.local_q3,p.local_q4,p.local_total,
                          p.hubo_overtime,p.source,p.source_game_id
-                  FROM partidos_baloncesto p JOIN equipos e ON e.id=p.equipo_visitante_id WHERE p.competicion_id=%s
+                  FROM partidos_baloncesto p JOIN equipos e ON e.id=p.equipo_visitante_id WHERE p.competicion_id=%s AND {FILTRO_NBA_ENTRENABLE}
                 )
                 SELECT * FROM apariciones ORDER BY equipo, fecha_partido DESC, partido_id DESC
                 """,
                 (comp_id, comp_id),
             )
-            rows = cur.fetchall()
+            rows = [r for r in cur.fetchall() if fase is None or r['tipo_partido'] == fase]
 
     by_team: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
@@ -150,6 +165,8 @@ def build_reports(output_md: Path, output_json: Path) -> dict[str, Any]:
             warnings.append(f"{abbr} {name}: " + "; ".join(warn))
         team_json[abbr] = {
             "equipo": name,
+            "fase_solicitada": fase or 'TODAS_DESCRIPTIVO',
+            "por_fase": resumen_fases(team_rows),
             "conteos": {"general": len(team_rows), "local": len(local), "visitante": len(away)},
             "fecha_mas_reciente": str(team_rows[0]["fecha_partido"]) if team_rows else None,
             "advertencias": warn,
@@ -172,6 +189,7 @@ def build_reports(output_md: Path, output_json: Path) -> dict[str, Any]:
         "# Reporte de calidad de datos NBA",
         "",
         f"Generado: {datetime.now().isoformat(timespec='seconds')}",
+        f"Fase: {fase or 'TODAS (descriptivo; desgloses por fase en JSON)'}; solo finales NBA válidos en las series por equipo.",
         "",
         "## Estado general",
         f"- Total partidos NBA: {calidad['total']}",
@@ -205,8 +223,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--output-md", default="reports/data_quality/nba_data_quality.md")
     parser.add_argument("--output-json", default="reports/team_recent_form/nba_team_recent_form.json")
+    parser.add_argument('--fase', choices=['PRE', 'REG', 'POST'], help='Separar muestras; omitir solo para inventario descriptivo')
     args = parser.parse_args()
-    result = build_reports(Path(args.output_md), Path(args.output_json))
+    result = build_reports(Path(args.output_md), Path(args.output_json), args.fase)
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 

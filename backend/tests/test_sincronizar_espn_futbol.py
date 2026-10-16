@@ -90,6 +90,19 @@ def test_ingesta_identidad_idempotencia_y_revision_conserva_nulos(futbol_db):
 
 
 @pytest.mark.integracion
+def test_ingesta_historica_no_cambia_afiliacion_actual_del_club(futbol_db):
+    otra_competicion = uuid4()
+    with psycopg.connect(futbol_db) as c:
+        c.execute('UPDATE equipos_futbol SET competicion_principal_id=%s WHERE id=%s',
+                  (otra_competicion, CLUB_A))
+        aplicar_plan(c, planificar(c, manifiesto(), [lote()]))
+        assert c.execute('SELECT competicion_principal_id FROM equipos_futbol WHERE id=%s',
+                         (CLUB_A,)).fetchone()[0] == otra_competicion
+        assert c.execute('SELECT competicion_principal_id FROM equipos_futbol WHERE id=%s',
+                         (CLUB_B,)).fetchone()[0] is None
+
+
+@pytest.mark.integracion
 def test_no_enlaza_por_nombre_parecido_y_revierte_ante_duplicado(futbol_db):
     with psycopg.connect(futbol_db,autocommit=True) as c:
         mal=lote();mal['eventos'][0]['local_nombre']='Club A parecido'

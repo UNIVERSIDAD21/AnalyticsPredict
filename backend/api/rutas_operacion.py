@@ -19,6 +19,11 @@ def leer_estado(conn):
             max(p.fecha_partido) FILTER(WHERE {FILTRO_NBA_ENTRENABLE}) ultimo_final,
             count(*) FILTER(WHERE p.valido IS FALSE) invalidados
             FROM partidos_baloncesto p JOIN competiciones_baloncesto cb ON cb.id=p.competicion_id WHERE cb.codigo='nba' ''').fetchone()
+        nba['por_fase'] = c.execute(f'''SELECT COALESCE(p.tipo_partido,'SIN_CLASIFICAR') fase,
+            count(*) n, count(*) FILTER(WHERE {FILTRO_NBA_ENTRENABLE}) finales_validos,
+            max(p.fecha_partido) FILTER(WHERE {FILTRO_NBA_ENTRENABLE}) ultimo_final
+            FROM partidos_baloncesto p JOIN competiciones_baloncesto cb ON cb.id=p.competicion_id
+            WHERE cb.codigo='nba' GROUP BY 1 ORDER BY 1''').fetchall()
         futbol=c.execute('''SELECT count(*) n,max(fecha_partido) ultima_fecha,
             max(fecha_partido) FILTER(WHERE estado='FINALIZADO' AND valido AND local_goles_total IS NOT NULL AND visitante_goles_total IS NOT NULL) ultimo_final,
             count(*) FILTER(WHERE estado='FINALIZADO' AND valido AND local_goles_total IS NOT NULL AND visitante_goles_total IS NOT NULL) finales_evaluables
@@ -37,6 +42,12 @@ def leer_estado(conn):
             prospectiva['congeladas']=c.execute('SELECT count(*) n FROM predicciones_prospectivas').fetchone()['n']
             prospectiva['resueltas']=c.execute('SELECT count(*) n FROM outcomes_prospectivos').fetchone()['n']
             prospectiva['estado']='ESPERANDO_OUTCOMES' if prospectiva['congeladas']>prospectiva['resueltas'] else 'SIN_CAPTURAS' if not prospectiva['congeladas'] else 'EVALUACION_PENDIENTE'
+            prospectiva['por_fase'] = c.execute('''SELECT CASE s.snapshot->'evento'->'season'->>'type'
+                WHEN '1' THEN 'PRE' WHEN '2' THEN 'REG' WHEN '3' THEN 'POST' ELSE 'SIN_CLASIFICAR' END fase,
+                count(*) congeladas, count(DISTINCT s.snapshot->>'event_id') eventos,
+                count(o.prediccion_id) resueltas
+                FROM predicciones_prospectivas s LEFT JOIN outcomes_prospectivos o ON o.prediccion_id=s.id
+                GROUP BY 1 ORDER BY 1''').fetchall()
         modelos_futbol=[]
         if c.execute("SELECT to_regclass('public.modelo_versiones_futbol') AS tabla").fetchone()['tabla']:
             modelos_futbol=c.execute('SELECT * FROM modelo_versiones_futbol WHERE activo=true ORDER BY id DESC').fetchall()

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-16 — Preparación estacional fútbol y conservación de fases NBA
+
+- Añadir preparación y evaluación posterior de candidatos Ridge aislados: política futura, CAL por partidos previos, mínimos conservados, abstenciones, integridad y salidas externas no sobrescribibles. No activar modelos ni fabricar probabilidades/calibradores.
+- Mostrar datos y seguimiento NBA por PRE/REG/POST; reporte de forma reciente con selector NBA válido y filtro por fase. Conservar pretemporada sin mezclar su eficacia con regular.
+- Preservar afiliación actual de clubes al ingerir histórico y contar evidencia correctamente bajo psycopg pipeline, con regresiones PostgreSQL.
+- Documentar 464 finales revisados, 38 colisiones retenidas y candidatura de 426 a aplicación controlada. Migración H12 preparada externamente sin publicar mientras falte visual; expediente Git sin contacto remoto. Ver el documento del bloque para límites y cierre efectivo.
+
 ## 2026-10-16 — Ejecución de los siete frentes y límites medidos
 
 - Completar200finales con goles/córners por mitades, evidencia separada, rollback e idempotencia. Postflight detectó el flag derivado del trigger: reconciliado con backup/huellas sin DML adicional y prueba SQL incorporada; guardia de prórroga protege FT.
