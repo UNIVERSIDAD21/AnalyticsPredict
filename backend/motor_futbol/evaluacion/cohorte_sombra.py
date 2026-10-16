@@ -51,6 +51,9 @@ def evaluar_cohorte(cohorte, partidos, observado_en):
         if cobertura is None or cobertura < politica['cobertura_minima']: motivos.append('COBERTURA_INSUFICIENTE')
         if m['ic95_delta_mae'] is None or m['ic95_delta_mae'][1] >= 0: motivos.append('MEJORA_NO_ACREDITADA')
         if any(v['mae'] > v['mae_baseline'] for v in m['por_target'].values()): motivos.append('TARGET_PEOR_QUE_BASELINE')
+        ultimo = max((exigir_utc(datetime.fromisoformat(p['fecha'])) for p in pares), default=None)
+        if ultimo is None or (observado-ultimo).total_seconds() > politica['max_antiguedad_target_dias']*86400:
+            motivos.append('TARGET_SIN_FRESCURA')
         if pendientes: motivos.append('OUTCOMES_PENDIENTES')
         if observado < exigir_utc(datetime.fromisoformat(cohorte['declaracion']['fin_eval'])):
             motivos.append('PERIODO_NO_CERRADO')

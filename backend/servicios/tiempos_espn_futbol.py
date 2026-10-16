@@ -215,8 +215,9 @@ def construir_plan(conn, observaciones: list[dict], *, bloquear=False) -> list[d
 def aplicar_observaciones(conn, observaciones: list[dict]) -> dict:
     """Transacción atómica/idempotente. La tabla de evidencia debe estar instalada.
 
-    No cambia FT, tiros, equipos, datos_completos ni las capturas previas.
-    El trigger canónico deriva datos_corners_completos de las cuatro mitades.
+    No escribe FT, tiros, equipos, flags ni las capturas previas directamente.
+    El trigger canónico deriva datos_completos de golesFT y la completitud de
+    córners de sus cuatro mitades; el flag genérico no acredita todos los targets.
     La evidencia original del vínculo y su hash permanecen íntegros.
     """
     cambios = evidencias = 0

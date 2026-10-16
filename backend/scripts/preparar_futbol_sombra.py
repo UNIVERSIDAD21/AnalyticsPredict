@@ -39,12 +39,15 @@ def main(argv=None):
     parser.add_argument('--inicio', type=datetime.fromisoformat)
     parser.add_argument('--fin', type=datetime.fromisoformat)
     parser.add_argument('--declarar', action='store_true')
+    parser.add_argument('--objetivo-cal', type=int, choices=[100, 200], default=200,
+                        help='Reserva predeclarada; CAL mínimo100 no cambia. Cada reserva requiere nueva declaración/cohorte.')
     parser.add_argument('--snapshot', type=Path)
     parser.add_argument('--fixtures', type=Path)
     parser.add_argument('--salida', type=Path)
     args = parser.parse_args(argv)
     ahora = datetime.now(timezone.utc)
-    politica = PoliticaEstacional()
+    politica = PoliticaEstacional(objetivo_cal=args.objetivo_cal,
+        version='estacional_sombra_v3_cal100' if args.objetivo_cal == 100 else 'estacional_sombra_v2')
     politica.validar()
     if args.declarar:
         if not args.inicio or not args.fin or not ahora < exigir_utc(args.inicio) < exigir_utc(args.fin):

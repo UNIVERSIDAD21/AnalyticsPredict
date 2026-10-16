@@ -59,3 +59,24 @@ historia ni cambios globales. El bloque D de evolución avanzada sigue fuera de 
 - 2026-10-15: CI337288d 4/4; detectado contrato hashvarchar32 al entrenar, corregido en852f4ba con CI38837332780 4/4, sin repetir73 filas deportivas ni publicar artefacto fallido. Modelo2123 ya activo,30 equipos. Datos ajenos/apuestas/predicciones intactos. Browser visual bloqueado por política de navegación local; HTTP comprobado, sin sortear la política.
 - 2026-10-15: fútbol2378058 CI38837743890 4/4 y aplicación verificada. Primer intento revirtió por lock sin residuos; segundo completo. Operación/prospectiva:751 backend,0fallos/omitidas,21frontend/lint/build. Captura real y CI de este último lote aún pendientes al registrar esta entrada.
 - 2026-10-15, posterior:2b142e0 CI38838845268 4/4; cadena instalada y12capturas reales prospectivas en Neon, sin afectar nueve huellas históricas. APIEstado200 y12/0. La entrada previa de pendientes es histórica; siguen abiertos outcomes futuros, independencia, KPI residual, ML fútbol, visual y procedencia P&L.
+
+
+## Pasada integral posterior16oct — prevalece sobre conteos anteriores
+
+- [x] Recuperar426finales adicionales con evidencia de goles1T/2T yFT/tiros; backup,
+  rollback/idempotencia/postflight,38colisiones retenidas sin duplicar. No incorporar
+  nuevos córners por mitades de cronología no conciliable.
+- [x] Incorporar163programados noviembre conNULL y controles; total24.845fútbol.
+- [x] V2estacional + CLI preparación/evaluación y pruebas;199fixturesfuturos,
+  163predicciones/36abstenciones por familia. Techo81,91%<90%, no activable.
+- [x] DiagnosticarV3reserva100 antes de outcomes sin bajar mínimos:CAL88/78<100,
+  sin candidato. Conservar versiones y fallos, no elegir por futuro observado.
+- [x] Añadir2finalesNBA PRE y capturar3REG20oct con ensayo/backup/huellas;
+  12PREoriginales intactos,15hashes/horas verificados,0outcomes.
+- [x] H12migración aislada completa:0alertas/npm10ci/29tests/lint/build, sin publicar.
+- [x] Preparar solicitudGitHub y propuesta mínima de navegación global, sin aplicar
+  políticas ni enviar a terceros. Decisiones del propietario solo al cierre.
+- [ ] ActivarMLfútbol/certificar eficacia: sigue sin aptitud/muestra elegible.
+- [ ] Visual/publicarH12/purgaGitintegral: dependencias de alcance/proveedor.
+
+Detalle: [validación estacional y fases NBA](VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md).

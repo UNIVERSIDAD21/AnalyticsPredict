@@ -27,3 +27,15 @@ Análisis NBA interno: no picks, stakes ni recomendaciones de apuestas.
 [Deuda previa íntegra](../archive/DEUDA_ANTES_CONSOLIDACION_2026-10-16.md), con sus
 cortes y adendas, se preserva para trazabilidad; sus cifras antiguas no son nuevas
 mediciones ni órdenes de pedir comprobantes, logins, pagos o dominios.
+
+
+## Actualización posterior — pasada integral16oct
+
+Ver [detalle vigente](VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md).
+426finales/163programados incorporados; quedan38colisiones a reconciliar con
+identidad/horario, no por fuzzy matching. El cuello de botella actual incluye
+histórico suficiente de clubes enTRAIN yCAL efectivo, no simplemente FTfaltantes.
+V2sombra163/199porfamilia;V3reserva100sin muestra mínima; no activar familias.
+NBA50PRE/15snapshots(12PRE+3REG)/0outcomes. H12laboratorio0alertaspero producto5dev,
+visualbloqueado. H4solicitud lista sinenvío. No repetir ingestas/congelamientos ni
+convertir esperas/proveedor/políticas en tareas manuales genéricas del propietario.

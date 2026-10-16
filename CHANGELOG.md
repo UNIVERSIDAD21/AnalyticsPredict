@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-10-16 — Pasada integral: datos verificados y cohortes futuras separadas
+
+- Aplicar426finales adicionales con goles por mitades/FT/tiros y163programados de noviembre sin marcadores; backup privado, rollback, idempotencia y postflight.38colisiones retenidas y358rechazos de córners por periodo, sin forzar datos.
+- Reconciliar el postflight genérico de completitud con triggerFT idéntico al previo; conservar incidencia y regresión, sin DML correctivo. V1reevaluada con política original, ninguna familia apta.
+- CongelarV2 de laboratorio para199futuros:163predicciones/36abstenciones porfamilia, techo81,91%<90%. VarianteV3declarada antes de outcomes conserva mínimos y falla CALefectivo88/78; no activar ni ocultar versiones.
+- Incorporar2finalesPRE NBA sin actualizar histórico y congelar3REG20oct;12PRE originales intactos,15hashes/relojes verificados,0outcomes, modelo2123 sin reentrenar.
+- Completar migraciónH12 aislada (audit0/npm10ci/tests/lint/build), no publicada por bloqueo visual. Preparar solicitudGitHub y propuesta de allowlistlocal sin contacto ni cambios globales.848backend/29frontend; eficacia NO CERTIFICADA.
+
 ## 2026-10-16 — Preparación estacional fútbol y conservación de fases NBA
 
 - Añadir preparación y evaluación posterior de candidatos Ridge aislados: política futura, CAL por partidos previos, mínimos conservados, abstenciones, integridad y salidas externas no sobrescribibles. No activar modelos ni fabricar probabilidades/calibradores.

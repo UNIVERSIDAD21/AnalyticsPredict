@@ -67,9 +67,10 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
                 local_goles_2t int,visitante_goles_1t int,visitante_goles_2t int,local_corners_total int,actualizado_en timestamptz);
                 CREATE TABLE partidos_fuente_espn_futbol(liga text,id_fuente text,partido_id uuid UNIQUE,evidencia jsonb,PRIMARY KEY(liga,id_fuente))''')
             c.execute('ALTER TABLE partidos_futbol ADD COLUMN local_corners_1t int, ADD COLUMN local_corners_2t int, ADD COLUMN visitante_corners_1t int, ADD COLUMN visitante_corners_2t int, ADD COLUMN visitante_corners_total int DEFAULT 1')
-            c.execute("""ALTER TABLE partidos_futbol ADD COLUMN datos_corners_completos boolean DEFAULT false, ADD COLUMN local_goles_et int DEFAULT 0;
+            c.execute("""ALTER TABLE partidos_futbol ADD COLUMN datos_corners_completos boolean DEFAULT false, ADD COLUMN datos_completos boolean DEFAULT false, ADD COLUMN local_goles_et int DEFAULT 0;
                 CREATE FUNCTION derivar_completitud() RETURNS trigger LANGUAGE plpgsql AS $$
-                BEGIN NEW.datos_corners_completos = NEW.local_corners_1t IS NOT NULL AND
+                BEGIN NEW.datos_completos = NEW.local_goles_total IS NOT NULL AND NEW.visitante_goles_total IS NOT NULL;
+                  NEW.datos_corners_completos = NEW.local_corners_1t IS NOT NULL AND
                   NEW.local_corners_2t IS NOT NULL AND NEW.visitante_corners_1t IS NOT NULL AND
                   NEW.visitante_corners_2t IS NOT NULL; RETURN NEW; END; $$;
                 CREATE TRIGGER calcular_totales BEFORE UPDATE ON partidos_futbol
@@ -87,6 +88,8 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
                     assert aplicar_observaciones(c,[obs])=={'partidos_completados':1,'evidencias_insertadas':1,'eventos_verificados':1}
                     assert aplicar_observaciones(c,[obs])=={'partidos_completados':0,'evidencias_insertadas':0,'eventos_verificados':1}
                 assert c.execute('SELECT local_corners_total,local_goles_total,local_goles_1t FROM partidos_futbol').fetchone()==(7,2,0)
+                # Completo genérico solo acredita golesFT; NO mitades de córners.
+                assert c.execute('SELECT datos_completos,datos_corners_completos,local_corners_1t FROM partidos_futbol').fetchone()==(True,False,None)
                 malo=deepcopy(obs);malo['local_goles_1t']=1;malo['local_goles_2t']=1
                 with pytest.raises(ValueError,match='contradictoria'):aplicar_observaciones(c,[malo])
                 assert c.execute('SELECT count(*) FROM observaciones_tiempos_espn_futbol').fetchone()[0]==1

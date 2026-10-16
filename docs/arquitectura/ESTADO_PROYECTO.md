@@ -15,6 +15,24 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 - [KPI de calibración](../reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md).
 - [Evaluación temporal fútbol](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
 
+## Última pasada integral — 2026-10-16
+
+[Detalle y límites](../reactivacion_single_user/VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md):
+426finales recuperados con goles por mitades/FT/tiros,38colisiones retenidas,
+163programados de noviembre sin marcadores, total24.845fútbol. No se incorporan
+nuevos córners por mitades;358rechazos de conciliación conservados. Postflight
+reconciliado con trigger genéricoFT sin corregir datos. V1sigue no apta.
+V2futura199partidos:163predicciones/36abstenciones por familia, techo81,91%;
+V3CAL100:88/78efectivos<100, sin candidato. Ninguna activaciónMLfútbol.
+NBA+2PRE(50),15snapshots(12PRE intactos+3REG20oct)/0outcomes,2123 sin reentrenar;
+fases visibles API/UI/reportes. H12laboratorio0alertas/npm10ci/29tests/lint/build,
+no publicado por visual bloqueado; producto conserva5altasdev/0prod. SolicitudH4
+preparada, no enviada. Propuestas concretas de alcance al cierre, no tareas
+manuales de programación ni soportes inexistentes para el propietario.
+
+La tabla siguiente conserva los alcances y cortes anteriores; esta sección y
+el documento enlazado prevalecen para los conteos actualizados del paquete.
+
 ## Hechos comprobados y límites
 
 | Frente | Cierre acreditado | Pendiente real |

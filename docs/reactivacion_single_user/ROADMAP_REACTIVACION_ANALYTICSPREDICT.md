@@ -18,6 +18,18 @@ el propietario, sin copiar memoria/configuración del agente al producto.
 | KPI/P&L y GET técnicos | [Cierre16/10](KPI_PNL_Y_GET_2026-10-16.md): política monetaria cross-sport/N/D, cohortes/grano, sinTTL,78GET y protección read-only/observabilidad |
 | Prospectiva técnica NBA | 12snapshotsPRE inmutables anteriores al inicio; no equivalen a12outcomes ni a certificación |
 
+## Pasada integral posterior del16oct
+
+[Estado de ejecución y continuidad](VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md).
+Recuperación426finales y calendario163programados aplicados con controles;38casos
+retenidos por identidad/horario, no duplicados ni corrección automática. V1noapta;
+V2futura163/199porfamilia y36abstenciones, techo81,91%;V3CAL100noalcanza100efectivos.
+No tratar el nuevo protocolo ni sus candidatos como permiso de activación.
+NBA2finalesPRE añadidos y3congelamientosREG reales, preservando12PRE;0outcomes.
+Visual y H4 requieren decisiones de alcance concretas al cierre. H12migración
+completa preparada externamente/audit0, pero sigue sin publicar y sin cierrevisual.
+No hay acciones futuras programadas ni nuevos bloques de evolución avanzada.
+
 ## Pendientes ejecutables del agente
 
 1. **Validación analítica M12:** evaluación descriptiva ejecutada por1.303cohortesraw de2–4pares; cero elegibilidad temporal histórica/calibradasID. Certificación y calibración requieren nuevas cadenas/muestra válidas, no agrupar versiones ni fabricar calibrador.

@@ -49,6 +49,21 @@ def test_receso_no_relaja_muestra_y_equipos_nuevos_se_reportan():
     assert viejo['estado'] == 'SIN_CANDIDATO' and 'MUESTRA_CAL_INSUFICIENTE' in viejo['motivos']
 
 
+def test_reserva_100_se_declara_aparte_y_no_relaja_minimo_de_equipo():
+    filas = datos()
+    for p in filas[540:]: p['equipo_local'] = 'Nuevo'
+    corte = max(p['fecha_partido'] for p in filas)+timedelta(days=1)
+    anterior = preparar_candidato(filas, 'goles', corte)
+    politica = PoliticaEstacional(objetivo_cal=100, version='estacional_sombra_v3_cal100')
+    nuevo = preparar_candidato(filas, 'goles', corte, politica)
+    assert anterior['estado'] == 'SIN_CANDIDATO'  # No maquillar la reserva200 previa.
+    assert nuevo['estado'] == 'CANDIDATO_SOMBRA' and 'nuevo' in nuevo['entidades']
+    assert nuevo['cal']['n_partidos'] >= 100
+    assert nuevo['politica']['min_partidos_equipo'] == anterior['politica']['min_partidos_equipo'] == 5
+    assert nuevo['politica_sha256'] != anterior['politica_sha256']
+    assert not nuevo['activable']
+
+
 def test_sombra_es_futura_no_lee_outcomes_y_cuenta_abstenciones():
     filas = datos(); corte = max(p['fecha_partido'] for p in filas)+timedelta(days=1)
     a = preparar_candidato(filas, 'goles', corte)
@@ -94,6 +109,7 @@ def test_evaluacion_posterior_no_promueve_ni_borra_abstenciones():
     outcome = {**fixture, 'estado': 'FINALIZADO'}
     posterior = evaluar_cohorte(cohorte, [outcome], fin+timedelta(days=1))['familias']['goles']
     assert posterior['cobertura_resuelta_total'] == .5 and not posterior['activable']
+    assert 'TARGET_SIN_FRESCURA' in evaluar_cohorte(cohorte, [outcome], fin+timedelta(days=100))['familias']['goles']['motivos']
     cambio = {**outcome, 'fecha_partido': inicio+timedelta(hours=1)}
     assert evaluar_cohorte(cohorte, [cambio], fin+timedelta(days=1))['familias']['goles']['exclusiones'] == {'IDENTIDAD_O_INICIO_CAMBIADO': 1}
     corrupta = deepcopy(cohorte); corrupta['familias']['goles']['cohorte']['predicciones'][0]['p_raw'] = .99
