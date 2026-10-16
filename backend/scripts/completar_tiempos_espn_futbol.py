@@ -12,7 +12,8 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from db import obtener_pool, cerrar_pool
-from servicios.tiempos_espn_futbol import interpretar_tiempos, construir_plan, aplicar_observaciones
+from servicios.tiempos_espn_futbol import (interpretar_tiempos, interpretar_tiempos_completos,
+    CONTRATO_COMPLETO, construir_plan, aplicar_observaciones)
 
 
 def cargar_evidencia(conn, archivo, directorio):
@@ -26,7 +27,8 @@ def cargar_evidencia(conn, archivo, directorio):
                           (obs['liga'], obs['id_fuente'])).fetchone()
         if ev is None:
             raise ValueError('Evento no vinculado')
-        interpretada = interpretar_tiempos(json.loads(ruta.read_text()), ev[0])
+        interpretar = interpretar_tiempos_completos if obs['contrato'] == CONTRATO_COMPLETO else interpretar_tiempos
+        interpretada = interpretar(json.loads(ruta.read_text()), ev[0])
         if any(interpretada[k] != obs.get(k) for k in interpretada):
             raise ValueError('La evidencia cruda no acredita los valores del lote')
         observaciones.append(obs)

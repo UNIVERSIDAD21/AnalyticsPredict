@@ -66,7 +66,8 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
                 fecha_partido timestamptz,local_goles_total int,visitante_goles_total int,local_goles_1t int,
                 local_goles_2t int,visitante_goles_1t int,visitante_goles_2t int,local_corners_total int,actualizado_en timestamptz);
                 CREATE TABLE partidos_fuente_espn_futbol(liga text,id_fuente text,partido_id uuid UNIQUE,evidencia jsonb,PRIMARY KEY(liga,id_fuente))''')
-            c.execute("INSERT INTO partidos_futbol VALUES(%s,'ESPN_SOCCER','FINALIZADO',true,%s,2,1,NULL,NULL,NULL,NULL,7,NULL)",[pid,ev['inicio_utc']])
+            c.execute('ALTER TABLE partidos_futbol ADD COLUMN local_corners_1t int, ADD COLUMN local_corners_2t int, ADD COLUMN visitante_corners_1t int, ADD COLUMN visitante_corners_2t int, ADD COLUMN visitante_corners_total int DEFAULT 1')
+            c.execute("INSERT INTO partidos_futbol(id,fuente_datos,estado,valido,fecha_partido,local_goles_total,visitante_goles_total,local_goles_1t,local_goles_2t,visitante_goles_1t,visitante_goles_2t,local_corners_total,actualizado_en) VALUES(%s,'ESPN_SOCCER','FINALIZADO',true,%s,2,1,NULL,NULL,NULL,NULL,7,NULL)",[pid,ev['inicio_utc']])
             from psycopg.types.json import Jsonb
             c.execute("INSERT INTO partidos_fuente_espn_futbol VALUES('eng.1','123',%s,%s)",[pid,Jsonb(ev)])
             ddl=(Path(__file__).parents[1]/'migrations/2026-10-16_tiempos_goles_espn.sql').read_text()
@@ -81,7 +82,63 @@ def test_sql_aplica_una_vez_rechaza_conflicto_y_preserva_otras_columnas():
                 malo=deepcopy(obs);malo['local_goles_1t']=1;malo['local_goles_2t']=1
                 with pytest.raises(ValueError,match='contradictoria'):aplicar_observaciones(c,[malo])
                 assert c.execute('SELECT count(*) FROM observaciones_tiempos_espn_futbol').fetchone()[0]==1
+                from servicios.tiempos_espn_futbol import CONTRATO_COMPLETO
+                completa={**obs,'contrato':CONTRATO_COMPLETO,'local_corners_total':7,'visitante_corners_total':1,
+                    'local_corners_1t':3,'local_corners_2t':4,'visitante_corners_1t':0,'visitante_corners_2t':1}
+                assert aplicar_observaciones(c,[completa])['partidos_completados']==1
+                assert aplicar_observaciones(c,[completa])['partidos_completados']==0
+                assert c.execute('SELECT local_corners_total,local_corners_1t,visitante_corners_1t FROM partidos_futbol').fetchone()==(7,3,0)
         finally:pool.close()
     finally:
         with admin.connection() as c:c.execute(sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(sql.Identifier(schema)))
         admin.close()
+
+
+def fixture_corners():
+    payload,ev=fixture_fuente()
+    ev.update(local_nombre='Casa',visitante_nombre='Fuera',local_corners=2,visitante_corners=1)
+    payload['header']['competitions'][0].update(playByPlaySource='full',commentaryAvailable=True)
+    payload['boxscore']={'teams':[{'team':{'id':ident},'statistics':[{'name':'wonCorners','displayValue':str(n)}]}
+                                     for ident,n in [('1',2),('2',1)]]}
+    specs=[('kickoff',1,None),('corner-awarded',1,'Casa'),('halftime',1,None),
+           ('corner-awarded',2,'Fuera'),('corner-awarded',2,'Casa'),('end-regular-time',2,None)]
+    payload['commentary']=[{'sequence':i,'play':{'id':str(i),'type':{'type':tipo},
+        'period':{'number':periodo},'team':{'displayName':equipo}}}
+        for i,(tipo,periodo,equipo) in enumerate(specs)]
+    origen=datetime.fromisoformat(ev['inicio_utc'])
+    minutos=[0,20,50,70,80,100]
+    for c,m in zip(payload['commentary'],minutos):
+        c['play']['wallclock']=(origen+timedelta(minutes=m)).isoformat()
+    payload['keyEvents']=[deepcopy(c['play']) for c in payload['commentary']
+                          if c['play']['type']['type'] in ('kickoff','halftime','end-regular-time')]
+    return payload,ev
+
+
+def test_corners_por_evento_concilian_ft_y_preservan_cero_real():
+    from servicios.tiempos_espn_futbol import interpretar_tiempos_completos,CONTRATO_COMPLETO
+    payload,ev=fixture_corners();dato=interpretar_tiempos_completos(payload,ev)
+    assert dato['contrato']==CONTRATO_COMPLETO
+    assert [dato[c] for c in ('local_corners_1t','local_corners_2t','visitante_corners_1t','visitante_corners_2t')]==[1,1,0,1]
+    validar_observacion({**dato,'observado_en':datetime.now(timezone.utc).isoformat()})
+
+
+@pytest.mark.parametrize('cambio',['sin_periodo','duplicado','equipo','secuencia','sin_limite','ft','fuente_parcial','fuera_limites'])
+def test_no_reconstruye_corners_con_cronologia_incompleta(cambio):
+    from servicios.tiempos_espn_futbol import interpretar_tiempos_completos
+    p,e=fixture_corners()
+    if cambio=='sin_periodo':p['commentary'][1]['play'].pop('period')
+    if cambio=='duplicado':p['commentary'][4]['play']['id']='1'
+    if cambio=='equipo':p['commentary'][1]['play']['team']['displayName']='Parecido'
+    if cambio=='secuencia':p['commentary'][1]['sequence']=99
+    if cambio=='sin_limite':p['keyEvents'].pop()
+    if cambio=='ft':p['boxscore']['teams'][0]['statistics'][0]['displayValue']='3'
+    if cambio=='fuera_limites':p['commentary'][1]['play']['wallclock']=p['keyEvents'][-1]['wallclock']
+    if cambio=='fuente_parcial':p['header']['competitions'][0]['playByPlaySource']='partial'
+    with pytest.raises(FuenteNoDisponible):interpretar_tiempos_completos(p,e)
+
+
+def test_limites_keyevents_no_requieren_play_en_comentario():
+    from servicios.tiempos_espn_futbol import interpretar_tiempos_completos
+    payload,ev=fixture_corners()
+    for i in (0,2,5):payload['commentary'][i].pop('play')
+    assert interpretar_tiempos_completos(payload,ev)['local_corners_1t']==1

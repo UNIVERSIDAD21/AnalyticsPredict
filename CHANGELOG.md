@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-16 — Córners por mitades acreditados
+
+- Extender el contrato ESPN con cronología completa, límites UTC, identidad/periodo y reconciliación FT. Aplicación atómica de ocho campos; evidencia separada y controles de idempotencia/contradicciones. No acredita aptitud ni independencia NBA.
+
 ## 2026-10-16 — preparación de goles fútbol por mitades
 
 - Parser y CLI de tiempos explícitos ESPN, identidad/UTC/FT y dos periodos exactos, sin imputar a partir de FT; cohorte200/200 comprobada. Observaciones separadas, plan de solo lectura por defecto y aplicación atómica/idempotente sin sobrescribir contradicciones. Migración y pruebas SQL preparadas; aplicación/evaluación posterior se acreditan por separado.
