@@ -11,7 +11,8 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 - [x] Crear `backend/.venv` persistente con Python 3.12 y `requirements.lock`.
 - [x] Verificar dependencias frontend y compatibilidad de Node local/CI. Node24 local: lint, 19 tests y build verdes; CI usa Node20.
 - [x] Arranque reproducible en loopback, sin parar procesos ajenos ni autoentrenar. `scripts/dev.sh`, 8000/5173 HTTP200; salud con30 equipos.
-- [ ] Smoke HTTP y visual de Dashboard, NBA, fútbol y bitácora; ausencia de login.
+- [x] Smoke HTTP de Dashboard, NBA, fútbol, bitácora y Estado: seis GET API y seis rutas frontend HTTP200; calendario canónico devuelve49 próximos. Rutas activas sin login en código/OpenAPI.
+- [ ] Smoke visual en navegador. Bloqueado por política de navegación local; HTTP y tests de componentes no lo sustituyen.
 
 ## B. NBA: dominio, calidad y actualización
 
@@ -24,19 +25,20 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 ## C. Fútbol canónico
 
 - [x] Acreditar correspondencias ESPN↔competición/temporada/clubes, incluidos ascendidos; no usar similitud automática. Manifiesto externo de96 clubes revisados contra catálogo/variantes/alias y rosters2026; dos altas (Hull/Coventry), cinco temporadas2026–27 con evidencia de scoreboard.
-- [ ] Implementar vínculo/ingesta canónica con procedencia, NULL, anti-duplicados y preservación del histórico; ensayar rollback. Código y regresiones sintéticas terminados (suite740); falta ensayo de contrato/datos reales y CI.
-- [ ] Aplicar con backup/postflight y conectar calendario/estadísticas al flujo API/UI.
-- [ ] Verificar modelos/calibradores de fútbol por dominio/fecha y actualizar solo con dataset apto, sin atribuir validación inexistente.
+- [x] Implementar vínculo/ingesta canónica con procedencia, NULL, anti-duplicados y preservación del histórico; rollback DDL+DML sobre contrato/datos reales y CI2378058 4/4.
+- [x] Aplicar con backup/postflight y conectar calendario/estadísticas al flujo API/UI. Neon337 eventos/200finales/136programados/1suspendido; dos clubes/cinco temporadas nuevas;23.919 históricos y seis huellas de apuestas/predicciones intactas, reimportación0/0;49 próximos en API del frontend.
+- [x] Verificar modelos/calibradores de fútbol antes de actualizar. No hay versión activa registrada; predictor sin archivos inicializa modelos vacíos, gestor legacy espera columna inexistente. Los nuevos FT carecen de1T/2T: no se entrenó ni activó calibrador/modelo.
+- [ ] Reparar persistencia/serving ML fútbol y verificar dataset por target antes de reentrenar. La cobertura FT no completa los modelos por tiempos; no basta con guardar una versión en BD.
 
 ## D. Operación y evidencia
 
-- [ ] Rutina manual explícita/idempotente de actualización y estado read-only de fuentes, frescura, modelos y jobs, sin notificaciones externas.
-- [ ] Cadena prospectiva congelada: evento, mercado, hora UTC, features/dataset/modelo/calibrador y predicción anteriores al inicio; outcome posterior acreditado y resolución idempotente.
-- [ ] Prueba E2E aislada y captura real prospectiva sin picks/stakes/recomendaciones en el módulo NBA interno.
+- [x] Rutina manual explícita/idempotente y estado read-only de fuentes, frescura, modelos y jobs, sin notificaciones externas. API/UI Estado más runbook `OPERACION_Y_PROSPECTIVA_2026-10-15.md`; ausencia/fallo no convertidos en cero.
+- [ ] Cadena prospectiva congelada: código/SQL y pruebas terminados; falta CI/aplicación controlada. Evento/mercado/hora UTC/features/dataset/modelo/raw/calibrador ausente explícito; reloj BD y registros inmutables. Outcome ESPN no independiente.
+- [ ] Prueba E2E aislada pasó con fixture temporal sintética; falta captura real anterior al inicio. Sin picks/stakes/recomendaciones; no retrofechar ni trasladar el Ridge al módulo NBA descriptivo.
 - [ ] Unificar gates de métricas SQL/API/UI, conservar N/D y motivos de exclusión; no reescribir apuestas dudosas.
 - [ ] Acumular outcomes futuros y validar walk-forward/calibración/confidence con n e intervalos. **Pendiente temporal: requiere que ocurran partidos después del congelamiento.**
 - [ ] Acreditar unidad/fuente/instante de stake/cuota/ganancia históricos. **Bloqueo de procedencia: no se inventa información irrecuperable; se mantiene excluida.**
-- [ ] Verificar fuente permitida independiente para resultados/inicio. **Sin sortear 403; no confundir dos consultas ESPN con independencia.**
+- [ ] Verificar fuente permitida independiente para resultados/inicio. **Bloqueado:** ambos schedule públicos NBA CDN devolvieron403; sin evasión. Dos consultas ESPN no son independencia.
 
 ## E. Publicación y cierre
 
@@ -51,3 +53,4 @@ historia ni cambios globales. El bloque D de evolución avanzada sigue fuera de 
 - 2026-10-15: checklist creado y entorno backend persistente instalado con lock.
   No se inició entrenamiento ni se alteró Neon para probar el entorno.
 - 2026-10-15: CI337288d 4/4; detectado contrato hashvarchar32 al entrenar, corregido en852f4ba con CI38837332780 4/4, sin repetir73 filas deportivas ni publicar artefacto fallido. Modelo2123 ya activo,30 equipos. Datos ajenos/apuestas/predicciones intactos. Browser visual bloqueado por política de navegación local; HTTP comprobado, sin sortear la política.
+- 2026-10-15: fútbol2378058 CI38837743890 4/4 y aplicación verificada. Primer intento revirtió por lock sin residuos; segundo completo. Operación/prospectiva:751 backend,0fallos/omitidas,21frontend/lint/build. Captura real y CI de este último lote aún pendientes al registrar esta entrada.

@@ -10,6 +10,7 @@ const enlaces = [
   { ruta: '/futbol', etiqueta: 'Fútbol', Icono: Activity },
   { ruta: '/bitacora', etiqueta: 'Bitácora', Icono: BookOpen },
   { ruta: '/configuracion', etiqueta: 'Configuración', Icono: Settings },
+  { ruta: '/operacion', etiqueta: 'Estado', Icono: Activity },
 ];
 
 export function Encabezado() {

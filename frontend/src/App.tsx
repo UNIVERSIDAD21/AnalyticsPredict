@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 const PaginaPrincipal = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaPrincipal')).PaginaPrincipal }));
+const PaginaOperacion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaOperacion')).PaginaOperacion }));
 const PaginaDashboardUsuario = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaDashboardUsuario')).PaginaDashboardUsuario }));
 const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBitacora')).PaginaBitacora }));
 const PaginaConfiguracion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaConfiguracion')).PaginaConfiguracion }));
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/centro-analitico" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<PaginaDashboardUsuario />} />
+          <Route path="/operacion" element={<PaginaOperacion />} />
           <Route path="/app" element={<PaginaPrincipal />} />
           <Route path="/bitacora" element={<PaginaBitacora />} />
           <Route path="/configuracion" element={<PaginaConfiguracion />} />

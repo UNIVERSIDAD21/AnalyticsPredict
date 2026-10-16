@@ -38,6 +38,7 @@ from api.rutas_analisis_futbol import router as router_analisis_futbol
 from api.rutas_apuestas_futbol import router as router_apuestas_futbol
 from api.rutas_metricas_futbol import router as router_metricas_futbol
 from api.rutas_fuentes_futbol import router as router_fuentes_futbol
+from api.rutas_operacion import router as router_operacion
 from api.excepciones import ErrorAnalisis, ErrorEquipoNoEncontrado, ErrorValidacion
 from db import cerrar_pool
 from observabilidad_http import ObservabilidadHTTP
@@ -260,6 +261,7 @@ app.include_router(router_analisis_futbol)
 app.include_router(router_apuestas_futbol)
 app.include_router(router_metricas_futbol)
 app.include_router(router_fuentes_futbol)
+app.include_router(router_operacion)
 
 
 @app.get(

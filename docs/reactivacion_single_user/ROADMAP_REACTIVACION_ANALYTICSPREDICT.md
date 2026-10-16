@@ -20,6 +20,15 @@
 
 ## Dependencia inmediata
 
+**Continuación autorizada 2026-10-15:** preparación para uso según
+`CHECKLIST_PREPARACION_USO_2026-10-15.md`. NBA30equipos/modelo2123;73finales
+añadidos y reimportación0. Fútbol canónico337eventos/200finales aplicado con CI4/4,
+ensayo y huellas intactas. Estado read-only/rutina manual y cadena Q1 raw aislada
+implementados (751backend/21frontend), instalación prospectiva pendiente de CI.
+No se activa ML fútbol: falta persistencia/serving apto y desgloses de targets.
+Mantener pendientes temporales, independencia, P&L y KPI residuales; no cerrar
+recertificación por disponibilidad técnica. Detalle en `OPERACION_Y_PROSPECTIVA_2026-10-15.md`.
+
 **Avance 2026-10-15:** capa de capturas ESPN Soccer aislada completada, publicada
 con CI 4/4 y aplicada/verificada en Neon (733 pruebas backend sintéticas verdes).
 Diez lotes frescos: 337 eventos, 200 finales con estadísticas completas;
