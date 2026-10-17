@@ -209,6 +209,7 @@ def db_url() -> str:
 
 
 EXCLUSION_CATEGORY_MESSAGES = {
+    "INVALIDATED": "Registro invalidado explícitamente",
     "FUTURE_OR_NOT_PLAYED": "Partido futuro o aún no jugado",
     "INCOMPLETE_SCORE": "Marcador parcial/incompleto",
     "INVALID_ZERO_ZERO": "Marcador 0-0 no válido para muestra histórica",
@@ -219,6 +220,8 @@ EXCLUSION_CATEGORY_MESSAGES = {
 
 
 def exclusion_category(row: dict[str, Any]) -> str | None:
+    if row.get('valido') is False:
+        return 'INVALIDATED'
     puntos = int(row.get("puntos_total") or 0)
     recibidos = int(row.get("recibidos_total") or 0)
     fecha = str(row.get("fecha_partido") or "")
@@ -276,15 +279,15 @@ def build_split(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
-def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: int = 30) -> dict[str, Any]:
+def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: int = 30, *, fecha_corte: str, fase: str) -> dict[str, Any]:
     import psycopg
     from psycopg.rows import dict_row
 
-    where_localia = ""
+    where_localia = "WHERE tipo_partido = %s AND fecha_partido < %s::date"
     if localia == "local":
-        where_localia = "WHERE localia = 'local'"
+        where_localia += " AND localia = 'local'"
     elif localia == "visitante":
-        where_localia = "WHERE localia = 'visitante'"
+        where_localia += " AND localia = 'visitante'"
     sql = f"""
     WITH nba AS (
       SELECT id FROM competiciones_baloncesto WHERE lower(codigo)='nba' LIMIT 1
@@ -297,7 +300,7 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
              p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_ot,p.visitante_total,
              p.local_q1 puntos_q1,p.local_q2 puntos_q2,p.local_q3 puntos_q3,p.local_q4 puntos_q4,p.local_total puntos_total,
              p.visitante_q1 recibidos_q1,p.visitante_q2 recibidos_q2,p.visitante_q3 recibidos_q3,p.visitante_q4 recibidos_q4,p.visitante_total recibidos_total,
-             p.hubo_overtime,p.source,p.source_game_id
+             p.hubo_overtime,p.source,p.source_game_id,p.valido
       FROM partidos_baloncesto p
       JOIN equipo e ON e.id=p.equipo_local_id
       JOIN equipos el ON el.id=p.equipo_local_id
@@ -310,7 +313,7 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
              p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_ot,p.visitante_total,
              p.visitante_q1,p.visitante_q2,p.visitante_q3,p.visitante_q4,p.visitante_total,
              p.local_q1,p.local_q2,p.local_q3,p.local_q4,p.local_total,
-             p.hubo_overtime,p.source,p.source_game_id
+             p.hubo_overtime,p.source,p.source_game_id,p.valido
       FROM partidos_baloncesto p
       JOIN equipo e ON e.id=p.equipo_visitante_id
       JOIN equipos el ON el.id=p.equipo_local_id
@@ -322,9 +325,11 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
     ORDER BY fecha_partido DESC, partido_id DESC
     LIMIT %s
     """
-    with psycopg.connect(db_url(), row_factory=dict_row) as conn:
+    with psycopg.connect(db_url(), row_factory=dict_row, connect_timeout=8) as conn:
+        conn.execute('SET TRANSACTION READ ONLY')
+        conn.execute("SET LOCAL statement_timeout='10s'")
         with conn.cursor() as cur:
-            cur.execute(sql, (team_abbr, max(limit * 3, 90)))
+            cur.execute(sql, (team_abbr, fase, fecha_corte, max(limit * 3, 90)))
             raw = [serialize_row(dict(r)) for r in cur.fetchall()]
     invalid = []
     for r in raw:
@@ -338,8 +343,15 @@ def fetch_team_rows_from_db(team_abbr: str, localia: str | None = None, limit: i
     return {"valid": valid, "excluded": invalid, "candidate_count": len(raw), "used_count": len(valid)}
 
 
-def extract_rows(team: dict[str, Any], localia: str | None = None) -> list[dict[str, Any]]:
-    rows = team.get("ultimos_30_partidos", [])
+def extract_rows(team: dict[str, Any], localia: str | None = None, *, fecha_corte: str, fase: str) -> list[dict[str, Any]]:
+    rows = []
+    for row in team.get("ultimos_30_partidos", []):
+        try:
+            fecha = datetime.strptime(str(row.get('fecha_partido', ''))[:10], '%Y-%m-%d').date().isoformat()
+        except ValueError:
+            continue
+        if row.get('tipo_partido') == fase and fecha < fecha_corte:
+            rows.append(row)
     if localia:
         return [r for r in rows if r.get("localia") == localia and is_valid_scored_row(r)]
     return [r for r in rows if is_valid_scored_row(r)]
@@ -426,35 +438,39 @@ def evaluate_market(market: dict[str, Any], home_rows: list[dict[str, Any]], awa
     return result
 
 
-def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path | None) -> tuple[dict[str, Any], str]:
+def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path | None, fase: str = 'REG') -> tuple[dict[str, Any], str]:
+    datetime.strptime(game_date, '%Y-%m-%d')
+    if fase not in {'PRE','REG','POST'}:
+        raise ValueError('Fase NBA inválida')
     teams = load_json(RECENT_FORM_PATH)
     home_abbr, home = resolve_team(home_q, teams)
     away_abbr, away = resolve_team(away_q, teams)
     if home_abbr == away_abbr:
         raise SystemExit("Equipo local y visitante no pueden ser el mismo")
 
-    all_dates = [d.get("fecha_mas_reciente") for d in teams.values() if d.get("fecha_mas_reciente")]
-    max_db_date = max(all_dates) if all_dates else None
     try:
-        home_general_quality = fetch_team_rows_from_db(home_abbr, None)
-        away_general_quality = fetch_team_rows_from_db(away_abbr, None)
-        home_local_quality = fetch_team_rows_from_db(home_abbr, "local")
-        away_visit_quality = fetch_team_rows_from_db(away_abbr, "visitante")
+        home_general_quality = fetch_team_rows_from_db(home_abbr, None, fecha_corte=game_date, fase=fase)
+        away_general_quality = fetch_team_rows_from_db(away_abbr, None, fecha_corte=game_date, fase=fase)
+        home_local_quality = fetch_team_rows_from_db(home_abbr, "local", fecha_corte=game_date, fase=fase)
+        away_visit_quality = fetch_team_rows_from_db(away_abbr, "visitante", fecha_corte=game_date, fase=fase)
         home_rows = home_general_quality["valid"]
         away_rows = away_general_quality["valid"]
         home_local_rows = home_local_quality["valid"]
         away_visit_rows = away_visit_quality["valid"]
         data_source = "bd_partidos_baloncesto"
-    except Exception as exc:  # noqa: BLE001
-        home_rows = extract_rows(home)
-        away_rows = extract_rows(away)
-        home_local_rows = extract_rows(home, "local")
-        away_visit_rows = extract_rows(away, "visitante")
+    except Exception:  # noqa: BLE001
+        home_rows = extract_rows(home, fecha_corte=game_date, fase=fase)
+        away_rows = extract_rows(away, fecha_corte=game_date, fase=fase)
+        home_local_rows = extract_rows(home, "local", fecha_corte=game_date, fase=fase)
+        away_visit_rows = extract_rows(away, "visitante", fecha_corte=game_date, fase=fase)
         home_general_quality = {"candidate_count": len(home_rows), "used_count": len(home_rows), "excluded": []}
         away_general_quality = {"candidate_count": len(away_rows), "used_count": len(away_rows), "excluded": []}
         home_local_quality = {"candidate_count": len(home_local_rows), "used_count": len(home_local_rows), "excluded": []}
         away_visit_quality = {"candidate_count": len(away_visit_rows), "used_count": len(away_visit_rows), "excluded": []}
-        data_source = f"fallback_json_forma_reciente: {exc}"
+        data_source = 'fallback_json_forma_reciente'
+
+    all_dates = [str(r['fecha_partido'])[:10] for r in home_rows + away_rows]
+    max_db_date = max(all_dates) if all_dates else None
 
     home_general_split = build_split(home_rows)
     away_general_split = build_split(away_rows)
@@ -462,6 +478,8 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
     away_visit_split = build_split(away_visit_rows)
 
     warnings = []
+    if data_source == 'fallback_json_forma_reciente':
+        warnings.append(warning('OFFLINE_REPORT_FALLBACK','No se pudo consultar la BD; se usa el archivo histórico filtrado por fecha y fase. Su frescura no equivale al estado actual de la BD.',scope='data_quality'))
     for label, data, rows in (("local", home, home_rows), ("visitante", away, away_rows)):
         warnings.extend([warning("TEAM_DATA_WARNING", str(w), scope="team", team=data["equipo"]) for w in data.get("advertencias", [])])
         if len(rows) < 30:
@@ -498,6 +516,9 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
             "generado_en": datetime.now().isoformat(timespec="seconds"),
             "fuente_forma_reciente": display_path(RECENT_FORM_PATH),
             "fuente_muestras_calculadas": data_source,
+            "fase": fase,
+            "fecha_corte_exclusiva": game_date,
+            "alcance_fecha_maxima": "MUESTRAS_FILTRADAS",
             "markets_file": display_path(markets_path),
             "reglas_clasificacion": {
                 "señal estadística fuerte": "brecha promedio-línea >= 6, al menos 3 ventanas con cumplimiento direccional >=60% o <=40%, y ventanas consistentes",
@@ -512,6 +533,7 @@ def build_analysis(home_q: str, away_q: str, game_date: str, markets_path: Path 
             "equipo_local": {"abreviatura": home_abbr, "nombre": home["equipo"]},
             "equipo_visitante": {"abreviatura": away_abbr, "nombre": away["equipo"]},
             "fecha_maxima_disponible_bd": max_db_date,
+            "fase": fase,
         },
         "muestras": {
             "local": {"general": len(home_rows), "local": len(home_local_rows), "excluidas_incompletas": len(home_general_quality["excluded"]) + len(home_local_quality["excluded"]), "conteos_historicos": home.get("conteos", {})},
@@ -667,7 +689,7 @@ def render_markdown(analysis: dict[str, Any]) -> str:
     lines += [
         "",
         "## Resumen para análisis externo",
-        f"Partido: {home['nombre']} local vs {away['nombre']} visitante, fecha {p['fecha']}. BD disponible hasta {p['fecha_maxima_disponible_bd']}.",
+        f"Partido: {home['nombre']} local vs {away['nombre']} visitante, fecha {p['fecha']}. Fase {p.get('fase', 'N/D')}; último dato usado {p['fecha_maxima_disponible_bd']}. Corte exclusivo: antes de la fecha del partido.",
         f"Muestras recientes: {home['abreviatura']} general {analysis['muestras']['local']['general']} y local {analysis['muestras']['local']['local']}; {away['abreviatura']} general {analysis['muestras']['visitante']['general']} y visitante {analysis['muestras']['visitante']['visitante']}.",
         f"Combinado split local/visitante últimos 30: Q1 {fmt(total30['q1']['total_combinado'])}, Q2 {fmt(total30['q2']['total_combinado'])}, Q3 {fmt(total30['q3']['total_combinado'])}, Q4 {fmt(total30['q4']['total_combinado'])}, total partido {fmt(total30['total']['total_combinado'])}.",
     ]
@@ -686,6 +708,7 @@ def main() -> int:
     parser.add_argument("--away", required=True, help="Equipo visitante: nombre completo o abreviatura")
     parser.add_argument("--date", required=True, help="Fecha del partido YYYY-MM-DD")
     parser.add_argument("--markets", help="JSON opcional con líneas de mercado")
+    parser.add_argument('--fase', choices=['PRE','REG','POST'], default='REG', help='Fase de la muestra; nunca mezcla PRE/REG/POST')
     parser.add_argument("--recent-form", default=str(RECENT_FORM_PATH), help="JSON de forma reciente")
     parser.add_argument("--output-dir", type=Path, help="Directorio externo para ambos reportes; útil para pruebas sin tocar históricos")
     args = parser.parse_args()
@@ -696,7 +719,7 @@ def main() -> int:
     if markets_path and not markets_path.exists():
         raise SystemExit(f"No existe archivo de mercados: {markets_path}")
 
-    analysis, file_slug = build_analysis(args.home, args.away, args.date, markets_path)
+    analysis, file_slug = build_analysis(args.home, args.away, args.date, markets_path, args.fase)
     json_dir = args.output_dir or DEFAULT_JSON_DIR
     md_dir = args.output_dir or DEFAULT_MD_DIR
     json_dir.mkdir(parents=True, exist_ok=True)

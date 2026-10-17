@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-10-16 — Uso local visual, H12 y contratos de análisis
+
+- Migrar Tailwind4/PostCSS oficial con lock y audit0, conservar tema/utilidades y validar vistas reales y móvil emulado.854backend/36frontend/lint/build.
+- Reparar selección/identidad/paginación/NULL de fútbol y registro con savepoint/enum canónico; bitácora con identidad canónica sin reescribir histórico y fechas sin desfase.
+- Sincronizar navegación por deporte, cabecera/título y textos single-user; análisisNBA interno sin datos de ejemplo, con fase/corte temporal tantoSQLcomo fallback y errores sanitizados.
+- Diferenciar outcomes registrados de independientes enEstado:15capturas/9resultadosPRE/0independientes, aplicación previa ensayada/idempotente y huellas intactas. Sin reentrenar ni calibrar; diagnósticoPRE no certifica eficacia.
+- Actualizar H4: ticket#4868445cerrado por proveedor sin coordinación de refs/cachés; sin purga parcial/forcepush. Ver ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.
+
 ## 2026-10-16 — Pasada integral: datos verificados y cohortes futuras separadas
 
 - Aplicar426finales adicionales con goles por mitades/FT/tiros y163programados de noviembre sin marcadores; backup privado, rollback, idempotencia y postflight.38colisiones retenidas y358rechazos de córners por periodo, sin forzar datos.

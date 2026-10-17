@@ -29,7 +29,7 @@ interface DeporteContextType {
   deporteActivo: Deporte;
 
   /** Función para cambiar el deporte activo */
-  cambiarDeporte: (deporte: Deporte) => void;
+  cambiarDeporte: (deporte: Deporte, navegar?: boolean) => void;
 
   /** Helper: ¿Es NBA el deporte activo? */
   esNBA: boolean;
@@ -51,7 +51,7 @@ const STORAGE_KEY = 'deporte_activo';
  * Rutas base por deporte
  */
 const RUTAS_BASE: Record<Deporte, string> = {
-  NBA: '/',
+  NBA: '/app',
   FUTBOL: '/futbol',
 };
 
@@ -123,10 +123,11 @@ export function ProveedorDeporte({ children }: ProveedorDeporteProps) {
   /**
    * Cambia el deporte activo y navega a la ruta base correspondiente
    */
-  const cambiarDeporte = useCallback((deporte: Deporte) => {
+  const cambiarDeporte = useCallback((deporte: Deporte, navegar = true) => {
     if (deporte === deporteActivo) return;
 
     setDeporteActivo(deporte);
+    if (!navegar) return;
 
     // Navegar a la ruta base del deporte
     const rutaDestino = RUTAS_BASE[deporte];

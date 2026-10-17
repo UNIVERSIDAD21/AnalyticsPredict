@@ -234,7 +234,9 @@ export function PaginaBitacora() {
         <ListaBitacoraUnificada
           apuestas={apuestas}
           estado={estado}
-          mensajeVacio={total === 0 ? 'Aún no tienes apuestas guardadas.' : 'No hay apuestas con estos filtros.'}
+          mensajeVacio={Object.entries(filtros).some(([campo, valor]) => campo !== 'orden' && Boolean(valor))
+            ? 'No hay apuestas con estos filtros.'
+            : 'Aún no tienes apuestas guardadas.'}
           onResolver={manejarResolver}
           onEliminar={manejarEliminar}
         />

@@ -39,7 +39,10 @@ export function InputLinea({
   unidadLabel = 'puntos',
   periodoLabel,
 }: PropsInputLinea) {
-  const placeholder = esJuegoCompleto ? 'Ej: 225.5' : 'Ej: 55.5';
+  const placeholder = unidadLabel === 'goles' ? 'Ej: 2.5'
+    : unidadLabel === 'corners' ? 'Ej: 9.5'
+    : unidadLabel === 'tiros a puerta' ? 'Ej: 8.5'
+    : esJuegoCompleto ? 'Ej: 225.5' : 'Ej: 55.5';
 
   return (
     <div className="w-full space-y-3">
@@ -85,6 +88,7 @@ export function InputLinea({
           value={valor}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          aria-label="Línea del análisis"
           disabled={deshabilitado}
           className={`input-base text-center text-lg font-mono ${error ? 'input-error' : ''}`}
         />

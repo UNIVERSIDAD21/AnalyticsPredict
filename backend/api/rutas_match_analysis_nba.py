@@ -37,6 +37,7 @@ class MatchAnalysisRequest(BaseModel):
     home: str = Field(min_length=1)
     away: str = Field(min_length=1)
     date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    fase: Literal['PRE','REG','POST'] = 'REG'
     markets: list[MarketInput] = Field(default_factory=list)
 
 
@@ -48,7 +49,6 @@ def generar_match_analysis(
     try:
         markets = [m.model_dump() for m in payload.markets]
         validate_markets(markets)
-        analysis, _slug = build_analysis(payload.home, payload.away, payload.date, None)
         # Reusar evaluación completa escribiendo markets temporal en memoria no está soportado por build_analysis;
         # por contrato interno, inyectamos evaluaciones recreando archivo temporal controlado.
         import tempfile, json
@@ -57,7 +57,7 @@ def generar_match_analysis(
             json.dump({"markets": markets}, fh, ensure_ascii=False)
             temp_path = Path(fh.name)
         try:
-            analysis, _slug = build_analysis(payload.home, payload.away, payload.date, temp_path)
+            analysis, _slug = build_analysis(payload.home, payload.away, payload.date, temp_path, payload.fase)
         finally:
             temp_path.unlink(missing_ok=True)
         external_summary = render_markdown(analysis).split("## Resumen para análisis externo", 1)[-1].strip()

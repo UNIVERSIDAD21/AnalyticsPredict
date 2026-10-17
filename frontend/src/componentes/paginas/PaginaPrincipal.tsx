@@ -312,7 +312,8 @@ export function PaginaPrincipal() {
           <p className="text-xs uppercase tracking-wider text-neon-cyan">Marco de uso responsable</p>
           <p className="text-sm text-texto-secundario mt-2">
             AnalyticsPredict prioriza disciplina operativa y trazabilidad de decisiones. No promete ganancias fáciles.
-            NBA es el frente comercial más maduro; fútbol opera en beta global con madurez diferenciada por mercado (shadow/validación/promoción parcial gobernada por evidencia). Si un mercado no está marcado explícitamente como promocionable, se considera en validación operativa.
+            Es una herramienta personal de consulta y análisis exploratorio. La eficacia predictiva no está certificada.
+            La pretemporada NBA se interpreta por separado de la temporada regular; fútbol no dispone de un modelo ML apto activo.
           </p>
         </div>
 

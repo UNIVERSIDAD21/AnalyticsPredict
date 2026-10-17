@@ -96,6 +96,10 @@ async def listar_partidos_proximos(
     query = """
         SELECT
             pf.id,
+            pf.competicion_id,
+            pf.temporada_id,
+            pf.equipo_local_id,
+            pf.equipo_visitante_id,
             c.nombre as competicion,
             pf.fecha_partido,
             el.nombre as equipo_local,
@@ -151,6 +155,10 @@ async def listar_partidos_proximos(
                 partidos = [
                     PartidoResumen(
                         id=fila["id"],
+                        competicion_id=fila["competicion_id"],
+                        temporada_id=fila["temporada_id"],
+                        equipo_local_id=fila["equipo_local_id"],
+                        equipo_visitante_id=fila["equipo_visitante_id"],
                         competicion=fila["competicion"],
                         fecha_partido=fila["fecha_partido"],
                         equipo_local=fila["equipo_local"],

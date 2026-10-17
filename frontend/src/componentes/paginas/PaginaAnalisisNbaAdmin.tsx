@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ClipboardCopy, Plus, ShieldAlert, Trash2 } from 'lucide-react';
 import { Boton, Input, Select, Tarjeta } from '../atomos';
+import { Encabezado } from '../organismos/Encabezado';
 import {
   generarAnalisisNba,
   type NbaMarket,
@@ -80,15 +81,21 @@ function contarCalidad(dataQuality: NbaMatchAnalysisResponse['data_quality']) {
     const excluded = Array.isArray(bucket.excluded) ? bucket.excluded.length : Number(bucket.excluded_count ?? 0);
     usadas += Number.isFinite(valid) ? valid : 0;
     excluidas += Number.isFinite(excluded) ? excluded : 0;
+    candidatas += Number(bucket.candidate_count ?? (valid + excluded));
     const reasonCounts = bucket.reason_counts;
     if (reasonCounts && typeof reasonCounts === 'object') {
       for (const [razon, total] of Object.entries(reasonCounts)) {
         razones[razon] = (razones[razon] ?? 0) + Number(total ?? 0);
       }
+    } else if (Array.isArray(bucket.excluded)) {
+      for (const fila of bucket.excluded) {
+        const dato = fila as Record<string, unknown>;
+        const razon = String(dato.categoria_exclusion ?? dato.razon_exclusion ?? 'Sin razón registrada');
+        razones[razon] = (razones[razon] ?? 0) + 1;
+      }
     }
   }
 
-  candidatas = usadas + excluidas;
   const porcentajeExcluido = candidatas > 0 ? (excluidas / candidatas) * 100 : 0;
   return { candidatas, usadas, excluidas, porcentajeExcluido, razones };
 }
@@ -199,19 +206,11 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 }
 
 export function PaginaAnalisisNbaAdmin() {
-  const [home, setHome] = useState('San Antonio Spurs');
-  const [away, setAway] = useState('Minnesota Timberwolves');
-  const [date, setDate] = useState('2026-05-05');
-  const [mercados, setMercados] = useState<MercadoFormulario[]>([
-    {
-      ...mercadoInicial('market-real'),
-      line: '218.5',
-      over_odds: '1.91',
-      under_odds: '1.91',
-      source: 'ESPN/DraftKings close',
-      source_url: 'https://www.espn.com/nba/game/_/gameId/401871152',
-    },
-  ]);
+  const [home, setHome] = useState('');
+  const [away, setAway] = useState('');
+  const [date, setDate] = useState('');
+  const [fase, setFase] = useState<'PRE' | 'REG' | 'POST'>('REG');
+  const [mercados, setMercados] = useState<MercadoFormulario[]>([mercadoInicial()]);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [resultado, setResultado] = useState<NbaMatchAnalysisResponse | null>(null);
   const [requestEnviado, setRequestEnviado] = useState<NbaMatchAnalysisRequest | null>(null);
@@ -254,6 +253,7 @@ export function PaginaAnalisisNbaAdmin() {
       home: home.trim(),
       away: away.trim(),
       date,
+      fase,
       markets: mercados.map((m) => ({
         market: m.market as NbaMarket,
         line: Number(m.line),
@@ -293,6 +293,7 @@ export function PaginaAnalisisNbaAdmin() {
   };
 
   return (
+    <><Encabezado />
     <main className="min-h-screen bg-futurista-negro px-4 py-8 text-texto-principal md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="space-y-3">
@@ -309,13 +310,14 @@ export function PaginaAnalisisNbaAdmin() {
             <Input etiqueta="Equipo local" value={home} onChange={(e) => setHome(e.target.value)} error={errores.home} />
             <Input etiqueta="Equipo visitante" value={away} onChange={(e) => setAway(e.target.value)} error={errores.away} />
             <Input etiqueta="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} error={errores.date} />
+            <Select etiqueta="Fase NBA" value={fase} opciones={[{valor:'PRE',etiqueta:'Pretemporada'},{valor:'REG',etiqueta:'Temporada regular'},{valor:'POST',etiqueta:'Postemporada'}]} onChange={(e) => setFase(e.target.value as typeof fase)} />
           </div>
 
           <section className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-semibold">Mercados a evaluar</h2>
-                <p className="text-sm text-texto-secundario">El frontend solo valida contrato y envía datos; las métricas las calcula el backend.</p>
+                <p className="text-sm text-texto-secundario">Indica el umbral y su procedencia. Una estimación técnica no equivale a una línea de mercado real.</p>
               </div>
               <Boton type="button" variante="secundario" iconoInicio={<Plus size={16} />} onClick={agregarMercado}>Agregar mercado</Boton>
             </div>
@@ -377,7 +379,8 @@ export function PaginaAnalisisNbaAdmin() {
                 <Dato etiqueta="Local" valor={resultado.teams.equipo_local?.nombre ?? requestEnviado?.home ?? 'N/D'} />
                 <Dato etiqueta="Visitante" valor={resultado.teams.equipo_visitante?.nombre ?? requestEnviado?.away ?? 'N/D'} />
                 <Dato etiqueta="Fecha" valor={resultado.teams.fecha ?? requestEnviado?.date ?? 'N/D'} />
-                <Dato etiqueta="Máxima BD" valor={resultado.teams.fecha_maxima_disponible_bd ?? String(resultado.metadata.fecha_maxima_disponible_bd ?? 'N/D')} />
+                <Dato etiqueta="Último dato usado" valor={resultado.teams.fecha_maxima_disponible_bd ?? 'N/D'} />
+                <Dato etiqueta="Fase" valor={String(resultado.metadata.fase ?? requestEnviado?.fase ?? 'N/D')} />
               </div>
             </Tarjeta>
 
@@ -390,6 +393,7 @@ export function PaginaAnalisisNbaAdmin() {
                 <Dato etiqueta="Excluidas" valor={String(calidad.excluidas)} />
                 <Dato etiqueta="% excluido" valor={`${formatearNumero(calidad.porcentajeExcluido)}%`} />
               </div>
+              <p className="text-xs text-texto-secundario">Las candidatas incluyen registros válidos fuera del límite de las muestras recientes.</p>
               <div className="rounded-lg bg-futurista-oscuro/60 p-3">
                 <p className="mb-2 text-sm font-semibold">Razones de exclusión</p>
                 {Object.keys(calidad.razones).length === 0 ? <p className="text-sm text-texto-secundario">Sin razones agregadas reportadas.</p> : (
@@ -431,6 +435,6 @@ export function PaginaAnalisisNbaAdmin() {
           </section>
         )}
       </div>
-    </main>
+    </main></>
   );
 }

@@ -670,9 +670,9 @@ async def listar_bitacora_unificada(
                 NULL::int AS selecciones_pendientes,
                 NULL::boolean AS tiene_mismo_partido,
                 NULL::jsonb AS advertencias,
-                f.equipo_local,
-                f.equipo_visitante,
-                f.fecha_partido,
+                COALESCE(NULLIF(f.equipo_local, ''), efl.nombre) AS equipo_local,
+                COALESCE(NULLIF(f.equipo_visitante, ''), efv.nombre) AS equipo_visitante,
+                COALESCE(f.fecha_partido, (pf.fecha_partido AT TIME ZONE 'America/Bogota')::date) AS fecha_partido,
                 f.mercado::text AS mercado,
                 f.lado,
                 f.linea,
@@ -682,6 +682,9 @@ async def listar_bitacora_unificada(
                 f.creado_en,
                 f.actualizado_en
             FROM apuestas_futbol f
+            LEFT JOIN partidos_futbol pf ON pf.id = f.partido_id
+            LEFT JOIN equipos_futbol efl ON efl.id = pf.equipo_local_id
+            LEFT JOIN equipos_futbol efv ON efv.id = pf.equipo_visitante_id
             UNION ALL
             SELECT
                 c.id,

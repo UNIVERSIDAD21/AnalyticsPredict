@@ -160,12 +160,12 @@ export function PaginaConfiguracion() {
               <h3 className="text-sm uppercase tracking-wider">Contexto fútbol (gobernanza)</h3>
             </div>
             <p className="text-sm text-texto-secundario">
-              Fútbol incrementa peso por evidencia por competición. No se promociona con paridad comercial respecto a NBA hasta cumplir madurez.
+              Fútbol es exploratorio y no dispone de un modelo ML apto activo. La disponibilidad técnica no acredita eficacia predictiva.
             </p>
             <ul className="text-xs text-texto-terciario space-y-1">
-              <li>• ESTABLE: despliegue normal de señal.</li>
-              <li>• EN VALIDACIÓN: seguimiento y calibración activa.</li>
-              <li>• LAB: uso controlado, sin promesa comercial fuerte.</li>
+              <li>• La aptitud se verifica por familia, mercado y periodo.</li>
+              <li>• No hay calibración certificada por el solo hecho de generar un análisis.</li>
+              <li>• Consulta Estado para conocer las versiones y muestras disponibles.</li>
             </ul>
           </div>
 

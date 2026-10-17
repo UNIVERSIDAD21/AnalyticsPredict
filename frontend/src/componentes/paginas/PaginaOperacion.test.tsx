@@ -14,12 +14,14 @@ describe('Estado operativo', () => {
       modelo_nba: { estado: 'DISPONIBLE', version: 2123, equipos: 30 },
       capturas_futbol: { lotes: 10, observado_en: null },
       predictor_ml_futbol: { estado: 'SIN_VERSION_ACTIVA', familias: {}, carga_en_proceso: { estado: 'NO_INICIALIZADO', familias: {} } },
-      prospectiva: { congeladas: null, resueltas: null, estado: 'ALMACEN_NO_INSTALADO' }, notas: [],
+      prospectiva: { congeladas: null, resueltas: null, resueltas_independientes: 0, estado: 'ALMACEN_NO_INSTALADO' }, notas: [],
     } });
     render(<PaginaOperacion />);
     expect(await screen.findByText(/último final: 2026-10-15/)).toBeTruthy();
     expect(screen.getByText(/N\/D predicciones congeladas/)).toBeTruthy();
     expect(screen.getByText('Seguimiento aún no instalado')).toBeTruthy();
+    expect(screen.getByText(/fuente independiente acreditada: 0/)).toBeTruthy();
+    expect(screen.queryByText(/resultados acreditados/)).toBeNull();
     expect(screen.getByText(/Pretemporada: 8 registros · 7 finales válidos/)).toBeTruthy();
     expect(screen.getByText(/Temporada regular: 22 registros/)).toBeTruthy();
   });

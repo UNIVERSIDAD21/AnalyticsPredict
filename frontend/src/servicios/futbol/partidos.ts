@@ -31,20 +31,20 @@ function transformarPartidoResumen(
 ): PartidoFutbolResumen {
   return {
     id: String(data.id || ''),
-    competicion: String(data.competicion || ''),
+    competicion: String(data.competicion_id || data.competicion || ''),
     competicionNombre: String(data.competicion_nombre || data.competicion || ''),
     fechaPartido: String(data.fecha_partido || ''),
-    equipoLocal: String(data.equipo_local || ''),
+    equipoLocal: String(data.equipo_local_id || data.equipo_local || ''),
     equipoLocalNombre: String(data.equipo_local_nombre || data.equipo_local || ''),
     equipoLocalLogo: data.equipo_local_logo as string | undefined,
-    equipoVisitante: String(data.equipo_visitante || ''),
+    equipoVisitante: String(data.equipo_visitante_id || data.equipo_visitante || ''),
     equipoVisitanteNombre: String(data.equipo_visitante_nombre || data.equipo_visitante || ''),
     equipoVisitanteLogo: data.equipo_visitante_logo as string | undefined,
     estado: (data.estado as PartidoFutbolResumen['estado']) || 'PROGRAMADO',
     jornada: data.jornada ? Number(data.jornada) : undefined,
-    golesLocal: data.goles_local !== undefined ? Number(data.goles_local) : undefined,
+    golesLocal: data.goles_local != null ? Number(data.goles_local) : undefined,
     golesVisitante:
-      data.goles_visitante !== undefined ? Number(data.goles_visitante) : undefined,
+      data.goles_visitante != null ? Number(data.goles_visitante) : undefined,
   };
 }
 
@@ -191,7 +191,7 @@ export async function obtenerPartidosProximos(
       params.equipo_id = filtros.equipo;
     }
     if (filtros?.limite) {
-      params.limite = filtros.limite;
+      params.tamano = filtros.limite;
     }
 
     const respuesta = await clienteAPI.get('/api/futbol/partidos/proximos', {

@@ -19,6 +19,7 @@ export interface NbaMatchAnalysisRequest {
   home: string;
   away: string;
   date: string;
+  fase?: 'PRE' | 'REG' | 'POST';
   markets: NbaMarketInput[];
 }
 

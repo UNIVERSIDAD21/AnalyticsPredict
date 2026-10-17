@@ -39,3 +39,11 @@ V2sombra163/199porfamilia;V3reserva100sin muestra mínima; no activar familias.
 NBA50PRE/15snapshots(12PRE+3REG)/0outcomes. H12laboratorio0alertaspero producto5dev,
 visualbloqueado. H4solicitud lista sinenvío. No repetir ingestas/congelamientos ni
 convertir esperas/proveedor/políticas en tareas manuales genéricas del propietario.
+
+## Corte de uso local posterior16oct (prevalece)
+
+Visual/H12técnico verificados: Tailwind4/audit0,854backend/36frontend/lint/build y
+flujos reales/aislados; publicación/CI en acta externa.15capturas/9outcomesPRE,
+0independientes, sin calibrador ni certificación. H4ticket#4868445cerrado con
+autoservicio, sin coordinación de purga. No repetir ingestas, modelos ni capturas.
+Ver [detalle](ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md).

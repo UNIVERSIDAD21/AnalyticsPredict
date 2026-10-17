@@ -1,5 +1,6 @@
 /** Navegación directa de la plataforma personal. */
 import { Activity, BarChart3, BookOpen, Settings, Target } from 'lucide-react';
+import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDeporte } from '../../contextos/DeporteContext';
 import { SelectorDeporte } from '../atomos/SelectorDeporte';
@@ -16,7 +17,11 @@ const enlaces = [
 export function Encabezado() {
   const navegar = useNavigate();
   const { pathname } = useLocation();
-  const { esFutbol } = useDeporte();
+  const { esFutbol, cambiarDeporte } = useDeporte();
+  useEffect(() => {
+    if (pathname.startsWith('/futbol')) cambiarDeporte('FUTBOL', false);
+    else if (pathname === '/app' || pathname.startsWith('/admin/nba')) cambiarDeporte('NBA', false);
+  }, [pathname, cambiarDeporte]);
 
   return (
     <header className="border-b border-neon-cyan/20 bg-futurista-oscuro">

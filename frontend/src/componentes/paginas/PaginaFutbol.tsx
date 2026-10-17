@@ -153,10 +153,11 @@ export function PaginaFutbol() {
 
   const historialCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
   const h2hCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
+  const seleccionInicialAplicada = useRef(false);
 
   const { partidos, cargando: cargandoPartidos, error: errorPartidos, recargar } = usePartidosFutbol({
     tipo: 'proximos',
-    filtrosIniciales: { dias: 7 },
+    filtrosIniciales: { dias: 7, limite: 100 },
     cargarAlMontar: true,
   });
 
@@ -166,34 +167,28 @@ export function PaginaFutbol() {
   );
 
   useEffect(() => {
+    if (seleccionInicialAplicada.current || partidos.length === 0) return;
+    seleccionInicialAplicada.current = true;
     const qs = new URLSearchParams(window.location.search);
     const porQuery = qs.get('partidoId');
     if (porQuery && partidos.some((p) => p.id === porQuery)) {
       setPartidoSeleccionadoId(porQuery);
       return;
     }
-    if (!partidoSeleccionadoId && partidos.length > 0) {
+    if (!partidoSeleccionadoId) {
       setPartidoSeleccionadoId(partidos[0].id);
     }
   }, [partidoSeleccionadoId, partidos]);
 
   const equiposAnalisis: Equipo[] = useMemo(() => {
-    if (!partidoSeleccionado) return [];
-    return [
-      {
-        id: String(partidoSeleccionado.equipoLocal),
-        nombre: partidoSeleccionado.equipoLocalNombre,
-        nombre_corto: partidoSeleccionado.equipoLocalNombre,
-        abreviatura: partidoSeleccionado.equipoLocalNombre.slice(0, 3).toUpperCase(),
-      },
-      {
-        id: String(partidoSeleccionado.equipoVisitante),
-        nombre: partidoSeleccionado.equipoVisitanteNombre,
-        nombre_corto: partidoSeleccionado.equipoVisitanteNombre,
-        abreviatura: partidoSeleccionado.equipoVisitanteNombre.slice(0, 3).toUpperCase(),
-      },
-    ];
-  }, [partidoSeleccionado]);
+    const catalogo = new Map<string, Equipo>();
+    for (const partido of partidos) {
+      for (const [id, nombre] of [[partido.equipoLocal, partido.equipoLocalNombre], [partido.equipoVisitante, partido.equipoVisitanteNombre]]) {
+        catalogo.set(String(id), { id: String(id), nombre, nombre_corto: nombre, abreviatura: nombre.slice(0, 3).toUpperCase() });
+      }
+    }
+    return [...catalogo.values()];
+  }, [partidos]);
 
   const partidosSelector: PartidoResumen[] = useMemo(() => (
     partidos.map((partido) => ({
@@ -211,6 +206,13 @@ export function PaginaFutbol() {
       finalizado: false,
     }))
   ), [partidos]);
+
+  const seleccionarPartidoFormulario = useCallback((partido: PartidoResumen | null) => {
+    setPartidoSeleccionadoId(partido?.id ?? '');
+    setAnalisis(null);
+    setSeleccionCanonicaActiva(null);
+    setErrorAnalisis(null);
+  }, []);
 
   const opcionesMercadoFutbol: Array<{ valor: Mercado; etiqueta: string }> = useMemo(
     () => [
@@ -495,10 +497,11 @@ export function PaginaFutbol() {
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
             <div className="lg:sticky lg:top-6 space-y-4">
               <Tarjeta className="border border-neon-cyan/20">
-                <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
+                <label htmlFor="categoria-futbol" className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                   Mercado fútbol
                 </label>
                 <select
+                  id="categoria-futbol"
                   value={categoriaMercadoFutbol}
                   onChange={(e) => setCategoriaMercadoFutbol(e.target.value as CategoriaSeleccionFutbol)}
                   className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
@@ -507,10 +510,11 @@ export function PaginaFutbol() {
                   <option value="GOLES">Goles</option>
                   <option value="TIROS_AL_ARCO">Tiros al arco</option>
                 </select>
-                <label className="block mt-3 text-xs font-semibold uppercase tracking-wider text-texto-secundario">
+                <label htmlFor="alcance-futbol" className="block mt-3 text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                   Alcance
                 </label>
                 <select
+                  id="alcance-futbol"
                   value={alcanceMercadoFutbol}
                   onChange={(e) => setAlcanceMercadoFutbol(e.target.value as AlcanceSeleccionFutbol)}
                   className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
@@ -522,12 +526,15 @@ export function PaginaFutbol() {
               </Tarjeta>
 
               <FormularioAnalisis
+                deporte="FUTBOL"
                 equipos={equiposAnalisis}
                 estadisticas={[]}
                 onAnalizar={ejecutarAnalisis}
                 cargando={cargandoAnalisis}
                 cargandoEquipos={cargandoPartidos}
                 partidosDisponibles={partidosSelector}
+                partidoActual={partidosSelector.find(p => p.id === partidoSeleccionadoId) ?? null}
+                onSeleccionarPartido={seleccionarPartidoFormulario}
                 opcionesMercado={opcionesMercadoFutbol}
                 textoAyudaMercado="Selecciona si quieres analizar primer tiempo, segundo tiempo o juego completo."
                 unidadLineaLabel={unidadLineaLabel}
@@ -559,8 +566,13 @@ export function PaginaFutbol() {
                   seleccionUsuario={{ lado: renderCanonico.seleccion.lado, linea: renderCanonico.seleccion.linea }}
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
-                  onGuardar={() => setMostrarGuardar(true)}
+                  onGuardar={renderCanonico.guardar ? () => setMostrarGuardar(true) : undefined}
                 />
+                {!renderCanonico.guardar && (
+                  <p className="text-sm text-texto-secundario">
+                    Este análisis no ofrece una selección registrable en bitácora.
+                  </p>
+                )}
 
                 {cargandoContexto && (
                   <Tarjeta className="flex items-center justify-center py-12">
@@ -611,7 +623,7 @@ export function PaginaFutbol() {
         <div className="contenedor py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
             <p className="text-texto-terciario text-xs uppercase tracking-wider">
-              Football Analyzer — Flujo canónico de fútbol
+              AnalyticsPredict — Fútbol
             </p>
             <p className="text-texto-terciario/60 text-xs">Las predicciones son orientativas. Apuesta responsablemente.</p>
           </div>

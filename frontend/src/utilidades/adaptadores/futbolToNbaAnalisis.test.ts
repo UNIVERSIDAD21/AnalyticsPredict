@@ -59,6 +59,19 @@ const contexto: { h2h: PartidoFutbolEstadistico[]; historialLocal: PartidoFutbol
 };
 
 describe('futbolToNbaAnalisis market-aware contexto', () => {
+  it('calcula la forma desde el ID exacto de cada equipo y no atribuye filas ajenas al visitante', () => {
+    const local = contexto.h2h[0];
+    const vuelta = { ...local, id: 'vuelta', equipoLocalId: 'eq-visita', equipoVisitanteId: 'eq-local' };
+    const ajeno = { ...local, id: 'ajeno', equipoLocalId: 'otro-1', equipoVisitanteId: 'otro-2' };
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(baseAnalisis, {
+      h2h: [local,vuelta,ajeno], historialLocal: [local,vuelta,ajeno], historialVisitante: [local,vuelta,ajeno],
+    });
+    expect(out.contexto?.h2h?.total_partidos).toBe(2);
+    expect(out.contexto?.forma_equipo.victorias).toBe(1);
+    expect(out.contexto?.forma_equipo.derrotas).toBe(1);
+    expect(out.contexto?.forma_rival.victorias).toBe(1);
+    expect(out.contexto?.forma_rival.derrotas).toBe(1);
+  });
   it('usa corners del mercado objetivo y no mezcla con goles', () => {
     const analisis = {
       ...baseAnalisis,

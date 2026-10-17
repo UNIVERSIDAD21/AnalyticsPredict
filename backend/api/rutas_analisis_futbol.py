@@ -56,6 +56,7 @@ from .schemas_futbol import (
     ObjetivoDisponibilidadFutbol,
 )
 from motor_futbol.madurez_beta import mapear_status_promocion
+from motor_futbol.tipos import TipoMercadoFutbol
 
 router = APIRouter(prefix="/api/futbol", tags=["Fútbol - Análisis"])
 logger = logging.getLogger(__name__)
@@ -64,7 +65,6 @@ logger = logging.getLogger(__name__)
 try:
     from motor_futbol.prediccion.predictor import PredictorFutbol
     from motor_futbol.calibracion.gestor_calibradores import GestorCalibradores
-    from motor_futbol.tipos import TipoMercadoFutbol
     MOTOR_DISPONIBLE = True
 except ImportError:
     MOTOR_DISPONIBLE = False
@@ -2404,6 +2404,9 @@ def _registrar_predicciones_futbol(
 
     for prediccion in mercados.values():
         mercado = (prediccion.mercado or "").upper()
+        if mercado not in {m.value for m in TipoMercadoFutbol}:
+            logger.info("Mercado exploratorio no persistible en el contrato canónico: %s", mercado)
+            continue
         for linea_str, probs in prediccion.lineas.items():
             try:
                 linea_valor = float(linea_str)
@@ -3747,13 +3750,16 @@ async def analizar_partido(
 
                 # 5b. Registrar predicciones para calibración/métricas
                 try:
-                    modelo_version_id_futbol = _obtener_modelo_version_futbol_id(cursor)
-                    total_registradas = _registrar_predicciones_futbol(
-                        cursor,
-                        partido=partido,
-                        mercados=todos_mercados,
-                        modelo_version_id=modelo_version_id_futbol,
-                    )
+                    # Un fallo de registro no debe dejar abortada la transacción
+                    # del análisis ni confirmar un lote parcial de predicciones.
+                    with conn.transaction():
+                        modelo_version_id_futbol = _obtener_modelo_version_futbol_id(cursor)
+                        total_registradas = _registrar_predicciones_futbol(
+                            cursor,
+                            partido=partido,
+                            mercados=todos_mercados,
+                            modelo_version_id=modelo_version_id_futbol,
+                        )
                     logger.info(
                         "Predicciones fútbol registradas: %s (partido_id=%s)",
                         total_registradas,
@@ -3769,6 +3775,10 @@ async def analizar_partido(
                 # 6. Construir respuesta
                 partido_resumen = PartidoResumen(
                     id=partido["id"],
+                    competicion_id=partido["competicion_id"],
+                    temporada_id=partido["temporada_id"],
+                    equipo_local_id=partido["equipo_local_id"],
+                    equipo_visitante_id=partido["equipo_visitante_id"],
                     competicion=partido["competicion"],
                     fecha_partido=partido["fecha_partido"],
                     equipo_local=partido["equipo_local"],

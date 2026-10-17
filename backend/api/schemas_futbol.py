@@ -94,6 +94,10 @@ class ListaEquiposResponse(BaseModel):
 class PartidoResumen(BaseModel):
     """Schema resumen de un partido."""
     id: UUID
+    competicion_id: Optional[UUID] = None
+    temporada_id: Optional[UUID] = None
+    equipo_local_id: Optional[UUID] = None
+    equipo_visitante_id: Optional[UUID] = None
     competicion: str
     competicion_nombre: Optional[str] = None
     fecha_partido: datetime

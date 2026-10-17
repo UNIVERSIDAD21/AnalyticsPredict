@@ -37,7 +37,7 @@ function transformarPartidoResumen(
 ): PartidoFutbolResumen {
   return {
     id: String(data.id || ''),
-    competicion: String(data.competicion || ''),
+    competicion: String(data.competicion_id || data.competicion || ''),
     competicionNombre: String(data.competicion_nombre || data.competicion || ''),
     fechaPartido: String(data.fecha_partido || ''),
     equipoLocal: String(data.equipo_local_id || data.equipo_local || ''),
@@ -48,9 +48,9 @@ function transformarPartidoResumen(
     equipoVisitanteLogo: data.equipo_visitante_logo as string | undefined,
     estado: (data.estado as PartidoFutbolResumen['estado']) || 'PROGRAMADO',
     jornada: data.jornada ? Number(data.jornada) : undefined,
-    golesLocal: data.goles_local !== undefined ? Number(data.goles_local) : undefined,
+    golesLocal: data.goles_local != null ? Number(data.goles_local) : undefined,
     golesVisitante:
-      data.goles_visitante !== undefined ? Number(data.goles_visitante) : undefined,
+      data.goles_visitante != null ? Number(data.goles_visitante) : undefined,
   };
 }
 

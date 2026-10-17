@@ -42,6 +42,7 @@ function numeroSeguro(valor: unknown, fallback = 0): number {
 }
 
 function numeroNullable(valor: unknown): number | null {
+  if (valor === null || valor === undefined || valor === '') return null;
   const n = typeof valor === 'number' ? valor : Number(valor);
   return Number.isFinite(n) ? n : null;
 }
@@ -121,6 +122,9 @@ function _metricaMercadoPartido(partido: PartidoFutbolEstadistico, mercado: stri
 }
 
 function desdePerspectiva(partido: PartidoFutbolEstadistico, equipoId: string, mercado: string): { equipo: number; rival: number } {
+  if (![String(partido.equipoLocalId), String(partido.equipoVisitanteId)].includes(String(equipoId))) {
+    return { equipo: Number.NaN, rival: Number.NaN };
+  }
   const esLocal = String(partido.equipoLocalId) === String(equipoId);
   if (esLocal) {
     return {
@@ -205,17 +209,21 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
   const stdEq = Number.isFinite(stdTotalRender) ? Math.max(0.5, stdTotalRender * 0.7) : Number.NaN;
   const stdRv = Number.isFinite(stdTotalRender) ? Math.max(0.5, stdTotalRender * 0.7) : Number.NaN;
 
-  const h2h = contexto?.h2h ?? [];
-  const historialLocal = contexto?.historialLocal ?? [];
-  const historialVisitante = contexto?.historialVisitante ?? [];
   const mercadoContexto = String(analisis.objetivo?.mercado || recObjetivo?.mercado || 'GOLES_FT').toUpperCase();
+  const equipoAnalizadoId = String(analisis.partido.equipoLocal);
+  const rivalAnalizadoId = String(analisis.partido.equipoVisitante);
+  const identidadValida = (p: PartidoFutbolEstadistico, id: string) => {
+    const perspectiva = desdePerspectiva(p, id, mercadoContexto);
+    return Number.isFinite(perspectiva.equipo) && Number.isFinite(perspectiva.rival);
+  };
+  const h2h = (contexto?.h2h ?? []).filter(p => identidadValida(p, equipoAnalizadoId) && identidadValida(p, rivalAnalizadoId));
+  const historialLocal = (contexto?.historialLocal ?? []).filter(p => identidadValida(p, equipoAnalizadoId));
+  const historialVisitante = (contexto?.historialVisitante ?? []).filter(p => identidadValida(p, rivalAnalizadoId));
 
   const muestraH2HObjetivo = Number(analisis.objetivo?.calidadDatos?.muestras?.h2h ?? 0);
   const h2hCanonico = (Number.isFinite(muestraH2HObjetivo) && muestraH2HObjetivo > 0)
     ? h2h.slice(0, muestraH2HObjetivo)
     : h2h;
-  const equipoAnalizadoId = String(analisis.partido.equipoLocal);
-  const rivalAnalizadoId = String(analisis.partido.equipoVisitante);
 
   const predMain: PrediccionCuarto = {
     cuarto: 'COMPLETO',

@@ -60,6 +60,10 @@ interface PropsFormularioAnalisis {
   textoAyudaMercado?: string;
   /** Unidad semántica del módulo (p.ej. goles/corners/disparos) */
   unidadLineaLabel?: string;
+  /** Dominio del formulario; evita consultar temporadas NBA desde fútbol. */
+  deporte?: 'NBA' | 'FUTBOL';
+  partidoActual?: PartidoResumen | null;
+  onSeleccionarPartido?: (partido: PartidoResumen | null) => void;
 }
 
 interface EstadoFormulario {
@@ -99,6 +103,9 @@ export function FormularioAnalisis({
   opcionesMercado,
   textoAyudaMercado,
   unidadLineaLabel,
+  deporte = 'NBA',
+  partidoActual,
+  onSeleccionarPartido,
 }: PropsFormularioAnalisis) {
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
@@ -109,7 +116,16 @@ export function FormularioAnalisis({
   const [errorTemporadas, setErrorTemporadas] = useState<string | null>(null);
 
   // Estado del partido seleccionado (CRÍTICO para registro de predicciones)
-  const [partidoSeleccionado, setPartidoSeleccionado] = useState<PartidoResumen | null>(null);
+  const [partidoInterno, setPartidoInterno] = useState<PartidoResumen | null>(null);
+  const partidoSeleccionado = partidoActual === undefined ? partidoInterno : partidoActual;
+
+  useEffect(() => {
+    if (!partidoSeleccionado) return;
+    setFormulario((prev) => ({ ...prev,
+      equipoLocal: partidoSeleccionado.equipo_local_nombre.toLowerCase(),
+      equipoVisitante: partidoSeleccionado.equipo_visitante_nombre.toLowerCase(),
+    }));
+  }, [partidoSeleccionado]);
 
   // Actualizar campo del formulario
   const actualizarCampo = useCallback(
@@ -130,13 +146,15 @@ export function FormularioAnalisis({
     setTemporadasSeleccionadas([]);
     setTemporadasDisponibles([]);
     setErrorTemporadas(null);
-    setPartidoSeleccionado(null);
-  }, []);
+    setPartidoInterno(null);
+    onSeleccionarPartido?.(null);
+  }, [onSeleccionarPartido]);
 
   // Manejar selección de partido (autocompleta equipos)
   const manejarSeleccionPartido = useCallback(
     (partido: PartidoResumen | null) => {
-      setPartidoSeleccionado(partido);
+      setPartidoInterno(partido);
+      onSeleccionarPartido?.(partido);
 
       if (partido) {
         // Autocompletar equipos desde el partido seleccionado
@@ -147,7 +165,7 @@ export function FormularioAnalisis({
         }));
       }
     },
-    []
+    [onSeleccionarPartido]
   );
 
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
@@ -251,10 +269,11 @@ export function FormularioAnalisis({
       Boolean
     ) as string[];
 
-    if (ids.length === 0) {
+    if (deporte === 'FUTBOL' || ids.length === 0) {
       setTemporadasDisponibles([]);
       setTemporadasSeleccionadas([]);
       setErrorTemporadas(null);
+      setCargandoTemporadas(false);
       return;
     }
 
@@ -298,7 +317,7 @@ export function FormularioAnalisis({
     return () => {
       activo = false;
     };
-  }, [equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
+  }, [deporte, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
 
   const toggleTemporada = useCallback((temporadaId: string) => {
     setTemporadasSeleccionadas((prev) =>
@@ -417,7 +436,7 @@ export function FormularioAnalisis({
           />
 
           {/* Temporadas */}
-          <div className="space-y-2">
+          {deporte === 'NBA' && <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                 Temporadas para el análisis
@@ -476,7 +495,7 @@ export function FormularioAnalisis({
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Cuotas duales (Over/Under) */}
           <InputCuotasDuales

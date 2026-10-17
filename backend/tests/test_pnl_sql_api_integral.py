@@ -52,8 +52,8 @@ def datos_pnl(monkeypatch):
     pool = PoolAplicacion(make_conninfo(url, options=f'-c search_path={schema}'),min_size=1,max_size=2,open=True)
     pool.wait()
     import db
-    from api import rutas_bitacora, rutas_apuestas_futbol, rutas_metricas_futbol
-    for mod in (db,rutas_bitacora,rutas_apuestas_futbol,rutas_metricas_futbol):
+    from api import rutas_bitacora, rutas_apuestas_futbol, rutas_metricas_futbol, rutas_partidos_futbol
+    for mod in (db,rutas_bitacora,rutas_apuestas_futbol,rutas_metricas_futbol,rutas_partidos_futbol):
         monkeypatch.setattr(mod,'obtener_pool',lambda:pool)
     try:
         yield pool
@@ -83,6 +83,59 @@ def test_unificado_cuenta_apuestas_no_selecciones_y_no_certifica(datos_pnl):
         with datos_pnl.connection() as c:
             c.execute("UPDATE apuestas_futbol SET resultado='GANADA',ganancia=10 WHERE resultado='PENDIENTE'")
         assert client.get('/api/bitacora/resumen').json()['resumen']['calidad_pnl']['n_resueltas'] == 6
+
+
+def test_calendario_futbol_expone_ids_y_pagina_sin_inventar_marcadores(datos_pnl):
+    with datos_pnl.connection() as c:
+        c.execute('ALTER TABLE partidos_futbol ADD temporada_id uuid')
+        liga, temporada, local, visitante = [uuid4() for _ in range(4)]
+        c.execute("INSERT INTO competiciones_futbol VALUES(%s,'Liga sintética')", [liga])
+        c.execute("INSERT INTO equipos_futbol VALUES(%s,'Local'),(%s,'Visitante')", [local, visitante])
+        for dia in (1,2):
+            c.execute("INSERT INTO partidos_futbol(id,competicion_id,temporada_id,equipo_local_id,equipo_visitante_id,fecha_partido,estado) VALUES(gen_random_uuid(),%s,%s,%s,%s,now()+%s*interval '1 day','PROGRAMADO')", [liga,temporada,local,visitante,dia])
+    with TestClient(app, raise_server_exceptions=False) as client:
+        r=client.get('/api/futbol/partidos/proximos', params={'tamano':1,'pagina':2})
+        assert r.status_code==200,r.text
+        respuesta=r.json()
+        assert respuesta['total']==2 and len(respuesta['partidos'])==1
+        p=respuesta['partidos'][0]
+        assert p['equipo_local_id']==str(local) and p['equipo_visitante_id']==str(visitante)
+        assert p['competicion_id']==str(liga) and p['temporada_id']==str(temporada)
+        assert p['equipo_local']=='Local' and p['goles_local'] is None and p['goles_visitante'] is None
+
+
+def test_bitacora_futbol_recupera_identidad_por_id_sin_reescribir_historial(datos_pnl):
+    with datos_pnl.connection() as c:
+        c.execute('''
+          ALTER TABLE apuestas ADD equipo_local text, ADD equipo_visitante text,
+            ADD valor_esperado numeric, ADD creado_en timestamptz DEFAULT now(), ADD actualizado_en timestamptz;
+          ALTER TABLE apuestas_futbol ADD equipo_local text, ADD equipo_visitante text,
+            ADD fecha_partido date, ADD probabilidad_sistema numeric, ADD confianza_sistema text,
+            ADD valor_esperado numeric, ADD creado_en timestamptz DEFAULT now(), ADD actualizado_en timestamptz;
+          ALTER TABLE apuestas_combinadas ADD n_selecciones int, ADD selecciones_ganadas int,
+            ADD selecciones_perdidas int, ADD selecciones_push int, ADD selecciones_pendientes int,
+            ADD tiene_mismo_partido boolean, ADD advertencias jsonb, ADD probabilidad_ajustada numeric,
+            ADD confianza_sistema text, ADD valor_esperado numeric, ADD creado_en timestamptz DEFAULT now(),
+            ADD actualizado_en timestamptz;
+        ''')
+        partido = c.execute("SELECT partido_id FROM apuestas_futbol WHERE resultado='PENDIENTE'").fetchone()[0]
+        local, visitante = uuid4(), uuid4()
+        c.execute('INSERT INTO equipos_futbol VALUES(%s,%s),(%s,%s)', [local, 'Local canónico', visitante, 'Visitante canónico'])
+        c.execute("INSERT INTO partidos_futbol(id,equipo_local_id,equipo_visitante_id,fecha_partido) VALUES(%s,%s,%s,'2026-10-18T01:00:00Z')", [partido, local, visitante])
+        c.execute("UPDATE apuestas_futbol SET equipo_local='Nombre histórico' WHERE partido_id=%s", [partido])
+        antes = c.execute('SELECT to_jsonb(a) FROM apuestas_futbol a ORDER BY id').fetchall()
+    with TestClient(app, raise_server_exceptions=False) as client:
+        r = client.get('/api/bitacora/unificada', params={'version':'v2','deporte':'futbol','busqueda':'Visitante canónico'})
+        assert r.status_code == 200, r.text
+        datos = r.json()['data']
+        assert datos['total'] == 1
+        fila = datos['registros'][0]
+        assert fila['equipo_local'] == 'Nombre histórico' and fila['equipo_visitante'] == 'Visitante canónico'
+        assert fila['fecha_partido'] == '2026-10-17'
+        sin_vinculo = client.get('/api/bitacora/unificada', params={'version':'v2','deporte':'futbol','resultado':'GANADA'}).json()['data']['registros'][0]
+        assert sin_vinculo['equipo_local'] is None and sin_vinculo['equipo_visitante'] is None
+    with datos_pnl.connection() as c:
+        assert c.execute('SELECT to_jsonb(a) FROM apuestas_futbol a ORDER BY id').fetchall() == antes
 
 
 def test_listado_futbol_resumen_filtrado_independiente_de_pagina(datos_pnl):

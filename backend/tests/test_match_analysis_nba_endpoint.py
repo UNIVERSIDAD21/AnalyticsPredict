@@ -62,6 +62,22 @@ def test_match_analysis_missing_source_type_returns_422():
     assert resp.status_code == 422
 
 
+def test_match_analysis_valida_fase_y_no_expone_errores_del_proveedor(monkeypatch):
+    from scripts import generar_analisis_partido_nba as modulo
+    payload = _payload()
+    payload['fase'] = 'MIXTO'
+    assert client.post('/api/nba/match-analysis', json=payload).status_code == 422
+    def fallo(*args, **kwargs):
+        raise RuntimeError('SECRETO_SINTETICO_NO_PUBLICAR')
+    monkeypatch.setattr(modulo, 'fetch_team_rows_from_db', fallo)
+    payload['fase'] = 'PRE'
+    respuesta = client.post('/api/nba/match-analysis', json=payload)
+    assert respuesta.status_code == 200,respuesta.text
+    assert 'SECRETO_SINTETICO' not in respuesta.text
+    assert respuesta.json()['metadata']['fase'] == 'PRE'
+    assert any(x['code']=='OFFLINE_REPORT_FALLBACK' for x in respuesta.json()['warnings'])
+
+
 def test_match_analysis_invalid_source_type_returns_422():
     resp = client.post("/api/nba/match-analysis", json=_payload(source_type="BAD_TYPE"))
     assert resp.status_code == 422

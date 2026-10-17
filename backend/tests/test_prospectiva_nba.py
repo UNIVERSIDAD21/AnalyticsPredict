@@ -141,5 +141,6 @@ def test_estado_operativo_respeta_contrato_sql_y_no_escribe(prospectiva_db):
         assert [(r['fase'], r['n'], r['finales_validos']) for r in estado['nba']['por_fase']] == [('PRE', 1, 1), ('REG', 1, 0)]
         assert estado['capturas_futbol']['lotes'] is None
         assert estado['prospectiva']['congeladas'] == 0
+        assert estado['prospectiva']['resueltas_independientes'] == 0
         assert estado['prospectiva']['por_fase'] == []
         assert estado['predictor_ml_futbol']['estado'] == 'SIN_VERSION_ACTIVA'

@@ -124,6 +124,22 @@ def test_persistencia_guarda_raw_y_null_sin_artefacto():
     assert cursor.rows[0][-1] == str(CALIBRADOR_ID)
 
 
+def test_persistencia_no_envia_mercados_exploratorios_al_enum_canonico():
+    class Cursor:
+        def executemany(self, sql, rows):
+            self.rows = rows
+    partido = {k: uuid4() for k in ['id','competicion_id','temporada_id','equipo_local_id','equipo_visitante_id']}
+    partido.update(equipo_local='Local',equipo_visitante='Visitante',fecha_partido=datetime.now(timezone.utc))
+    cursor = Cursor()
+    mercados = {
+        'GOLES_FT': _generar_predicciones_mercado('GOLES_FT',2.7,.8,[2.5]),
+        'DISPAROS_1T': _generar_predicciones_mercado('DISPAROS_1T',10,3,[10.5]),
+    }
+    assert _registrar_predicciones_futbol(cursor,partido=partido,mercados=mercados,modelo_version_id=None)==1
+    assert [r[10] for r in cursor.rows]==['GOLES_FT']
+    assert _registrar_predicciones_futbol(cursor,partido=partido,mercados={'solo':mercados['DISPAROS_1T']},modelo_version_id=None)==0
+
+
 def test_endpoint_calibracion_usa_columna_raw_real_y_muestra_sin_procedencia(monkeypatch):
     class Cursor:
         sql = ""

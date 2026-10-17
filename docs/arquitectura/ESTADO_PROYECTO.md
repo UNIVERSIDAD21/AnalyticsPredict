@@ -15,7 +15,18 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 - [KPI de calibración](../reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md).
 - [Evaluación temporal fútbol](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
 
-## Última pasada integral — 2026-10-16
+## Corte de uso local y visual — 2026-10-16
+
+[Arranque, correcciones y límites](../reactivacion_single_user/ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md).
+Backend/frontend loopback,2123/30equipos sin reentrenar; flujos visibles y formulario
+fútbol sintético verificados. H12Tailwind4/audit0,854backend/36frontend/lint/build;
+publicación/CI final acreditadas en acta externa. Estado15capturas/9outcomesPRE/
+0independientes;6pendientes, sin repetir congelamientos. H4ticket#4868445cerrado
+por proveedor con autoservicio, sin coordinación de purga. Fútbol0MLactivos y
+P&LN/D; eficaciaNO_CERTIFICADA. Este corte reemplaza bloqueos visual/H12 y conteos
+outcomes anteriores, no los cierres científicos aún pendientes.
+
+## Última pasada integral anterior — 2026-10-16
 
 [Detalle y límites](../reactivacion_single_user/VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md):
 426finales recuperados con goles por mitades/FT/tiros,38colisiones retenidas,
@@ -30,8 +41,8 @@ no publicado por visual bloqueado; producto conserva5altasdev/0prod. SolicitudH4
 preparada, no enviada. Propuestas concretas de alcance al cierre, no tareas
 manuales de programación ni soportes inexistentes para el propietario.
 
-La tabla siguiente conserva los alcances y cortes anteriores; esta sección y
-el documento enlazado prevalecen para los conteos actualizados del paquete.
+La tabla siguiente conserva los alcances y cortes anteriores; el corte de uso
+local al inicio prevalece para visual/H12/outcomes/H4 actuales.
 
 ## Hechos comprobados y límites
 

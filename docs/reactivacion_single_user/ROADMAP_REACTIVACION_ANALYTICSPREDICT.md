@@ -5,6 +5,16 @@ y órdenes posteriores. Sustituye C0–C7 comercial; no abre evolución avanzada
 La ejecución detallada se registra en el `PLAN_MAESTRO.md` externo solicitado por
 el propietario, sin copiar memoria/configuración del agente al producto.
 
+## Corte de uso local posterior16oct
+
+[Visual y H12](ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md): navegación/datos reales,
+envío fútbol aislado y NBA interno con corte/fase verificados; audit0/854backend/
+36frontend/lint/build. Cierre técnico visual/H12 sujeto a publicación/CI del acta.
+15capturas/9outcomesPRE/0independientes; faltan6outcomes en este corte, independencia,
+muestra y calibración. H4ticketcerrado por proveedor: bloqueado, sin purga parcial.
+Los estados antiguos siguientes se conservan como antecedentes, no bloqueos
+actuales del navegador ni permiso para repetir ingestas/capturas/entrenamiento.
+
 ## Base cerrada (no repetir)
 
 | Alcance | Evidencia |
@@ -33,11 +43,8 @@ No hay acciones futuras programadas ni nuevos bloques de evolución avanzada.
 ## Pendientes ejecutables del agente
 
 1. **Validación analítica M12:** evaluación descriptiva ejecutada por1.303cohortesraw de2–4pares; cero elegibilidad temporal histórica/calibradasID. Certificación y calibración requieren nuevas cadenas/muestra válidas, no agrupar versiones ni fabricar calibrador.
-3. **H12:** resolver auditoría dev, permisos específicos y rot con evidencia,
-   preservando cambios previos; lock/tests/lint/build/CI. [Avance16/10](H12_DEPENDENCIAS_2026-10-16.md):
-   dev10→5altas porbraces sin parche,prod0; no cerrarH12.
-4. **Visual:** diagnosticar el rechazo de navegación de la herramienta por vía
-   soportada, sin eludir políticas; verificar flujos visibles y registrar evidencia.
+3. **H12 y visual:** cierre técnico posterior de uso local; ver informe y acta
+   final para publicación/CI. No repetir diagnóstico del navegador ya recuperado.
 5. **Fuentes:** complemento200finales1T/2T aplicado/verificado; proveedor NBA independiente permitido aún sin acreditar. CBS12/12calendarios y finalprobe no demuestran upstream independiente. No evadir403 ni llamar independientes a dos endpoints ESPN.
 6. **Calibración/confidence/odds:** evaluar por versión/deporte/mercado con muestras
    válidas, intervalos y disponibilidad histórica explícita; no fabricar calibrador.
@@ -48,7 +55,7 @@ No hay acciones futuras programadas ni nuevos bloques de evolución avanzada.
 | Frente | Estado | Condición de reanudación |
 |---|---|---|
 | Activación fútbol | No apta según protocolo actual | Cobertura>=90% en las tres, ningún target corners peor. Actual79,13%; censoCALjunio-agosto97finales<100mínimo. No bajar gates/eliminar ventanas tras medir |
-| OutcomesNBA | Espera de evento | Resolver después de partidos16/10 23:00Z→17/10 02:30Z porUUID existente; no retrofechar |
+| OutcomesNBA | 9PRE resueltos,6outcomes pendientes en15capturas | Resolver porUUID existente tras evento/final; independencia y muestra siguen sin acreditar; no retrofechar |
 | IndependenciaNBA | No acreditada | Proveedor permitido con identidad/instantes/resultados trazables; CDN403 no se sortea |
 | P&L sin soportes | No recuperable controlado | Mantener exclusiones/ROI N/D; propietario confirma ausencia, no pedir pruebas inexistentes |
 | H4 | Purga integral no acreditada | Alcance completo de refs y verificación de inaccesibilidad, no solo ramas |

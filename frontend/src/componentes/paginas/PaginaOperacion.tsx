@@ -8,7 +8,7 @@ type Estado = {
   nba: Serie; futbol: Serie;
   modelo_nba: { estado: string; version?: number; equipos?: number; ultimo_dato?: string };
   capturas_futbol: { lotes: number | null; observado_en: string | null };
-  prospectiva: { congeladas: number | null; resueltas: number | null; estado: string; por_fase?: { fase: string; congeladas: number; eventos: number; resueltas: number }[] };
+  prospectiva: { congeladas: number | null; resueltas: number | null; resueltas_independientes?: number | null; estado: string; por_fase?: { fase: string; congeladas: number; eventos: number; resueltas: number; resueltas_independientes?: number }[] };
   predictor_ml_futbol: { estado: string; motivo: string; familias: Record<string, { estado: string; version_id: number | null }>; carga_en_proceso: { estado: string; familias: Record<string, { estado: string; version_id: number | null }> } };
   notas: string[];
 };
@@ -51,7 +51,9 @@ export function PaginaOperacion() {
             return <li key={familia}>{familia}: {modelo.estado === 'VERIFICADA_PARA_CARGA' ? 'artefacto verificado' : modelo.estado === 'ARTEFACTO_NO_APTO' ? 'artefacto no apto' : 'sin versión activa'} · versión {modelo.version_id ?? 'N/D'} · {coincide ? 'cargado' : 'no cargado'}</li>;
           })}</ul>
         </section>
-        <section className="border border-neon-cyan/20 rounded p-4"><h2 className="font-bold">Seguimiento prospectivo</h2><p>{estado.prospectiva.congeladas ?? 'N/D'} predicciones congeladas · {estado.prospectiva.resueltas ?? 'N/D'} resultados acreditados</p><p>{estado.prospectiva.estado === 'ALMACEN_NO_INSTALADO' ? 'Seguimiento aún no instalado' : estado.prospectiva.estado === 'ESPERANDO_OUTCOMES' ? 'Esperando resultados posteriores' : estado.prospectiva.estado === 'SIN_CAPTURAS' ? 'Sin predicciones congeladas' : 'Evaluación pendiente'}</p>
+        <section className="border border-neon-cyan/20 rounded p-4"><h2 className="font-bold">Seguimiento prospectivo</h2><p>{estado.prospectiva.congeladas ?? 'N/D'} predicciones congeladas · {estado.prospectiva.resueltas ?? 'N/D'} resultados registrados</p>
+          <p>Resultados con fuente independiente acreditada: {estado.prospectiva.resueltas_independientes ?? 'N/D'}. Registrar un resultado no certifica su independencia ni la calibración.</p>
+          <p>{estado.prospectiva.estado === 'ALMACEN_NO_INSTALADO' ? 'Seguimiento aún no instalado' : estado.prospectiva.estado === 'ESPERANDO_OUTCOMES' ? 'Esperando resultados posteriores' : estado.prospectiva.estado === 'SIN_CAPTURAS' ? 'Sin predicciones congeladas' : 'Evaluación pendiente'}</p>
           <ul aria-label="Seguimiento NBA por fase">{estado.prospectiva.por_fase?.map(s => <li key={s.fase}>{fase(s.fase)}: {s.eventos} eventos · {s.congeladas} predicciones · {s.resueltas} resultados</li>)}</ul>
         </section>
       </div>

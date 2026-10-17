@@ -12,7 +12,7 @@ el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 - [x] Verificar dependencias frontend y compatibilidad de Node local/CI. Node24 local: lint, 19 tests y build verdes; CI usa Node20.
 - [x] Arranque reproducible en loopback, sin parar procesos ajenos ni autoentrenar. `scripts/dev.sh`, 8000/5173 HTTP200; salud con30 equipos.
 - [x] Smoke HTTP de Dashboard, NBA, fútbol, bitácora y Estado: seis GET API y seis rutas frontend HTTP200; calendario canónico devuelve49 próximos. Rutas activas sin login en código/OpenAPI.
-- [ ] Smoke visual en navegador. Herramienta rechazó navegación local; diagnóstico técnico del agente con control autorizado, no revisión delegada al propietario. HTTP y componentes no lo sustituyen.
+- [x] Smoke visual16/10: dashboard/NBA/fútbol/bitácora/configuración/Estado y análisisNBA interno con datos; formulario fútbol contra base artificial exclusiva. Navegación local recuperada por vía soportada. Ver ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md.
 
 ## B. NBA: dominio, calidad y actualización
 
@@ -80,3 +80,14 @@ historia ni cambios globales. El bloque D de evolución avanzada sigue fuera de 
 - [ ] Visual/publicarH12/purgaGitintegral: dependencias de alcance/proveedor.
 
 Detalle: [validación estacional y fases NBA](VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md).
+
+## Cierre de uso local posterior16oct (prevalece)
+
+- [x] Revisar visualmente Tailwind4, publicar H12 tras pruebas/audit0 y comprobarCI en acta externa.
+- [x] AnálisisNBA interno con fase/corte y sin cuotas/fuentes de ejemplo, HTTP200.
+- [x] Contrato calendario/selección fútbol porIDs, POSTaislado200, sin escribir análisis de prueba enNeon.
+- [x] Registrar9outcomesPRE con ensayo/backup/idempotencia y huellas preservadas.
+- [ ] Independencia/muestra/calibración:0outcomesindependientes; no certificación.
+- [ ] H4: proveedor cerró#4868445sin coordinación de purga; no ejecutar parcial.
+
+FútbolsinMLaptoactivo; P&LN/D. El sistema puede usarse localmente de modo exploratorio.

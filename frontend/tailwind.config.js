@@ -22,6 +22,7 @@ export default {
           verde: '#00ff88',
           rojo: '#ff0055',
           azul: '#00d4ff',
+          amarillo: '#ffc800',
         },
         // Texto
         texto: {
@@ -79,9 +80,9 @@ export default {
       },
       fontFamily: {
         futurista: ['Orbitron', 'sans-serif'],
-        principal: ['Exo 2', 'system-ui', 'sans-serif'],
+        principal: ['"Exo 2"', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
-        sans: ['Exo 2', 'system-ui', 'sans-serif'],
+        sans: ['"Exo 2"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'tarjeta': '0 0 20px rgba(0, 245, 255, 0.1)',

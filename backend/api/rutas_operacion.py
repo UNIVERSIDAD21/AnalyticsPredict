@@ -37,15 +37,17 @@ def leer_estado(conn):
             nba_job=c.execute("SELECT ultima_exito,ultima_error,ultimo_error,ultimo_insertados,ultimo_actualizados,cursor_fecha FROM ingestion_state_baloncesto WHERE clave='nba_partidos'").fetchone()
         if nba_job is not None and nba_job.get('ultimo_error'):
             nba_job['ultimo_error'] = 'FALLO_REGISTRADO_VER_LOG_LOCAL'
-        prospectiva={'congeladas':None,'resueltas':None,'estado':'ALMACEN_NO_INSTALADO'}
+        prospectiva={'congeladas':None,'resueltas':None,'resueltas_independientes':None,'estado':'ALMACEN_NO_INSTALADO'}
         if c.execute("SELECT to_regclass('public.predicciones_prospectivas') AS tabla").fetchone()['tabla']:
             prospectiva['congeladas']=c.execute('SELECT count(*) n FROM predicciones_prospectivas').fetchone()['n']
             prospectiva['resueltas']=c.execute('SELECT count(*) n FROM outcomes_prospectivos').fetchone()['n']
+            prospectiva['resueltas_independientes']=c.execute("SELECT count(*) n FROM outcomes_prospectivos WHERE evidencia->>'independiente'='true'").fetchone()['n']
             prospectiva['estado']='ESPERANDO_OUTCOMES' if prospectiva['congeladas']>prospectiva['resueltas'] else 'SIN_CAPTURAS' if not prospectiva['congeladas'] else 'EVALUACION_PENDIENTE'
             prospectiva['por_fase'] = c.execute('''SELECT CASE s.snapshot->'evento'->'season'->>'type'
                 WHEN '1' THEN 'PRE' WHEN '2' THEN 'REG' WHEN '3' THEN 'POST' ELSE 'SIN_CLASIFICAR' END fase,
                 count(*) congeladas, count(DISTINCT s.snapshot->>'event_id') eventos,
-                count(o.prediccion_id) resueltas
+                count(o.prediccion_id) resueltas,
+                count(o.prediccion_id) FILTER(WHERE o.evidencia->>'independiente'='true') resueltas_independientes
                 FROM predicciones_prospectivas s LEFT JOIN outcomes_prospectivos o ON o.prediccion_id=s.id
                 GROUP BY 1 ORDER BY 1''').fetchall()
         modelos_futbol=[]
