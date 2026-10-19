@@ -64,7 +64,8 @@ class _FakePool:
 class TestAuditoriaApuestasAnalizadas(unittest.TestCase):
     def test_where_base(self):
         where, params = _armar_where_auditoria_futbol()
-        self.assertEqual(where, "1=1")
+        self.assertIn("PARTIDO_GUARDADO", where)
+        self.assertIn("PARTIDO_ARCHIVADO", where)
         self.assertEqual(params, [])
 
     def test_where_con_todos_los_filtros(self):
