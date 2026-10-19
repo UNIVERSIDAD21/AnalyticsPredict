@@ -16,6 +16,14 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 
 ## Prioridades activas
 
+- **ML fútbol V4,19/10:** [desarrollo y cohorte futura](reactivacion_single_user/ML_FUTBOL_FORMA_V4_2026-10-19.md).
+  Selección temporal entre identidad/forma/híbrido, refit final explícito y recarga
+  sin entrenar. Desarrollo exploratorio goles/disparos:1.157/1.193pares,96,98% de
+  cobertura y mejora frente a baseline de liga; no prueba del artefacto final.
+  Congelados251futuros por familia de goles/disparos antes del20/10; córners223/251,
+  techo88,84%<90. Sin DML, activación, probabilidades ni cron;0MLfútbol activos.
+  V1/V2/V3 intactas. Serving/calibración/promoción siguen pendientes de evidencia.
+
 - **Flujo personal para empezar a usarlo (19/10):** en `/futbol` se puede elegir
   un partido, consultar el análisis/contexto disponible y guardarlo con “Guardar
   para revisar”; `/bitacora` mantiene una lista aparte con enlace para reabrirlo,

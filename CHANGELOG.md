@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-19 — Desarrollo ML fútbol con forma causal y nueva cohorte futura
+
+- Implementar selección temporal de Ridge identidad/forma/híbrido, ataque/defensa5/20, descanso/contexto de liga y refit final explícito. No consumir outcomes del partido ni de eventos simultáneos; los históricos de desarrollo no certifican el modelo final.
+- Evaluar1.193eventos,1.157pares goles/disparos y96,98%cobertura con mejora frente a baseline de liga; córners619pares/51,89%, no apto. Mantener V1/V2/V3 sin modificaciones.
+- Congelar251partidos20oct–1dicUTC con251predicciones de goles/251disparos/223córners+28abstenciones; techo córners88,84%<90. Artefactos completos con coeficientes/features/estado/hash y CLI externa READONLY, sin sobrescribir.
+- Mantener probabilidadesN/D,0MLfútbol activos y promoción/calibración pendientes. Sin DML/ingesta/cron/serving/NBA/bitácora;887backend/0fallos/0skips y dos deprecaciones heredadas. Evidencia externa `ML_FUTBOL_FORMA_TEMPORAL_V4_2026-10-19`.
+
 ## 2026-10-19 — Consulta y guardado neutral de partidos de fútbol
 
 - Desde Fútbol, guardar el partido seleccionado para volver a revisarlo en una lista separada de Bitácora; reabrirlo por UUID aunque quede fuera del calendario próximo y retirarlo mediante archivo lógico.

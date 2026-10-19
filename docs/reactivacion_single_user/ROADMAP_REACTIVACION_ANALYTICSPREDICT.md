@@ -1,9 +1,20 @@
 # Roadmap vigente de reactivación AnalyticsPredict
 
-**Corte consolidado:2026-10-18.** Directiva single-user del propietario del2026-10-05
+**Corte consolidado:2026-10-19.** Directiva single-user del propietario del2026-10-05
 y órdenes posteriores. Sustituye C0–C7 comercial; no abre evolución avanzada D.
 La ejecución detallada se registra en el `PLAN_MAESTRO.md` externo solicitado por
 el propietario, sin copiar memoria/configuración del agente al producto.
+
+## Nuevo desarrollo ML autorizado19/10
+
+[V4 forma temporal](ML_FUTBOL_FORMA_V4_2026-10-19.md): selección CAL de diseño/alpha,
+refit final explícito y nueva cohorte futura, sin alterar V1/V2/V3. Goles/disparos
+superan controles exploratorios retrospectivos con96,98%cobertura; NO es eficacia
+del modelo final.251capturas futuras por familia,20oct–1dicUTC,0outcomes iniciales.
+Córners223/251, techo88,84%<90: bloqueado aun antes de outcomes. No cambiar esta
+cohorte tras ver resultados. El siguiente paso es evaluar sus finales reales,
+separar calibración probabilística y nueva evaluación antes de promoción/serving.
+Sin calendario automático ni activación por CI o MAE;0MLfútbol activos.
 
 ## Recuperación de datos enero–octubre cerrada 18/10
 
@@ -64,7 +75,7 @@ No hay acciones futuras programadas ni nuevos bloques de evolución avanzada.
 
 | Frente | Estado | Condición de reanudación |
 |---|---|---|
-| Activación fútbol | No apta según protocolo actual | Cobertura>=90% en las tres, ningún target corners peor. Actual79,13%; censoCALjunio-agosto97finales<100mínimo. No bajar gates/eliminar ventanas tras medir |
+| Activación fútbol | Sin activo; V4 en evaluación futura, V1/V2/V3 conservadas | V4 goles/disparos96,98%retrospectivo,251predicciones futuras sin outcomes; falta prueba propia/calibración/promoción. Córners techo88,84%<90. No bajar gates ni heredar métricas de desarrollo al refit |
 | OutcomesNBA | 9PRE resueltos,6outcomes pendientes en15capturas | Resolver porUUID existente tras evento/final; independencia y muestra siguen sin acreditar; no retrofechar |
 | IndependenciaNBA | No acreditada | Proveedor permitido con identidad/instantes/resultados trazables; CDN403 no se sortea |
 | P&L sin soportes | No recuperable controlado | Mantener exclusiones/ROI N/D; propietario confirma ausencia, no pedir pruebas inexistentes |

@@ -41,6 +41,21 @@ ML fútbol continúa sin activo; la certificación global permanece **NO CERTIFI
 Detalle y pruebas dirigidas en la entrega externa
 `PARTIDOS_GUARDADOS_BITACORA_2026-10-19`.
 
+## Desarrollo ML fútbol V4 — 2026-10-19
+
+[Protocolo, resultados y límites](../reactivacion_single_user/ML_FUTBOL_FORMA_V4_2026-10-19.md).
+Nuevos candidatos Ridge con forma causal/contexto de liga y refit final anterior
+a eventos futuros, separados de V1/V2/V3. Desarrollo retrospectivo:1.157/1.193
+pares goles/disparos,96,98%cobertura, mejora frente a baseline de liga y sin targets
+nominalmente peores; esto NO certifica el refit final ni reescribe los gatesV1.
+Córners619/1.193,51,89%, no apto por cobertura. Cohorte futura20oct–1dicUTC:
+251partidos,251predicciones goles/251disparos/223córners+28abstenciones, techo
+córners88,84%<90. Estado inicial0pares/N/D, sin calibrador ni activación.
+JSONcoeficientes/features/estado/hash completo y CLI de evaluación posterior,
+archivos externos no sobrescribibles.887backend/0fallos/0skips, dos deprecaciones;
+CI y publicación delSHA final en acta externa. Neon soloREADONLY,0MLfútbol activos,
+serving/NBA/apuestas/bitácora intactos. No cron, ingesta ni arranque de servicios.
+
 ## Corte de uso local y visual — 2026-10-16
 
 [Arranque, correcciones y límites](../reactivacion_single_user/ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md).

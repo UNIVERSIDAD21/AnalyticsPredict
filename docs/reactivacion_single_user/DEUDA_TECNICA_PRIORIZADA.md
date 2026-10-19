@@ -1,6 +1,6 @@
 # Deuda técnica priorizada — AnalyticsPredict single-user
 
-**Corte consolidado:2026-10-18.** No sustituye gates científicos ni reactiva planes
+**Corte consolidado:2026-10-19.** No sustituye gates científicos ni reactiva planes
 comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 [roadmap](ROADMAP_REACTIVACION_ANALYTICSPREDICT.md) gobiernan el trabajo nuevo.
 
@@ -11,7 +11,8 @@ su alcance: 2.928 finales contrastados, fútbol 273 altas/108 cambios, NBA 18 al
 6 fases y Euro 183 altas. No hay finales aún PROGRAMADO dentro de esa cohorte.
 Un evento conserva periodos NULL por fuente inválida. Esto no cierra calidad de
 todos los campos/años, independencia NBA, aptitud ML fútbol ni calibración.
-No se han recalculado los gates históricos siguientes con la base actualizada.
+Los gates V1/V2/V3 no se recalcularon con esta actualización; V4 es un nuevo
+protocolo autorizado19/10, no una corrección de sus decisiones históricas.
 Los estados visual/H12/outcomes del corte posterior 16/10 prevalecen sobre las
 filas históricas de la tabla. No hay refresco automático creado en este bloque.
 
@@ -22,7 +23,7 @@ filas históricas de la tabla. No hay refresco automático creado en este bloque
 | P1 | H4 historiaGit | Purga integral recuperable y ausencia acreditada en todas las refs relevantes | Ensayo357/357refs y4blobs fuera con árboles restantes idénticos; backup privado. Remoto12heads/13refsPR contaminadas+cachésGitHub; no purga parcial |
 | P2 | H12 dev/permisos/rot | Versiones compatibles, lock/pruebas/lint/build/CI; permisos reparados solo con evidencia | 16/10:5altasdev porbraces sin parche,0prod;10→5tras Vite/overrides probados.0discrepanciasmodo/sin chmod, respaldo histórico preservado |
 | P2 | Visual/E2E | Flujo visible completo con evidencia, no solo HTTP200 | Herramienta rechazó navegación local; diagnóstico del agente, no falta de permiso del propietario |
-| P2 analítico | Actualización y activación fútbol | Gates predeclarados por familia; fuente por tiempos/cobertura; versión/calibrador vinculados | 200complementos1T/2T aplicados;618EVAL/familia, ninguna apta:79,13%cobertura y targetcorners. CensoCAL97<100; no fallo de persistencia ni falta de permiso |
+| P2 analítico | Actualización y activación fútbol | Gates predeclarados por familia; prueba propia del refit; versión/calibrador vinculados | V4 goles/disparos1.157/1.193pares exploratorios,96,98%;251predicciones futuras por familia,0outcomes iniciales. Córners223/251futuros, techo88,84%<90. Falta evaluación/calibración/promoción/serving;0MLactivos. V1/V2/V3 intactas |
 | P2 analítico | H8/H9 científico y prospectiva | fit_end<prediction_time<outcome_time, datos disponibles, independencia y muestra suficiente | 0históricasNBAcertificables;12snapshotsPRE/0outcomes al último corte, eventos aún futuros |
 | P2 analítico | Confidence/odds/calibración | Cortes por deporte/mercado/versión, n/IC/baseline y elegibilidad temporal | Evaluación realizada:1.303cohortesraw n2–4,0calibradasID/pares temporales; confianza/cuotas descriptivas. Certificación abierta, sinprobabilidades/ROI certificados |
 | Control permanente | P&L sin soportes | Preservar filas, exclusiones y ROI N/D; propagar motivos | Ausencia definitiva confirmada por propietario;114/181binarias no evaluables,67solo aritméticas. Nada que pedirle |

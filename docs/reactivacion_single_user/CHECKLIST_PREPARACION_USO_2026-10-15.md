@@ -6,6 +6,22 @@ pendientes con evidencia. Base `ebf128c`, rama `reactivacion/implementacion-sing
 el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 `Carpeta de Entregas de Borlty/PREPARACION_USO_INTEGRAL_2026-10-15`.
 
+## Desarrollo ML fútbol19/10 (prevalece para candidatos, no certificación)
+
+- [x] V4 forma causal/contexto de liga, selección CAL y refit final explícito,
+  recarga sin entrenamiento y política previa; V1/V2/V3 intactas.
+- [x] Desarrollo exploratorio:1.157/1.193pares de goles/disparos,96,98%cobertura,
+  mejora frente a baseline de liga; no se atribuye ese rendimiento al refit final.
+- [x] Congelar251partidos futuros del20oct–1dicUTC:251predicciones goles,
+  251disparos,223córners y28abstenciones.0pares iniciales, métricasN/D.
+- [x] Guardar coeficientes/features/estado/hashes y comprobar recarga exacta;
+  887backend/0fallos/0skips en PostgreSQL sintético propio, dos deprecaciones.
+- [ ] Evaluar outcomes futuros y calibración por versión/mercado antes de
+  promoción/serving. Córners ya falla cobertura máxima88,84%<90.0MLfútbol activos.
+
+Ver [V4](ML_FUTBOL_FORMA_V4_2026-10-19.md). Sin escriturasNeon, ingestas, cron,
+acciones NBA ni cambios al flujo de Bitácora. No repetir capturas congeladas.
+
 ## Actualización de datos 18/10 (prevalece para frescura)
 
 - [x] Permisos efectivos Neon comprobados; no requiere control global adicional.
