@@ -15,6 +15,7 @@ import { usePartidosFutbol } from '../../hooks';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
+import { archivarPartidoGuardado, guardarPartidoParaRevisar, listarPartidosGuardados } from '../../servicios/bitacora';
 import type {
   AnalisisFutbolResponse,
   PartidoFutbolEstadistico,
@@ -129,6 +130,9 @@ export function PaginaFutbol() {
   const { agregarToast } = useToasts();
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
+  const [partidoFueraDeLista, setPartidoFueraDeLista] = useState<PartidoFutbolResumen | null>(null);
+  const [partidosGuardadosIds, setPartidosGuardadosIds] = useState<Set<string>>(new Set());
+  const [guardandoPartido, setGuardandoPartido] = useState(false);
   const [categoriaMercadoFutbol, setCategoriaMercadoFutbol] = useState<CategoriaSeleccionFutbol>('CORNERS');
   const [alcanceMercadoFutbol, setAlcanceMercadoFutbol] = useState<AlcanceSeleccionFutbol>('TOTAL');
   const [seleccionCanonicaActiva, setSeleccionCanonicaActiva] = useState<SeleccionCanonicaFutbol | null>(null);
@@ -161,37 +165,59 @@ export function PaginaFutbol() {
     cargarAlMontar: true,
   });
 
+  const partidosVista = useMemo(() => {
+    if (!partidoFueraDeLista || partidos.some((p) => p.id === partidoFueraDeLista.id)) return partidos;
+    return [...partidos, partidoFueraDeLista];
+  }, [partidoFueraDeLista, partidos]);
+
   const partidoSeleccionado = useMemo(
-    () => partidos.find((p) => p.id === partidoSeleccionadoId) ?? null,
-    [partidoSeleccionadoId, partidos]
+    () => partidosVista.find((p) => p.id === partidoSeleccionadoId) ?? null,
+    [partidoSeleccionadoId, partidosVista]
   );
 
   useEffect(() => {
-    if (seleccionInicialAplicada.current || partidos.length === 0) return;
-    seleccionInicialAplicada.current = true;
+    if (seleccionInicialAplicada.current || cargandoPartidos) return;
     const qs = new URLSearchParams(window.location.search);
     const porQuery = qs.get('partidoId');
-    if (porQuery && partidos.some((p) => p.id === porQuery)) {
+    if (porQuery) {
+      seleccionInicialAplicada.current = true;
       setPartidoSeleccionadoId(porQuery);
+      if (!partidos.some((p) => p.id === porQuery)) {
+        void obtenerPartido(porQuery)
+          .then(setPartidoFueraDeLista)
+          .catch((error) => agregarToast({
+            titulo: 'No se pudo abrir el partido guardado',
+            mensaje: error instanceof Error ? error.message : 'Partido no disponible',
+            tipo: 'error',
+          }));
+      }
       return;
     }
+    if (partidos.length === 0) return;
+    seleccionInicialAplicada.current = true;
     if (!partidoSeleccionadoId) {
       setPartidoSeleccionadoId(partidos[0].id);
     }
-  }, [partidoSeleccionadoId, partidos]);
+  }, [agregarToast, cargandoPartidos, partidoSeleccionadoId, partidos]);
+
+  useEffect(() => {
+    void listarPartidosGuardados()
+      .then((respuesta) => setPartidosGuardadosIds(new Set(respuesta.partidos.map((partido) => partido.partido_id))))
+      .catch(() => setPartidosGuardadosIds(new Set()));
+  }, []);
 
   const equiposAnalisis: Equipo[] = useMemo(() => {
     const catalogo = new Map<string, Equipo>();
-    for (const partido of partidos) {
+    for (const partido of partidosVista) {
       for (const [id, nombre] of [[partido.equipoLocal, partido.equipoLocalNombre], [partido.equipoVisitante, partido.equipoVisitanteNombre]]) {
         catalogo.set(String(id), { id: String(id), nombre, nombre_corto: nombre, abreviatura: nombre.slice(0, 3).toUpperCase() });
       }
     }
     return [...catalogo.values()];
-  }, [partidos]);
+  }, [partidosVista]);
 
   const partidosSelector: PartidoResumen[] = useMemo(() => (
-    partidos.map((partido) => ({
+    partidosVista.map((partido) => ({
       id: partido.id,
       fecha_partido: partido.fechaPartido.split('T')[0],
       tipo_partido: 'REG',
@@ -205,7 +231,7 @@ export function PaginaFutbol() {
       visitante_total: null,
       finalizado: false,
     }))
-  ), [partidos]);
+  ), [partidosVista]);
 
   const seleccionarPartidoFormulario = useCallback((partido: PartidoResumen | null) => {
     setPartidoSeleccionadoId(partido?.id ?? '');
@@ -213,6 +239,38 @@ export function PaginaFutbol() {
     setSeleccionCanonicaActiva(null);
     setErrorAnalisis(null);
   }, []);
+
+  const manejarGuardarPartido = useCallback(async () => {
+    if (!partidoSeleccionado) return;
+    setGuardandoPartido(true);
+    try {
+      await guardarPartidoParaRevisar(partidoSeleccionado.id);
+      setPartidosGuardadosIds((actuales) => new Set(actuales).add(partidoSeleccionado.id));
+      agregarToast({ titulo: 'Partido guardado', mensaje: 'Quedó en Bitácora para volver a revisarlo. No se registró una apuesta.', tipo: 'success' });
+    } catch (error) {
+      agregarToast({ titulo: 'No se pudo guardar', mensaje: error instanceof Error ? error.message : 'Intenta de nuevo.', tipo: 'error' });
+    } finally {
+      setGuardandoPartido(false);
+    }
+  }, [agregarToast, partidoSeleccionado]);
+
+  const manejarQuitarPartido = useCallback(async () => {
+    if (!partidoSeleccionado) return;
+    setGuardandoPartido(true);
+    try {
+      await archivarPartidoGuardado(partidoSeleccionado.id);
+      setPartidosGuardadosIds((actuales) => {
+        const nuevos = new Set(actuales);
+        nuevos.delete(partidoSeleccionado.id);
+        return nuevos;
+      });
+      agregarToast({ titulo: 'Partido quitado', mensaje: 'Se retiró de tu lista de partidos guardados.', tipo: 'success' });
+    } catch (error) {
+      agregarToast({ titulo: 'No se pudo quitar', mensaje: error instanceof Error ? error.message : 'Intenta de nuevo.', tipo: 'error' });
+    } finally {
+      setGuardandoPartido(false);
+    }
+  }, [agregarToast, partidoSeleccionado]);
 
   const opcionesMercadoFutbol: Array<{ valor: Mercado; etiqueta: string }> = useMemo(
     () => [
@@ -493,9 +551,37 @@ export function PaginaFutbol() {
           </div>
         )}
 
+        <div className="mb-5 rounded-lg border border-neon-amarillo/30 bg-neon-amarillo/5 px-4 py-3 text-sm text-texto-secundario">
+          Puedes consultar calendario, historial y estadísticas. Fútbol no tiene un modelo ML activo; estos datos no equivalen a una predicción certificada.
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
             <div className="lg:sticky lg:top-6 space-y-4">
+              {partidoSeleccionado && (
+                <Tarjeta className="border border-neon-verde/20">
+                  <p className="text-xs uppercase tracking-wider text-texto-secundario">Partido seleccionado</p>
+                  <p className="mt-2 font-semibold text-texto-principal">
+                    {partidoSeleccionado.equipoLocalNombre} vs {partidoSeleccionado.equipoVisitanteNombre}
+                  </p>
+                  <p className="mt-1 text-xs text-texto-secundario">
+                    {partidoSeleccionado.competicionNombre} · {new Date(partidoSeleccionado.fechaPartido).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </p>
+                  {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
+                    <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
+                      {guardandoPartido ? 'Actualizando…' : 'Quitar de Bitácora'}
+                    </Boton>
+                  ) : (
+                    <Boton variante="secundario" anchoCompleto onClick={manejarGuardarPartido} disabled={guardandoPartido}>
+                      {guardandoPartido ? 'Guardando…' : 'Guardar para revisar'}
+                    </Boton>
+                  )}
+                  <p className="mt-2 text-xs text-texto-secundario">
+                    Guardar aquí solo marca el partido para volver a consultarlo; no crea apuesta ni pick.
+                  </p>
+                </Tarjeta>
+              )}
+
               <Tarjeta className="border border-neon-cyan/20">
                 <label htmlFor="categoria-futbol" className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                   Mercado fútbol

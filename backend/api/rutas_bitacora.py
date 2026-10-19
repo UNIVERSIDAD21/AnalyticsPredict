@@ -87,6 +87,10 @@ class RespuestaBitacoraUnificada(BaseModel):
     total_paginas: int
     registros: List[RegistroBitacoraUnificada]
 
+
+class PeticionPartidoGuardado(BaseModel):
+    partido_id: UUID
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
@@ -791,7 +795,13 @@ async def listar_apuestas_analizadas(
     pool = obtener_pool()
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("SELECT COUNT(*) AS total FROM apuestas_analizadas")
+            cur.execute(
+                """
+                SELECT COUNT(*) AS total
+                FROM apuestas_analizadas
+                WHERE estado IS NULL OR estado NOT IN ('PARTIDO_GUARDADO', 'PARTIDO_ARCHIVADO')
+                """
+            )
             total = cur.fetchone()["total"]
             cur.execute(
                 """
@@ -799,6 +809,7 @@ async def listar_apuestas_analizadas(
                        probabilidad_sistema, confianza, estado, resultado_outcome,
                        valor_real, resultado_resumen, creado_en, actualizado_en
                 FROM apuestas_analizadas
+                WHERE estado IS NULL OR estado NOT IN ('PARTIDO_GUARDADO', 'PARTIDO_ARCHIVADO')
                 ORDER BY actualizado_en DESC
                 LIMIT %s OFFSET %s
                 """,
@@ -807,6 +818,51 @@ async def listar_apuestas_analizadas(
             filas = cur.fetchall() or []
     payload_legacy = {"exito": True, "total": total, "items": filas}
     return _respuesta_contrato(payload_legacy, version, response, "apuestas-analizadas")
+
+
+@router.get("/partidos-guardados", summary="Listar partidos de fútbol guardados para consulta")
+async def listar_partidos_guardados(
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
+    partido_id: Optional[UUID] = None,
+    limite: int = Query(default=200, ge=1, le=1000),
+):
+    from servicios.partidos_guardados import listar_partidos_futbol_guardados
+
+    partidos = listar_partidos_futbol_guardados(partido_id=partido_id, limite=limite)
+    payload_legacy = {"exito": True, "total": len(partidos), "partidos": partidos}
+    return _respuesta_contrato(payload_legacy, version, response, "partidos-guardados")
+
+
+@router.post("/partidos-guardados", status_code=status.HTTP_201_CREATED, summary="Guardar un partido para revisar")
+async def guardar_partido_para_revisar(
+    peticion: PeticionPartidoGuardado,
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
+):
+    from servicios.partidos_guardados import guardar_partido_futbol
+
+    try:
+        partido = guardar_partido_futbol(peticion.partido_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    payload_legacy = {"exito": True, "partido": partido}
+    return _respuesta_contrato(payload_legacy, version, response, "partidos-guardados")
+
+
+@router.post("/partidos-guardados/{partido_id}/archivar", summary="Quitar un partido guardado")
+async def archivar_partido_guardado(
+    partido_id: UUID,
+    response: Response,
+    version: str = Query(default="v2", pattern="^(v2|legacy)$"),
+):
+    from servicios.partidos_guardados import archivar_partido_futbol_guardado
+
+    archivado = archivar_partido_futbol_guardado(partido_id)
+    if not archivado:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="El partido no está guardado")
+    payload_legacy = {"exito": True, "partido_id": str(partido_id), "archivado": True}
+    return _respuesta_contrato(payload_legacy, version, response, "partidos-guardados")
 
 
 class AuditoriaDecisionFutbolItem(BaseModel):

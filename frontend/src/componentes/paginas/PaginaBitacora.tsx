@@ -2,14 +2,15 @@
  * PaginaBitacora.tsx — Página de bitácora
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organismos';
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
 import { useBitacora } from '../../hooks';
-import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada, actualizarResultadoCombinada } from '../../servicios';
+import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada, actualizarResultadoCombinada, archivarPartidoGuardado, listarPartidosGuardados } from '../../servicios';
 import { RegistroBitacoraUnificada, ResultadoApuesta } from '../../tipos';
+import type { PartidoGuardadoFutbol } from '../../tipos';
 
 const TAMANO_PAGINA = 20;
 
@@ -33,6 +34,9 @@ export function PaginaBitacora() {
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const [apuestaAEliminar, setApuestaAEliminar] = useState<RegistroBitacoraUnificada | null>(null);
   const [eliminando, setEliminando] = useState(false);
+  const [partidosGuardados, setPartidosGuardados] = useState<PartidoGuardadoFutbol[]>([]);
+  const [cargandoPartidosGuardados, setCargandoPartidosGuardados] = useState(true);
+  const [partidoArchivando, setPartidoArchivando] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,6 +74,33 @@ export function PaginaBitacora() {
       setMensajeError(error);
     }
   }, [error]);
+
+  const recargarPartidosGuardados = useCallback(async () => {
+    try {
+      const respuesta = await listarPartidosGuardados();
+      setPartidosGuardados(respuesta.partidos);
+    } catch (errorCarga) {
+      setMensajeError(errorCarga instanceof Error ? errorCarga.message : 'No se pudieron cargar los partidos guardados');
+    } finally {
+      setCargandoPartidosGuardados(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void recargarPartidosGuardados();
+  }, [recargarPartidosGuardados]);
+
+  const manejarArchivarPartido = async (partidoId: string) => {
+    setPartidoArchivando(partidoId);
+    try {
+      await archivarPartidoGuardado(partidoId);
+      setPartidosGuardados((actuales) => actuales.filter((partido) => partido.partido_id !== partidoId));
+    } catch (errorArchivar) {
+      setMensajeError(errorArchivar instanceof Error ? errorArchivar.message : 'No se pudo quitar el partido guardado');
+    } finally {
+      setPartidoArchivando(null);
+    }
+  };
 
   const manejarFiltro = (campo: string, valor: string) => {
     if (campo === 'busqueda') {
@@ -192,6 +223,46 @@ export function PaginaBitacora() {
         )}
 
         <p className="text-xs text-neon-amarillo">Agregados monetarios N/D: no hay soportes originales ni unidad acreditada. Los importes individuales se conservan. {resumenDatos.pnlNoEvaluable ? `${resumenDatos.pnlNoEvaluable} apuestas resueltas excluidas de P&L en este corte.` : 'Los conteos y resultados son registrados, no rendimiento certificado.'}</p>
+
+        <section className="tarjeta p-4 space-y-3" aria-labelledby="partidos-guardados-titulo">
+          <div>
+            <h3 id="partidos-guardados-titulo" className="text-lg font-semibold text-texto-principal">Partidos guardados para revisar</h3>
+            <p className="text-sm text-texto-secundario">Son marcadores de consulta, no apuestas y no cuentan en las métricas de apuestas.</p>
+          </div>
+          {cargandoPartidosGuardados ? (
+            <p className="text-sm text-texto-secundario">Cargando partidos guardados…</p>
+          ) : partidosGuardados.length === 0 ? (
+            <p className="text-sm text-texto-secundario">Aún no guardas partidos. Selecciona uno en Fútbol y pulsa “Guardar para revisar”.</p>
+          ) : (
+            <ul className="space-y-3">
+              {partidosGuardados.map(({ partido, partido_id: partidoId }) => (
+                <li key={partidoId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-neon-cyan/15 bg-futurista-oscuro/40 p-3">
+                  <div>
+                    <p className="font-semibold text-texto-principal">
+                      {partido.equipo_local || 'Local'} vs {partido.equipo_visitante || 'Visitante'}
+                    </p>
+                    <p className="text-xs text-texto-secundario">
+                      {partido.competicion || 'Competición no disponible'}
+                      {partido.fecha_partido ? ` · ${new Date(partido.fecha_partido).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}
+                      {partido.goles_local != null && partido.goles_visitante != null ? ` · ${partido.goles_local}-${partido.goles_visitante}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`/futbol?partidoId=${encodeURIComponent(partidoId)}`}
+                      className="inline-flex items-center justify-center rounded-lg border border-neon-cyan/30 px-3 py-2 text-sm text-neon-cyan hover:bg-neon-cyan/10"
+                    >
+                      Abrir partido
+                    </a>
+                    <Boton variante="fantasma" tamano="sm" disabled={partidoArchivando === partidoId} onClick={() => void manejarArchivarPartido(partidoId)}>
+                      {partidoArchivando === partidoId ? 'Quitando…' : 'Quitar'}
+                    </Boton>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="tarjeta p-4">

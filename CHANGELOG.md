@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-19 — Consulta y guardado neutral de partidos de fútbol
+
+- Desde Fútbol, guardar el partido seleccionado para volver a revisarlo en una lista separada de Bitácora; reabrirlo por UUID aunque quede fuera del calendario próximo y retirarlo mediante archivo lógico.
+- Persistirlo con estado propio y sin mercado/pick/probabilidad/stake ni DDL; excluirlo del listado, resumen, auditoría, métricas de calidad y backfill de apuestas.
+- Mantener visible que fútbol no tiene un modelo ML activo. Verificar con seis pruebas backend dirigidas/simuladas, build/lint frontend; ninguna escritura de prueba a la base real.
+
 ## 2026-10-18 — Recuperación de datos enero–octubre y finales pendientes
 
 - Contrastar 2.928 finales de 12 competiciones fútbol, NBA y Euroliga; aplicar 273 altas/108 actualizaciones fútbol, 18 altas/6 fases NBA y 183 altas Euro, con respaldo privado, ensayo/rollback y postflight independiente.

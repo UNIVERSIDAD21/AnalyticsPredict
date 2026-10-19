@@ -129,3 +129,28 @@ export interface RespuestaApuestasAnalizadas {
   total: number;
   items: ApuestaAnalizada[];
 }
+
+export interface PartidoGuardadoFutbol {
+  deporte: 'futbol';
+  partido_id: string;
+  estado: 'PARTIDO_GUARDADO';
+  partido: {
+    id: string;
+    competicion: string | null;
+    fecha_partido: string | null;
+    estado: string | null;
+    jornada: number | null;
+    equipo_local: string | null;
+    equipo_visitante: string | null;
+    goles_local: number | null;
+    goles_visitante: number | null;
+  };
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
+export interface RespuestaPartidosGuardados {
+  exito: boolean;
+  total: number;
+  partidos: PartidoGuardadoFutbol[];
+}

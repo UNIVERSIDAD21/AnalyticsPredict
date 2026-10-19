@@ -1,6 +1,6 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-18**. Herramienta personal single-user, local y
+Última actualización: **2026-10-19**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
@@ -28,6 +28,18 @@ Fútbol sin ML activo, NBA 2123 sin reentrenar, prospectiva 15/9/0 independiente
 sin modificar. Servicios no arrancados por esta tarea; no cron ni certificación.
 Las cifras y límites analíticos del 16/10 siguientes son antecedentes de sus
 cohortes; no se han recalculado ni trasladado a esta nueva base.
+
+## Flujo inicial de uso — 2026-10-19
+
+`/futbol` permite seleccionar un partido y consultar los datos/análisis
+disponibles; “Guardar para revisar” lo agrega a una lista separada dentro de
+`/bitacora`, desde donde se vuelve a abrir por su UUID. Guardar/reabrir no crea
+una apuesta, mercado, pick ni probabilidad. El estado neutral queda fuera de
+conteos, métricas, evaluaciones y backfill de apuestas. La implementación no
+requiere DDL; solo escribe cuando el propietario pulsa guardar o quitar. Modelo
+ML fútbol continúa sin activo; la certificación global permanece **NO CERTIFICADO**.
+Detalle y pruebas dirigidas en la entrega externa
+`PARTIDOS_GUARDADOS_BITACORA_2026-10-19`.
 
 ## Corte de uso local y visual — 2026-10-16
 

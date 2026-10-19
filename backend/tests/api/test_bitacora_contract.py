@@ -82,6 +82,7 @@ def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
     class Cursor:
         def __init__(self):
             self.consulta = ""
+            self.consultas = []
 
         def __enter__(self):
             return self
@@ -91,6 +92,7 @@ def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
 
         def execute(self, consulta, *_args):
             self.consulta = consulta
+            self.consultas.append(consulta)
 
         def fetchone(self):
             return {"total": 16}
@@ -99,6 +101,9 @@ def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
             return [{"id": 1, "estado": "FINALIZADA"}]
 
     class Conexion:
+        def __init__(self, pool):
+            self.pool = pool
+
         def __enter__(self):
             return self
 
@@ -106,20 +111,27 @@ def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
             pass
 
         def cursor(self, **_kwargs):
-            return Cursor()
+            cursor = Cursor()
+            self.pool.cursors.append(cursor)
+            return cursor
 
     class Pool:
+        def __init__(self):
+            self.cursors = []
+
         def connection(self):
-            return Conexion()
+            return Conexion(self)
 
     def escritura_inesperada(*_args, **_kwargs):
         raise AssertionError("GET /apuestas-analizadas no debe escribir en la base")
 
     monkeypatch.setattr(apuestas_analizadas, "resolver_apuestas_analizadas", escritura_inesperada)
     monkeypatch.setattr(apuestas_analizadas, "asegurar_tabla_apuestas_analizadas", escritura_inesperada)
-    monkeypatch.setattr(rutas_bitacora, "obtener_pool", Pool)
+    pool = Pool()
+    monkeypatch.setattr(rutas_bitacora, "obtener_pool", lambda: pool)
     monkeypatch.setattr(rutas_bitacora, "BITACORA_USAGE_PATH", tmp_path / "usage.json")
 
     payload = asyncio.run(rutas_bitacora.listar_apuestas_analizadas(Response(), version="v2", limite=1, offset=0))
     assert payload["data"]["total"] == 16
     assert payload["data"]["items"] == [{"id": 1, "estado": "FINALIZADA"}]
+    assert all("PARTIDO_GUARDADO" in consulta and "PARTIDO_ARCHIVADO" in consulta for consulta in pool.cursors[0].consultas)

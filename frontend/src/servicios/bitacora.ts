@@ -11,6 +11,8 @@ import {
   RespuestaListaApuestas,
   RespuestaResumenApuestas,
   RespuestaApuestasAnalizadas,
+  PartidoGuardadoFutbol,
+  RespuestaPartidosGuardados,
 } from '../tipos';
 
 export async function crearApuesta(payload: PeticionCrearApuesta): Promise<RespuestaApuesta> {
@@ -65,4 +67,28 @@ export async function listarApuestasAnalizadas(
     total: 'number', items: 'array',
   });
   return { ...data, exito: true };
+}
+
+export async function listarPartidosGuardados(): Promise<RespuestaPartidosGuardados> {
+  const respuesta = await clienteAPI.get('/api/bitacora/partidos-guardados', {
+    params: { version: 'v2', limite: 500 },
+  });
+  const data = leerDatosBitacora<Omit<RespuestaPartidosGuardados, 'exito'>>(respuesta.data, {
+    total: 'number', partidos: 'array',
+  });
+  return { ...data, exito: true };
+}
+
+export async function guardarPartidoParaRevisar(partidoId: string): Promise<PartidoGuardadoFutbol> {
+  const respuesta = await clienteAPI.post('/api/bitacora/partidos-guardados?version=v2', {
+    partido_id: partidoId,
+  });
+  const data = leerDatosBitacora<{ partido: PartidoGuardadoFutbol }>(respuesta.data, {
+    partido: 'object',
+  });
+  return data.partido;
+}
+
+export async function archivarPartidoGuardado(partidoId: string): Promise<void> {
+  await clienteAPI.post(`/api/bitacora/partidos-guardados/${partidoId}/archivar?version=v2`);
 }

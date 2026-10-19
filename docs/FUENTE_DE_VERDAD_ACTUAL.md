@@ -16,6 +16,14 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 
 ## Prioridades activas
 
+- **Flujo personal para empezar a usarlo (19/10):** en `/futbol` se puede elegir
+  un partido, consultar el análisis/contexto disponible y guardarlo con “Guardar
+  para revisar”; `/bitacora` mantiene una lista aparte con enlace para reabrirlo,
+  incluso si ya salió del calendario próximo. Es un marcador neutral: no crea
+  apuesta, pick ni probabilidad y se excluye de conteos/métricas de apuestas. El
+  modelo ML de fútbol sigue sin estar activo. Ver entrega externa
+  `PARTIDOS_GUARDADOS_BITACORA_2026-10-19`.
+
 - **Datos actualizados 18/10:** [enero–octubre](reactivacion_single_user/ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md). Contrastados 2.928 finales de 12 competiciones fútbol, NBA y Euroliga: 273 altas/108 actualizaciones fútbol, 18 altas/6 fases NBA y 183 altas Euro. Neon con permisos efectivos suficientes, respaldos/rollback/postflight; 11 huellas protegidas intactas. Totales fútbol 25.118 (24.593 finales FT), NBA 10.379, Euro 2.672. Este corte prevalece para datos; no reentrena ni activa modelos, no resuelve prospectiva y no certifica eficacia. Refresco puntual, no cron.
 
 - **Uso local verificado16/10:** [arranque visual/H12](reactivacion_single_user/ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md): rutas visibles con datos, formulario fútbol aislado y análisisNBA interno con fase/corte;854backend/36frontend, audit0.15capturas/9outcomesPRE/0independientes; sinMLfútbol activo ni certificación. TicketH4cerrado por proveedor, sin purga. Este corte prevalece sobre estados visual/H12/outcomes anteriores.

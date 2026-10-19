@@ -277,6 +277,7 @@ def resumen_apuestas_analizadas(pool=None) -> dict:
                     COUNT(*) FILTER (WHERE resultado_outcome = 'PERDIDA') AS perdidas,
                     COUNT(*) FILTER (WHERE resultado_outcome = 'PUSH') AS push
                 FROM apuestas_analizadas
+                WHERE estado IS NULL OR estado NOT IN ('PARTIDO_GUARDADO', 'PARTIDO_ARCHIVADO')
             """)
             row = cur.fetchone()
             return {
@@ -305,7 +306,9 @@ def _armar_where_auditoria_futbol(
     resultado_outcome: Optional[str] = None,
 ) -> tuple[str, list[Any]]:
     # La vista ya está filtrada a deporte='futbol'
-    condiciones = ["1=1"]
+    condiciones = [
+        "(v.estado IS NULL OR v.estado NOT IN ('PARTIDO_GUARDADO', 'PARTIDO_ARCHIVADO'))"
+    ]
     params: list[Any] = []
 
     if mercado:
@@ -646,6 +649,7 @@ def backfill_decisiones_desde_payload_futbol(
                     SELECT id, payload
                     FROM apuestas_analizadas
                     WHERE deporte = 'futbol'
+                      AND (estado IS NULL OR estado NOT IN ('PARTIDO_GUARDADO', 'PARTIDO_ARCHIVADO'))
                       AND (%s IS NULL OR id > %s)
                       AND (
                         decision_p_raw IS NULL

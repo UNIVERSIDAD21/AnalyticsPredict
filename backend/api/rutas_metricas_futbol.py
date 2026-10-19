@@ -967,6 +967,7 @@ def _resumen_calidad_1x2_futbol(cursor) -> dict:
             COUNT(*) FILTER (WHERE resultado_outcome = 'PUSH') AS push
         FROM apuestas_analizadas
         WHERE deporte = 'futbol'
+          AND (estado IS NULL OR estado NOT IN ('PARTIDO_GUARDADO', 'PARTIDO_ARCHIVADO'))
         """
     )
     row = cursor.fetchone()
