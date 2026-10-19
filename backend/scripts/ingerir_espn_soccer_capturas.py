@@ -75,7 +75,8 @@ def validar_lote(datos: dict[str, Any]) -> dict[str, Any]:
         final = evento.get("final_acreditado")
         if not isinstance(final, bool):
             raise ValueError("Finalidad ambigua")
-        if final != (evento["estado_fuente"] in {"STATUS_FULL_TIME", "STATUS_FINAL"}):
+        if final != (evento["estado_fuente"] in {
+                "STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}):
             raise ValueError("Finalidad incompatible con estado fuente")
         if final and datetime.fromisoformat(instante) > datetime.fromisoformat(observado):
             raise ValueError("Final posterior a su observación")

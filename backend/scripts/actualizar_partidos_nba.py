@@ -101,7 +101,13 @@ def is_completed(event: dict[str, Any]) -> bool:
 
 def season_type(event: dict[str, Any]) -> str:
     raw = event.get("season", {}).get("type")
-    return {1: "PRE", 2: "REG", 3: "POST"}.get(safe_int(raw), "REG")
+    # ESPN usa 5 para play-in: es postemporada, nunca temporada regular.
+    # Un valor desconocido no autoriza inventar la fase REG.
+    fases = {1: "PRE", 2: "REG", 3: "POST", 5: "POST"}
+    try:
+        return fases[safe_int(raw)]
+    except KeyError as exc:
+        raise ValueError("Fase ESPN NBA no acreditada") from exc
 
 
 def event_to_record(event: dict[str, Any], ctx: DbContext) -> dict[str, Any]:
@@ -337,7 +343,8 @@ def upsert_records(conn, records: list[dict[str, Any]], dry_run: bool) -> dict[s
     return stats
 
 
-def update_ingestion_state(conn, ctx: DbContext, stats: dict[str, int], start: date, end: date, dry_run: bool) -> None:
+def update_ingestion_state(conn, ctx: DbContext, stats: dict[str, int], start: date, end: date, dry_run: bool, *, commit: bool = True) -> None:
+    """Registra el corte; commit=False conserva la atomicidad del llamador."""
     if dry_run:
         return
     ok = stats["failed"] == 0
@@ -367,7 +374,8 @@ def update_ingestion_state(conn, ctx: DbContext, stats: dict[str, int], start: d
                 json.dumps({"fuente": SOURCE, "from": str(start), "to": str(end), **stats}), ok, ok,
             ),
         )
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
 def main() -> int:

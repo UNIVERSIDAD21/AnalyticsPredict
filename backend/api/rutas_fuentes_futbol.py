@@ -57,7 +57,7 @@ def leer_captura_mes(conn, liga: str, mes: str) -> dict:
 
 @router.get("/espn-soccer", summary="Calendario y outcomes de capturas ESPN Soccer")
 async def obtener_espn_soccer(
-    liga: str = Query(..., description="premier|laliga|seriea|bundesliga|ligue1"),
+    liga: str = Query(..., description="Competición ESPN: " + ", ".join(LIGAS)),
     mes: str = Query(..., pattern=r"^[0-9]{6}$", description="Mes UTC YYYYMM"),
 ):
     if liga not in LIGAS or not 1 <= int(mes[4:]) <= 12 or int(mes[:4]) == 0:

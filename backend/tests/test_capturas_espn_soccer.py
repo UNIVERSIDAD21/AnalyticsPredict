@@ -216,3 +216,20 @@ def test_pg_get_read_only_cobertura_y_mes_aislado(captura_db, monkeypatch):
     with psycopg.connect(captura_db) as conn:
         assert conn.execute("SELECT count(*) FROM capturas_espn_soccer_lotes").fetchone() == (1,)
         assert conn.execute("SELECT count(*) FROM capturas_espn_soccer_eventos").fetchone() == (1,)
+
+
+@pytest.mark.integracion
+def test_migracion_copas_preserva_lotes_y_revierte_constraint(captura_db):
+    migracion=MIGRACION.parent/'2026-10-18_competiciones_espn_copas.sql'
+    ddl='\n'.join(l for l in migracion.read_text().splitlines() if l.strip() not in {'BEGIN;','COMMIT;'})
+    with psycopg.connect(captura_db,autocommit=True) as conn:
+        aplicar_lotes(conn,[lote_sintetico()])
+        consulta="SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='capturas_espn_soccer_lotes'::regclass AND conname='capturas_espn_soccer_lotes_liga_check'"
+        antes=conn.execute(consulta).fetchone()[0]
+        with conn.transaction(force_rollback=True):
+            conn.execute(ddl)
+            copa=lote_sintetico();copa['liga']='eng.fa';copa['eventos'][0]['liga']='eng.fa'
+            assert aplicar_lotes(conn,[copa])==(1,1)
+            assert conn.execute('SELECT count(*) FROM capturas_espn_soccer_lotes').fetchone()[0]==2
+        assert conn.execute(consulta).fetchone()[0]==antes
+        assert conn.execute('SELECT count(*) FROM capturas_espn_soccer_lotes').fetchone()[0]==1

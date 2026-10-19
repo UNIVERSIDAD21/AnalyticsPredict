@@ -18,7 +18,10 @@ import requests
 
 BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 LIGAS = {"premier": "eng.1", "laliga": "esp.1", "seriea": "ita.1",
-          "bundesliga": "ger.1", "ligue1": "fra.1"}
+          "bundesliga": "ger.1", "ligue1": "fra.1", "facup": "eng.fa",
+          "copa_rey": "esp.copa_del_rey", "coppa_italia": "ita.coppa_italia",
+          "coupe_france": "fra.coupe_de_france", "champions": "uefa.champions",
+          "europa": "uefa.europa", "conference": "uefa.europa.conf"}
 LIMITE = 500
 
 
@@ -62,7 +65,8 @@ def interpretar_evento(evento: dict[str, Any], liga: str) -> dict[str, Any]:
     if set(por_lado) != {"home", "away"}:
         raise FuenteNoDisponible("Local/visitante ambiguos")
     estado = evento.get("status", {}).get("type", {})
-    final = estado.get("completed") is True and estado.get("name") in {"STATUS_FULL_TIME", "STATUS_FINAL"}
+    final = estado.get("completed") is True and estado.get("name") in {
+        "STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}
     salida = {"fuente": "ESPN_SOCCER", "liga": liga, "id_fuente": str(evento["id"]),
               "inicio_utc": _instante_utc(evento.get("date")), "estado_fuente": estado.get("name"),
               "final_acreditado": final}

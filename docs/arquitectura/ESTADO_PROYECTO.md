@@ -1,6 +1,6 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-16**. Herramienta personal single-user, local y
+Última actualización: **2026-10-18**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
@@ -14,6 +14,20 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 - [KPI/P&L y auditoría GET](../reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md).
 - [KPI de calibración](../reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md).
 - [Evaluación temporal fútbol](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
+
+## Corte vigente de datos — 2026-10-18
+
+[Actualización integral enero–octubre](../reactivacion_single_user/ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md):
+2.928 finales de fuentes contrastados, sin faltantes en esa cohorte. Fútbol +273
+partidos/108 actualizaciones (82 estados programados cerrados y 26 conciliaciones);
+NBA +18/6 fases; Euroliga +183. Totales 25.118 fútbol/24.593 finales FT,
+10.379 NBA y 2.672 Euro. Un desglose de periodos inválido del proveedor se conserva
+NULL, no imputado. Backups, rollback, idempotencia y once huellas protegidas intactas;
+875 backend y 36 frontend aprobadas, lint/build/audit producción 0.
+Fútbol sin ML activo, NBA 2123 sin reentrenar, prospectiva 15/9/0 independientes
+sin modificar. Servicios no arrancados por esta tarea; no cron ni certificación.
+Las cifras y límites analíticos del 16/10 siguientes son antecedentes de sus
+cohortes; no se han recalculado ni trasladado a esta nueva base.
 
 ## Corte de uso local y visual — 2026-10-16
 

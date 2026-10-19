@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-18 — Recuperación de datos enero–octubre y finales pendientes
+
+- Contrastar 2.928 finales de 12 competiciones fútbol, NBA y Euroliga; aplicar 273 altas/108 actualizaciones fútbol, 18 altas/6 fases NBA y 183 altas Euro, con respaldo privado, ensayo/rollback y postflight independiente.
+- Ampliar capturas/vínculos a copas/europeas; reconocer AET/PEN, validar mitades/ET/tandas y agregado sin inventar periodos ni alterar la semántica del ganador. Conciliar históricos solo por manifiesto explícito y huella previa; preservar estadísticas y afiliaciones.
+- Corregir play-in ESPN tipo 5 a POST, permitir estado de ingesta NBA dentro de una transacción externa y añadir adaptador oficial Euro con cuartos/OT/FT e identidad verificados.
+- Conservar apuestas, modelos y prospectiva: once huellas intactas; sin reentrenar/activar/resolver, P&L N/D y eficacia NO CERTIFICADA. 875 backend/36 frontend aprobadas, lint/build/audit producción 0.
+
 ## 2026-10-16 — Uso local visual, H12 y contratos de análisis
 
 - Migrar Tailwind4/PostCSS oficial con lock y audit0, conservar tema/utilidades y validar vistas reales y móvil emulado.854backend/36frontend/lint/build.

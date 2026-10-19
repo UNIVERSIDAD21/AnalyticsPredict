@@ -1,9 +1,19 @@
 # Roadmap vigente de reactivación AnalyticsPredict
 
-**Corte consolidado:2026-10-16.** Directiva single-user del propietario del2026-10-05
+**Corte consolidado:2026-10-18.** Directiva single-user del propietario del2026-10-05
 y órdenes posteriores. Sustituye C0–C7 comercial; no abre evolución avanzada D.
 La ejecución detallada se registra en el `PLAN_MAESTRO.md` externo solicitado por
 el propietario, sin copiar memoria/configuración del agente al producto.
+
+## Recuperación de datos enero–octubre cerrada 18/10
+
+[Alcance y controles](ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md): 2.928 finales
+fuente conciliados, 474 altas y 114 actualizaciones de registros/fases. Estados
+PROGRAMADO corregidos únicamente con final acreditado; sin duplicar históricos.
+La recuperación es puntual para 12 competiciones fútbol, NBA y Euro; no programar
+ingestas futuras ni repetir las cohortes aplicadas. Modelos/capturas/outcomes y
+apuestas intactos. M03/M12 científicos permanecen abiertos; si se solicita una
+nueva evaluación deberá declarar otra cohorte sin alterar V1/V2/V3 congeladas.
 
 ## Corte de uso local posterior16oct
 

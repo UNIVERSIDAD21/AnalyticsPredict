@@ -6,6 +6,18 @@ pendientes con evidencia. Base `ebf128c`, rama `reactivacion/implementacion-sing
 el motivo de bloqueo/en curso. Evidencias sin secretos fuera del repo:
 `Carpeta de Entregas de Borlty/PREPARACION_USO_INTEGRAL_2026-10-15`.
 
+## Actualización de datos 18/10 (prevalece para frescura)
+
+- [x] Permisos efectivos Neon comprobados; no requiere control global adicional.
+- [x] Contraste enero–18oct: 1.758 finales fútbol, 891 NBA y 279 Euro con identidad y FT/cuartos conciliados.
+- [x] Backups privados, ensayos/rollback e invariantes; 474 altas y 114 actualizaciones aplicadas sin duplicar históricos.
+- [x] Once huellas de apuestas/modelos/prospectiva y artefacto NBA 2123 intactos.
+- [x] 875 backend/36 frontend, lint/build y auditoría producción 0; logs externos.
+- [ ] Certificación científica: sin activación fútbol ni nueva calibración NBA; prospectiva 15/9/0 independientes sin resolver en esta tarea.
+
+Ver [alcance y límites](ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md). No se infiere
+completitud de córners/tiempos por tener un final ni se programa refresco continuo.
+
 ## A. Entorno y flujo local
 
 - [x] Crear `backend/.venv` persistente con Python 3.12 y `requirements.lock`.

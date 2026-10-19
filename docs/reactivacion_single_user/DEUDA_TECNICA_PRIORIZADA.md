@@ -1,8 +1,19 @@
 # Deuda técnica priorizada — AnalyticsPredict single-user
 
-**Corte consolidado:2026-10-16.** No sustituye gates científicos ni reactiva planes
+**Corte consolidado:2026-10-18.** No sustituye gates científicos ni reactiva planes
 comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 [roadmap](ROADMAP_REACTIVACION_ANALYTICSPREDICT.md) gobiernan el trabajo nuevo.
+
+## Corte vigente de datos 18/10
+
+[Recuperación enero–octubre](ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md) cerrada en
+su alcance: 2.928 finales contrastados, fútbol 273 altas/108 cambios, NBA 18 altas/
+6 fases y Euro 183 altas. No hay finales aún PROGRAMADO dentro de esa cohorte.
+Un evento conserva periodos NULL por fuente inválida. Esto no cierra calidad de
+todos los campos/años, independencia NBA, aptitud ML fútbol ni calibración.
+No se han recalculado los gates históricos siguientes con la base actualizada.
+Los estados visual/H12/outcomes del corte posterior 16/10 prevalecen sobre las
+filas históricas de la tabla. No hay refresco automático creado en este bloque.
 
 | Prioridad | Trabajo | Criterio de cierre | Estado real |
 |---|---|---|---|

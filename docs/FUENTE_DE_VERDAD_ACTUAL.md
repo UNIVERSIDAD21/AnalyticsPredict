@@ -15,6 +15,9 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 5. `docs/borlty-context/` (contexto histórico complementario)
 
 ## Prioridades activas
+
+- **Datos actualizados 18/10:** [enero–octubre](reactivacion_single_user/ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md). Contrastados 2.928 finales de 12 competiciones fútbol, NBA y Euroliga: 273 altas/108 actualizaciones fútbol, 18 altas/6 fases NBA y 183 altas Euro. Neon con permisos efectivos suficientes, respaldos/rollback/postflight; 11 huellas protegidas intactas. Totales fútbol 25.118 (24.593 finales FT), NBA 10.379, Euro 2.672. Este corte prevalece para datos; no reentrena ni activa modelos, no resuelve prospectiva y no certifica eficacia. Refresco puntual, no cron.
+
 - **Uso local verificado16/10:** [arranque visual/H12](reactivacion_single_user/ARRANQUE_VISUAL_Y_USO_LOCAL_2026-10-16.md): rutas visibles con datos, formulario fútbol aislado y análisisNBA interno con fase/corte;854backend/36frontend, audit0.15capturas/9outcomesPRE/0independientes; sinMLfútbol activo ni certificación. TicketH4cerrado por proveedor, sin purga. Este corte prevalece sobre estados visual/H12/outcomes anteriores.
 - **Paquete integral estacional16/10:** [V2 de laboratorio y fases NBA](reactivacion_single_user/VALIDACION_ESTACIONAL_Y_FASES_NBA_2026-10-16.md). Candidatos futuros separados de V1, abstenciones/mínimos y evidencia temporal; PRE conservada y visible. Recuperación histórica solo con respaldo/ensayo, colisiones retenidas. Visual/H12/Git y certificación no se cierran por preparación técnica.
 - **Siete frentes ejecutados16/10:** [resultados y dependencias](reactivacion_single_user/SIETE_FRENTES_2026-10-16.md). Complementados200finales con goles/córners1T/2T acreditados y postflight;618EVAL por familia, ninguna apta. M12 descriptivo ejecutado, no certificación. H4ensayo integral hecho, no purga remota; visual/H12 y outcomes conservan bloqueos explícitos.

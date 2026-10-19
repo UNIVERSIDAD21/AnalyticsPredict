@@ -63,7 +63,9 @@ def futbol_db():
                         local_goles_total int,visitante_goles_total int,local_corners_total int,visitante_corners_total int,
                         local_disparos_total int,visitante_disparos_total int,local_disparos_arco int,visitante_disparos_arco int,
                         ganador_id uuid,diferencia_goles int,datos_corners_completos boolean,datos_disparos_completos boolean,
-                        datos_completos boolean,valido boolean,resultado_final text,url_referencia text,actualizado_en timestamptz);
+                        datos_completos boolean,valido boolean,resultado_final text,url_referencia text,actualizado_en timestamptz,
+                        local_goles_1t int,local_goles_2t int,visitante_goles_1t int,visitante_goles_2t int,
+                        local_penales int,visitante_penales int,hubo_penales boolean,hubo_tiempo_extra boolean);
                 ''')
                 c.execute('INSERT INTO competiciones_futbol VALUES(%s,%s,NULL)',(COMP,'ESP_LALIGA'))
                 c.execute('INSERT INTO equipos_futbol(id,nombre) VALUES(%s,%s),(%s,%s)',(CLUB_A,'Club A',CLUB_B,'Club B'))
@@ -124,3 +126,74 @@ def test_abandonado_no_se_convierte_en_final_o_programado(futbol_db):
     with psycopg.connect(futbol_db) as c:
         aplicar_plan(c,planificar(c,manifiesto(),[datos]))
         assert c.execute('SELECT estado,local_goles_total,visitante_goles_total,resultado_final FROM partidos_futbol').fetchone()==('SUSPENDIDO',None,None,None)
+
+
+@pytest.mark.integracion
+def test_programado_vinculado_se_actualiza_sin_insertar_otro_partido(futbol_db):
+    previo=lote();previo['n_finales']=0
+    previo['eventos'][0].update(final_acreditado=False,estado_fuente='STATUS_SCHEDULED',
+                              local_goles=None,visitante_goles=None)
+    with psycopg.connect(futbol_db) as c:
+        aplicar_plan(c,planificar(c,manifiesto(),[previo]))
+        ident=c.execute('SELECT id FROM partidos_futbol').fetchone()[0]
+        final=lote();final['observado_en']='2026-10-02T00:00Z'
+        r=aplicar_plan(c,planificar(c,manifiesto(),[final]))
+        assert r=={'insertados':0,'actualizados':1,'eventos':1}
+        assert c.execute('SELECT id,estado,local_goles_total,visitante_goles_total FROM partidos_futbol').fetchall()==[(ident,'FINALIZADO',0,2)]
+        assert aplicar_plan(c,planificar(c,manifiesto(),[final]))['actualizados']==0
+
+
+@pytest.mark.integracion
+def test_club_en_liga_y_copa_se_mapea_sin_cambiar_afiliacion(futbol_db):
+    comp_copa=uuid4()
+    m=manifiesto();m['temporadas']={'esp.copa_del_rey':m['temporadas']['esp.1']}
+    for e in m['equipos']:e['ligas']=['esp.1','esp.copa_del_rey']
+    datos=lote();datos['liga']='esp.copa_del_rey';datos['eventos'][0]['liga']='esp.copa_del_rey'
+    with psycopg.connect(futbol_db) as c:
+        c.execute('INSERT INTO competiciones_futbol VALUES(%s,%s,NULL)',(comp_copa,'ESP_COPA'))
+        aplicar_plan(c,planificar(c,m,[datos]))
+        assert c.execute('SELECT competicion_id FROM partidos_futbol').fetchone()[0]==comp_copa
+        assert c.execute('SELECT competicion_principal_id FROM equipos_futbol WHERE id=%s',(CLUB_A,)).fetchone()[0] is None
+
+
+@pytest.mark.integracion
+def test_conciliacion_legacy_exige_huella_y_conserva_id(futbol_db):
+    from scripts.sincronizar_espn_futbol import huella_fila
+    from psycopg.rows import dict_row
+    temporada,partido=uuid4(),uuid4()
+    with psycopg.connect(futbol_db) as c:
+        c.execute('INSERT INTO temporadas_futbol(id,competicion_id,nombre,anio_inicio,anio_fin) VALUES(%s,%s,%s,2026,2027)',(temporada,COMP,'2026-2027'))
+        c.execute('INSERT INTO partidos_futbol(id,competicion_id,temporada_id,equipo_local_id,equipo_visitante_id,fecha_partido,fuente_datos,estado) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
+                  (partido,COMP,temporada,CLUB_A,CLUB_B,'2026-09-01T07:00Z','SOFASCORE','PROGRAMADO'))
+        with c.cursor(row_factory=dict_row) as cur:
+            antes=cur.execute('SELECT * FROM partidos_futbol WHERE id=%s',(partido,)).fetchone()
+        m=manifiesto();m['conciliaciones']=[{'liga':'esp.1','id_fuente':'100','partido_id':str(partido),
+            'huella_antes':huella_fila(antes),'justificacion':'IDs de clubes, competición, temporada y desfase de cinco horas revisados.'}]
+        malo=deepcopy(m);malo['conciliaciones'][0]['huella_antes']='0'*64
+        with pytest.raises(ValueError,match='Conciliación cambió'):
+            aplicar_plan(c,planificar(c,malo,[lote()]))
+        assert aplicar_plan(c,planificar(c,m,[lote()]))=={'insertados':0,'actualizados':1,'eventos':1}
+        assert c.execute('SELECT id,estado FROM partidos_futbol').fetchall()==[(partido,'FINALIZADO')]
+        assert aplicar_plan(c,planificar(c,m,[lote()]))['actualizados']==0
+
+
+@pytest.mark.integracion
+def test_final_reglamentario_se_completa_con_et_sin_inventar_goles_en_segundo_tiempo(futbol_db):
+    from scripts.sincronizar_espn_futbol import huella_fila
+    from psycopg.rows import dict_row
+    temporada,partido=uuid4(),uuid4()
+    with psycopg.connect(futbol_db) as c:
+        c.execute('INSERT INTO temporadas_futbol(id,competicion_id,nombre,anio_inicio,anio_fin) VALUES(%s,%s,%s,2026,2027)',(temporada,COMP,'2026-2027'))
+        c.execute('INSERT INTO partidos_futbol(id,competicion_id,temporada_id,equipo_local_id,equipo_visitante_id,fecha_partido,fuente_datos,estado,local_goles_1t,local_goles_2t,local_goles_et,local_goles_total,visitante_goles_1t,visitante_goles_2t,visitante_goles_et,visitante_goles_total) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,1,2,0,3,0,0,0,0)',
+                  (partido,COMP,temporada,CLUB_A,CLUB_B,'2026-09-01T12:00Z','SOFASCORE','FINALIZADO'))
+        with c.cursor(row_factory=dict_row) as cur:antes=cur.execute('SELECT * FROM partidos_futbol').fetchone()
+        final=lote();ev=final['eventos'][0];ev.update(estado_fuente='STATUS_FINAL_AET',local_goles=5,visitante_goles=0,sha256_boxscore='b'*64)
+        ev['periodos']={'contrato':'ESPN_EXPLICIT_HALVES_ET_PEN_V1','ganador':'local','campos':{
+            'local_goles_1t':1,'local_goles_2t':2,'local_goles_et':2,
+            'visitante_goles_1t':0,'visitante_goles_2t':0,'visitante_goles_et':0,
+            'local_penales':None,'visitante_penales':None,'hubo_penales':False,'hubo_tiempo_extra':True}}
+        m=manifiesto();m['conciliaciones']=[{'liga':'esp.1','id_fuente':'100','partido_id':str(partido),
+            'huella_antes':huella_fila(antes),'justificacion':'Final con ET acreditado por summary','tipo':'FINAL_VALIDADO_EXPLICITAMENTE'}]
+        assert aplicar_plan(c,planificar(c,m,[final]))['actualizados']==1
+        assert c.execute('SELECT id,local_goles_1t,local_goles_2t,local_goles_et,local_goles_total FROM partidos_futbol').fetchone()==(partido,1,2,2,5)
+        assert aplicar_plan(c,planificar(c,m,[final]))['actualizados']==0

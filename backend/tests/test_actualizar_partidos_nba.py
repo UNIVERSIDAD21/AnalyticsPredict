@@ -5,6 +5,42 @@ import pytest
 from scripts import actualizar_partidos_nba as ingesta
 
 
+@pytest.mark.parametrize('commit,esperados', [(True, 1), (False, 0)])
+def test_estado_ingesta_respeta_transaccion_del_llamador(commit, esperados):
+    class Conexion:
+        commits = 0
+        escrituras = 0
+
+        def cursor(self):
+            return self
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def execute(self, consulta, parametros):
+            assert 'ingestion_state_baloncesto' in consulta
+            self.escrituras += 1
+
+        def commit(self):
+            self.commits += 1
+
+    conn = Conexion()
+    ctx = ingesta.DbContext('comp', 'temporada', '2026-27', {}, {})
+    ingesta.update_ingestion_state(conn, ctx, {'inserted': 6, 'updated': 0, 'failed': 0},
+                                   date(2026, 1, 1), date(2026, 10, 18), False, commit=commit)
+    assert conn.escrituras == 1
+    assert conn.commits == esperados
+
+
+def test_playin_es_postemporada_y_fase_desconocida_no_es_regular():
+    assert ingesta.season_type({'season': {'type': 5}}) == 'POST'
+    with pytest.raises(ValueError, match='Fase ESPN NBA'):
+        ingesta.season_type({'season': {'type': 99}})
+
+
 def test_espn_403_se_detiene_sin_reintentos(monkeypatch):
     llamadas = []
 
