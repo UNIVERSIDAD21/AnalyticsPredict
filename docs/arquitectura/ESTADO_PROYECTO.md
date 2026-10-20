@@ -31,7 +31,12 @@ y no se infirió la causa del desacuerdo de score. Kaggle/HF aportaron subconjun
 conservadores. Se identificó importador histórico SofaScore con hora local ingenua;
 la única excepción ESPN/SofaScore permite +5 h exactas en el mismo día UTC y conserva
 la fecha canónica. Otros datasets se excluyen por métricas, upstream/licencias/robots
-o procedencia insuficiente. El censo no afirma que todos los NULL sean recuperables.
+o procedencia insuficiente. El cotejo adicional confirma que StatsBomb solo lista Copa
+del Rey hasta 1983/84 y UCL hasta 2018/19; los cruces exactos previos no aportan nuevos
+gaps. Stats API documenta corners/tiros/SOT y declara un acuerdo de redistribución con
+API-Football, pero su catálogo de cobertura requiere API key (GET público 401), no hay
+clave protegida configurada y el servicio prohíbe espejos masivos; no se creó cuenta ni
+se descargaron estadísticas. El censo no afirma que todos los NULL sean recuperables.
 La búsqueda API posterior halló FootyStats con catálogo histórico/estadísticas pero
 el demo no incluye las copas y el plan gratis es PL-only; API-Football ofrece free
 limitado a temporadas no verificadas y sin licencia explícita de publicación. El
