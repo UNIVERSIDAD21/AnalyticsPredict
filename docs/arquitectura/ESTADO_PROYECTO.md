@@ -19,8 +19,9 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
 [Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
 Recuperación parcial ya persistida: 234 vínculos proveedor-partido y 1.374
-actualizaciones NULL-only, con 1.386 observaciones de procedencia. Censo READ ONLY:
-24.593 finales FT, 4.605 partidos con algún NULL de corners/disparos/tiros al arco
+actualizaciones NULL-only, con 1.386 observaciones de procedencia. Censo READ ONLY
+de 2026-10-20 23:43 UTC: 24.593 finales FT, 4.605 partidos con algún NULL de
+corners/disparos/tiros al arco
 (26.426 campos); gaps en ENG_FACUP, ESP_COPA, UEFA Champions/Europa/Conference,
 FRA_COUPE e ITA_COPPA. ESPN aportó tandas verificadas; DataHub PDDL amplió top-5 y
 un crosswalk exacto de LaLiga (dos partidos/12 valores) pasó backup, rollback y doble
@@ -33,10 +34,15 @@ la fecha canónica. Otros datasets se excluyen por métricas, upstream/licencias
 o procedencia insuficiente. El censo no afirma que todos los NULL sean recuperables.
 La búsqueda API posterior halló FootyStats con catálogo histórico/estadísticas pero
 el demo no incluye las copas y el plan gratis es PL-only; API-Football ofrece free
-limitado a temporadas no verificadas y sin licencia explícita de publicación. No hay
-claves proveedor en el almacén/entorno y no se contrató acceso. Continuidad y evidencia
-agregada quedan en el informe y la entrega externa. Sin ML fútbol activo, apuestas
-alteradas ni ingestas programadas.
+limitado a temporadas no verificadas y sin licencia explícita de publicación. El
+cotejo por fase 2025/26 muestra que los gaps UEFA están en clasificatorias de julio/
+agosto: Champions 55 partidos (48/7), Europa 58 (32/26) y Conference 181 (129/52);
+los meses posteriores con finales no tienen gaps. ESPN Scoreboard devolvió HTTP 200,
+0 eventos en las muestras clasificatorias y no hay vínculo ESPN para los 55 candidatos
+UCL. TotalCorner se excluyó por términos contra extracción automatizada y FCStats por
+robots.txt dirigido a crawlers de IA y HTTP 403. Sin nuevas escrituras. Continuidad y
+evidencia agregada quedan en el informe y la entrega externa. Sin ML fútbol activo,
+apuestas alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18
 

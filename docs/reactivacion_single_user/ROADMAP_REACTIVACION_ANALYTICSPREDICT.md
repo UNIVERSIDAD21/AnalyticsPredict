@@ -23,9 +23,14 @@ cohortes verificadas ESPN, DataHub, Kaggle y HF; no se mezclan definiciones ni s
 sobrescriben valores. StatsBomb no halló NULLs objetivo en su muestra. Un mirror HF
 es duplicado exacto del ya auditado; otros datasets no aportan métricas o quedan
 excluidos por licencia, upstream/robots, bloqueo o procedencia no acreditada. PitchAPI
-mantiene cobertura sin probar por falta de clave protegida. Continuar el censo/búsqueda para los gaps
-restantes, sin prometer completitud y sin ingestas programadas; cualquier nuevo
-lote requiere identidad por partido/campo, NULL-only, backup y postflight.
+mantiene cobertura sin probar por falta de clave protegida. Continuar el censo/búsqueda
+para los gaps restantes, sin prometer completitud y sin ingestas programadas; cualquier
+nuevo lote requiere identidad por partido/campo, NULL-only, backup y postflight. El
+cotejo READ ONLY UEFA 2025/26 confirmó gaps solo en clasificatorias de julio/agosto
+(55 Champions, 58 Europa, 181 Conference); ESPN Scoreboard no lista eventos UCL en
+las fechas de muestra y los 55 candidatos no tienen ID ESPN vinculado. TotalCorner se
+excluye por términos contra extracción automatizada y FCStats por su robots.txt
+específico para crawlers de IA.
 
 ## Nuevo desarrollo ML autorizado19/10
 
