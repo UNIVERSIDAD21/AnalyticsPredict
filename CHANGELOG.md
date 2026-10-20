@@ -1,12 +1,14 @@
 # CHANGELOG
 
-## 2026-10-20 — Preparación multi-fuente para nulos de estadísticas
+## 2026-10-20 — Recuperación multi-fuente parcial y búsqueda ampliada
 
-- Añadir cliente PitchAPI de solo lectura, parser de eventos, enlace único por IDs mapeados y conciliación competencia/equipos/fecha/FT. Resolver estadísticas campo-a-campo con origen/hash, preservación de datos no nulos, conflictos y consistencia corners/tiros; adaptador ESPN acepta valores individuales y no interpreta ausencia como cero.
-- Añadir migración de observaciones de procedencia y aplicación SQL explícita/NULL-only con transacción y bloqueo. La migración no se aplicó ni se escribió en Neon.
-- Añadir auditor de catálogo PitchAPI, auditor de gaps ESPN reproducible y pruebas dirigidas. Solo se mapean `shots` y posesión: tiros a puerta queda pendiente por definición que puede incluir bloqueos y xG por modelo no comparable entre fuentes. El resolver exige ambos lados de ET/tanda y deriva sus flags canónicos atómicamente. Resultado:39 aprobadas/1 omitida (requiere PostgreSQL sintético no disponible); compileall y diff check aprobados.
-- Ampliar ESPN de 4 ejemplos a los97 gaps: crosswalk y conciliación identidad/fecha/FT válidos97/97; los97 payloads tenían `statistics=[]`, incluidas claves no mapeadas;0 campos recuperables. Guardar manifiesto y payloads íntegros externos con modos0600/0700. StatsBomb:1.819 partidos listados,155 candidatos por equipos/fecha±1día/FT,0 con nulos en las10 métricas corners/tiros; el kickoff sin zona horaria impide promover esos candidatos a enlaces de aplicación. Endpoint CSV público de football-data.co.uk agotó el timeout de conexión; FBref devolvió403 con desafío, sin sortear ninguno de los bloqueos. PitchAPI requiere clave protegida sin respuesta. Sin compras, bypass, ingesta ni backfill. Ver `docs/reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md` y entrega externa homónima.
-- La primera integración PostgreSQL efímera detectó fechas `datetime` no serializables en la evidencia JSON. Se serializaron IDs/fechas explícitamente; CI 39431037523 confirmó el arreglo con 4/4 jobs verdes, incluida la integración sintética.
+- Aplicar en Neon valores NULL-only respaldados por ESPN, DataHub PDDL, Kaggle y Hugging Face: 234 vínculos proveedor-partido, 1.374 valores y 1.386 observaciones de procedencia. La tanda DataHub añadió dos LaLiga (12 valores); una excepción de Verona–Roma completó un único corner local `0` corroborado por tres fuentes, conservando el FT canónico 3–0. Ambas pasaron backup privado, ensayo rollback y postflight.
+- Actualizar resolver campo-a-campo y el aplicador DataHub para un crosswalk explícito y acotado a `Betis`→Real Betis, `Espanol`→Espanyol y `Sociedad`→Real Sociedad, manteniendo identidad única por competición/fecha/equipos/localía/FT y guardas NULL-only.
+- Censo READ ONLY: 24.593 finales FT; 4.605 partidos/26.426 campos aún tienen algún NULL entre corners, disparos y tiros al arco. Los gaps se concentran en copas nacionales/UEFA; no se afirma completitud ni recuperabilidad universal. En Verona–Roma los tiros de DataHub/Kaggle discrepan de ESPN/HF; se preservan valores canónicos y solo se aplica corner 0 explícito, dejando el 3–0 intacto.
+- Examinar candidatos CC0/CC-BY y fuentes adicionales; descartar los que no aportan campos, carecen de términos claros o dependen de scraping no autorizado/bloqueado. Confirmar que un mirror HF era duplicado exacto y que datasets recientes carecían de procedencia o cobertura útil. No sortear bloqueos, comprar planes ni usar credenciales no disponibles.
+- Reconciliar tablas de lotes con contadores actuales de Neon en consulta READ ONLY; registrar el censo de cierre. Alinear constraints de migraciones hermanas para que el orden alfabético de aplicación no reduzca la allowlist de fuentes y sanitizar errores operativos sin imprimir detalles del driver/DSN.
+- Actualizar fuente de verdad, estado, roadmap y acta externa con límites, procedencia y continuidad. Sin cambios en apuestas/modelos ni ingestas programadas.
+
 
 ## 2026-10-19 — Desarrollo ML fútbol con forma causal y nueva cohorte futura
 

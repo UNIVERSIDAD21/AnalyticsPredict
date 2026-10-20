@@ -9,18 +9,23 @@ el propietario, sin copiar memoria/configuración del agente al producto.
 
 [Resolver y fuentes revisadas](RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md):
 cliente PitchAPI y resolución campo-a-campo con origen/hash, identidad mapeada,
-conflictos en cuarentena y actualización `NULL`-only explícita. Sin migración ni
-escrituras en Neon. StatsBomb tiene155candidatos exploratorios/1.819, sin zona
-horaria acreditada y0nulos corner/shots en la muestra, por lo que no se aceptan
-para aplicación. ESPN97/97gaps de copa con identidad revalidada tienen
-`statistics=[]`. Docs PitchAPI publican shots, tiros a puerta, posesión y xG,
-pero solo shots/posesión pasan el mapeo canónico actual; los otros dos tienen
-semántica/modelo no compatible entre proveedores. Requiere clave protegida no
-recibida; cobertura por liga/temporada/partido sigue sin verificar. Continuar sin
-pausa artificial con fuentes públicas permitidas; preparar backfill solo tras
-acreditar identidad y campo, sin prometer
-recuperar todos los valores. ET/tanda requieren ambos marcadores laterales y
-sincronizan sus flags canónicos en la misma transacción.
+conflictos en cuarentena y actualización `NULL`-only explícita. Ya se aplicaron
+1.374 valores en 234 vínculos fuente-partido, conservando 1.386 observaciones de
+procedencia. Censo READ ONLY: 24.593 finales FT, 4.605 con al menos un NULL entre
+las seis métricas (26.426 campos), principalmente en copas nacionales y torneos
+UEFA. DataHub PDDL completó 2 LaLiga/12 campos; Verona–Roma añadió 1 corner local
+0 corroborado por tres fuentes, con backup privado, ensayo rollback y postflight.
+El FT canónico 3–0 se preservó; el 0–0 reportado para el partido jugado no se usa
+para modificar el marcador y la causa del desacuerdo no se adjudicó. El desfase +5h del
+importador SofaScore solo se admite en la excepción ESPN/SofaScore exacta, mismo día
+UTC y con equipos/FT/competición concordantes; fechas no se corrigen. Se usaron
+cohortes verificadas ESPN, DataHub, Kaggle y HF; no se mezclan definiciones ni se
+sobrescriben valores. StatsBomb no halló NULLs objetivo en su muestra. Un mirror HF
+es duplicado exacto del ya auditado; otros datasets no aportan métricas o quedan
+excluidos por licencia, upstream/robots, bloqueo o procedencia no acreditada. PitchAPI
+mantiene cobertura sin probar por falta de clave protegida. Continuar el censo/búsqueda para los gaps
+restantes, sin prometer completitud y sin ingestas programadas; cualquier nuevo
+lote requiere identidad por partido/campo, NULL-only, backup y postflight.
 
 ## Nuevo desarrollo ML autorizado19/10
 

@@ -18,16 +18,21 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 ## Recuperación multi-fuente de nulos — 2026-10-20
 
 [Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
-Preparados cliente PitchAPI y resolver campo-a-campo con identidad/procedencia,
-migración no aplicada y guards NULL-only. Auditoría READONLY:4.739finales con gaps
-SofaScore; StatsBomb155candidatos por fecha±1día/FT sin zona horaria/0nulos en10
-métricas corners/disparos, no aptos para aplicar; ESPN97/97resúmenes enlazados
-validados sin estadísticas. PitchAPI queda sin muestra autenticada porque no hay
-clave disponible; su documentación anuncia tiros, tiros a puerta, posesión y xG,
-pero no se probó cobertura por partido/temporada. El resolver solo habilita tiros
-totales y posesión; retiene tiros a puerta por diferencia semántica y no mezcla el
-xG propietario de cada proveedor. No hubo DDL/DML ni backfill; cobertura real y
-alcance siguen abiertos.
+Recuperación parcial ya persistida: 234 vínculos proveedor-partido y 1.374
+actualizaciones NULL-only, con 1.386 observaciones de procedencia. Censo READ ONLY:
+24.593 finales FT, 4.605 partidos con algún NULL de corners/disparos/tiros al arco
+(26.426 campos); gaps en ENG_FACUP, ESP_COPA, UEFA Champions/Europa/Conference,
+FRA_COUPE e ITA_COPPA. ESPN aportó tandas verificadas; DataHub PDDL amplió top-5 y
+un crosswalk exacto de LaLiga (dos partidos/12 valores) pasó backup, rollback y doble
+postflight. Una excepción limitada completó corners local 0 de Verona–Roma tras
+conciliación ESPN/HF/DataHub y corroboración Kaggle; el FT canónico 3–0 se conservó
+y no se infirió la causa del desacuerdo de score. Kaggle/HF aportaron subconjuntos
+conservadores. Se identificó importador histórico SofaScore con hora local ingenua;
+la única excepción ESPN/SofaScore permite +5 h exactas en el mismo día UTC y conserva
+la fecha canónica. Otros datasets se excluyen por métricas, upstream/licencias/robots
+o procedencia insuficiente. El censo no afirma que todos los NULL sean recuperables;
+PitchAPI sigue sin clave ni cobertura autenticada. Sin ML fútbol activo, apuestas
+alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18
 

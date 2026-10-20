@@ -13,6 +13,7 @@ from servicios.resolucion_multifuente_futbol import (
     ConflictoConcurrente,
     EvidenciaCampo,
     EvidenciaNoValida,
+    METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
     PartidoCanonico,
     PartidoProveedor,
     construir_plan_resolucion,
@@ -20,12 +21,107 @@ from servicios.resolucion_multifuente_futbol import (
     extraer_evidencia_espn,
     extraer_evidencia_pitchapi_estadistica,
     extraer_evidencia_estadistica,
+    extraer_evidencia_datahub_football_data_csv,
+    sha256_json,
     validar_vinculo_partido,
+    validar_inicio_identidad,
     vincular_partido_unico,
 )
 
 
 AHORA = datetime(2026, 10, 20, 20, 0, tzinfo=timezone.utc)
+
+
+def _payload_datahub_csv():
+    fila = {
+        "Date": "2023-02-11",
+        "HomeTeam": "Sevilla",
+        "AwayTeam": "Mallorca",
+        "FTHG": "2",
+        "FTAG": "0",
+        "HC": "8",
+        "AC": "2",
+        "HS": "15",
+        "AS": "6",
+        "HST": "6",
+        "AST": "0",
+    }
+    evento_id = "FDATA/ESP_LALIGA/2223/904bb28ac0cc72e8bc619a97"
+    payload = {
+        "event_id": evento_id,
+        "competition_code": "ESP_LALIGA",
+        "season": "2223",
+        "date": "2023-02-11",
+        "home": "Sevilla",
+        "away": "Mallorca",
+        "ft_home": 2,
+        "ft_away": 0,
+        "source_url": "https://datahub.io/football/spanish-la-liga/_r/-/season-2223.csv",
+        "license": "ODC-PDDL-1.0",
+        "source_file_sha256": "a" * 64,
+        "source_row_sha256": sha256_json(fila),
+        "source_row_number": 204,
+        "raw_row": fila,
+    }
+    expected = {
+        "event_id": evento_id,
+        "comp_code": "ESP_LALIGA",
+        "season": "2223",
+        "date": "2023-02-11",
+        "home": "Sevilla",
+        "away": "Mallorca",
+        "ft_home": 2,
+        "ft_away": 0,
+    }
+    return evento_id, payload, expected
+
+
+def test_datahub_csv_extrae_seis_campos_y_preserva_ceros_explicitos():
+    evento_id, payload, expected = _payload_datahub_csv()
+
+    evidencia = extraer_evidencia_datahub_football_data_csv(
+        evento_id=evento_id,
+        payload=payload,
+        esperado=expected,
+        observado_en=AHORA,
+    )
+
+    assert {x.campo: x.valor for x in evidencia} == {
+        "local_corners_total": 8,
+        "visitante_corners_total": 2,
+        "local_disparos_total": 15,
+        "visitante_disparos_total": 6,
+        "local_disparos_arco": 6,
+        "visitante_disparos_arco": 0,
+    }
+    assert {x.fuente for x in evidencia} == {"DATAHUB_FOOTBALL_DATA"}
+    assert {x.periodo_proveedor for x in evidencia} == {"All"}
+    assert {x.sha256_payload for x in evidencia} == {payload["source_row_sha256"]}
+
+
+@pytest.mark.parametrize(
+    "change,pattern",
+    [
+        ("license", "Licencia"),
+        ("source_url", "URL"),
+        ("source_row_sha256", "hash de la fila"),
+        ("home", "Identidad de fila"),
+    ],
+)
+def test_datahub_csv_rechaza_procedencia_o_identidad_que_no_concilia(change, pattern):
+    evento_id, payload, expected = _payload_datahub_csv()
+    if change in {"license", "source_url", "source_row_sha256"}:
+        payload[change] = "0" * 64 if change == "source_row_sha256" else "INVALID"
+    else:
+        expected[change] = "Real Betis"
+
+    with pytest.raises(EvidenciaNoValida, match=pattern):
+        extraer_evidencia_datahub_football_data_csv(
+            evento_id=evento_id,
+            payload=payload,
+            esperado=expected,
+            observado_en=AHORA,
+        )
 
 
 def fixture_identidad():
@@ -99,6 +195,64 @@ def test_vinculo_rechaza_competencia_fecha_marcador_o_estado(cambio, patron):
         validar_vinculo_partido(
             canon, modificado, mapeo_competiciones=comps, mapeo_equipos=equipos
         )
+
+
+def test_identidad_legacy_bogota_acepta_solo_offset_exacto_con_mismo_dia_y_fuentes():
+    canonico = datetime(2023, 2, 12, 15, 0, tzinfo=timezone.utc)
+    proveedor = datetime(2023, 2, 12, 20, 0, tzinfo=timezone.utc)
+    validar_inicio_identidad(
+        canonico,
+        proveedor,
+        metodo=METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
+        fuente_proveedor="ESPN_SOCCER",
+        fuente_canonica="SOFASCORE",
+    )
+
+    with pytest.raises(EvidenciaNoValida, match="tolerancia"):
+        validar_inicio_identidad(canonico, proveedor, fuente_proveedor="ESPN_SOCCER")
+    with pytest.raises(EvidenciaNoValida, match="aplica"):
+        validar_inicio_identidad(
+            canonico, proveedor,
+            metodo=METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
+            fuente_proveedor="PITCHAPI", fuente_canonica="SOFASCORE",
+        )
+    with pytest.raises(EvidenciaNoValida, match="exactas"):
+        validar_inicio_identidad(
+            canonico, proveedor - timedelta(seconds=1),
+            metodo=METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
+            fuente_proveedor="ESPN_SOCCER", fuente_canonica="SOFASCORE",
+        )
+    with pytest.raises(EvidenciaNoValida, match="cruza el día"):
+        validar_inicio_identidad(
+            datetime(2023, 2, 12, 20, 0, tzinfo=timezone.utc),
+            datetime(2023, 2, 13, 1, 0, tzinfo=timezone.utc),
+            metodo=METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
+            fuente_proveedor="ESPN_SOCCER", fuente_canonica="SOFASCORE",
+        )
+
+
+def test_vinculo_legacy_tambien_exige_mapeo_local_visitante_competencia_y_ft():
+    canon, proveedor, _, _ = fixture_identidad()
+    inicio_canonico = datetime(2023, 2, 12, 15, 0, tzinfo=timezone.utc)
+    canon = PartidoCanonico(**{**canon.__dict__, "inicio_utc": inicio_canonico})
+    proveedor = PartidoProveedor(**{
+        **proveedor.__dict__,
+        "fuente": "ESPN_SOCCER",
+        "inicio_utc": inicio_canonico + timedelta(hours=5),
+    })
+    comps = {("ESPN_SOCCER", proveedor.competicion_id): canon.competicion_id}
+    equipos = {
+        ("ESPN_SOCCER", proveedor.equipo_local_id): canon.equipo_local_id,
+        ("ESPN_SOCCER", proveedor.equipo_visitante_id): canon.equipo_visitante_id,
+    }
+    validar_vinculo_partido(
+        canon,
+        proveedor,
+        mapeo_competiciones=comps,
+        mapeo_equipos=equipos,
+        metodo_identidad=METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
+        fuente_canonica="SOFASCORE",
+    )
 
 
 def test_extraccion_solo_toma_claves_y_periodos_explicitos_y_preserva_cero():
@@ -509,6 +663,7 @@ def test_aplicacion_postgresql_sintetico_es_null_only_idempotente_y_contratos():
                     id uuid PRIMARY KEY, estado text NOT NULL,
                     competicion_id text NOT NULL, equipo_local_id text NOT NULL,
                     equipo_visitante_id text NOT NULL, fecha_partido timestamptz NOT NULL,
+                    fuente_datos text NOT NULL DEFAULT 'PITCHAPI',
                     hubo_tiempo_extra boolean NOT NULL DEFAULT false,
                     hubo_penales boolean NOT NULL DEFAULT false,
                     local_goles_1t integer, local_goles_2t integer, local_goles_et integer,
@@ -577,6 +732,48 @@ def test_aplicacion_postgresql_sintetico_es_null_only_idempotente_y_contratos():
                 assert conn.execute(
                     "SELECT count(*) FROM observaciones_multifuente_estadisticas_futbol WHERE partido_id=%s", (pid,)
                 ).fetchone() == (1,)
+
+                legacy_pid = uuid4()
+                legacy_inicio = datetime(2023, 2, 12, 15, 0, tzinfo=timezone.utc)
+                legacy_ev = evidencia(
+                    "local_corners_total", 5, fuente="ESPN_SOCCER", evento="643980"
+                )
+                legacy_plan = construir_plan_resolucion({}, [legacy_ev])
+                legacy_identity = {
+                    **identity,
+                    "metodo": METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,
+                    "canonical_source": "SOFASCORE",
+                    "canonical_start_utc": legacy_inicio.isoformat(),
+                    "provider_start_utc": (legacy_inicio + timedelta(hours=5)).isoformat(),
+                }
+                with conn.transaction():
+                    conn.execute(
+                        """INSERT INTO partidos_futbol
+                           (id,estado,competicion_id,equipo_local_id,equipo_visitante_id,fecha_partido,
+                            fuente_datos,local_goles_total,visitante_goles_total)
+                           VALUES (%s,'FINALIZADO','competicion-1','equipo-1','equipo-2',
+                                   %s,'SOFASCORE',2,1)""",
+                        (legacy_pid, legacy_inicio),
+                    )
+                    aplicado_legacy = aplicar_plan_resolucion(
+                        conn,
+                        partido_id=str(legacy_pid),
+                        goles_local_ft=2,
+                        goles_visitante_ft=1,
+                        plan=legacy_plan,
+                        identidades={("ESPN_SOCCER", legacy_ev.evento_id): legacy_identity},
+                        dry_run=False,
+                    )
+                assert aplicado_legacy["campos_aplicados"] == ["local_corners_total"]
+                assert conn.execute(
+                    "SELECT fecha_partido,fuente_datos,local_corners_total FROM partidos_futbol WHERE id=%s",
+                    (legacy_pid,),
+                ).fetchone() == (legacy_inicio, "SOFASCORE", 5)
+                identidad_evidencia = conn.execute(
+                    "SELECT evidencia_identidad->>'metodo' FROM observaciones_multifuente_estadisticas_futbol WHERE partido_id=%s",
+                    (legacy_pid,),
+                ).fetchone()
+                assert identidad_evidencia == (METODO_IDENTIDAD_SOFASCORE_HORA_LOCAL_BOGOTA,)
 
                 conflicto = construir_plan_resolucion({}, [evidencia("local_corners_total", 5)])
                 with pytest.raises(ConflictoConcurrente, match="no se sobrescribe"):

@@ -1,61 +1,79 @@
 # Recuperación multi-fuente de estadísticas nulas — 2026-10-20
 
-## Estado
+## Estado vigente
 
-**Infraestructura de resolución preparada; cobertura real y recuperación de datos no cerradas.** No se cambió ninguna fila de Neon ni se aplicó la migración de procedencia. No se declara recuperado ningún campo en este bloque.
+**Recuperación parcial aplicada; la búsqueda continúa y el catálogo de fútbol no está completo.** Los backfills tocaron únicamente seis métricas por partido finalizado: corners FT, disparos totales y tiros al arco, lado local/visitante. No modificaron goles, partidos futuros, apuestas, modelos ni predicciones.
 
-El trabajo responde a las estadísticas nulas de partidos finalizados. `NULL` significa desconocido/no publicado, nunca cero. Los campos de partidos futuros siguen siendo nulos por diseño. Los valores canónicos no nulos no se sobrescriben; una fuente no enlazada, un partido ambiguo, un desacuerdo o una estadística ausente queda fuera del plan de aplicación.
+Los `NULL` siguen significando dato desconocido/no publicado, nunca cero. Un valor canónico no nulo no se sobrescribe. Las fuentes con identidad ambigua, discrepancia o derechos/contrato insuficientes quedan excluidas. La cantidad de partidos con nulos no representa una cantidad recuperable.
 
-## Corte observado en Neon (solo lectura)
+## Censo actual de Neon — READ ONLY, 2026-10-20
 
-- Catálogo canónico: 12 competiciones de fútbol en este corte; los otros 13 torneos de la auditoría de octubre son un conjunto separado, no se deben atribuir al catálogo activo.
-- Finales con marcador FT: 24.593 según el corte de datos del 18/10.
-- 4.739 finales con fuente declarada SofaScore conservan ID SofaScore y tienen al menos un campo objetivo FT nulo en corners/tiros; ninguno de esos registros tiene vínculo ESPN. No hay IDs API-Football ni Flashscore para enlazarlos directamente.
-- 97 gaps adicionales pertenecen a vínculos ESPN de copas (59 FA Cup, 25 Copa del Rey, 7 Coupe de France, 6 Coppa Italia). Se consultaron los97 resúmenes públicos a ritmo secuencial de1,2s. Los97 pasaron crosswalk de competición/temporada/equipos, ID de evento, fecha±2min, estado final y FT; los97 tenían `statistics=[]` y cero elementos estadísticos, incluso con claves sin mapear. No hubo bloqueo ni error de red. Resultado: 0 campos nuevos disponibles por ESPN para esta cohorte.
-- Una observación de diciembre de 2025 (Tenerife–Granada) mostró un desfase de inicio de cinco horas entre el registro canónico y ESPN; el resultado y nombres coincidían, pero no pasa la tolerancia de identidad y no se usa.
+- **24.593** partidos finalizados con FT.
+- **4.605 partidos** aún tienen al menos un `NULL` en las seis métricas objetivo; suman **26.426 campos nulos**.
+- Nulos por campo: corners local **4.094**, corners visitante **4.094**, disparos local **4.585**, disparos visitante **4.585**, tiros al arco local **4.534**, visitante **4.534**.
+- Partidos con gaps por competición: ENG_FACUP 862; ENG_PREMIER 0; ESP_COPA 338; ESP_LALIGA 0; EUR_CHAMPIONS 336; EUR_CONFERENCE 968; EUR_EUROPA 796; FRA_COUPE 1.106; FRA_LIGUE1 0; GER_BUNDESLIGA 0; ITA_COPPA 199; ITA_SERIEA 0.
+- Hellas Verona–Roma (2020-09-19) ya no tiene gaps: se completó solo corners local `0`, explícito y concordante en ESPN, HF/API-Football y DataHub; Kaggle CC0 lo corroboró. El FT canónico 3–0 se preservó, aunque ESPN/DataHub/Kaggle reportan 0–0 jugado. La causa de la diferencia de score no se adjudicó en esta auditoría. Los tiros de DataHub/Kaggle discrepan de ESPN/HF y no se cambiaron.
 
-Un segundo censo READONLY sobre los 24.593 finales FT midió nulos por columna (no equivale a faltantes recuperables): goles 1T local/visitante42/37; goles 2T6.182/6.181; goles ET671/671; marcador de tanda de penales24.563/24.563; corners 1T6.089 por lado,2T6.093 por lado y FT4.323 por lado; disparos totales4.814 por lado y a puerta4.763 por lado; disparos fuera/bloqueados24.593 por lado; posesión5.866 por lado; faltas, tarjetas amarillas/rojas y fueras de juego24.593 por lado; xG16.166 por lado y xG 1T24.593 por lado. Penales/ET son condicionales al tipo de partido; un `NULL` puede ser no aplicable, y no se debe reemplazar automáticamente por cero.
+Este censo no afirma que todos los 4.605 partidos sean recuperables. Hay partidos adjudicados/no jugados, temporadas sin publicación y diferencias de definición entre fuentes.
 
-Las cifras anteriores son consultas identificadas de ese corte, no garantías de exhaustividad global ni un backfill.
+## Lotes persistidos antes de la excepción final y procedencia
 
-## Fuentes públicas examinadas
+| Fuente | Vínculos fuente-partido | Valores nuevos NULL-only | Observaciones registradas |
+|---|---:|---:|---:|
+| ESPN Soccer | 193 | 1.152 | 1.154 |
+| DataHub Football CSV | 4 | 24 | 24 |
+| Kaggle `gokhanergul/football-match-statistics` | 31 | 178 | 186 |
+| Hugging Face `eatpizzanot/soccer-dataset` | 4 | 19 | 19 |
+| **Subtotal de lotes anteriores** | **232** | **1.373** | **1.383** |
 
-| Fuente | Evidencia observada | Resultado para completar nulos |
+El número de observaciones puede superar los valores escritos porque se conservan comprobaciones iguales/conflictivas sin sobrescribir el dato canónico. Los vínculos cuentan cada combinación proveedor-partido, no necesariamente partidos canónicos distintos. Después de la excepción de Verona–Roma se añadieron **2 vínculos** (ESPN y DataHub; se reutilizó el vínculo HF existente), **1 valor canónico** y **3 observaciones**; total actual Neon: **234 vínculos / 1.374 valores / 1.386 observaciones**. El archivo CC0 de `ferrariboy4k/top5leagues` se usó solo como corroboración externa; no se añadió como cuarta fuente persistida porque atribuye los datos a upstreams que ya están representados.
+
+La última tanda DataHub añadió **Almería–Real Betis (2023-02-11)** y **Espanyol–Real Sociedad (2023-02-13)**: 12 valores. Se cruzaron competición, fecha local exacta, orden/localía, FT, alias de proveedor documentados y candidato canónico único. Ambos lados tenían los seis campos `NULL` y la fuente PDDL tenía seis enteros positivos explícitos por partido. Se aplicó backup privado, ensayo transaccional con rollback verificado y postflight transaccional e independiente. Censo: 4.608→4.606 dentro del ensayo, de vuelta a 4.608 tras rollback; aplicación final 4.606. Migración adicional no necesaria.
+
+El historial de tandas ESPN, DataHub, Kaggle y HF —incluyendo hashes, raws disponibles, backups, rollback y postflights— permanece en la entrega externa indicada al final. La tabla de procedencia conserva proveedor, evento, campo, valor, contrato, evidencia de identidad y hash.
+
+En el censo inicial tras DataHub el total fue 4.608→4.606 dentro del ensayo y de vuelta a 4.608 tras rollback; la aplicación de esa tanda dejó 4.606. Después se aplicó la excepción Verona–Roma, y el censo READ ONLY actual bajó a 4.605.
+
+La excepción Verona–Roma tiene auditoría reproducible en `backend/scripts/aplicar_cero_corners_verona_roma.py`: modo READ ONLY predeterminado, identidad exacta y limitada, respaldo externo, ensayo con rollback, UPDATE exclusivo `NULL`-only y postflight independiente. El desacuerdo de score queda en la evidencia; no se utiliza para mutar el FT ni se generaliza a otros cruces.
+
+## Búsqueda multi-fuente realizada
+
+| Fuente | Cobertura/resultado observado | Decisión |
 |---|---|---|
-| ESPN Soccer | 97/97 summaries de los gaps, todos con ID/equipos/fecha±2min/estado/FT concordantes y `statistics=[]`; se contaron también las claves sin mapear dentro del boxscore. | 0 valores estadísticos disponibles para recuperar en esta cohorte. Payloads y manifiesto externos íntegros. |
-| StatsBomb Open Data | 1.819 partidos listados de seis competiciones/temporadas; 155 coincidencias candidatas únicas por competición, equipos ordenados, fecha±1 día y FT; 0 de esos candidatos tenía nulos en los 10 campos corners/disparos inicialmente examinados. | Ningún nulo objetivo observado en esa muestra. El kickoff StatsBomb no trae zona horaria y no se reconcilió con el timestamp canónico; esos155 son candidatos exploratorios, no enlaces de identidad aptos para aplicación. Otros campos no se auditaron. 1.026 no produjeron vínculo por fecha/equipos/FT; 638 no tuvieron cruce de alias de equipo unívoco. |
-| PitchAPI | Documentación oficial pública consultada el20/10 declara77ligas, todas las rutas del plan gratis, histórico desde2021 y sin cuota de requests; tiene un fair-use burst guard. En `/matches/{id}/stats` publica `shots`, `shots_on_target`, `BallPossesion` y `expected_goals`/xG por mitades. | El mapeo canónico solo habilita `shots` y posesión; el endpoint todavía requiere `X-API-KEY` y cobertura de liga/temporada/partido no comprobada en vivo. Se retienen tiros a puerta porque la definición puede incluir bloqueos y xG porque el proveedor exige no mezclar modelos. `is_on_target` tampoco se usa: explícitamente incluye bloqueos dirigidos al arco. Fuente: [documentación PitchAPI](https://pitchapi.dev/). |
-| football-data.org | Cobertura anunciada para scores/calendarios; corners y tiros están en el complemento publicado de €15/mes. | No comprado. Profundidad histórica por liga/partido desde 2018 no acreditada. |
-| football-data.co.uk | GET directo a un CSV público de muestra terminó por timeout de conexión antes de obtener respuesta HTTP. | Sin datos descargados ni usados; no se sorteó el bloqueo de red. |
-| FBref | La página pública de estadísticas de Premier League respondió HTTP 403 con desafío del sitio. | No se consultaron endpoints alternos ni se intentó evadir el bloqueo. |
-| TheSportsDB / otras APIs comerciales | TheSportsDB respondió HTTP 403 en la pasada previa; TheStatsAPI/Sportmonks requieren plan comercial y no acreditan campos/seasons completos en evidencia actual. | No se eluden bloqueos ni se contratan planes. |
+| ESPN Soccer | Se inspeccionaron 164/164 scoreboards válidos: 2.695 eventos y 2.687 finales. 75 coincidencias 1:1; 47 summaries aportaron inicialmente 282 observaciones (seis por partido), 28 no incluyeron estadísticas. La ampliación y el cruce de históricos aportaron tandas adicionales; los summaries sin boxscore útil no se reutilizaron como si tuvieran ceros. | Los valores verificados se aplicaron campo-a-campo. El desfase histórico ESPN↔SofaScore se acepta solo para +5 h exactas y mismo día UTC cuando también concilian IDs, lados, competición y FT; no se corrigen fechas canónicas. |
+| DataHub Football CSV | Paquete ODC-PDDL 1.0, cinco ligas/40 CSV/14.285 filas. 9.911 identidades iniciales estrictas; el nuevo crosswalk corto de LaLiga descubrió dos filas positivas adicionales. | Los lotes originales aplicaron cuatro partidos/24 valores. Luego corroboró el cero local de Verona–Roma con ESPN y HF; solo ese corner se aplicó, con el 3–0 canónico preservado. Otros desacuerdos no se sobrescribieron. |
+| Kaggle `gokhanergul/football-match-statistics` | CSV con partidos de ligas/copas; se conciliaron filas por fecha, competición, orden y FT, incluyendo alias explícitos limitados. Una fila adicional Bordeaux–Jumeaux fue corroborada con páginas de FFF y Girondins. | 31 vínculos y 178 valores; 6 iguales y 2 conflictos se preservaron sin escritura. Los otros 11 candidatos por nombre no identificaban a los equipos canónicos indicados y no se forzó el cruce. |
+| Hugging Face `eatpizzanot/soccer-dataset` | Revisión fijada a `f0cbe86bee3f28cc4b803f735a5287968741c471`; el crosswalk encontró ceros dudosos, conflictos y dos lados con tiros internamente imposibles. | Solo 19 valores positivos de 4 partidos superaron los controles; ceros dudosos y lados inconsistentes excluidos. El card declara CC BY 4.0 y atribuye parte de los datos a API-Football/football-data.co.uk, aunque el card advierte que podría no otorgar derechos sobre upstream; se conserva esa limitación. |
+| Hugging Face `Sporoseseun/soccer-dataset` | Declara la misma licencia/fuentes/esquema. La comparación de las revisiones fijadas encontró los mismos 17 archivos Git y los mismos 11 OID/tamaños LFS; incluye el mismo parquet de estadísticas. | Duplicado exacto del dataset ya auditado; no se redescargó, no añade cobertura ni se usa como fuente independiente. |
+| Kaggle `ferrariboy4k/top5leagues` | CC0 según la ficha; 40 CSV de 5 ligas 2014–2022 con corners, tiros y tiros al arco. En Hellas Verona–Roma 2020-09-19 reporta FT jugado 0–0, 0–6 corners y 9/15 tiros, 7/7 a puerta. La ficha atribuye fuentes a football-data.co.uk, understat, sofifa y transfermarkt. | Se usó como corroboración solo del cero local de corners junto con ESPN/HF/DataHub. Sus tiros no concilian con ESPN/HF y no se aplicaron; no se registró como upstream independiente. |
+| Kaggle `gokhanergul/france-and-germany-football-leagues-dataset` | Apache 2.0 declarado; 38.596 partidos en Francia/Alemania, con Coupe de France y DFB-Pokal. Archivo revisado: un CSV, 10 columnas: competición, fecha, equipos, scores y temporada. | No tiene corners, tiros ni tiros al arco. No aplicado; raw ZIP y cabeceras archivados con hash. |
+| Kaggle `adamgbor/club-football-match-data-2000-2025` | MIT en la ficha; anuncia datos 2000–2026 de 42 ligas y stats desde Football-Data.co.uk. | No incluye copas según su catálogo/descripción; derechos upstream no verificados. No descargado ni aplicado. |
+| Kaggle `sagehaz/Football_Match_Datasets` | MIT en la ficha; CSV semanales 2025 con columnas de resultados/estadísticas, pero el README solo declara la licencia y no identifica fuente/proveedor. | No usado por falta de procedencia verificable de los datos subyacentes. |
+| Hugging Face `tarekmasryo/football-matches-2025-dataset` | CC BY 4.0 declarado; 1.941 partidos 2024/25 de cinco ligas + Champions; 23 columnas de resultado/árbitro/fixture, sin las seis métricas objetivo. | No aporta los campos estadísticos faltantes; no descargado. |
+| Kaggle `willfitzhugh/european-soccer-data` | La copia declara CC0 y contiene 106.876 filas de partidos/lado, incluidos cups y UEFA; su CSV solo trae fecha, equipos, marcadores, puntos, temporada, ubicación, país y competición. No trae corners, tiros ni tiros al arco. | Descargado y revisado; no sirve para las métricas objetivo. Hash ZIP `2ba6976b571feaa9b294f5e15d799eec39b1673eeeba5df7fcbc95b06934d884`. |
+| Kaggle `omarameen99/football-matches-data-from-soccerway` | Declara Apache 2.0, 55 competiciones y 16.688 partidos recientes con estadísticas; su descripción atribuye el dataset a un proceso automatizado Selenium/BeautifulSoup sobre Soccerway. El `robots.txt` público de Soccerway desautoriza `/football/`. | No se descargó ni usó. Extracción upstream sistemática y derechos de redistribución no acreditados; no se eludió la política del sitio. |
+| Kaggle `johntocci/champions-league-matches-2025-2026` | Declara CC0, pero describe scraping automatizado diario desde FBref; cubre una temporada UCL y subset de métricas. FBref respondió 403 en auditoría anterior. | No se usó ni se eludió el bloqueo. |
+| Kaggle `ivanposinovec/football-matches-from-europe-and-south-america` | Declara CC0, pero el propio card dice que los partidos se obtuvieron scrapeando FBref y exige aceptar Sports Reference Terms of Use. | No descargado ni usado bajo las restricciones actuales de fuente. |
+| Wyscout Open Data (copia Kaggle `aleespinosa`) | CC BY 4.0, cinco ligas principales 2017/18 más World Cup 2018 y Euro 2016; no declara las copas de clubes objetivo. Copia de ~3,2 GB. | No cubre las competiciones objetivo restantes según el alcance publicado; no descargado. |
+| Kaggle `tonygordonjr` | Atribuye datos a API-Football/RapidAPI y declara uso no comercial/académico. | No utilizado por restricción de uso y derechos upstream no aclarados. |
+| StatsBomb Open Data | 1.819 partidos listados; 155 cruces candidatos exploratorios con fecha/equipos/FT. Ninguno de esos 155 tenía nulos en las diez métricas corners/tiros examinadas; el kickoff de algunos archivos carece de zona horaria acreditada. | No se encontró un gap objetivo utilizable ni se elevan candidatos ambiguos a vínculos de aplicación. |
+| PitchAPI y football-data.org | PitchAPI documenta estadísticas, pero su endpoint requiere clave y no se verificó cobertura real; football-data.org anuncia corners/tiros como complemento pagado. | No se recibió clave ni se compró plan. |
+| FBref, TheSportsDB, football-data.co.uk | Se observaron 403/desafío o timeout en las consultas previas. FFF/UEFA y otros sitios oficiales están sujetos a condiciones de reutilización distintas. | No se sortean bloqueos ni se automatizan sitios cuyos términos lo prohíben. No se atribuyen datos no publicados. |
 
-## Código añadido
+Un barrido adicional de catálogos Kaggle/Hugging Face/GitHub encontró copias de Adamgbor con upstream Football-Data.co.uk; `WideMan/football_matches` sin licencia declarada y sin cobertura de copas objetivo acreditada; un dataset HF de detección de imágenes; mirrors FBref sin términos claros; y un conjunto reciente francés/alemán que solo contiene marcador, fecha y equipos. No aportan una fuente nueva utilizable. También se confirmó que el mirror HF de Sporoseseun es una copia binaria exacta del dataset HF ya auditado, sin cobertura independiente. No se usaron fuentes con métricas sin upstream/licencia claros. El extractor de búsqueda web configurado no tuvo clave; no se alteró Gateway ni se intentó eludir ese requisito.
 
-- `backend/servicios/proveedor_pitchapi.py`: cliente GET de host fijo, ritmo conservador, sin redirecciones ni reintentos de 401/403, errores sanitizados y parser de partido.
-- `backend/servicios/resolucion_multifuente_futbol.py`: validación de identidad por IDs mapeados, vínculo único, parser ESPN campo-a-campo, mapeo PitchAPI solo para métricas de semántica compatible y parser genérico con mapa explícito; hash de payload, merge que conserva valores no nulos y controles de consistencia. La allowlist comprende36 columnas canónicas; el mapeo PitchAPI actual cubre disparos totales y posesión, no las36.
-- `backend/migrations/2026-10-20_observaciones_multifuente_futbol.sql`: tabla de evidencia por campo/evento/proveedor. **Solo archivo de migración; no aplicada.**
-- `backend/scripts/auditar_catalogo_pitchapi.py`: auditor autenticado de catálogo y partidos en modo exclusivamente GET; no lee `.env`, no conecta a PostgreSQL, guarda fuera del repositorio con modo privado y no sobrescribe evidencia.
-- `backend/scripts/auditar_gaps_espn_multifuente.py`: lector PostgreSQL READ ONLY que consulta los97 gaps enlazados y resúmenes ESPN con GET secuencial; sin reintentos/redirecciones, valida crosswalks y guarda JSON sin sobrescribir fuera del repo.
-- Pruebas dirigidas de resolución, parser y controles de red. La integración PostgreSQL se ejecuta solo si `DATABASE_URL` apunta a una BD sintética `ap_suite_test_*`.
+## Código y operación
 
-La escritura requiere llamada explícita a `aplicar_plan_resolucion(..., dry_run=False)`, bloque `connection.transaction()` activo, migración aplicada y revalidación del estado/FT bajo bloqueo. La sentencia incluye guardas `IS NULL`; ET/tanda exigen ambos marcadores laterales y actualizan sus flags canónicos dentro de la misma transacción. El usuario operativo debe realizar backup, ensayo/rollback y postflight antes de autorizar un lote productivo. Ninguna de esas operaciones se ejecutó en este bloque.
+- `backend/servicios/resolucion_multifuente_futbol.py`: validación de eventos/identidad, extracción por campo y proveedor, hash, consistencia y merge que conserva valores no nulos. La regla general de hora no se relajó; la excepción +5 h está limitada al importador SofaScore y ESPN en el mismo día UTC.
+- `backend/servicios/proveedor_pitchapi.py`: cliente documentado, GET y errores sanitizados; no se usó sin API key.
+- `backend/migrations/2026-10-20_observaciones_multifuente_futbol.sql` y allowlists de `DATAHUB_FOOTBALL_DATA`, `KAGGLE_GOKHANERGUL` y `HF_EATPIZZANOT`: la tabla y constraints necesarios existen en Neon y la procedencia de las tandas aplicadas está registrada.
+- Scripts de auditoría/aplicación por proveedor en `backend/scripts/`; modo de solo lectura por defecto cuando corresponde, DML explícito, guardas `IS NULL`, lock, backup externo, rollback y postflight.
+- No se reentrenó ni activó modelo, no se modificaron apuestas/predicciones, no se creó cron, no se contrató proveedor y no se automatizaron fuentes futuras.
 
-## Próximo trabajo sin pausa artificial
+La revisión vigente compiló el resolutor y el script Verona–Roma con `py_compile`, y pasó `git diff --check`. La ejecución predeterminada del script produjo `READ_ONLY_PREFLIGHT_OK`, confirmó el target corner `0`, el FT canónico `3–0`, la identidad y las tres observaciones existentes, con `database_changes=false`; evidencia en `VERONA_ROMA_CORNERS_ZERO/RUN_20261020T231726198596Z/`. Un recenso READ ONLY independiente de Neon confirmó 24.593 finales, 4.605 con gaps (26.426 campos), 234 vínculos y 1.386 observaciones; detalle por competición/campo en `CENSO_READONLY_CIERRE_20261020T231929Z.json`. No se ejecutó la suite local en esta pasada y el resultado de pruebas del checkpoint anterior no se presenta como validación de este cambio.
 
-1. Continuar sin pausa artificial buscando fuentes públicas accesibles con contrato/licencia y campos demostrables; conservar el ritmo y detener solo la fuente ante bloqueos, rate limit o fallos.
-2. Cuando la clave PitchAPI esté disponible por el almacén protegido, ejecutar el auditor de catálogo/temporadas y una muestra real del endpoint de estadísticas; no pegar claves en chat, `.env` o archivos.
-3. Construir crosswalk explícito de competiciones/equipos, conciliar identidad, fecha y FT y medir cobertura por temporada/campo. No elevar los155 candidatos StatsBomb con hora local sin zona a identidad validada.
-4. Solo con identidad y métricas acreditadas, generar un dry-run y preparar lote de aplicación con backup, rollback, idempotencia y postflight independientes. La migración sigue sin aplicar y no se habilita DML por tener código listo.
-5. Mantener `NULL` para cualquier temporada/campo sin fuente verificable. No se promete completar todos los nulos.
+## Continuidad
 
-ETA medida a partir de una credencial funcional: 1–3 horas para una primera evaluación autenticada y contrato por muestra; después, la duración de un backfill depende de cobertura real y volumen. El alcance completo de los 4.739 gaps no tiene ETA garantizable y podría permanecer incompleto si las fuentes no publican el dato.
+Se sigue buscando cobertura admisible para los gaps de copas nacionales y torneos UEFA. Los 4.605 partidos residuales quedan abiertos: no hay una fuente verificada para completar todo el catálogo ni ETA confiable. Mantener `NULL` cuando falte evidencia. No declarar “datos completos” hasta un censo nuevo y un postflight por campo/fuente.
 
-## Verificación de código de este corte
-
-- `pytest -q backend/tests/test_resolucion_multifuente_futbol.py backend/tests/test_proveedor_pitchapi.py`: **39 aprobadas, 1 omitida**. La omitida requiere PostgreSQL sintético local; el host no tiene `initdb`, `pg_ctl`, `pg_config` ni `docker` disponibles y no se usó Neon para probar DML.
-- `compileall` de los módulos y script: aprobado.
-- `git diff --check`: aprobado.
-- Sin migración, DDL/DML, ingesta, activación de modelos, serving, cron ni compra.
-
-Evidencia cruda externa y manifiesto: `Carpeta de Entregas de Borlty/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20`.
+Evidencia privada externa: `/home/erik-fuentes/AnalyticsPredict/Carpeta de Entregas de Borlty/RECUPERACION_MULTIFUENTE_SEGUIMIENTO_2026-10-20/`, en particular `CENSO_Y_FUENTES_ALTERNATIVAS_20261020T2257Z.json`, `CENSO_READONLY_CIERRE_20261020T231929Z.json`, `DATAHUB_LALIGA_RESIDUAL_CROSSWALK/application_result.json`, `VERONA_ROMA_CORNERS_ZERO/` (incluye aplicación y preflight READ ONLY posterior), `KAGGLE_CC0_TOP5_PROBE/`, `KAGGLE_GOKHANERGUL_FRANCE_GERMANY_NO_STATS_PROBE/`, `FUENTES_COPAS_BUSQUEDA_SUPLEMENTARIA_20261020.json`, `CATALOGOS_HF_KAGGLE_ADICIONALES_20261020.json` y `MANIFIESTO_SHA256.txt`. La evidencia permanece fuera del repositorio y no incluye secretos.
