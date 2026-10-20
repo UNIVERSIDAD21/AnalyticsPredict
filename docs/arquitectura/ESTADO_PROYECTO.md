@@ -30,8 +30,12 @@ y no se infirió la causa del desacuerdo de score. Kaggle/HF aportaron subconjun
 conservadores. Se identificó importador histórico SofaScore con hora local ingenua;
 la única excepción ESPN/SofaScore permite +5 h exactas en el mismo día UTC y conserva
 la fecha canónica. Otros datasets se excluyen por métricas, upstream/licencias/robots
-o procedencia insuficiente. El censo no afirma que todos los NULL sean recuperables;
-PitchAPI sigue sin clave ni cobertura autenticada. Sin ML fútbol activo, apuestas
+o procedencia insuficiente. El censo no afirma que todos los NULL sean recuperables.
+La búsqueda API posterior halló FootyStats con catálogo histórico/estadísticas pero
+el demo no incluye las copas y el plan gratis es PL-only; API-Football ofrece free
+limitado a temporadas no verificadas y sin licencia explícita de publicación. No hay
+claves proveedor en el almacén/entorno y no se contrató acceso. Continuidad y evidencia
+agregada quedan en el informe y la entrega externa. Sin ML fútbol activo, apuestas
 alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18
