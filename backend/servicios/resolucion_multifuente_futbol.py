@@ -783,6 +783,19 @@ def aplicar_plan_resolucion(
             raise EvidenciaNoValida("Procedencia contiene una columna no permitida")
         for evidencia in observaciones:
             identidad = identidades_limpias[(evidencia.fuente.upper(), evidencia.evento_id)]
+            identidad_json = {
+                "metodo": identidad["metodo"],
+                "canonical_competition_id": str(identidad["canonical_competition_id"]),
+                "provider_competition_id": str(identidad["provider_competition_id"]),
+                "canonical_home_team_id": str(identidad["canonical_home_team_id"]),
+                "provider_home_team_id": str(identidad["provider_home_team_id"]),
+                "canonical_away_team_id": str(identidad["canonical_away_team_id"]),
+                "provider_away_team_id": str(identidad["provider_away_team_id"]),
+                "canonical_start_utc": identidad["canonical_start_utc"].isoformat(),
+                "provider_start_utc": identidad["provider_start_utc"].isoformat(),
+                "canonical_ft": list(identidad["canonical_ft"]),
+                "provider_ft": list(identidad["provider_ft"]),
+            }
             cursor = connection.execute(
                 """INSERT INTO observaciones_multifuente_estadisticas_futbol
                    (fuente, id_evento_fuente, partido_id, campo, valor, clave_proveedor,
@@ -793,7 +806,7 @@ def aplicar_plan_resolucion(
                 (
                     evidencia.fuente.upper(), evidencia.evento_id, partido_id, campo, evidencia.valor,
                     evidencia.clave_proveedor, evidencia.periodo_proveedor, evidencia.sha256_payload,
-                    evidencia.contrato, Jsonb(dict(identidad)), evidencia.observado_en,
+                    evidencia.contrato, Jsonb(identidad_json), evidencia.observado_en,
                 ),
             )
             insertados += int(cursor.fetchone() is not None)
