@@ -1,9 +1,26 @@
 # Roadmap vigente de reactivación AnalyticsPredict
 
-**Corte consolidado:2026-10-19.** Directiva single-user del propietario del2026-10-05
+**Corte consolidado:2026-10-20.** Directiva single-user del propietario del2026-10-05
 y órdenes posteriores. Sustituye C0–C7 comercial; no abre evolución avanzada D.
 La ejecución detallada se registra en el `PLAN_MAESTRO.md` externo solicitado por
 el propietario, sin copiar memoria/configuración del agente al producto.
+
+## Recuperación multi-fuente autorizada20/10
+
+[Resolver y fuentes revisadas](RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md):
+cliente PitchAPI y resolución campo-a-campo con origen/hash, identidad mapeada,
+conflictos en cuarentena y actualización `NULL`-only explícita. Sin migración ni
+escrituras en Neon. StatsBomb tiene155candidatos exploratorios/1.819, sin zona
+horaria acreditada y0nulos corner/shots en la muestra, por lo que no se aceptan
+para aplicación. ESPN97/97gaps de copa con identidad revalidada tienen
+`statistics=[]`. Docs PitchAPI publican shots, tiros a puerta, posesión y xG,
+pero solo shots/posesión pasan el mapeo canónico actual; los otros dos tienen
+semántica/modelo no compatible entre proveedores. Requiere clave protegida no
+recibida; cobertura por liga/temporada/partido sigue sin verificar. Continuar sin
+pausa artificial con fuentes públicas permitidas; preparar backfill solo tras
+acreditar identidad y campo, sin prometer
+recuperar todos los valores. ET/tanda requieren ambos marcadores laterales y
+sincronizan sus flags canónicos en la misma transacción.
 
 ## Nuevo desarrollo ML autorizado19/10
 

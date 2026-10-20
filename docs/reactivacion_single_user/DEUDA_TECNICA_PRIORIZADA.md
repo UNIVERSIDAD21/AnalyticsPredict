@@ -1,6 +1,6 @@
 # Deuda técnica priorizada — AnalyticsPredict single-user
 
-**Corte consolidado:2026-10-19.** No sustituye gates científicos ni reactiva planes
+**Corte consolidado:2026-10-20.** No sustituye gates científicos ni reactiva planes
 comerciales. [Estado vigente](../arquitectura/ESTADO_PROYECTO.md) y
 [roadmap](ROADMAP_REACTIVACION_ANALYTICSPREDICT.md) gobiernan el trabajo nuevo.
 
@@ -15,6 +15,20 @@ Los gates V1/V2/V3 no se recalcularon con esta actualización; V4 es un nuevo
 protocolo autorizado19/10, no una corrección de sus decisiones históricas.
 Los estados visual/H12/outcomes del corte posterior 16/10 prevalecen sobre las
 filas históricas de la tabla. No hay refresco automático creado en este bloque.
+
+## Recuperación multi-fuente — 2026-10-20
+
+[Informe vigente](RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md): cliente y
+resolver campo-a-campo implementados; cobertura no cerrada. 4.739finales con
+gaps SofaScore no tienen vínculo ESPN; StatsBomb155candidatos carecen de kickoff
+con zona horaria y no se promueven a enlaces para aplicar; ESPN97/97resúmenes
+revalidados de copas no aportaron estadísticas. PitchAPI requiere API key protegida
+no recibida; documentación expone shots/tiros a puerta/posesión/xG, pero solo
+shots/posesión pasan hoy el mapeo canónico; faltan semántica compatible y cobertura
+por partido para los demás. Sin DDL/DML, compra ni backfill. Esta deuda no se
+cierra por tener código preparado: ET/tanda exigen pares explícitos y flags en
+la transacción; faltan acceso, cobertura por temporada, prueba SQL sintética y
+postflight de datos.
 
 | Prioridad | Trabajo | Criterio de cierre | Estado real |
 |---|---|---|---|

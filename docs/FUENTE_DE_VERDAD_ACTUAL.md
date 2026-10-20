@@ -16,6 +16,8 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 
 ## Prioridades activas
 
+- **Datos multi-fuente nulos,20/10:** [resolver y evidencia](reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md). Cliente PitchAPI, adaptador ESPN y merge campo-a-campo con identidad/procedencia; auditoría READONLY encontró4.739finales con gaps SofaScore y ningún vínculo ESPN. StatsBomb encontró155candidatos de descubrimiento sin zona horaria y0nulos corners/disparos en su muestra, no aptos para enlazar/aplicar. Auditoría ESPN cruzó97/97 resúmenes de copa con identidad válida y `statistics=[]` en todos. PitchAPI documenta métricas de equipo desde2021, pero solo shots/posesión pasan el mapeo canónico; tiros a puerta y xG quedan fuera por semántica/modelo. Sin clave no hay cobertura autenticada. No se aplicó migración ni DML.
+
 - **ML fútbol V4,19/10:** [desarrollo y cohorte futura](reactivacion_single_user/ML_FUTBOL_FORMA_V4_2026-10-19.md).
   Selección temporal entre identidad/forma/híbrido, refit final explícito y recarga
   sin entrenar. Desarrollo exploratorio goles/disparos:1.157/1.193pares,96,98% de

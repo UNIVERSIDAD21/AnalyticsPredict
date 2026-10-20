@@ -1,6 +1,6 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-19**. Herramienta personal single-user, local y
+Última actualización: **2026-10-20**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
@@ -14,6 +14,20 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 - [KPI/P&L y auditoría GET](../reactivacion_single_user/KPI_PNL_Y_GET_2026-10-16.md).
 - [KPI de calibración](../reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md).
 - [Evaluación temporal fútbol](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
+
+## Recuperación multi-fuente de nulos — 2026-10-20
+
+[Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
+Preparados cliente PitchAPI y resolver campo-a-campo con identidad/procedencia,
+migración no aplicada y guards NULL-only. Auditoría READONLY:4.739finales con gaps
+SofaScore; StatsBomb155candidatos por fecha±1día/FT sin zona horaria/0nulos en10
+métricas corners/disparos, no aptos para aplicar; ESPN97/97resúmenes enlazados
+validados sin estadísticas. PitchAPI queda sin muestra autenticada porque no hay
+clave disponible; su documentación anuncia tiros, tiros a puerta, posesión y xG,
+pero no se probó cobertura por partido/temporada. El resolver solo habilita tiros
+totales y posesión; retiene tiros a puerta por diferencia semántica y no mezcla el
+xG propietario de cada proveedor. No hubo DDL/DML ni backfill; cobertura real y
+alcance siguen abiertos.
 
 ## Corte vigente de datos — 2026-10-18
 

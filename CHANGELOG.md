@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-20 — Preparación multi-fuente para nulos de estadísticas
+
+- Añadir cliente PitchAPI de solo lectura, parser de eventos, enlace único por IDs mapeados y conciliación competencia/equipos/fecha/FT. Resolver estadísticas campo-a-campo con origen/hash, preservación de datos no nulos, conflictos y consistencia corners/tiros; adaptador ESPN acepta valores individuales y no interpreta ausencia como cero.
+- Añadir migración de observaciones de procedencia y aplicación SQL explícita/NULL-only con transacción y bloqueo. La migración no se aplicó ni se escribió en Neon.
+- Añadir auditor de catálogo PitchAPI, auditor de gaps ESPN reproducible y pruebas dirigidas. Solo se mapean `shots` y posesión: tiros a puerta queda pendiente por definición que puede incluir bloqueos y xG por modelo no comparable entre fuentes. El resolver exige ambos lados de ET/tanda y deriva sus flags canónicos atómicamente. Resultado:39 aprobadas/1 omitida (requiere PostgreSQL sintético no disponible); compileall y diff check aprobados.
+- Ampliar ESPN de 4 ejemplos a los97 gaps: crosswalk y conciliación identidad/fecha/FT válidos97/97; los97 payloads tenían `statistics=[]`, incluidas claves no mapeadas;0 campos recuperables. Guardar manifiesto y payloads íntegros externos con modos0600/0700. StatsBomb:1.819 partidos listados,155 candidatos por equipos/fecha±1día/FT,0 con nulos en las10 métricas corners/tiros; el kickoff sin zona horaria impide promover esos candidatos a enlaces de aplicación. Endpoint CSV público de football-data.co.uk agotó el timeout de conexión y no se usó alternativa al bloqueo. PitchAPI requiere clave protegida sin respuesta. Sin compras, bypass, ingesta ni backfill. Ver `docs/reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md` y entrega externa homónima.
+
 ## 2026-10-19 — Desarrollo ML fútbol con forma causal y nueva cohorte futura
 
 - Implementar selección temporal de Ridge identidad/forma/híbrido, ataque/defensa5/20, descanso/contexto de liga y refit final explícito. No consumir outcomes del partido ni de eventos simultáneos; los históricos de desarrollo no certifican el modelo final.
