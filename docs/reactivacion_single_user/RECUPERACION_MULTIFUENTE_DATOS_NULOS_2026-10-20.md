@@ -52,8 +52,10 @@ endpoints de catálogo y estadísticas probados sin clave devolvieron HTTP 401.
 
 Resultado: candidato prometedor para probar solo después de acceso autenticado, pero
 **no probado, no validado para el residual y no se considera fuente que lo resuelva**.
-No se creó cuenta, no se aceptaron términos, no se aportó email ni se usó el API key
-de nadie. La solicitud posterior, si se habilita por el flujo del proveedor, debe
+El formulario de registro requiere nombre, apellido, email, contraseña y aceptación
+explícita de Terms of Service/Privacy Policy. No se creó cuenta, no se aceptaron
+términos, no se aportó email ni se usó el API key de nadie. La solicitud posterior,
+si se habilita por el flujo del proveedor, debe
 validar cobertura/temporadas, respuestas reales y los seis campos antes de generar
 lotes NULL-only. No consumir más de su cuota gratis ni usar un plan que se convierta
 en cobro. Evidencia externa privada y manifiesto:

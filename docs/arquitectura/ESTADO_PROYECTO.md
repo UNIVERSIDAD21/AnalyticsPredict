@@ -62,9 +62,11 @@ sin tarjeta), acceso declarado a todos los endpoints/competiciones y retención 
 para análisis/modelado. El catálogo documentado expone corners y componentes de
 disparo, pero no una definición suficiente para todos los seis campos; además declara
 profundidad menor en lower/basic tiers, no acredita todas las copas/temporadas y sus
-endpoints requieren API key (401 en las consultas sin autenticar). No se creó cuenta,
-no se aceptaron términos ni se descargaron datos. Es un candidato condicionado, no una
-fuente probada. Evidencia externa `APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`.
+endpoints requieren API key (401 en las consultas sin autenticar). El formulario Free
+solicita nombre, email, contraseña y aceptación de términos; no se envió información,
+no se aceptaron términos ni se creó cuenta/descargaron datos. Es un candidato
+condicionado, no una fuente probada. Evidencia externa
+`APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`.
 
 Ampliación de búsqueda a las 02:12 UTC en catálogos públicos: Hugging Face sin
 datasets para tres consultas focales; OpenAIRE sin resultados de datasets FA Cup y

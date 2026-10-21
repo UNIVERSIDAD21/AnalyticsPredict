@@ -9,7 +9,7 @@
 
 - Revisar páginas públicas de pricing, términos y documentación: plan Free declara 100 requests/día, sin tarjeta, retención de datos obtenidos con clave propia para análisis/modelado y acceso general a competiciones/endpoints.
 - La documentación declara profundidad desigual por tier; no garantiza seis métricas por fixture/temporada en las copas/torneos residuales ni define suficientemente el total de disparos. La lista plana de torneos está incompleta; catálogo y planes muestran cifras que requieren validación.
-- Consultas sin autenticación a endpoints de torneos, categoría y stats devolvieron 401. No crear cuenta, aceptar términos, enviar email ni descargar datos sin clave/permiso de uso. Candidato condicionado, no cubre actualmente ningún valor comprobado.
+- Consultas sin autenticación a endpoints de torneos, categoría y stats devolvieron 401. El formulario Free requiere nombre, email, contraseña y aceptación expresa de términos; no se envió identidad ni se creó cuenta. Candidato condicionado, no cubre actualmente ningún valor comprobado.
 - Evidencia privada con hashes: `Carpeta de Entregas de Borlty/APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`. Sin DDL/DML.
 
 ## 2026-10-21 — Crosswalk HF y acceso Neon de AnalyticsPredict
