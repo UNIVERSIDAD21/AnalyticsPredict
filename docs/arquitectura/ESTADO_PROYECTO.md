@@ -37,7 +37,8 @@ ejemplos fuera de su código: Fredrikstad–Molde (Copa Noruega) bajo ENG_FACUP 
 Sporting–Nacional (Allianz Cup/Taça da Liga) bajo ITA_COPPA. `pais_id` faltante impide
 estimar el alcance; esas distribuciones no equivalen a conteos de FA Cup/Coppa Italia
 reales. No imputar países ni recategorizar en este corte. Evidencia privada en
-`SOURCE_SPLIT_AND_FREE_CROSSWALK_20261021T014525Z.json` y
+`SOURCE_SPLIT_AND_FREE_CROSSWALK_20261021T014525Z.json`,
+`GITHUB_HTML_FREE_SOURCE_SEARCH_20261021T0148Z.json` y
 `COMPETITION_CROSSWALK_FREE_SOURCE_REVIEW_20261021T0135Z.json`.
 
 Los antecedentes de búsqueda y excepciones de fuente permanecen abajo como cortes

@@ -25,10 +25,14 @@ interno como filtro. No aporta valores nuevos al corte.
 Búsqueda adicional de catálogos gratuitos: HF devolvió cuatro listas vacías; Kaggle
 respondió con reCAPTCHA, DuckDuckGo con desafío humano y Mojeek con CAPTCHA. Bing no
 mostró un candidato exacto útil. Los desafíos se detuvieron sin resolver; el buscador
-OpenClaw configurado permanece sin clave y no se cambió. Ninguna de estas limitaciones
-se trata como prueba de inexistencia global. Sin DDL/DML, credenciales, nueva descarga
-o nuevo valor en esta auditoría. Evidencia reproducible `SOURCE_SPLIT_AND_FREE_CROSSWALK_20261021T014525Z.json`;
-script privado externo `source_split_kaggle_crosswalk_readonly.py`.
+OpenClaw configurado permanece sin clave y no se cambió. GitHub HTML específico también devolvió cero para FA Cup, Norwegian Cup, Taça da Liga
+y stats de copas; el único resultado UEFA cubría una final de 2019. Un repo MIT que
+usa `sofascore-wrapper` cubre solo la liga turca y no acredita derechos upstream.
+Ninguna de estas búsquedas es prueba de inexistencia global. Sin DDL/DML, credenciales,
+nueva descarga o nuevo valor en esta auditoría. Evidencia reproducible
+`SOURCE_SPLIT_AND_FREE_CROSSWALK_20261021T014525Z.json`,
+`GITHUB_HTML_FREE_SOURCE_SEARCH_20261021T0148Z.json`; script privado externo
+`source_split_kaggle_crosswalk_readonly.py`.
 
 ## Aplicación confirmada — 2026-10-21 01:27 UTC
 
