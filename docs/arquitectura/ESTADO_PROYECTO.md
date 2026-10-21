@@ -54,6 +54,8 @@ privada con respuestas y hashes `PUBLIC_CATALOGS_TARGETED_20261021.json`; CI de
 Los antecedentes de búsqueda y excepciones de fuente permanecen abajo como cortes
 históricos con su fecha; no reemplazan el censo ni la decisión más reciente.
 Sin ML fútbol activo, apuestas/modelos alterados o ingestas programadas.
+Actualización de fuentes 21/10 02:36 UTC: las fichas públicas nuevas no cubren métricas+competiciones residuales con derechos claros. Censo no actualizado desde 01:59:43 UTC; no hubo escrituras ni valores. Evidencia externa `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/FREE_CATALOG_CONTINUATION_20261021T0236Z.json`. CI `1d18751` 4/4 verde.
+
 
 La búsqueda adicional de catálogos públicos GitHub/Hugging Face/Zenodo tampoco
 acreditó cobertura/licencia suficiente para las copas nacionales o clasificatorias

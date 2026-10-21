@@ -1,3 +1,8 @@
+## 2026-10-21 — Continuación de búsqueda de fuentes gratuitas
+
+- Evaluar metadatos de HF/GitHub, el catálogo oficial de StatsBomb y una página FA Cup permitida por robots. Los candidatos contienen tiros sin córners, marcadores sin estadísticas o solo ligas/upstream sin derechos independientes; ninguno aumenta cobertura residual comprobable. No se descargaron datasets ni se consultó el endpoint `/api/` prohibido.
+- Detener búsquedas ante CAPTCHA/desafío humano; sin bypass. Sin DDL/DML ni valores nuevos. Censo de referencia, no recalculado: 4.603/24.593 finales con NULL (26.414 celdas, READ ONLY 01:59:43 UTC). CI `1d18751` 4/4 verde (`39533378261`). Evidencia privada: `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/FREE_CATALOG_CONTINUATION_20261021T0236Z.json`.
+
 # CHANGELOG
 
 ## 2026-10-21 — Revisión amplia de Hugging Face
