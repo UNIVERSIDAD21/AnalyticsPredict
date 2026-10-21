@@ -20,9 +20,9 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 [Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
 Recuperación parcial ya persistida: 234 vínculos proveedor-partido y 1.374
 actualizaciones NULL-only, con 1.386 observaciones de procedencia. Censo READ ONLY
-de 2026-10-20 23:43 UTC: 24.593 finales FT, 4.605 partidos con algún NULL de
+de 2026-10-20 23:59 UTC: 24.593 finales FT, 4.605 partidos con algún NULL de
 corners/disparos/tiros al arco
-(26.426 campos); gaps en ENG_FACUP, ESP_COPA, UEFA Champions/Europa/Conference,
+(26.426 campos en 53 grupos de competencia-temporada); gaps en ENG_FACUP, ESP_COPA, UEFA Champions/Europa/Conference,
 FRA_COUPE e ITA_COPPA. ESPN aportó tandas verificadas; DataHub PDDL amplió top-5 y
 un crosswalk exacto de LaLiga (dos partidos/12 valores) pasó backup, rollback y doble
 postflight. Una excepción limitada completó corners local 0 de Verona–Roma tras
