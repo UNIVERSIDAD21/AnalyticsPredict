@@ -77,9 +77,16 @@ UEFA pendientes. El repo `xgabora/Club-Football-Match-Data` declara MIT para el
 repositorio, pero atribuye sus estadísticas a Football-Data.co.uk y documenta
 códigos de ligas/divisiones, sin confirmar derechos upstream ni cobertura de copas.
 Otros resultados eran top-5, solo marcadores/minutos de gol, licencia no comercial
-o procedencia insuficiente. No se descargaron nuevos datasets ni se consultó Neon;
-el último censo observado es 4.605/24.593 partidos con NULL (26.426 celdas) al
-2026-10-20 23:59 UTC. Evidencia: entrega privada
+o procedencia insuficiente. Se evaluó in-memory una muestra comercial de 20 partidos
+UEFA: solo 2 coincidieron con registros canónicos y ambos tienen las seis métricas;
+los otros 3 no existían en la base dentro de ±1 día. El producto completo (USD 499,
+licencia single-commercial-user) incluye UCL/UEL/Conference desde 2016, pero no copas
+nacionales y declara que la mayoría de clasificatorias no están cubiertas. `Goal_Attempts`
+no tiene semántica documentada equivalente a tiros totales. Es un posible suplemento
+pagado con cobertura residual no probada, no un backfill autorizado. No hubo compra,
+trial, ni persistencia de la muestra. La consulta puntual READ ONLY no recalculó el
+censo ni escribió. El último censo observado es 4.605/24.593 partidos con NULL
+(26.426 celdas) al 2026-10-20 23:59 UTC. Evidencia: entrega privada
 `FUTBOL_DATASET_CATALOG_AUDIT_2026-10-20/`.
 
 ## Corte vigente de datos — 2026-10-18
