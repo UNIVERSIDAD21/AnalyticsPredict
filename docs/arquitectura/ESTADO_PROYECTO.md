@@ -65,7 +65,9 @@ dataset histórico nuevo; Kaggle respondió challenge de navegador y se respetó
 bypass. StatPal/SoccerDataAPI y Goalserve anuncian estadísticas e histórico, pero no
 se confirmó cobertura fixture/temporada ni derechos suficientes para conservarlos;
 no se creó cuenta, usó trial ni contactó a esos proveedores. Scorebing y documentación
-de API-Football devolvieron 403 y se dejaron ahí, sin reintento. Sin nuevas escrituras.
+de API-Football devolvieron 403 y se dejaron ahí, sin reintento. Se excluyó `xValue`
+por falta de licencia de datos y por los términos/robots de FotMob contra uso
+automatizado o sistemático. Sin nuevas escrituras.
 Continuidad y evidencia agregada quedan en el informe/entrega externa.
 Sin ML fútbol activo, apuestas alteradas ni ingestas programadas.
 

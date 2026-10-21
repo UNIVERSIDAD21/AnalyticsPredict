@@ -106,6 +106,14 @@ Goalserve anuncia más de 400 ligas en cobertura live, más de 50 para estadíst
 
 La portada de Scorebing y la documentación pública de API-Football devolvieron HTTP 403; no se reintentaron ni sortearon. Evidencia y timestamps quedan en `SPORTMONKS_SOURCE_AUDIT_2026-10-20/API_LEADS_STATPAL_GOALSERVE.json`; estos proveedores se mantienen como leads condicionados, no como datos disponibles. El censo no cambia.
 
+### Descarte explícito de FotMob/xValue
+
+Una búsqueda de código en GitHub halló `vsntll/xValue`, cuyo README afirma cubrir copas de clubes de las cinco ligas grandes durante 2020/21–2026/27 y describe scripts que consultan FotMob para boxscores (incl. SOT) y estadísticas de copas. La ficha API pública de GitHub devuelve `license: null` y el path `LICENSE` no existe. No se clonó el repo, no se descargaron sus `data/processed` ni se ejecutó su código.
+
+La fuente original, FotMob, establece en sus términos que los servicios automáticos (robots/crawlers/indexación) y otros métodos de uso sistemático o regular no están permitidos. Su `robots.txt` desautoriza `/api/*` para `User-agent: *` (con excepciones explícitas para algunos search bots). Por tanto, no se replica el API/scraper ni se usa el dataset del repo como upstream licenciado. Este candidato se descarta aunque su README mencione las competiciones/campos.
+
+Evidencia con hashes: `SPORTMONKS_SOURCE_AUDIT_2026-10-20/FOTMOB_XVALUE_EXCLUSION.json`. No hubo petición a endpoints de partidos, DDL/DML ni cambio del censo.
+
 ## Cobertura StatsBomb y lead Stats API — 2026-10-20 23:54 UTC
 
 Se actualizó `data/competitions.json` del repositorio público de StatsBomb Open Data y se contaron 80 combinaciones competición-temporada. Las únicas competiciones objetivo listadas son Champions League (18 temporadas, última 2018/19), Copa del Rey (1977/78, 1982/83 y 1983/84) y UEFA Europa League (1988/89). No aparecen FA Cup, Coupe de France, Coppa Italia ni Conference League. La lista confirma que StatsBomb no cubre los huecos clasificatorios UEFA actuales; el cruce exacto previo de UCL ya había hallado cero gaps en 155 candidatos. No se descargaron archivos de eventos ni se añadieron estadísticas.
