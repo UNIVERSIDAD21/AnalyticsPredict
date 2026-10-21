@@ -309,4 +309,46 @@ Resultado: ningún candidato habilita la cobertura estadística residual de copa
 
 El espejo HF `ClementeH/statsbomb-open-data-shots` declara CC BY-SA 4.0 y 88.023 registros de tiros, pero no tiene córners; la cobertura fuente oficial ya cruzada no agrega partidos con gaps objetivo. El repositorio GitHub `Abbasmo72/UEFA-Champions-League` no declara licencia y su ejemplo de matchday reciente solo contiene local, marcador y visitante. `Damir81/football-charts-results-goal-timing` publica resultados y tiempos de gol bajo CC BY 4.0, no las métricas objetivo. `ashhad0030/Match-Data` declara MIT para el repo, pero su README atribuye los datos a Football-Data.co.uk/ClubElo, no aclara derechos upstream separados y se centra en ligas. FA Cup Hub lista resultados, goleadores, alineaciones, asistencia, oficiales y sedes; no corners/tiros/SOT. Su `robots.txt` permite páginas públicas pero prohíbe `/api/`; no se accedió al API.
 
-Metadatos nuevos de Hugging Face/GitHub no dejaron fuente elegible. Kaggle y una consulta DuckDuckGo presentaron CAPTCHA/desafío humano y se detuvieron sin resolverlos. Sin descargas de candidatos, DDL/DML ni valores nuevos. No se refrescó el censo; la última referencia sigue siendo `2026-10-21 01:59:43 UTC` (4.603/24.593 partidos, 26.414 celdas con NULL en seis métricas). Evidencia: `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/FREE_CATALOG_CONTINUATION_20261021T0236Z.json`; CI del commit `1d18751e71f23ae46e6b3128abf672e423fbb0d4` pasó 4/4 (`39533378261`). La búsqueda continúa y no se afirma completitud.
+Metadatos nuevos de Hugging Face/GitHub no dejaron fuente elegible. Kaggle y una consulta DuckDuckGo presentaron CAPTCHA/desafío humano y se detuvieron sin resolverlos. Sin descargas de candidatos, DDL/DML ni valores nuevos. No se refrescó el censo; la última referencia sigue siendo `2026-10-21 01:59:43 UTC` (4.603/24.593 partidos, 26.414 celdas con NULL en seis métricas). Evidencia: `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/FREE_CATALOG_CONTINUATION_20261021T0236Z.json`; CI del commit `1d18751e71f23ae46e6b3128abf672e423fbbd04` pasó 4/4 (`39533378261`). La búsqueda continúa y no se afirma completitud.
+
+## Dataset HF gratuito con estadísticas de copas — 2026-10-21 03:02 UTC
+
+Se auditó el snapshot público `eatpizzanot/soccer-dataset`, revisión fija
+`f0cbe86bee3f28cc4b803f735a5287968741c471`. La tarjeta declara CC BY 4.0; el README
+expresa que combina API-Football y football-data.co.uk para investigación/educación
+y pide citar ambos upstreams. Se descargaron temporalmente solo los pequeños
+parquets `fixtures`, `match_stats`, `league_catalogue` y `teams` para medición local;
+no se adjuntan a la entrega ni al repositorio. Hashes y enlaces constan en la entrega
+privada `HF_CC_BY_FUTBOL_STATS_2026-10-20/`.
+
+El join interno por `match_stats.fixture_id = fixtures.id` no produjo IDs huérfanos.
+En las siete competiciones objetivo hay **22.841 finales FT**: 13.276 filas de stats,
+de las cuales **10.088** contienen los seis campos objetivo. En 3.188 filas de stats
+los seis campos son `NULL`; 9.565 partidos no traen fila de stats. No se observaron
+filas parcialmente pobladas entre corners/tiros/SOT. Dos partidos violan
+`SOT <= tiros totales` y se excluyen de cualquier posible uso:
+
+| Competición | Finales FT fuente | Seis campos completos | Tras excluir anomalía |
+|---|---:|---:|---:|
+| UEFA Champions League | 3.228 | 2.309 | 2.309 |
+| UEFA Europa League | 4.201 | 3.395 | 3.394 |
+| FA Cup | 9.893 | 1.107 | 1.107 |
+| Coupe de France | 2.307 | 606 | 606 |
+| Coppa Italia | 482 | 337 | 337 |
+| Copa del Rey | 800 | 735 | 735 |
+| UEFA Europa Conference League | 1.930 | 1.599 | 1.598 |
+| **Total** | **22.841** | **10.088** | **10.086** |
+
+Aunque el catálogo marca historial `full` para estas ligas, la cobertura de estadísticas
+de partido es menor en varias competiciones y empieza después del primer año anunciado.
+El dataset no ofrece desglose de corners por mitades. Los 10.086 fixtures coherentes
+son solo un techo dentro de la fuente, **no** partidos que se haya probado que coinciden
+con los gaps canónicos.
+
+El crosswalk con AnalyticsPredict no se ejecutó: el SELECT Neon de solo lectura pedido
+antes fue rechazado y no se intentó por otra conexión. El censo archivado de
+4.603/24.593 finales (26.414 celdas) a las 01:59:43 UTC sigue siendo referencia; no
+es un postflight actualizado. Sin DDL/DML, valores nuevos, modelos o predicciones.
+Aunque la tarjeta declara CC BY 4.0, los upstreams conservan sus propios términos:
+mantener atribución, revisar la compatibilidad con el uso interno/modelado del proyecto
+y no redistribuir raw. No se creó cuenta, clave, trial ni compra.

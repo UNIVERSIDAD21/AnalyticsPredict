@@ -41,6 +41,15 @@ reales. No imputar países ni recategorizar en este corte. Evidencia privada en
 `GITHUB_HTML_FREE_SOURCE_SEARCH_20261021T0148Z.json` y
 `COMPETITION_CROSSWALK_FREE_SOURCE_REVIEW_20261021T0135Z.json`.
 
+**Actualización 2026-10-21 03:02 UTC:** se auditó localmente `eatpizzanot/soccer-dataset`
+(HF; licencia CC BY 4.0 declarada, upstreams API-Football y football-data.co.uk).
+En siete copas/torneos ofrece 10.088 finales con las seis estadísticas completas;
+se excluyen dos filas con `SOT > tiros totales`, quedando 10.086 coherentes en fuente.
+No es un conteo de partidos recuperables: no se cotejó con Neon porque el SELECT
+anterior fue rechazado; no se probó otra vía. El censo 4.603/24.593 es aún la
+referencia READ ONLY 01:59:43 UTC. Próxima dependencia: crosswalk por fixture bajo
+lectura autorizada y revisión de los derechos upstream antes de persistir.
+
 Ampliación de búsqueda a las 02:12 UTC en catálogos públicos: Hugging Face sin
 datasets para tres consultas focales; OpenAIRE sin resultados de datasets FA Cup y
 cuatro registros UEFA no pertinentes; Figshare/Wyscout enumera solo top-5 europeas y
