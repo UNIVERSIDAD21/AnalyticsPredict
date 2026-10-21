@@ -45,9 +45,12 @@ agosto: Champions 55 partidos (48/7), Europa 58 (32/26) y Conference 181 (129/52
 los meses posteriores con finales no tienen gaps. ESPN Scoreboard devolvió HTTP 200,
 0 eventos en las muestras clasificatorias y no hay vínculo ESPN para los 55 candidatos
 UCL. TotalCorner se excluyó por términos contra extracción automatizada y FCStats por
-robots.txt dirigido a crawlers de IA y HTTP 403. Sin nuevas escrituras. Continuidad y
-evidencia agregada quedan en el informe y la entrega externa. Sin ML fútbol activo,
-apuestas alteradas ni ingestas programadas.
+robots.txt dirigido a crawlers de IA y HTTP 403. Footballdata.io documenta stats pero
+requiere autenticación, no muestra cobertura objetivo y puede requerir permiso escrito
+para almacenamiento prolongado; no se consultaron datos. El mirror jokecamp/FootballData
+no acredita derechos upstream pese a la licencia MIT del repo. Sin nuevas escrituras.
+Continuidad y evidencia agregada quedan en el informe y la entrega externa. Sin ML
+fútbol activo, apuestas alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18
 
