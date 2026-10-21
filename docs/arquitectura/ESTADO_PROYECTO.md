@@ -62,8 +62,11 @@ variable. Coverage Finder requiere cuenta; no se verificó cobertura exacta por
 fixture/campo/temporada de las siete competiciones con gaps. No se creó cuenta, no se
 obtuvo clave ni se inició prueba con tarjeta. Búsquedas directas HF/GitHub no hallaron
 dataset histórico nuevo; Kaggle respondió challenge de navegador y se respetó sin
-bypass. Sin nuevas escrituras. Continuidad y evidencia agregada quedan en el
-informe/entrega externa.
+bypass. StatPal/SoccerDataAPI y Goalserve anuncian estadísticas e histórico, pero no
+se confirmó cobertura fixture/temporada ni derechos suficientes para conservarlos;
+no se creó cuenta, usó trial ni contactó a esos proveedores. Scorebing y documentación
+de API-Football devolvieron 403 y se dejaron ahí, sin reintento. Sin nuevas escrituras.
+Continuidad y evidencia agregada quedan en el informe/entrega externa.
 Sin ML fútbol activo, apuestas alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18

@@ -98,6 +98,14 @@ En consultas directas de metadatos de Hugging Face, los candidatos nuevos fueron
 
 La evidencia de páginas oficiales de Sportmonks y búsquedas de catálogos, junto con su hash, queda fuera del repositorio en `SPORTMONKS_SOURCE_AUDIT_2026-10-20/`. El censo vigente no cambió: 4.605 partidos y 26.426 campos con NULL; el residuo sigue concentrado en ENG_FA Cup, Copa del Rey, Coupe de France, Coppa Italia y fases/temporadas UEFA.
 
+### Otros leads API: StatPal y Goalserve
+
+StatPal (el sitio legado SoccerDataAPI redirige a este servicio) anuncia estadísticas detalladas con corners y tiros, temporadas/datos históricos y 1.000+ ligas; el marketing legado hablaba de hasta siete años, mientras el sitio actual no fija un rango exacto. La página ofrece un demo público de datos en vivo sin signup y planes desde USD 19/mes con una prueba de 14 días, pero no revela en la muestra una matriz exacta de copas, años, fixtures y tipos estadísticos. La documentación extraída solo expuso la portada v2.0.0. La ruta pública `/terms-of-service/` respondió 404 y no se verificaron derechos de almacenamiento/producto. No se usó el demo, no se creó cuenta ni se empezó prueba.
+
+Goalserve anuncia más de 400 ligas en cobertura live, más de 50 para estadísticas históricas y feeds XML/JSON con resultados, estadísticas e histórico. La prueba gratuita dirige a un formulario de contacto; las páginas públicas revisadas no acreditan las siete competiciones, temporadas históricas, métricas exactas ni precio/condiciones de conservación. No se contactó, registró cuenta, empezó trial ni realizó llamadas.
+
+La portada de Scorebing y la documentación pública de API-Football devolvieron HTTP 403; no se reintentaron ni sortearon. Evidencia y timestamps quedan en `SPORTMONKS_SOURCE_AUDIT_2026-10-20/API_LEADS_STATPAL_GOALSERVE.json`; estos proveedores se mantienen como leads condicionados, no como datos disponibles. El censo no cambia.
+
 ## Cobertura StatsBomb y lead Stats API — 2026-10-20 23:54 UTC
 
 Se actualizó `data/competitions.json` del repositorio público de StatsBomb Open Data y se contaron 80 combinaciones competición-temporada. Las únicas competiciones objetivo listadas son Champions League (18 temporadas, última 2018/19), Copa del Rey (1977/78, 1982/83 y 1983/84) y UEFA Europa League (1988/89). No aparecen FA Cup, Coupe de France, Coppa Italia ni Conference League. La lista confirma que StatsBomb no cubre los huecos clasificatorios UEFA actuales; el cruce exacto previo de UCL ya había hallado cero gaps en 155 candidatos. No se descargaron archivos de eventos ni se añadieron estadísticas.
