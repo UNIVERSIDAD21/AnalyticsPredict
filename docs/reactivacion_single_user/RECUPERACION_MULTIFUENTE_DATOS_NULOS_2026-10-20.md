@@ -1,5 +1,23 @@
 # Recuperación multi-fuente de estadísticas nulas — 2026-10-20
 
+## Rectificación de derechos y acceso — 2026-10-21
+
+La revisión posterior de los términos oficiales de SportsAPI Pro
+(`https://sportsapipro.com/terms`, actualizados 2026-09-01) y de su documentación
+de derechos (`https://docs.sportsapipro.com/data-rights.md`) permite uso privado/
+interno, retención permanente y analítica/modelado, también en Free. Esto rectifica
+la duda anterior sobre si esos términos permitían el uso interno; no acredita la
+exactitud, cobertura histórica, exhaustividad ni procedencia upstream de cada dato.
+
+En una prueba posterior, un único GET autenticado a la ruta de calendario para la
+fecha exacta 2025-08-12 respondió HTTP 403. No se guardó el cuerpo, no se reintentó,
+no se probó una ruta alternativa y no se hizo una llamada de estadísticas. No hubo
+datos nuevos ni cruce con brechas; el proveedor queda inaccesible para esta prueba y
+no se incorporó al resolver/importador. La key solo fue inyectada por el mecanismo
+protegido de Gateway y su valor no se registró. Los conteos de gaps y los resultados
+de muestras que siguen son los antecedentes de las fechas indicadas, no una
+afirmación de cobertura completa.
+
 ## Prueba autenticada limitada — SportsAPI Pro, 2026-10-21 04:22 UTC
 
 Al reconectar el Chrome normal tras el `listo` del Jefe, el proveedor ya mostraba el

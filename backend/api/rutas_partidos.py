@@ -297,7 +297,7 @@ async def partidos_hoy() -> RespuestaPartidos:
 )
 async def partidos_proximos(
     dias: int = QueryParam(7, ge=1, le=30, description="Días hacia adelante"),
-    limite: int = QueryParam(50, ge=1, le=200, description="Máximo de resultados"),
+    limite: int = QueryParam(50, ge=1, le=500, description="Máximo de resultados"),
 ) -> RespuestaPartidos:
     """Obtiene partidos próximos."""
     hoy = obtener_fecha_nba_hoy()
@@ -521,4 +521,3 @@ async def obtener_partido(partido_id: str):
 
     except Exception as e:
         raise HTTPException(503, detail='Consulta de partidos no disponible') from e
-

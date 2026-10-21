@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-21 — Calendario de 30 días y estado de recuperación
+
+- Cargar y verificar 114 fixtures NBA y 69 EuroLeague; consultar conjuntamente 232 NBA, 69 EuroLeague y 256 partidos de fútbol en ocho competiciones, horizonte 21-oct–20-nov. Corregir dos reprogramaciones de fútbol en sus mismas filas ESPN, sin duplicados.
+- Servir el último día local completo de fútbol (America/Bogota) y permitir hasta 500 fixtures de baloncesto en selector/API. Pruebas: 55 backend passed/8 skipped; 2 frontend passed, lint y build.
+- Mantener 4.603 partidos/26.414 NULLs en las seis métricas de fútbol; cero estadísticas históricas nuevas. UEFA se excluyó por términos que prohíben crear bases/software con su contenido. SportsAPI Pro declara uso interno permitido, pero el GET de validación devolvió 403 y se detuvo sin reintento. Sin cron, servidores, entrenamiento ni activación. Corte: `docs/reactivacion_single_user/PUESTA_EN_MARCHA_BASE_Y_CALENDARIOS_2026-10-21.md`; evidencia privada en `Carpeta de Entregas de Borlty/PUESTA_EN_MARCHA_BASE_Y_CALENDARIOS_2026-10-21/`.
+
 ## 2026-10-21 — Fecha local y diferencia de puntos NBA
 
 - Alinear la ingesta ESPN con el trigger canónico: `diferencia_puntos` se guarda como magnitud absoluta.

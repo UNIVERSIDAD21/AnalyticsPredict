@@ -15,10 +15,14 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 - [KPI de calibración](../reactivacion_single_user/KPI_CALIBRACION_2026-10-16.md).
 - [Evaluación temporal fútbol](../reactivacion_single_user/EVALUACION_TEMPORAL_FUTBOL_2026-10-16.md).
 
+## Calendario y gaps — cierre 2026-10-21
+
+[Corte de preparación](../reactivacion_single_user/PUESTA_EN_MARCHA_BASE_Y_CALENDARIOS_2026-10-21.md): 114 nuevas fechas NBA, 69 EuroLeague y 256 partidos futuros de fútbol verificados/servidos; dos fechas de fútbol corregidas sobre filas existentes. Los endpoints de 30 días devuelven 301 fixtures de baloncesto y 256 de fútbol. Censo estadístico READ ONLY 15:19 UTC: 4.603/24.593 finales con NULL (26.414 celdas); no se añadieron estadísticas históricas en esta pasada. No hay refresh automático, activación de modelo ni certificación. El GET de validación de SportsAPI Pro respondió 403 y se detuvo; UEFA se excluyó por sus términos de uso.
+
 ## Recuperación multi-fuente de nulos — 2026-10-20
 
 [Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
-Transacción vigente **REPEATABLE READ / READ ONLY 2026-10-21 03:21:18 UTC:** 24.593
+Transacción del corte de crosswalk **REPEATABLE READ / READ ONLY 2026-10-21 03:21:18 UTC** (histórica; el censo posterior de campos a 15:19 UTC se resume debajo): 24.593
 finales FT; **4.603 partidos con algún NULL (26.414 celdas)** en las seis métricas. Por
 código interno: ENG_FACUP 862; ESP_COPA 338; EUR_CHAMPIONS 336; EUR_CONFERENCE 968;
 EUR_EUROPA 796; FRA_COUPE 1.104; ITA_COPPA 199. Persisten 236 vínculos, 1.398

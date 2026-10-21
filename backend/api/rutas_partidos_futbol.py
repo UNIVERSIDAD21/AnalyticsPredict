@@ -6,9 +6,10 @@ rutas_partidos_futbol.py — Endpoints para gestión de partidos de fútbol.
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Optional, List
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
@@ -25,6 +26,22 @@ from .schemas_futbol import (
 
 router = APIRouter(prefix="/api/futbol/partidos", tags=["Fútbol - Partidos"])
 logger = logging.getLogger(__name__)
+ZONA_HORARIA_USUARIO = ZoneInfo("America/Bogota")
+
+
+def _rango_proximos(ahora: datetime, dias: int) -> tuple[datetime, datetime]:
+    """Devuelve [ahora, medianoche posterior al último día local incluido)."""
+    if ahora.tzinfo is None or ahora.utcoffset() is None:
+        raise ValueError("ahora debe incluir zona horaria")
+    if dias < 1 or dias > 30:
+        raise ValueError("dias debe estar entre 1 y 30")
+    inicio = ahora.astimezone(ZONA_HORARIA_USUARIO)
+    fin_local_exclusivo = datetime.combine(
+        inicio.date() + timedelta(days=dias + 1),
+        time.min,
+        tzinfo=ZONA_HORARIA_USUARIO,
+    )
+    return inicio, fin_local_exclusivo
 
 
 def _calcular_estadisticas_equipo(cursor, equipo_id: str) -> Optional[EstadisticasEquipo]:
@@ -89,8 +106,9 @@ async def listar_partidos_proximos(
     """Lista partidos próximos."""
     pool = obtener_pool()
 
-    fecha_inicio = datetime.now()
-    fecha_fin = fecha_inicio + timedelta(days=dias)
+    fecha_inicio, fecha_fin_exclusiva = _rango_proximos(
+        datetime.now(ZONA_HORARIA_USUARIO), dias
+    )
     estados_programados = ["PROGRAMADO"]  # CORREGIDO: valores válidos del ENUM
 
     query = """
@@ -111,18 +129,18 @@ async def listar_partidos_proximos(
         JOIN equipos_futbol el ON pf.equipo_local_id = el.id
         JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
         WHERE pf.fecha_partido >= %s
-          AND pf.fecha_partido <= %s
+          AND pf.fecha_partido < %s
           AND (pf.estado = ANY(%s) OR pf.estado IS NULL)
     """
     count_query = """
         SELECT COUNT(*)
         FROM partidos_futbol pf
         WHERE pf.fecha_partido >= %s
-          AND pf.fecha_partido <= %s
+          AND pf.fecha_partido < %s
           AND (pf.estado = ANY(%s) OR pf.estado IS NULL)
     """
-    params = [fecha_inicio, fecha_fin, estados_programados]
-    count_params = [fecha_inicio, fecha_fin, estados_programados]
+    params = [fecha_inicio, fecha_fin_exclusiva, estados_programados]
+    count_params = [fecha_inicio, fecha_fin_exclusiva, estados_programados]
 
     if competicion_id:
         query += " AND pf.competicion_id = %s"

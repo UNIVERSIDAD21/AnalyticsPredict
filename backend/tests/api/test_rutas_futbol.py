@@ -238,6 +238,29 @@ class TestEquipos:
 class TestPartidos:
     """Tests para endpoints de partidos."""
 
+    def test_rango_proximos_incluye_dia_final_completo_en_bogota(self):
+        """El horizonte de N días incluye el día N hasta su medianoche local."""
+        from zoneinfo import ZoneInfo
+        from api.rutas_partidos_futbol import _rango_proximos
+
+        bogota = ZoneInfo("America/Bogota")
+        inicio, fin_exclusivo = _rango_proximos(
+            datetime(2026, 10, 21, 10, 30, tzinfo=bogota), 30
+        )
+
+        assert inicio.isoformat() == "2026-10-21T10:30:00-05:00"
+        assert fin_exclusivo.isoformat() == "2026-11-21T00:00:00-05:00"
+        assert datetime(2026, 11, 20, 23, 59, tzinfo=bogota) < fin_exclusivo
+        assert datetime(2026, 11, 21, 0, 0, tzinfo=bogota) == fin_exclusivo
+
+    def test_rango_proximos_rechaza_fecha_sin_zona_o_horizonte_invalido(self):
+        from api.rutas_partidos_futbol import _rango_proximos
+
+        with pytest.raises(ValueError, match="zona horaria"):
+            _rango_proximos(datetime(2026, 10, 21, 10, 30), 30)
+        with pytest.raises(ValueError, match="entre 1 y 30"):
+            _rango_proximos(datetime.now().astimezone(), 31)
+
     def test_listar_partidos_proximos(self, client, mock_pool):
         """Verifica que se listan partidos próximos."""
         cursor_mock = MagicMock()
