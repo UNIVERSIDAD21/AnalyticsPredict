@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-21 — Revisión de nuevos catálogos gratuitos
+
+- Verificar CI del commit `90b5973`: 4/4 verde (run `39531836396`). La rama tenía ese commit local sin sincronizar todavía; se incluirá junto con este registro en el siguiente push autorizado.
+- Revisar el repo `xgabora/Club-Football-Match-Data`: 238.858 filas anunciadas, 38 códigos de liga/división y seis métricas compatibles, pero no enumera las copas/UEFA residuales; README declara Football-Data.co.uk como upstream y no se acredita una licencia independiente de sus datos. No se descargó el CSV de 45 MB ni se importó.
+- Revisar dos resultados GitHub adicionales: el repo UCL con columnas de stats no publica el CSV ni licencia de datos; la guía `withqwerty/football-docs` no es un dataset y no tiene licencia declarada. Ninguno resuelve los gaps.
+- La búsqueda OpenClaw sigue sin clave Gemini; Google devolvió página `/sorry` y la lectura de resultados de Brave expiró dos veces, por lo que se detuvo sin bypass. La búsqueda pública de GitHub sí fue accesible. No se cambiaron claves/configuración, no se descargó contenido nuevo y no hubo DDL/DML ni valores aplicados. Censo de referencia READ ONLY: 4.603/24.593 finales con NULL, 26.414 celdas (01:59:43 UTC). Evidencia externa privada: `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/GITHUB_FREE_STATS_REPOSITORY_REVIEW_20261021T0224Z.json`.
+
 ## 2026-10-21 — Auditoría de muestras y validación de proveedores de fútbol
 
 - Buscar en GitHub HTML datasets abiertos de FA Cup, Norwegian Cup, Taça da Liga y torneos UEFA; no apareció una base histórica elegible. El único resultado UCL era una visualización de la final 2019; el repo MIT `kaany43/Turkish-Super-League-toolkit` se limita a Turquía y no acredita derechos upstream de SofaScore. No se clonó ni ejecutó. Evidencia `GITHUB_HTML_FREE_SOURCE_SEARCH_20261021T0148Z.json`.
