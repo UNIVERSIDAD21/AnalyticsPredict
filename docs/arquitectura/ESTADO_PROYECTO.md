@@ -50,9 +50,13 @@ requiere autenticación, no muestra cobertura objetivo y puede requerir permiso 
 para almacenamiento prolongado; no se consultaron datos. El mirror jokecamp/FootballData
 no acredita derechos upstream pese a la licencia MIT del repo. Dos repositorios
 adicionales anuncian estadísticas pero carecen de licencia reconocida y no cubren
-copas/temporadas residuales; no se descargaron. Sin nuevas escrituras. Continuidad y
-evidencia agregada quedan en el informe y la entrega externa. Sin ML fútbol activo,
-apuestas alteradas ni ingestas programadas.
+copas/temporadas residuales; no se descargaron. Footiqo permite exports manuales
+privados para UEFA, pero prohíbe scraping/descarga automatizada y no se confirmó
+cobertura por temporada; la navegación no incluye copas nacionales. Además anuncia
+datasets premium de 150.000+ partidos/60+ ligas y Advanced Stats Big Five+UCL+UEL,
+sin detallar cobertura objetivo ni precio específico; no se pidió muestra ni se compró.
+Sin nuevas escrituras. Continuidad y evidencia agregada quedan en el informe/entrega externa.
+Sin ML fútbol activo, apuestas alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18
 
