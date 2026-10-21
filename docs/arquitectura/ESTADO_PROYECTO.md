@@ -41,6 +41,16 @@ reales. No imputar países ni recategorizar en este corte. Evidencia privada en
 `GITHUB_HTML_FREE_SOURCE_SEARCH_20261021T0148Z.json` y
 `COMPETITION_CROSSWALK_FREE_SOURCE_REVIEW_20261021T0135Z.json`.
 
+Ampliación de búsqueda a las 02:12 UTC en catálogos públicos: Hugging Face sin
+datasets para tres consultas focales; OpenAIRE sin resultados de datasets FA Cup y
+cuatro registros UEFA no pertinentes; Figshare/Wyscout enumera solo top-5 europeas y
+torneos de selecciones; DataCite devuelve datasets de ligas principales, no de las
+copas objetivo. La oferta gratis de football-data.org excluye estadísticas y anuncia
+corners/tiros en un add-on pagado; no se usa. API-Football volvió a responder challenge
+403 y la ruta se dejó detenida. No hay valores nuevos ni mutación de Neon. Evidencia
+privada con respuestas y hashes `PUBLIC_CATALOGS_TARGETED_20261021.json`; CI de
+`83f8a0b` verificado 4/4 verde.
+
 Los antecedentes de búsqueda y excepciones de fuente permanecen abajo como cortes
 históricos con su fecha; no reemplazan el censo ni la decisión más reciente.
 Sin ML fútbol activo, apuestas/modelos alterados o ingestas programadas.
