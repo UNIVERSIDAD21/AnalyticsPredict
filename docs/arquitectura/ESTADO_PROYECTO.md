@@ -55,7 +55,15 @@ privados para UEFA, pero prohíbe scraping/descarga automatizada y no se confirm
 cobertura por temporada; la navegación no incluye copas nacionales. Además anuncia
 datasets premium de 150.000+ partidos/60+ ligas y Advanced Stats Big Five+UCL+UEL,
 sin detallar cobertura objetivo ni precio específico; no se pidió muestra ni se compró.
-Sin nuevas escrituras. Continuidad y evidencia agregada quedan en el informe/entrega externa.
+Sportmonks es un lead API adicional: documenta estadísticas por fixture y permite
+almacenar sus datos, con prohibición de reventa directa; los planes base incluyen
+tres temporadas recientes por liga y el histórico requiere add-on con profundidad
+variable. Coverage Finder requiere cuenta; no se verificó cobertura exacta por
+fixture/campo/temporada de las siete competiciones con gaps. No se creó cuenta, no se
+obtuvo clave ni se inició prueba con tarjeta. Búsquedas directas HF/GitHub no hallaron
+dataset histórico nuevo; Kaggle respondió challenge de navegador y se respetó sin
+bypass. Sin nuevas escrituras. Continuidad y evidencia agregada quedan en el
+informe/entrega externa.
 Sin ML fútbol activo, apuestas alteradas ni ingestas programadas.
 
 ## Corte vigente de datos — 2026-10-18
