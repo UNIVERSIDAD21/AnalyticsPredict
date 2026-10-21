@@ -5,6 +5,12 @@
 
 # CHANGELOG
 
+## 2026-10-21 — Prueba autenticada limitada de SportsAPI Pro
+
+- Cuenta Free ya autenticada en Chrome normal; API key guardada en Secret Store del Gateway, acotada a `api.sportsapipro.com` y ausente del repo.
+- Validé temporadas, fixtures y estadísticas por periodos con 44 GET en siete competiciones residuales. Seis muestras confirmaron campos y consistencia interna; FA Cup quedó con evidencia parcial de periodos.
+- No crucé con Neon ni escribí/importé datos. La respuesta no identifica el upstream; aún no es fuente apta para backfill integral. Evidencia privada `Carpeta de Entregas de Borlty/REGISTRO_SPORTSAPI_PRO_2026-10-20/`.
+
 ## 2026-10-21 — Búsqueda pública focal adicional
 
 - Consultar metadatos Hugging Face para `corner football`, `shots soccer` y `football statistics cup`: las tres respuestas HTTP 200 fueron vacías. No es prueba de inexistencia global.

@@ -36,8 +36,9 @@ detallada de permisos queda fuera del repositorio en
 
 El lote gratuito anterior aplicó 12 campos a dos partidos Coupe de France con backup,
 rollback y postflight; los FT canónicos permanecen intactos. No hay una fuente gratuita
-integral validada. No contratar, pagar, abrir trials ni crear cuentas/claves; no
-extraer sitios con términos incompatibles ni eludir 403/CAPTCHAs. Se confirmaron
+integral validada. No contratar, pagar ni abrir trials. No crear cuentas/claves nuevas
+sin autorización expresa (el alta Free de SportsAPI Pro descrita abajo sí fue
+autorizada); no extraer sitios con términos incompatibles ni eludir 403/CAPTCHAs. Se confirmaron
 ejemplos fuera de su código: Fredrikstad–Molde (Copa Noruega) bajo ENG_FACUP y
 Sporting–Nacional (Allianz Cup/Taça da Liga) bajo ITA_COPPA. `pais_id` faltante impide
 estimar el alcance; esas distribuciones no equivalen a conteos de FA Cup/Coppa Italia
@@ -57,16 +58,18 @@ completo, incluidos positivos aislados dentro de fixtures conflictivos. DataHub 
 0 cruces. Neon recibió cero valores nuevos. Crosswalk y adjudicación en la entrega
 privada `HF_CROSSWALK_2026-10-20/`, con manifiesto SHA-256.
 
-Lead gratuito revisado 21/10 03:27 UTC: SportsAPI Pro publica Free (100 requests/día,
-sin tarjeta), acceso declarado a todos los endpoints/competiciones y retención interna
-para análisis/modelado. El catálogo documentado expone corners y componentes de
-disparo, pero no una definición suficiente para todos los seis campos; además declara
-profundidad menor en lower/basic tiers, no acredita todas las copas/temporadas y sus
-endpoints requieren API key (401 en las consultas sin autenticar). El formulario Free
-solicita nombre, email, contraseña y aceptación de términos; no se envió información,
-no se aceptaron términos ni se creó cuenta/descargaron datos. Es un candidato
-condicionado, no una fuente probada. Evidencia externa
-`APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`.
+Prueba autenticada limitada de SportsAPI Pro (21/10 04:22 UTC): al reconectar Chrome
+normal, el dashboard ya mostraba cuenta verificada en plan Free; el agente no reenvió
+el registro ni la aceptación de términos. API key en Secret Store protegido, allow-host
+`api.sportsapipro.com`, sin valor en el repositorio. 44 GET de descubrimiento/validación;
+temporadas y página de 30 fixtures HTTP 200 en siete competencias residuales. Seis
+ejemplos 2025/26 devolvieron las cinco claves comprobadas en `ALL`/`1ST`/`2ND` y
+conciliaron tiros por componentes y periodos; la salida visible de FA Cup solo permite
+acreditar `ALL`/`1ST`. `source: live` no identifica el upstream. Se prueba disponibilidad
+técnica puntual, no la integridad del catálogo, independencia de fuente, derechos
+upstream ni match contra los NULL. Sin consulta ni escritura Neon, sin backfill. Antes
+de considerar datos nuevos falta aclarar procedencia/derechos y ejecutar crosswalk
+NULL-only. Evidencia privada `REGISTRO_SPORTSAPI_PRO_2026-10-20/`.
 
 Ampliación de búsqueda a las 02:12 UTC en catálogos públicos: Hugging Face sin
 datasets para tres consultas focales; OpenAIRE sin resultados de datasets FA Cup y

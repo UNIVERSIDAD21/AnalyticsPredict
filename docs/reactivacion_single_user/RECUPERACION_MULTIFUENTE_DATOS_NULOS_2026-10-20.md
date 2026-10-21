@@ -1,5 +1,40 @@
 # Recuperación multi-fuente de estadísticas nulas — 2026-10-20
 
+## Prueba autenticada limitada — SportsAPI Pro, 2026-10-21 04:22 UTC
+
+Al reconectar el Chrome normal tras el `listo` del Jefe, el proveedor ya mostraba el
+dashboard autenticado. El perfil `efuentes1@udi.edu.co` figuraba verificado y el plan
+era Free (100 requests/día, “Free forever”). No se repitió el registro ni se volvió a
+marcar aceptación de términos en esta sesión; tampoco se modificó el perfil. Se omitió
+el onboarding opcional, incluida su oferta promocional. La autorización previa del Jefe
+para el alta gratuita y aceptación de términos se conserva como antecedente.
+
+La API key se guardó como secreto `SPORTSAPIPRO_API_KEY` en el Secret Store protegido
+del Gateway, con allow-host exacto `api.sportsapipro.com`; el valor no se guardó en este
+repositorio ni en la evidencia. Se contabilizaron **44 GET autenticados**. Para FA Cup,
+UCL, UEL, Conference League, Copa del Rey, Coupe de France y Coppa Italia, la lista de
+temporadas y una página por torneo de 30 fixtures respondieron HTTP 200; cada página
+contenía 28–30 partidos finalizados.
+
+Se probaron siete partidos 2025/26. En seis (UCL, UEL, Conference League, Copa del Rey,
+Coupe de France y Coppa Italia), `GET /api/match/{id}/statistics` respondió 200 con
+`ALL`, `1ST`, `2ND` y las cinco claves `totalShotsOnGoal` (etiquetada “Total shots”),
+`shotsOnGoal`, `shotsOffGoal`, `blockedScoringAttempt` y `cornerKicks`. En esas muestras,
+el total concilió con tiros al arco + fuera + bloqueados y `ALL` con `1ST + 2ND`. La
+muestra de FA Cup respondió 200 y la salida visible confirmó esas claves en `ALL` y
+`1ST`; el volcado se truncó antes del segundo periodo, que por ello no queda certificado
+en esta evidencia. Resumen y valores observados en la entrega privada
+`REGISTRO_SPORTSAPI_PRO_2026-10-20/`.
+
+**Resultado:** cobertura técnica de campos demostrada en seis ejemplos y parcialmente
+en FA Cup; **no** es cobertura integral, cruce contra los NULL actuales, validación de
+upstream independiente ni autorización para backfill. La respuesta expuso `source:
+live`, que no identifica proveedor upstream. Esta pasada no consultó ni modificó Neon,
+no cruzó partidos con el censo, no importó datos y no tocó modelos/serving. Hace falta
+resolver el origen/derechos y ejecutar un cotejo estricto NULL-only antes de valorar
+cualquier lote. El censo READ ONLY 03:21:18 UTC sigue siendo referencia anterior, no
+se presenta como medición actual.
+
 ## Continuidad más reciente — 2026-10-21 03:23 UTC
 
 El Jefe aclaró que puedo tomar las decisiones operativas de esta búsqueda y autorizó
@@ -38,7 +73,7 @@ y su exportación requiere email/consentimiento de marketing, que no se envió. 
 encontró una fuente gratuita que cubra todos los gaps. Acta y evidencia privada con
 manifiesto verificado: `Carpeta de Entregas de Borlty/HF_CROSSWALK_2026-10-20/`.
 
-## Lead gratuito condicionado — SportsAPI Pro, 2026-10-21 03:27 UTC
+## Antecedente pre-alta — SportsAPI Pro, 2026-10-21 03:27 UTC
 
 El proveedor anuncia plan sin costo de 100 requests/día, sin tarjeta, todos los
 endpoints/competiciones y retención privada para análisis/modelado. Sus documentos
