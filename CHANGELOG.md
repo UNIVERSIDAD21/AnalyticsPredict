@@ -5,9 +5,17 @@
 
 # CHANGELOG
 
+## 2026-10-21 — Evaluar candidato gratuito SportsAPI Pro
+
+- Revisar páginas públicas de pricing, términos y documentación: plan Free declara 100 requests/día, sin tarjeta, retención de datos obtenidos con clave propia para análisis/modelado y acceso general a competiciones/endpoints.
+- La documentación declara profundidad desigual por tier; no garantiza seis métricas por fixture/temporada en las copas/torneos residuales ni define suficientemente el total de disparos. La lista plana de torneos está incompleta; catálogo y planes muestran cifras que requieren validación.
+- Consultas sin autenticación a endpoints de torneos, categoría y stats devolvieron 401. No crear cuenta, aceptar términos, enviar email ni descargar datos sin clave/permiso de uso. Candidato condicionado, no cubre actualmente ningún valor comprobado.
+- Evidencia privada con hashes: `Carpeta de Entregas de Borlty/APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`. Sin DDL/DML.
+
 ## 2026-10-21 — Crosswalk HF y acceso Neon de AnalyticsPredict
 
 - Confirmar que Neon de AnalyticsPredict es accesible por la conexión protegida del proyecto; la integración Neon de OpenClaw apuntaba a otro proyecto y no se usó. No se leyó ni mostró el secreto de conexión.
+- Revisar metadatos de permisos dentro de `READ ONLY`; conexión y permisos de trabajo en objetos consultados confirmados, sin afirmar administración irrestricta. Detalle de permisos fuera del repositorio. No se intentaron escrituras.
 - Censo `REPEATABLE READ / READ ONLY` (03:21:18 UTC): 24.593 finales FT, 4.603 partidos/26.414 celdas con NULL; 236 vínculos, 1.398 observaciones y 1.396 pares partido-campo. Reparto de gaps por fuente original: 97 ESPN y 4.506 SofaScore.
 - Cruzar el snapshot HF declarado CC-BY contra Neon: 800 candidatos exactos. Sus 4.418 campos faltantes son ceros fuente dudosos; 12 partidos tienen 13 conflictos. DataHub no produjo cruces nuevos. Rechazar el lote: 0 valores nuevos, 0 DDL/DML.
 - Revisar catálogos gratuitos sin cuentas, claves, emails, compras, trials ni bypass: HF/GitHub sin candidatos nuevos; Kaggle reCAPTCHA detenido; la muestra gratuita de Footiqo es EPL 2025/26 y requiere email/consentimiento de marketing para exportarla. No se obtuvo ni descargó.

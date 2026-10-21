@@ -28,8 +28,11 @@ estadísticas útiles. El snapshot HF CC-BY declarado se cruzó exactamente: 800
 candidatos en cinco competiciones, pero los 4.418 campos faltantes de esos candidatos
 son ceros literales de calidad dudosa; además se detectaron 12 partidos con conflictos.
 DataHub dio 0 coincidencias adicionales. No se aplicaron valores en este corte. La
-conexión protegida de AnalyticsPredict a Neon funcionó en solo lectura; la integración
-Neon de OpenClaw apuntaba a otro proyecto y no se usó.
+conexión protegida de AnalyticsPredict a Neon funciona; el censo y la consulta de
+metadatos de permisos se ejecutaron en transacciones READ ONLY, sin DDL/DML. La
+integración Neon de OpenClaw apuntaba a otro proyecto y no se usó. La evidencia
+detallada de permisos queda fuera del repositorio en
+`HF_CROSSWALK_2026-10-20/ACTA_PRIVILEGIOS_NEON_READONLY_2026-10-20.md`.
 
 El lote gratuito anterior aplicó 12 campos a dos partidos Coupe de France con backup,
 rollback y postflight; los FT canónicos permanecen intactos. No hay una fuente gratuita
@@ -53,6 +56,15 @@ discrepancias, 12 ceros contra positivos y una diferencia 4 vs. 6. Se rechazó e
 completo, incluidos positivos aislados dentro de fixtures conflictivos. DataHub produjo
 0 cruces. Neon recibió cero valores nuevos. Crosswalk y adjudicación en la entrega
 privada `HF_CROSSWALK_2026-10-20/`, con manifiesto SHA-256.
+
+Lead gratuito revisado 21/10 03:27 UTC: SportsAPI Pro publica Free (100 requests/día,
+sin tarjeta), acceso declarado a todos los endpoints/competiciones y retención interna
+para análisis/modelado. El catálogo documentado expone corners y componentes de
+disparo, pero no una definición suficiente para todos los seis campos; además declara
+profundidad menor en lower/basic tiers, no acredita todas las copas/temporadas y sus
+endpoints requieren API key (401 en las consultas sin autenticar). No se creó cuenta,
+no se aceptaron términos ni se descargaron datos. Es un candidato condicionado, no una
+fuente probada. Evidencia externa `APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`.
 
 Ampliación de búsqueda a las 02:12 UTC en catálogos públicos: Hugging Face sin
 datasets para tres consultas focales; OpenAIRE sin resultados de datasets FA Cup y

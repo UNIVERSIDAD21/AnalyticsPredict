@@ -5,7 +5,13 @@
 El Jefe aclaró que puedo tomar las decisiones operativas de esta búsqueda y autorizó
 el acceso a Neon. La conexión protegida configurada para AnalyticsPredict funciona;
 la integración Neon de OpenClaw apuntaba únicamente a otro proyecto y no se usó. No
-se leyó ni expuso ningún secreto. La consulta fue `REPEATABLE READ / READ ONLY`.
+se leyó ni expuso ningún secreto. La consulta fue `REPEATABLE READ / READ ONLY`. Una
+consulta de metadatos posterior (03:31 UTC, también `READ ONLY`) confirmó permisos
+efectivos de lectura/escritura necesarios sobre las tablas de trabajo consultadas,
+además de permisos de esquema; el rol no es superusuario ni se afirma que tenga
+privilegios administrativos irrestrictos. No se ejecutó DDL/DML. El desglose exacto
+queda en acta privada:
+`Carpeta de Entregas de Borlty/HF_CROSSWALK_2026-10-20/ACTA_PRIVILEGIOS_NEON_READONLY_2026-10-20.md`.
 
 Censo observado **2026-10-21 03:21:18 UTC**: 24.593 partidos finales con FT;
 **4.603** con al menos un NULL en las seis métricas (26.414 celdas). Por fuente
@@ -31,6 +37,27 @@ Kaggle devolvió reCAPTCHA y se detuvo; la muestra gratuita de Footiqo es EPL 20
 y su exportación requiere email/consentimiento de marketing, que no se envió. No se
 encontró una fuente gratuita que cubra todos los gaps. Acta y evidencia privada con
 manifiesto verificado: `Carpeta de Entregas de Borlty/HF_CROSSWALK_2026-10-20/`.
+
+## Lead gratuito condicionado — SportsAPI Pro, 2026-10-21 03:27 UTC
+
+El proveedor anuncia plan sin costo de 100 requests/día, sin tarjeta, todos los
+endpoints/competiciones y retención privada para análisis/modelado. Sus documentos
+listan corner kicks y varias componentes de disparos, más periodos `ALL`, `1ST`,
+`2ND`. No se encontró una definición suficiente del total de disparos para mapearlo
+sin validación. La misma documentación reduce la profundidad para Standard/Basic y
+no garantiza las seis métricas por fixture/temporada en todas las copas objetivo.
+Además, el endpoint plano de torneos es explícitamente incompleto (requiere recorrer
+categorías); el sitio presenta varios conteos de competiciones en sus páginas. Los
+endpoints de catálogo y estadísticas probados sin clave devolvieron HTTP 401.
+
+Resultado: candidato prometedor para probar solo después de acceso autenticado, pero
+**no probado, no validado para el residual y no se considera fuente que lo resuelva**.
+No se creó cuenta, no se aceptaron términos, no se aportó email ni se usó el API key
+de nadie. La solicitud posterior, si se habilita por el flujo del proveedor, debe
+validar cobertura/temporadas, respuestas reales y los seis campos antes de generar
+lotes NULL-only. No consumir más de su cuota gratis ni usar un plan que se convierta
+en cobro. Evidencia externa privada y manifiesto:
+`Carpeta de Entregas de Borlty/APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`.
 
 ## Estado vigente
 
