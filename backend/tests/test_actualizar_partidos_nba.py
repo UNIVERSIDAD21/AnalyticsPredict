@@ -78,6 +78,43 @@ def test_final_nba_exige_marcador_y_cuartos_acreditados():
         ingesta.event_to_record(evento, ctx)
 
 
+@pytest.mark.parametrize(('local', 'visitante'), [(106, 100), (100, 106)])
+def test_diferencia_nba_respeta_trigger_canonico(local, visitante):
+    ctx = ingesta.DbContext('comp', 'temporada', '2026-27',
+                            {'LCL': 'local', 'VIS': 'visitante'}, {})
+    cuotas_local = [local // 4] * 4
+    cuotas_local[-1] += local - sum(cuotas_local)
+    cuotas_visitante = [visitante // 4] * 4
+    cuotas_visitante[-1] += visitante - sum(cuotas_visitante)
+    evento = {
+        'id': 'espn-diferencia', 'date': '2026-10-20T23:00Z', 'season': {'type': 2},
+        'competitions': [{'competitors': [
+            {'homeAway': 'home', 'team': {'abbreviation': 'LCL'}, 'score': str(local),
+             'linescores': [{'value': n} for n in cuotas_local]},
+            {'homeAway': 'away', 'team': {'abbreviation': 'VIS'}, 'score': str(visitante),
+             'linescores': [{'value': n} for n in cuotas_visitante]},
+        ]}],
+    }
+    record = ingesta.event_to_record(evento, ctx)
+    assert record['diferencia_puntos'] == abs(local - visitante)
+    assert record['ganador_id'] == ('local' if local > visitante else 'visitante')
+
+
+def test_fecha_nba_usa_dia_local_tras_medianoche_utc():
+    ctx = ingesta.DbContext('comp', 'temporada', '2026-27',
+                            {'LCL': 'local', 'VIS': 'visitante'}, {})
+    evento = {
+        'id': 'espn-cambio-dia', 'date': '2026-10-21T01:50:00Z', 'season': {'type': 2},
+        'competitions': [{'competitors': [
+            {'homeAway': 'home', 'team': {'abbreviation': 'LCL'}, 'score': '100',
+             'linescores': [{'value': 25}] * 4},
+            {'homeAway': 'away', 'team': {'abbreviation': 'VIS'}, 'score': '90',
+             'linescores': [{'value': 22}, {'value': 22}, {'value': 23}, {'value': 23}]},
+        ]}],
+    }
+    assert ingesta.event_to_record(evento, ctx)['fecha_partido'] == date(2026, 10, 20)
+
+
 def test_scoreboard_consulta_dias_individuales_y_descarta_no_finalizados(monkeypatch):
     consultas = []
 

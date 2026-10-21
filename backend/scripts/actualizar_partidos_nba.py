@@ -19,9 +19,10 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import requests
 from dotenv import load_dotenv
@@ -32,6 +33,7 @@ load_dotenv(ROOT / "backend" / ".env")
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
 HEADERS = {"User-Agent": "AnalyticsPredict-NBA-Ingestion/1.0", "Accept": "application/json"}
 SOURCE = "ESPN"
+ZONA_HORARIA_NBA = ZoneInfo("America/New_York")
 
 
 @dataclass(frozen=True)
@@ -154,7 +156,9 @@ def event_to_record(event: dict[str, Any], ctx: DbContext) -> dict[str, Any]:
     if (len(home_ls) > 4 and sum(home_ls[4:]) != home_ot) or (len(away_ls) > 4 and sum(away_ls[4:]) != away_ot):
         raise ValueError("overtime/totales inconsistentes")
 
-    event_date = datetime.fromisoformat(str(event["date"]).replace("Z", "+00:00")).date()
+    event_date = datetime.fromisoformat(str(event["date"]).replace("Z", "+00:00")).astimezone(
+        ZONA_HORARIA_NBA
+    ).date()
     winner_id = home_id if home_total > away_total else away_id if away_total > home_total else None
     event_id = str(event.get("id") or comps[0].get("id") or "").strip()
     if not event_id:
@@ -175,7 +179,8 @@ def event_to_record(event: dict[str, Any], ctx: DbContext) -> dict[str, Any]:
         "visitante_q1": away_ls[0], "visitante_q2": away_ls[1], "visitante_q3": away_ls[2], "visitante_q4": away_ls[3],
         "visitante_ot": away_ot, "visitante_total": away_total,
         "ganador_id": winner_id,
-        "diferencia_puntos": home_total - away_total,
+        # El trigger canónico calcula la diferencia como magnitud absoluta.
+        "diferencia_puntos": abs(home_total - away_total),
         "hubo_overtime": home_ot > 0 or away_ot > 0,
         "fuente_datos": SOURCE,
         "source": SOURCE,
