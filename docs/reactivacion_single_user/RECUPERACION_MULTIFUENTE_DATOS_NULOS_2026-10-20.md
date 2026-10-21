@@ -1,5 +1,37 @@
 # Recuperación multi-fuente de estadísticas nulas — 2026-10-20
 
+## Continuidad más reciente — 2026-10-21 03:23 UTC
+
+El Jefe aclaró que puedo tomar las decisiones operativas de esta búsqueda y autorizó
+el acceso a Neon. La conexión protegida configurada para AnalyticsPredict funciona;
+la integración Neon de OpenClaw apuntaba únicamente a otro proyecto y no se usó. No
+se leyó ni expuso ningún secreto. La consulta fue `REPEATABLE READ / READ ONLY`.
+
+Censo observado **2026-10-21 03:21:18 UTC**: 24.593 partidos finales con FT;
+**4.603** con al menos un NULL en las seis métricas (26.414 celdas). Por fuente
+original, 97 corresponden a ESPN_SOCCER y 4.506 a SOFASCORE. Neon contiene 236
+vínculos multi-fuente, 1.398 observaciones y 1.396 pares partido-campo distintos.
+Estos conteos de candidatos/gaps no equivalen a campos recuperables.
+
+El cruce del snapshot HF `eatpizzanot/soccer-dataset` encontró 800 identidades
+exactas en cinco competiciones. De 4.418 campos canónicos NULL dentro del cruce, la
+fuente entregaba cero literal en los 4.418; no hay un valor positivo para completar
+esos NULL. Además, 12 partidos tienen 13 conflictos con valores canónicos existentes
+(12 ceros vs. positivo y uno 4 vs. 6). Los positivos aislados de esos partidos
+también se dejaron en cuarentena. DataHub tuvo 0 cruces nuevos. Decisión: descartar
+todo este lote y mantener NULLs/canónicos sin cambios. **No se ejecutó DDL ni DML y
+no se añadieron estadísticas.** La licencia CC-BY-4.0 la declara el publicador del
+dataset; upstreams API-Football/football-data.co.uk siguen siendo una salvedad, por
+lo que este cruce no se presenta como cobertura recuperable ni como autorización
+más amplia.
+
+La revisión gratuita adicional no creó cuentas ni claves, no envió emails, no pagó,
+no inició trials y no superó desafíos: HF/GitHub no listaron candidatos nuevos;
+Kaggle devolvió reCAPTCHA y se detuvo; la muestra gratuita de Footiqo es EPL 2025/26
+y su exportación requiere email/consentimiento de marketing, que no se envió. No se
+encontró una fuente gratuita que cubra todos los gaps. Acta y evidencia privada con
+manifiesto verificado: `Carpeta de Entregas de Borlty/HF_CROSSWALK_2026-10-20/`.
+
 ## Estado vigente
 
 **Recuperación parcial aplicada; la búsqueda continúa y el catálogo de fútbol no está completo.** Los backfills tocaron únicamente seis métricas por partido finalizado: corners FT, disparos totales y tiros al arco, lado local/visitante. No modificaron goles, partidos futuros, apuestas, modelos ni predicciones.

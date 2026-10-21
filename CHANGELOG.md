@@ -5,6 +5,14 @@
 
 # CHANGELOG
 
+## 2026-10-21 — Crosswalk HF y acceso Neon de AnalyticsPredict
+
+- Confirmar que Neon de AnalyticsPredict es accesible por la conexión protegida del proyecto; la integración Neon de OpenClaw apuntaba a otro proyecto y no se usó. No se leyó ni mostró el secreto de conexión.
+- Censo `REPEATABLE READ / READ ONLY` (03:21:18 UTC): 24.593 finales FT, 4.603 partidos/26.414 celdas con NULL; 236 vínculos, 1.398 observaciones y 1.396 pares partido-campo. Reparto de gaps por fuente original: 97 ESPN y 4.506 SofaScore.
+- Cruzar el snapshot HF declarado CC-BY contra Neon: 800 candidatos exactos. Sus 4.418 campos faltantes son ceros fuente dudosos; 12 partidos tienen 13 conflictos. DataHub no produjo cruces nuevos. Rechazar el lote: 0 valores nuevos, 0 DDL/DML.
+- Revisar catálogos gratuitos sin cuentas, claves, emails, compras, trials ni bypass: HF/GitHub sin candidatos nuevos; Kaggle reCAPTCHA detenido; la muestra gratuita de Footiqo es EPL 2025/26 y requiere email/consentimiento de marketing para exportarla. No se obtuvo ni descargó.
+- Evidencia privada con SHA-256 verificado: `Carpeta de Entregas de Borlty/HF_CROSSWALK_2026-10-20/`. Sin pruebas ejecutadas; cambios de documentación solamente.
+
 ## 2026-10-21 — Revisión amplia de Hugging Face
 
 - Consultar API de datasets con `football match`, `soccer stats` y `football cups`: 17 resultados, 1 y 0. Revisar metadatos/fichas de los candidatos con licencia/cobertura aparente. Ninguno aporta las seis métricas en copas nacionales/UEFA residual bajo permiso abierto: hay duplicados de ligas, resultados sin stats, muestras sintéticas, repos sin procedencia/licencia, o productos pagos. No descargar CSVs.
