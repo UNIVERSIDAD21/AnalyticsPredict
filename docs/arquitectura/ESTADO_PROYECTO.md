@@ -82,6 +82,8 @@ Catálogo gratuito ampliado (21/10): Kaggle lista `ivanposinovec/football-matche
 
 Revisión GitHub 21/10 02:24 UTC: `xgabora/Club-Football-Match-Data` declara 238.858 filas, 38 códigos de liga/división y las seis métricas, pero su README atribuye el dataset a Football-Data.co.uk y no confirma licencia independiente del upstream ni cobertura de las copas/clasificatorias residuales. No se descargó el CSV. Un proyecto UCL adicional no publica el CSV anunciado ni licencia de datos; una guía de fuentes tampoco es dataset. Google activó `/sorry`, Brave expiró tras un reintento y el buscador OpenClaw sigue sin clave Gemini; no se cambiaron configuración ni credenciales. CI de `90b5973` verde 4/4 (run `39531836396`). Sin nuevos valores ni DDL/DML; censo de referencia sigue en 4.603/24.593 (26.414 celdas, READ ONLY 01:59:43 UTC). Evidencia: `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/GITHUB_FREE_STATS_REPOSITORY_REVIEW_20261021T0224Z.json`.
 
+Catálogo HF 21/10 02:27–02:28 UTC: 17 resultados `football match`, uno `soccer stats`, cero `football cups`. Las fichas de datos gratuitos compatibles se acotan a resultados/HT/FT (sin las seis métricas), ligas top-5 ya completas, muestras generadas o sin upstream/licencia verificable; duplicados y ofertas pagas se excluyeron. No se descargó ningún CSV. CI de `0bd75d0` pasó 4/4 (run `39533085455`). Evidencia privada `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/HF_BROAD_FOOTBALL_CATALOG_REVIEW_20261021T0229Z.json`; sin DDL/DML, cuentas, pagos ni nuevos valores.
+
 ## Corte vigente de datos — 2026-10-18
 
 [Actualización integral enero–octubre](../reactivacion_single_user/ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md):

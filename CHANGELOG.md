@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-21 — Revisión amplia de Hugging Face
+
+- Consultar API de datasets con `football match`, `soccer stats` y `football cups`: 17 resultados, 1 y 0. Revisar metadatos/fichas de los candidatos con licencia/cobertura aparente. Ninguno aporta las seis métricas en copas nacionales/UEFA residual bajo permiso abierto: hay duplicados de ligas, resultados sin stats, muestras sintéticas, repos sin procedencia/licencia, o productos pagos. No descargar CSVs.
+- CI del commit `0bd75d0` pasó 4/4 (run `39533085455`). La nueva evidencia privada, con manifiesto SHA-256, es `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/HF_BROAD_FOOTBALL_CATALOG_REVIEW_20261021T0229Z.json`. Sin DDL/DML, valores nuevos, cuentas, claves, pagos ni trials; censo de referencia sigue en 4.603/24.593 (26.414 celdas, READ ONLY 01:59:43 UTC).
+- Se documentó en el acta privada que `0bd75d0` quedó con correo noreply por una variable del proceso pese al `git -c`; no se reescribirá el commit publicado ni se hará force-push. Los commits siguientes usarán `GIT_AUTHOR_*` y `GIT_COMMITTER_*` explícitos y se verificarán después de crearse.
+
 ## 2026-10-21 — Revisión de nuevos catálogos gratuitos
 
 - Verificar CI del commit `90b5973`: 4/4 verde (run `39531836396`). La rama tenía ese commit local sin sincronizar todavía; se incluirá junto con este registro en el siguiente push autorizado.
