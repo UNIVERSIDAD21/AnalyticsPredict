@@ -18,65 +18,31 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 ## Recuperación multi-fuente de nulos — 2026-10-20
 
 [Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
-Continuidad 2026-10-21: dos muestras/proveedores adicionales no aportan valores
-utilizables. Sports Data Vault publicó 32 FA Cup clasificatorias sin estadísticas en
-su sample gratuito de siete días; TheStatsAPI queda excluido provisionalmente por
-ejemplos de fixture inconsistentes con el calendario oficial y términos de retención
-que no validan el uso histórico en BD/modelos. API-Football/Sportmonks siguen como
-leads que requieren autenticación para verificar cobertura por fixture-temporada.
-No hubo nueva lectura ni escritura en Neon; se conserva el censo observado abajo.
-Recuperación parcial ya persistida: 234 vínculos proveedor-partido y 1.374
-actualizaciones NULL-only, con 1.386 observaciones de procedencia. Censo READ ONLY
-de 2026-10-20 23:59 UTC: 24.593 finales FT, 4.605 partidos con algún NULL de
-corners/disparos/tiros al arco
-(26.426 campos en 53 grupos de competencia-temporada); gaps en ENG_FACUP, ESP_COPA, UEFA Champions/Europa/Conference,
-FRA_COUPE e ITA_COPPA. ESPN aportó tandas verificadas; DataHub PDDL amplió top-5 y
-un crosswalk exacto de LaLiga (dos partidos/12 valores) pasó backup, rollback y doble
-postflight. Una excepción limitada completó corners local 0 de Verona–Roma tras
-conciliación ESPN/HF/DataHub y corroboración Kaggle; el FT canónico 3–0 se conservó
-y no se infirió la causa del desacuerdo de score. Kaggle/HF aportaron subconjuntos
-conservadores. Se identificó importador histórico SofaScore con hora local ingenua;
-la única excepción ESPN/SofaScore permite +5 h exactas en el mismo día UTC y conserva
-la fecha canónica. Otros datasets se excluyen por métricas, upstream/licencias/robots
-o procedencia insuficiente. El cotejo adicional confirma que StatsBomb solo lista Copa
-del Rey hasta 1983/84 y UCL hasta 2018/19; los cruces exactos previos no aportan nuevos
-gaps. Stats API documenta corners/tiros/SOT y declara un acuerdo de redistribución con
-API-Football, pero su catálogo de cobertura requiere API key (GET público 401), no hay
-clave protegida configurada y el servicio prohíbe espejos masivos; no se creó cuenta ni
-se descargaron estadísticas. El censo no afirma que todos los NULL sean recuperables.
-La búsqueda API posterior halló FootyStats con catálogo histórico/estadísticas pero
-el demo no incluye las copas y el plan gratis es PL-only; API-Football ofrece free
-limitado a temporadas no verificadas y sin licencia explícita de publicación. El
-cotejo por fase 2025/26 muestra que los gaps UEFA están en clasificatorias de julio/
-agosto: Champions 55 partidos (48/7), Europa 58 (32/26) y Conference 181 (129/52);
-los meses posteriores con finales no tienen gaps. ESPN Scoreboard devolvió HTTP 200,
-0 eventos en las muestras clasificatorias y no hay vínculo ESPN para los 55 candidatos
-UCL. TotalCorner se excluyó por términos contra extracción automatizada y FCStats por
-robots.txt dirigido a crawlers de IA y HTTP 403. Footballdata.io documenta stats pero
-requiere autenticación, no muestra cobertura objetivo y puede requerir permiso escrito
-para almacenamiento prolongado; no se consultaron datos. El mirror jokecamp/FootballData
-no acredita derechos upstream pese a la licencia MIT del repo. Dos repositorios
-adicionales anuncian estadísticas pero carecen de licencia reconocida y no cubren
-copas/temporadas residuales; no se descargaron. Footiqo permite exports manuales
-privados para UEFA, pero prohíbe scraping/descarga automatizada y no se confirmó
-cobertura por temporada; la navegación no incluye copas nacionales. Además anuncia
-datasets premium de 150.000+ partidos/60+ ligas y Advanced Stats Big Five+UCL+UEL,
-sin detallar cobertura objetivo ni precio específico; no se pidió muestra ni se compró.
-Sportmonks es un lead API adicional: documenta estadísticas por fixture y permite
-almacenar sus datos, con prohibición de reventa directa; los planes base incluyen
-tres temporadas recientes por liga y el histórico requiere add-on con profundidad
-variable. Coverage Finder requiere cuenta; no se verificó cobertura exacta por
-fixture/campo/temporada de las siete competiciones con gaps. No se creó cuenta, no se
-obtuvo clave ni se inició prueba con tarjeta. Búsquedas directas HF/GitHub no hallaron
-dataset histórico nuevo; Kaggle respondió challenge de navegador y se respetó sin
-bypass. StatPal/SoccerDataAPI y Goalserve anuncian estadísticas e histórico, pero no
-se confirmó cobertura fixture/temporada ni derechos suficientes para conservarlos;
-no se creó cuenta, usó trial ni contactó a esos proveedores. Scorebing y documentación
-de API-Football devolvieron 403 y se dejaron ahí, sin reintento. Se excluyó `xValue`
-por falta de licencia de datos y por los términos/robots de FotMob contra uso
-automatizado o sistemático. Sin nuevas escrituras.
-Continuidad y evidencia agregada quedan en el informe/entrega externa.
-Sin ML fútbol activo, apuestas alteradas ni ingestas programadas.
+Transacción **REPEATABLE READ / READ ONLY 2026-10-21 01:45:25 UTC:** 24.593 finales
+FT; **4.603 partidos con algún NULL (26.414 celdas)** en las seis métricas. Por código
+interno: ENG_FACUP 862; ESP_COPA 338; EUR_CHAMPIONS 336; EUR_CONFERENCE 968;
+EUR_EUROPA 796; FRA_COUPE 1.104; ITA_COPPA 199; cinco ligas principales 0. Persisten
+236 vínculos, 1.386 valores NULL-only y 1.398 observaciones. Distribución de huecos por
+fuente: **97 ESPN_SOCCER** y **4.506 SOFASCORE**. Los 97 gaps ESPN corresponden a una
+auditoría 97/97 con identidad verificada, HTTP 200 y `statistics=[]`; el dataset local
+gratuito Kaggle contiene 8.856 filas FA Cup/Coppa Italia hasta 2024/25, pero el cruce
+por equipos/aliases ordenados y fecha ±1 día contra todos los canónicos dio 0
+identidades únicas. No se incorporaron datos en este corte.
+
+El lote gratuito anterior aplicó 12 campos a dos partidos Coupe de France con backup,
+rollback y postflight; los FT canónicos permanecen intactos. No hay una fuente gratuita
+integral validada. No contratar, pagar, abrir trials ni crear cuentas/claves; no
+extraer sitios con términos incompatibles ni eludir 403/CAPTCHAs. Se confirmaron
+ejemplos fuera de su código: Fredrikstad–Molde (Copa Noruega) bajo ENG_FACUP y
+Sporting–Nacional (Allianz Cup/Taça da Liga) bajo ITA_COPPA. `pais_id` faltante impide
+estimar el alcance; esas distribuciones no equivalen a conteos de FA Cup/Coppa Italia
+reales. No imputar países ni recategorizar en este corte. Evidencia privada en
+`SOURCE_SPLIT_AND_FREE_CROSSWALK_20261021T014525Z.json` y
+`COMPETITION_CROSSWALK_FREE_SOURCE_REVIEW_20261021T0135Z.json`.
+
+Los antecedentes de búsqueda y excepciones de fuente permanecen abajo como cortes
+históricos con su fecha; no reemplazan el censo ni la decisión más reciente.
+Sin ML fútbol activo, apuestas/modelos alterados o ingestas programadas.
 
 La búsqueda adicional de catálogos públicos GitHub/Hugging Face/Zenodo tampoco
 acreditó cobertura/licencia suficiente para las copas nacionales o clasificatorias
@@ -86,15 +52,20 @@ códigos de ligas/divisiones, sin confirmar derechos upstream ni cobertura de co
 Otros resultados eran top-5, solo marcadores/minutos de gol, licencia no comercial
 o procedencia insuficiente. Se evaluó in-memory una muestra comercial de 20 partidos
 UEFA: solo 2 coincidieron con registros canónicos y ambos tienen las seis métricas;
-los otros 3 no existían en la base dentro de ±1 día. El producto completo (USD 499,
-licencia single-commercial-user) incluye UCL/UEL/Conference desde 2016, pero no copas
-nacionales y declara que la mayoría de clasificatorias no están cubiertas. `Goal_Attempts`
-no tiene semántica documentada equivalente a tiros totales. Es un posible suplemento
-pagado con cobertura residual no probada, no un backfill autorizado. No hubo compra,
-trial, ni persistencia de la muestra. La consulta puntual READ ONLY no recalculó el
+los otros 3 no existían en la base dentro de ±1 día. El producto completo es de pago,
+con licencia single-commercial-user; incluye UCL/UEL/Conference desde 2016, pero no
+copas nacionales y declara que la mayoría de clasificatorias no están cubiertas.
+`Goal_Attempts` no tiene semántica documentada equivalente a tiros totales. Queda
+excluido por la instrucción posterior del propietario de usar únicamente fuentes
+gratuitas, no es candidato vigente. No hubo compra, trial, ni persistencia de la
+muestra. La consulta puntual READ ONLY no recalculó el
 censo ni escribió. El último censo observado es 4.605/24.593 partidos con NULL
 (26.426 celdas) al 2026-10-20 23:59 UTC. Evidencia: entrega privada
 `FUTBOL_DATASET_CATALOG_AUDIT_2026-10-20/`.
+
+**Criterio del propietario para nuevas fuentes (21/10): exclusivamente gratuitas, sin trial convertible ni pago.** FootyStats lista CSV por temporada para varias copas/UEFA, pero la descarga ampliada requiere créditos; su sample sin registro es solo EPL y los términos prohíben extracción automatizada del sitio. Se excluye. StrikerAPI da 500 créditos mensuales sin tarjeta y permite almacenar/modelar bajo términos publicados, pero requiere cuenta verificada, consume cuota, usa ESPN como upstream, no enumera las copas nacionales pendientes y declara que las clasificatorias UEFA suelen no tener boxscores. No se probó con clave ni ofrece cobertura demostrada de los gaps actuales. Se descartan asimismo espejos o repos sin autorización/upstream claro, aunque el repositorio declare licencia de código. Sin nuevas cuentas, claves, compras, pruebas, consultas o escrituras; último censo sin cambios: 4.605/24.593 finales FT con al menos un NULL (26.426 celdas, observación 2026-10-20 23:59 UTC). El análisis sigue abierto, no hay fuente gratuita verificada que cubra todo el residuo. Evidencia: entrega externa `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/FREE_SOURCES_REVIEW_20261021.json`.
+
+Catálogo gratuito ampliado (21/10): Kaggle lista `ivanposinovec/football-matches-from-europe-and-south-america` como CC0 y declara estadísticas de copas/UEFA 2015–2023, pero el propio registro dice que scrapea FBref y somete su uso a términos de Sports Reference; no se descargó ni se usará sin permiso claro. Un dataset UCL 2020–2026 que anuncia estadísticas de clasificatorias marca la licencia como “Other” y no aclara upstream ni retención; también excluido. El Wyscout CC BY 4.0 es de ligas top-five 2017/18 más torneos nacionales, no copas/UEFA de clubes, y sus archivos de 3,23 GB no se descargaron. Los demás resultados no cubren las métricas/competencias pendientes. No se pagó, no se inició trial/cuenta y no cambió Neon. Evidencia de catálogo y hashes en `FUENTES_MULTIFUENTE_FUTBOL_2026-10-21/FREE_SOURCES_REVIEW_20261021.json`.
 
 ## Corte vigente de datos — 2026-10-18
 
