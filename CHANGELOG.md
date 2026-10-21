@@ -5,6 +5,12 @@
 
 # CHANGELOG
 
+## 2026-10-21 — Búsqueda pública focal adicional
+
+- Consultar metadatos Hugging Face para `corner football`, `shots soccer` y `football statistics cup`: las tres respuestas HTTP 200 fueron vacías. No es prueba de inexistencia global.
+- Inspeccionar el formulario público gratuito de SportsAPI Pro: exige nombre, apellido, email, contraseña y consentimiento a términos; no se transmitieron datos ni se creó cuenta. Sin clave, sus endpoints continúan devolviendo 401.
+- Sin consulta ni mutación de Neon; censo de referencia 03:21:18 UTC. Evidencia privada con SHA-256 en `Carpeta de Entregas de Borlty/FUENTES_GRATUITAS_RECHECK_2026-10-20/`.
+
 ## 2026-10-21 — Evaluar candidato gratuito SportsAPI Pro
 
 - Revisar páginas públicas de pricing, términos y documentación: plan Free declara 100 requests/día, sin tarjeta, retención de datos obtenidos con clave propia para análisis/modelado y acceso general a competiciones/endpoints.

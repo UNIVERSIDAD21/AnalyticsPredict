@@ -61,6 +61,12 @@ lotes NULL-only. No consumir más de su cuota gratis ni usar un plan que se conv
 en cobro. Evidencia externa privada y manifiesto:
 `Carpeta de Entregas de Borlty/APISPORTSPRO_CANDIDATE_AUDIT_2026-10-20/`.
 
+Reconsulta focal de Hugging Face a las 03:34 UTC: `corner football`, `shots soccer`
+y `football statistics cup` devolvieron 0 metadatos de datasets cada una (HTTP 200).
+Es una búsqueda acotada, no prueba de inexistencia global. No se volvió a leer Neon;
+el censo 03:21:18 UTC permanece como referencia. Evidencia externa:
+`Carpeta de Entregas de Borlty/FUENTES_GRATUITAS_RECHECK_2026-10-20/`.
+
 ## Estado vigente
 
 **Recuperación parcial aplicada; la búsqueda continúa y el catálogo de fútbol no está completo.** Los backfills tocaron únicamente seis métricas por partido finalizado: corners FT, disparos totales y tiros al arco, lado local/visitante. No modificaron goles, partidos futuros, apuestas, modelos ni predicciones.
