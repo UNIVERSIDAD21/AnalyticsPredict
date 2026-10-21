@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-21 — Aplicación puntual de estadísticas de fútbol WEB
+
+- A petición expresa del propietario, aplicar el contenido de su matriz en los seis campos objetivo solo cuando seguían NULL. Persistidos 11.991 valores en 2.185 partidos, con 2.435 vínculos y observación/proveedor/URL por campo; fuente categórica `WEB`.
+- Respaldo privado, ensayo transaccional revertido y postflight independiente correctos. Censo: 24.593 finales FT; gaps de 4.559/26.144 a 2.497/14.153; 2.062 partidos completados. Se preservaron los campos previos, marcador, apuestas y modelos; 0 modelos activos.
+- Los valores fueron suministrados por el propietario. No se reconsultaron URLs ni se verificó individualmente cada cifra; esta orden es puntual y no implica licencia de terceros o permiso para extraer nuevos datos. El propietario pidió dejar el residual como NULL. Evidencia privada con backup y manifiesto: `Carpeta de Entregas de Borlty/APLICACION_STATS_FUTBOL_WEB_2026-10-21/`.
+
 ## 2026-10-21 — Calendario de 30 días y estado de recuperación
 
 - Cargar y verificar 114 fixtures NBA y 69 EuroLeague; consultar conjuntamente 232 NBA, 69 EuroLeague y 256 partidos de fútbol en ocho competiciones, horizonte 21-oct–20-nov. Corregir dos reprogramaciones de fútbol en sus mismas filas ESPN, sin duplicados.

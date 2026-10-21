@@ -17,6 +17,20 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
 ## Calendario y gaps — cierre 2026-10-21
 
+**Actualización de matriz WEB posterior al corte del calendario:** por instrucción
+expresa del Jefe se aplicaron 11.991 valores NULL-only en 2.185 partidos con
+procedencia por campo. La identidad canónica coincidió en 4.559/4.559 IDs; el lote
+pasó respaldo, ensayo revertido y postflight READ ONLY independiente. De 24.593
+finales FT, quedan **2.497 partidos con NULL (14.153 celdas)**; 2.062 partidos
+alcanzaron las seis métricas. Los valores previos, marcador, modelos y apuestas no
+se alteraron; permanecen 0 modelos de fútbol activos. El residual queda
+deliberadamente sin completar por orden del Jefe. El lote es dato suministrado por
+el propietario: la categoría es `WEB`, y los proveedores/URLs originales se
+conservan por observación. No se consultaron URLs ni se revalidó cada cifra en esta
+aplicación; la orden es puntual, no una aprobación de derechos/licencias ni permiso
+general para futuras extracciones. Evidencia externa privada:
+`APLICACION_STATS_FUTBOL_WEB_2026-10-21/`.
+
 [Corte de preparación](../reactivacion_single_user/PUESTA_EN_MARCHA_BASE_Y_CALENDARIOS_2026-10-21.md): 114 nuevas fechas NBA, 69 EuroLeague y 256 partidos futuros de fútbol verificados/servidos; dos fechas de fútbol corregidas sobre filas existentes. Los endpoints de 30 días devuelven 301 fixtures de baloncesto y 256 de fútbol. Censo estadístico READ ONLY 15:19 UTC: 4.603/24.593 finales con NULL (26.414 celdas); no se añadieron estadísticas históricas en esta pasada. No hay refresh automático, activación de modelo ni certificación. El GET de validación de SportsAPI Pro respondió 403 y se detuvo; UEFA se excluyó por sus términos de uso.
 
 ## Recuperación multi-fuente de nulos — 2026-10-20

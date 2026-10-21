@@ -5,6 +5,22 @@ y órdenes posteriores. Sustituye C0–C7 comercial; no abre evolución avanzada
 La ejecución detallada se registra en el `PLAN_MAESTRO.md` externo solicitado por
 el propietario, sin copiar memoria/configuración del agente al producto.
 
+## Aplicación puntual de lote WEB — 2026-10-21
+
+El Jefe suministró una matriz de estadísticas y ordenó aplicarla bajo categoría
+`WEB`, dejando sin completar los pendientes posteriores. Se registraron
+**11.991 valores** en **2.185 partidos**, mediante **2.435 vínculos** y **11.991
+observaciones** con autoridad/URL original campo a campo. La matriz indicó cifras
+de UEFA.com (7.522), Flashscore (3.624), ESPN (410), APWin (399) y FotMob (36).
+Los controles validaron estructura e identidad canónica, no cada cifra contra la
+página. Sin solicitudes a esos sitios durante la escritura. Backup privado,
+rollback comprobado y postflight READ ONLY: 24.593 finales FT, ahora 2.497 partidos
+y 14.153 celdas NULL en las seis métricas; 2.062 completados. El Jefe pidió dejar
+el residual tal cual. No se modificaron marcadores, apuestas o modelos; cero modelos
+activos. Esta persistencia es una instrucción puntual con datos del propietario, no
+certifica las licencias de los proveedores ni autoriza otras recolecciones. Evidencia
+privada `Carpeta de Entregas de Borlty/APLICACION_STATS_FUTBOL_WEB_2026-10-21/`.
+
 ## Recuperación multi-fuente autorizada20/10
 
 [Resolver y fuentes revisadas](RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md):
