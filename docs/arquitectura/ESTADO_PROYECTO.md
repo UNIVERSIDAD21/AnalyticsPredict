@@ -71,6 +71,17 @@ automatizado o sistemático. Sin nuevas escrituras.
 Continuidad y evidencia agregada quedan en el informe/entrega externa.
 Sin ML fútbol activo, apuestas alteradas ni ingestas programadas.
 
+La búsqueda adicional de catálogos públicos GitHub/Hugging Face/Zenodo tampoco
+acreditó cobertura/licencia suficiente para las copas nacionales o clasificatorias
+UEFA pendientes. El repo `xgabora/Club-Football-Match-Data` declara MIT para el
+repositorio, pero atribuye sus estadísticas a Football-Data.co.uk y documenta
+códigos de ligas/divisiones, sin confirmar derechos upstream ni cobertura de copas.
+Otros resultados eran top-5, solo marcadores/minutos de gol, licencia no comercial
+o procedencia insuficiente. No se descargaron nuevos datasets ni se consultó Neon;
+el último censo observado es 4.605/24.593 partidos con NULL (26.426 celdas) al
+2026-10-20 23:59 UTC. Evidencia: entrega privada
+`FUTBOL_DATASET_CATALOG_AUDIT_2026-10-20/`.
+
 ## Corte vigente de datos — 2026-10-18
 
 [Actualización integral enero–octubre](../reactivacion_single_user/ACTUALIZACION_INTEGRAL_DATOS_2026-10-18.md):
