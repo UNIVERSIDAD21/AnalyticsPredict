@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-21 — Auditoría de muestras y validación de proveedores de fútbol
+
+- Evaluar in-memory la muestra gratuita de Sports Data Vault (2.721 partidos, 1.828 filas de stats, 12–18 oct 2026): 32 FA Cup clasificatorias, ninguna con estadísticas; no hubo partidos de las otras copas/torneos objetivo. No aporta valores para completar; el archivo histórico cuesta USD 99 y su licencia se limita a investigación individual sin redistribución. Muestra no persistida ni importada.
+- Descartar provisionalmente TheStatsAPI: sus ejemplos públicos contienen Manchester City–Arsenal en FA Cup el 14-sep-2026, contradicho por el calendario oficial de rondas, y reutilizan un mismo ID entre páginas de copas distintas. La retención en DB/modelos no está suficientemente aclarada para la licencia visible. Sin cuenta, API key, trial, compra o contacto.
+- Confirmar que API-Football y Sportmonks publican cobertura/estadísticas, pero no permiten verificar desde acceso público la cobertura exacta histórica de cada fixture/campo; se requiere cuenta o clave. Sin credenciales nuevas ni llamadas autenticadas.
+- Sin nueva consulta/cambio a Neon: el último censo sigue siendo 4.605/24.593 finales con algún NULL (26.426 celdas, 2026-10-20 23:59 UTC). Sin DDL/DML ni nuevos valores. Evidencia externa privada `FUTBOL_DATASET_CATALOG_AUDIT_2026-10-20/CATALOG_AUDIT_SUPPLEMENT_20261021.json`, SHA-256 verificado.
+
 ## 2026-10-20 — Recuperación multi-fuente parcial y búsqueda ampliada
 
 - Aplicar en Neon valores NULL-only respaldados por ESPN, DataHub PDDL, Kaggle y Hugging Face: 234 vínculos proveedor-partido, 1.374 valores y 1.386 observaciones de procedencia. La tanda DataHub añadió dos LaLiga (12 valores); una excepción de Verona–Roma completó un único corner local `0` corroborado por tres fuentes, conservando el FT canónico 3–0. Ambas pasaron backup privado, ensayo rollback y postflight.

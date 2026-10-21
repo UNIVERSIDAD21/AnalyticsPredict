@@ -1,6 +1,6 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-20**. Herramienta personal single-user, local y
+Última actualización: **2026-10-21**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
@@ -18,6 +18,13 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 ## Recuperación multi-fuente de nulos — 2026-10-20
 
 [Estado, cobertura y límites](../reactivacion_single_user/RECUPERACION_MULTIFUENTE_DATOS_NULOS_2026-10-20.md).
+Continuidad 2026-10-21: dos muestras/proveedores adicionales no aportan valores
+utilizables. Sports Data Vault publicó 32 FA Cup clasificatorias sin estadísticas en
+su sample gratuito de siete días; TheStatsAPI queda excluido provisionalmente por
+ejemplos de fixture inconsistentes con el calendario oficial y términos de retención
+que no validan el uso histórico en BD/modelos. API-Football/Sportmonks siguen como
+leads que requieren autenticación para verificar cobertura por fixture-temporada.
+No hubo nueva lectura ni escritura en Neon; se conserva el censo observado abajo.
 Recuperación parcial ya persistida: 234 vínculos proveedor-partido y 1.374
 actualizaciones NULL-only, con 1.386 observaciones de procedencia. Censo READ ONLY
 de 2026-10-20 23:59 UTC: 24.593 finales FT, 4.605 partidos con algún NULL de
