@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-21 — Probabilidad del ganador local/visitante en NBA
+
+- Corregir la tarjeta de ganador: el motor devuelve `probabilidad_ganador` para el equipo analizado/local; cuando el ganador probable es el rival/visitante, la UI presenta el complemento y ya no muestra la probabilidad del local junto al visitante.
+- Diagnóstico: las comparaciones manuales deben conservar los mismos parámetros de temporada. La UI envía las temporadas seleccionadas y el backend ajusta un modelo en esa llamada; si se omiten, sirve el modelo que ya estaba cargado. No son corridas directamente comparables.
+
 ## 2026-10-21 — Corrección de análisis NBA con bankroll de base de datos
 
 - Normalizar a `float` el bankroll `NUMERIC` recibido como `Decimal` al construir la configuración de sizing; evita el `TypeError` `Decimal * float` durante el cálculo de Kelly.

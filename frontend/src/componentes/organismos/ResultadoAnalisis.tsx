@@ -216,6 +216,13 @@ export function ResultadoAnalisis({
   const nombreGanador = prediccionGanador?.ganador_probable === 'equipo'
     ? resultado.equipo_nombre_completo
     : resultado.rival_nombre_completo;
+  // `probabilidad_ganador` es la probabilidad del equipo analizado (local).
+  // Si el ganador probable es el rival, presentar su complemento.
+  const probabilidadGanadorMostrado = prediccionGanador
+    ? (prediccionGanador.ganador_probable === 'equipo'
+      ? prediccionGanador.probabilidad_ganador
+      : 1 - prediccionGanador.probabilidad_ganador)
+    : null;
 
   // Determinar si la predicción del usuario coincide con el sistema
   const tieneRecomendacionSistema = Boolean(detalle || resultado.mejor_apuesta);
@@ -368,7 +375,7 @@ export function ResultadoAnalisis({
             <div>
               <p className="text-lg font-futurista text-texto-principal">{nombreGanador}</p>
               <p className="text-sm text-texto-secundario">
-                Probabilidad: <span className="text-neon-verde font-semibold">{(prediccionGanador.probabilidad_ganador * 100).toFixed(1)}%</span>
+                Probabilidad: <span className="text-neon-verde font-semibold">{((probabilidadGanadorMostrado ?? 0) * 100).toFixed(1)}%</span>
               </p>
             </div>
             <div className="text-right text-xs text-texto-secundario">
