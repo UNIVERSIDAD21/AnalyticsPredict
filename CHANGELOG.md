@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Modos NBA y resultados compartidos — 2026-10-22
+
+[Uso, método y validación](docs/reactivacion_single_user/MODOS_NBA_Y_RESULTADOS_2026-10-22.md): NBA añade prepartido y cortes completos Q1–Q3,
+ruta live propia, validación consecutiva y dispersión solo de lo pendiente. Ajuste
+de ritmo heurístico/RAW, sin entrenar ni usar calibración o cuotas PRE. El corte
+es solo consulta y no contamina registros de apuestas/predicciones prepartido.
+Euroliga usa el mismo componente completo de resultados NBA, con H2H/forma comunes,
+RAW/push/regulación y datos ausentes explícitos. 36 pruebas backend focalizadas,
+58 frontend/lint/build; sin POST productivo ni modificar artefactos/cohortes.
+No acredita eficacia, calibración o actualización live por reloj.
+
 ## Interfaz única Baloncesto — 2026-10-22
 
 [Integración, uso y límites](docs/reactivacion_single_user/INTEGRACION_UI_BALONCESTO_2026-10-22.md): una sección **Baloncesto** en

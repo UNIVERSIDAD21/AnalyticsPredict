@@ -1,5 +1,10 @@
 # Baloncesto: NBA y Euroliga en una pantalla — 2026-10-22
 
+**Ampliación posterior:** [modos NBA y renderer completo común](MODOS_NBA_Y_RESULTADOS_2026-10-22.md).
+Los cortes NBA son solo consulta; las descripciones de comportamiento NBA previas
+de este documento se refieren al modo prepartido.
+
+
 ## Uso
 
 Abrir `/baloncesto` y elegir **Liga: NBA o Euroliga**. La navegación principal y el

@@ -7,7 +7,7 @@ import { MensajeError } from '../moleculas';
 import { Spinner } from '../atomos';
 import { extraerMensajeError } from '../../servicios/api';
 import { analizarEuroliga, cargarEuroliga, type PeticionEuro, type ResultadoEuro } from '../../servicios/euroliga';
-import type { Equipo } from '../../tipos';
+import type { Equipo, LadoApuesta } from '../../tipos';
 
 type Datos = Awaited<ReturnType<typeof cargarEuroliga>>;
 const OPCIONES = [
@@ -23,6 +23,7 @@ export function ModuloEuroliga() {
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
+  const [seleccion, setSeleccion] = useState<{ lado: LadoApuesta; linea: number } | null>(null);
   const [resultado, setResultado] = useState<ResultadoEuro | null>(null);
   const [cargando, setCargando] = useState(false);
   const [actualizando, setActualizando] = useState(true);
@@ -43,7 +44,8 @@ export function ModuloEuroliga() {
   const invalidar = useCallback(() => { setResultado(null); setError(null); }, []);
   const actualizar = useCallback(() => { setResultado(null); setRevision(n => n + 1); }, []);
 
-  const enviar = async (peticion: PeticionEuro) => {
+  const enviar = async (peticion: PeticionEuro, lado?: LadoApuesta) => {
+    setSeleccion(lado ? { lado, linea: peticion.linea } : null);
     if (cargando) return;
     setCargando(true); setError(null); setResultado(null);
     try {
@@ -75,7 +77,7 @@ export function ModuloEuroliga() {
           opcionesMercado={OPCIONES} textoAyudaMercado="Q1–Q4: cuartos de 10 minutos. Total: regulación de 40 minutos, sin prórroga."
           onAnalizar={enviar} cargando={cargando || actualizando} onCambiarParametros={invalidar} onActualizarPartidos={actualizar} />
       }>
-        {cargando ? <div className="tarjeta min-h-[420px] flex items-center justify-center" role="status"><Spinner texto="Analizando partido Euroliga…" tamano="lg" centrado /></div> : resultado ? <ResultadoEuroliga r={resultado} /> : <div className="tarjeta h-full min-h-[500px]">
+        {cargando ? <div className="tarjeta min-h-[420px] flex items-center justify-center" role="status"><Spinner texto="Analizando partido Euroliga…" tamano="lg" centrado /></div> : resultado ? <ResultadoEuroliga r={resultado} seleccionUsuario={seleccion} /> : <div className="tarjeta h-full min-h-[500px]">
           <EstadoVacio />
           <details className="px-6 pb-6 text-sm text-texto-secundario">
             <summary className="cursor-pointer">Evaluación temporal y límites del modelo Euroliga</summary>

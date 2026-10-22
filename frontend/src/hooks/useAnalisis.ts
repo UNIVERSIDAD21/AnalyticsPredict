@@ -5,9 +5,9 @@
  * Fase 2: Ahora incluye advertencias del backend para mostrar en UI.
  */
 
-import { useState, useCallback } from 'react';
-import { PeticionAnalisis, ResultadoAnalisis, EstadoPeticion } from '../tipos';
-import { analizarPartido } from '../servicios';
+import { useState, useCallback, useRef } from 'react';
+import { PeticionAnalisisNBA, ResultadoAnalisis, EstadoPeticion } from '../tipos';
+import { analizarPartido, analizarPartidoEnVivo } from '../servicios';
 import { useConfiguracionUsuario } from '../contextos/ConfiguracionUsuario';
 import { useToasts } from '../contextos/Toasts';
 
@@ -25,7 +25,7 @@ interface RetornoUseAnalisis {
   error: string | null;
 
   /** Ejecutar análisis */
-  analizar: (peticion: PeticionAnalisis) => Promise<void>;
+  analizar: (peticion: PeticionAnalisisNBA) => Promise<void>;
 
   /** Limpiar estado */
   limpiar: () => void;
@@ -42,8 +42,10 @@ export function useAnalisis(): RetornoUseAnalisis {
   const [error, setError] = useState<string | null>(null);
   const { configuracion } = useConfiguracionUsuario();
   const { agregarToast } = useToasts();
+  const solicitudActual = useRef(0);
 
-  const analizar = useCallback(async (peticion: PeticionAnalisis) => {
+  const analizar = useCallback(async (peticion: PeticionAnalisisNBA) => {
+    const solicitud = ++solicitudActual.current;
     setEstado('cargando');
     setError(null);
     setResultado(null);
@@ -81,17 +83,20 @@ export function useAnalisis(): RetornoUseAnalisis {
         });
       }
 
-      const respuesta = await analizarPartido(
+      const esCorte = 'marcador_q1' in peticion || 'marcador_q2' in peticion || 'marcador_q3' in peticion;
+      const respuesta = esCorte ? await analizarPartidoEnVivo(peticion) : await analizarPartido(
         {
           ...peticion,
           modo_devig: modoDevigFinal,
         },
         configuracion
       );
+      if (solicitud !== solicitudActual.current) return;
       setResultado(respuesta.datos);
       setAdvertencias([...advertenciasLocales, ...respuesta.advertencias]);
       setEstado('exito');
     } catch (err) {
+      if (solicitud !== solicitudActual.current) return;
       const mensaje = err instanceof Error ? err.message : 'Error al analizar partido';
       setError(mensaje);
       setEstado('error');
@@ -99,6 +104,7 @@ export function useAnalisis(): RetornoUseAnalisis {
   }, [agregarToast, configuracion]);
 
   const limpiar = useCallback(() => {
+    solicitudActual.current++;
     setResultado(null);
     setAdvertencias([]);
     setEstado('inactivo');

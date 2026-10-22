@@ -10,7 +10,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class ConfiguracionSizingPeticion(BaseModel):
@@ -194,11 +194,20 @@ class PeticionAnalisis(BaseModel):
 
 class PeticionAnalisisEnVivo(PeticionAnalisis):
     """Solicitud para análisis en vivo con marcadores reales."""
+    model_config = ConfigDict(extra="forbid")
 
     marcador_q1: Optional[str] = Field(None, description="Marcador Q1 (ej: 28-32)")
     marcador_q2: Optional[str] = Field(None, description="Marcador Q2 (ej: 25-24)")
     marcador_q3: Optional[str] = Field(None, description="Marcador Q3 (ej: 30-28)")
     peso_en_vivo: float = Field(0.5, ge=0.0, le=1.0, description="Peso del ajuste en vivo")
+
+    @model_validator(mode="after")
+    def validar_corte(self) -> "PeticionAnalisisEnVivo":
+        from motor.utilidades import parsear_marcador, validar_corte_en_vivo
+        validar_corte_en_vivo([parsear_marcador(q) for q in (self.marcador_q1, self.marcador_q2, self.marcador_q3)], self.mercado)
+        if self.temporadas or any(x is not None for x in (self.cuota, self.cuota_over, self.cuota_under, self.cuota_ganador_equipo, self.cuota_ganador_rival)):
+            raise ValueError("El modo al cierre usa el modelo cargado, sin cuotas ni temporadas de prepartido.")
+        return self
 
 
 class PeticionCrearApuesta(BaseModel):

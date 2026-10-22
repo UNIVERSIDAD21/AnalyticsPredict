@@ -185,7 +185,7 @@ function procesarAdvertencia(codigo: string): AdvertenciaProcesada {
   // Código desconocido: mostrar como info con el código
   return {
     codigo,
-    mensaje: codigoNormalizado.replace(/_/g, ' ').toLowerCase(),
+    mensaje: /\s/.test(codigoNormalizado) ? codigo.trim() : codigoNormalizado.replace(/_/g, ' ').toLowerCase(),
     categoria: 'info',
   };
 }
@@ -306,7 +306,7 @@ export function PanelAdvertencias({ advertencias }: PropsPanelAdvertencias) {
                     {adv.mensaje}
                   </p>
                   {/* Mostrar código si es diferente al mensaje */}
-                  {adv.codigo !== adv.mensaje && (
+                  {normalizarCodigo(adv.codigo) !== normalizarCodigo(adv.mensaje) && (
                     <p className="text-[10px] font-mono text-texto-terciario mt-1">
                       {adv.codigo}
                     </p>

@@ -161,6 +161,7 @@ export interface PeticionAnalisisEnVivo extends PeticionAnalisis {
   marcador_q3?: string;
   peso_en_vivo?: number;
 }
+export type PeticionAnalisisNBA = PeticionAnalisis | PeticionAnalisisEnVivo;
 
 // ══════════════════════════════════════════════════════════════
 // RESPUESTAS

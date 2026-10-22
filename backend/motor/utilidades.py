@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import math
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, Sequence
 
 
 # ══════════════════════════════════════════════════════════════
@@ -82,6 +82,19 @@ def parsear_lineas(texto: Optional[str]) -> Dict[str, float]:
             raise ValueError(f'Valor inválido "{valor}" para {clave}.') from exc
 
     return resultado
+
+
+def validar_corte_en_vivo(marcadores: Sequence[Optional[Tuple[float, float]]], mercado: str) -> int:
+    """Solo Q1–Q3 completos y consecutivos; nunca una apuesta sobre lo ya observado."""
+    n = sum(q is not None for q in marcadores)
+    if not n or any(q is None for q in marcadores[:n]):
+        raise ValueError("Proporciona cuartos completos consecutivos desde Q1 hasta el corte.")
+    for q in marcadores[:n]:
+        if len(q) != 2 or any(not math.isfinite(x) or x != int(x) or x < 0 or x > 100 for x in q):
+            raise ValueError("Cada marcador debe tener puntos enteros entre 0 y 100, por cuarto y no acumulados.")
+    if mercado in ("Q1", "Q2", "Q3") and int(mercado[1]) <= n:
+        raise ValueError("El mercado debe ser posterior al corte observado o COMPLETO.")
+    return n
 
 
 def parsear_marcador(texto: Optional[str]) -> Optional[Tuple[float, float]]:

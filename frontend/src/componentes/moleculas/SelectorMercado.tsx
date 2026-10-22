@@ -34,6 +34,7 @@ interface PropsSelectorMercado {
   opciones?: OpcionSelect[];
   /** Texto de ayuda custom */
   textoAyuda?: string;
+  cuartosObservados?: number;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -50,11 +51,12 @@ export function SelectorMercado({
   deshabilitado = false,
   opciones,
   textoAyuda,
+  cuartosObservados = 0,
 }: PropsSelectorMercado) {
   return (
     <Select
       etiqueta="Mercado"
-      opciones={opciones ?? OPCIONES_MERCADO}
+      opciones={(opciones ?? OPCIONES_MERCADO).map(o => ({ ...o, deshabilitada: o.deshabilitada || (/^Q[1-3]$/.test(o.valor) && Number(o.valor.slice(1)) <= cuartosObservados) }))}
       value={valor}
       onChange={(e) => onChange(e.target.value as Mercado)}
       placeholder="Selecciona el mercado"

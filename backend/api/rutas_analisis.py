@@ -475,7 +475,11 @@ def _registrar_bitacora_analisis_nba(
     resultado,
     contexto_registro: Optional[Dict[str, Any]],
 ) -> None:
-    """Registra en bitácora TODA ejecución de análisis NBA."""
+    """Registra análisis PRE; los cortes NBA son consulta sin registro financiero."""
+    if getattr(resultado, "es_en_vivo", False):
+        # Las métricas y el resolver de esta tabla no distinguen PRE/live ni OT.
+        # Un corte manual es solo consulta; no contaminar apuestas o calibración.
+        return
     partido_id = _partido_id_bitacora_nba(peticion, contexto_registro)
     if not partido_id:
         logger.warning("No se pudo registrar análisis NBA en bitácora: partido_id ausente")
@@ -645,7 +649,8 @@ def ejecutar_analisis(
             "Modo estricto NBA activo: recomendaciones deshabilitadas por falta de resueltas con volumen suficiente."
         )
 
-    contexto_registro = _extraer_contexto_registro(peticion)
+    resultado.metadata["modelo_version"] = getattr(modelo, "version", None)
+    contexto_registro = None if resultado.es_en_vivo else _extraer_contexto_registro(peticion)
     if contexto_registro and resultado.candidatos:
         modelo_version_id = getattr(modelo, "version", None)
         if modelo_version_id is None or not isinstance(modelo_version_id, int):

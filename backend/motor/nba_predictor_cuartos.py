@@ -49,6 +49,7 @@ from .utilidades import (
     normalizar_nombre,
     parsear_marcador,
     resolver_nombre_en_modelo,
+    validar_corte_en_vivo,
 )
 
 CLAVES_CUARTOS = ("Q1", "Q2", "Q3", "Q4")
@@ -205,6 +206,7 @@ def calcular_prediccion_cuarto(
     media_rival: float,
     desviacion_rival: float,
     linea: Optional[float] = None,
+    sigma_ganador_completo: bool = True,
 ) -> PrediccionCuarto:
     """Construye la predicción completa para un cuarto."""
     media_total = float(media_equipo) + float(media_rival)
@@ -223,7 +225,7 @@ def calcular_prediccion_cuarto(
     desviacion_equipo_victoria = desviacion_equipo
     desviacion_rival_victoria = desviacion_rival
 
-    if cuarto == "COMPLETO":
+    if cuarto == "COMPLETO" and sigma_ganador_completo:
         # Para probabilidad de ganador en juego completo usamos sigma empírico NBA
         # para evitar sobreestimar incertidumbre al propagar residuos por cuarto.
         sigma_por_lado = SIGMA_GANADOR_NBA_COMPLETO / np.sqrt(2.0)
@@ -534,6 +536,10 @@ def analizar_partido(
     metadata: Dict[str, object] = {"mercado": mercado}
 
     if es_en_vivo:
+        if any(x is not None for x in (cuota, cuota_over, cuota_under, cuota_ganador_equipo, cuota_ganador_rival)):
+            raise ValueError("El modo al cierre no utiliza cuotas de prepartido.")
+        marcadores = [parsear_marcador(q) for q in (marcador_q1, marcador_q2, marcador_q3)]
+        corte = validar_corte_en_vivo(marcadores, mercado)
         media_equipo, media_rival, cuartos_reales, metadata = aplicar_ajuste_en_vivo(
             media_equipo,
             media_rival,
@@ -543,6 +549,14 @@ def analizar_partido(
             peso_en_vivo,
         )
         metadata["mercado"] = mercado
+        # Lo observado es determinista. Solo se propaga dispersión de lo pendiente.
+        desviacion_equipo = np.array(desviacion_equipo, copy=True)
+        desviacion_rival = np.array(desviacion_rival, copy=True)
+        desviacion_equipo[:corte] = 0
+        desviacion_rival[:corte] = 0
+        media_equipo[corte:] = np.maximum(0, media_equipo[corte:])
+        media_rival[corte:] = np.maximum(0, media_rival[corte:])
+        metadata.update({"modo_analisis": f"CIERRE_Q{corte}", "metodo_live": "Ajuste heurístico de residuos; dispersión marginal de cuartos pendientes, suponiendo independencia. No calibrado para este corte.", "contexto_live": "Forma e H2H solo descriptivos; no reajustan el corte.", "alcance_live": "48 minutos de regulación sin OT; no usa reloj ni parcial del cuarto en curso."})
 
     predicciones: Dict[str, PrediccionCuarto] = {}
     for indice, cuarto in enumerate(CLAVES_CUARTOS):
@@ -567,6 +581,7 @@ def analizar_partido(
             float(np.sum(media_rival)),
             float(np.sqrt(np.sum(desviacion_rival ** 2))),
             linea=linea,
+            sigma_ganador_completo=not es_en_vivo,
         )
 
         if prediccion_juego_completo is not None and cuota_ganador_equipo is not None:
@@ -615,7 +630,9 @@ def analizar_partido(
     )
 
     analisis_mercado = None
-    if calibrador_activo is None:
+    if es_en_vivo:
+        calibrador_activo = None
+    if calibrador_activo is None and not es_en_vivo:
         calibrador_activo = obtener_calibrador_activo(
             mercado=mercado,
             origen=origen_prediccion,
@@ -691,7 +708,7 @@ def analizar_partido(
         )
 
     candidatos: List[CandidatoApuesta] = []
-    if linea is not None:
+    if linea is not None and not es_en_vivo:
         if mercado == "COMPLETO" and prediccion_juego_completo is not None:
             media_equipo_total = float(np.sum(media_equipo))
             desviacion_equipo_total = float(np.sqrt(np.sum(desviacion_equipo ** 2)))
@@ -727,9 +744,9 @@ def analizar_partido(
             )
 
     mejor_apuesta = seleccionar_mejor_apuesta(candidatos)
-    if not candidatos:
+    if not candidatos and not es_en_vivo:
         metadata["mensaje_apuesta"] = "NO_APTO: SIN_CANDIDATOS"
-    elif mejor_apuesta is None:
+    elif mejor_apuesta is None and not es_en_vivo:
         metadata["mensaje_apuesta"] = "NO_APTO: EV<=0 o edge_real<=0 en todos los candidatos"
 
     if mercado == "COMPLETO" and prediccion_juego_completo is not None:
@@ -785,7 +802,7 @@ def analizar_partido(
 
     contexto = None
     prediccion_ajustada = None
-    advertencias_contexto: List[str] = []
+    advertencias_contexto: List[str] = [str(metadata[k]) for k in ("metodo_live", "contexto_live", "alcance_live")] if es_en_vivo else []
     if incluir_contexto:
         try:
             contexto = recolectar_contexto(
@@ -799,7 +816,7 @@ def analizar_partido(
             else:
                 prediccion_base = predicciones.get(mercado)
 
-            if prediccion_base is not None:
+            if prediccion_base is not None and not es_en_vivo:
                 prediccion_ajustada = aplicar_ajustes_contextuales(
                     contexto=contexto,
                     media_base=prediccion_base.media_total,

@@ -5,11 +5,11 @@
  * con resultados, totales, y tendencias OVER/UNDER.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { Users, ChevronDown, ChevronUp, TrendingUp, Info } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Tarjeta } from '../atomos';
-import type { ContextoH2H } from '../../tipos/analisis';
+import type { H2HVista } from '../../tipos/resultadoVista';
 
 // ══════════════════════════════════════════════════════════════
 // CONSTANTES
@@ -24,7 +24,7 @@ const LINEA_TIPICA = 2.5;
 
 interface PropsSeccionH2H {
   /** Datos de enfrentamientos directos */
-  h2h: ContextoH2H;
+  h2h: H2HVista;
   /** Nombre del equipo principal */
   equipoNombre: string;
   /** Nombre del equipo rival */
@@ -37,6 +37,8 @@ interface PropsSeccionH2H {
   inicialmenteExpandido?: boolean;
   /** Clase CSS adicional */
   className?: string;
+  compararLinea?: boolean;
+  nota?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -83,8 +85,10 @@ export function SeccionH2H({
   unidadLabel = 'unidades',
   inicialmenteExpandido = false,
   className,
+  compararLinea = true, nota,
 }: PropsSeccionH2H) {
   const [expandido, setExpandido] = useState(inicialmenteExpandido);
+  const idContenido = useId();
 
   // Calcular estadísticas derivadas
   const stats = useMemo(() => {
@@ -134,7 +138,7 @@ export function SeccionH2H({
         onClick={() => setExpandido(!expandido)}
         className="w-full flex items-center justify-between gap-2 group"
         aria-expanded={expandido}
-        aria-controls="contenido-h2h"
+        aria-controls={idContenido}
       >
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-neon-cyan" />
@@ -182,7 +186,7 @@ export function SeccionH2H({
         <span className="text-texto-terciario hidden sm:inline">|</span>
 
         {/* Tendencia OVER */}
-        <div className="flex items-center gap-1.5">
+        {compararLinea && <div className="flex items-center gap-1.5">
           <span className="text-texto-secundario">OVER:</span>
           <span
             className={clsx(
@@ -196,12 +200,13 @@ export function SeccionH2H({
           >
             {stats.porcentajeOver}%
           </span>
-        </div>
+        </div>}
       </div>
 
+      {nota && <p className="text-xs text-texto-secundario">{nota}</p>}
       {/* Contenido expandible */}
       {expandido && (
-        <div id="contenido-h2h" className="space-y-4">
+        <div id={idContenido} className="space-y-4">
           {/* Tabla de partidos */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -216,9 +221,9 @@ export function SeccionH2H({
                   <th className="text-center py-2 px-2 text-xs uppercase tracking-wider text-texto-terciario font-normal">
                     Total
                   </th>
-                  <th className="text-center py-2 px-2 text-xs uppercase tracking-wider text-texto-terciario font-normal">
+                  {compararLinea && <th className="text-center py-2 px-2 text-xs uppercase tracking-wider text-texto-terciario font-normal">
                     vs Línea
-                  </th>
+                  </th>}
                 </tr>
               </thead>
               <tbody>
@@ -270,7 +275,7 @@ export function SeccionH2H({
                       </td>
 
                       {/* vs Línea */}
-                      <td className="py-2 px-2 text-center">
+                      {compararLinea && <td className="py-2 px-2 text-center">
                         <span
                           className={clsx(
                             'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium',
@@ -281,7 +286,7 @@ export function SeccionH2H({
                         >
                           {esOver ? 'OVER' : 'UNDER'}
                         </span>
-                      </td>
+                      </td>}
                     </tr>
                   );
                 })}
@@ -290,7 +295,7 @@ export function SeccionH2H({
           </div>
 
           {/* Nota de tendencia */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-futurista-medio/30 border border-neon-cyan/10">
+          {compararLinea && <div className="flex items-start gap-2 p-3 rounded-lg bg-futurista-medio/30 border border-neon-cyan/10">
             <TrendingUp className="w-4 h-4 text-neon-cyan flex-shrink-0 mt-0.5" />
             <p className="text-sm text-texto-secundario">
               <span className="text-neon-cyan font-medium">Tendencia:</span>{' '}
@@ -303,7 +308,7 @@ export function SeccionH2H({
                 </span>
               )}
             </p>
-          </div>
+          </div>}
 
           {/* Promedios individuales */}
           <div className="grid grid-cols-2 gap-4">

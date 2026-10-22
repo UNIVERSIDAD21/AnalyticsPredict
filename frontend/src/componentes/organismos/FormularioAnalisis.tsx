@@ -23,6 +23,8 @@ import {
   Equipo,
   Mercado,
   PeticionAnalisis,
+  PeticionAnalisisEnVivo,
+  PeticionAnalisisNBA,
   LadoApuesta,
   ModoDevig,
   EstadisticasEquipo,
@@ -62,13 +64,14 @@ interface PropsBaseFormularioAnalisis {
   /** Invalida una salida cuando cambian los parámetros del formulario. */
   onCambiarParametros?: () => void;
   onActualizarPartidos?: () => void;
+  onCambiarModo?: (cuartosCompletos: number) => void;
   partidoActual?: PartidoResumen | null;
   onSeleccionarPartido?: (partido: PartidoResumen | null) => void;
 }
 
 type PropsFormularioAnalisis = PropsBaseFormularioAnalisis & (
-  | { deporte: 'EUROLIGA'; onAnalizar: (peticion: PeticionEuro) => void }
-  | { deporte?: 'NBA' | 'FUTBOL'; onAnalizar: (peticion: PeticionAnalisis, ladoSeleccionado?: LadoApuesta) => void }
+  | { deporte: 'EUROLIGA'; onAnalizar: (peticion: PeticionEuro, ladoSeleccionado?: LadoApuesta) => void }
+  | { deporte?: 'NBA' | 'FUTBOL'; onAnalizar: (peticion: PeticionAnalisisNBA, ladoSeleccionado?: LadoApuesta) => void }
 );
 
 interface EstadoFormulario {
@@ -113,10 +116,13 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     onSeleccionarPartido,
     onCambiarParametros,
     onActualizarPartidos,
+    onCambiarModo,
   } = props;
   const esEuroliga = deporte === 'EUROLIGA';
   const [cuartos, setCuartos] = useState(0);
+  const esCorteNBA = deporte === 'NBA' && cuartos > 0;
   const [parciales, setParciales] = useState<[string, string][]>([['', ''], ['', ''], ['', '']]);
+  useEffect(() => { onCambiarModo?.(cuartos); }, [cuartos, onCambiarModo]);
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
   const [errores, setErrores] = useState<string[]>([]);
@@ -204,6 +210,13 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (cargando) return;
+      const scores = parciales.slice(0, cuartos).map(q => q.map(Number) as [number, number]);
+      if (cuartos > 0 && (parciales.slice(0, cuartos).some(q => q.some(x => !x.trim())) || scores.some(q => q.some(x => !Number.isInteger(x) || x < 0 || x > 100)))) {
+        setErrores(['Completa cada cuarto terminado con enteros entre 0 y 100.']); return;
+      }
+      if (cuartos > 0 && formulario.mercado !== 'COMPLETO' && Number(formulario.mercado.slice(1)) <= cuartos) {
+        setErrores(['Selecciona un cuarto posterior al corte observado o el total de regulación.']); return;
+      }
 
       if (props.deporte === 'EUROLIGA') {
         const erroresEuro: string[] = [];
@@ -218,7 +231,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         if (formulario.mercado !== 'COMPLETO' && Number(formulario.mercado.slice(1)) <= cuartos) erroresEuro.push('Selecciona un cuarto posterior al corte observado o el total de regulación.');
         if (erroresEuro.length) { setErrores(erroresEuro); return; }
         props.onAnalizar({ equipo_local: equipoLocalSeleccionado!.nombre, equipo_visitante: equipoVisitanteSeleccionado!.nombre,
-          mercado: formulario.mercado as PeticionEuro['mercado'], linea, partido_id: partidoSeleccionado?.id, parciales: scores });
+          mercado: formulario.mercado as PeticionEuro['mercado'], linea, partido_id: partidoSeleccionado?.id, parciales: scores }, formulario.ladoApuesta);
         return;
       }
 
@@ -233,8 +246,8 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         : undefined;
 
       // Validar cuotas
-      const tieneOver = cuotaOverValor !== undefined && esCuotaValida(cuotaOverValor);
-      const tieneUnder = cuotaUnderValor !== undefined && esCuotaValida(cuotaUnderValor);
+      const tieneOver = !esCorteNBA && cuotaOverValor !== undefined && esCuotaValida(cuotaOverValor);
+      const tieneUnder = !esCorteNBA && cuotaUnderValor !== undefined && esCuotaValida(cuotaUnderValor);
 
       // Validación UX: no permitir solo cuota del lado opuesto
       const soloLadoOpuesto =
@@ -278,7 +291,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         lado: ladoSeleccionado,
         modo_devig: modoDevig,
         // Contexto
-        temporadas: temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas : undefined,
+        temporadas: !esCorteNBA && temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas : undefined,
         partido_id: partidoSeleccionado?.id,
         temporada_id: partidoSeleccionado?.temporada_id
           ?? (temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined),
@@ -294,9 +307,14 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         return;
       }
 
-      props.onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
+      if (esCorteNBA) {
+        const live: PeticionAnalisisEnVivo = { ...peticion as PeticionAnalisis, marcador_q1: scores[0].join('-') };
+        if (cuartos >= 2) live.marcador_q2 = scores[1].join('-');
+        if (cuartos >= 3) live.marcador_q3 = scores[2].join('-');
+        props.onAnalizar(live, ladoSeleccionado);
+      } else props.onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, props, cargando, cuartos, parciales, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado]
+    [formulario, props, cargando, cuartos, parciales, esCorteNBA, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado]
   );
 
   useEffect(() => {
@@ -304,7 +322,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
       Boolean
     ) as string[];
 
-    if (deporte !== 'NBA' || ids.length === 0) {
+    if (deporte !== 'NBA' || cuartos > 0 || ids.length === 0) {
       setTemporadasDisponibles([]);
       setTemporadasSeleccionadas([]);
       setErrorTemporadas(null);
@@ -352,7 +370,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     return () => {
       activo = false;
     };
-  }, [deporte, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
+  }, [deporte, cuartos, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
 
   const toggleTemporada = useCallback((temporadaId: string) => {
     setTemporadasSeleccionadas((prev) =>
@@ -407,7 +425,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
             partidosDisponibles={partidosDisponibles}
-            modoRegistro={esEuroliga ? 'euroliga' : 'nba'}
+            modoRegistro={esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
             onActualizar={onActualizarPartidos}
           />
 
@@ -458,6 +476,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             deshabilitado={cargando}
             opciones={opcionesMercado}
             textoAyuda={textoAyudaMercado}
+            cuartosObservados={deporte === 'FUTBOL' ? 0 : cuartos}
           />
 
           {/* Línea con selector Over/Under */}
@@ -473,11 +492,11 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             placeholderLinea={esEuroliga ? (esJuegoCompleto ? 'Ej: 170.5' : 'Ej: 42.5') : undefined}
           />
 
-          {esEuroliga && <div className="space-y-3">
+          {deporte !== 'FUTBOL' && <div className="space-y-3">
             <label className="block etiqueta">Modo de análisis
               <select className="input-base w-full mt-2" value={cuartos} disabled={cargando} onChange={e => { setCuartos(Number(e.target.value)); onCambiarParametros?.(); setErrores([]); }}>
                 <option value={0}>Prepartido</option>
-                {[1, 2, 3].map(q => <option key={q} value={q}>Condicionado al cierre de Q{q}</option>)}
+                {[1, 2, 3].map(q => <option key={q} value={q}>Corte al cierre de Q{q}</option>)}
               </select>
             </label>
             {Array.from({ length: cuartos }, (_, i) => <div key={i} className="grid grid-cols-2 gap-2">
@@ -485,11 +504,12 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
                 <input type="number" min="0" max="100" step="1" disabled={cargando} className="input-base w-full mt-1" value={parciales[i][lado]} onChange={e => { setParciales(prev => prev.map((q, j) => j === i ? q.map((x, k) => k === lado ? e.target.value : x) as [string, string] : q)); onCambiarParametros?.(); setErrores([]); }} />
               </label>)}
             </div>)}
-            <p className="text-xs text-texto-secundario">{cuartos > 0 ? 'Puntos de cada cuarto completo, no acumulados. No admite reloj ni parciales del cuarto en curso.' : 'Cuartos de 10 minutos y total de 40 minutos, sin prórroga.'}</p>
+            <p className="text-xs text-texto-secundario">{cuartos > 0 ? 'Puntos de cada cuarto completo, no acumulados. No admite reloj ni parciales del cuarto en curso.' : esEuroliga ? 'Cuartos de 10 minutos y total de 40 minutos, sin prórroga.' : 'Análisis previo al partido; no utiliza marcadores observados.'}</p>
+            {esCorteNBA && <p className="text-xs text-texto-secundario">Ajuste de ritmo heurístico con el modelo cargado, sin cuotas ni reajuste por temporadas. Probabilidades no calibradas para este corte; 48 minutos de regulación, sin prórroga. Solo consulta: no registra apuestas ni predicciones prepartido.</p>}
           </div>}
 
           {/* Temporadas */}
-          {deporte === 'NBA' && <div className="space-y-2">
+          {deporte === 'NBA' && !esCorteNBA && <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                 Temporadas para el análisis
@@ -551,7 +571,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
           </div>}
 
           {/* Cuotas duales (Over/Under) */}
-          {!esEuroliga && <><InputCuotasDuales
+          {!esEuroliga && !esCorteNBA && <><InputCuotasDuales
             cuotaOver={formulario.cuotaOver}
             cuotaUnder={formulario.cuotaUnder}
             onCuotaOverChange={(valor) => actualizarCampo('cuotaOver', valor)}

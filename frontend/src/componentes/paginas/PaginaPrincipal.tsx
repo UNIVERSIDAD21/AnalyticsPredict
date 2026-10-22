@@ -16,7 +16,7 @@ import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
 import { ArrowLeft } from 'lucide-react';
 import { EstadoVacio, PanelesAnalisisBaloncesto } from '../organismos/PanelesAnalisisBaloncesto';
-import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
+import { LadoApuesta, PeticionAnalisisNBA, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
 
@@ -69,16 +69,20 @@ export function PaginaPrincipal() {
     lado: LadoApuesta;
     linea: number;
   } | null>(null);
-  const [ultimaPeticion, setUltimaPeticion] = useState<PeticionAnalisis | null>(null);
+  const [ultimaPeticion, setUltimaPeticion] = useState<PeticionAnalisisNBA | null>(null);
+  const [cuartosAnalisis, setCuartosAnalisis] = useState(0);
 
   const [tabActivo, setTabActivo] = useState<'analisis' | 'estadisticas'>('analisis');
   const [mostrarGuardar, setMostrarGuardar] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
   const [equipoHistorialId, setEquipoHistorialId] = useState<string | null>(null);
+  const invalidarParametros = useCallback(() => {
+    limpiarAnalisis(); setSeleccionUsuario(null); setUltimaPeticion(null); setMostrarGuardar(false);
+  }, [limpiarAnalisis]);
   // Se removió el panel de salud del sistema por requerimiento de producto.
 
   const seleccionCombinadaActual = useMemo<SeleccionCombinadaInput | null>(() => {
-    if (!resultado || !seleccionUsuario) return null;
+    if (!resultado || !seleccionUsuario || resultado.es_en_vivo) return null;
     const mercado = (resultado.metadata?.mercado || 'COMPLETO') as SeleccionCombinadaInput['mercado'];
     const detalle = resultado.mejor_apuesta_detalle;
     const analisisMercado = resultado.analisis_mercado;
@@ -325,6 +329,8 @@ export function PaginaPrincipal() {
                     analizar(peticion);
                   }}
                   cargando={estadoAnalisis === 'cargando'}
+                  onCambiarParametros={invalidarParametros}
+                  onCambiarModo={setCuartosAnalisis}
                   cargandoEquipos={false}
                 />
           }>
@@ -352,7 +358,7 @@ export function PaginaPrincipal() {
                     seleccionUsuario={seleccionUsuario}
                     equipoLocalId={ultimaPeticion?.equipo_local_id}
                     equipoVisitanteId={ultimaPeticion?.equipo_visitante_id}
-                    onGuardar={() => {
+                    onGuardar={resultado.es_en_vivo ? undefined : () => {
                       setMostrarGuardar(true);
                       setErrorGuardar(null);
                     }}
@@ -369,9 +375,9 @@ export function PaginaPrincipal() {
                 </div>
               )}
 
-              <div className="mt-4">
+              {cuartosAnalisis === 0 && !resultado?.es_en_vivo && <div className="mt-4">
                 <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
-              </div>
+              </div>}
           </PanelesAnalisisBaloncesto>
         )}
 
@@ -434,7 +440,7 @@ export function PaginaPrincipal() {
           </div>
         )}
 
-      {resultado && seleccionUsuario && (
+      {resultado && !resultado.es_en_vivo && seleccionUsuario && (
         <FormularioGuardarApuesta
           abierto={mostrarGuardar}
           resultado={resultado}

@@ -47,4 +47,25 @@ describe('formulario por dominio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }));
     expect(seleccionar).toHaveBeenCalledWith(null);
   });
+  it('NBA envía solo cuartos completos a la petición live y vuelve limpiamente a prepartido', async () => {
+    const analizar=vi.fn(), invalidar=vi.fn();
+    render(<FormularioAnalisis equipos={equipos} partidoActual={partido} partidosDisponibles={[partido]} onAnalizar={analizar} onCambiarParametros={invalidar} />);
+    await waitFor(() => expect(screen.getByRole('combobox', { name:'Equipo Local' })).toHaveValue('betis'));
+    fireEvent.change(screen.getByRole('combobox',{name:'Mercado'}),{target:{value:'COMPLETO'}});
+    fireEvent.change(screen.getByRole('spinbutton',{name:'Línea del análisis'}),{target:{value:'220.5'}});
+    fireEvent.change(screen.getByRole('combobox',{name:'Modo de análisis'}),{target:{value:'2'}});
+    expect(screen.queryByText('Temporadas para el análisis')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    expect(analizar).not.toHaveBeenCalled();
+    for (const [label,value] of [['Q1 local','28'],['Q1 visitante','30'],['Q2 local','25'],['Q2 visitante','24']]) fireEvent.change(screen.getByRole('spinbutton',{name:label}),{target:{value}});
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    expect(analizar).toHaveBeenLastCalledWith(expect.objectContaining({marcador_q1:'28-30',marcador_q2:'25-24',linea:220.5,partido_id:partido.id,temporadas:undefined,cuota_over:undefined}), 'OVER');
+    expect(analizar.mock.calls[0][0]).not.toHaveProperty('marcador_q3');
+    fireEvent.change(screen.getByRole('combobox',{name:'Modo de análisis'}),{target:{value:'0'}});
+    expect(screen.queryByRole('spinbutton',{name:'Q1 local'})).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    expect(analizar.mock.calls[1][0]).not.toHaveProperty('marcador_q1');
+    expect(invalidar).toHaveBeenCalled();
+  });
+
 });
