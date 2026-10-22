@@ -23,8 +23,9 @@ interface Props {
     lado: 'OVER' | 'UNDER';
     linea: number;
     cuota?: number;
-    probabilidad: number;
-    confianza: NivelConfianza;
+    probabilidad: number | null;
+    confianza: NivelConfianza | null;
+    esRecomendacion: boolean;
   };
 }
 
@@ -87,22 +88,29 @@ export function ModalGuardarApuestaFutbol({
               {recomendacion.lado} {recomendacion.linea}
             </span>
 
-            {recomendacion.cuota !== undefined && (
-              <>
-                <span className="text-texto-terciario">Cuota:</span>
-                <span className="text-texto-principal">
-                  {recomendacion.cuota.toFixed(2)}
-                </span>
-              </>
-            )}
+            <span className="text-texto-terciario">Registro:</span>
+            <span className="text-texto-principal">
+              {recomendacion.esRecomendacion ? 'Recomendación exacta' : 'Selección manual'}
+            </span>
+
+            <span className="text-texto-terciario">Cuota:</span>
+            <span className="text-texto-principal">
+              {recomendacion.cuota != null && recomendacion.cuota > 1
+                ? recomendacion.cuota.toFixed(2)
+                : 'N/D'}
+            </span>
 
             <span className="text-texto-terciario">Probabilidad:</span>
             <span className="text-texto-principal">
-              {(recomendacion.probabilidad * 100).toFixed(1)}%
+              {recomendacion.probabilidad === null
+                ? 'N/D'
+                : `${(recomendacion.probabilidad * 100).toFixed(1)}%`}
             </span>
 
             <span className="text-texto-terciario">Confianza:</span>
-            <BadgeConfianza nivel={recomendacion.confianza} />
+            {recomendacion.confianza
+              ? <BadgeConfianza nivel={recomendacion.confianza} />
+              : <span className="text-texto-principal">N/D</span>}
           </div>
         </div>
 

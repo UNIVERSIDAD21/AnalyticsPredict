@@ -427,6 +427,9 @@ class ApuestaRequest(BaseModel):
     linea: float = Field(gt=0)
     cuota: Optional[float] = Field(default=None, ge=0)
     stake: float = Field(gt=0)
+    probabilidad_sistema: Optional[float] = Field(default=None, ge=0, le=1)
+    confianza_sistema: Optional[Literal["MUY_ALTA", "ALTA", "MEDIA", "BAJA", "MUY_BAJA"]] = None
+    valor_esperado: Optional[float] = None
     casa_apuestas: Optional[str] = None
     notas: Optional[str] = None
 
@@ -475,9 +478,9 @@ class ApuestaResponse(BaseModel):
     cuota: float
     stake: float
     estado: Literal["PENDIENTE", "GANADA", "PERDIDA", "PUSH", "CANCELADA", "VOID"]
-    probabilidad_sistema: float
-    confianza: str
-    valor_esperado: float
+    probabilidad_sistema: Optional[float] = None
+    confianza: Optional[str] = None
+    valor_esperado: Optional[float] = None
     ganancia_potencial: float
     resultado: Optional[str] = None
     ganancia_real: Optional[float] = None

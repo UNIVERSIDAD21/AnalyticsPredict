@@ -444,6 +444,9 @@ export interface ApuestaFutbolRequest {
   linea: number;
   cuota: number;
   stake: number;
+  probabilidadSistema?: number | null;
+  confianzaSistema?: NivelConfianza | null;
+  valorEsperado?: number | null;
   casaApuestas?: string;
   notas?: string;
 }
@@ -462,9 +465,9 @@ export interface ApuestaFutbol {
   stake: number;
   estado: EstadoApuesta;
   // Análisis del sistema
-  probabilidadSistema: number;
-  confianza: NivelConfianza;
-  valorEsperado: number;
+  probabilidadSistema: number | null;
+  confianza: NivelConfianza | null;
+  valorEsperado: number | null;
   gananciasPotenciales: number;
   // Resultado (si resuelto)
   resultadoReal?: number;

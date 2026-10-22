@@ -8,6 +8,16 @@ Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
 [Corrección y límites](../reactivacion_single_user/VISIBILIDAD_CALENDARIO_FUTBOL_EN_CURSO_2026-10-22.md): `/api/futbol/partidos/proximos` incluye el día local completo y estados de juego no terminales. Juventus–Stade Rennais ya aparece en el selector aunque su hora de inicio haya pasado. El estado del registro sigue siendo la fuente mostrada; la aplicación no recibe ni inventa marcador/estado live automáticamente.
 
+## Guardado manual de apuestas de fútbol — 2026-10-22
+
+[Diagnóstico y validación](../reactivacion_single_user/REGISTRO_MANUAL_APUESTAS_FUTBOL_2026-10-22.md): una selección válida se puede
+guardar en Bitácora aunque el análisis no la devuelva como recomendación exacta.
+Probabilidad disponible del objetivo se conserva; confianza y valor esperado no
+disponibles permanecen N/D. La cuota registrada corresponde al lado elegido. Las
+lecturas de `apuestas_futbol` conservan NULLs y la bitácora unificada ya incorpora
+esa tabla. Pruebas focalizadas, lint y build aprobados; no se realizó escritura
+productiva.
+
 ## Modos NBA y resultados compartidos — 2026-10-22
 
 [Uso, método y validación](../reactivacion_single_user/MODOS_NBA_Y_RESULTADOS_2026-10-22.md): NBA añade prepartido y cortes completos Q1–Q3,

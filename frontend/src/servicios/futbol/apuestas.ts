@@ -69,9 +69,13 @@ function transformarApuesta(data: Record<string, unknown>): ApuestaFutbol {
     stake: Number(data.stake || 0),
     estado: (data.estado as EstadoApuesta) || 'PENDIENTE',
     // Análisis del sistema
-    probabilidadSistema: Number(data.probabilidad_sistema || data.probabilidad || 0),
-    confianza: (data.confianza as NivelConfianza) || 'MEDIA',
-    valorEsperado: Number(data.valor_esperado || 0),
+    probabilidadSistema: data.probabilidad_sistema == null && data.probabilidad == null
+      ? null
+      : Number(data.probabilidad_sistema ?? data.probabilidad),
+    confianza: data.confianza == null && data.confianza_sistema == null
+      ? null
+      : String(data.confianza ?? data.confianza_sistema) as NivelConfianza,
+    valorEsperado: data.valor_esperado == null ? null : Number(data.valor_esperado),
     gananciasPotenciales: Number(gananciaPotencial || 0),
     // Resultado
     resultadoReal:
@@ -121,6 +125,9 @@ export async function crearApuesta(
       linea: apuesta.linea,
       cuota: apuesta.cuota,
       stake: apuesta.stake,
+      probabilidad_sistema: apuesta.probabilidadSistema,
+      confianza_sistema: apuesta.confianzaSistema,
+      valor_esperado: apuesta.valorEsperado,
       casa_apuestas: apuesta.casaApuestas,
       notas: apuesta.notas,
     };

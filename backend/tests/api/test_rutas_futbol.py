@@ -406,6 +406,82 @@ class TestApuestas:
 
         assert response.status_code in [400, 422]
 
+    @pytest.mark.parametrize(
+        ("probabilidad_sistema", "confianza_sistema", "valor_esperado"),
+        [(None, None, None), (0.62, "MEDIA", 0.14)],
+    )
+    def test_guardar_seleccion_manual_con_snapshot_analitico_opcional(
+        self, client, mock_pool, probabilidad_sistema, confianza_sistema, valor_esperado,
+    ):
+        """Registra selección manual y conserva métricas reales o N/D sin inventarlas."""
+        partido_id = uuid4()
+        fecha_partido = datetime.now() + timedelta(days=1)
+        fecha_creacion = datetime.now()
+        cursor_mock = MagicMock()
+        cursor_mock.fetchone.side_effect = [
+            {
+                "partido_id_detalle": partido_id,
+                "fecha_partido": fecha_partido,
+                "partido_estado": "PROGRAMADO",
+                "jornada": 10,
+                "equipo_local_id": uuid4(),
+                "equipo_visitante_id": uuid4(),
+                "competicion_nombre": "Liga sintética",
+                "equipo_local_nombre": "Local sintético",
+                "equipo_visitante_nombre": "Visitante sintético",
+                "goles_local": None,
+                "goles_visitante": None,
+            },
+            {"fecha_creacion": fecha_creacion},
+        ]
+        cursor_mock.fetchall.return_value = [
+            {"column_name": columna}
+            for columna in (
+                "id", "partido_id", "mercado", "lado", "linea", "stake", "cuota",
+                "resultado", "probabilidad_sistema", "confianza_sistema", "valor_esperado",
+                "ganancia_potencial", "notas", "creado_en",
+            )
+        ]
+        conn_mock = MagicMock()
+        conn_mock.__enter__ = MagicMock(return_value=conn_mock)
+        conn_mock.__exit__ = MagicMock(return_value=False)
+        conn_mock.cursor.return_value.__enter__ = MagicMock(return_value=cursor_mock)
+        conn_mock.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        mock_pool.connection.return_value = conn_mock
+
+        response = client.post(
+            "/api/futbol/apuestas",
+            json={
+                "partido_id": str(partido_id),
+                "mercado": "GOLES_FT",
+                "lado": "UNDER",
+                "linea": 2.5,
+                "cuota": 1.84,
+                "stake": 25,
+                "probabilidad_sistema": probabilidad_sistema,
+                "confianza_sistema": confianza_sistema,
+                "valor_esperado": valor_esperado,
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["probabilidad_sistema"] == probabilidad_sistema
+        assert data["confianza"] == confianza_sistema
+        assert data["valor_esperado"] == valor_esperado
+        insert_sql, insert_values = cursor_mock.execute.call_args_list[-1].args
+        insert_columns = insert_sql.split("(", 1)[1].split(")", 1)[0].split(", ")
+        persisted_values = dict(zip(insert_columns, insert_values))
+        assert data["id"] == persisted_values["id"]
+        assert persisted_values["probabilidad_sistema"] == probabilidad_sistema
+        assert persisted_values["confianza_sistema"] == confianza_sistema
+        assert persisted_values["valor_esperado"] == valor_esperado
+        assert persisted_values["mercado"] == "GOLES_FT"
+        assert persisted_values["lado"] == "UNDER"
+        assert persisted_values["cuota"] == 1.84
+        assert persisted_values["stake"] == 25
+        conn_mock.commit.assert_called_once()
+
     def test_validar_mercados_corners(self):
         """Verifica que los mercados de corners son válidos."""
         from api.rutas_apuestas_futbol import MERCADOS_VALIDOS

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Guardado manual de apuestas fútbol — 2026-10-22
+
+- Habilitar guardar la selección válida de fútbol aunque no exista una recomendación exacta; el modal diferencia registro manual de recomendación.
+- Persistir la cuota del lado Over/Under seleccionado y conservar la probabilidad disponible del objetivo. Confianza/EV ausentes quedan NULL en vez de usar 0,5/BAJA o EV inferido.
+- `apuestas_futbol` continúa alimentando la bitácora unificada. Validación sintética: 27 pruebas backend, 4 frontend, lint/build; sin POST productivo.
+- Detalle: `docs/reactivacion_single_user/REGISTRO_MANUAL_APUESTAS_FUTBOL_2026-10-22.md`.
+
 ## Calendario de fútbol: visibilidad durante el día del partido — 2026-10-22
 
 - El endpoint de próximos partidos empieza ahora a medianoche de `America/Bogota`, no en la hora actual, y conserva estados no terminales de partido (incluidos `EN_VIVO`, sus fases y penales). Así, un fixture no desaparece del selector al pasar su hora de inicio.

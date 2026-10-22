@@ -15,6 +15,7 @@ import { usePartidosFutbol } from '../../hooks';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
+import { prepararApuestaGuardableFutbol } from '../../utilidades/seleccionApuestaFutbol';
 import { archivarPartidoGuardado, guardarPartidoParaRevisar, listarPartidosGuardados } from '../../servicios/bitacora';
 import type {
   AnalisisFutbolResponse,
@@ -66,10 +67,12 @@ interface RenderCanonicoFutbol {
     lado: 'OVER' | 'UNDER';
     linea: number;
     cuota: number;
-    probabilidad: number;
-    confianza: RecomendacionApuesta['confianza'];
+    probabilidad: number | null;
+    confianza: RecomendacionApuesta['confianza'] | null;
+    valorEsperado: number | null;
     trazabilidad: string;
-  } | null;
+    tieneRecomendacion: boolean;
+  };
 }
 
 function resolverMercadoCanonicoFutbol(
@@ -297,20 +300,20 @@ export function PaginaFutbol() {
       && Math.abs(rec.linea - seleccionCanonicaActiva.linea) < 1e-9
     )) ?? null;
 
-    const cuotaCanonica = seleccionCanonicaActiva.cuotas.over
-      ?? seleccionCanonicaActiva.cuotas.under
-      ?? recomendacion?.cuota
-      ?? recomendacion?.cuotaOver
-      ?? recomendacion?.cuotaUnder
-      ?? 0;
+    const guardable = prepararApuestaGuardableFutbol(analisis, {
+      mercado: seleccionCanonicaActiva.mercadoObjetivo,
+      lado: seleccionCanonicaActiva.lado,
+      linea: seleccionCanonicaActiva.linea,
+      cuotas: seleccionCanonicaActiva.cuotas,
+      trazabilidad: seleccionCanonicaActiva.trazabilidad,
+    });
+    const cuotaCanonica = guardable.cuota;
 
     const periodoCombinada: Mercado = seleccionCanonicaActiva.periodo === '1T'
       ? 'Q1'
       : (seleccionCanonicaActiva.periodo === '2T' ? 'Q2' : 'COMPLETO');
 
-    const probabilidadCanonica = resultado.mejor_apuesta_detalle?.probabilidad_sistema
-      ?? recomendacion?.probabilidad
-      ?? 0;
+    const probabilidadCanonica = guardable.probabilidad ?? 0;
     const mediaCanonica = resultado.mejor_apuesta_detalle?.prediccion_media
       ?? analisis.objetivo.mediaObjetivo
       ?? null;
@@ -347,17 +350,9 @@ export function PaginaFutbol() {
       mercadoObjetivo: analisis.objetivo,
       resultado,
       combinada,
-      guardar: recomendacion
-        ? {
-            mercado: seleccionCanonicaActiva.mercadoObjetivo,
-            lado: seleccionCanonicaActiva.lado,
-            linea: seleccionCanonicaActiva.linea,
-            cuota: cuotaCanonica,
-            probabilidad: probabilidadCanonica,
-            confianza: recomendacion.confianza,
-            trazabilidad: seleccionCanonicaActiva.trazabilidad.idSeleccion,
-          }
-        : null,
+      guardar: {
+        ...guardable,
+      },
     };
   }, [analisis, h2hPartidos, historialLocal, historialVisitante, partidoSeleccionado, seleccionCanonicaActiva]);
 
@@ -524,7 +519,10 @@ export function PaginaFutbol() {
         linea: renderCanonico.guardar.linea,
         cuota: renderCanonico.guardar.cuota,
         stake,
-        notas: `Guardado desde render canónico fútbol (${renderCanonico.guardar.trazabilidad})`,
+        probabilidadSistema: renderCanonico.guardar.probabilidad,
+        confianzaSistema: renderCanonico.guardar.confianza,
+        valorEsperado: renderCanonico.guardar.valorEsperado,
+        notas: `${renderCanonico.guardar.tieneRecomendacion ? 'Recomendación exacta' : 'Selección manual'} desde análisis fútbol (${renderCanonico.guardar.trazabilidad})`,
       });
       setMostrarGuardar(false);
       agregarToast({ titulo: 'Apuesta guardada', mensaje: 'Se registró en bitácora.', tipo: 'success' });
@@ -652,13 +650,8 @@ export function PaginaFutbol() {
                   seleccionUsuario={{ lado: renderCanonico.seleccion.lado, linea: renderCanonico.seleccion.linea }}
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
-                  onGuardar={renderCanonico.guardar ? () => setMostrarGuardar(true) : undefined}
+                  onGuardar={() => setMostrarGuardar(true)}
                 />
-                {!renderCanonico.guardar && (
-                  <p className="text-sm text-texto-secundario">
-                    Este análisis no ofrece una selección registrable en bitácora.
-                  </p>
-                )}
 
                 {cargandoContexto && (
                   <Tarjeta className="flex items-center justify-center py-12">
@@ -701,6 +694,7 @@ export function PaginaFutbol() {
             cuota: renderCanonico.guardar.cuota,
             probabilidad: renderCanonico.guardar.probabilidad,
             confianza: renderCanonico.guardar.confianza,
+            esRecomendacion: renderCanonico.guardar.tieneRecomendacion,
           }}
         />
       )}

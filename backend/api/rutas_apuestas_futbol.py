@@ -217,15 +217,6 @@ def _calcular_resultado_real(mercado: str, partido: dict) -> Optional[float]:
     return mapping.get(mercado)
 
 
-def _determinar_confianza(probabilidad: float) -> str:
-    """Determina el nivel de confianza basado en probabilidad."""
-    if probabilidad >= 0.75:
-        return "ALTA"
-    elif probabilidad >= 0.55:
-        return "MEDIA"
-    return "BAJA"
-
-
 @router.post(
     "",
     response_model=ApuestaResponse,
@@ -316,10 +307,12 @@ async def crear_apuesta(
                 )
                 col_cuota = _resolver_columna(columnas, "cuota", "odds", "cuota_decimal")
 
-                # Calcular probabilidad del sistema (simplificado)
-                probabilidad_sistema = 0.5
-                valor_esperado = (probabilidad_sistema * cuota) - 1 if cuota else 0.0
-                confianza = _determinar_confianza(probabilidad_sistema)
+                # Las métricas analíticas solo se persisten cuando vienen de una
+                # recomendación coincidente del análisis. Un registro manual no
+                # debe inventar probabilidad, confianza ni valor esperado.
+                probabilidad_sistema = request.probabilidad_sistema
+                valor_esperado = request.valor_esperado
+                confianza = request.confianza_sistema
                 ganancia_potencial = request.stake * (cuota - 1) if cuota else 0.0
 
                 apuesta_id = uuid4()
@@ -576,9 +569,15 @@ async def listar_apuestas(
                             cuota=float(fila.get("cuota") or 0),
                             stake=float(fila["stake"]),
                             estado=fila.get("estado") or "PENDIENTE",
-                            probabilidad_sistema=float(fila.get("probabilidad_sistema") or 0),
-                            confianza=fila.get("confianza") or "MEDIA",
-                            valor_esperado=float(fila.get("valor_esperado") or 0),
+                            probabilidad_sistema=(
+                                float(fila["probabilidad_sistema"])
+                                if fila.get("probabilidad_sistema") is not None else None
+                            ),
+                            confianza=fila.get("confianza"),
+                            valor_esperado=(
+                                float(fila["valor_esperado"])
+                                if fila.get("valor_esperado") is not None else None
+                            ),
                             ganancia_potencial=float(fila.get("ganancia_potencial") or 0),
                             resultado=fila.get("resultado"),
                             ganancia_real=float(fila["ganancia_real"]) if fila.get("ganancia_real") is not None else None,
@@ -781,9 +780,15 @@ async def obtener_apuesta(
                     cuota=float(fila.get("cuota") or 0),
                     stake=float(fila["stake"]),
                     estado=fila.get("estado") or "PENDIENTE",
-                    probabilidad_sistema=float(fila.get("probabilidad_sistema") or 0),
-                    confianza=fila.get("confianza") or "MEDIA",
-                    valor_esperado=float(fila.get("valor_esperado") or 0),
+                    probabilidad_sistema=(
+                        float(fila["probabilidad_sistema"])
+                        if fila.get("probabilidad_sistema") is not None else None
+                    ),
+                    confianza=fila.get("confianza"),
+                    valor_esperado=(
+                        float(fila["valor_esperado"])
+                        if fila.get("valor_esperado") is not None else None
+                    ),
                     ganancia_potencial=float(fila.get("ganancia_potencial") or 0),
                     resultado=fila.get("resultado"),
                     ganancia_real=float(fila["ganancia_real"]) if fila.get("ganancia_real") is not None else None,
