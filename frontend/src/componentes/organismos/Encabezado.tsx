@@ -8,6 +8,7 @@ import { SelectorDeporte } from '../atomos/SelectorDeporte';
 const enlaces = [
   { ruta: '/dashboard', etiqueta: 'Dashboard', Icono: BarChart3 },
   { ruta: '/app', etiqueta: 'NBA', Icono: Target },
+  { ruta: '/euroliga', etiqueta: 'Euroliga', Icono: Target },
   { ruta: '/futbol', etiqueta: 'Fútbol', Icono: Activity },
   { ruta: '/bitacora', etiqueta: 'Bitácora', Icono: BookOpen },
   { ruta: '/configuracion', etiqueta: 'Configuración', Icono: Settings },
@@ -17,9 +18,10 @@ const enlaces = [
 export function Encabezado() {
   const navegar = useNavigate();
   const { pathname } = useLocation();
-  const { esFutbol, cambiarDeporte } = useDeporte();
+  const { deporteActivo, cambiarDeporte } = useDeporte();
   useEffect(() => {
-    if (pathname.startsWith('/futbol')) cambiarDeporte('FUTBOL', false);
+    if (pathname.startsWith('/euroliga')) cambiarDeporte('EUROLIGA', false);
+    else if (pathname.startsWith('/futbol')) cambiarDeporte('FUTBOL', false);
     else if (pathname === '/app' || pathname.startsWith('/admin/nba')) cambiarDeporte('NBA', false);
   }, [pathname, cambiarDeporte]);
 
@@ -36,9 +38,9 @@ export function Encabezado() {
               <Icono className="w-4 h-4" />{etiqueta}
             </button>
           ))}
-          <SelectorDeporte tamaño="sm" className="hidden sm:flex" onChangeDeporte={(deporte) => navegar(deporte === 'NBA' ? '/app' : '/futbol')} />
+          <SelectorDeporte tamaño="sm" className="hidden sm:flex" onChangeDeporte={(deporte) => navegar(deporte === 'NBA' ? '/app' : deporte === 'EUROLIGA' ? '/euroliga' : '/futbol')} />
         </nav>
-        <span className="sr-only">Deporte actual: {esFutbol ? 'Fútbol' : 'NBA'}</span>
+        <span className="sr-only">Deporte actual: {deporteActivo}</span>
       </div>
     </header>
   );

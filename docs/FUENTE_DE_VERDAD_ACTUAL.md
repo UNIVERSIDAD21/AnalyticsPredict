@@ -16,6 +16,20 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 
 ## Prioridades activas
 
+### Predictor Euroliga integrado — 2026-10-21
+
+[Uso, método y límites](reactivacion_single_user/PREDICTOR_EUROLIGA_2026-10-21.md). Pantalla `/euroliga`, API,
+Ridge y artefacto propios; probabilidades RAW de cuartos/total de 40 min sin OT,
+condicionamiento a Q1–Q3 completos y journal separado. 2.591 finales hasta21oct tras
+una alta oficial 90–81 Hapoel–Virtus con rollback/postflight. NBA 2123 intacto.
+Euroliga `euro-f9cc361e255b91196acc`, 29 entidades históricas,69 fixtures reconocibles.
+EVAL 327/463: MAE total 15,9832 vs media 15,6727; sin superioridad acreditada ni calibración
+del refit final. Cohorte 69/0 abstenciones, 63 anteriores por fecha, 0 outcomes; 6 del 22oct
+sin hora de kickoff no acreditan prospectiva. 994 backend/42 frontend/lint/build y
+visual desktop/móvil aprobados. Sin apuestas/registros NBA ni cron. Funcionalidad
+integrada; eficacia NO_CERTIFICADA y no demostrada equivalente a NBA.
+
+
 - **Aplicación puntual de matriz WEB — 2026-10-21:** por instrucción expresa del Jefe se persistieron internamente 11.991 campos NULL-only de 2.185 partidos de fútbol, con categoría `WEB`; proveedor y URL originales permanecen por observación. Se verificaron 4.559/4.559 identidades canónicas, respaldo privado, ensayo con rollback y postflight independiente. El censo bajó de 4.559/24.593 partidos y 26.144 celdas con NULL a **2.497 partidos/14.153 celdas**; 2.062 partidos pasaron a seis métricas pobladas. Se conservaron los valores no nulos, FT, apuestas y modelos; sigue habiendo **0 modelos de fútbol activos**. El Jefe indicó dejar el residual como NULL. No se consultaron páginas en esta aplicación ni se revalidó cada cifra contra su URL. El propietario suministró el lote y ordenó su uso privado; esto es una excepción de alcance puntual, no acredita licencia de los proveedores ni habilita nuevas extracciones/importaciones. Acta y hashes privados en `Carpeta de Entregas de Borlty/APLICACION_STATS_FUTBOL_WEB_2026-10-21/`.
 
 - **Calendario de 30 días y estado de recuperación — 2026-10-21:** [corte y límites](reactivacion_single_user/PUESTA_EN_MARCHA_BASE_Y_CALENDARIOS_2026-10-21.md). Verificados 232 fixtures NBA (114 altas), 69 EuroLeague (69 altas) y 256 partidos de fútbol ya existentes en ocho competiciones; dos fechas futuras de fútbol actualizadas en las mismas filas. Los endpoints sirven 256 partidos de fútbol y 301 de baloncesto en el horizonte. Sin actualización automática. El censo estadístico READ ONLY de 15:19 UTC conserva 4.603/24.593 finales FT con NULL en seis métricas (26.414 celdas); no se añadieron estadísticas históricas en esta pasada. Términos públicos permiten uso interno de SportsAPI Pro Free, pero el GET autenticado exacto devolvió 403 y se detuvo sin reintento; UEFA se excluyó por sus términos contra recopilación para bases/software. Calendario listo en el horizonte verificado, base histórica incompleta y sistema NO CERTIFICADO.

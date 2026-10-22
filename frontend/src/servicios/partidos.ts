@@ -62,13 +62,14 @@ export async function obtenerPartidosHoy(): Promise<PartidoResumen[]> {
  */
 export async function obtenerPartidosProximos(
   dias: number = 7,
-  limite: number = 500
+  limite: number = 500,
+  competicion?: 'nba' | 'euroleague'
 ): Promise<PartidoResumen[]> {
   try {
     const diasNormalizados = Number.isFinite(dias) ? Math.min(Math.max(dias, 1), 30) : 7;
     const limiteNormalizado = Number.isFinite(limite) ? Math.min(Math.max(limite, 1), 500) : 500;
     const respuesta = await clienteAPI.get<RespuestaPartidos>('/api/partidos/proximos', {
-      params: { dias: diasNormalizados, limite: limiteNormalizado },
+      params: { dias: diasNormalizados, limite: limiteNormalizado, ...(competicion ? { competicion } : {}) },
     });
 
     if (!respuesta.data.exito) {

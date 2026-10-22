@@ -19,7 +19,7 @@ import {
 /**
  * Deportes disponibles en la aplicación
  */
-export type Deporte = 'NBA' | 'FUTBOL';
+export type Deporte = 'NBA' | 'EUROLIGA' | 'FUTBOL';
 
 /**
  * Tipo del contexto de deporte
@@ -52,6 +52,7 @@ const STORAGE_KEY = 'deporte_activo';
  */
 const RUTAS_BASE: Record<Deporte, string> = {
   NBA: '/app',
+  EUROLIGA: '/euroliga',
   FUTBOL: '/futbol',
 };
 
@@ -60,6 +61,7 @@ const RUTAS_BASE: Record<Deporte, string> = {
  */
 function detectarDeporteDesdeURL(): Deporte {
   const pathname = window.location.pathname;
+  if (pathname.startsWith('/euroliga')) return 'EUROLIGA';
   if (pathname.startsWith('/futbol')) {
     return 'FUTBOL';
   }
@@ -71,13 +73,9 @@ function detectarDeporteDesdeURL(): Deporte {
  */
 function obtenerDeporteInicial(): Deporte {
   // Regla de producto: al iniciar siempre caer en NBA (Análisis).
-  // Solo respetar FUTBOL cuando la URL explícitamente está en /futbol.
+  // Respetar Fútbol/Euroliga cuando la URL selecciona explícitamente su módulo.
   const deporteURL = detectarDeporteDesdeURL();
-  if (deporteURL === 'FUTBOL') {
-    return 'FUTBOL';
-  }
-
-  return 'NBA';
+  return deporteURL;
 }
 
 // ══════════════════════════════════════════════════════════════

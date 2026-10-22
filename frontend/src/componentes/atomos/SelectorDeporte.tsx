@@ -33,6 +33,7 @@ const CONFIGURACION_DEPORTES: Record<Deporte, ConfiguracionDeporte> = {
     etiqueta: 'NBA',
     color: 'neon-cyan',
   },
+  EUROLIGA: { icono: '🏀', etiqueta: 'EUROLIGA', color: 'neon-cyan' },
   FUTBOL: {
     icono: '⚽',
     etiqueta: 'FÚTBOL',

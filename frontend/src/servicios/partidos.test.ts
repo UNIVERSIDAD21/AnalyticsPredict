@@ -27,3 +27,9 @@ it('limita los parámetros a los rangos aceptados por la API', async () => {
     params: { dias: 30, limite: 500 },
   });
 });
+
+it('permite aislar el selector NBA sin cambiar el calendario general', async () => {
+  const get = vi.spyOn(clienteAPI, 'get').mockResolvedValue({ data: { exito: true, partidos: [], total: 0 } });
+  await obtenerPartidosProximos(7, 500, 'nba');
+  expect(get).toHaveBeenCalledWith('/api/partidos/proximos', { params: { dias: 7, limite: 500, competicion: 'nba' } });
+});

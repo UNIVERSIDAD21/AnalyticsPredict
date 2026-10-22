@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 const PaginaPrincipal = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaPrincipal')).PaginaPrincipal }));
+const PaginaEuroliga = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaEuroliga')).PaginaEuroliga }));
 const PaginaOperacion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaOperacion')).PaginaOperacion }));
 const PaginaDashboardUsuario = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaDashboardUsuario')).PaginaDashboardUsuario }));
 const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBitacora')).PaginaBitacora }));
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/dashboard" element={<PaginaDashboardUsuario />} />
           <Route path="/operacion" element={<PaginaOperacion />} />
           <Route path="/app" element={<PaginaPrincipal />} />
+          <Route path="/euroliga" element={<PaginaEuroliga />} />
           <Route path="/bitacora" element={<PaginaBitacora />} />
           <Route path="/configuracion" element={<PaginaConfiguracion />} />
           <Route path="/admin/nba-analysis" element={<PaginaAnalisisNbaAdmin />} />

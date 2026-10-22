@@ -1,0 +1,97 @@
+"""Contratos exclusivos Euroliga: análisis neutral y trazabilidad sin DML."""
+from datetime import datetime, timedelta, timezone
+import logging
+from typing import Annotated, Literal
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, ConfigDict, Field
+
+from motor.euroliga import cargar, final_valido, normalizar_nombre, predecir
+from servicios.predictor_euroliga import contexto, historial, leer_datos, registrar, resumir_fixture
+
+router = APIRouter(prefix="/api/euroliga", tags=["Predictor Euroliga"])
+logger = logging.getLogger(__name__)
+
+
+class PeticionEuroliga(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    equipo_local: str = Field(min_length=2, max_length=120)
+    equipo_visitante: str = Field(min_length=2, max_length=120)
+    mercado: Literal["Q1", "Q2", "Q3", "Q4", "COMPLETO"] = "COMPLETO"
+    linea: float = Field(gt=0, le=600)
+    partido_id: UUID | None = None
+    parciales: list[tuple[Annotated[int, Field(strict=True, ge=0, le=100)], Annotated[int, Field(strict=True, ge=0, le=100)]]] = Field(default_factory=list, max_length=3)
+
+
+def modelo_actual():
+    try:
+        return cargar()
+    except (RuntimeError, ValueError, KeyError, OSError) as exc:
+        logger.warning("Modelo Euroliga no disponible: %s", type(exc).__name__)
+        raise HTTPException(503, "Modelo Euroliga no disponible; revisar publicación offline") from exc
+
+
+@router.get("/estado")
+def estado():
+    m = modelo_actual()
+    return {"exito": True, "dominio": m["dominio"], "version": m["version"], "corte_datos": m["fecha_max"],
+            "fit_completed_at": m["fit_completed_at"], "partidos": m["partidos_entrenamiento"],
+            "equipos": len(m["entidades"]), "dataset_sha256": m["dataset_sha256"],
+            "certificacion": m["certificacion"], "calibrador": None, "incluye_ot": False,
+            "min_partidos_equipo": m["min_partidos_equipo"], "validacion": m["validacion"]}
+
+
+@router.get("/equipos")
+def equipos():
+    m = modelo_actual()
+    return {"exito": True, "equipos": [{**v, "muestras": m["muestras_equipo"][k],
+             "elegible": m["muestras_equipo"][k] >= m["min_partidos_equipo"]} for k, v in sorted(m["catalogo"].items())]}
+
+
+@router.get("/partidos")
+def partidos(dias: int = Query(30, ge=1, le=60)):
+    hoy = datetime.now(timezone.utc).date()
+    fin = hoy + timedelta(days=dias)
+    filas = leer_datos()
+    resultados = [resumir_fixture(r) for r in filas if r["valido"] is True and hoy.isoformat() <= str(r["fecha_partido"])[:10] <= fin.isoformat() and not final_valido(r)]
+    finales = [str(r["fecha_partido"])[:10] for r in filas if final_valido(r)]
+    return {"exito": True, "partidos": resultados, "total": len(resultados), "ultimo_final_bd": max(finales) if finales else None,
+            "observado_en": datetime.now(timezone.utc).isoformat(), "zona_fechas": "fecha canónica de competición; sin hora de kickoff"}
+
+
+@router.post("/analizar")
+def analizar(p: PeticionEuroliga):
+    m = modelo_actual()
+    fixture = None
+    filas = leer_datos()
+    if p.partido_id:
+        fixture = next((r for r in filas if str(r["id"]) == str(p.partido_id)), None)
+        if not fixture or fixture["valido"] is not True:
+            raise HTTPException(422, "Fixture no pertenece a Euroliga válida")
+        if any(normalizar_nombre(fixture[k]) != normalizar_nombre(nombre) for k, nombre in (("local", p.equipo_local), ("visitante", p.equipo_visitante))):
+            raise HTTPException(422, "Equipos/localía no coinciden con el fixture Euroliga")
+        if final_valido(fixture) or str(fixture["fecha_partido"])[:10] < datetime.now(timezone.utc).date().isoformat():
+            raise HTTPException(422, "Fixture finalizado o pasado: usar evaluación offline, no pronóstico prepartido")
+        if str(fixture["fecha_partido"])[:10] <= m["fecha_max"]:
+            raise HTTPException(422, "Fixture no es posterior al corte del modelo")
+    try:
+        resultado = predecir(m, p.equipo_local, p.equipo_visitante, p.mercado, p.linea, [list(q) for q in p.parciales])
+        corte = str(fixture["fecha_partido"])[:10] if fixture else (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
+        resultado["contexto"] = contexto(filas, p.equipo_local, p.equipo_visitante, corte)
+        resultado["ultimo_final_bd"] = max((str(r["fecha_partido"])[:10] for r in filas if final_valido(r)), default=None)
+        if resultado["ultimo_final_bd"] and resultado["ultimo_final_bd"] > m["fecha_max"]:
+            resultado["advertencias"].append("La base tiene finales posteriores al modelo; publicar un refit explícito para incorporarlos.")
+        if (datetime.now(timezone.utc).date() - datetime.fromisoformat(m["fecha_max"]).date()).days > 3:
+            resultado["advertencias"].append("Histórico del modelo con más de tres días de antigüedad; frescura de ronda no acreditada.")
+        return {"exito": True, "resultado": registrar(resultado, fixture)}
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except OSError as exc:
+        logger.error("No se pudo conservar análisis Euroliga: %s", type(exc).__name__)
+        raise HTTPException(503, "No se pudo conservar la trazabilidad del análisis") from exc
+
+
+@router.get("/historial")
+def consultar_historial(limite: int = Query(20, ge=1, le=100)):
+    return {"exito": True, "analisis": historial(limite)}

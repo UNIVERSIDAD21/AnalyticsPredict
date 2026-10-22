@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional, List
+from typing import Optional, List, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -80,6 +80,7 @@ def _consultar_partidos(
     solo_futuros: bool = False,
     solo_finalizados: bool = False,
     limite: int = 50,
+    competicion: Optional[str] = None,
 ) -> RespuestaPartidos:
     """
     Función interna para consultar partidos.
@@ -97,6 +98,12 @@ def _consultar_partidos(
     # Construir query
     condiciones = ["p.fecha_partido >= %s", "p.fecha_partido <= %s"]
     parametros: List = [fecha_desde, fecha_hasta]
+
+    if competicion:
+        if competicion not in ("nba", "euroleague"):
+            raise HTTPException(422, "Competición de baloncesto no soportada")
+        condiciones.append("p.valido IS TRUE AND EXISTS (SELECT 1 FROM competiciones_baloncesto cb WHERE cb.id=p.competicion_id AND cb.codigo=%s)")
+        parametros.append(competicion)
 
     if equipo_id:
         condiciones.append("(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)")
@@ -265,6 +272,7 @@ async def listar_partidos(
         False, description="Solo partidos con resultado"
     ),
     limite: int = QueryParam(50, ge=1, le=200, description="Máximo de resultados"),
+    competicion: Optional[Literal["nba", "euroleague"]] = None,
 ) -> RespuestaPartidos:
     """Lista partidos con filtros."""
     return _consultar_partidos(
@@ -274,6 +282,7 @@ async def listar_partidos(
         solo_futuros=solo_futuros,
         solo_finalizados=solo_finalizados,
         limite=limite,
+        competicion=competicion,
     )
 
 
@@ -298,6 +307,7 @@ async def partidos_hoy() -> RespuestaPartidos:
 async def partidos_proximos(
     dias: int = QueryParam(7, ge=1, le=30, description="Días hacia adelante"),
     limite: int = QueryParam(50, ge=1, le=500, description="Máximo de resultados"),
+    competicion: Optional[Literal["nba", "euroleague"]] = None,
 ) -> RespuestaPartidos:
     """Obtiene partidos próximos."""
     hoy = obtener_fecha_nba_hoy()
@@ -306,6 +316,7 @@ async def partidos_proximos(
         fecha_hasta=hoy + timedelta(days=dias),
         solo_futuros=True,
         limite=limite,
+        competicion=competicion,
     )
 
 

@@ -4,6 +4,20 @@
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
+## Predictor Euroliga integrado — 2026-10-21
+
+[Uso, método y límites](../reactivacion_single_user/PREDICTOR_EUROLIGA_2026-10-21.md). Pantalla `/euroliga`, API,
+Ridge y artefacto propios; probabilidades RAW de cuartos/total de 40 min sin OT,
+condicionamiento a Q1–Q3 completos y journal separado. 2.591 finales hasta21oct tras
+una alta oficial 90–81 Hapoel–Virtus con rollback/postflight. NBA 2123 intacto.
+Euroliga `euro-f9cc361e255b91196acc`, 29 entidades históricas,69 fixtures reconocibles.
+EVAL 327/463: MAE total 15,9832 vs media 15,6727; sin superioridad acreditada ni calibración
+del refit final. Cohorte 69/0 abstenciones, 63 anteriores por fecha, 0 outcomes; 6 del 22oct
+sin hora de kickoff no acreditan prospectiva. 994 backend/42 frontend/lint/build y
+visual desktop/móvil aprobados. Sin apuestas/registros NBA ni cron. Funcionalidad
+integrada; eficacia NO_CERTIFICADA y no demostrada equivalente a NBA.
+
+
 ## Fuentes y continuidad
 
 - [Fuente de verdad](../FUENTE_DE_VERDAD_ACTUAL.md).
@@ -183,7 +197,7 @@ fútbol sintético verificados. H12Tailwind4/audit0,854backend/36frontend/lint/b
 publicación/CI final acreditadas en acta externa. Estado15capturas/9outcomesPRE/
 0independientes;6pendientes, sin repetir congelamientos. H4ticket#4868445cerrado
 por proveedor con autoservicio, sin coordinación de purga. Fútbol0MLactivos y
-P&LN/D; eficaciaNO_CERTIFICADA. Este corte reemplaza bloqueos visual/H12 y conteos
+P&LN/D; eficacia NO_CERTIFICADA. Este corte reemplaza bloqueos visual/H12 y conteos
 outcomes anteriores, no los cierres científicos aún pendientes.
 
 ## Última pasada integral anterior — 2026-10-16

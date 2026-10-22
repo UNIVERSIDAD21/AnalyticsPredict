@@ -32,6 +32,7 @@ from api.rutas_combinadas import router as router_combinadas
 from api.rutas_calidad import router as router_calidad
 from api.rutas_explicabilidad import router as router_explicabilidad
 from api.rutas_match_analysis_nba import router as router_match_analysis_nba
+from api.rutas_euroliga import router as router_euroliga
 
 # Routers de Fútbol
 from api.rutas_competiciones_futbol import router as router_competiciones_futbol
@@ -291,6 +292,7 @@ app.include_router(router_match_analysis_nba)
 
 # Routers de Fútbol
 app.include_router(router_competiciones_futbol)
+app.include_router(router_euroliga)
 app.include_router(router_equipos_futbol)
 app.include_router(router_partidos_futbol)
 app.include_router(router_analisis_futbol)

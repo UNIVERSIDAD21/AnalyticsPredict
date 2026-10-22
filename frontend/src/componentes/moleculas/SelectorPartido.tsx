@@ -108,7 +108,7 @@ export function SelectorPartido({
     setCargando(true);
     setError(null);
     try {
-      const lista = await obtenerPartidosProximos(diasAdelante);
+      const lista = await obtenerPartidosProximos(diasAdelante, 500, 'nba');
       setPartidos(ordenarYDedupe(lista));
     } catch (err) {
       setError('No se pudieron cargar los partidos');
