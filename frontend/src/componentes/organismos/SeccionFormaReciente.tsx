@@ -51,6 +51,8 @@ interface PropsSeccionForma {
   className?: string;
   nota?: string;
   deporte?: 'baloncesto' | 'futbol';
+  /** Oculta indicadores que no existen en el contrato Euroliga. */
+  soloRegulacionDescriptiva?: boolean;
   /** Callback cuando el usuario quiere ver estadísticas de un equipo */
   onVerEstadisticas?: (equipoId: string) => void;
 }
@@ -151,7 +153,7 @@ function formatearFechaCorta(fechaISO: string): string {
 // COMPONENTE TARJETA DE FORMA
 // ══════════════════════════════════════════════════════════════
 
-function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadisticas, deporte }: PropsTarjetaFormaEquipo & { deporte: 'baloncesto' | 'futbol' }) {
+function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadisticas, deporte, soloRegulacionDescriptiva }: PropsTarjetaFormaEquipo & { deporte: 'baloncesto' | 'futbol'; soloRegulacionDescriptiva?: boolean }) {
   if (!forma) return <div className="tarjeta p-4"><h4>{nombre}</h4><p>Sin finales recientes disponibles.</p></div>;
   const porcentajeVictorias = calcularPorcentajeVictorias(
     forma.victorias,
@@ -200,7 +202,7 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
             {forma.ppg.toFixed(1)}
           </span>
         </div>
-        <div className="flex items-center justify-between">
+        {!soloRegulacionDescriptiva && <div className="flex items-center justify-between">
           <span className="text-sm text-texto-secundario">vs temporada</span>
           <span
             className={clsx(
@@ -220,7 +222,7 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
               <TrendingDown className="w-3 h-3" />
             ) : null}
           </span>
-        </div>
+        </div>}
       </div>
 
       {/* Promedio en contra y balance */}
@@ -248,7 +250,7 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
       </div>
 
       {/* Tendencia */}
-      <div className="flex items-center justify-between pt-2 border-t border-futurista-medio">
+      {!soloRegulacionDescriptiva && <div className="flex items-center justify-between pt-2 border-t border-futurista-medio">
         <span className="text-sm text-texto-secundario">Tendencia</span>
         <div className="flex items-center gap-2">
           <span className={clsx('text-sm', obtenerColorTendencia(forma.tendencia ?? 'ESTABLE'))}>
@@ -256,7 +258,7 @@ function TarjetaFormaEquipo({ nombre, forma, descanso, equipoId, onVerEstadistic
           </span>
           {forma.tendencia && <IconoTendencia tendencia={forma.tendencia} />}
         </div>
-      </div>
+      </div>}
 
       {/* Barra de victorias */}
       <div className="space-y-1">
@@ -319,7 +321,7 @@ export function SeccionFormaReciente({
   rivalId,
   inicialmenteExpandido = true,
   className,
-  onVerEstadisticas, nota, deporte = 'baloncesto',
+  onVerEstadisticas, nota, deporte = 'baloncesto', soloRegulacionDescriptiva = false,
 }: PropsSeccionForma) {
   const [expandido, setExpandido] = useState(inicialmenteExpandido);
   const idContenido = useId();
@@ -375,6 +377,7 @@ export function SeccionFormaReciente({
               descanso={descansoEquipo}
               equipoId={equipoId}
               onVerEstadisticas={onVerEstadisticas}
+              soloRegulacionDescriptiva={soloRegulacionDescriptiva}
             />
             <TarjetaFormaEquipo
               deporte={deporte}
@@ -383,11 +386,12 @@ export function SeccionFormaReciente({
               descanso={descansoRival}
               equipoId={rivalId}
               onVerEstadisticas={onVerEstadisticas}
+              soloRegulacionDescriptiva={soloRegulacionDescriptiva}
             />
           </div>
 
           {/* Contexto del partido */}
-          {descansoEquipo && descansoRival ? <div className="p-4 rounded-lg bg-futurista-medio/30 border border-neon-cyan/10 space-y-3">
+          {!soloRegulacionDescriptiva && (descansoEquipo && descansoRival ? <div className="p-4 rounded-lg bg-futurista-medio/30 border border-neon-cyan/10 space-y-3">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="w-4 h-4 text-neon-cyan" />
               <h4 className="text-sm font-semibold text-texto-principal uppercase tracking-wider">
@@ -490,7 +494,7 @@ export function SeccionFormaReciente({
                 </p>
               </div>
             )}
-          </div> : <p className="text-xs text-texto-secundario">Descanso: N/D en esta captura.</p>}
+          </div> : <p className="text-xs text-texto-secundario">Descanso: N/D en esta captura.</p>)}
         </div>
       )}
     </Tarjeta>

@@ -15,6 +15,8 @@ import {
 import type { ResultadoVista } from '../../tipos/resultadoVista';
 import type { ResultadoEuro } from '../../servicios/euroliga';
 import { formaEquipoEuroliga, h2hEuroliga } from '../../utilidades/resultadoEuroliga';
+import { SeccionHistorialEuroliga } from './SeccionHistorialEuroliga';
+import { PanelDiagnosticoEuroliga } from './PanelDiagnosticoEuroliga';
 import { TarjetaProbabilidad } from './TarjetaProbabilidad';
 import { ListaRazones } from './ListaRazones';
 import { AnalisisMercadoCard } from './AnalisisMercadoCard';
@@ -598,14 +600,11 @@ export function ResultadoAnalisis({
           compararLinea={false} nota="Marcadores finales que pueden incluir OT; no se comparan con la línea de regulación ni con una línea por cuarto." unidadLabel="puntos" />
         <SeccionFormaReciente formaEquipo={formaEquipoEuroliga(fuenteEuroliga, fuenteEuroliga.equipo_local)}
           formaRival={formaEquipoEuroliga(fuenteEuroliga, fuenteEuroliga.equipo_visitante)} descansoEquipo={null} descansoRival={null}
-          equipoNombre={fuenteEuroliga.equipo_local} rivalNombre={fuenteEuroliga.equipo_visitante} nota="Solo regulación: V/E/D, puntos y balance descriptivos de los últimos finales disponibles (máximo 10). No ajustan la distribución ni estiman tendencia o comparación de temporada." />
-        <details className="tarjeta p-4 text-xs text-texto-secundario break-words"><summary className="cursor-pointer">Modelo y muestra de datos</summary>
-          <p className="mt-3">Datos hasta {fuenteEuroliga.corte_datos}. Muestras de entrenamiento: local {fuenteEuroliga.muestras.local}, visitante {fuenteEuroliga.muestras.visitante}.</p>
-          <p>Temporada {fuenteEuroliga.temporada_reciente}: local {fuenteEuroliga.muestras_temporada.local}, visitante {fuenteEuroliga.muestras_temporada.visitante} finales.</p>
-          <p>Fecha del partido: {fuenteEuroliga.fecha_partido ?? 'N/D'}. {fuenteEuroliga.prospectiva_acreditada_por_fecha ? 'Captura anterior a la fecha del fixture.' : 'No se acredita anterioridad al kickoff.'} No acredita calibración.</p>
-          <p className="break-all">Modelo: {fuenteEuroliga.modelo_version} · Análisis: {fuenteEuroliga.analisis_id}</p>
-          <p className="break-all">Dataset SHA-256: {fuenteEuroliga.dataset_sha256}</p>
-        </details>
+          equipoNombre={fuenteEuroliga.equipo_local} rivalNombre={fuenteEuroliga.equipo_visitante} soloRegulacionDescriptiva
+          nota="Últimos 10 finales previos disponibles: resultados, puntos a favor/en contra y balance en regulación. La forma no altera la predicción ni estima una probabilidad propia." />
+        <SeccionHistorialEuroliga equipos={fuenteEuroliga.contexto.equipos} local={fuenteEuroliga.equipo_local}
+          visitante={fuenteEuroliga.equipo_visitante} corte={fuenteEuroliga.contexto.corte_exclusivo ?? fuenteEuroliga.fecha_partido} />
+        <PanelDiagnosticoEuroliga resultado={fuenteEuroliga} />
       </>}
       {esCorte && !esEuro && <details className="tarjeta p-4 text-xs text-texto-secundario"><summary className="cursor-pointer">Modelo y corte NBA</summary>
         <p className="mt-3">Versión: {String(resultado.metadata.modelo_version ?? 'N/D')}. Peso heurístico de ritmo: {String(resultado.metadata.peso_en_vivo ?? 'N/D')}.</p>
@@ -615,7 +614,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           11. HISTORIAL DETALLADO
           ═══════════════════════════════════════════════════════════ */}
-      {!gateCriticoBeta && equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
+      {!gateCriticoBeta && !esEuro && equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
         <SeccionHistorialDetallado
           equipoLocalId={equipoLocalId}
           equipoLocalNombre={resultado.equipo_nombre_completo}

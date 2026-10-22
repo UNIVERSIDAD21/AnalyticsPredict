@@ -78,7 +78,27 @@ def analizar(p: PeticionEuroliga):
     try:
         resultado = predecir(m, p.equipo_local, p.equipo_visitante, p.mercado, p.linea, [list(q) for q in p.parciales])
         corte = str(fixture["fecha_partido"])[:10] if fixture else (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
-        resultado["contexto"] = contexto(filas, p.equipo_local, p.equipo_visitante, corte)
+        resultado["contexto"] = contexto(
+            filas, p.equipo_local, p.equipo_visitante, corte, m.get("temporada_reciente")
+        )
+        validacion = m.get("validacion", {})
+        resultado["diagnostico_modelo"] = {
+            "partidos_entrenamiento": m.get("partidos_entrenamiento"),
+            "fecha_min": m.get("fecha_min"),
+            "fecha_max": m.get("fecha_max"),
+            "alpha_ridge": m.get("alpha"),
+            "ajuste_finalizado_en": m.get("fit_completed_at"),
+        }
+        resultado["validacion_historica"] = {
+            "tipo": validacion.get("tipo"),
+            "train_n": validacion.get("train_n"),
+            "cal_n": validacion.get("cal_n"),
+            "cal_util_n": validacion.get("cal_util_n"),
+            "evaluacion": validacion.get("evaluacion"),
+            "calibrador_probabilistico": validacion.get("calibrador_probabilistico"),
+            "prospectiva_n": validacion.get("prospectiva_n", 0),
+            "limitacion": validacion.get("limitacion"),
+        }
         resultado["ultimo_final_bd"] = max((str(r["fecha_partido"])[:10] for r in filas if final_valido(r)), default=None)
         if resultado["ultimo_final_bd"] and resultado["ultimo_final_bd"] > m["fecha_max"]:
             resultado["advertencias"].append("La base tiene finales posteriores al modelo; publicar un refit explícito para incorporarlos.")

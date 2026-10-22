@@ -150,13 +150,18 @@ def cliente(modelo, filas, monkeypatch, tmp_path):
     return TestClient(app), futuro
 
 
-def test_api_aislada_y_journal_inmutable(cliente, tmp_path):
+def test_api_aislada_y_journal_inmutable(cliente, tmp_path, modelo):
     c, f = cliente
     p = {"equipo_local": f["local"], "equipo_visitante": f["visitante"], "mercado": "Q1", "linea": 40.5, "partido_id": f["id"]}
     r = c.post("/api/euroliga/analizar", json=p)
     assert r.status_code == 200, r.text
     resultado = r.json()["resultado"]
     assert resultado["prospectiva_acreditada_por_fecha"]
+    assert resultado["diagnostico_modelo"]["partidos_entrenamiento"] == modelo["partidos_entrenamiento"]
+    assert resultado["validacion_historica"]["train_n"] == modelo["validacion"]["train_n"]
+    assert set(resultado["validacion_historica"]["evaluacion"]["mercados"]) == set(motor.MERCADOS)
+    assert resultado["contexto"]["corte_exclusivo"] == f["fecha_partido"]
+    assert all(len(g["cuartos"]) == 4 for equipo in resultado["contexto"]["equipos"].values() for g in equipo["recientes"])
     archivos = list((tmp_path / "journal").glob("*.json"))
     assert len(archivos) == 1
     anterior = archivos[0].read_bytes()
@@ -202,6 +207,25 @@ def test_contexto_solo_euroliga_y_anterior_al_fixture(filas):
     c = servicio.contexto(filas, filas[0]["local"], filas[0]["visitante"], "2024-09-01")
     assert all(x["fecha"] < "2024-09-01" for d in c["equipos"].values() for x in d["recientes"])
     assert all(x["fecha"] < "2024-09-01" for x in c["h2h"])
+    overtime = {**filas[-1], "id": "overtime-euro", "fecha_partido": "2026-10-20",
+                "equipo_local_id": "team-0", "equipo_visitante_id": "team-1",
+                "local": "Euro 0", "visitante": "Euro 1", "temporada_id": "2025",
+                "temporada_nombre": "2025", "local_q1": 20, "local_q2": 20,
+                "local_q3": 20, "local_q4": 20, "visitante_q1": 20,
+                "visitante_q2": 20, "visitante_q3": 20, "visitante_q4": 20,
+                "local_ot": 5, "visitante_ot": 4, "local_total": 85, "visitante_total": 84}
+    detallado = servicio.contexto([*filas, overtime], "Euro 0", "Euro 1", "2026-10-22", "2025")
+    for equipo in detallado["equipos"].values():
+        assert len(equipo["recientes"]) <= 50
+        assert all(len(g["cuartos"]) == 4 for g in equipo["recientes"])
+        assert all(g["puntos_finales"] == g["puntos_regulacion"] + g["puntos_ot"] for g in equipo["recientes"])
+        temporada = equipo["temporada_resumen"]
+        assert temporada["nombre"] == "2025"
+        assert temporada["total"]["partidos"] == sum(temporada[lado]["partidos"] for lado in ("como_local", "como_visitante"))
+    assert len(detallado["equipos"]["euro 0"]["recientes"]) == 50
+    partido_ot = next(g for g in detallado["equipos"]["euro 0"]["recientes"] if g["id"] == "overtime-euro")
+    assert (partido_ot["resultado_regulacion"], partido_ot["puntos_ot"], partido_ot["puntos_rival_ot"],
+            partido_ot["puntos_finales"], partido_ot["puntos_rival_finales"]) == ("E", 5, 4, 85, 84)
 
 
 def test_cohorte_congela_no_regenera_y_detecta_tamper(modelo, filas, tmp_path, monkeypatch):

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Historial detallado del análisis Euroliga — 2026-10-22
+
+- Añadir historial exclusivo Euro con los últimos 50 finales previos por equipo, periodos Q1–Q4, OT y marcador final; UI con filtros por sede y 10/25/50 juegos, forma reciente y resumen de temporada.
+- Mostrar diagnóstico del artefacto y evaluación temporal congelada por periodo (TRAIN/CAL/EVAL, MAE, Brier RAW frente a referencia y cobertura del intervalo), con advertencia explícita: el EVAL no valida el refit final ni acredita calibración/prospectiva.
+- Ocultar en Euro placeholders NBA no disponibles. No añadir dependencias de API/datos/modelos NBA, picks ni sizing. Validación sintética y visual; sin POST productivo, escritura en base, entrenamiento o cambio de modelos.
+- Detalle: `docs/reactivacion_single_user/ANALISIS_EUROLIGA_DETALLADO_2026-10-22.md`.
+
 ## Guardado manual de apuestas fútbol — 2026-10-22
 
 - Habilitar guardar la selección válida de fútbol aunque no exista una recomendación exacta; el modal diferencia registro manual de recomendación.

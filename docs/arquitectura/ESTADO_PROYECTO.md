@@ -29,6 +29,10 @@ RAW/push/regulación y datos ausentes explícitos. 36 pruebas backend focalizada
 58 frontend/lint/build; sin POST productivo ni modificar artefactos/cohortes.
 No acredita eficacia, calibración o actualización live por reloj.
 
+## Historial y diagnóstico detallados de Euroliga — 2026-10-22
+
+[Cambio y límites](../reactivacion_single_user/ANALISIS_EUROLIGA_DETALLADO_2026-10-22.md): el resultado Euro ahora presenta hasta 50 partidos previos por equipo, desglosados por regulación, Q1–Q4, OT y final, filtros de sede/ventana y resúmenes de temporada. Incluye métricas EVAL históricas por periodo, separadas del refit servido y con limitaciones visibles. H2H/formato NBA no se reutiliza para este historial; las consultas siguen limitadas al dominio Euroliga. La validación retrospectiva no acredita calibración ni rendimiento prospectivo; sin apuestas, DML ni reentrenamiento.
+
 ## Interfaz única Baloncesto — 2026-10-22
 
 [Integración, uso y límites](../reactivacion_single_user/INTEGRACION_UI_BALONCESTO_2026-10-22.md): una sección **Baloncesto** en

@@ -39,6 +39,10 @@ RAW/push/regulación y datos ausentes explícitos. 36 pruebas backend focalizada
 58 frontend/lint/build; sin POST productivo ni modificar artefactos/cohortes.
 No acredita eficacia, calibración o actualización live por reloj.
 
+### Historial detallado y diagnóstico Euroliga — 2026-10-22
+
+[Alcance y validación](reactivacion_single_user/ANALISIS_EUROLIGA_DETALLADO_2026-10-22.md): cada análisis Euroliga incluye historial propio de hasta 50 finales previos por equipo, selector de 10/25/50 y sede, resultados/promedios de regulación, cuartos, OT y final separados, además de resumen de temporada local/visitante. Añade evaluación retrospectiva por periodo y trazabilidad del artefacto. Se presenta como descriptivo: la cohorte EVAL es del candidato congelado, no del refit final; no hay calibrador ni prospectiva independiente y sigue NO CERTIFICADO. No se llama a APIs ni modelos NBA ni se agregan cuotas, sizing o picks. Pruebas backend/frontend y lint/build verdes; inspección visual con datos sintéticos rotulados, sin POST productivo, DML o entrenamiento.
+
 ### Interfaz única Baloncesto — 2026-10-22
 
 [Integración, uso y límites](reactivacion_single_user/INTEGRACION_UI_BALONCESTO_2026-10-22.md): una sección **Baloncesto** en

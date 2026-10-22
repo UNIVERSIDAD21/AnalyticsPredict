@@ -58,26 +58,69 @@ def resumir_fixture(r: dict) -> dict:
             "visitante_total": r["visitante_total"], "finalizado": final_valido(r)}
 
 
-def contexto(filas: list[dict], local: str, visitante: str, fecha: str) -> dict:
+def _resumen_equipo_temporada(partidos: list[dict], nombre: str) -> dict:
+    """Resumen de regulación por temporada/sede; los empates no se convierten en victorias."""
+    partidos_lado = []
+    for r in partidos:
+        lado = "local" if normalizar_nombre(r["local"]) == nombre else "visitante"
+        otro = "visitante" if lado == "local" else "local"
+        partidos_lado.append({
+            "como_local": lado == "local",
+            "pf": sum(r[f"{lado}_q{i}"] for i in range(1, 5)),
+            "pc": sum(r[f"{otro}_q{i}"] for i in range(1, 5)),
+        })
+
+    def resumir(muestra: list[dict]) -> dict:
+        victorias = sum(p["pf"] > p["pc"] for p in muestra)
+        empates = sum(p["pf"] == p["pc"] for p in muestra)
+        derrotas = sum(p["pf"] < p["pc"] for p in muestra)
+        n = len(muestra)
+        return {
+            "partidos": n, "victorias_regulacion": victorias, "empates_regulacion": empates,
+            "derrotas_regulacion": derrotas,
+            "promedio_favor_regulacion": sum(p["pf"] for p in muestra) / n if n else None,
+            "promedio_contra_regulacion": sum(p["pc"] for p in muestra) / n if n else None,
+            "balance_regulacion": (sum(p["pf"] - p["pc"] for p in muestra) / n) if n else None,
+        }
+
+    return {"total": resumir(partidos_lado),
+            "como_local": resumir([p for p in partidos_lado if p["como_local"]]),
+            "como_visitante": resumir([p for p in partidos_lado if not p["como_local"]])}
+
+
+def contexto(filas: list[dict], local: str, visitante: str, fecha: str,
+             temporada_reciente: str | None = None) -> dict:
     datos = preparar_filas(filas, fecha)
     local, visitante = normalizar_nombre(local), normalizar_nombre(visitante)
     equipos = {}
     for nombre in (local, visitante):
         propios = [r for r in datos if nombre in (normalizar_nombre(r["local"]), normalizar_nombre(r["visitante"]))]
-        recientes = propios[-10:]
+        recientes = propios[-50:]
         detalle = []
         for r in reversed(recientes):
             casa = normalizar_nombre(r["local"]) == nombre
             lado, otro = ("local", "visitante") if casa else ("visitante", "local")
+            puntos_regulacion = sum(r[f"{lado}_q{i}"] for i in range(1, 5))
+            puntos_rival_regulacion = sum(r[f"{otro}_q{i}"] for i in range(1, 5))
+            diferencia = puntos_regulacion - puntos_rival_regulacion
             detalle.append({"id": r["id"], "fecha": r["fecha_partido"], "rival": r[otro], "como_local": casa,
-                            "puntos_regulacion": sum(r[f"{lado}_q{i}"] for i in range(1, 5)),
-                            "puntos_rival_regulacion": sum(r[f"{otro}_q{i}"] for i in range(1, 5))})
-        equipos[nombre] = {"n_historico": len(propios), "ventana": "últimos 10 finales previos al fixture",
-                           "recientes": detalle, "media_regulacion": sum(x["puntos_regulacion"] for x in detalle) / len(detalle) if detalle else None}
+                            "puntos_regulacion": puntos_regulacion,
+                            "puntos_rival_regulacion": puntos_rival_regulacion,
+                            "resultado_regulacion": "V" if diferencia > 0 else "D" if diferencia < 0 else "E",
+                            "cuartos": [{"equipo": r[f"{lado}_q{i}"], "rival": r[f"{otro}_q{i}"]} for i in range(1, 5)],
+                            "puntos_ot": r[f"{lado}_ot"], "puntos_rival_ot": r[f"{otro}_ot"],
+                            "puntos_finales": r[f"{lado}_total"], "puntos_rival_finales": r[f"{otro}_total"]})
+        temporada = temporada_reciente or (datos[-1]["temporada_nombre"] if datos else None)
+        partidos_temporada = [r for r in propios if r["temporada_nombre"] == temporada]
+        equipos[nombre] = {"n_historico": len(propios), "ventana": "últimos 50 finales previos al fixture",
+                           "temporada_resumen": {"nombre": temporada,
+                               **_resumen_equipo_temporada(partidos_temporada, nombre)},
+                           "recientes": detalle,
+                           "media_regulacion": sum(x["puntos_regulacion"] for x in detalle) / len(detalle) if detalle else None}
     h2h = [r for r in datos if {normalizar_nombre(r["local"]), normalizar_nombre(r["visitante"])} == {local, visitante}][-10:]
     return {"corte_exclusivo": fecha, "equipos": equipos, "h2h": [{"fecha": r["fecha_partido"], "local": r["local"],
              "visitante": r["visitante"], "local_total": r["local_total"], "visitante_total": r["visitante_total"]} for r in reversed(h2h)],
-             "uso": "Contexto descriptivo Euroliga; no altera la distribución Ridge ni constituye otra probabilidad."}
+             "uso": "Contexto descriptivo Euroliga; últimos 50 finales previos al corte, regulación separada de prórroga y final. No altera Ridge ni constituye otra probabilidad."}
 
 
 def ruta_journal() -> Path:

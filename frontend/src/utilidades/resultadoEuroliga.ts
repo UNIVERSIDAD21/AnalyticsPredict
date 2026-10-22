@@ -18,7 +18,7 @@ export function adaptarResultadoEuroliga(r: ResultadoEuro): ResultadoVista {
 }
 
 export function formaEuroliga(datos: ResultadoEuro['contexto']['equipos'][string] | undefined): FormaVista | null {
-  const recientes = [...(datos?.recientes ?? [])].sort((a,b) => b.fecha.localeCompare(a.fecha));
+  const recientes = [...(datos?.recientes ?? [])].sort((a,b) => b.fecha.localeCompare(a.fecha)).slice(0, 10);
   if (!recientes.length) return null;
   const resultados = recientes.map(x => x.puntos_regulacion > x.puntos_rival_regulacion ? 'V' : x.puntos_regulacion < x.puntos_rival_regulacion ? 'D' : 'E');
   const media = (campo: 'puntos_regulacion' | 'puntos_rival_regulacion') => recientes.reduce((sum,x) => sum+x[campo],0)/recientes.length;
