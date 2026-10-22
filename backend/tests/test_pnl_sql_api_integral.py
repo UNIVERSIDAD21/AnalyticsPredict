@@ -33,7 +33,7 @@ def datos_pnl(monkeypatch):
               ganancia numeric,partido_id uuid,lado text,linea numeric,cuota_over numeric,cuota_under numeric,
               fecha_partido date,edge_real numeric,probabilidad_sistema numeric,confianza_sistema text,
               competicion_id uuid, competicion_nombre text, puntos_reales numeric,
-              fecha_resolucion timestamptz, actualizado_en timestamptz);
+              fecha_resolucion timestamptz);
             CREATE TABLE competiciones_baloncesto(id uuid PRIMARY KEY, codigo text NOT NULL);
             CREATE TYPE resultado_apuesta_futbol AS ENUM ('GANADA','PERDIDA','PUSH','PENDIENTE');
             CREATE TABLE apuestas_futbol(id uuid, mercado text,resultado resultado_apuesta_futbol,stake numeric,cuota numeric,
@@ -107,6 +107,10 @@ def test_resolvedor_nba_no_resuelve_fixture_euro_con_marcador_final(datos_pnl):
             lado,linea,fecha_partido,competicion_id,competicion_nombre)
             VALUES (%s,'COMPLETO','PERDIDA',10,1.9,-10,%s,'OVER',165,CURRENT_DATE,%s,'EuroLeague')''',
             [apuesta_resuelta, partido, competencia])
+        # Evita que el saneamiento NBA del partido de hoy revierta esta fila
+        # legacy; la verificación se centra en que las filas Euro se excluyen.
+        c.execute("UPDATE apuestas SET fecha_partido=CURRENT_DATE-1 WHERE competicion_id IS NULL")
+        c.execute('ALTER TABLE apuestas ADD actualizado_en timestamptz')
 
     resumen = resolver_apuestas(pool=datos_pnl)
 
