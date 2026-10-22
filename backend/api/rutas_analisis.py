@@ -649,8 +649,8 @@ def ejecutar_analisis(
             "Modo estricto NBA activo: recomendaciones deshabilitadas por falta de resueltas con volumen suficiente."
         )
 
-    resultado.metadata["modelo_version"] = getattr(modelo, "version", None)
-    contexto_registro = None if resultado.es_en_vivo else _extraer_contexto_registro(peticion)
+    es_corte = any(m is not None for m in (marcador_q1, marcador_q2, marcador_q3))
+    contexto_registro = None if es_corte else _extraer_contexto_registro(peticion)
     if contexto_registro and resultado.candidatos:
         modelo_version_id = getattr(modelo, "version", None)
         if modelo_version_id is None or not isinstance(modelo_version_id, int):
@@ -705,6 +705,7 @@ def ejecutar_analisis(
         logger.exception("No se pudo registrar análisis NBA en bitácora")
 
     datos_respuesta = resultado_a_dict(resultado)
+    datos_respuesta.setdefault("metadata", {})["modelo_version"] = getattr(modelo, "version", None)
     datos_respuesta.pop("advertencias", None)
     if datos_respuesta.get("mejor_apuesta") is not None:
         mejor = datos_respuesta["mejor_apuesta"]

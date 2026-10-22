@@ -31,6 +31,8 @@ def _aislar_politicas_nba(monkeypatch):
     """Estos casos prueban el registro, no los gates que consultan la BD."""
     monkeypatch.setattr("api.rutas_analisis._obtener_mercados_bloqueados_nba", lambda **_: set())
     monkeypatch.setattr("api.rutas_analisis._modo_estricto_nba_activo", lambda: False)
+    monkeypatch.setattr("api.rutas_analisis._obtener_config_usuario", lambda: None)
+    monkeypatch.setattr("api.rutas_analisis._registrar_bitacora_analisis_nba", lambda *args: None)
 
 
 # =============================================================================

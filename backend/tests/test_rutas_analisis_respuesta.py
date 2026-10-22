@@ -31,6 +31,8 @@ def _stub_ejecucion(monkeypatch, datos_respuesta):
             self.candidatos = []
 
     monkeypatch.setattr(rutas_analisis, "obtener_modelo", lambda: object())
+    monkeypatch.setattr(rutas_analisis, "_obtener_config_usuario", lambda: None)
+    monkeypatch.setattr(rutas_analisis, "_registrar_bitacora_analisis_nba", lambda *args: None)
     monkeypatch.setattr(rutas_analisis, "_obtener_mercados_bloqueados_nba", lambda **_: set())
     monkeypatch.setattr(rutas_analisis, "_modo_estricto_nba_activo", lambda: False)
     monkeypatch.setattr(rutas_analisis, "validar_equipos", lambda *args, **kwargs: None)
@@ -122,6 +124,7 @@ def test_cuota_legacy_sin_lado_explicito_no_falla_validacion(monkeypatch):
     respuesta = rutas_analisis.ejecutar_analisis(peticion)
 
     assert respuesta.exito is True
+    assert respuesta.datos["metadata"]["modelo_version"] is None
 
 
 def test_error_interno_devuelve_motivo_en_mensaje(monkeypatch):
