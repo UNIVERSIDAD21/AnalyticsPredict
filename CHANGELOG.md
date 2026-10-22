@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-21 — Corrección de análisis NBA con bankroll de base de datos
+
+- Normalizar a `float` el bankroll `NUMERIC` recibido como `Decimal` al construir la configuración de sizing; evita el `TypeError` `Decimal * float` durante el cálculo de Kelly.
+- Añadir regresión con el tipo `Decimal` que entrega PostgreSQL. Validación focalizada: 10 pruebas de sizing/Kelly aprobadas. No se repitió el análisis productivo ni se registró una predicción.
+
 ## 2026-10-21 — Aplicación puntual de estadísticas de fútbol WEB
 
 - A petición expresa del propietario, aplicar el contenido de su matriz en los seis campos objetivo solo cuando seguían NULL. Persistidos 11.991 valores en 2.185 partidos, con 2.435 vínculos y observación/proveedor/URL por campo; fuente categórica `WEB`.

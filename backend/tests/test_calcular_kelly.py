@@ -1,4 +1,5 @@
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -87,3 +88,19 @@ def test_calcula_porcentaje_y_stake_minimo():
     assert resultado.stake_porcentaje == pytest.approx(2.5)
     assert resultado.stake == pytest.approx(2.5)
     assert "Stake por debajo del mínimo configurado." in resultado.advertencias
+
+
+def test_bankroll_decimal_de_postgres_se_normaliza_antes_de_calcular_stake():
+    config = ConfiguracionSizing.construir_desde_fuentes(
+        config_sizing_usuario=None,
+        bankroll_override=None,
+        perfil_override=None,
+        bankroll_usuario=Decimal("1000.00"),
+        perfil_default="CONSERVADOR",
+    )
+
+    resultado = calcular_kelly(0.6, 2.0, config, _datos_devig("exacto"))
+
+    assert isinstance(config.bankroll, float)
+    assert resultado.stake == pytest.approx(20.0)
+    assert resultado.bankroll_momento == pytest.approx(1000.0)

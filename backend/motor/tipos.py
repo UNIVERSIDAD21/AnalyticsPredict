@@ -214,7 +214,13 @@ class ConfiguracionSizing:
         """Construye la configuración con precedencia request > BD > default."""
         advertencias: List[str] = []
 
-        bankroll = bankroll_override if bankroll_override is not None else bankroll_usuario
+        bankroll_fuente = (
+            bankroll_override if bankroll_override is not None else bankroll_usuario
+        )
+        # psycopg entrega columnas NUMERIC como Decimal, mientras que el motor
+        # de sizing opera en float. Normalizar aquí evita mezclas Decimal/float
+        # al calcular el stake y mantiene el contrato declarado por el dataclass.
+        bankroll = float(bankroll_fuente) if bankroll_fuente is not None else None
         if bankroll is None:
             advertencias.append("Sin bankroll disponible para sizing.")
 
