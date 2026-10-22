@@ -57,7 +57,8 @@ def datos_pnl(monkeypatch):
     pool.wait()
     import db
     from api import rutas_bitacora, rutas_apuestas_futbol, rutas_metricas_futbol, rutas_partidos_futbol
-    for mod in (db,rutas_bitacora,rutas_apuestas_futbol,rutas_metricas_futbol,rutas_partidos_futbol):
+    import motor.resolucion_apuestas as motor_resolucion_apuestas
+    for mod in (db,rutas_bitacora,rutas_apuestas_futbol,rutas_metricas_futbol,rutas_partidos_futbol,motor_resolucion_apuestas):
         monkeypatch.setattr(mod,'obtener_pool',lambda:pool)
     try:
         yield pool
