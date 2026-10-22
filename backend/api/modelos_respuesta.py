@@ -276,6 +276,8 @@ class Apuesta(BaseModel):
 
     id: str
     partido_id: Optional[str] = None
+    competicion_id: Optional[str] = None
+    competicion_nombre: Optional[str] = None
     equipo_local: str
     equipo_visitante: str
     fecha_partido: Optional[str] = None
@@ -305,7 +307,7 @@ class Apuesta(BaseModel):
     creado_en: Optional[str] = None
     actualizado_en: Optional[str] = None
 
-    @field_validator("id", "partido_id", mode="before")
+    @field_validator("id", "partido_id", "competicion_id", mode="before")
     @classmethod
     def convertir_uuid(cls, v: Any) -> Optional[str]:
         """Convierte UUID a string."""

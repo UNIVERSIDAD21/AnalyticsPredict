@@ -44,6 +44,10 @@ from servicios.politica_pnl import publicar_pnl
 
 logger = logging.getLogger(__name__)
 
+_NBA_COMPETENCIA_SQL = "(a.competicion_id IS NULL OR EXISTS ("
+_NBA_COMPETENCIA_SQL += "SELECT 1 FROM competiciones_baloncesto cb "
+_NBA_COMPETENCIA_SQL += "WHERE cb.id = a.competicion_id AND cb.codigo = 'nba'))"
+
 
 @dataclass
 class ResumenResolucionApuestas:
@@ -224,8 +228,12 @@ def resolver_apuestas(
     pool = pool or obtener_pool()
     resumen = ResumenResolucionApuestas()
 
-    # Construir query con filtros
-    condiciones = ["a.resultado = 'PENDIENTE'"] if not force else []
+    # El resolvedor de esta ruta es NBA: una apuesta Euroliga a total debe
+    # resolverse con puntos de regulación, no con el total final que puede incluir OT.
+    alcance_nba = _NBA_COMPETENCIA_SQL
+    condiciones = [alcance_nba]
+    if not force:
+        condiciones.insert(0, "a.resultado = 'PENDIENTE'")
     parametros: List[Any] = []
 
     if mercado:
@@ -276,12 +284,12 @@ def resolver_apuestas(
                 hoy_bogota = datetime.now(ZoneInfo("America/Bogota")).date()
                 revert_params: List[Any] = [hoy_bogota]
                 revert_where = [
-                    "resultado IN ('GANADA','PERDIDA','PUSH')",
-                    "fecha_partido >= %s",
+                    "a.resultado IN ('GANADA','PERDIDA','PUSH')",
+                    "a.fecha_partido >= %s",
                 ]
                 cursor.execute(
                     f"""
-                    UPDATE apuestas
+                    UPDATE apuestas a
                     SET
                         resultado = 'PENDIENTE',
                         puntos_reales = NULL,
@@ -289,6 +297,7 @@ def resolver_apuestas(
                         fecha_resolucion = NULL,
                         actualizado_en = NOW()
                     WHERE {' AND '.join(revert_where)}
+                      AND {alcance_nba}
                     """,
                     revert_params,
                 )
@@ -513,7 +522,8 @@ def obtener_estadisticas_apuestas(
                         COUNT(*) FILTER (WHERE partido_id IS NULL) AS sin_partido_id,
                         COALESCE(SUM(ganancia), 0) AS ganancia_total,
                         COALESCE(SUM(stake), 0) AS stake_total
-                    FROM apuestas
+                    FROM apuestas a
+                    WHERE {_NBA_COMPETENCIA_SQL}
                     """,
                 )
                 fila = cursor.fetchone()
@@ -564,17 +574,17 @@ def obtener_apuestas_pendientes_por_mercado(
     """
     pool = pool or obtener_pool()
 
-    where_clause = "resultado = 'PENDIENTE'"
+    where_clause = f"a.resultado = 'PENDIENTE' AND {_NBA_COMPETENCIA_SQL}"
     try:
         with pool.connection() as conexion:
             with conexion.cursor() as cursor:
                 cursor.execute(
                     f"""
-                    SELECT mercado, COUNT(*)
-                    FROM apuestas
+                    SELECT a.mercado, COUNT(*)
+                    FROM apuestas a
                     WHERE {where_clause}
-                    GROUP BY mercado
-                    ORDER BY mercado
+                    GROUP BY a.mercado
+                    ORDER BY a.mercado
                     """,
                 )
                 return {fila[0]: fila[1] for fila in cursor.fetchall()}

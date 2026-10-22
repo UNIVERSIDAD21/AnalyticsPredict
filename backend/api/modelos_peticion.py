@@ -214,6 +214,9 @@ class PeticionCrearApuesta(BaseModel):
     """Solicitud para guardar una apuesta en la bitácora."""
 
     partido_id: Optional[str] = Field(None, description="ID opcional del partido")
+    competicion_codigo: Literal["nba", "euroleague"] = Field(
+        "nba", description="Competición de baloncesto a la que pertenece la apuesta"
+    )
     equipo_local: str = Field(..., min_length=1, description="Nombre del equipo local")
     equipo_visitante: str = Field(..., min_length=1, description="Nombre del equipo visitante")
     fecha_partido: Optional[date] = Field(None, description="Fecha del partido")
@@ -224,8 +227,8 @@ class PeticionCrearApuesta(BaseModel):
     cuota_over: Optional[Decimal] = Field(None, ge=Decimal("1.01"))
     cuota_under: Optional[Decimal] = Field(None, ge=Decimal("1.01"))
     stake: Decimal = Field(..., gt=0)
-    probabilidad_sistema: float = Field(..., ge=0.0, le=1.0)
-    confianza_sistema: Literal["ALTA", "MEDIA", "BAJA"]
+    probabilidad_sistema: Optional[float] = Field(None, ge=0.0, le=1.0)
+    confianza_sistema: Optional[Literal["ALTA", "MEDIA", "BAJA"]] = None
     valor_esperado: Optional[float] = None
     devig_metodo: Optional[str] = None
     modo_devig: Optional[str] = None

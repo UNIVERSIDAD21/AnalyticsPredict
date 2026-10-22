@@ -1,11 +1,42 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clienteAPI } from './api';
-import { listarApuestasAnalizadas, obtenerResumenApuestas } from './bitacora';
+import { crearApuesta, listarApuestasAnalizadas, obtenerResumenApuestas } from './bitacora';
 import { listarBitacoraUnificada } from './combinadas';
+import type { PeticionCrearApuesta, RespuestaApuesta } from '../tipos';
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('contrato v2 de bitácora', () => {
+  it('envía cuota manual Euroliga a la bitácora y conserva analíticas no disponibles como null', async () => {
+    const payload: PeticionCrearApuesta = {
+      partido_id: 'fixture-euro', competicion_codigo: 'euroleague',
+      equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi', fecha_partido: '2026-10-22',
+      mercado: 'COMPLETO', lado: 'UNDER', linea: 170.5, cuota: 1.91, stake: 25,
+      probabilidad_sistema: null, confianza_sistema: null, valor_esperado: null,
+      razones: [{ tipo: 'trazabilidad_euroliga', analisis_id: 'analisis-euro' }],
+    };
+    const respuesta: RespuestaApuesta = {
+      exito: true,
+      apuesta: {
+        id: 'apuesta-euro', partido_id: 'fixture-euro', competicion_id: 'competencia-euro',
+        competicion_nombre: 'EuroLeague', equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi',
+        fecha_partido: '2026-10-22', mercado: 'COMPLETO', lado: 'UNDER', linea: 170.5,
+        cuota: 1.91, stake: 25, probabilidad_sistema: null, confianza_sistema: null,
+        valor_esperado: null, resultado: 'PENDIENTE', ganancia: 0,
+      },
+    };
+    const post = vi.spyOn(clienteAPI, 'post').mockResolvedValue({ data: respuesta });
+
+    const guardada = await crearApuesta(payload);
+
+    expect(post).toHaveBeenCalledWith('/api/bitacora', payload);
+    expect(guardada.apuesta.competicion_nombre).toBe('EuroLeague');
+    expect(guardada.apuesta.cuota).toBe(1.91);
+    expect(guardada.apuesta.probabilidad_sistema).toBeNull();
+    expect(guardada.apuesta.confianza_sistema).toBeNull();
+    expect(guardada.apuesta.valor_esperado).toBeNull();
+  });
+
   it('muestra registros reales del envelope v2 y pide explícitamente esa versión', async () => {
     const get = vi.spyOn(clienteAPI, 'get').mockResolvedValue({ data: {
       ok: true, data: { total: 1, pagina: 1, total_paginas: 1, registros: [{ id: 'fila-1' }] },

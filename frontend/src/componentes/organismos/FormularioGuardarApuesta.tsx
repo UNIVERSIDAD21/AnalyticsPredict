@@ -10,11 +10,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Boton, Input } from '../atomos';
-import { LadoApuesta, Mercado, PeticionCrearApuesta, ResultadoAnalisis } from '../../tipos';
+import { LadoApuesta, Mercado, PeticionCrearApuesta } from '../../tipos';
+import type { ResultadoVista } from '../../tipos/resultadoVista';
 
 interface PropsFormularioGuardarApuesta {
   abierto: boolean;
-  resultado: ResultadoAnalisis;
+  resultado: ResultadoVista;
   ladoSeleccionado: LadoApuesta;
   lineaSeleccionada: number;
   fechaPartido?: string;
@@ -22,6 +23,9 @@ interface PropsFormularioGuardarApuesta {
   cuotaSeleccionada?: number;
   cuotaOver?: number;
   cuotaUnder?: number;
+  competicionCodigo?: 'nba' | 'euroleague';
+  permitirCuotaManual?: boolean;
+  guardando?: boolean;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -36,10 +40,14 @@ export function FormularioGuardarApuesta({
   cuotaSeleccionada,
   cuotaOver,
   cuotaUnder,
+  competicionCodigo = 'nba',
+  permitirCuotaManual = false,
+  guardando = false,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
   const [stake, setStake] = useState('');
+  const [cuotaManual, setCuotaManual] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const mercado = (resultado.metadata?.mercado || 'COMPLETO') as Mercado;
@@ -95,9 +103,10 @@ export function FormularioGuardarApuesta({
   useEffect(() => {
     if (abierto) {
       setStake('');
+      setCuotaManual(cuotaAutoLlenada != null ? String(cuotaAutoLlenada) : '');
       setError(null);
     }
-  }, [abierto]);
+  }, [abierto, cuotaAutoLlenada]);
 
   // Buscar candidato correspondiente al lado seleccionado (para casos NO_APTO)
   const candidatoSeleccionado = useMemo(() => {
@@ -120,8 +129,8 @@ export function FormularioGuardarApuesta({
   // Extraer snapshot completo del análisis incluyendo campos P1
   const snapshot = useMemo(() => {
     const probabilidadSistema = ladoSeleccionado === 'OVER'
-      ? resultado.probabilidad_over ?? 0
-      : resultado.probabilidad_under ?? 0;
+      ? resultado.probabilidad_over ?? (competicionCodigo === 'euroleague' ? null : 0)
+      : resultado.probabilidad_under ?? (competicionCodigo === 'euroleague' ? null : 0);
 
     const prediccion = mercado === 'COMPLETO'
       ? resultado.prediccion_juego_completo
@@ -167,7 +176,7 @@ export function FormularioGuardarApuesta({
       sizing_advertencias: detalle?.sizing_advertencias ?? null,
       sizing_penalizaciones: detalle?.sizing_penalizaciones ?? null,
     };
-  }, [ladoSeleccionado, mercado, resultado, candidatoSeleccionado]);
+  }, [competicionCodigo, ladoSeleccionado, mercado, resultado, candidatoSeleccionado]);
 
   const cuotaOverFinal = useMemo(
     () => snapshot.cuota_over ?? cuotaOver ?? undefined,
@@ -190,14 +199,14 @@ export function FormularioGuardarApuesta({
 
   const manejarGuardar = () => {
     const stakeNumero = Number(stake);
-    const cuotaFinal = cuotaAutoLlenada;
+    const cuotaFinal = permitirCuotaManual ? Number(cuotaManual) : cuotaAutoLlenada;
     const fechaFinal = fechaAutoLlenada;
 
-    if (!stake || stakeNumero <= 0) {
+    if (!stake || !Number.isFinite(stakeNumero) || stakeNumero <= 0) {
       setError('Ingresa un stake válido.');
       return;
     }
-    if (!cuotaFinal || cuotaFinal < 1.01) {
+    if (cuotaFinal == null || !Number.isFinite(cuotaFinal) || cuotaFinal < 1.01) {
       setError('Cuota inválida. Ingresa una cuota >= 1.01');
       return;
     }
@@ -208,6 +217,7 @@ export function FormularioGuardarApuesta({
     const payload: PeticionCrearApuesta = {
       // Datos básicos
       partido_id: partidoIdFinal,
+      competicion_codigo: competicionCodigo,
       equipo_local: resultado.equipo_nombre_completo,
       equipo_visitante: resultado.rival_nombre_completo,
       fecha_partido: fechaFinal || undefined,
@@ -219,11 +229,13 @@ export function FormularioGuardarApuesta({
       cuota_under: cuotaUnderFinal,
       stake: stakeNumero,
       probabilidad_sistema: snapshot.probabilidad,
-      confianza_sistema: resultado.nivel_confianza,
+      confianza_sistema: competicionCodigo === 'euroleague' ? null : resultado.nivel_confianza,
       valor_esperado: snapshot.valorEsperado ?? undefined,
       prediccion_media: snapshot.media ?? undefined,
       prediccion_desviacion: snapshot.desviacion ?? undefined,
-      razones: resultado.razones as unknown as Array<Record<string, unknown>>,
+      razones: competicionCodigo === 'euroleague'
+        ? [{ tipo: 'trazabilidad_euroliga', ...resultado.metadata }]
+        : resultado.razones as unknown as Array<Record<string, unknown>>,
 
       // Campos de De-Vig (P1)
       devig_metodo: snapshot.devig_metodo ?? undefined,
@@ -254,14 +266,14 @@ export function FormularioGuardarApuesta({
   };
 
   // Formatear probabilidad para mostrar
-  const formatearProbabilidad = (p: number) => `${(p * 100).toFixed(1)}%`;
+  const formatearProbabilidad = (p: number | null) => p == null ? 'N/D' : `${(p * 100).toFixed(1)}%`;
   const formatearEdge = (e: number | null) => e != null ? `${(e * 100).toFixed(2)}%` : 'N/A';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-lg rounded-xl border border-neon-cyan/30 bg-futurista-oscuro p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-futurista text-texto-principal mb-4">
-          Guardar en Bitacora
+          Guardar en Bitácora{competicionCodigo === 'euroleague' ? ' · Euroliga' : ''}
         </h3>
 
         {/* Resumen de la apuesta (readonly) */}
@@ -286,25 +298,26 @@ export function FormularioGuardarApuesta({
             <div className="flex justify-between">
               <span>Cuota:</span>
               <span className="text-texto-principal">
-                @ {cuotaAutoLlenada?.toFixed(2) || 'N/A'}
+                @ {(permitirCuotaManual ? (cuotaManual ? Number(cuotaManual) : null) : cuotaAutoLlenada)?.toFixed(2) || 'N/D'}
               </span>
             </div>
 
             <div className="flex justify-between">
-              <span>Probabilidad:</span>
+              <span>{competicionCodigo === 'euroleague' ? 'Probabilidad RAW:' : 'Probabilidad:'}</span>
               <span className="text-texto-principal">
-                {formatearProbabilidad(snapshot.probabilidad)}
+                {competicionCodigo === 'euroleague' ? `${formatearProbabilidad(snapshot.probabilidad)} · no calibrada` : formatearProbabilidad(snapshot.probabilidad)}
               </span>
             </div>
 
             <div className="flex justify-between">
               <span>Confianza:</span>
               <span className={`font-medium ${
+                competicionCodigo === 'euroleague' ? 'text-texto-secundario' :
                 resultado.nivel_confianza === 'ALTA' ? 'text-neon-verde' :
                 resultado.nivel_confianza === 'MEDIA' ? 'text-neon-amarillo' :
                 'text-neon-rojo'
               }`}>
-                {resultado.nivel_confianza}
+                {competicionCodigo === 'euroleague' ? 'N/D · no certificada' : resultado.nivel_confianza}
               </span>
             </div>
 
@@ -350,8 +363,24 @@ export function FormularioGuardarApuesta({
           </div>
         </div>
 
-        {/* Campo principal: STAKE */}
+        {/* La cuota de Euroliga se ingresa manualmente: ese motor no consulta cuotas. */}
         <div className="space-y-4">
+          {permitirCuotaManual && (
+            <div className="p-4 rounded-lg border border-neon-cyan/30 bg-futurista-medio/30">
+              <Input
+                etiqueta="Cuota decimal (obligatoria)"
+                type="number"
+                min="1.01"
+                step="0.01"
+                value={cuotaManual}
+                onChange={(event) => setCuotaManual(event.target.value)}
+                placeholder="Ejemplo: 1.85"
+                textoAyuda="Registra la cuota que observaste. No se consulta ni se completa desde el modelo."
+              />
+            </div>
+          )}
+
+          {/* Campo principal: STAKE */}
           <div className="p-4 rounded-lg border-2 border-neon-cyan/50 bg-neon-cyan/5">
             <Input
               etiqueta="Cuanto vas a apostar? (obligatorio)"
@@ -380,8 +409,8 @@ export function FormularioGuardarApuesta({
           <Boton variante="fantasma" onClick={onCerrar}>
             Cancelar
           </Boton>
-          <Boton variante="primario" onClick={manejarGuardar}>
-            Guardar apuesta
+          <Boton variante="primario" onClick={manejarGuardar} disabled={guardando}>
+            {guardando ? 'Guardando…' : 'Guardar apuesta'}
           </Boton>
         </div>
       </div>

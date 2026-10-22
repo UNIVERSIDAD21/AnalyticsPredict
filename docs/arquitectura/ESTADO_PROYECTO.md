@@ -4,6 +4,10 @@
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
+## Cuota y registro manual de apuestas Euroliga — 2026-10-22
+
+[Detalle, flujo y validación](../reactivacion_single_user/REGISTRO_APUESTAS_EUROLIGA_2026-10-22.md): desde el resultado Euroliga se puede abrir Bitácora, indicar cuota decimal observada y stake. El API asigna `competicion_id`/nombre, valida liga y fixture, y el listado unificado distingue EURO. Probabilidad RAW se guarda como no calibrada; confianza/EV siguen NULL. El resolvedor, métricas y estadísticas NBA excluyen filas Euro. Pruebas sintéticas UI/API y esquema READ ONLY; sin POST productivo ni cambios a apuestas existentes.
+
 ## Visibilidad de fixtures de fútbol — 2026-10-22
 
 [Corrección y límites](../reactivacion_single_user/VISIBILIDAD_CALENDARIO_FUTBOL_EN_CURSO_2026-10-22.md): `/api/futbol/partidos/proximos` incluye el día local completo y estados de juego no terminales. Juventus–Stade Rennais ya aparece en el selector aunque su hora de inicio haya pasado. El estado del registro sigue siendo la fuente mostrada; la aplicación no recibe ni inventa marcador/estado live automáticamente.

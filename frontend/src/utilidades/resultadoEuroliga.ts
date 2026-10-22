@@ -13,7 +13,11 @@ export function adaptarResultadoEuroliga(r: ResultadoEuro): ResultadoVista {
     ubicacion: 'LOCAL', fecha_analisis: r.fecha_analisis, predicciones, prediccion_juego_completo: predicciones.COMPLETO,
     razones: [], nivel_confianza: null, factores_confianza: null, analisis_mercado: null, mejor_apuesta: null,
     es_en_vivo: r.modo !== 'PREPARTIDO', cuartos_reales: Object.fromEntries(Object.entries(r.predicciones).filter(([m,p]) => m !== 'COMPLETO' && p.observado).map(([m,p]) => [m,[p.media_local,p.media_visitante]])),
-    metadata: { deporte: 'baloncesto', liga: 'euroliga', mercado: r.mercado, modo_analisis: r.modo },
+    metadata: { deporte: 'baloncesto', liga: 'euroliga', mercado: r.mercado, modo_analisis: r.modo,
+      partido_id: r.partido_id, fecha_partido: r.fecha_partido, analisis_id: r.analisis_id,
+      modelo_version: r.modelo_version, dataset_sha256: r.dataset_sha256, corte_datos: r.corte_datos,
+      fecha_analisis_fuente: r.fecha_analisis, probabilidad_raw_no_calibrada: true,
+      regulacion_sin_ot: true },
     linea_analizada: r.linea, probabilidad_over: r.probabilidades.over, probabilidad_under: r.probabilidades.under };
 }
 

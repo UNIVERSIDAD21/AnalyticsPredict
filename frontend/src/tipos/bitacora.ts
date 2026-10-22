@@ -10,6 +10,8 @@ export type ResultadoApuesta = 'PENDIENTE' | 'GANADA' | 'PERDIDA' | 'PUSH' | 'AN
 export interface Apuesta {
   id: string;
   partido_id?: string | null;
+  competicion_id?: string | null;
+  competicion_nombre?: string | null;
   equipo_local: string;
   equipo_visitante: string;
   fecha_partido?: string | null;
@@ -52,6 +54,7 @@ export interface RespuestaResumenApuestas {
 
 export interface PeticionCrearApuesta {
   partido_id?: string | null;
+  competicion_codigo?: 'nba' | 'euroleague';
   equipo_local: string;
   equipo_visitante: string;
   fecha_partido?: string | null;
@@ -62,8 +65,8 @@ export interface PeticionCrearApuesta {
   cuota_over?: number | null;
   cuota_under?: number | null;
   stake: number;
-  probabilidad_sistema: number;
-  confianza_sistema: NivelConfianza;
+  probabilidad_sistema: number | null;
+  confianza_sistema: NivelConfianza | null;
   valor_esperado?: number | null;
   prediccion_media?: number | null;
   prediccion_desviacion?: number | null;

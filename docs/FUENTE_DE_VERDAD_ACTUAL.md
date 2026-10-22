@@ -22,6 +22,10 @@ con cuota del lado correcto y campos analíticos N/D cuando no están disponible
 La lectura unificada existente incluye `apuestas_futbol`. Validación sintética
 backend/frontend, lint/build verdes; sin POST ni cambios a apuestas productivas.
 
+### Cuota y guardado de apuestas Euroliga — 2026-10-22
+
+[Flujo y validación](reactivacion_single_user/REGISTRO_APUESTAS_EUROLIGA_2026-10-22.md): el modal Euroliga ahora acepta cuota decimal observada y stake, y crea un registro que queda identificado como EURO en la bitácora unificada. Competencia/fixture se validan en backend; probabilidad disponible se etiqueta RAW no calibrada y confianza/EV quedan NULL. La resolución automática y las métricas deportivas siguen siendo NBA (filas Euroliga excluidas). No se probó con apuesta productiva ni se tocó la base.
+
 ### Corrección de visibilidad del calendario fútbol — 2026-10-22
 
 El selector de Fútbol consulta partidos desde el inicio del día local (`America/Bogota`) y admite estados activos (`EN_VIVO` y fases), además de los programados. Evita ocultar encuentros al pasar su hora de inicio. La lista conserva el estado que entrega la base; no hay refresco automático de marcadores ni se infiere que un partido está en juego solo por el reloj. Detalle/reproducción: [corrección y límites](reactivacion_single_user/VISIBILIDAD_CALENDARIO_FUTBOL_EN_CURSO_2026-10-22.md).

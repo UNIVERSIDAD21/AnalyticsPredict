@@ -10,6 +10,7 @@ import pytest
 from app import app
 from db import obtener_pool, PoolAplicacion
 from servicios.politica_pnl import no_concilia_sql, publicar_pnl
+from motor.resolucion_apuestas import resolver_apuestas
 
 
 @pytest.fixture
@@ -30,7 +31,10 @@ def datos_pnl(monkeypatch):
               local_q2 int,visitante_q2 int,local_q3 int,visitante_q3 int,local_q4 int,visitante_q4 int);
             CREATE TABLE apuestas(id uuid, mercado text,resultado text,stake numeric,cuota numeric,
               ganancia numeric,partido_id uuid,lado text,linea numeric,cuota_over numeric,cuota_under numeric,
-              fecha_partido date,edge_real numeric,probabilidad_sistema numeric,confianza_sistema text);
+              fecha_partido date,edge_real numeric,probabilidad_sistema numeric,confianza_sistema text,
+              competicion_id uuid, competicion_nombre text, puntos_reales numeric,
+              fecha_resolucion timestamptz, actualizado_en timestamptz);
+            CREATE TABLE competiciones_baloncesto(id uuid PRIMARY KEY, codigo text NOT NULL);
             CREATE TYPE resultado_apuesta_futbol AS ENUM ('GANADA','PERDIDA','PUSH','PENDIENTE');
             CREATE TABLE apuestas_futbol(id uuid, mercado text,resultado resultado_apuesta_futbol,stake numeric,cuota numeric,
               ganancia numeric,fecha_creacion timestamptz,partido_id uuid,lado text,linea numeric);
@@ -42,7 +46,7 @@ def datos_pnl(monkeypatch):
             CREATE TABLE equipos_futbol(id uuid,nombre text);
             CREATE TABLE predicciones_futbol(mercado text,prob_over numeric,outcome_binario boolean);
         ''')
-        c.execute("INSERT INTO apuestas VALUES (%s,'Q1','GANADA',10,2,10,NULL,'OVER',50,2,NULL,CURRENT_DATE,.1,.7,'ALTA')",[uuid4()])
+        c.execute("INSERT INTO apuestas(id,mercado,resultado,stake,cuota,ganancia,partido_id,lado,linea,cuota_over,cuota_under,fecha_partido,edge_real,probabilidad_sistema,confianza_sistema) VALUES (%s,'Q1','GANADA',10,2,10,NULL,'OVER',50,2,NULL,CURRENT_DATE,.1,.7,'ALTA')",[uuid4()])
         for mercado,resultado,ganancia in [('GOLES_FT','GANADA',10),('GOLES_FT','PERDIDA',-5),('CORNERS_FT','PUSH',0),('GOLES_FT','PENDIENTE',900)]:
             c.execute('INSERT INTO apuestas_futbol VALUES (%s,%s,%s,10,2,%s,NOW(),gen_random_uuid(),\'OVER\',2.5)',[uuid4(),mercado,resultado,ganancia])
         comb = uuid4()
@@ -83,6 +87,42 @@ def test_unificado_cuenta_apuestas_no_selecciones_y_no_certifica(datos_pnl):
         with datos_pnl.connection() as c:
             c.execute("UPDATE apuestas_futbol SET resultado='GANADA',ganancia=10 WHERE resultado='PENDIENTE'")
         assert client.get('/api/bitacora/resumen').json()['resumen']['calidad_pnl']['n_resueltas'] == 6
+
+
+def test_resolvedor_nba_no_resuelve_fixture_euro_con_marcador_final(datos_pnl):
+    competencia = uuid4()
+    partido = uuid4()
+    apuesta = uuid4()
+    apuesta_resuelta = uuid4()
+    with datos_pnl.connection() as c:
+        c.execute("INSERT INTO competiciones_baloncesto VALUES (%s,'euroleague')", [competencia])
+        c.execute('''INSERT INTO partidos_baloncesto(id,valido,local_total,visitante_total,
+            local_q1,visitante_q1,local_q2,visitante_q2,local_q3,visitante_q3,local_q4,visitante_q4)
+            VALUES (%s,true,88,82,20,20,22,20,21,21,25,21)''', [partido])
+        c.execute('''INSERT INTO apuestas(id,mercado,resultado,stake,cuota,ganancia,partido_id,
+            lado,linea,fecha_partido,competicion_id,competicion_nombre)
+            VALUES (%s,'COMPLETO','PENDIENTE',10,1.9,0,%s,'OVER',165,CURRENT_DATE,%s,'EuroLeague')''',
+            [apuesta, partido, competencia])
+        c.execute('''INSERT INTO apuestas(id,mercado,resultado,stake,cuota,ganancia,partido_id,
+            lado,linea,fecha_partido,competicion_id,competicion_nombre)
+            VALUES (%s,'COMPLETO','PERDIDA',10,1.9,-10,%s,'OVER',165,CURRENT_DATE,%s,'EuroLeague')''',
+            [apuesta_resuelta, partido, competencia])
+
+    resumen = resolver_apuestas(pool=datos_pnl)
+
+    assert resumen.resueltas == 0
+    with datos_pnl.connection() as c:
+        assert c.execute('SELECT resultado FROM apuestas WHERE id=%s', [apuesta]).fetchone()[0] == 'PENDIENTE'
+        assert c.execute('SELECT resultado FROM apuestas WHERE id=%s', [apuesta_resuelta]).fetchone()[0] == 'PERDIDA'
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        metricas = client.get('/api/bitacora/metricas')
+        assert metricas.status_code == 200, metricas.text
+        assert metricas.json()['resumen_global']['total'] == 1  # solo la fila NBA sin competencia legacy
+        estadisticas = client.get('/api/bitacora/estadisticas')
+        assert estadisticas.status_code == 200, estadisticas.text
+        assert estadisticas.json()['estadisticas']['total'] == 1
+        assert estadisticas.json()['pendientes_por_mercado'] == {}
 
 
 def test_calendario_futbol_expone_ids_y_pagina_sin_inventar_marcadores(datos_pnl):

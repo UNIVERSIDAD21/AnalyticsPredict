@@ -2,12 +2,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FormularioAnalisis } from '../organismos/FormularioAnalisis';
 import { ResultadoEuroliga } from '../organismos/ResultadoEuroliga';
+import { FormularioGuardarApuesta } from '../organismos/FormularioGuardarApuesta';
 import { EstadoVacio, PanelesAnalisisBaloncesto } from '../organismos/PanelesAnalisisBaloncesto';
 import { MensajeError } from '../moleculas';
 import { Spinner } from '../atomos';
 import { extraerMensajeError } from '../../servicios/api';
+import { crearApuesta } from '../../servicios/bitacora';
 import { analizarEuroliga, cargarEuroliga, type PeticionEuro, type ResultadoEuro } from '../../servicios/euroliga';
-import type { Equipo, LadoApuesta } from '../../tipos';
+import type { Equipo, LadoApuesta, PeticionCrearApuesta } from '../../tipos';
+import { useToasts } from '../../contextos/Toasts';
+import { adaptarResultadoEuroliga } from '../../utilidades/resultadoEuroliga';
 
 type Datos = Awaited<ReturnType<typeof cargarEuroliga>>;
 const OPCIONES = [
@@ -28,6 +32,10 @@ export function ModuloEuroliga() {
   const [cargando, setCargando] = useState(false);
   const [actualizando, setActualizando] = useState(true);
   const [tab, setTab] = useState<'analisis' | 'estadisticas' | 'historial'>('analisis');
+  const [mostrarGuardar, setMostrarGuardar] = useState(false);
+  const [guardandoApuesta, setGuardandoApuesta] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
+  const { agregarToast } = useToasts();
 
   useEffect(() => {
     let activo = true;
@@ -41,19 +49,35 @@ export function ModuloEuroliga() {
   const equipos = useMemo<Equipo[]>(() => (datos?.equipos ?? []).map(x => ({
     ...x, nombre_corto: x.nombre, abreviatura: '',
   })), [datos?.equipos]);
-  const invalidar = useCallback(() => { setResultado(null); setError(null); }, []);
+  const invalidar = useCallback(() => { setResultado(null); setError(null); setMostrarGuardar(false); }, []);
   const actualizar = useCallback(() => { setResultado(null); setRevision(n => n + 1); }, []);
 
   const enviar = async (peticion: PeticionEuro, lado?: LadoApuesta) => {
     setSeleccion(lado ? { lado, linea: peticion.linea } : null);
     if (cargando) return;
-    setCargando(true); setError(null); setResultado(null);
+    setCargando(true); setError(null); setErrorGuardar(null); setMostrarGuardar(false); setResultado(null);
     try {
       const r = await analizarEuroliga(peticion);
       setResultado(r);
       setDatos(d => d ? { ...d, historial: [r, ...d.historial].slice(0, 20) } : d);
     } catch (e) { setError(extraerMensajeError(e)); }
     finally { setCargando(false); }
+  };
+
+  const guardarApuesta = async (apuesta: PeticionCrearApuesta) => {
+    setGuardandoApuesta(true);
+    setErrorGuardar(null);
+    try {
+      await crearApuesta(apuesta);
+      setMostrarGuardar(false);
+      agregarToast({ titulo: 'Guardado en Bitácora', mensaje: 'La selección Euroliga quedó registrada.', tipo: 'success' });
+    } catch (e) {
+      const mensaje = extraerMensajeError(e);
+      setErrorGuardar(mensaje);
+      agregarToast({ titulo: 'No se pudo guardar', mensaje, tipo: 'error' });
+    } finally {
+      setGuardandoApuesta(false);
+    }
   };
 
   return <div aria-label="Analizador Euroliga">
@@ -64,6 +88,7 @@ export function ModuloEuroliga() {
       <button type="button" className="text-neon-cyan text-xs" disabled={cargando || actualizando} onClick={actualizar}>Actualizar estado y calendario</button>
     </div>
     {error && <div className="mb-6"><MensajeError titulo="Euroliga" mensaje={error} onCerrar={() => setError(null)} /></div>}
+    {errorGuardar && <div className="mb-6"><MensajeError titulo="Guardado de apuesta Euroliga" mensaje={errorGuardar} onCerrar={() => setErrorGuardar(null)} /></div>}
     {!datos && actualizando && <p role="status">Cargando Euroliga…</p>}
     {!datos && error && <button type="button" className="text-neon-cyan mb-6" onClick={actualizar}>Reintentar carga de Euroliga</button>}
     {datos && <>
@@ -77,7 +102,7 @@ export function ModuloEuroliga() {
           opcionesMercado={OPCIONES} textoAyudaMercado="Q1–Q4: cuartos de 10 minutos. Total: regulación de 40 minutos, sin prórroga."
           onAnalizar={enviar} cargando={cargando || actualizando} onCambiarParametros={invalidar} onActualizarPartidos={actualizar} />
       }>
-        {cargando ? <div className="tarjeta min-h-[420px] flex items-center justify-center" role="status"><Spinner texto="Analizando partido Euroliga…" tamano="lg" centrado /></div> : resultado ? <ResultadoEuroliga r={resultado} seleccionUsuario={seleccion} /> : <div className="tarjeta h-full min-h-[500px]">
+        {cargando ? <div className="tarjeta min-h-[420px] flex items-center justify-center" role="status"><Spinner texto="Analizando partido Euroliga…" tamano="lg" centrado /></div> : resultado ? <ResultadoEuroliga r={resultado} seleccionUsuario={seleccion} onGuardar={resultado.modo === 'PREPARTIDO' && seleccion ? () => { setMostrarGuardar(true); setErrorGuardar(null); } : undefined} /> : <div className="tarjeta h-full min-h-[500px]">
           <EstadoVacio />
           <details className="px-6 pb-6 text-sm text-texto-secundario">
             <summary className="cursor-pointer">Evaluación temporal y límites del modelo Euroliga</summary>
@@ -98,5 +123,18 @@ export function ModuloEuroliga() {
         {datos.historial.map(r => <details key={r.analisis_id} className="tarjeta p-4"><summary className="cursor-pointer">{new Date(r.fecha_analisis).toLocaleString()} · {r.equipo_local} — {r.equipo_visitante} · {r.mercado} · {r.linea} · {r.modo}</summary><div className="mt-4"><ResultadoEuroliga r={r} /></div></details>)}
       </div>}
     </>}
+    {resultado && seleccion && resultado.modo === 'PREPARTIDO' && <FormularioGuardarApuesta
+      abierto={mostrarGuardar}
+      resultado={adaptarResultadoEuroliga(resultado)}
+      ladoSeleccionado={seleccion.lado}
+      lineaSeleccionada={seleccion.linea}
+      fechaPartido={resultado.fecha_partido ?? undefined}
+      partidoId={resultado.partido_id ?? undefined}
+      competicionCodigo="euroleague"
+      permitirCuotaManual
+      guardando={guardandoApuesta}
+      onCerrar={() => setMostrarGuardar(false)}
+      onGuardar={guardarApuesta}
+    />}
   </div>;
 }

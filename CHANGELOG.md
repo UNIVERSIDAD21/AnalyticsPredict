@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Cuota y registro de apuestas Euroliga — 2026-10-22
+
+- Añadir entrada manual de cuota decimal y stake al modal de Bitácora desde análisis Euroliga prepartido.
+- Persistir en `apuestas` con competencia Euroliga validada por fixture, mostrar etiqueta EURO en el listado unificado y conservar trazabilidad de modelo/dataset.
+- Guardar la probabilidad del lado como RAW no calibrada; confianza y EV no disponibles siguen NULL. Excluir Euro del resolvedor/métricas NBA para no mezclar regulación/OT.
+- Detalle: `docs/reactivacion_single_user/REGISTRO_APUESTAS_EUROLIGA_2026-10-22.md`.
+
 ## Historial detallado del análisis Euroliga — 2026-10-22
 
 - Añadir historial exclusivo Euro con los últimos 50 finales previos por equipo, periodos Q1–Q4, OT y marcador final; UI con filtros por sede y 10/25/50 juegos, forma reciente y resumen de temporada.

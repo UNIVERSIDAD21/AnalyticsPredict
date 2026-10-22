@@ -39,6 +39,7 @@ class RegistroBitacoraUnificada(BaseModel):
 
     id: UUID
     deporte: Optional[str] = None
+    competicion_nombre: Optional[str] = None
     tipo_apuesta: str
     resultado: str
     stake: float
@@ -99,6 +100,9 @@ router = APIRouter(prefix="/api/bitacora", tags=["Bitácora"])
 _PNL_NBA_NO_EVALUABLE_SQL = no_concilia_sql(
     cuota_lado="CASE WHEN lado = 'OVER' THEN cuota_over WHEN lado = 'UNDER' THEN cuota_under END"
 )
+_NBA_COMPETENCIA_SQL = "(apuestas.competicion_id IS NULL OR EXISTS ("
+_NBA_COMPETENCIA_SQL += "SELECT 1 FROM competiciones_baloncesto cb "
+_NBA_COMPETENCIA_SQL += "WHERE cb.id = apuestas.competicion_id AND cb.codigo = 'nba'))"
 
 # Un importe conciliable no acredita el resultado de un partido inválido, 0–0
 # o incompatible con la línea y el marcador. Se preserva la fila histórica.
@@ -126,9 +130,10 @@ _RESULTADO_NBA_NO_EVALUABLE_SQL = """EXISTS (
                END IS DISTINCT FROM apuestas.resultado))
 )"""
 _NBA_NO_EVALUABLE_SQL = (
-    f"({_PNL_NBA_NO_EVALUABLE_SQL} OR "
+    f"({_NBA_COMPETENCIA_SQL} AND ("
+    f"{_PNL_NBA_NO_EVALUABLE_SQL} OR "
     f"(resultado IN ('GANADA', 'PERDIDA', 'PUSH', 'ANULADA') "
-    f"AND (apuestas.partido_id IS NULL OR {_RESULTADO_NBA_NO_EVALUABLE_SQL})))"
+    f"AND (apuestas.partido_id IS NULL OR {_RESULTADO_NBA_NO_EVALUABLE_SQL}))))"
 )
 
 BITACORA_SUNSET_DATE = os.getenv("BITACORA_LEGACY_SUNSET", "2026-12-31")
@@ -183,6 +188,10 @@ def _serializar_jsonb(valor: object | None) -> object | None:
     if Jsonb is not None:
         return Jsonb(valor)
     return json.dumps(valor)
+
+
+def _normalizar_nombre_equipo(valor: object) -> str:
+    return " ".join(str(valor).casefold().split())
 
 
 def _construir_payload_apuesta(peticion: PeticionCrearApuesta) -> dict:
@@ -302,8 +311,73 @@ async def guardar_apuesta(
         with conexion.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
+                SELECT id, nombre_corto
+                FROM competiciones_baloncesto
+                WHERE codigo = %s
+                """,
+                (peticion.competicion_codigo,),
+            )
+            competicion = cursor.fetchone()
+            if not competicion:
+                raise HTTPException(
+                    status_code=422,
+                    detail="La competición solicitada no está configurada.",
+                )
+
+            if peticion.partido_id:
+                try:
+                    partido_uuid = UUID(peticion.partido_id)
+                except (TypeError, ValueError, AttributeError) as exc:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="El ID del partido no es válido.",
+                    ) from exc
+                cursor.execute(
+                    """
+                    SELECT p.competicion_id, c.codigo, p.fecha_partido,
+                           el.nombre AS equipo_local, ev.nombre AS equipo_visitante
+                    FROM partidos_baloncesto p
+                    JOIN competiciones_baloncesto c ON c.id = p.competicion_id
+                    JOIN equipos el ON el.id = p.equipo_local_id
+                    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                    WHERE p.id = %s
+                    """,
+                    (partido_uuid,),
+                )
+                partido = cursor.fetchone()
+                if not partido or partido["codigo"] != peticion.competicion_codigo:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="El partido no pertenece a la competición seleccionada.",
+                    )
+                fecha_fixture = partido["fecha_partido"]
+                if isinstance(fecha_fixture, datetime):
+                    fecha_fixture = fecha_fixture.date()
+                elif not isinstance(fecha_fixture, date):
+                    fecha_fixture = date.fromisoformat(str(fecha_fixture)[:10])
+                if peticion.competicion_codigo == "euroleague" and (
+                    _normalizar_nombre_equipo(partido["equipo_local"])
+                    != _normalizar_nombre_equipo(peticion.equipo_local)
+                    or _normalizar_nombre_equipo(partido["equipo_visitante"])
+                    != _normalizar_nombre_equipo(peticion.equipo_visitante)
+                    or (
+                        peticion.fecha_partido is not None
+                        and fecha_fixture != peticion.fecha_partido
+                    )
+                ):
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Los equipos o la fecha no coinciden con el partido seleccionado.",
+                    )
+
+            datos_apuesta["competicion_id"] = competicion["id"]
+            datos_apuesta["competicion_nombre"] = competicion["nombre_corto"]
+            cursor.execute(
+                """
                 INSERT INTO apuestas (
                     partido_id,
+                    competicion_id,
+                    competicion_nombre,
                     equipo_local,
                     equipo_visitante,
                     fecha_partido,
@@ -341,6 +415,8 @@ async def guardar_apuesta(
                     razones
                 ) VALUES (
                     %(partido_id)s,
+                    %(competicion_id)s,
+                    %(competicion_nombre)s,
                     %(equipo_local)s,
                     %(equipo_visitante)s,
                     %(fecha_partido)s,
@@ -632,6 +708,7 @@ async def listar_bitacora_unificada(
             SELECT
                 a.id,
                 'baloncesto'::text AS deporte,
+                a.competicion_nombre,
                 'SIMPLE'::text AS tipo_apuesta,
                 a.resultado,
                 a.stake,
@@ -661,6 +738,7 @@ async def listar_bitacora_unificada(
             SELECT
                 f.id,
                 'futbol'::text AS deporte,
+                NULL::text AS competicion_nombre,
                 'SIMPLE'::text AS tipo_apuesta,
                 f.resultado::text AS resultado,
                 f.stake,
@@ -693,6 +771,7 @@ async def listar_bitacora_unificada(
             SELECT
                 c.id,
                 'baloncesto'::text AS deporte,
+                NULL::text AS competicion_nombre,
                 'COMBINADA'::text AS tipo_apuesta,
                 c.resultado,
                 c.stake,
@@ -1271,8 +1350,9 @@ async def obtener_metricas_bitacora(
 
     advertencias: List[str] = []
 
-    # Construir filtros base (global compartido)
-    condiciones = ["resultado IN ('GANADA', 'PERDIDA', 'PUSH')"]
+    # Estas métricas usan las reglas y evaluabilidad de NBA; Euro se muestra en
+    # la bitácora unificada, pero no entra en la cohorte NBA.
+    condiciones = ["resultado IN ('GANADA', 'PERDIDA', 'PUSH')", _NBA_COMPETENCIA_SQL]
     parametros: List[object] = []
 
     if desde:
