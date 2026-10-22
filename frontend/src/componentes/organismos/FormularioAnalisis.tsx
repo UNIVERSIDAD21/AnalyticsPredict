@@ -31,6 +31,7 @@ import {
 } from '../../tipos';
 import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
 import { esCuotaValida } from '../../utilidades/validadores';
+import type { PeticionEuro } from '../../servicios/euroliga';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -41,13 +42,11 @@ interface OpcionMercadoCustom {
   etiqueta: string;
 }
 
-interface PropsFormularioAnalisis {
+interface PropsBaseFormularioAnalisis {
   /** Lista de equipos disponibles */
   equipos: Equipo[];
   /** Estadísticas de equipos */
   estadisticas?: EstadisticasEquipo[];
-  /** Callback cuando se envía el formulario */
-  onAnalizar: (peticion: PeticionAnalisis, ladoSeleccionado?: LadoApuesta) => void;
   /** Indica si está cargando */
   cargando?: boolean;
   /** Indica si los equipos están cargando */
@@ -60,11 +59,17 @@ interface PropsFormularioAnalisis {
   textoAyudaMercado?: string;
   /** Unidad semántica del módulo (p.ej. goles/corners/disparos) */
   unidadLineaLabel?: string;
-  /** Dominio del formulario; evita consultar temporadas NBA desde fútbol. */
-  deporte?: 'NBA' | 'FUTBOL';
+  /** Invalida una salida cuando cambian los parámetros del formulario. */
+  onCambiarParametros?: () => void;
+  onActualizarPartidos?: () => void;
   partidoActual?: PartidoResumen | null;
   onSeleccionarPartido?: (partido: PartidoResumen | null) => void;
 }
+
+type PropsFormularioAnalisis = PropsBaseFormularioAnalisis & (
+  | { deporte: 'EUROLIGA'; onAnalizar: (peticion: PeticionEuro) => void }
+  | { deporte?: 'NBA' | 'FUTBOL'; onAnalizar: (peticion: PeticionAnalisis, ladoSeleccionado?: LadoApuesta) => void }
+);
 
 interface EstadoFormulario {
   equipoLocal: string;
@@ -93,20 +98,25 @@ const ESTADO_INICIAL: EstadoFormulario = {
 /**
  * Formulario para configurar y ejecutar análisis de partidos
  */
-export function FormularioAnalisis({
-  equipos,
-  estadisticas = [],
-  onAnalizar,
-  cargando = false,
-  cargandoEquipos = false,
-  partidosDisponibles,
-  opcionesMercado,
-  textoAyudaMercado,
-  unidadLineaLabel,
-  deporte = 'NBA',
-  partidoActual,
-  onSeleccionarPartido,
-}: PropsFormularioAnalisis) {
+export function FormularioAnalisis(props: PropsFormularioAnalisis) {
+  const {
+    equipos,
+    estadisticas = [],
+    cargando = false,
+    cargandoEquipos = false,
+    partidosDisponibles,
+    opcionesMercado,
+    textoAyudaMercado,
+    unidadLineaLabel,
+    deporte = 'NBA',
+    partidoActual,
+    onSeleccionarPartido,
+    onCambiarParametros,
+    onActualizarPartidos,
+  } = props;
+  const esEuroliga = deporte === 'EUROLIGA';
+  const [cuartos, setCuartos] = useState(0);
+  const [parciales, setParciales] = useState<[string, string][]>([['', ''], ['', ''], ['', '']]);
   // Estado del formulario
   const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
   const [errores, setErrores] = useState<string[]>([]);
@@ -131,12 +141,13 @@ export function FormularioAnalisis({
   const actualizarCampo = useCallback(
     <K extends keyof EstadoFormulario>(campo: K, valor: EstadoFormulario[K]) => {
       setFormulario((prev) => ({ ...prev, [campo]: valor }));
+      onCambiarParametros?.();
       // Limpiar errores al modificar
       if (errores.length > 0) {
         setErrores([]);
       }
     },
-    [errores.length]
+    [errores.length, onCambiarParametros]
   );
 
   // Resetear formulario
@@ -148,13 +159,19 @@ export function FormularioAnalisis({
     setErrorTemporadas(null);
     setPartidoInterno(null);
     onSeleccionarPartido?.(null);
-  }, [onSeleccionarPartido]);
+    onCambiarParametros?.();
+    setCuartos(0);
+    setParciales([['', ''], ['', ''], ['', '']]);
+  }, [onSeleccionarPartido, onCambiarParametros]);
 
   // Manejar selección de partido (autocompleta equipos)
   const manejarSeleccionPartido = useCallback(
     (partido: PartidoResumen | null) => {
       setPartidoInterno(partido);
       onSeleccionarPartido?.(partido);
+      onCambiarParametros?.();
+      setCuartos(0);
+      setParciales([['', ''], ['', ''], ['', '']]);
 
       if (partido) {
         // Autocompletar equipos desde el partido seleccionado
@@ -165,7 +182,7 @@ export function FormularioAnalisis({
         }));
       }
     },
-    [onSeleccionarPartido]
+    [onSeleccionarPartido, onCambiarParametros]
   );
 
   const esJuegoCompleto = formulario.mercado === 'COMPLETO';
@@ -186,6 +203,24 @@ export function FormularioAnalisis({
   const manejarEnvio = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      if (cargando) return;
+
+      if (props.deporte === 'EUROLIGA') {
+        const erroresEuro: string[] = [];
+        const scores = parciales.slice(0, cuartos).map(q => q.map(Number) as [number, number]);
+        if (!equipoLocalSeleccionado || !equipoVisitanteSeleccionado) erroresEuro.push('Selecciona los dos equipos Euroliga.');
+        if (equipoLocalSeleccionado?.id === equipoVisitanteSeleccionado?.id) erroresEuro.push('Los equipos deben ser distintos.');
+        if (equipoLocalSeleccionado?.elegible === false || equipoVisitanteSeleccionado?.elegible === false) erroresEuro.push('Equipo sin muestra suficiente para el predictor.');
+        if (!formulario.mercado) erroresEuro.push('Selecciona el mercado.');
+        const linea = Number(formulario.linea);
+        if (!formulario.linea.trim() || !Number.isFinite(linea) || linea <= 0 || linea > 600) erroresEuro.push('La línea debe ser mayor a 0 y como máximo 600.');
+        if (parciales.slice(0, cuartos).some(q => q.some(x => !x.trim())) || scores.some(q => q.some(x => !Number.isInteger(x) || x < 0 || x > 100))) erroresEuro.push('Completa cada cuarto terminado con enteros entre 0 y 100.');
+        if (formulario.mercado !== 'COMPLETO' && Number(formulario.mercado.slice(1)) <= cuartos) erroresEuro.push('Selecciona un cuarto posterior al corte observado o el total de regulación.');
+        if (erroresEuro.length) { setErrores(erroresEuro); return; }
+        props.onAnalizar({ equipo_local: equipoLocalSeleccionado!.nombre, equipo_visitante: equipoVisitanteSeleccionado!.nombre,
+          mercado: formulario.mercado as PeticionEuro['mercado'], linea, partido_id: partidoSeleccionado?.id, parciales: scores });
+        return;
+      }
 
       const ladoSeleccionado = formulario.ladoApuesta;
 
@@ -259,9 +294,9 @@ export function FormularioAnalisis({
         return;
       }
 
-      onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
+      props.onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, onAnalizar, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado]
+    [formulario, props, cargando, cuartos, parciales, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado]
   );
 
   useEffect(() => {
@@ -269,7 +304,7 @@ export function FormularioAnalisis({
       Boolean
     ) as string[];
 
-    if (deporte === 'FUTBOL' || ids.length === 0) {
+    if (deporte !== 'NBA' || ids.length === 0) {
       setTemporadasDisponibles([]);
       setTemporadasSeleccionadas([]);
       setErrorTemporadas(null);
@@ -372,6 +407,8 @@ export function FormularioAnalisis({
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
             partidosDisponibles={partidosDisponibles}
+            modoRegistro={esEuroliga ? 'euroliga' : 'nba'}
+            onActualizar={onActualizarPartidos}
           />
 
           {/* Equipo Local - deshabilitado si hay partido seleccionado */}
@@ -408,11 +445,11 @@ export function FormularioAnalisis({
             }
           />
 
-          <PanelEstadisticasEquipo
+          {!esEuroliga && <PanelEstadisticasEquipo
             equipoLocal={buscarEstadisticas(formulario.equipoLocal)}
             equipoVisitante={buscarEstadisticas(formulario.equipoVisitante)}
             cargando={cargando}
-          />
+          />}
 
           {/* Mercado */}
           <SelectorMercado
@@ -432,8 +469,24 @@ export function FormularioAnalisis({
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
             unidadLabel={unidadLineaLabel ?? 'puntos'}
-            periodoLabel={formulario.mercado === 'Q1' ? 'primer tiempo' : (formulario.mercado === 'Q2' ? 'segundo tiempo' : (formulario.mercado === 'COMPLETO' ? 'juego completo' : undefined))}
+            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga ? 'regulación de 40 minutos (sin OT)' : 'juego completo') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
+            placeholderLinea={esEuroliga ? (esJuegoCompleto ? 'Ej: 170.5' : 'Ej: 42.5') : undefined}
           />
+
+          {esEuroliga && <div className="space-y-3">
+            <label className="block etiqueta">Modo de análisis
+              <select className="input-base w-full mt-2" value={cuartos} disabled={cargando} onChange={e => { setCuartos(Number(e.target.value)); onCambiarParametros?.(); setErrores([]); }}>
+                <option value={0}>Prepartido</option>
+                {[1, 2, 3].map(q => <option key={q} value={q}>Condicionado al cierre de Q{q}</option>)}
+              </select>
+            </label>
+            {Array.from({ length: cuartos }, (_, i) => <div key={i} className="grid grid-cols-2 gap-2">
+              {[0, 1].map(lado => <label key={lado} className="block text-xs text-texto-secundario">Q{i + 1} {lado === 0 ? 'local' : 'visitante'}
+                <input type="number" min="0" max="100" step="1" disabled={cargando} className="input-base w-full mt-1" value={parciales[i][lado]} onChange={e => { setParciales(prev => prev.map((q, j) => j === i ? q.map((x, k) => k === lado ? e.target.value : x) as [string, string] : q)); onCambiarParametros?.(); setErrores([]); }} />
+              </label>)}
+            </div>)}
+            <p className="text-xs text-texto-secundario">{cuartos > 0 ? 'Puntos de cada cuarto completo, no acumulados. No admite reloj ni parciales del cuarto en curso.' : 'Cuartos de 10 minutos y total de 40 minutos, sin prórroga.'}</p>
+          </div>}
 
           {/* Temporadas */}
           {deporte === 'NBA' && <div className="space-y-2">
@@ -498,7 +551,7 @@ export function FormularioAnalisis({
           </div>}
 
           {/* Cuotas duales (Over/Under) */}
-          <InputCuotasDuales
+          {!esEuroliga && <><InputCuotasDuales
             cuotaOver={formulario.cuotaOver}
             cuotaUnder={formulario.cuotaUnder}
             onCuotaOverChange={(valor) => actualizarCampo('cuotaOver', valor)}
@@ -511,7 +564,8 @@ export function FormularioAnalisis({
           <IndicadorOverround
             cuotaOver={formulario.cuotaOver}
             cuotaUnder={formulario.cuotaUnder}
-          />
+          /></>}
+          {esEuroliga && <p className="text-xs text-texto-secundario">Se conserva cada análisis en el historial Euroliga. Probabilidades RAW sin calibrar; no registra apuestas.</p>}
         </div>
 
         {/* Resumen de apuesta */}
@@ -523,7 +577,7 @@ export function FormularioAnalisis({
             <p className={`text-sm font-semibold ${formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
               }`}>
               {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} {unidadLineaLabel ?? 'puntos'}
-              {formulario.mercado && ` en ${formulario.mercado === 'Q1' ? 'Primer tiempo' : (formulario.mercado === 'Q2' ? 'Segundo tiempo' : (formulario.mercado === 'COMPLETO' ? 'Juego completo' : formulario.mercado))}`}
+              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? (esEuroliga ? 'Regulación (sin OT)' : 'Juego completo') : deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'Primer tiempo' : 'Segundo tiempo') : `Cuarto ${formulario.mercado}`}`}
             </p>
           </div>
         )}

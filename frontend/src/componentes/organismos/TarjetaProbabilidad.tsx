@@ -14,6 +14,8 @@ interface PropsTarjetaProbabilidad {
   linea: number;
   probabilidadOver: number;
   probabilidadUnder: number;
+  probabilidadPush?: number;
+  decimales?: number;
   mediaTotal: number;
   desviacion: number;
   seleccionUsuario?: LadoApuesta;
@@ -24,8 +26,8 @@ interface PropsTarjetaProbabilidad {
 // UTILIDADES
 // ══════════════════════════════════════════════════════════════
 
-function formatearPorcentaje(valor: number): string {
-  return `${(valor * 100).toFixed(1)}%`;
+function formatearPorcentaje(valor: number, decimales: number): string {
+  return `${(valor * 100).toFixed(decimales)}%`;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -39,6 +41,8 @@ export function TarjetaProbabilidad({
   linea,
   probabilidadOver,
   probabilidadUnder,
+  probabilidadPush,
+  decimales = 1,
   mediaTotal,
   desviacion,
   seleccionUsuario,
@@ -46,6 +50,8 @@ export function TarjetaProbabilidad({
 }: PropsTarjetaProbabilidad) {
   const esOverFavorito = probabilidadOver > probabilidadUnder;
   const porcentajeOver = probabilidadOver * 100;
+  const porcentajeUnder = probabilidadUnder * 100;
+  const etiquetaLinea = String(linea);
 
   return (
     <Tarjeta className="animate-deslizar-arriba">
@@ -55,13 +61,13 @@ export function TarjetaProbabilidad({
           Línea Analizada
         </span>
         <div className="text-5xl font-futurista font-bold text-neon-cyan mt-2 texto-glow-cyan">
-          {linea.toFixed(1)}
+          {etiquetaLinea}
         </div>
         <span className="text-sm text-texto-terciario">{unidadLabel}</span>
       </div>
 
       {/* Barra de probabilidad futurista */}
-      <div className="relative h-14 rounded-xl overflow-hidden bg-futurista-oscuro border border-neon-cyan/20 mb-6">
+      <div role="img" aria-label={`Over ${formatearPorcentaje(probabilidadOver, decimales)}, Under ${formatearPorcentaje(probabilidadUnder, decimales)}${probabilidadPush !== undefined ? `, Push ${formatearPorcentaje(probabilidadPush, decimales)}` : ''}`} className="relative h-14 rounded-xl overflow-hidden bg-futurista-oscuro border border-neon-cyan/20 mb-6">
         {/* Lado Over */}
         <div
           className="absolute left-0 top-0 h-full transition-all duration-1000 ease-out"
@@ -75,10 +81,12 @@ export function TarjetaProbabilidad({
         <div
           className="absolute right-0 top-0 h-full transition-all duration-1000 ease-out"
           style={{
-            width: `${100 - porcentajeOver}%`,
+            width: `${porcentajeUnder}%`,
             background: 'linear-gradient(90deg, rgba(255, 0, 85, 0.6) 0%, rgba(255, 0, 85, 0.3) 100%)',
           }}
         />
+
+        {probabilidadPush !== undefined && <div className="absolute top-0 h-full bg-amber-400/60" data-testid="barra-push" style={{ left: `${porcentajeOver}%`, width: `${probabilidadPush * 100}%` }} />}
 
         {/* Indicador central */}
         <div
@@ -100,7 +108,7 @@ export function TarjetaProbabilidad({
       </div>
 
       {/* Probabilidades numéricas */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className={`grid gap-4 mb-6 ${probabilidadPush === undefined ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}>
         {/* Over */}
         <div className={`text-center p-4 rounded-xl border transition-all duration-300 ${
           esOverFavorito
@@ -108,11 +116,11 @@ export function TarjetaProbabilidad({
             : 'bg-futurista-oscuro/50 border-neon-cyan/10'
         } ${seleccionUsuario === 'OVER' ? 'ring-2 ring-neon-verde/50' : ''}`}>
           <div className={`text-3xl font-mono font-bold ${esOverFavorito ? 'text-neon-verde texto-glow-verde' : 'text-texto-secundario'}`}>
-            {formatearPorcentaje(probabilidadOver)}
+            {formatearPorcentaje(probabilidadOver, decimales)}
           </div>
           <div className="flex items-center justify-center gap-1 mt-2 text-sm text-texto-secundario">
             <TrendingUp size={14} />
-            <span>Over {linea.toFixed(1)}</span>
+            <span>Over {etiquetaLinea}</span>
           </div>
           {seleccionUsuario === 'OVER' && (
             <div className="mt-2 text-xs text-neon-verde">Tu predicción</div>
@@ -126,16 +134,20 @@ export function TarjetaProbabilidad({
             : 'bg-futurista-oscuro/50 border-neon-cyan/10'
         } ${seleccionUsuario === 'UNDER' ? 'ring-2 ring-neon-rojo/50' : ''}`}>
           <div className={`text-3xl font-mono font-bold ${!esOverFavorito ? 'text-neon-rojo texto-glow-rojo' : 'text-texto-secundario'}`}>
-            {formatearPorcentaje(probabilidadUnder)}
+            {formatearPorcentaje(probabilidadUnder, decimales)}
           </div>
           <div className="flex items-center justify-center gap-1 mt-2 text-sm text-texto-secundario">
             <TrendingDown size={14} />
-            <span>Under {linea.toFixed(1)}</span>
+            <span>Under {etiquetaLinea}</span>
           </div>
           {seleccionUsuario === 'UNDER' && (
             <div className="mt-2 text-xs text-neon-rojo">Tu predicción</div>
           )}
         </div>
+        {probabilidadPush !== undefined && <div className="text-center p-4 rounded-xl border border-amber-400/30 bg-futurista-oscuro/50">
+          <div className="text-3xl font-mono font-bold text-amber-300">{formatearPorcentaje(probabilidadPush, decimales)}</div>
+          <p className="mt-2 text-sm text-texto-secundario">Igual a la línea (push)</p>
+        </div>}
       </div>
 
       {/* Estadísticas adicionales */}

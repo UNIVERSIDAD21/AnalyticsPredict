@@ -5,7 +5,9 @@ funcional terminada; **no acredita igualdad de precisión con NBA ni certificaci
 
 ## Uso y límites
 
-Abrir `/euroliga` desde la navegación. Seleccionar fixture Euroliga o dos equipos,
+Desde el 22/10, abrir **Baloncesto** (`/baloncesto?liga=euroliga`) y elegir Euroliga
+en el selector de liga. `/euroliga` redirige a esa misma pantalla. Ver la
+[integración de interfaz](INTEGRACION_UI_BALONCESTO_2026-10-22.md). Seleccionar fixture Euroliga o dos equipos,
 periodo y línea. Informa Over/Under/push, media, desviación, intervalo nominal,
 proyecciones Q1–Q4/total y ventaja local/visitante. Admite condicionamiento a los
 marcadores de cuartos completos Q1–Q3, no reloj ni parcial del cuarto siguiente.

@@ -1,9 +1,9 @@
 /** Rutas de la plataforma personal AnalyticsPredict. */
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
-const PaginaPrincipal = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaPrincipal')).PaginaPrincipal }));
-const PaginaEuroliga = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaEuroliga')).PaginaEuroliga }));
+import type { LigaBaloncesto } from './utilidades/ligasBaloncesto';
+const PaginaBaloncesto = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBaloncesto')).PaginaBaloncesto }));
 const PaginaOperacion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaOperacion')).PaginaOperacion }));
 const PaginaDashboardUsuario = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaDashboardUsuario')).PaginaDashboardUsuario }));
 const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBitacora')).PaginaBitacora }));
@@ -12,17 +12,25 @@ const PaginaFutbol = lazy(async () => ({ default: (await import('./componentes/p
 const AnalisisPartidoFutbol = lazy(async () => ({ default: (await import('./componentes/paginas/AnalisisPartidoFutbol')).AnalisisPartidoFutbol }));
 const PaginaAnalisisNbaAdmin = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaAnalisisNbaAdmin')).PaginaAnalisisNbaAdmin }));
 
-export default function App() {
+/** Compatibilidad de marcadores anteriores sin mantener páginas paralelas. */
+function RedireccionBaloncesto({ liga }: { liga: LigaBaloncesto }) {
+  const { search, hash } = useLocation();
+  const params = new URLSearchParams(search);
+  params.set('liga', liga);
+  return <Navigate to={`/baloncesto?${params}${hash}`} replace />;
+}
+
+export function RutasAplicacion() {
   return (
-    <BrowserRouter>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-texto-secundario">Cargando módulo...</div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/centro-analitico" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<PaginaDashboardUsuario />} />
           <Route path="/operacion" element={<PaginaOperacion />} />
-          <Route path="/app" element={<PaginaPrincipal />} />
-          <Route path="/euroliga" element={<PaginaEuroliga />} />
+          <Route path="/baloncesto" element={<PaginaBaloncesto />} />
+          <Route path="/app" element={<RedireccionBaloncesto liga="nba" />} />
+          <Route path="/euroliga" element={<RedireccionBaloncesto liga="euroliga" />} />
           <Route path="/bitacora" element={<PaginaBitacora />} />
           <Route path="/configuracion" element={<PaginaConfiguracion />} />
           <Route path="/admin/nba-analysis" element={<PaginaAnalisisNbaAdmin />} />
@@ -33,6 +41,9 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
-    </BrowserRouter>
   );
+}
+
+export default function App() {
+  return <BrowserRouter><RutasAplicacion /></BrowserRouter>;
 }

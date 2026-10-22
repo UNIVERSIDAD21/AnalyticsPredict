@@ -30,7 +30,7 @@ interface ConfiguracionDeporte {
 const CONFIGURACION_DEPORTES: Record<Deporte, ConfiguracionDeporte> = {
   NBA: {
     icono: '🏀',
-    etiqueta: 'NBA',
+    etiqueta: 'BALONCESTO',
     color: 'neon-cyan',
   },
   EUROLIGA: { icono: '🏀', etiqueta: 'EUROLIGA', color: 'neon-cyan' },
@@ -83,16 +83,17 @@ export function SelectorDeporte({
         ${className}
       `}
     >
-      {(Object.keys(CONFIGURACION_DEPORTES) as Deporte[]).map((deporte) => {
-        const config = CONFIGURACION_DEPORTES[deporte];
-        const esActivo = deporteActivo === deporte;
+      {(['NBA', 'FUTBOL'] as Deporte[]).map((grupo) => {
+        const deporte = grupo === 'NBA' && deporteActivo === 'EUROLIGA' ? 'EUROLIGA' : grupo;
+        const config = CONFIGURACION_DEPORTES[grupo];
+        const esActivo = grupo === 'NBA' ? deporteActivo !== 'FUTBOL' : deporteActivo === 'FUTBOL';
 
         return (
           <button
             key={deporte}
             type="button"
             onClick={() => {
-              cambiarDeporte(deporte);
+              cambiarDeporte(deporte, !onChangeDeporte);
               onChangeDeporte?.(deporte);
             }}
             className={`
@@ -141,9 +142,10 @@ export function SelectorDeporteCompacto({ className = '' }: { className?: string
         ${className}
       `}
     >
-      {(Object.keys(CONFIGURACION_DEPORTES) as Deporte[]).map((deporte) => {
-        const config = CONFIGURACION_DEPORTES[deporte];
-        const esActivo = deporteActivo === deporte;
+      {(['NBA', 'FUTBOL'] as Deporte[]).map((grupo) => {
+        const deporte = grupo === 'NBA' && deporteActivo === 'EUROLIGA' ? 'EUROLIGA' : grupo;
+        const config = CONFIGURACION_DEPORTES[grupo];
+        const esActivo = grupo === 'NBA' ? deporteActivo !== 'FUTBOL' : deporteActivo === 'FUTBOL';
 
         return (
           <button

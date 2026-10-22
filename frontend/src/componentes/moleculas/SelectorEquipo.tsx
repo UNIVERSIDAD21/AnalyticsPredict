@@ -50,8 +50,8 @@ export function SelectorEquipo({
   const opciones = useMemo<OpcionSelect[]>(() => {
     return equipos.map((equipo) => ({
       valor: equipo.nombre.toLowerCase(),
-      etiqueta: `${equipo.nombre} (${equipo.abreviatura})`,
-      deshabilitada: equipo.nombre.toLowerCase() === equipoExcluido?.toLowerCase(),
+      etiqueta: `${equipo.nombre}${equipo.abreviatura ? ` (${equipo.abreviatura})` : ''}${equipo.muestras !== undefined ? ` · n=${equipo.muestras}` : ''}`,
+      deshabilitada: equipo.elegible === false || equipo.nombre.toLowerCase() === equipoExcluido?.toLowerCase(),
     }));
   }, [equipos, equipoExcluido]);
 

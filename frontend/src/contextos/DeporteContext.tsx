@@ -11,6 +11,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
+import { leerLigaBaloncesto, rutaBaloncesto } from '../utilidades/ligasBaloncesto';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -51,8 +52,8 @@ const STORAGE_KEY = 'deporte_activo';
  * Rutas base por deporte
  */
 const RUTAS_BASE: Record<Deporte, string> = {
-  NBA: '/app',
-  EUROLIGA: '/euroliga',
+  NBA: rutaBaloncesto('nba'),
+  EUROLIGA: rutaBaloncesto('euroliga'),
   FUTBOL: '/futbol',
 };
 
@@ -61,6 +62,7 @@ const RUTAS_BASE: Record<Deporte, string> = {
  */
 function detectarDeporteDesdeURL(): Deporte {
   const pathname = window.location.pathname;
+  if (pathname === '/baloncesto') return leerLigaBaloncesto(window.location.search) === 'euroliga' ? 'EUROLIGA' : 'NBA';
   if (pathname.startsWith('/euroliga')) return 'EUROLIGA';
   if (pathname.startsWith('/futbol')) {
     return 'FUTBOL';
@@ -122,18 +124,16 @@ export function ProveedorDeporte({ children }: ProveedorDeporteProps) {
    * Cambia el deporte activo y navega a la ruta base correspondiente
    */
   const cambiarDeporte = useCallback((deporte: Deporte, navegar = true) => {
-    if (deporte === deporteActivo) return;
-
     setDeporteActivo(deporte);
     if (!navegar) return;
 
     // Navegar a la ruta base del deporte
     const rutaDestino = RUTAS_BASE[deporte];
-    if (window.location.pathname !== rutaDestino) {
+    if (`${window.location.pathname}${window.location.search}` !== rutaDestino) {
       window.history.pushState({}, '', rutaDestino);
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
-  }, [deporteActivo]);
+  }, []);
 
   /**
    * Valores computados
@@ -184,7 +184,7 @@ export function useNavegacionDeporte() {
     (subruta: string) => {
       let rutaCompleta: string;
 
-      if (deporteActivo === 'NBA') {
+      if (deporteActivo !== 'FUTBOL') {
         rutaCompleta = subruta.startsWith('/') ? subruta : `/${subruta}`;
       } else {
         // Para fútbol, agregar prefijo /futbol
@@ -205,7 +205,7 @@ export function useNavegacionDeporte() {
    */
   const construirURL = useCallback(
     (subruta: string): string => {
-      if (deporteActivo === 'NBA') {
+      if (deporteActivo !== 'FUTBOL') {
         return subruta.startsWith('/') ? subruta : `/${subruta}`;
       }
       const subrutaLimpia = subruta.startsWith('/') ? subruta.slice(1) : subruta;

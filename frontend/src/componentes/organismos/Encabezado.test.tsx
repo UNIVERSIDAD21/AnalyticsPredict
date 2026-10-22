@@ -6,7 +6,7 @@ import { ProveedorDeporte } from '../../contextos/DeporteContext';
 import { Encabezado } from './Encabezado';
 
 afterEach(cleanup);
-function Ruta() { return <output data-testid="ruta">{useLocation().pathname}</output>; }
+function Ruta() { return <output data-testid="ruta">{useLocation().pathname}{useLocation().search}</output>; }
 
 describe('navegación deportiva', () => {
   it('sincroniza el deporte al navegar sin reemplazar rutas de detalle', async () => {
@@ -15,9 +15,9 @@ describe('navegación deportiva', () => {
     </MemoryRouter></ProveedorDeporte>);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a FÚTBOL' })).toHaveAttribute('aria-pressed', 'true'));
     expect(screen.getByTestId('ruta')).toHaveTextContent('/futbol/partidos/partido-1');
-    fireEvent.click(screen.getByRole('button', { name: 'NBA' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a NBA' })).toHaveAttribute('aria-pressed', 'true'));
-    expect(screen.getByTestId('ruta')).toHaveTextContent('/app');
+    fireEvent.click(screen.getByRole('button', { name: 'Baloncesto' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a BALONCESTO' })).toHaveAttribute('aria-pressed', 'true'));
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/baloncesto?liga=nba');
     fireEvent.click(screen.getByRole('button', { name: 'Fútbol' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a FÚTBOL' })).toHaveAttribute('aria-pressed', 'true'));
     expect(screen.getByTestId('ruta')).toHaveTextContent('/futbol');

@@ -112,6 +112,7 @@ export function equiposAOpciones(equipos: Equipo[]): OpcionEquipo[] {
  */
 export function buscarEquipo(equipos: Equipo[], nombre: string): Equipo | undefined {
   const nombreNormalizado = nombre.toLowerCase().trim();
+  if (!nombreNormalizado) return undefined;
   return equipos.find(
     (equipo) =>
       equipo.nombre.toLowerCase() === nombreNormalizado ||

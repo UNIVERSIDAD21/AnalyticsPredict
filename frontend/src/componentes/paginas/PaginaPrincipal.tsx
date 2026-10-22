@@ -4,8 +4,8 @@
  */
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Encabezado,
   CreadorCombinada,
   FormularioAnalisis,
   FormularioGuardarApuesta,
@@ -14,7 +14,8 @@ import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, ProgresoAnalisis } from '../moleculas';
 import { Spinner } from '../atomos';
 import { useEquipos, useAnalisis, useEstadisticasEquipos } from '../../hooks';
-import { Activity, TrendingUp, Target, BarChart3, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { EstadoVacio, PanelesAnalisisBaloncesto } from '../organismos/PanelesAnalisisBaloncesto';
 import { LadoApuesta, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 import { crearApuesta } from '../../servicios';
 import { useToasts } from '../../contextos/Toasts';
@@ -27,58 +28,6 @@ const HistorialEquipo = lazy(async () => ({
 }));
 
 // ══════════════════════════════════════════════════════════════
-// COMPONENTE ESTADO VACÍO
-// ══════════════════════════════════════════════════════════════
-
-function EstadoVacio() {
-  return (
-    <div className="h-full flex flex-col items-center justify-center text-center p-8">
-      {/* Icono animado */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-neon-cyan/10 blur-3xl rounded-full animate-pulse" />
-        <div className="relative w-32 h-32 rounded-2xl border border-neon-cyan/20 bg-futurista-oscuro/50 flex items-center justify-center">
-          <BarChart3 className="w-16 h-16 text-neon-cyan/50" />
-        </div>
-      </div>
-
-      {/* Texto */}
-      <h3 className="text-2xl font-futurista text-texto-principal mb-3 tracking-wider">
-        ESPERANDO ANÁLISIS
-      </h3>
-      <p className="text-texto-secundario max-w-md mb-8">
-        Configura los parámetros del partido en el panel izquierdo para obtener predicciones
-        basadas en análisis estadístico avanzado.
-      </p>
-
-      {/* Características */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl">
-        <div className="p-4 rounded-lg border border-neon-cyan/10 bg-futurista-oscuro/30">
-          <Activity className="w-6 h-6 text-neon-cyan mb-2 mx-auto" />
-          <p className="text-xs text-texto-secundario uppercase tracking-wider">
-            Análisis por Cuarto
-          </p>
-        </div>
-        <div className="p-4 rounded-lg border border-neon-verde/10 bg-futurista-oscuro/30">
-          <TrendingUp className="w-6 h-6 text-neon-verde mb-2 mx-auto" />
-          <p className="text-xs text-texto-secundario uppercase tracking-wider">
-            Probabilidades Over/Under
-          </p>
-        </div>
-        <div className="p-4 rounded-lg border border-neon-magenta/10 bg-futurista-oscuro/30">
-          <Target className="w-6 h-6 text-neon-magenta mb-2 mx-auto" />
-          <p className="text-xs text-texto-secundario uppercase tracking-wider">
-            Detección de Valor
-          </p>
-        </div>
-      </div>
-
-      {/* Línea decorativa */}
-      <div className="mt-8 w-48 h-[1px] bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
 // ══════════════════════════════════════════════════════════════
 
@@ -86,6 +35,8 @@ function EstadoVacio() {
  * Página principal del Analizador NBA con diseño futurista
  */
 export function PaginaPrincipal() {
+  const navegar = useNavigate();
+  const [params, setParams] = useSearchParams();
   const {
     equipos,
     estado: estadoEquipos,
@@ -182,11 +133,6 @@ export function PaginaPrincipal() {
   const ultimoResultadoRef = useRef<string | null>(null);
   const ultimoErrorRef = useRef<string | null>(null);
   const ultimaAdvertenciaRef = useRef<string | null>(null);
-  const navegar = (ruta: string) => {
-    if (window.location.pathname === ruta) return;
-    window.history.pushState({}, '', ruta);
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
 
   const obtenerAdvertenciasCriticas = (lista: string[]) => {
     const mapeo: Record<string, string> = {
@@ -285,7 +231,6 @@ export function PaginaPrincipal() {
 
   // Leer parámetros de URL para navegación directa a estadísticas de equipo
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
     const equipo = params.get('equipo');
 
@@ -295,19 +240,17 @@ export function PaginaPrincipal() {
         setEquipoHistorialId(equipo);
       }
       // Limpiar los parámetros de la URL sin recargar
-      window.history.replaceState({}, '', window.location.pathname);
+      const siguientes = new URLSearchParams(params);
+      siguientes.delete('tab');
+      siguientes.delete('equipo');
+      setParams(siguientes, { replace: true });
     }
-  }, []);
+  }, [params, setParams]);
 
   // Panel de salud removido por requerimiento.
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Encabezado */}
-      <Encabezado />
-
-      {/* Contenido principal - Full height */}
-      <main className="flex-1 contenedor py-6 lg:py-8">
+    <div aria-label="Analizador NBA">
         <div className="mb-6 tarjeta p-4 border border-neon-cyan/20">
           <p className="text-xs uppercase tracking-wider text-neon-cyan">Marco de uso responsable</p>
           <p className="text-sm text-texto-secundario mt-2">
@@ -370,10 +313,7 @@ export function PaginaPrincipal() {
 
         {/* Layout principal de dos columnas */}
         {estadoEquipos === 'exito' && tabActivo === 'analisis' && (
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
-            {/* Panel Izquierdo - Formulario */}
-            <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
-              <div className="lg:sticky lg:top-6">
+          <PanelesAnalisisBaloncesto formulario={
                 <FormularioAnalisis
                   equipos={equipos}
                   estadisticas={estadisticasEquipos}
@@ -387,11 +327,8 @@ export function PaginaPrincipal() {
                   cargando={estadoAnalisis === 'cargando'}
                   cargandoEquipos={false}
                 />
-              </div>
-            </div>
-
+          }>
             {/* Panel Derecho - Resultados */}
-            <div className="flex-1 min-w-0" id="resultado-analisis">
               {/* Error de análisis */}
               {errorAnalisis && (
                 <MensajeError
@@ -435,8 +372,7 @@ export function PaginaPrincipal() {
               <div className="mt-4">
                 <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
               </div>
-            </div>
-          </div>
+          </PanelesAnalisisBaloncesto>
         )}
 
         {tabActivo === 'estadisticas' && (
@@ -497,7 +433,6 @@ export function PaginaPrincipal() {
             )}
           </div>
         )}
-      </main>
 
       {resultado && seleccionUsuario && (
         <FormularioGuardarApuesta
@@ -547,19 +482,7 @@ export function PaginaPrincipal() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="border-t border-neon-cyan/10 bg-futurista-negro/80 backdrop-blur-sm">
-        <div className="contenedor py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
-            <p className="text-texto-terciario text-xs uppercase tracking-wider">
-              NBA Analyzer Pro — Sistema de Predicción Avanzada
-            </p>
-            <p className="text-texto-terciario/60 text-xs">
-              Los análisis son orientativos. Apuesta responsablemente.
-            </p>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 }

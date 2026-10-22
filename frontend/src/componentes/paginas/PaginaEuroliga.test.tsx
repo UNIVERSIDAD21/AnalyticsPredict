@@ -3,9 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ProveedorDeporte } from '../../contextos/DeporteContext';
-import { PaginaEuroliga } from './PaginaEuroliga';
+import { obtenerTemporadasEquipos, obtenerPartidosProximos } from '../../servicios';
+import { ModuloEuroliga } from './PaginaEuroliga';
 import { analizarEuroliga, cargarEuroliga, type ResultadoEuro } from '../../servicios/euroliga';
 
+vi.mock('../../servicios', async (original) => ({ ...await original<typeof import('../../servicios')>(), obtenerTemporadasEquipos: vi.fn(), obtenerPartidosProximos: vi.fn() }));
 vi.mock('../../servicios/euroliga', () => ({ cargarEuroliga: vi.fn(), analizarEuroliga: vi.fn() }));
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -30,23 +32,28 @@ function preparar() {
     ultimoFinal: '2026-10-16', historial: [],
   });
   vi.mocked(analizarEuroliga).mockResolvedValue(resultado);
-  render(<MemoryRouter initialEntries={['/euroliga']}><ProveedorDeporte><PaginaEuroliga /></ProveedorDeporte></MemoryRouter>);
+  render(<MemoryRouter initialEntries={['/euroliga']}><ProveedorDeporte><ModuloEuroliga /></ProveedorDeporte></MemoryRouter>);
 }
 
 async function completar() {
-  await screen.findByRole('combobox', { name: 'Partido Euroliga' });
-  fireEvent.change(screen.getByRole('combobox', { name: 'Partido Euroliga' }), { target: { value: 'fixture-euro' } });
-  fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea de puntos' }), { target: { value: '170.5' } });
+  fireEvent.click(await screen.findByRole('button', { name: /Seleccionar partido/ }));
+  fireEvent.click(screen.getByRole('button', { name: /Real Madrid vs Maccabi/ }));
+  fireEvent.change(screen.getByRole('combobox', { name: 'Mercado' }), { target: { value: 'COMPLETO' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea del análisis' }), { target: { value: '170.5' } });
 }
 
 describe('predictor Euroliga integrado', () => {
   it('manda exactamente fixture, modo y línea a Euro; muestra porcentajes y conserva historial sin repetir POST', async () => {
     preparar(); await completar();
-    fireEvent.click(screen.getByRole('button', { name: 'Analizar Euroliga' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
     await screen.findByRole('region', { name: 'Resultado Euroliga' });
     expect(analizarEuroliga).toHaveBeenCalledTimes(1);
     expect(analizarEuroliga).toHaveBeenCalledWith({ equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi', mercado: 'COMPLETO', linea: 170.5, partido_id: 'fixture-euro', parciales: [] });
-    expect(screen.getByText('70.00 %')).toBeInTheDocument();
+    expect(screen.getByText('70.00%')).toBeInTheDocument();
+    expect(obtenerTemporadasEquipos).not.toHaveBeenCalled();
+    expect(obtenerPartidosProximos).not.toHaveBeenCalled();
+    expect(screen.queryByText('Temporadas para el análisis')).toBeNull();
+    expect(screen.queryByLabelText(/Cuota Over/)).toBeNull();
     expect(screen.getByText('Probabilidades RAW no calibradas.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Historial Euroliga (1)' }));
     expect(screen.getByText(/21.*Real Madrid — Maccabi/)).toBeInTheDocument();
@@ -58,19 +65,63 @@ describe('predictor Euroliga integrado', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Modo de análisis' }), { target: { value: '1' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Q1 local' }), { target: { value: '20' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Q1 visitante' }), { target: { value: '19' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Analizar Euroliga' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
     await screen.findByRole('region', { name: 'Resultado Euroliga' });
     expect(analizarEuroliga).toHaveBeenCalledWith(expect.objectContaining({ parciales: [[20, 19]] }));
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea de puntos' }), { target: { value: '175.5' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea del análisis' }), { target: { value: '175.5' } });
     expect(screen.queryByRole('region', { name: 'Resultado Euroliga' })).not.toBeInTheDocument();
   });
 
   it('muestra error del servicio y permite reintentar sin fabricar un resultado', async () => {
     preparar(); await completar();
     vi.mocked(analizarEuroliga).mockRejectedValue(new Error('Abstención por muestra insuficiente'));
-    fireEvent.click(screen.getByRole('button', { name: 'Analizar Euroliga' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Abstención por muestra insuficiente'));
     expect(screen.queryByRole('region', { name: 'Resultado Euroliga' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Analizar Euroliga' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Analizar Partido' })).not.toBeDisabled();
   });
+  it('no convierte una selección vacía en el primer equipo con abreviatura vacía', async () => {
+    preparar();
+    await screen.findByRole('combobox', { name: 'Equipo Local' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Equipo Visitante' }), { target: { value: 'maccabi' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Mercado' }), { target: { value: 'COMPLETO' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea del análisis' }), { target: { value: '170.5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    expect(analizarEuroliga).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Selecciona los dos equipos Euroliga.');
+  });
+
+  it('rechaza parciales vacíos y un mercado ya observado antes de enviar al motor', async () => {
+    preparar(); await completar();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Modo de análisis' }), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    expect(analizarEuroliga).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Completa cada cuarto terminado');
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Q1 local' }), { target: { value: '20' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Q1 visitante' }), { target: { value: '19' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Mercado' }), { target: { value: 'Q1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    expect(analizarEuroliga).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('posterior al corte observado');
+  });
+
+  it('las pestañas conservan línea y equipos; limpiar elimina salida y modo live', async () => {
+    preparar(); await completar();
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    await screen.findByRole('region', { name: 'Resultado Euroliga' });
+    fireEvent.click(screen.getByRole('button', { name: 'Estadísticas de equipos' }));
+    expect(screen.getByRole('region', { name: 'Muestra de equipos Euroliga' })).toHaveTextContent('Muestra pequeña');
+    fireEvent.click(screen.getByRole('button', { name: 'Análisis' }));
+    expect(screen.getByRole('spinbutton', { name: 'Línea del análisis' })).toHaveValue(170.5);
+    expect(screen.getByRole('combobox', { name: 'Equipo Local' })).toHaveValue('real madrid');
+    expect(analizarEuroliga).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Modo de análisis' }), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }));
+    expect(screen.queryByRole('region', { name: 'Resultado Euroliga' })).toBeNull();
+    expect(screen.getByRole('spinbutton', { name: 'Línea del análisis' })).toHaveValue(null);
+    expect(screen.getByRole('combobox', { name: 'Equipo Local' })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Modo de análisis' })).toHaveValue('0');
+    expect(screen.queryByRole('spinbutton', { name: 'Q1 local' })).toBeNull();
+  });
+
 });

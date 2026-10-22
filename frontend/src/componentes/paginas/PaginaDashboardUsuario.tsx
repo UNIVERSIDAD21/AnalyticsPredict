@@ -60,7 +60,7 @@ export function PaginaDashboardUsuario() {
           </section>
         </>}
         <div className="flex flex-wrap gap-3">
-          <Boton variante="primario" onClick={() => navegar('/app')}>Análisis NBA</Boton>
+          <Boton variante="primario" onClick={() => navegar('/baloncesto')}>Análisis de baloncesto</Boton>
           <Boton variante="secundario" onClick={() => navegar('/futbol')}>Fútbol</Boton>
           <Boton variante="secundario" onClick={() => navegar('/bitacora')}>Bitácora</Boton>
           <Boton variante="secundario" onClick={() => navegar('/admin/nba-analysis')}>Análisis NBA interno</Boton>

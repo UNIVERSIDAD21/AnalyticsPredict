@@ -44,6 +44,8 @@ interface PropsSelectorPartido {
   diasAdelante?: number;
   /** Partidos inyectados por módulo (si llega, no consulta servicio) */
   partidosDisponibles?: PartidoResumen[];
+  modoRegistro?: 'nba' | 'euroliga';
+  onActualizar?: () => void;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -56,7 +58,10 @@ export function SelectorPartido({
   deshabilitado = false,
   diasAdelante = 7,
   partidosDisponibles,
+  modoRegistro = 'nba',
+  onActualizar,
 }: PropsSelectorPartido) {
+  const esEuroliga = modoRegistro === 'euroliga';
   const [partidos, setPartidos] = useState<PartidoResumen[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -182,7 +187,7 @@ export function SelectorPartido({
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50">
                 <div className="bg-futurista-medio border border-neon-cyan/30 rounded-lg px-3 py-2 shadow-lg min-w-[200px]">
                   <p className="text-xs text-texto-principal whitespace-nowrap">
-                    Selecciona un partido real para que el sistema aprenda de tus análisis
+                    {esEuroliga ? 'Selecciona el partido para conservar su identidad en el historial Euroliga' : 'Selecciona un partido real para que el sistema aprenda de tus análisis'}
                   </p>
                 </div>
                 <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neon-cyan/30" />
@@ -192,7 +197,7 @@ export function SelectorPartido({
         </label>
         <button
           type="button"
-          onClick={cargarPartidos}
+          onClick={() => { if (onActualizar) onActualizar(); else void cargarPartidos(); }}
           disabled={cargando || deshabilitado}
           className="text-xs text-neon-cyan hover:text-neon-cyan/80 flex items-center gap-1"
         >
@@ -202,7 +207,11 @@ export function SelectorPartido({
       </div>
 
       {/* Panel informativo colapsable (Nivel 2) */}
-      {mostrarInfo && (
+      {mostrarInfo && esEuroliga && <div className="p-4 rounded-lg bg-futurista-oscuro/80 border border-neon-cyan/20 text-xs text-texto-secundario space-y-2">
+        <p>Seleccionar un partido conserva sus equipos, localía y fecha. Cada ejecución se guarda en el historial Euroliga, también en modo de solo cálculo.</p>
+        <p>Consultar o analizar no entrena el modelo ni acredita calibración. No existe comparación automática con resultados.</p>
+      </div>}
+      {mostrarInfo && !esEuroliga && (
         <div className="p-4 rounded-lg bg-futurista-oscuro/80 border border-neon-cyan/20 space-y-3 animate-entrada">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-neon-cyan flex items-center gap-2">
@@ -269,7 +278,7 @@ export function SelectorPartido({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-neon-verde">
-                    Registrable
+                    {esEuroliga ? 'Partido Euroliga' : 'Registrable'}
                   </span>
                 </div>
                 <p className="text-sm font-semibold text-texto-principal">
@@ -281,7 +290,7 @@ export function SelectorPartido({
                   {partidoSeleccionado.temporada_nombre}
                 </p>
                 <p className="text-xs text-neon-verde/80 mt-1">
-                  Se guardará y comparará con resultado real
+                  {esEuroliga ? 'Identidad del partido vinculada al historial Euroliga' : 'Se guardará y comparará con resultado real'}
                 </p>
               </div>
             </div>
@@ -380,7 +389,7 @@ export function SelectorPartido({
                   </span>
                 </div>
                 <p className="text-xs text-neon-amarillo/80">
-                  Sin partido, el análisis es teórico y no se registra.
+                  {esEuroliga ? 'Sin partido, se conserva como cálculo teórico en el historial Euroliga.' : 'Sin partido, el análisis es teórico y no se registra.'}
                 </p>
                 {!mostrarInfo && (
                   <button

@@ -12,6 +12,9 @@ export interface Equipo {
   abreviatura: string;
   conferencia?: string;
   division?: string;
+  /** Soporte del predictor de la liga, cuando el catálogo lo informa. */
+  elegible?: boolean;
+  muestras?: number;
 }
 
 /**

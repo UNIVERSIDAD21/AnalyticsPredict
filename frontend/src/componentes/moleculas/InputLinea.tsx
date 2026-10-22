@@ -19,6 +19,7 @@ interface PropsInputLinea {
   esJuegoCompleto?: boolean;
   unidadLabel?: string;
   periodoLabel?: string;
+  placeholderLinea?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -38,11 +39,12 @@ export function InputLinea({
   esJuegoCompleto = false,
   unidadLabel = 'puntos',
   periodoLabel,
+  placeholderLinea,
 }: PropsInputLinea) {
-  const placeholder = unidadLabel === 'goles' ? 'Ej: 2.5'
+  const placeholder = placeholderLinea ?? (unidadLabel === 'goles' ? 'Ej: 2.5'
     : unidadLabel === 'corners' ? 'Ej: 9.5'
     : unidadLabel === 'tiros a puerta' ? 'Ej: 8.5'
-    : esJuegoCompleto ? 'Ej: 225.5' : 'Ej: 55.5';
+    : esJuegoCompleto ? 'Ej: 225.5' : 'Ej: 55.5');
 
   return (
     <div className="w-full space-y-3">

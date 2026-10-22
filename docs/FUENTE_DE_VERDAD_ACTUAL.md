@@ -16,6 +16,18 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 
 ## Prioridades activas
 
+### Interfaz única Baloncesto — 2026-10-22
+
+[Integración, uso y límites](reactivacion_single_user/INTEGRACION_UI_BALONCESTO_2026-10-22.md): una sección **Baloncesto** en
+`/baloncesto`, selector NBA/Euroliga y formulario/layout del analizador NBA
+compartidos. `/app` y `/euroliga` son redirecciones compatibles, no pantallas
+separadas. Cada liga conserva catálogo, calendario, petición y predictor propios;
+cambiar de liga limpia la selección y la salida anterior. Euroliga no llama al
+análisis ni a temporadas NBA. Historial original sin repetir POST, regulación sin
+OT y probabilidades RAW explícitas. 51 pruebas frontend, lint/build y visual real
+desktop/móvil390px aprobados. Sin POST productivo, cambios de BD o modelos.
+La integración visual no acredita calibración ni igualdad de eficacia.
+
 ### Predictor Euroliga integrado — 2026-10-21
 
 [Uso, método y límites](reactivacion_single_user/PREDICTOR_EUROLIGA_2026-10-21.md). Pantalla `/euroliga`, API,
