@@ -14,6 +14,10 @@ Plataforma analítica de decisiones deportivas con foco operativo (calidad de da
 4. `docs/reactivacion_single_user/DEUDA_TECNICA_PRIORIZADA.md` (prioridades técnicas)
 5. `docs/borlty-context/` (contexto histórico complementario)
 
+### Corrección de visibilidad del calendario fútbol — 2026-10-22
+
+El selector de Fútbol consulta partidos desde el inicio del día local (`America/Bogota`) y admite estados activos (`EN_VIVO` y fases), además de los programados. Evita ocultar encuentros al pasar su hora de inicio. La lista conserva el estado que entrega la base; no hay refresco automático de marcadores ni se infiere que un partido está en juego solo por el reloj. Detalle/reproducción: [corrección y límites](reactivacion_single_user/VISIBILIDAD_CALENDARIO_FUTBOL_EN_CURSO_2026-10-22.md).
+
 ## Prioridades activas
 
 ### Modos NBA y resultados compartidos — 2026-10-22

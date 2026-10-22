@@ -30,14 +30,23 @@ ZONA_HORARIA_USUARIO = ZoneInfo("America/Bogota")
 
 
 def _rango_proximos(ahora: datetime, dias: int) -> tuple[datetime, datetime]:
-    """Devuelve [ahora, medianoche posterior al último día local incluido)."""
+    """Devuelve desde el inicio de hoy local hasta el fin del horizonte incluido.
+
+    Incluir todo el día local permite conservar en el selector los encuentros que
+    ya iniciaron pero cuyo estado todavía figura como PROGRAMADO en la fuente.
+    """
     if ahora.tzinfo is None or ahora.utcoffset() is None:
         raise ValueError("ahora debe incluir zona horaria")
     if dias < 1 or dias > 30:
         raise ValueError("dias debe estar entre 1 y 30")
-    inicio = ahora.astimezone(ZONA_HORARIA_USUARIO)
+    inicio_local = ahora.astimezone(ZONA_HORARIA_USUARIO)
+    inicio = datetime.combine(
+        inicio_local.date(),
+        time.min,
+        tzinfo=ZONA_HORARIA_USUARIO,
+    )
     fin_local_exclusivo = datetime.combine(
-        inicio.date() + timedelta(days=dias + 1),
+        inicio_local.date() + timedelta(days=dias + 1),
         time.min,
         tzinfo=ZONA_HORARIA_USUARIO,
     )
@@ -93,8 +102,8 @@ def _calcular_estadisticas_equipo(cursor, equipo_id: str) -> Optional[Estadistic
 @router.get(
     "/proximos",
     response_model=ListaPartidosResponse,
-    summary="Partidos próximos",
-    description="Lista partidos programados para los próximos días.",
+    summary="Calendario de hoy y próximos partidos",
+    description="Lista partidos no terminales de hoy y los próximos días.",
 )
 async def listar_partidos_proximos(
     competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
@@ -103,13 +112,21 @@ async def listar_partidos_proximos(
     pagina: int = Query(1, ge=1, description="Número de página"),
     tamano: int = Query(20, ge=1, le=100, description="Tamaño de página"),
 ) -> ListaPartidosResponse:
-    """Lista partidos próximos."""
+    """Lista partidos de hoy y próximos que sigan sin un estado terminal."""
     pool = obtener_pool()
 
     fecha_inicio, fecha_fin_exclusiva = _rango_proximos(
         datetime.now(ZONA_HORARIA_USUARIO), dias
     )
-    estados_programados = ["PROGRAMADO"]  # CORREGIDO: valores válidos del ENUM
+    estados_visibles = [
+        "PROGRAMADO",
+        "EN_VIVO",
+        "PRIMER_TIEMPO",
+        "ENTRETIEMPO",
+        "SEGUNDO_TIEMPO",
+        "TIEMPO_EXTRA",
+        "PENALES",
+    ]
 
     query = """
         SELECT
@@ -139,8 +156,8 @@ async def listar_partidos_proximos(
           AND pf.fecha_partido < %s
           AND (pf.estado = ANY(%s) OR pf.estado IS NULL)
     """
-    params = [fecha_inicio, fecha_fin_exclusiva, estados_programados]
-    count_params = [fecha_inicio, fecha_fin_exclusiva, estados_programados]
+    params = [fecha_inicio, fecha_fin_exclusiva, estados_visibles]
+    count_params = [fecha_inicio, fecha_fin_exclusiva, estados_visibles]
 
     if competicion_id:
         query += " AND pf.competicion_id = %s"

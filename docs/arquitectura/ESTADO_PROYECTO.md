@@ -4,6 +4,10 @@
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
+## Visibilidad de fixtures de fútbol — 2026-10-22
+
+[Corrección y límites](../reactivacion_single_user/VISIBILIDAD_CALENDARIO_FUTBOL_EN_CURSO_2026-10-22.md): `/api/futbol/partidos/proximos` incluye el día local completo y estados de juego no terminales. Juventus–Stade Rennais ya aparece en el selector aunque su hora de inicio haya pasado. El estado del registro sigue siendo la fuente mostrada; la aplicación no recibe ni inventa marcador/estado live automáticamente.
+
 ## Modos NBA y resultados compartidos — 2026-10-22
 
 [Uso, método y validación](../reactivacion_single_user/MODOS_NBA_Y_RESULTADOS_2026-10-22.md): NBA añade prepartido y cortes completos Q1–Q3,

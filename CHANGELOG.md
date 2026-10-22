@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Calendario de fútbol: visibilidad durante el día del partido — 2026-10-22
+
+- El endpoint de próximos partidos empieza ahora a medianoche de `America/Bogota`, no en la hora actual, y conserva estados no terminales de partido (incluidos `EN_VIVO`, sus fases y penales). Así, un fixture no desaparece del selector al pasar su hora de inicio.
+- Reproducción verificada con Juventus–Stade Rennais: antes figuraba en `/hoy` pero quedaba fuera de `/proximos`; tras el cambio aparece en la pantalla Fútbol. El registro continúa `PROGRAMADO`; esto corrige visibilidad, no añade un feed de marcadores ni confirma estado live. Sin POST, ingesta o escrituras de datos.
+
 ## Modos NBA y resultados compartidos — 2026-10-22
 
 [Uso, método y validación](docs/reactivacion_single_user/MODOS_NBA_Y_RESULTADOS_2026-10-22.md): NBA añade prepartido y cortes completos Q1–Q3,
