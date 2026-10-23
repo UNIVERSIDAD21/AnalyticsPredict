@@ -331,6 +331,7 @@ export async function analizarPartido(
     return {
       exito: Boolean(data.exito ?? true),
       partido: transformarPartidoResumen(data.partido || {}),
+      analisisIntegral: data.analisis_integral ?? data.analisisIntegral,
       timestampAnalisis: String(data.timestamp_analisis || data.timestampAnalisis || new Date().toISOString()),
       objetivo: transformarObjetivoAnalisis((data.objetivo || {}) as Record<string, unknown>),
       mercadosCorners: transformarMercadosAgrupados(mercadosCorners),

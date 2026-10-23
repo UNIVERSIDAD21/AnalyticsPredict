@@ -152,10 +152,13 @@ def cliente(modelo, filas, monkeypatch, tmp_path):
 
 def test_api_aislada_y_journal_inmutable(cliente, tmp_path, modelo):
     c, f = cliente
-    p = {"equipo_local": f["local"], "equipo_visitante": f["visitante"], "mercado": "Q1", "linea": 40.5, "partido_id": f["id"]}
+    p = {"equipo_local": f["local"], "equipo_visitante": f["visitante"], "mercado": "Q1", "linea": 40.5, "partido_id": f["id"], "cuota_over": 1.91, "cuota_under": 1.95, "lado": "UNDER"}
     r = c.post("/api/euroliga/analizar", json=p)
     assert r.status_code == 200, r.text
     resultado = r.json()["resultado"]
+    assert resultado["analisis_integral"]["cuotas"] == {"over": 1.91, "under": 1.95}
+    assert resultado["analisis_integral"]["lado"] == "UNDER"
+    assert len(resultado["analisis_integral"]["periodos"]) == 5
     assert resultado["prospectiva_acreditada_por_fecha"]
     assert resultado["diagnostico_modelo"]["partidos_entrenamiento"] == modelo["partidos_entrenamiento"]
     assert resultado["validacion_historica"]["train_n"] == modelo["validacion"]["train_n"]

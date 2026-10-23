@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from motor.euroliga import cargar, final_valido, normalizar_nombre, predecir
 from servicios.predictor_euroliga import contexto, historial, leer_datos, registrar, resumir_fixture
+from servicios.analisis_integral import integral_euroliga, aplicar_escenario_euroliga
 
 router = APIRouter(prefix="/api/euroliga", tags=["Predictor Euroliga"])
 logger = logging.getLogger(__name__)
@@ -21,6 +22,9 @@ class PeticionEuroliga(BaseModel):
     mercado: Literal["Q1", "Q2", "Q3", "Q4", "COMPLETO"] = "COMPLETO"
     linea: float = Field(gt=0, le=600)
     partido_id: UUID | None = None
+    lado: Literal["OVER", "UNDER"] = "OVER"
+    cuota_over: float | None = Field(default=None, gt=1, le=1000)
+    cuota_under: float | None = Field(default=None, gt=1, le=1000)
     parciales: list[tuple[Annotated[int, Field(strict=True, ge=0, le=100)], Annotated[int, Field(strict=True, ge=0, le=100)]]] = Field(default_factory=list, max_length=3)
 
 
@@ -104,6 +108,11 @@ def analizar(p: PeticionEuroliga):
             resultado["advertencias"].append("La base tiene finales posteriores al modelo; publicar un refit explícito para incorporarlos.")
         if (datetime.now(timezone.utc).date() - datetime.fromisoformat(m["fecha_max"]).date()).days > 3:
             resultado["advertencias"].append("Histórico del modelo con más de tres días de antigüedad; frescura de ronda no acreditada.")
+        resultado["fecha_partido"] = str(fixture["fecha_partido"])[:10] if fixture else None
+        integral = integral_euroliga(
+            resultado, lado=p.lado, cuota_over=p.cuota_over, cuota_under=p.cuota_under
+        )
+        aplicar_escenario_euroliga(resultado, integral)
         return {"exito": True, "resultado": registrar(resultado, fixture)}
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -114,4 +123,8 @@ def analizar(p: PeticionEuroliga):
 
 @router.get("/historial")
 def consultar_historial(limite: int = Query(20, ge=1, le=100)):
-    return {"exito": True, "analisis": historial(limite)}
+    resultados = historial(limite)
+    for r in resultados:
+        if "analisis_integral" not in r:
+            r["analisis_integral"] = integral_euroliga(r, aplicar_contexto=False)
+    return {"exito": True, "analisis": resultados}

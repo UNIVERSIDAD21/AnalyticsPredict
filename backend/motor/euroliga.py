@@ -329,7 +329,7 @@ def predecir(modelo: dict, local: str, visitante: str, mercado: str, linea: floa
             "mercado": mercado, "linea": linea, "incluye_ot": False, "parciales": parciales,
             "muestras": {"local": n_local, "visitante": n_visitante}, "muestras_temporada": n_temporada,
             "temporada_reciente": modelo["temporada_reciente"], "predicciones": predicciones,
-            "probabilidades": proba, "ventaja_regulacion": {"local": p_local, "visitante": 1 - p_local,
+            "probabilidades": proba, "ventaja_regulacion": {"local": p_local, "visitante": 1 - p_local, "desviacion_diferencia": sd_diff,
               "definicion": "Aproximación continua de diferencia de puntos en regulación; no moneyline con OT."},
             "origen_dispersion": modelo["origen_dispersion"], "advertencias": advertencias,
             "politica": {"no_picks": True, "no_stakes": True, "no_recommendations": True}}

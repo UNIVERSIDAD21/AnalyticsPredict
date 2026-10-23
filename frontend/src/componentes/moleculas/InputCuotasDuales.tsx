@@ -87,6 +87,7 @@ export function InputCuotasDuales({
               step="0.01"
               min="1.01"
               max="100"
+              aria-label="Cuota Over"
               value={cuotaOver}
               onChange={(e) => onCuotaOverChange(e.target.value)}
               placeholder="Ej: 1.85"
@@ -131,6 +132,7 @@ export function InputCuotasDuales({
               step="0.01"
               min="1.01"
               max="100"
+              aria-label="Cuota Under"
               value={cuotaUnder}
               onChange={(e) => onCuotaUnderChange(e.target.value)}
               placeholder="Ej: 1.95"

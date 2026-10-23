@@ -3,10 +3,14 @@ import type { ResultadoEuro } from '../servicios/euroliga';
 import type { ResultadoVista, FormaVista, H2HVista } from '../tipos/resultadoVista';
 
 export function adaptarResultadoEuroliga(r: ResultadoEuro): ResultadoVista {
+  const integral = r.analisis_integral;
+  const probabilidades = integral?.probabilidades ?? r.probabilidades;
   const predicciones = Object.fromEntries(Object.entries(r.predicciones).map(([m, p]) => [m, {
-    media_equipo: p.media_local, media_rival: p.media_visitante, media_total: p.media_total, desviacion_total: p.desviacion_total,
-    probabilidad_over: m === r.mercado ? r.probabilidades.over : null,
-    probabilidad_under: m === r.mercado ? r.probabilidades.under : null,
+    media_equipo: integral?.periodos.find(x=>x.periodo===m)?.local ?? p.media_local,
+    media_rival: integral?.periodos.find(x=>x.periodo===m)?.visitante ?? p.media_visitante,
+    media_total: integral?.periodos.find(x=>x.periodo===m)?.total ?? p.media_total, desviacion_total: p.desviacion_total,
+    probabilidad_over: m === r.mercado ? probabilidades.over : null,
+    probabilidad_under: m === r.mercado ? probabilidades.under : null,
     ...(m === 'COMPLETO' ? { ganador_probable: r.ventaja_regulacion.local >= 0.5 ? 'equipo' : 'rival', probabilidad_ganador: r.ventaja_regulacion.local } : {}),
   }]));
   return { equipo: r.equipo_local, rival: r.equipo_visitante, equipo_nombre_completo: r.equipo_local, rival_nombre_completo: r.equipo_visitante,
@@ -15,10 +19,10 @@ export function adaptarResultadoEuroliga(r: ResultadoEuro): ResultadoVista {
     es_en_vivo: r.modo !== 'PREPARTIDO', cuartos_reales: Object.fromEntries(Object.entries(r.predicciones).filter(([m,p]) => m !== 'COMPLETO' && p.observado).map(([m,p]) => [m,[p.media_local,p.media_visitante]])),
     metadata: { deporte: 'baloncesto', liga: 'euroliga', mercado: r.mercado, modo_analisis: r.modo,
       partido_id: r.partido_id, fecha_partido: r.fecha_partido, analisis_id: r.analisis_id,
-      modelo_version: r.modelo_version, dataset_sha256: r.dataset_sha256, corte_datos: r.corte_datos,
+      analisis_integral: integral, modelo_version: r.modelo_version, dataset_sha256: r.dataset_sha256, corte_datos: r.corte_datos,
       fecha_analisis_fuente: r.fecha_analisis, probabilidad_raw_no_calibrada: true,
       regulacion_sin_ot: true },
-    linea_analizada: r.linea, probabilidad_over: r.probabilidades.over, probabilidad_under: r.probabilidades.under };
+    linea_analizada: r.linea, probabilidad_over: probabilidades.over, probabilidad_under: probabilidades.under };
 }
 
 export function formaEuroliga(datos: ResultadoEuro['contexto']['equipos'][string] | undefined): FormaVista | null {

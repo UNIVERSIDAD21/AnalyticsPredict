@@ -29,6 +29,7 @@ jobs:
       - name: Unitarias analíticas sin BD
         run: >-
           python -m pytest -q
+          tests/test_analisis_integral.py
           tests/test_walk_forward.py
           tests/test_futbol_walkforward_scorecard.py
           tests/test_futbol_madurez_beta.py

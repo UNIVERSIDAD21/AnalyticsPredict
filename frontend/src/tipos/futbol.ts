@@ -1,3 +1,4 @@
+import type { AnalisisIntegral } from './analisisIntegral';
 /**
  * futbol.ts — Interfaces TypeScript para el módulo de fútbol
  */
@@ -409,6 +410,7 @@ export interface ObjetivoAnalisisFutbol extends ObjetivoEstadoFutbol {
 }
 
 export interface AnalisisFutbolResponse {
+  analisisIntegral?: AnalisisIntegral;
   exito: boolean;
   partido: PartidoFutbolResumen;
   timestampAnalisis: string;

@@ -1,3 +1,4 @@
+import type { AnalisisIntegral } from '../tipos/analisisIntegral';
 /** Contrato exclusivo Euroliga; jamás llama a /api/analizar ni entrena al consultar. */
 import { clienteAPI } from './api';
 import type { PartidoResumen } from '../tipos';
@@ -15,6 +16,7 @@ export interface EstadoEuro {
 export interface EquipoEuro { id: string; nombre: string; muestras: number; elegible: boolean }
 export interface PeticionEuro {
   equipo_local: string; equipo_visitante: string; mercado: MercadoEuro; linea: number;
+  lado?: 'OVER' | 'UNDER'; cuota_over?: number; cuota_under?: number;
   partido_id?: string; parciales: [number, number][];
 }
 export interface PrediccionEuro {
@@ -44,6 +46,7 @@ export interface ValidacionHistoricaEuro {
     mercados: Record<string, MetricaValidacionEuro> };
 }
 export interface ResultadoEuro {
+  analisis_integral?: AnalisisIntegral;
   analisis_id: string; partido_id: string | null; fecha_partido: string | null;
   modelo_version: string; dataset_sha256: string; fecha_analisis: string; corte_datos: string;
   equipo_local: string; equipo_visitante: string; mercado: MercadoEuro; linea: number; modo: string;

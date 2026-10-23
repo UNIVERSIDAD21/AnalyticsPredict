@@ -1,3 +1,5 @@
+import type { AnalisisIntegral } from '../../tipos/analisisIntegral';
+import { SeccionesAnalisisIntegral } from './SeccionesAnalisisIntegral';
 // hace parte del diseño de analisis
 /**
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
@@ -166,6 +168,8 @@ export function ResultadoAnalisis({
 }: PropsResultadoAnalisis) {
   const mercado = resultado.metadata?.mercado as string;
   const esEuro = Boolean(fuenteEuroliga);
+  const integral = (fuenteEuroliga?.analisis_integral ?? resultado.metadata?.analisis_integral) as AnalisisIntegral | undefined;
+  const seccionIntegral = (seccion: 'ganador' | 'periodos' | 'contexto' | 'valor' | 'razones') => integral ? <SeccionesAnalisisIntegral key={`${resultado.fecha_analisis}-${seccion}`} datos={integral} seccion={seccion} local={resultado.equipo_nombre_completo} visitante={resultado.rival_nombre_completo} lado={seleccionUsuario?.lado} /> : null;
   const esCorte = resultado.es_en_vivo;
   const modo = String(resultado.metadata?.modo_analisis ?? (esCorte ? `CIERRE_Q${Object.keys(resultado.cuartos_reales ?? {}).length}` : 'PREPARTIDO'));
   const modoLabel = modo === 'PREPARTIDO' ? 'Prepartido' : `Corte al cierre de ${modo.replace('CIERRE_', '')}`;
@@ -380,7 +384,8 @@ export function ResultadoAnalisis({
         </div>
       )}
 
-      {prediccionGanador && probabilidadGanadorMostrado !== null && (
+      {seccionIntegral('ganador')}
+      {!integral && !esFutbol && prediccionGanador && probabilidadGanadorMostrado !== null && (
         <div className="tarjeta p-4 border border-neon-cyan/20">
           <p className="text-xs uppercase tracking-wider text-neon-cyan font-semibold">{etiquetaGanador}</p>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
@@ -411,7 +416,7 @@ export function ResultadoAnalisis({
           desviacion={desviacion}
           seleccionUsuario={seleccionUsuario?.lado}
           unidadLabel={unidadAnalisis}
-          probabilidadPush={fuenteEuroliga?.probabilidades.push}
+          probabilidadPush={integral?.probabilidades.push ?? fuenteEuroliga?.probabilidades.push}
           decimales={esEuro ? 2 : 1}
         />
       )}
@@ -422,7 +427,8 @@ export function ResultadoAnalisis({
         ]} />
       )}
 
-      {!esFutbol && <div className="tarjeta p-6 space-y-3">
+      {seccionIntegral('periodos')}
+      {!integral && !esFutbol && <div className="tarjeta p-6 space-y-3">
         <h3 className="text-lg font-futurista">Proyección por periodo</h3>
         <p className="text-xs text-texto-secundario">{esEuro ? 'Cuartos de 10 minutos; regulación de 40 minutos, sin OT.' : 'Cuartos de 12 minutos; la suma de cuartos no incluye prórroga.'} Observado no significa pronosticado.</p>
         <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr><th className="p-2">Periodo</th><th className="p-2">Local</th><th className="p-2">Visitante</th><th className="p-2">Total</th><th className="p-2">Desviación</th></tr></thead><tbody>{Object.entries(resultado.predicciones).sort(([a],[b]) => ['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(a)-['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(b)).map(([m,p]) => <tr key={m} className="border-t border-neon-cyan/10"><th className="p-2">{m}{resultado.cuartos_reales?.[m] ? ' (observado)' : ''}</th><td className="p-2">{p.media_equipo.toFixed(2)}</td><td className="p-2">{p.media_rival.toFixed(2)}</td><td className="p-2">{p.media_total.toFixed(2)}</td><td className="p-2">{p.desviacion_total.toFixed(2)}</td></tr>)}</tbody></table></div>
@@ -430,7 +436,7 @@ export function ResultadoAnalisis({
       {(esCorte || esEuro) && <div className="tarjeta p-4 text-sm text-texto-secundario space-y-2">
         <p>{modoLabel}. No es un pronóstico con reloj ni marcador parcial actualizado.</p>
         <p>{fuenteEuroliga ? (esCorte ? 'Distribución gaussiana condicionada a cuartos completos, sin calibración probabilística acreditada.' : 'Distribución gaussiana prepartido, sin calibración probabilística acreditada.') : String(resultado.metadata.metodo_live)}</p>
-        {fuenteEuroliga && <p>Intervalo predictivo 80 % RAW: {fuenteEuroliga.predicciones[fuenteEuroliga.mercado].intervalo_predictivo_80_raw.map(n=>n.toFixed(2)).join(' – ')}. Cobertura nominal, no certificada.</p>}
+        {fuenteEuroliga && <p>Intervalo predictivo 80 % RAW: {(integral ? [-1,1].map(signo=>(mediaTotal ?? 0)+signo*1.2815515655*(desviacion ?? 0)) : fuenteEuroliga.predicciones[fuenteEuroliga.mercado].intervalo_predictivo_80_raw).map(n=>n.toFixed(2)).join(' – ')}. Cobertura nominal, no certificada. El escenario contextual conserva la dispersión Ridge sin validación adicional.</p>}
       </div>}
 
       {/* ═══════════════════════════════════════════════════════════
@@ -438,7 +444,8 @@ export function ResultadoAnalisis({
           ═══════════════════════════════════════════════════════════ */}
 
       {/* Panel de Comparación Base vs Ajustada */}
-      {hayAjusteContextualReal && resultado.prediccion_ajustada && resultado.prediccion_base
+      {seccionIntegral('contexto')}
+      {!integral && hayAjusteContextualReal && resultado.prediccion_ajustada && resultado.prediccion_base
         && numeroValido(resultado.prediccion_base.media)
         && numeroValido(resultado.prediccion_base.probabilidad_over)
         && numeroValido(resultado.prediccion_base.probabilidad_under)
@@ -463,14 +470,14 @@ export function ResultadoAnalisis({
         />
       )}
 
-      {!hayAjusteContextualReal && resultado.prediccion_ajustada && resultado.prediccion_base && (
+      {!integral && !hayAjusteContextualReal && resultado.prediccion_ajustada && resultado.prediccion_base && (
         <PanelAdvertencias advertencias={[
           'Predicción base y ajustada coinciden para el mercado objetivo: no hubo ajuste contextual efectivo en esta corrida.',
         ]} />
       )}
 
       {/* Lista de Ajustes Aplicados */}
-      {resultado.ajustes && resultado.ajustes.ajustes && resultado.ajustes.ajustes.length > 0 && (
+      {!integral && resultado.ajustes && resultado.ajustes.ajustes && resultado.ajustes.ajustes.length > 0 && (
         <SeccionAjustesAplicados
           ajustes={resultado.ajustes.ajustes}
           ajusteTotal={resultado.ajustes.ajuste_total_capped}
@@ -484,7 +491,7 @@ export function ResultadoAnalisis({
           7. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
           Solo mostrar si hay detalle avanzado
           ═══════════════════════════════════════════════════════════ */}
-      {tieneDetalleAvanzado && detalle && (
+      {!integral && tieneDetalleAvanzado && detalle && (
         <div className="space-y-4">
           <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
             <span className="w-8 h-[2px] bg-gradient-to-r from-neon-cyan to-transparent" />
@@ -520,7 +527,7 @@ export function ResultadoAnalisis({
           8. BLOQUE SCORE + SIZING (Fase 2)
           Solo mostrar si hay detalle avanzado
           ═══════════════════════════════════════════════════════════ */}
-      {tieneDetalleAvanzado && detalle && (
+      {!integral && tieneDetalleAvanzado && detalle && (
         <div className="space-y-4">
           <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-magenta flex items-center gap-2">
             <span className="w-8 h-[2px] bg-gradient-to-r from-neon-magenta to-transparent" />
@@ -558,7 +565,8 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           9. ANÁLISIS DE MERCADO (legacy, si hay cuota pero no detalle avanzado)
           ═══════════════════════════════════════════════════════════ */}
-      {!tieneDetalleAvanzado && resultado.analisis_mercado && (
+      {seccionIntegral('valor')}
+      {!integral && !tieneDetalleAvanzado && resultado.analisis_mercado && (
         <AnalisisMercadoCard analisis={resultado.analisis_mercado} />
       )}
 
@@ -567,8 +575,9 @@ export function ResultadoAnalisis({
           ═══════════════════════════════════════════════════════════ */}
 
       {/* Head-to-Head */}
-      {!gateCriticoBeta && resultado.contexto?.h2h && (
+      {(!gateCriticoBeta || esFutbol) && resultado.contexto?.h2h && (
         <SeccionH2H
+          nota={esFutbol ? "Balance de victorias por goles; medias y línea por la métrica seleccionada." : undefined}
           h2h={resultado.contexto.h2h}
           equipoNombre={resultado.equipo_nombre_completo}
           rivalNombre={resultado.rival_nombre_completo}
@@ -579,8 +588,9 @@ export function ResultadoAnalisis({
       )}
 
       {/* Forma Reciente */}
-      {!gateCriticoBeta && resultado.contexto && resultado.contexto.forma_equipo && resultado.contexto.forma_rival && (
+      {(!gateCriticoBeta || esFutbol) && resultado.contexto && resultado.contexto.forma_equipo && resultado.contexto.forma_rival && (
         <SeccionFormaReciente
+          nota={esFutbol ? "V/E/D y racha por goles; promedios de la métrica y periodo seleccionados." : undefined}
           formaEquipo={resultado.contexto.forma_equipo}
           formaRival={resultado.contexto.forma_rival}
           descansoEquipo={resultado.contexto.descanso_equipo}
@@ -601,7 +611,7 @@ export function ResultadoAnalisis({
         <SeccionFormaReciente formaEquipo={formaEquipoEuroliga(fuenteEuroliga, fuenteEuroliga.equipo_local)}
           formaRival={formaEquipoEuroliga(fuenteEuroliga, fuenteEuroliga.equipo_visitante)} descansoEquipo={null} descansoRival={null}
           equipoNombre={fuenteEuroliga.equipo_local} rivalNombre={fuenteEuroliga.equipo_visitante} soloRegulacionDescriptiva
-          nota="Últimos 10 finales previos disponibles: resultados, puntos a favor/en contra y balance en regulación. La forma no altera la predicción ni estima una probabilidad propia." />
+          nota="Últimos 10 finales previos disponibles: resultados, puntos a favor/en contra y balance en regulación. El uso de forma en el escenario contextual se desglosa en Ajustes aplicados; la salida Ridge original se conserva." />
         <SeccionHistorialEuroliga equipos={fuenteEuroliga.contexto.equipos} local={fuenteEuroliga.equipo_local}
           visitante={fuenteEuroliga.equipo_visitante} corte={fuenteEuroliga.contexto.corte_exclusivo ?? fuenteEuroliga.fecha_partido} />
         <PanelDiagnosticoEuroliga resultado={fuenteEuroliga} />
@@ -614,7 +624,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           11. HISTORIAL DETALLADO
           ═══════════════════════════════════════════════════════════ */}
-      {!gateCriticoBeta && !esEuro && equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
+      {(!gateCriticoBeta || esFutbol) && !esEuro && equipoLocalId && equipoVisitanteId && linea > 0 && mercadoCanon && (
         <SeccionHistorialDetallado
           equipoLocalId={equipoLocalId}
           equipoLocalNombre={resultado.equipo_nombre_completo}
@@ -632,7 +642,8 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           12. RAZONES
           ═══════════════════════════════════════════════════════════ */}
-      {!gateCriticoBeta && !esEuro && (
+      {seccionIntegral('razones')}
+      {!integral && !gateCriticoBeta && !esEuro && (
         <ListaRazones razones={resultado.razones} deporte={esFutbol ? 'futbol' : 'baloncesto'} unidadLabel={unidadAnalisis} />
       )}
 

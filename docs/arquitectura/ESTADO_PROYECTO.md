@@ -1,8 +1,18 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-22**. Herramienta personal single-user, local y
+Última actualización: **2026-10-23**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
+
+## Paridad completa de análisis Euroliga y fútbol — 2026-10-23
+
+Ganador (1X2 en fútbol), periodos propios, impacto/ajustes trazados, valor por cuotas,
+riesgo, H2H, forma, historial y razones disponibles sin bloquear por certificación.
+Euroliga conserva Ridge base y expone escenario heurístico de forma/descanso;
+fútbol usa su predictor heurístico existente sin activar ML. Sin reparto ficticio
+48/52, confianza ni descanso inventados. Sin POST productivo ni cambio de artefactos.
+[Contrato, métodos y validación](../reactivacion_single_user/PARIDAD_ANALISIS_DEPORTIVOS_2026-10-23.md).
+
 
 ## Cuota y registro manual de apuestas Euroliga — 2026-10-22
 

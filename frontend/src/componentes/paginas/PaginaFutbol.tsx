@@ -1,3 +1,4 @@
+import type { ResultadoVista } from '../../tipos/resultadoVista';
 /**
  * PaginaFutbol.tsx — módulo fútbol alineado al canon NBA.
  *
@@ -25,7 +26,7 @@ import type {
   TipoMercadoFutbol,
   UbicacionHistorialEquipo,
 } from '../../tipos/futbol';
-import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis, SeleccionCombinadaInput, ResultadoAnalisis as ResultadoAnalisisCanonico } from '../../tipos';
+import type { Equipo, Mercado, PartidoResumen, PeticionAnalisis, SeleccionCombinadaInput } from '../../tipos';
 
 const navegar = (ruta: string) => {
   if (window.location.pathname === ruta && window.location.search === '') return;
@@ -60,7 +61,7 @@ interface RenderCanonicoFutbol {
   seleccion: SeleccionCanonicaFutbol;
   recomendacion: RecomendacionApuesta | null;
   mercadoObjetivo: AnalisisFutbolResponse['objetivo'];
-  resultado: ResultadoAnalisisCanonico;
+  resultado: ResultadoVista;
   combinada: SeleccionCombinadaInput | null;
   guardar: {
     mercado: TipoMercadoFutbol;

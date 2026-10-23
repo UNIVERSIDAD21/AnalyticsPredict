@@ -413,6 +413,7 @@ class AnalisisResponse(BaseModel):
     modelo_version: str
     calibradores_activos: int = 0
     prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
+    analisis_integral: Optional[Dict[str, Any]] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

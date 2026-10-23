@@ -24,6 +24,7 @@ from scipy import stats
 
 from db import obtener_pool
 from servicios.apuestas_analizadas import registrar_apuesta_analizada
+from servicios.analisis_integral import integral_futbol
 from servicios.b3_estabilizacion_futbol import (
     combinar_valor_cross_liga,
     ajustar_probabilidad_por_muestras,
@@ -3111,6 +3112,8 @@ async def analizar_partido(
                     stats_visitante_away = {}
                     promedios_liga = {"local": {}, "visitante": {}, "global": {}, "total": {}}
 
+                trazas_contextuales = {}
+
                 # 3. Calcular predicciones base (robustas: contexto + global + liga)
                 local_corners_ctx = _obtener_resumen_seguro(stats_local_home, "corners_ft")
                 local_corners_global = _obtener_resumen_seguro(stats_local_global, "corners_ft")
@@ -3135,6 +3138,7 @@ async def analizar_partido(
                     codigo_competicion=partido.get("competicion_codigo"),
                 )
                 # Ajuste por forma reciente + ventaja local
+                base_corners_total = corners_local + corners_visitante
                 corners_local = _aplicar_ajuste_forma(
                     corners_local,
                     _media_reciente_metrica(partidos_local_home, equipo_local_id, "corners_ft"),
@@ -3145,9 +3149,16 @@ async def analizar_partido(
                     _media_reciente_metrica(partidos_visitante_away, equipo_visitante_id, "corners_ft"),
                     vis_corners_ctx.get("promedio") or vis_corners_global.get("promedio"),
                 )
+                forma_corners_total = corners_local + corners_visitante
                 ha_corners = _home_advantage_liga(promedios_liga, "corners_ft")
                 corners_local *= ha_corners
                 corners_visitante /= ha_corners
+                trazas_contextuales["CORNERS_FT"] = [
+                    {"factor": "Forma reciente", "delta": forma_corners_total - base_corners_total,
+                     "unidad": "corners", "descripcion": "Diferencia exacta tras el ajuste de forma reciente del motor.", "aplicado": True},
+                    {"factor": "Ventaja local", "delta": corners_local + corners_visitante - forma_corners_total,
+                     "unidad": "corners", "descripcion": f"Factor de localía de la competición: {ha_corners:.4f}; multiplicación local/división visitante.", "aplicado": True},
+                ]
 
                 corners_total = corners_local + corners_visitante
                 corners_std = _std_robusta(
@@ -3178,6 +3189,7 @@ async def analizar_partido(
                     valor_liga=liga_goles.get("promedio"),
                     codigo_competicion=partido.get("competicion_codigo"),
                 )
+                base_goles_total = goles_local + goles_visitante
                 goles_local = _aplicar_ajuste_forma(
                     goles_local,
                     _media_reciente_metrica(partidos_local_home, equipo_local_id, "goles_ft"),
@@ -3188,9 +3200,16 @@ async def analizar_partido(
                     _media_reciente_metrica(partidos_visitante_away, equipo_visitante_id, "goles_ft"),
                     vis_goles_ctx.get("promedio") or vis_goles_global.get("promedio"),
                 )
+                forma_goles_total = goles_local + goles_visitante
                 ha_goles = _home_advantage_liga(promedios_liga, "goles_ft")
                 goles_local *= ha_goles
                 goles_visitante /= ha_goles
+                trazas_contextuales["GOLES_FT"] = [
+                    {"factor": "Forma reciente", "delta": forma_goles_total - base_goles_total,
+                     "unidad": "goles", "descripcion": "Diferencia exacta tras el ajuste de forma reciente del motor.", "aplicado": True},
+                    {"factor": "Ventaja local", "delta": goles_local + goles_visitante - forma_goles_total,
+                     "unidad": "goles", "descripcion": f"Factor de localía de la competición: {ha_goles:.4f}; multiplicación local/división visitante.", "aplicado": True},
+                ]
 
                 goles_total = goles_local + goles_visitante
                 goles_std = _std_robusta(
@@ -3221,6 +3240,7 @@ async def analizar_partido(
                     valor_liga=liga_disp.get("promedio"),
                     codigo_competicion=partido.get("competicion_codigo"),
                 )
+                base_disparos_total = disparos_local + disparos_visitante
                 disparos_local = _aplicar_ajuste_forma(
                     disparos_local,
                     _media_reciente_metrica(partidos_local_home, equipo_local_id, "disparos_ft"),
@@ -3231,9 +3251,16 @@ async def analizar_partido(
                     _media_reciente_metrica(partidos_visitante_away, equipo_visitante_id, "disparos_ft"),
                     vis_disp_ctx.get("promedio") or vis_disp_global.get("promedio"),
                 )
+                forma_disparos_total = disparos_local + disparos_visitante
                 ha_disp = _home_advantage_liga(promedios_liga, "disparos_ft")
                 disparos_local *= ha_disp
                 disparos_visitante /= ha_disp
+                trazas_contextuales["DISPAROS_FT"] = [
+                    {"factor": "Forma reciente", "delta": forma_disparos_total - base_disparos_total,
+                     "unidad": "disparos", "descripcion": "Diferencia exacta tras el ajuste de forma reciente del motor.", "aplicado": True},
+                    {"factor": "Ventaja local", "delta": disparos_local + disparos_visitante - forma_disparos_total,
+                     "unidad": "disparos", "descripcion": f"Factor de localía de la competición: {ha_disp:.4f}; multiplicación local/división visitante.", "aplicado": True},
+                ]
 
                 disparos_total = disparos_local + disparos_visitante
                 disparos_std = _std_robusta(
@@ -3632,6 +3659,8 @@ async def analizar_partido(
                     promedios_liga,
                 )
 
+                mercados_base_integral = {k: v.model_dump() for k, v in {**mercados_corners, **mercados_goles, **mercados_disparos}.items()}
+
                 # 5. Ensemble ML + heurístico (P5)
                 if mercados_corners_ml or mercados_goles_ml or mercados_disparos_ml:
                     mercados_corners = _ensamblar_mercados(mercados_corners_ml, mercados_corners, peso_ml=0.65)
@@ -3802,10 +3831,10 @@ async def analizar_partido(
                 ganador_probable = "LOCAL" if prob_local >= prob_empate and prob_local >= prob_visitante else ("VISITANTE" if prob_visitante >= prob_empate else "EMPATE")
                 diferencial_xg = goles_local - goles_visitante
                 razones_1x2 = [
-                    f"Diferencial esperado de gol: {diferencial_xg:+.2f} ({partido['equipo_local']} vs {partido['equipo_visitante']}).",
+                    f"Diferencial de goles estimados: {diferencial_xg:+.2f} ({partido['equipo_local']} vs {partido['equipo_visitante']}).",
                     f"Probabilidades 1X2: Local {prob_local*100:.1f}%, Empate {prob_empate*100:.1f}%, Visitante {prob_visitante*100:.1f}%.",
                     f"Marcador más probable según modelo Dixon-Coles: {marcador_probable}.",
-                    f"Base ofensiva estimada: xG local {goles_local:.2f} y xG visitante {goles_visitante:.2f}.",
+                    f"Base ofensiva del estimador: goles esperados local {goles_local:.2f} y visitante {goles_visitante:.2f}.",
                 ]
 
                 try:
@@ -3953,6 +3982,14 @@ async def analizar_partido(
                     recomendaciones=recomendaciones,
                     modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
                     calibradores_activos=calibradores_activos,
+                    analisis_integral=integral_futbol(
+                        mercados={k: v.model_dump() for k, v in todos_mercados.items()},
+                        base=mercados_base_integral, objetivo=objetivo,
+                        ganador={"prob_local": prob_local, "prob_empate": prob_empate, "prob_visitante": prob_visitante, "razones": razones_1x2},
+                        goles_local=goles_local, goles_visitante=goles_visitante,
+                        trazas=trazas_contextuales, cuotas=request.cuotas_por_linea,
+                        modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
+                    ),
                     prediccion_ganador=ProbabilidadesGanadorFutbol(
                         prob_local=prob_local,
                         prob_empate=prob_empate,

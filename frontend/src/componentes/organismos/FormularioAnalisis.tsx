@@ -229,9 +229,13 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         if (!formulario.linea.trim() || !Number.isFinite(linea) || linea <= 0 || linea > 600) erroresEuro.push('La línea debe ser mayor a 0 y como máximo 600.');
         if (parciales.slice(0, cuartos).some(q => q.some(x => !x.trim())) || scores.some(q => q.some(x => !Number.isInteger(x) || x < 0 || x > 100))) erroresEuro.push('Completa cada cuarto terminado con enteros entre 0 y 100.');
         if (formulario.mercado !== 'COMPLETO' && Number(formulario.mercado.slice(1)) <= cuartos) erroresEuro.push('Selecciona un cuarto posterior al corte observado o el total de regulación.');
+        for (const [nombre, valor] of [['Over', formulario.cuotaOver], ['Under', formulario.cuotaUnder]]) {
+          if (valor.trim() && (!Number.isFinite(Number(valor)) || Number(valor) <= 1 || Number(valor) > 1000)) erroresEuro.push(`Cuota ${nombre} inválida (mayor a 1 y hasta 1000).`);
+        }
         if (erroresEuro.length) { setErrores(erroresEuro); return; }
         props.onAnalizar({ equipo_local: equipoLocalSeleccionado!.nombre, equipo_visitante: equipoVisitanteSeleccionado!.nombre,
-          mercado: formulario.mercado as PeticionEuro['mercado'], linea, partido_id: partidoSeleccionado?.id, parciales: scores }, formulario.ladoApuesta);
+          mercado: formulario.mercado as PeticionEuro['mercado'], linea, lado: formulario.ladoApuesta,
+          cuota_over: formulario.cuotaOver.trim() ? Number(formulario.cuotaOver) : undefined, cuota_under: formulario.cuotaUnder.trim() ? Number(formulario.cuotaUnder) : undefined, partido_id: partidoSeleccionado?.id, parciales: scores }, formulario.ladoApuesta);
         return;
       }
 
@@ -571,7 +575,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
           </div>}
 
           {/* Cuotas duales (Over/Under) */}
-          {!esEuroliga && !esCorteNBA && <><InputCuotasDuales
+          {!esCorteNBA && <><InputCuotasDuales
             cuotaOver={formulario.cuotaOver}
             cuotaUnder={formulario.cuotaUnder}
             onCuotaOverChange={(valor) => actualizarCampo('cuotaOver', valor)}

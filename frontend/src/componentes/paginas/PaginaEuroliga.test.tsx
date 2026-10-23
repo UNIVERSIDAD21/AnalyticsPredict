@@ -45,12 +45,35 @@ async function completar() {
 }
 
 describe('predictor Euroliga integrado', () => {
+  it('muestra todos los bloques integrales sin recomendación ni certificación y conserva el escenario al guardar', async () => {
+    preparar(); await completar();
+    const integral = {
+      version: 'integral-v1', deporte: 'euroliga' as const, metodo: 'Ridge + escenario RAW', unidad: 'puntos', mercado: 'COMPLETO', linea: 170.5, lado: 'OVER' as const,
+      probabilidades: { over: .3, under: .7, push: 0 }, cuotas: { over: 1.91, under: 1.95 },
+      ganador: { local: .2, empate: .3, visitante: .5, marcador: '80 – 81', definicion: '40 minutos sin OT' },
+      periodos: [{ periodo: 'COMPLETO', local: 80, visitante: 81, total: 161, desviacion: 17, observado: false }],
+      comparacion: { media_base: 160, media_ajustada: 161, probabilidades_base: { over: .28, under: .72, push: 0 }, probabilidades_ajustadas: { over: .3, under: .7, push: 0 } },
+      ajustes: [{ factor: 'Forma', delta: 1, unidad: 'puntos', descripcion: 'Heurística trazada', aplicado: true }],
+      razones: ['Razonamiento de la corrida'], muestras: { local: 200, visitante: 6 }, nota_periodos: 'Datos sintéticos',
+    };
+    vi.mocked(analizarEuroliga).mockResolvedValue({ ...resultado, analisis_integral: integral });
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    await screen.findByRole('region', { name: 'Resultado Euroliga' });
+    for (const nombre of ['Ganador del partido','Proyección por periodo','Impacto de ajustes contextuales','Ajustes aplicados','Análisis de valor','Decisión y riesgo','Razones del análisis']) {
+      expect(screen.getByRole('heading', { name: nombre })).toBeInTheDocument();
+    }
+    expect(screen.getByRole('heading', { name: 'Historial detallado Euroliga' })).toBeInTheDocument();
+    expect(screen.getByText('50.00 %', { selector: 'strong.text-sm' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar en Bitácora' })).toBeInTheDocument();
+  });
   it('manda exactamente fixture, modo y línea a Euro; muestra porcentajes y conserva historial sin repetir POST', async () => {
     preparar(); await completar();
+    fireEvent.change(screen.getByLabelText('Cuota Over'), { target: { value: '1.91' } });
+    fireEvent.change(screen.getByLabelText('Cuota Under'), { target: { value: '1.95' } });
     fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
     await screen.findByRole('region', { name: 'Resultado Euroliga' });
     expect(analizarEuroliga).toHaveBeenCalledTimes(1);
-    expect(analizarEuroliga).toHaveBeenCalledWith({ equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi', mercado: 'COMPLETO', linea: 170.5, partido_id: '00000000-0000-0000-0000-000000000301', parciales: [] });
+    expect(analizarEuroliga).toHaveBeenCalledWith({ equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi', mercado: 'COMPLETO', linea: 170.5, lado: 'OVER', cuota_over: 1.91, cuota_under: 1.95, partido_id: '00000000-0000-0000-0000-000000000301', parciales: [] });
     expect(screen.getByText('70.00%')).toBeInTheDocument();
     expect(obtenerTemporadasEquipos).not.toHaveBeenCalled();
     expect(obtenerPartidosProximos).not.toHaveBeenCalled();
