@@ -9,18 +9,19 @@
 
 import { CheckCircle, XCircle, TrendingUp, AlertTriangle, Zap, Shield, HelpCircle } from 'lucide-react';
 import { Tarjeta } from '../atomos';
-import { ComponentesScore } from '../../tipos';
+import type { ComponentesScoreVista } from '../../tipos/resultadoVista';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
 // ══════════════════════════════════════════════════════════════
 
 interface PropsTarjetaScore {
+  conservarCampos?: boolean;
   /** Score total (-1000 si gates fallan) */
   scoreTotal: number | null;
 
   /** Componentes del score */
-  componentes: ComponentesScore | null;
+  componentes: ComponentesScoreVista | null;
 
   /** Explicación legible del score */
   explicacion: string | null;
@@ -69,6 +70,7 @@ function formatearPorcentaje(valor: number | null): string {
  */
 export function TarjetaScore({
   scoreTotal,
+  conservarCampos = false,
   componentes,
   explicacion,
   penalizaciones,
@@ -77,7 +79,7 @@ export function TarjetaScore({
   const esApto = gatesPasados(scoreTotal);
 
   // Si no hay score, mostrar estado indeterminado
-  if (scoreTotal === null) {
+  if (scoreTotal === null && !conservarCampos) {
     return (
       <Tarjeta className="animate-deslizar-arriba">
         <div className="text-center py-6">
@@ -86,7 +88,7 @@ export function TarjetaScore({
             Score no disponible
           </p>
           <p className="text-xs text-texto-terciario mt-1">
-            Se requieren más datos para evaluar esta apuesta
+            {explicacion ?? 'Se requieren más datos para evaluar esta apuesta'}
           </p>
         </div>
       </Tarjeta>
@@ -117,10 +119,10 @@ export function TarjetaScore({
             <h3 className={`text-lg font-futurista font-bold tracking-wider ${
               esApto ? 'text-neon-verde' : 'text-neon-rojo'
             }`}>
-              {esApto ? 'APUESTA APTA' : 'NO RECOMENDADO'}
+              {scoreTotal===null ? 'SCORE / DECISIÓN N/D' : esApto ? 'APUESTA APTA' : 'NO RECOMENDADO'}
             </h3>
             <p className="text-xs text-texto-secundario mt-0.5">
-              {esApto
+              {scoreTotal===null ? explicacion : esApto
                 ? 'Cumple criterios de valor, edge positivo y sizing viable'
                 : 'No cumple los gates mínimos (EV ≤ 0, edge ≤ 0 o Kelly ≤ 0)'
               }
@@ -134,7 +136,7 @@ export function TarjetaScore({
             <div className={`text-2xl font-mono font-bold ${
               esApto ? 'text-neon-verde texto-glow-verde' : 'text-neon-rojo'
             }`}>
-              {esApto ? scoreTotal.toFixed(1) : '—'}
+              {scoreTotal===null ? 'N/D' : esApto ? scoreTotal.toFixed(1) : '—'}
             </div>
           </div>
         </div>
@@ -168,9 +170,9 @@ export function TarjetaScore({
                   {formatearPorcentaje(valorEsperado)}
                 </span>
                 <span className={`text-sm font-mono font-bold ${
-                  componentes.ev >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
+                  (componentes.ev !== null && componentes.ev >= 0) ? 'text-neon-verde' : 'text-neon-rojo'
                 }`}>
-                  {componentes.ev >= 0 ? '+' : ''}{componentes.ev.toFixed(1)}
+                  {(componentes.ev !== null && componentes.ev >= 0) ? '+' : ''}{(componentes.ev?.toFixed(1) ?? 'N/D')}
                 </span>
               </div>
             </div>
@@ -182,9 +184,9 @@ export function TarjetaScore({
                 <span className="text-xs text-texto-secundario">Edge Real</span>
               </div>
               <span className={`text-sm font-mono font-bold ${
-                componentes.edge_real >= 0 ? 'text-neon-verde' : 'text-neon-rojo'
+                (componentes.edge_real !== null && componentes.edge_real >= 0) ? 'text-neon-verde' : 'text-neon-rojo'
               }`}>
-                {componentes.edge_real >= 0 ? '+' : ''}{componentes.edge_real.toFixed(1)}
+                {(componentes.edge_real !== null && componentes.edge_real >= 0) ? '+' : ''}{(componentes.edge_real?.toFixed(1) ?? 'N/D')}
               </span>
             </div>
 
@@ -193,19 +195,19 @@ export function TarjetaScore({
               <div className="flex items-center gap-2">
                 <Shield size={14} className="text-neon-amarillo" />
                 <span className="text-xs text-texto-secundario">
-                  Riesgo (σ = {componentes.riesgo_valor.toFixed(1)})
+                  Riesgo (σ = {(componentes.riesgo_valor?.toFixed(1) ?? 'N/D')})
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {componentes.riesgo_normalizado > 1 && (
+                {(componentes.riesgo_normalizado !== null && componentes.riesgo_normalizado > 1) && (
                   <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold rounded bg-neon-amarillo/20 text-neon-amarillo border border-neon-amarillo/30">
                     Alto
                   </span>
                 )}
                 <span className={`text-sm font-mono font-bold ${
-                  componentes.penalizacion_riesgo < 0 ? 'text-neon-rojo' : 'text-neon-verde'
+                  (componentes.penalizacion_riesgo !== null && componentes.penalizacion_riesgo < 0) ? 'text-neon-rojo' : 'text-neon-verde'
                 }`}>
-                  {componentes.penalizacion_riesgo >= 0 ? '+' : ''}{componentes.penalizacion_riesgo.toFixed(1)}
+                  {(componentes.penalizacion_riesgo !== null && componentes.penalizacion_riesgo >= 0) ? '+' : ''}{(componentes.penalizacion_riesgo?.toFixed(1) ?? 'N/D')}
                 </span>
               </div>
             </div>
@@ -218,7 +220,7 @@ export function TarjetaScore({
                   <span className="text-xs text-texto-secundario">Penalización De-Vig</span>
                 </div>
                 <span className="text-sm font-mono font-bold text-neon-rojo">
-                  {componentes.penalizacion_devig.toFixed(1)}
+                  {(componentes.penalizacion_devig?.toFixed(1) ?? 'N/D')}
                 </span>
               </div>
             )}
@@ -228,7 +230,7 @@ export function TarjetaScore({
           <div className="mt-4">
             <div className="flex justify-between text-[10px] text-texto-terciario mb-1">
               <span>0</span>
-              <span>Score: {esApto ? scoreTotal.toFixed(1) : 'N/A'}</span>
+              <span>Score: {scoreTotal===null ? 'N/D' : esApto ? scoreTotal.toFixed(1) : 'N/A'}</span>
               <span>20+</span>
             </div>
             <div className="h-2 rounded-full bg-futurista-oscuro overflow-hidden">
@@ -238,7 +240,7 @@ export function TarjetaScore({
                 }`}
                 style={{
                   width: esApto
-                    ? `${Math.min(100, Math.max(5, (scoreTotal / 20) * 100))}%`
+                    ? `${Math.min(100, Math.max(5, ((scoreTotal ?? 0) / 20) * 100))}%`
                     : '0%',
                 }}
               />

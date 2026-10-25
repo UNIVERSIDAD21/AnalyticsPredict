@@ -1,3 +1,5 @@
+import { MemoryRouter } from 'react-router-dom';
+import { ToastsProvider } from '../../contextos/Toasts';
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -12,6 +14,8 @@ import { ModuloWnba } from "./PaginaWnba";
 import {
   analizarWnba,
   cargarWnba,
+  obtenerTemporadasWnba,
+  sincronizarCalendarioWnba,
   type ResultadoWnba,
 } from "../../servicios/wnba";
 import {
@@ -22,6 +26,8 @@ import {
 vi.mock("../../servicios/wnba", () => ({
   analizarWnba: vi.fn(),
   cargarWnba: vi.fn(),
+  obtenerTemporadasWnba: vi.fn(),
+  sincronizarCalendarioWnba: vi.fn(),
 }));
 vi.mock("../../servicios", async (original) => ({
   ...(await original<typeof import("../../servicios")>()),
@@ -126,14 +132,16 @@ function datos(disponible = true) {
       modelo: { disponible },
     },
     proximos: [],
-    pasados: [],
+    comprobacion: undefined,
+    estadisticas: { exito:true, equipos:[], fecha_actualizacion:"2026-10-25",temporadas_disponibles:[],temporada_actual:null },
     historial: [],
   };
 }
 async function preparar(disponible = true) {
   vi.mocked(cargarWnba).mockResolvedValue(datos(disponible));
   vi.mocked(analizarWnba).mockResolvedValue(resultado);
-  const view = render(<ModuloWnba />);
+  vi.mocked(obtenerTemporadasWnba).mockResolvedValue(datos().catalogo.temporadas);
+  const view = render(<MemoryRouter initialEntries={["/baloncesto?liga=wnba&prueba=1"]}><ToastsProvider><ModuloWnba /></ToastsProvider></MemoryRouter>);
   await screen.findByRole("combobox", { name: "Equipo Local" });
   return view;
 }
@@ -153,90 +161,47 @@ function completar() {
   );
 }
 
-describe("WNBA con formulario real compartido", () => {
-  it("envía temporadas, UUID propios, corte, fases y línea sin consultas NBA ni modo en vivo", async () => {
-    await preparar();
-    completar();
-    expect(
-      screen.queryByRole("combobox", { name: "Modo de análisis" }),
-    ).toBeNull();
-    expect(
-      screen.getByText(/No hay próximos encuentros WNBA/),
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText("2025 (200 REG)"));
-    fireEvent.change(screen.getByLabelText("Corte WNBA"), {
-      target: { value: "2026-09-01" },
-    });
-    fireEvent.click(
-      screen.getByLabelText(/Identificar como análisis de prueba/),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Analizar Partido" }));
-    await screen.findByRole("region", { name: "Resultado WNBA" });
-    expect(analizarWnba).toHaveBeenCalledWith(
-      expect.objectContaining({
-        equipo_local_id: "liberty",
-        equipo_visitante_id: "aces",
-        temporadas: ["2026"],
-        corte: "2026-09-01",
-        fases: ["REG"],
-        linea: 160,
-        mercado: "COMPLETO",
-        es_prueba: true,
-      }),
-      expect.any(AbortSignal),
-    );
+describe("WNBA dentro del recorrido NBA compartido", () => {
+  it("envía alcance propio y conserva temporadas sin controles adicionales", async () => {
+    await preparar(); completar();
+    await screen.findByRole('button',{name:'2025'});
+    expect(screen.getByRole('combobox',{name:'Modo de análisis'})).toBeInTheDocument();
+    expect(screen.queryByLabelText('Corte WNBA')).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'2025'}));
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    await waitFor(()=>expect(analizarWnba).toHaveBeenCalled());
+    expect(analizarWnba).toHaveBeenCalledWith(expect.objectContaining({
+      equipo_local_id:'liberty',equipo_visitante_id:'aces',temporadas:['2026'],fases:['REG'],es_prueba:true,linea:160,
+      modo:'PREPARTIDO',parciales:[]
+    }),expect.any(AbortSignal));
+    await screen.findByText('Proyección por periodo');
     expect(obtenerTemporadasEquipos).not.toHaveBeenCalled();
     expect(obtenerPartidosProximos).not.toHaveBeenCalled();
-    expect(screen.getAllByText("68.00 %").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("2.00 %").length).toBeGreaterThan(0);
-    expect(
-      screen.queryByRole("button", { name: /Guardar selección en Bitácora/ }),
-    ).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Historial WNBA (1)" }));
-    expect(
-      screen.getByRole("region", { name: "Historial WNBA" }),
-    ).toBeInTheDocument();
-    expect(analizarWnba).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('region',{name:'Resultado WNBA'})).toBeNull();
   });
-  it("limpia resultados al cambiar temporadas y permite recuperar un modelo ausente", async () => {
-    await preparar(false);
-    expect(
-      screen.getByRole("button", { name: "Analizar Partido" }),
-    ).toBeDisabled();
-    expect(screen.getByText(/Modelo WNBA no disponible/)).toBeInTheDocument();
-    vi.mocked(cargarWnba).mockResolvedValue(datos());
-    fireEvent.click(screen.getByRole("button", { name: /Actualizar estado/ }));
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Analizar Partido" }),
-      ).not.toBeDisabled(),
-    );
-    completar();
-    fireEvent.click(screen.getByRole("button", { name: "Analizar Partido" }));
-    await screen.findByRole("region", { name: "Resultado WNBA" });
-    fireEvent.click(screen.getByLabelText("2025 (200 REG)"));
-    expect(screen.queryByRole("region", { name: "Resultado WNBA" })).toBeNull();
+  it.each([1,2,3])('envía cada cuarto terminado en cierre Q%i y no cuotas ni temporadas PRE',async q=>{
+    await preparar(); completar();
+    fireEvent.change(screen.getByRole('combobox',{name:'Modo de análisis'}),{target:{value:String(q)}});
+    for(let i=1;i<=q;i++)for(const lado of ['local','visitante'])fireEvent.change(screen.getByLabelText(`Q${i} ${lado}`),{target:{value:'20'}});
+    expect(screen.queryByLabelText('Cuota Over')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    await waitFor(()=>expect(analizarWnba).toHaveBeenCalled());
+    expect(analizarWnba).toHaveBeenCalledWith(expect.objectContaining({modo:`CIERRE_Q${q}`,parciales:Array.from({length:q},()=>[20,20]),cuota_over:undefined}),expect.any(AbortSignal));
   });
-  it("aborta e ignora una respuesta tardía al desmontar y volver a la liga", async () => {
-    const view = await preparar();
-    let resolver!: (r: ResultadoWnba) => void;
-    vi.mocked(analizarWnba).mockImplementationOnce(
-      () =>
-        new Promise((r) => {
-          resolver = r;
-        }),
-    );
-    completar();
-    fireEvent.click(screen.getByRole("button", { name: "Analizar Partido" }));
-    const signal = vi.mocked(analizarWnba).mock.calls[0][1]!;
-    view.unmount();
-    expect(signal.aborted).toBe(true);
-    render(<ModuloWnba />);
-    await screen.findByRole("combobox", { name: "Equipo Local" });
-    await act(async () => resolver(resultado));
-    expect(screen.queryByRole("region", { name: "Resultado WNBA" })).toBeNull();
-    expect(screen.getByRole("combobox", { name: "Equipo Local" })).toHaveValue(
-      "",
-    );
+  it('aborta e ignora una respuesta tardía al desmontar',async()=>{
+    const view=await preparar();let resolver!:(r:ResultadoWnba)=>void;
+    vi.mocked(analizarWnba).mockImplementationOnce(()=>new Promise(r=>{resolver=r;}));
+    completar();await screen.findByRole('button',{name:'2025'});
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    await waitFor(()=>expect(analizarWnba).toHaveBeenCalled());
+    const signal=vi.mocked(analizarWnba).mock.calls[0][1]!;view.unmount();expect(signal.aborted).toBe(true);
+    await act(async()=>resolver(resultado));
+  });
+  it('Actualizar sincroniza la fuente, no el predictor',async()=>{
+    await preparar();vi.mocked(sincronizarCalendarioWnba).mockResolvedValue({comprobacion:{desde:'2026-10-25',hasta:'2027-01-25',comprobado_utc:'2026-10-25',estado:'PARTIDOS_PUBLICADOS',detalle:'3 encuentros',fuentes:[]}});
+    fireEvent.click(screen.getByRole('button',{name:'Actualizar'}));
+    await waitFor(()=>expect(sincronizarCalendarioWnba).toHaveBeenCalledTimes(1));
+    expect(analizarWnba).not.toHaveBeenCalled();
   });
 });

@@ -20,6 +20,7 @@ import type { TipoMercadoFutbol } from '../../tipos/futbol';
 interface PropsSeccionHistorialDetallado {
   /** ID del equipo local */
   equipoLocalId: string;
+  fuenteWnba?: string;
   /** Nombre completo del equipo local */
   equipoLocalNombre: string;
   /** Abreviatura del equipo local */
@@ -51,6 +52,7 @@ interface PropsSeccionHistorialDetallado {
  */
 export function SeccionHistorialDetallado({
   equipoLocalId,
+  fuenteWnba,
   equipoLocalNombre,
   equipoLocalAbr,
   equipoVisitanteId,
@@ -111,6 +113,7 @@ export function SeccionHistorialDetallado({
             mercado={mercado}
             linea={linea}
             deporte={deporte}
+            fuenteWnba={fuenteWnba}
           />
 
           {/* Divisor vertical (solo desktop) */}
@@ -127,6 +130,7 @@ export function SeccionHistorialDetallado({
             mercado={mercado}
             linea={linea}
             deporte={deporte}
+            fuenteWnba={fuenteWnba}
           />
         </div>
       )}

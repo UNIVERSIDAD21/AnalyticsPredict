@@ -16,7 +16,7 @@ interface RetornoUseEquipos {
 /**
  * Hook que carga y gestiona la lista de equipos NBA
  */
-export function useEquipos(): RetornoUseEquipos {
+export function useEquipos(liga?: 'wnba'): RetornoUseEquipos {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [estado, setEstado] = useState<EstadoPeticion>('inactivo');
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export function useEquipos(): RetornoUseEquipos {
     setError(null);
 
     try {
-      const datos = await obtenerEquipos();
+      const datos = await obtenerEquipos(liga);
       setEquipos(datos);
       setEstado('exito');
     } catch (err) {
@@ -34,7 +34,7 @@ export function useEquipos(): RetornoUseEquipos {
       setError(mensaje);
       setEstado('error');
     }
-  }, []);
+  }, [liga]);
 
   useEffect(() => {
     cargarEquipos();

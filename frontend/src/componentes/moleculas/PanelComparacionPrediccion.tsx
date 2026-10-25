@@ -29,13 +29,14 @@ interface PropsPanelComparacion {
   /** Línea analizada */
   linea: number;
   /** Nivel de confianza base */
-  confianzaBase: NivelConfianza | string;
+  confianzaBase: NivelConfianza | string | null;
   /** Nivel de confianza ajustada */
-  confianzaAjustada: NivelConfianza | string;
+  confianzaAjustada: NivelConfianza | string | null;
   /** Clase CSS adicional */
   className?: string;
   /** Unidad semántica a mostrar */
   unidadLabel?: string;
+  recomendacionHabilitada?: boolean;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -68,8 +69,8 @@ function formatearDiferenciaPorcentaje(diferencia: number): string {
 /**
  * Obtiene el color según la confianza
  */
-function obtenerColorConfianza(confianza: string): string {
-  switch (confianza.toUpperCase()) {
+function obtenerColorConfianza(confianza: string | null): string {
+  switch ((confianza ?? '').toUpperCase()) {
     case 'ALTA':
       return 'text-neon-verde';
     case 'MEDIA':
@@ -93,6 +94,7 @@ export function PanelComparacionPrediccion({
   confianzaAjustada,
   className,
   unidadLabel = 'unidades',
+  recomendacionHabilitada = true,
 }: PropsPanelComparacion) {
   // Cálculos derivados
   const datos = useMemo(() => {
@@ -213,7 +215,7 @@ export function PanelComparacionPrediccion({
                 obtenerColorConfianza(confianzaBase)
               )}
             >
-              {confianzaBase}
+              {confianzaBase ?? 'N/D'}
             </span>
           </div>
         </div>
@@ -357,7 +359,7 @@ export function PanelComparacionPrediccion({
                   obtenerColorConfianza(confianzaAjustada)
                 )}
               >
-                {confianzaAjustada}
+                {confianzaAjustada ?? 'N/D'}
               </span>
               {confianzaBase !== confianzaAjustada && (
                 <span className="text-xs text-texto-terciario">
@@ -381,7 +383,7 @@ export function PanelComparacionPrediccion({
           <AlertTriangle className="w-5 h-5 text-advertencia-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm text-advertencia-500 font-medium">
-              La recomendación cambió
+              {recomendacionHabilitada ? 'La recomendación cambió' : 'Recomendación: N/D'}
             </p>
             <p className="text-sm text-texto-secundario mt-1">
               De{' '}
@@ -393,7 +395,7 @@ export function PanelComparacionPrediccion({
                     : 'text-under-medio'
                 )}
               >
-                {datos.recomendacionBase}
+                {recomendacionHabilitada ? datos.recomendacionBase : 'Sin recomendación WNBA validada'}
               </span>{' '}
               →{' '}
               <span
@@ -404,7 +406,7 @@ export function PanelComparacionPrediccion({
                     : 'text-under-medio'
                 )}
               >
-                {datos.recomendacionAjustada}
+                {recomendacionHabilitada ? datos.recomendacionAjustada : 'Probabilidades RAW'}
               </span>{' '}
               ({formatearDiferenciaPorcentaje(Math.abs(datos.diferenciaProbOver))} de
               diferencia)

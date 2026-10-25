@@ -33,6 +33,15 @@ describe('una sola sección Baloncesto', () => {
     expect(screen.getByLabelText('Selección WNBA')).toHaveValue('');
     expect(screen.getByTestId('ruta')).toHaveTextContent('liga=wnba');
   });
+  it('retira la referencia al journal y lado al cambiar de competición', async () => {
+    preparar('/baloncesto?liga=wnba&analisis=journal-wnba&lado=UNDER&prueba=1');
+    await screen.findByText('Motor WNBA');
+    fireEvent.change(screen.getByRole('combobox',{name:'Liga'}),{target:{value:'nba'}});
+    await screen.findByText('Motor NBA');
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/baloncesto?liga=nba&prueba=1');
+    expect(screen.getByTestId('ruta')).not.toHaveTextContent('analisis=');
+    expect(screen.getByTestId('ruta')).not.toHaveTextContent('lado=');
+  });
   it('cambia de motor en la misma pantalla y limpia las selecciones de la otra liga', async () => {
     preparar('/baloncesto?liga=nba');
     const liga = await screen.findByRole('combobox', { name: 'Liga' });

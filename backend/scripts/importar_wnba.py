@@ -37,10 +37,16 @@ def guardar(path, value):
 
 def respaldo(url, root):
     binary = shutil.which('pg_dump')
+    bin_privado = Path.home()/'.local/opt/analyticspredict-pg-client/usr/lib/postgresql/18/bin'
+    if not binary and (bin_privado/'pg_dump').is_file():
+        binary = str(bin_privado/'pg_dump')
     exigir(binary, 'pg_dump no encontrado en PATH; no se escribe sin respaldo')
     path = root/'respaldo_previo.dump'
     exigir(not path.exists(), 'Respaldo ya existente; utilizar otro directorio de operación')
     env = os.environ.copy()
+    lib_privada = Path.home()/'.local/opt/analyticspredict-pg-client/usr/lib/x86_64-linux-gnu'
+    if Path(binary).parent == bin_privado and lib_privada.is_dir():
+        env['LD_LIBRARY_PATH'] = str(lib_privada)
     # Credencial solo en el entorno del proceso hijo; nunca en argv ni reportes.
     for k,v in conninfo_to_dict(url).items():
         exigir(k in {'host','port','dbname','user','password','sslmode','channel_binding','connect_timeout'},
@@ -51,7 +57,7 @@ def respaldo(url, root):
     exigir(r.returncode == 0 and path.exists(), 'pg_dump falló; ver log local del operador, sin DML')
     os.chmod(path, 0o600)
     restore = str(Path(binary).with_name('pg_restore'))
-    r = subprocess.run([restore,'--list',str(path)],capture_output=True)
+    r = subprocess.run([restore,'--list',str(path)],capture_output=True,env=env)
     exigir(r.returncode == 0, 'El archivo de respaldo no es legible por pg_restore')
     guardar(root/'respaldo.json', {'archivo':str(path),'sha256':digest(path.read_bytes()),'formato':'pg_dump custom'})
     return json.loads((root/'respaldo.json').read_text())

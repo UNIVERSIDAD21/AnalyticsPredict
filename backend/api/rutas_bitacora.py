@@ -337,7 +337,23 @@ async def guardar_apuesta(
                         status_code=422,
                         detail="El ID del partido no es válido.",
                     ) from exc
-                cursor.execute(
+                if peticion.competicion_codigo == "wnba":
+                    cursor.execute("""SELECT f.competicion_id,c.codigo,f.fecha_local fecha_partido,
+                        el.nombre equipo_local,ev.nombre equipo_visitante,f.id fixture_wnba_id,f.resultado_id,f.revision_sha256
+                        FROM fixtures_wnba f JOIN competiciones_baloncesto c ON c.id=f.competicion_id
+                        JOIN equipos el ON el.id=f.equipo_local_id JOIN equipos ev ON ev.id=f.equipo_visitante_id
+                        WHERE f.id=%s AND c.codigo='wnba' AND f.estado='PROGRAMADO' AND f.precision_fecha='HORA'
+                        AND f.inicio_utc > now() FOR SHARE OF f""", (partido_uuid,))
+                    partido = cursor.fetchone()
+                    if not partido:
+                        raise HTTPException(422,"Fixture WNBA no vigente o sin hora confirmada")
+                    traza=next(r for r in peticion.razones if r.get('tipo')=='trazabilidad_wnba')
+                    if traza.get('fixture_revision_sha256') != partido['revision_sha256']:
+                        raise HTTPException(422,"El calendario WNBA cambió desde el análisis; analizar la revisión vigente")
+                    datos_apuesta["fixture_wnba_id"] = partido["fixture_wnba_id"]
+                    datos_apuesta["partido_id"] = partido["resultado_id"]
+                else:
+                    cursor.execute(
                     """
                     SELECT p.competicion_id, c.codigo, p.fecha_partido,
                            el.nombre AS equipo_local, ev.nombre AS equipo_visitante
@@ -349,7 +365,7 @@ async def guardar_apuesta(
                     """,
                     (partido_uuid,),
                 )
-                partido = cursor.fetchone()
+                    partido = cursor.fetchone()
                 if not partido or partido["codigo"] != peticion.competicion_codigo:
                     raise HTTPException(
                         status_code=422,
@@ -463,6 +479,10 @@ async def guardar_apuesta(
                 datos_apuesta,
             )
             apuesta = cursor.fetchone()
+            if peticion.competicion_codigo == "wnba":
+                cursor.execute("UPDATE apuestas SET fixture_wnba_id=%s WHERE id=%s",
+                               (datos_apuesta["fixture_wnba_id"],apuesta["id"]))
+                apuesta["fixture_wnba_id"] = datos_apuesta["fixture_wnba_id"]
     return RespuestaApuesta(exito=True, apuesta=apuesta)
 
 

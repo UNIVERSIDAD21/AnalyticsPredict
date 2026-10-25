@@ -168,6 +168,7 @@ export function ResultadoAnalisis({
 }: PropsResultadoAnalisis) {
   const mercado = resultado.metadata?.mercado as string;
   const esEuro = Boolean(fuenteEuroliga);
+  const esWnba = resultado.metadata?.liga === 'wnba';
   const integral = (fuenteEuroliga?.analisis_integral ?? resultado.metadata?.analisis_integral) as AnalisisIntegral | undefined;
   const seccionIntegral = (seccion: 'ganador' | 'periodos' | 'contexto' | 'valor' | 'razones') => integral ? <SeccionesAnalisisIntegral key={`${resultado.fecha_analisis}-${seccion}`} datos={integral} seccion={seccion} local={resultado.equipo_nombre_completo} visitante={resultado.rival_nombre_completo} lado={seleccionUsuario?.lado} /> : null;
   const esCorte = resultado.es_en_vivo;
@@ -177,7 +178,8 @@ export function ResultadoAnalisis({
   const configConfianza = obtenerConfigConfianza(esCorte ? null : resultado.nivel_confianza);
 
   const detalle = extraerMejorApuestaDetalle(resultado);
-  const tieneDetalleAvanzado = detalle !== null;
+  const detalleVista = detalle ?? resultado.detalle_descriptivo;
+  const tieneDetalleAvanzado = detalleVista != null;
 
   const mercadoCanon = detalle?.mercado || mercado;
   const prediccionMercado = mercadoCanon === 'COMPLETO'
@@ -233,7 +235,9 @@ export function ResultadoAnalisis({
   // `probabilidad_ganador` es la probabilidad del equipo analizado (local).
   // Si el ganador probable es el rival, presentar su complemento.
   const probabilidadGanadorMostrado = prediccionGanador && numeroValido(prediccionGanador.probabilidad_ganador)
-    ? (prediccionGanador.ganador_probable === 'equipo'
+    ? (prediccionGanador.ganador_tres_vias
+      ? Math.max(prediccionGanador.ganador_tres_vias.local, prediccionGanador.ganador_tres_vias.empate, prediccionGanador.ganador_tres_vias.visitante)
+      : prediccionGanador.ganador_probable === 'equipo'
       ? prediccionGanador.probabilidad_ganador
       : 1 - prediccionGanador.probabilidad_ganador)
     : null;
@@ -284,7 +288,7 @@ export function ResultadoAnalisis({
       <div className="tarjeta p-3 border border-neon-cyan/20">
         <p className="text-xs uppercase tracking-wider text-texto-terciario">Estado operativo del mercado</p>
         <p className="text-sm font-semibold text-neon-cyan">{estadoOperativoMercado}</p>
-        {!esEuro && !esCorte && estadoOperativoMercado !== 'PROMOCIONABLE' && (
+        {!esEuro && !esWnba && !esCorte && estadoOperativoMercado !== 'PROMOCIONABLE' && (
           <p className="text-xs text-advertencia-500 mt-1">Modo activo: PAPER/SHADOW (validación prolongada, no mercado promocionado).</p>
         )}
         {motivosEstadoOperativo.length > 0 && (
@@ -306,7 +310,7 @@ export function ResultadoAnalisis({
         {/* Línea decorativa superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan" />
 
-        <p className="text-center text-xs text-neon-cyan mb-4">{esEuro ? 'Euroliga' : esFutbol ? 'Fútbol' : 'NBA'} · {modoLabel}{esEuro || esCorte ? ' · Regulación sin OT · RAW' : ''}</p>
+        <p className="text-center text-xs text-neon-cyan mb-4">{esEuro ? 'Euroliga' : esWnba ? 'WNBA' : esFutbol ? 'Fútbol' : 'NBA'} · {modoLabel}{esEuro || esCorte ? ' · Regulación sin OT · RAW' : ''}</p>
         {/* Equipos */}
         <div className="text-center mb-6 pt-2">
           <div className="flex items-center justify-center gap-3 md:gap-6 flex-wrap">
@@ -320,7 +324,7 @@ export function ResultadoAnalisis({
           </div>
           <div className="mt-2 inline-block px-4 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30">
             <span className="text-sm text-neon-cyan font-mono">
-              {esEuro && mercado === 'COMPLETO' ? 'REGULACIÓN · 40 MIN · SIN OT' : esFutbol ? etiquetaPeriodo.toUpperCase() : (mercado === 'COMPLETO' ? 'JUEGO COMPLETO' : `CUARTO ${mercado}`)}
+              {(esEuro || (esWnba && !resultado.metadata.incluye_ot)) && mercado === 'COMPLETO' ? 'REGULACIÓN · 40 MIN · SIN OT' : esFutbol ? etiquetaPeriodo.toUpperCase() : (mercado === 'COMPLETO' ? 'JUEGO COMPLETO' : `CUARTO ${mercado}`)}
             </span>
           </div>
         </div>
@@ -390,7 +394,7 @@ export function ResultadoAnalisis({
           <p className="text-xs uppercase tracking-wider text-neon-cyan font-semibold">{etiquetaGanador}</p>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-lg font-futurista text-texto-principal">{nombreGanador}</p>
+              <p className="text-lg font-futurista text-texto-principal">{prediccionGanador.ganador_tres_vias && prediccionGanador.ganador_tres_vias.empate >= Math.max(prediccionGanador.ganador_tres_vias.local,prediccionGanador.ganador_tres_vias.visitante) ? 'Empate' : nombreGanador}</p>
               <p className="text-sm text-texto-secundario">
                 Probabilidad: <span className="text-neon-verde font-semibold">{((probabilidadGanadorMostrado ?? 0) * 100).toFixed(1)}%</span>
               </p>
@@ -416,7 +420,7 @@ export function ResultadoAnalisis({
           desviacion={desviacion}
           seleccionUsuario={seleccionUsuario?.lado}
           unidadLabel={unidadAnalisis}
-          probabilidadPush={integral?.probabilidades.push ?? fuenteEuroliga?.probabilidades.push}
+          probabilidadPush={esWnba && !Number.isInteger(linea) ? undefined : integral?.probabilidades.push ?? fuenteEuroliga?.probabilidades.push ?? (typeof resultado.metadata?.probabilidad_push === 'number' ? resultado.metadata.probabilidad_push : undefined)}
           decimales={esEuro ? 2 : 1}
         />
       )}
@@ -430,7 +434,7 @@ export function ResultadoAnalisis({
       {seccionIntegral('periodos')}
       {!integral && !esFutbol && <div className="tarjeta p-6 space-y-3">
         <h3 className="text-lg font-futurista">Proyección por periodo</h3>
-        <p className="text-xs text-texto-secundario">{esEuro ? 'Cuartos de 10 minutos; regulación de 40 minutos, sin OT.' : 'Cuartos de 12 minutos; la suma de cuartos no incluye prórroga.'} Observado no significa pronosticado.</p>
+        <p className="text-xs text-texto-secundario">{esEuro ? 'Cuartos de 10 minutos; regulación de 40 minutos, sin OT.' : esWnba ? `Cuartos de 10 minutos; regulación de 40 minutos. Juego completo ${resultado.metadata.incluye_ot ? 'incluye OT; la suma de cuartos conserva regulación' : 'sin OT en cortes entre cuartos'}.` : 'Cuartos de 12 minutos; la suma de cuartos no incluye prórroga.'} Observado no significa pronosticado.</p>
         <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr><th className="p-2">Periodo</th><th className="p-2">Local</th><th className="p-2">Visitante</th><th className="p-2">Total</th><th className="p-2">Desviación</th></tr></thead><tbody>{Object.entries(resultado.predicciones).sort(([a],[b]) => ['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(a)-['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(b)).map(([m,p]) => <tr key={m} className="border-t border-neon-cyan/10"><th className="p-2">{m}{resultado.cuartos_reales?.[m] ? ' (observado)' : ''}</th><td className="p-2">{p.media_equipo.toFixed(2)}</td><td className="p-2">{p.media_rival.toFixed(2)}</td><td className="p-2">{p.media_total.toFixed(2)}</td><td className="p-2">{p.desviacion_total.toFixed(2)}</td></tr>)}</tbody></table></div>
       </div>}
       {(esCorte || esEuro) && <div className="tarjeta p-4 text-sm text-texto-secundario space-y-2">
@@ -464,6 +468,7 @@ export function ResultadoAnalisis({
             probabilidadUnder: resultado.prediccion_ajustada.probabilidad_under_ajustada,
           }}
           linea={linea}
+          recomendacionHabilitada={!esWnba}
           confianzaBase={resultado.prediccion_ajustada.confianza_base}
           confianzaAjustada={resultado.prediccion_ajustada.confianza_ajustada}
           unidadLabel={unidadAnalisis}
@@ -491,7 +496,7 @@ export function ResultadoAnalisis({
           7. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
           Solo mostrar si hay detalle avanzado
           ═══════════════════════════════════════════════════════════ */}
-      {!integral && tieneDetalleAvanzado && detalle && (
+      {!integral && tieneDetalleAvanzado && detalleVista && (
         <div className="space-y-4">
           <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
             <span className="w-8 h-[2px] bg-gradient-to-r from-neon-cyan to-transparent" />
@@ -501,21 +506,22 @@ export function ResultadoAnalisis({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* TarjetaDeVig */}
             <TarjetaDeVig
-              metodo={detalle.devig_metodo}
-              overround={detalle.devig_overround}
-              pMktRaw={detalle.devig_p_mkt_raw}
-              pMktFair={detalle.devig_p_mkt_fair}
-              edgeRaw={detalle.edge_raw}
-              edgeReal={detalle.edge_real}
-              advertencias={detalle.devig_advertencias}
+              calibrado={!esWnba || detalleVista.p_calibrada != null}
+              metodo={detalleVista.devig_metodo ?? 'no_aplicado'}
+              overround={detalleVista.devig_overround ?? null}
+              pMktRaw={detalleVista.devig_p_mkt_raw ?? null}
+              pMktFair={detalleVista.devig_p_mkt_fair ?? null}
+              edgeRaw={detalleVista.edge_raw ?? null}
+              edgeReal={detalleVista.edge_real ?? null}
+              advertencias={detalleVista.devig_advertencias ?? []}
             />
 
             {/* SeccionCalibracion */}
             <div className="flex flex-col justify-center">
               <SeccionCalibracion
-                pRaw={detalle.p_raw}
-                pCalibrada={detalle.p_calibrada}
-                calibradorUsado={detalle.calibrador_usado}
+                pRaw={detalleVista.p_raw ?? null}
+                pCalibrada={detalleVista.p_calibrada ?? null}
+                calibradorUsado={detalleVista.calibrador_usado ?? null}
                 unidadDelta="pp"
               />
             </div>
@@ -527,7 +533,7 @@ export function ResultadoAnalisis({
           8. BLOQUE SCORE + SIZING (Fase 2)
           Solo mostrar si hay detalle avanzado
           ═══════════════════════════════════════════════════════════ */}
-      {!integral && tieneDetalleAvanzado && detalle && (
+      {!integral && tieneDetalleAvanzado && detalleVista && (
         <div className="space-y-4">
           <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-magenta flex items-center gap-2">
             <span className="w-8 h-[2px] bg-gradient-to-r from-neon-magenta to-transparent" />
@@ -537,25 +543,27 @@ export function ResultadoAnalisis({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* TarjetaScore */}
             <TarjetaScore
-              scoreTotal={detalle.score_total}
-              componentes={detalle.score_componentes}
-              explicacion={detalle.score_explicacion}
-              penalizaciones={detalle.score_penalizaciones}
-              valorEsperado={detalle.valor_esperado}
+              conservarCampos={esWnba}
+              scoreTotal={detalleVista.score_total ?? null}
+              componentes={detalleVista.score_componentes ?? null}
+              explicacion={detalleVista.score_explicacion ?? null}
+              penalizaciones={detalleVista.score_penalizaciones ?? []}
+              valorEsperado={detalleVista.valor_esperado ?? null}
             />
 
             {/* TarjetaSizing */}
             <TarjetaSizing
-              kellyFull={detalle.kelly_full}
-              kellyFraccional={detalle.kelly_fraccional}
-              fraccionKelly={detalle.fraccion_kelly}
-              stake={detalle.stake}
-              stakePorcentaje={detalle.stake_porcentaje}
-              bankroll={detalle.bankroll_momento}
-              perfilRiesgo={detalle.perfil_riesgo_usado}
-              advertencias={detalle.sizing_advertencias}
-              penalizaciones={detalle.sizing_penalizaciones}
-              aplicaronCaps={detalle.aplicaron_caps}
+              conservarCampos={esWnba}
+              kellyFull={detalleVista.kelly_full ?? null}
+              kellyFraccional={detalleVista.kelly_fraccional ?? null}
+              fraccionKelly={detalleVista.fraccion_kelly ?? null}
+              stake={detalleVista.stake ?? null}
+              stakePorcentaje={detalleVista.stake_porcentaje ?? null}
+              bankroll={detalleVista.bankroll_momento ?? null}
+              perfilRiesgo={detalleVista.perfil_riesgo_usado ?? null}
+              advertencias={detalleVista.sizing_advertencias ?? []}
+              penalizaciones={detalleVista.sizing_penalizaciones ?? null}
+              aplicaronCaps={detalleVista.aplicaron_caps ?? false}
               onConfigurarBankroll={onConfigurarBankroll}
             />
           </div>
@@ -616,8 +624,8 @@ export function ResultadoAnalisis({
           visitante={fuenteEuroliga.equipo_visitante} corte={fuenteEuroliga.contexto.corte_exclusivo ?? fuenteEuroliga.fecha_partido} />
         <PanelDiagnosticoEuroliga resultado={fuenteEuroliga} />
       </>}
-      {esCorte && !esEuro && <details className="tarjeta p-4 text-xs text-texto-secundario"><summary className="cursor-pointer">Modelo y corte NBA</summary>
-        <p className="mt-3">Versión: {String(resultado.metadata.modelo_version ?? 'N/D')}. Peso heurístico de ritmo: {String(resultado.metadata.peso_en_vivo ?? 'N/D')}.</p>
+      {esCorte && !esEuro && <details className="tarjeta p-4 text-xs text-texto-secundario"><summary className="cursor-pointer">Modelo y corte {esWnba ? 'WNBA' : 'NBA'}</summary>
+        <p className="mt-3">Versión: {String(resultado.metadata.modelo_version ?? 'N/D')}. Peso heurístico de ritmo: {esWnba ? 'N/D: WNBA usa covarianza condicional, no un peso heurístico de ritmo' : String(resultado.metadata.peso_en_vivo ?? 'N/D')}.</p>
         <p>Solo consulta. No se guarda como apuesta ni predicción prepartido y no acredita calibración.</p>
       </details>}
 
@@ -635,6 +643,7 @@ export function ResultadoAnalisis({
           mercado={esFutbol ? (mercadoCanon as TipoMercadoFutbol) : (mercado as Mercado)}
           linea={linea}
           deporte={esFutbol ? 'futbol' : 'baloncesto'}
+          fuenteWnba={esWnba ? String(resultado.metadata.analisis_id) : undefined}
           inicialmenteExpandido={false}
         />
       )}

@@ -16,6 +16,8 @@ import { MetodoDeVig } from '../../tipos';
 // ══════════════════════════════════════════════════════════════
 
 interface PropsTarjetaDeVig {
+  /** False cuando el edge usa probabilidades RAW sin calibrador. */
+  calibrado?: boolean;
   /** Método de de-vig utilizado */
   metodo: MetodoDeVig;
 
@@ -23,10 +25,10 @@ interface PropsTarjetaDeVig {
   overround: number | null;
 
   /** Probabilidad cruda del mercado (1/cuota) */
-  pMktRaw: number;
+  pMktRaw: number | null;
 
   /** Probabilidad justa después de eliminar vig */
-  pMktFair: number;
+  pMktFair: number | null;
 
   /** Edge crudo (antes de calibración) */
   edgeRaw: number | null;
@@ -130,6 +132,7 @@ export function TarjetaDeVig({
   edgeRaw,
   edgeReal,
   advertencias = [],
+  calibrado = true,
 }: PropsTarjetaDeVig) {
   const config = obtenerConfigMetodo(metodo);
   const Icono = config.icono;
@@ -202,7 +205,7 @@ export function TarjetaDeVig({
             <span className="text-[10px] uppercase tracking-wider">Diferencia</span>
           </div>
           <div className="text-lg font-mono font-bold text-neon-magenta">
-            {isFinite(pMktRaw) && isFinite(pMktFair) ? `${((pMktRaw - pMktFair) * 100).toFixed(2)} pp` : '—'}
+            {pMktRaw !== null && pMktFair !== null && isFinite(pMktRaw) && isFinite(pMktFair) ? `${((pMktRaw - pMktFair) * 100).toFixed(2)} pp` : '—'}
           </div>
           <div className="text-[10px] text-texto-terciario mt-1">
             Vig aplicado
@@ -224,7 +227,7 @@ export function TarjetaDeVig({
               <br /><br />
               <strong>Edge Raw:</strong> Antes de calibrar probabilidades.
               <br />
-              <strong>Edge Real:</strong> Después de calibración, ajustado por vig justo. <span className="text-neon-verde">Este es el que importa.</span>
+              <strong>Edge Real:</strong> {calibrado ? 'Después de calibración, ajustado por vig justo.' : 'Probabilidad RAW condicionada a no-push menos probabilidad de mercado sin vig; no acredita calibración ni ventaja futura.'}
             </div>
           </div>
         </div>
@@ -252,7 +255,7 @@ export function TarjetaDeVig({
             {/* Indicador visual de que este es el importante */}
             <div className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-neon-verde/20 border border-neon-verde/40">
               <span className="text-[8px] font-bold uppercase tracking-wider text-neon-verde">
-                USAR ESTE
+                {calibrado ? 'USAR ESTE' : 'RAW'}
               </span>
             </div>
             <div className="text-[10px] uppercase tracking-wider text-texto-terciario mb-1">
@@ -266,7 +269,7 @@ export function TarjetaDeVig({
               {formatearPorcentaje(edgeReal)}
             </div>
             <div className="text-[10px] text-texto-terciario mt-1">
-              Calibrado + de-vig
+              {calibrado ? 'Calibrado + de-vig' : 'RAW + de-vig'}
             </div>
           </div>
         </div>
@@ -290,7 +293,7 @@ export function TarjetaDeVig({
           <p className="text-[10px] text-texto-terciario leading-relaxed">
             <strong className="text-neon-cyan">De-vig</strong> elimina el margen de la casa de las cuotas
             para obtener la probabilidad justa del mercado. El <strong className="text-neon-verde">Edge Real</strong> es
-            tu ventaja real después de ajustar por calibración y vig.
+            {calibrado ? 'tu ventaja real después de ajustar por calibración y vig.' : 'una diferencia descriptiva RAW frente al mercado sin vig, no una ventaja certificada.'}
           </p>
         </div>
       </div>

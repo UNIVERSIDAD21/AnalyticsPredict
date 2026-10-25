@@ -19,8 +19,9 @@ import {
 /**
  * Obtiene la lista de todos los equipos NBA
  */
-export async function obtenerEquipos(): Promise<Equipo[]> {
+export async function obtenerEquipos(liga?: 'wnba'): Promise<Equipo[]> {
   try {
+    if (liga === 'wnba') return (await import('./wnba')).obtenerEquiposWnba();
     const respuesta = await clienteAPI.get<RespuestaEquipos>('/api/equipos');
 
     if (!respuesta.data.exito) {
@@ -34,6 +35,8 @@ export async function obtenerEquipos(): Promise<Equipo[]> {
 }
 
 interface ParametrosHistorialEquipo {
+  liga?: 'wnba';
+  analisisId?: string;
   temporadaId?: string;
   comoLocal?: boolean;
   orden?: 'asc' | 'desc';
@@ -49,10 +52,11 @@ export async function obtenerHistorialEquipo(
 ): Promise<RespuestaHistorialEquipo> {
   try {
     const respuesta = await clienteAPI.get<RespuestaHistorialEquipo>(
-      `/api/equipos/${equipoId}/partidos`,
+      parametros.liga === 'wnba' ? `/api/wnba/equipos/${equipoId}/historial` : `/api/equipos/${equipoId}/partidos`,
       {
         params: {
           temporada_id: parametros.temporadaId,
+          analisis_id: parametros.analisisId,
           como_local: parametros.comoLocal,
           orden: parametros.orden,
           limite: parametros.limite,

@@ -16,6 +16,28 @@ const juegoProrroga={id:'2',fecha:'2026-10-18',rival:'Otro',como_local:false,pun
 const euroDetallado:ResultadoEuro={...euro,diagnostico_modelo:{partidos_entrenamiento:2591,fecha_min:'2018-10-11',fecha_max:'2026-10-20',alpha_ridge:5,ajuste_finalizado_en:'2026-10-21T20:00:00Z'},validacion_historica:{tipo:'retrospectiva_exploratoria_no_prospectiva',train_n:1000,cal_n:500,cal_util_n:480,prospectiva_n:0,calibrador_probabilistico:null,limitacion:'Evalúa candidato TRAIN, no refit final.',evaluacion:{partidos:463,evaluados:327,abstenciones:136,cobertura:327/463,mercados:{COMPLETO:{mae:15.98,mae_media_liga:15.67,brier_raw:0.258,brier_referencia_50:0.25,linea_referencia_train:160.5,cobertura_intervalo_80:0.718,n:327}}}},contexto:{...euro.contexto,corte_exclusivo:'2026-10-22',equipos:{'real madrid':{...euro.contexto.equipos['real madrid'],temporada_resumen:temporada,recientes:[juegoCasa,juegoProrroga]},maccabi:{n_historico:6,media_regulacion:79,temporada_resumen:temporada,recientes:[{...juegoCasa,id:'3',como_local:false}]}}}};
 
 describe('resultados completos compartidos',()=>{
+ it.each([0,1,2,3])('conserva secciones y acciones NBA/WNBA en el mismo estado sin cuotas, corte%i',q=>{
+  // Contrato puramente visual sintético: no se ejecuta ni sustituye ningún predictor.
+  const base=adaptarResultadoEuroliga(euro);
+  const forma={ultimos_n:10,victorias:6,derrotas:4,racha:'V2',ppg:80,opp_ppg:77,net_rating:3};
+  const comun={...base,es_en_vivo:q>0,cuartos_reales:Object.fromEntries(Array.from({length:q},(_,i)=>[`Q${i+1}`,[20,21] as [number,number]])),
+   contexto:{h2h:{...h2hEuroliga(euro),tendencia_over:0},forma_equipo:forma,forma_rival:forma,descanso_equipo:null,descanso_rival:null,stats_temporada_equipo:{},stats_temporada_rival:{}},
+   metadata:{mercado:'COMPLETO',modo_analisis:q?`CIERRE_Q${q}`:'PREPARTIDO',probabilidad_push:0}};
+  const props={seleccionUsuario:{lado:'OVER' as const,linea:170.5},onGuardar:q?undefined:vi.fn()};
+  render(<ResultadoAnalisis resultado={{...comun,metadata:{...comun.metadata,liga:'nba'}}} {...props}/>);
+  const campos=()=>({secciones:[...document.querySelectorAll('h3')].map(e=>e.textContent),acciones:screen.queryAllByRole('button').map(e=>e.textContent),tablas:[...document.querySelectorAll('th')].map(e=>e.textContent)});
+  const nba=campos();cleanup();
+  render(<ResultadoAnalisis resultado={{...comun,metadata:{...comun.metadata,liga:'wnba',incluye_ot:!q}}} {...props}/>);
+  expect(campos()).toEqual(nba);
+  expect(screen.queryByTestId('barra-push')).toBeNull();
+  expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})!==null).toBe(q===0);
+ });
+ it('conserva la masa push WNBA en líneas enteras sin crear una tarjeta vacía en medias líneas',()=>{
+  const base=adaptarResultadoEuroliga(euro);
+  render(<ResultadoAnalisis resultado={{...base,metadata:{mercado:'COMPLETO',liga:'wnba',probabilidad_push:.02}}} seleccionUsuario={{lado:'OVER',linea:170}}/>);
+  expect(screen.getByTestId('barra-push')).toBeInTheDocument();
+  expect(screen.getByRole('img').getAttribute('aria-label')).toContain('Push 2.0%');
+ });
  it('Euroliga usa la presentación NBA conservando RAW, ventaja y confianza no certificada',()=>{
   const get=vi.spyOn(clienteAPI,'get');
   render(<ResultadoEuroliga r={euro} seleccionUsuario={{lado:'UNDER',linea:170.5}} />);

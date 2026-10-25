@@ -16,6 +16,8 @@ export function PaginaBaloncesto() {
     siguientes.set('liga', valor);
     siguientes.delete('tab');
     siguientes.delete('equipo');
+    siguientes.delete('analisis');
+    siguientes.delete('lado');
     setParams(siguientes);
   };
 

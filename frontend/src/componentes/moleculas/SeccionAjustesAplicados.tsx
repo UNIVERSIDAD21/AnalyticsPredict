@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Tarjeta } from '../atomos';
-import type { AjusteIndividual } from '../../tipos/analisis';
+import type { AjustesVista } from '../../tipos/resultadoVista';
+type AjusteIndividual = AjustesVista['ajustes'][number];
 
 // ══════════════════════════════════════════════════════════════
 // CONSTANTES

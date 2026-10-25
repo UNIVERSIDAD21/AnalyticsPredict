@@ -68,7 +68,7 @@ const construirMapaOponentes = (equipos: Equipo[]): Map<string, ResumenEquipoOpo
   return mapa;
 };
 
-export function useHistorialEquipo(equipoId: string): UseHistorialEquipoReturn {
+export function useHistorialEquipo(equipoId: string, liga?: 'wnba'): UseHistorialEquipoReturn {
   const [partidos, setPartidos] = useState<PartidoHistorial[]>([]);
   const [partidosBase, setPartidosBase] = useState<PartidoHistorial[]>([]);
   const [equipo, setEquipo] = useState<InfoEquipoHistorial | null>(null);
@@ -95,6 +95,7 @@ export function useHistorialEquipo(equipoId: string): UseHistorialEquipoReturn {
     try {
       const respuesta = await obtenerHistorialEquipo(equipoId, {
         temporadaId: filtros.temporadaId,
+        liga,
         comoLocal: filtros.comoLocal,
         orden: 'desc',
       });
@@ -108,7 +109,7 @@ export function useHistorialEquipo(equipoId: string): UseHistorialEquipoReturn {
       setError(mensaje);
       setCargando(false);
     }
-  }, [equipoId, filtros.temporadaId, filtros.comoLocal]);
+  }, [equipoId, filtros.temporadaId, filtros.comoLocal, liga]);
 
   useEffect(() => {
     cargarHistorial();
@@ -118,7 +119,7 @@ export function useHistorialEquipo(equipoId: string): UseHistorialEquipoReturn {
     let activo = true;
     const cargarEquipos = async () => {
       try {
-        const equipos = await obtenerEquipos();
+        const equipos = await obtenerEquipos(liga);
         if (!activo) {
           return;
         }
@@ -133,7 +134,7 @@ export function useHistorialEquipo(equipoId: string): UseHistorialEquipoReturn {
     return () => {
       activo = false;
     };
-  }, []);
+  }, [liga]);
 
   useEffect(() => {
     const oponenteId = filtros.oponenteId;

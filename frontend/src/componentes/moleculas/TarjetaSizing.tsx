@@ -24,6 +24,7 @@ import { PerfilRiesgo, PenalizacionesSizing } from '../../tipos';
 // ══════════════════════════════════════════════════════════════
 
 interface PropsTarjetaSizing {
+  conservarCampos?: boolean;
   /** Kelly completo */
   kellyFull: number | null;
 
@@ -43,13 +44,13 @@ interface PropsTarjetaSizing {
   bankroll: number | null;
 
   /** Perfil de riesgo usado */
-  perfilRiesgo: PerfilRiesgo;
+  perfilRiesgo: PerfilRiesgo | null;
 
   /** Advertencias de sizing */
   advertencias: string[];
 
   /** Penalizaciones aplicadas */
-  penalizaciones: PenalizacionesSizing;
+  penalizaciones: PenalizacionesSizing | null;
 
   /** Indica si se aplicaron caps */
   aplicaronCaps?: boolean;
@@ -62,7 +63,7 @@ interface PropsTarjetaSizing {
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 
-function obtenerConfigPerfil(perfil: PerfilRiesgo) {
+function obtenerConfigPerfil(perfil: PerfilRiesgo | null) {
   switch (perfil) {
     case 'CONSERVADOR':
       return {
@@ -88,11 +89,13 @@ function obtenerConfigPerfil(perfil: PerfilRiesgo) {
         bgColor: 'bg-neon-magenta/10',
         borderColor: 'border-neon-magenta/30',
       };
+    default:
+      return { texto: 'N/D', fraccion: 'N/D', color: 'text-texto-secundario', bgColor: 'bg-futurista-oscuro', borderColor: 'border-neon-cyan/20' };
   }
 }
 
-function formatearMoneda(valor: number | null): string {
-  if (valor === null || !isFinite(valor)) return '—';
+function formatearMoneda(valor: number | null, sinDato = '—'): string {
+  if (valor === null || !isFinite(valor)) return sinDato;
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency: 'USD',
@@ -101,8 +104,8 @@ function formatearMoneda(valor: number | null): string {
   }).format(valor);
 }
 
-function formatearPorcentaje(valor: number | null, decimales = 2): string {
-  if (valor === null || !isFinite(valor)) return '—';
+function formatearPorcentaje(valor: number | null, decimales = 2, sinDato = '—'): string {
+  if (valor === null || !isFinite(valor)) return sinDato;
   return `${(valor * 100).toFixed(decimales)}%`;
 }
 
@@ -125,6 +128,7 @@ function obtenerTextoPenalizacion(key: string): string {
  */
 export function TarjetaSizing({
   kellyFull,
+  conservarCampos = false,
   kellyFraccional,
   fraccionKelly,
   stake,
@@ -140,7 +144,7 @@ export function TarjetaSizing({
   const tieneBankroll = bankroll !== null && bankroll > 0;
   const kellyPositivo = kellyFull !== null && kellyFull > 0;
 
-  if (kellyFull === null) {
+  if (kellyFull === null && !conservarCampos) {
     return (
       <Tarjeta className="animate-deslizar-arriba">
         <div className="text-center py-6">
@@ -155,7 +159,7 @@ export function TarjetaSizing({
   }
 
   // Si Kelly es negativo o cero, no se recomienda apostar
-  if (!kellyPositivo) {
+  if (!kellyPositivo && !conservarCampos) {
     return (
       <Tarjeta className="animate-deslizar-arriba">
         <div className="text-center py-6">
@@ -180,7 +184,7 @@ export function TarjetaSizing({
   }
 
   // Estado: Sin bankroll configurado
-  if (!tieneBankroll) {
+  if (!tieneBankroll && !conservarCampos) {
     return (
       <Tarjeta className="animate-deslizar-arriba">
         <div className="text-center py-4">
@@ -200,7 +204,7 @@ export function TarjetaSizing({
               Kelly Fraccional (% del bankroll)
             </div>
             <div className="text-3xl font-mono font-bold text-neon-cyan texto-glow-cyan">
-              {formatearPorcentaje(kellyFraccional)}
+              {formatearPorcentaje(kellyFraccional, 2, conservarCampos ? 'N/D' : '—')}
             </div>
             <div className="text-[10px] text-texto-terciario mt-1">
               Perfil: {configPerfil.texto} ({configPerfil.fraccion} Kelly)
@@ -223,7 +227,7 @@ export function TarjetaSizing({
   }
 
   // Estado: Con bankroll configurado - mostrar todo
-  const penalizacionesActivas = Object.entries(penalizaciones).filter(
+  const penalizacionesActivas = Object.entries(penalizaciones ?? {}).filter(
     ([, valor]) => valor !== undefined && valor < 1
   );
 
@@ -238,7 +242,7 @@ export function TarjetaSizing({
             </div>
             <div>
               <h3 className={`text-sm font-futurista font-bold tracking-wider ${configPerfil.color}`}>
-                SIZING RECOMENDADO
+                {kellyFull===null ? 'SIZING · N/D' : 'SIZING RECOMENDADO'}
               </h3>
               <p className="text-xs text-texto-secundario">
                 Perfil: {configPerfil.texto}
@@ -265,10 +269,10 @@ export function TarjetaSizing({
           Stake Recomendado
         </div>
         <div className="text-4xl font-mono font-bold text-neon-verde texto-glow-verde">
-          {formatearMoneda(stake)}
+          {formatearMoneda(stake, conservarCampos ? 'N/D' : '—')}
         </div>
         <div className="text-sm text-texto-secundario mt-1">
-          {formatearPorcentaje(stakePorcentaje)} de tu bankroll
+          {formatearPorcentaje(stakePorcentaje, 2, conservarCampos ? 'N/D' : '—')} de tu bankroll
         </div>
       </div>
 
@@ -281,7 +285,7 @@ export function TarjetaSizing({
             <span className="text-[10px] uppercase tracking-wider">Bankroll</span>
           </div>
           <div className="text-lg font-mono font-bold text-texto-principal">
-            {formatearMoneda(bankroll)}
+            {formatearMoneda(bankroll, conservarCampos ? 'N/D' : '—')}
           </div>
         </div>
 
@@ -292,7 +296,7 @@ export function TarjetaSizing({
             <span className="text-[10px] uppercase tracking-wider">Kelly Full</span>
           </div>
           <div className="text-lg font-mono font-bold text-neon-cyan">
-            {formatearPorcentaje(kellyFull)}
+            {formatearPorcentaje(kellyFull, 2, conservarCampos ? 'N/D' : '—')}
           </div>
         </div>
 
@@ -303,7 +307,7 @@ export function TarjetaSizing({
             <span className="text-[10px] uppercase tracking-wider">Fracción</span>
           </div>
           <div className={`text-lg font-mono font-bold ${configPerfil.color}`}>
-            {formatearPorcentaje(fraccionKelly)}
+            {formatearPorcentaje(fraccionKelly, 2, conservarCampos ? 'N/D' : '—')}
           </div>
         </div>
 
@@ -314,7 +318,7 @@ export function TarjetaSizing({
             <span className="text-[10px] uppercase tracking-wider">Kelly Frac.</span>
           </div>
           <div className="text-lg font-mono font-bold text-neon-verde">
-            {formatearPorcentaje(kellyFraccional)}
+            {formatearPorcentaje(kellyFraccional, 2, conservarCampos ? 'N/D' : '—')}
           </div>
         </div>
       </div>

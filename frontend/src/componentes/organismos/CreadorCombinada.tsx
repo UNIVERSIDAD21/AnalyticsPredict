@@ -1,8 +1,10 @@
+import { evaluarCombinadaWnba, type EvaluacionCombinadaWnba } from '../../servicios/wnba';
+import { extraerMensajeError } from '../../servicios/api';
 /**
  * CreadorCombinada.tsx — Constructor de apuestas combinadas
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Boton, Input } from '../atomos';
 import { IndicadorCorrelacion, ResumenCombinada, SelectorSeleccion } from '../moleculas';
 import { SeleccionCombinadaInput } from '../../tipos';
@@ -12,6 +14,7 @@ import { useToasts } from '../../contextos/Toasts';
 interface PropsCreadorCombinada {
   seleccionActual?: SeleccionCombinadaInput | null;
   onCreada?: () => void;
+  liga?: 'wnba';
 }
 
 const MERCADOS_CUARTOS = new Set(['Q1', 'Q2', 'Q3', 'Q4']);
@@ -58,7 +61,7 @@ function calcularCorrelacion(selecciones: SeleccionCombinadaInput[]) {
   return { factor, advertencias, tieneMismoPartido };
 }
 
-export function CreadorCombinada({ seleccionActual, onCreada }: PropsCreadorCombinada) {
+export function CreadorCombinada({ seleccionActual, onCreada, liga }: PropsCreadorCombinada) {
   const [selecciones, setSelecciones] = useState<SeleccionCombinadaInput[]>([]);
   const [stake, setStake] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -75,9 +78,20 @@ export function CreadorCombinada({ seleccionActual, onCreada }: PropsCreadorComb
     return selecciones.reduce((acc, seleccion) => acc * (seleccion.probabilidad_sistema || 0), 1);
   }, [selecciones]);
 
-  const correlacion = useMemo(() => calcularCorrelacion(selecciones), [selecciones]);
-  const probabilidadAjustada = probabilidadIndependiente * correlacion.factor;
-  const edge = cuotaTotal * probabilidadAjustada - 1;
+  const [evaluacion, setEvaluacion] = useState<EvaluacionCombinadaWnba | null>(null);
+  useEffect(() => {
+    if (!liga || !selecciones.length) { setEvaluacion(null); return; }
+    const c = new AbortController(); setEvaluacion(null);
+    evaluarCombinadaWnba(selecciones,c.signal).then(r=>{if(!c.signal.aborted)setEvaluacion(r);})
+      .catch(e=>{if(!c.signal.aborted)setError(extraerMensajeError(e));});
+    return ()=>c.abort();
+  }, [liga,selecciones]);
+  const correlacion = useMemo(() => liga ? {
+    factor:selecciones.length ? evaluacion?.factor_correlacion ?? null : 1,
+    advertencias:evaluacion?.advertencias ?? [], tieneMismoPartido:evaluacion?.tiene_mismo_partido ?? false,
+  } : calcularCorrelacion(selecciones), [selecciones,liga,evaluacion]);
+  const probabilidadAjustada = liga && selecciones.length ? evaluacion?.probabilidad_ajustada ?? null : probabilidadIndependiente * (correlacion.factor ?? 1);
+  const edge = liga ? evaluacion?.valor_esperado_unidad ?? null : cuotaTotal * (probabilidadAjustada ?? 0) - 1;
 
   const agregarSeleccionActual = () => {
     if (!seleccionActual) return;
@@ -99,7 +113,7 @@ export function CreadorCombinada({ seleccionActual, onCreada }: PropsCreadorComb
       return;
     }
     setError(null);
-    await crear({
+    try { await crear({
       stake: stakeNumero,
       cuota_total: Number(cuotaTotal.toFixed(2)),
       selecciones,
@@ -112,6 +126,7 @@ export function CreadorCombinada({ seleccionActual, onCreada }: PropsCreadorComb
     setSelecciones([]);
     setStake('');
     onCreada?.();
+    } catch (e) { setError(extraerMensajeError(e)); }
   };
 
   return (
@@ -156,6 +171,7 @@ export function CreadorCombinada({ seleccionActual, onCreada }: PropsCreadorComb
           <IndicadorCorrelacion
             factor={correlacion.factor}
             tieneCorrelacion={correlacion.tieneMismoPartido}
+            independenciaAsumida={Boolean(liga)}
           />
         </div>
       </div>

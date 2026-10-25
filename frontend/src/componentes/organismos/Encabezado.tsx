@@ -20,7 +20,7 @@ export function Encabezado() {
   const { pathname, search } = useLocation();
   const { deporteActivo, cambiarDeporte } = useDeporte();
   useEffect(() => {
-    if (pathname === '/baloncesto') cambiarDeporte(leerLigaBaloncesto(search) === 'euroliga' ? 'EUROLIGA' : 'NBA', false);
+    if (pathname === '/baloncesto') cambiarDeporte(leerLigaBaloncesto(search).toUpperCase() as 'NBA' | 'WNBA' | 'EUROLIGA', false);
     else if (pathname.startsWith('/euroliga')) cambiarDeporte('EUROLIGA', false);
     else if (pathname.startsWith('/futbol')) cambiarDeporte('FUTBOL', false);
     else if (pathname === '/app' || pathname.startsWith('/admin/nba')) cambiarDeporte('NBA', false);
@@ -35,11 +35,11 @@ export function Encabezado() {
         </button>
         <nav aria-label="Navegación principal" className="flex flex-wrap items-center gap-2">
           {enlaces.map(({ ruta, etiqueta, Icono }) => (
-            <button key={ruta} type="button" onClick={() => navegar(ruta === '/baloncesto' ? rutaBaloncesto(deporteActivo === 'EUROLIGA' ? 'euroliga' : 'nba') : ruta)} aria-current={pathname === ruta ? 'page' : undefined} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border ${pathname === ruta ? 'border-neon-cyan text-neon-cyan' : 'border-neon-cyan/20 text-texto-secundario'}`}>
+            <button key={ruta} type="button" onClick={() => navegar(ruta === '/baloncesto' ? rutaBaloncesto(deporteActivo === 'EUROLIGA' ? 'euroliga' : deporteActivo === 'WNBA' ? 'wnba' : 'nba') : ruta)} aria-current={pathname === ruta ? 'page' : undefined} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border ${pathname === ruta ? 'border-neon-cyan text-neon-cyan' : 'border-neon-cyan/20 text-texto-secundario'}`}>
               <Icono className="w-4 h-4" />{etiqueta}
             </button>
           ))}
-          <SelectorDeporte tamaño="sm" className="hidden sm:flex" onChangeDeporte={(deporte) => navegar(deporte === 'FUTBOL' ? '/futbol' : rutaBaloncesto(deporte === 'EUROLIGA' ? 'euroliga' : 'nba'))} />
+          <SelectorDeporte tamaño="sm" className="hidden sm:flex" onChangeDeporte={(deporte) => navegar(deporte === 'FUTBOL' ? '/futbol' : rutaBaloncesto(deporte === 'EUROLIGA' ? 'euroliga' : deporte === 'WNBA' ? 'wnba' : 'nba'))} />
         </nav>
         <span className="sr-only">Deporte actual: {deporteActivo}</span>
       </div>

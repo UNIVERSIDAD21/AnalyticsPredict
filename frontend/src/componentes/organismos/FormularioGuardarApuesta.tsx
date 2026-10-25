@@ -23,9 +23,10 @@ interface PropsFormularioGuardarApuesta {
   cuotaSeleccionada?: number;
   cuotaOver?: number;
   cuotaUnder?: number;
-  competicionCodigo?: 'nba' | 'euroleague';
+  competicionCodigo?: 'nba' | 'euroleague' | 'wnba';
   permitirCuotaManual?: boolean;
   guardando?: boolean;
+  bloqueoGuardado?: string;
   onCerrar: () => void;
   onGuardar: (apuesta: PeticionCrearApuesta) => void;
 }
@@ -43,6 +44,7 @@ export function FormularioGuardarApuesta({
   competicionCodigo = 'nba',
   permitirCuotaManual = false,
   guardando = false,
+  bloqueoGuardado,
   onCerrar,
   onGuardar,
 }: PropsFormularioGuardarApuesta) {
@@ -129,8 +131,8 @@ export function FormularioGuardarApuesta({
   // Extraer snapshot completo del análisis incluyendo campos P1
   const snapshot = useMemo(() => {
     const probabilidadSistema = ladoSeleccionado === 'OVER'
-      ? resultado.probabilidad_over ?? (competicionCodigo === 'euroleague' ? null : 0)
-      : resultado.probabilidad_under ?? (competicionCodigo === 'euroleague' ? null : 0);
+      ? resultado.probabilidad_over ?? (competicionCodigo !== 'nba' ? null : 0)
+      : resultado.probabilidad_under ?? (competicionCodigo !== 'nba' ? null : 0);
 
     const prediccion = mercado === 'COMPLETO'
       ? resultado.prediccion_juego_completo
@@ -229,11 +231,13 @@ export function FormularioGuardarApuesta({
       cuota_under: cuotaUnderFinal,
       stake: stakeNumero,
       probabilidad_sistema: snapshot.probabilidad,
-      confianza_sistema: competicionCodigo === 'euroleague' ? null : resultado.nivel_confianza,
+      confianza_sistema: competicionCodigo !== 'nba' ? null : resultado.nivel_confianza,
       valor_esperado: snapshot.valorEsperado ?? undefined,
       prediccion_media: snapshot.media ?? undefined,
       prediccion_desviacion: snapshot.desviacion ?? undefined,
-      razones: competicionCodigo === 'euroleague'
+      razones: competicionCodigo === 'wnba'
+        ? [{ tipo: 'trazabilidad_wnba', ...resultado.metadata }]
+        : competicionCodigo === 'euroleague'
         ? [{ tipo: 'trazabilidad_euroliga', ...resultado.metadata }]
         : resultado.razones as unknown as Array<Record<string, unknown>>,
 
@@ -402,14 +406,14 @@ export function FormularioGuardarApuesta({
             )}
           </div>
 
-          {error && <p className="text-neon-rojo text-sm">{error}</p>}
+          {(error || bloqueoGuardado) && <p className="text-neon-rojo text-sm">{error || bloqueoGuardado}</p>}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
           <Boton variante="fantasma" onClick={onCerrar}>
             Cancelar
           </Boton>
-          <Boton variante="primario" onClick={manejarGuardar} disabled={guardando}>
+          <Boton variante="primario" onClick={manejarGuardar} disabled={guardando || Boolean(bloqueoGuardado)}>
             {guardando ? 'Guardando…' : 'Guardar apuesta'}
           </Boton>
         </div>

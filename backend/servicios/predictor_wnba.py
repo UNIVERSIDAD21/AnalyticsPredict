@@ -151,6 +151,18 @@ def cargar():
     return m
 
 
+def cargar_publicacion(version):
+    import re
+    actual=cargar()
+    if version==actual['version']:
+        return actual
+    exigir(bool(re.fullmatch(r'wnba-v1-[0-9a-f]{24}',str(version))), 'Identidad de publicación WNBA inválida')
+    m=json.loads((ruta_activa().parent/'versiones'/(version+'.json')).read_text())
+    exigir(m.get('version')==version and m.get('dominio')=='wnba' and m.get('formato')==FORMATO
+           and identidad_modelo(m)==version and huella(m['datos'])==m['dataset_sha256'],'Publicación WNBA no íntegra')
+    return m
+
+
 @lru_cache(maxsize=16)
 def ajuste_cache(version, dataset_hash, temporadas, corte, fases, rows_json):
     # Todos los alcances forman parte de la clave; el ajuste nunca se modifica.
@@ -180,6 +192,9 @@ def contexto(rows, local, visita):
                     "regulacion_rival": b,
                     "ot": r["local_ot"] if home else r["visitante_ot"],
                     "final": r["local_total"] if home else r["visitante_total"],
+                    "final_rival": r["visitante_total"] if home else r["local_total"],
+                    "ot_rival": r["visitante_ot"] if home else r["local_ot"],
+                    "temporada": r["temporada"],
                     "resultado": "V" if a > b else "D" if a < b else "E",
                 }
             )
@@ -190,6 +205,17 @@ def contexto(rows, local, visita):
             ),
             "recientes": list(reversed(team[-50:])),
         }
+        ultima_temporada = max((r["temporada"] for r in rows if tid in (r["local_id"],r["visitante_id"])),default=None)
+        actuales = [r for r in rows if r["temporada"]==ultima_temporada and tid in (r["local_id"],r["visitante_id"])]
+        if actuales:
+            objetivos = []
+            for r in actuales:
+                casa=r["local_id"]==tid
+                q=r["y"][:4] if casa else r["y"][4:]
+                objetivos.append(q+[r["local_total"] if casa else r["visitante_total"]])
+            result[tid]["temporada_resumen"]={"nombre":ultima_temporada,"n":len(actuales),
+                "medias_favor":{k:sum(x[i] for x in objetivos)/len(objetivos) for i,k in enumerate(("Q1","Q2","Q3","Q4","COMPLETO"))},
+                "media_regulacion":sum(sum(x[:4]) for x in objetivos)/len(objetivos)}
     h2h = [r for r in rows if {r["local_id"], r["visitante_id"]} == {local, visita}][
         -10:
     ]
@@ -214,6 +240,8 @@ def analizar(
     es_prueba=False,
     cuota_over=None,
     cuota_under=None,
+    parciales=None,
+    ampliar=False,
 ):
     catalogo = {
         r[k]: r[n]
@@ -230,7 +258,8 @@ def analizar(
             (
                 r
                 for r in filas
-                if str(r.get("partido_id")) == partido_id
+                if str(r.get("fixture_id")) == partido_id
+                or str(r.get("partido_id")) == partido_id
                 or "espn-" + r["source_game_id"] == partido_id
             ),
             None,
@@ -238,8 +267,9 @@ def analizar(
         exigir(
             fixture is not None
             and fixture["competicion_codigo"] == "wnba"
-            and fixture["fase"] in fases
-            and fixture["estado"] in ("FINALIZADO", "PROGRAMADO"),
+            and (fixture["fase"] in fases or (ampliar and fixture["fase"] == "POST"))
+            and (fixture["estado"] in ("FINALIZADO", "PROGRAMADO") or
+                 (ampliar and parciales and fixture["estado"] in ("EN_VIVO", "DEMORADO"))),
             "Partido no pertenece a WNBA/fases/estados elegibles",
         )
         exigir(
@@ -247,6 +277,10 @@ def analizar(
             and str(fixture["equipo_visitante_id"]) == visita,
             "Equipos/localía distintos del fixture WNBA",
         )
+        exigir(not (ampliar and parciales and datetime.fromisoformat(fixture['inicio_utc'])>datetime.now(timezone.utc))
+               or es_prueba, 'Fixture futuro con cuartos observados contradictorios; solo admitirlo como prueba explícita')
+        if ampliar and fixture["fase"] == "POST" and "POST" not in fases:
+            fases = ["REG", "POST"]
         fecha = (
             datetime.fromisoformat(fixture["inicio_utc"])
             .astimezone(BOGOTA)
@@ -255,6 +289,7 @@ def analizar(
         )
         corte = corte or min(fecha, datetime.now(BOGOTA).date().isoformat())
         exigir(corte <= fecha, "Corte posterior al inicio del partido histórico")
+    corte = corte or (datetime.now(BOGOTA).date().isoformat() if ampliar else None)
     exigir(corte is not None, "Análisis manual requiere corte explícito")
     exigir(
         corte <= datetime.now(BOGOTA).date().isoformat(), "Corte futuro no soportado"
@@ -269,7 +304,19 @@ def analizar(
         tuple(sorted(fases)),
         rows_json,
     )
-    result = predecir(model, local, visita, mercado, linea)
+    parciales = [] if parciales is None else parciales
+    if ampliar:
+        from motor.wnba_ampliado import ajustar_ot, predecir_ampliado
+        ot = ajustar_ot(rows)
+        result = predecir_ampliado(model, local, visita, mercado, linea, parciales, ot)
+        if not parciales:
+            neutral = {**model, "coeficientes": [model["coeficientes"][0]] + [[0.0]*4 for _ in model["coeficientes"][1:]]}
+            base = predecir_ampliado(neutral, local, visita, mercado, linea, [], ot)
+            result["base_descompuesta"] = {"prediccion":base["predicciones"][mercado],"probabilidades":base["probabilidades"],
+                "definicion":"Intercepto común del mismo Ridge WNBA, antes de identidad de ataque/defensa y localía nominal. No otro modelo ni ajuste adicional duplicado."}
+        version_calculo = "wnba-v2-" + huella({"ridge":model,"ot":ot,"algoritmo":"wnba-condicional-ot-v2","sobol":32768})[:24]
+    else:
+        result = predecir(model, local, visita, mercado, linea)
     now = datetime.now(timezone.utc)
     modo = (
         "MANUAL"
@@ -280,15 +327,23 @@ def analizar(
             else "PREPARTIDO"
         )
     )
+    incluye_ot = result.get("incluye_ot", False)
     warnings = [
         "Probabilidades estimadas SIN CALIBRAR; eficacia no certificada.",
-        "40 minutos de regulación; no incluye OT ni equivale a moneyline con prórroga.",
+        ("Juego completo incluye prórroga, condicionada al empate a 40 minutos; cuartos sin OT."
+         if incluye_ot else "40 minutos de regulación; sin OT; ganador de regulación incluye empate."),
         "La dispersión viene de errores temporales previos al refit; no tiene calibrador probabilístico.",
         "Las métricas del candidato congelado no acreditan este ajuste final por temporadas.",
         "No incorpora lesiones, alineaciones, posesiones ni reloj en vivo.",
         "Localía nominal del fixture; no modela sedes neutrales, viajes ni burbuja 2020.",
         "Histórico reconstruido con datos actuales; no acredita disponibilidad original de cada dato.",
     ]
+    if ampliar:
+        warnings += ["Contrato WNBA condicional/OT v2: las métricas v1 NO validan esta ampliación.",
+                     "Integración numérica Sobol discreta determinista; incertidumbre y probabilidades SIN CALIBRAR."]
+    if parciales:
+        warnings.append("Corte entre cuartos completos, no análisis con reloj/posesiones. Solo consulta; sin apuestas ni predicciones prepartido.")
+        modo = f"CIERRE_Q{len(parciales)}"
     actuales = normalizar(filas)
     latest = max((r["fecha"] for r in actuales), default=None)
     if huella(actuales) != m["dataset_sha256"]:
@@ -310,18 +365,20 @@ def analizar(
             "equipo_local_id": local,
             "equipo_visitante_id": visita,
             "partido_id": (
-                str(fixture["partido_id"])
-                if fixture and fixture["partido_id"]
+                str(fixture.get("fixture_id") or fixture["partido_id"])
+                if fixture and (fixture.get("fixture_id") or fixture["partido_id"])
                 else None
             ),
             "fixture_fuente": fixture["source_game_id"] if fixture else None,
+            "fixture_revision_sha256": fixture.get("revision_sha256") if fixture else None,
             "fecha_partido": fixture["inicio_utc"] if fixture else None,
             "modo": modo,
             "es_prueba": es_prueba,
-            "incluye_ot": False,
+            "incluye_ot": incluye_ot,
+            "contrato_prediccion": "wnba-condicional-ot-v2" if ampliar else "wnba-regulacion-v1",
             "calibracion": "SIN_CALIBRAR",
             "confianza": None,
-            "modelo_version": model["version"],
+            "modelo_version": version_calculo if ampliar else model["version"],
             "publicacion_version": m["version"],
             "dataset_sha256": model["dataset_sha256"],
             "dataset_publicado_sha256": m["dataset_sha256"],
@@ -361,7 +418,7 @@ def analizar(
             ),
             "guardar_bitacora_habilitado": bool(
                 fixture
-                and fixture["partido_id"]
+                and (fixture.get("fixture_id") or fixture["partido_id"])
                 and modo == "PREPARTIDO"
                 and not es_prueba
             ),
@@ -399,6 +456,22 @@ def historial(limite=20):
     return [json.loads(p.read_text()) for p in paths]
 
 
+def historial_para_vista(limite=20):
+    """Enriquece descriptivos archivados sin reescribir ni recalcular predicciones."""
+    salida=historial(limite)
+    for r in salida:
+        if all('temporada_resumen' in t for t in r.get('contexto',{}).get('equipos',{}).values()):
+            continue
+        try:
+            m=cargar_publicacion(r['publicacion_version'])
+            rows=alcance(m['datos'],[s['id'] for s in r['temporadas_solicitadas']],r['corte_exclusivo'],r['fases_solicitadas'])
+            r['contexto']=contexto(rows,r['equipo_local_id'],r['equipo_visitante_id'])
+            r['advertencias']=[*r['advertencias'],'Contexto descriptivo de temporada enriquecido en memoria desde el snapshot original; predicciones/archivo original intactos.']
+        except (ValueError, RuntimeError, OSError, KeyError):
+            r['advertencias']=[*r['advertencias'],'Resumen adicional de temporada N/D: publicación original no disponible; se conserva intacta la captura archivada.']
+    return salida
+
+
 def validar_guardado(p):
     """Solo una acción manual sobre un análisis oficial previo; nunca simulaciones."""
     from uuid import UUID
@@ -426,6 +499,7 @@ def validar_guardado(p):
         and float(p.linea) == r["linea"],
         "La selección no coincide con el análisis WNBA",
     )
+    exigir(evidencias[0].get("incluye_ot", False) == r["incluye_ot"], "Convención OT distinta del análisis WNBA")
     esperado = r["probabilidades"][p.lado.lower()]
     exigir(
         p.probabilidad_sistema is not None

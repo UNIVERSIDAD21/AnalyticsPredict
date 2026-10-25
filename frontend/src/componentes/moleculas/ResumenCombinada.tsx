@@ -4,8 +4,8 @@
 
 interface PropsResumenCombinada {
   cuotaTotal: number;
-  probabilidadIndependiente: number;
-  probabilidadAjustada: number;
+  probabilidadIndependiente: number | null;
+  probabilidadAjustada: number | null;
   edge: number | null;
 }
 
@@ -30,13 +30,13 @@ export function ResumenCombinada({
       <div className="bg-futurista-medio/40 border border-neon-cyan/20 rounded-lg p-3">
         <p className="text-xs uppercase tracking-widest text-texto-terciario">Prob. indep.</p>
         <p className="text-lg text-texto-principal font-semibold">
-          {(probabilidadIndependiente * 100).toFixed(1)}%
+          {probabilidadIndependiente === null ? 'N/D' : `${(probabilidadIndependiente * 100).toFixed(1)}%`}
         </p>
       </div>
       <div className="bg-futurista-medio/40 border border-neon-cyan/20 rounded-lg p-3">
         <p className="text-xs uppercase tracking-widest text-texto-terciario">Prob. ajustada</p>
         <p className="text-lg text-texto-principal font-semibold">
-          {(probabilidadAjustada * 100).toFixed(1)}%
+          {probabilidadAjustada === null ? 'N/D' : `${(probabilidadAjustada * 100).toFixed(1)}%`}
         </p>
       </div>
     </div>

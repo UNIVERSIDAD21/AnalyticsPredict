@@ -337,6 +337,10 @@ def importar(conn, lote):
         cur.executemany('''INSERT INTO public.partidos_fuente_wnba(competicion_id,source,source_game_id,temporada_id,
              equipo_local_id,equipo_visitante_id,partido_id,inicio_utc,estado,fase,registro,registro_sha256,lote_sha256)
              VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', new_source)
+    from servicios.calendario_wnba import vincular_final
+    for r in rs:
+        if r['final_completo']:
+            vincular_final(conn,r,uid('partido',r['source_game_id']))
     # Una segunda llamada en la misma transacción también debe ser NO-OP.
     result['competicion_id'] = cid
     return result

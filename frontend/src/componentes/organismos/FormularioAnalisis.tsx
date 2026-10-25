@@ -34,7 +34,7 @@ import {
 import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
 import { esCuotaValida } from '../../utilidades/validadores';
 import type { PeticionEuro } from '../../servicios/euroliga';
-import type { FormularioWnba } from '../../servicios/wnba';
+import { obtenerTemporadasWnba, type FormularioWnba } from '../../servicios/wnba';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -46,6 +46,8 @@ interface OpcionMercadoCustom {
 }
 
 interface PropsBaseFormularioAnalisis {
+  valoresIniciales?: { id: string; equipoLocal:string; equipoVisitante:string; mercado:Mercado; linea:string; ladoApuesta:LadoApuesta;
+    cuotaOver:string; cuotaUnder:string; temporadas:string[]; parciales:[number,number][] };
   /** Lista de equipos disponibles */
   equipos: Equipo[];
   /** Estadísticas de equipos */
@@ -66,6 +68,7 @@ interface PropsBaseFormularioAnalisis {
   onCambiarParametros?: () => void;
   onActualizarPartidos?: () => void;
   onCambiarModo?: (cuartosCompletos: number) => void;
+  estadoCalendario?: import('../../servicios/wnba').ComprobacionCalendario;
   partidoActual?: PartidoResumen | null;
   onSeleccionarPartido?: (partido: PartidoResumen | null) => void;
 }
@@ -119,10 +122,13 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     onCambiarParametros,
     onActualizarPartidos,
     onCambiarModo,
+    estadoCalendario,
+    valoresIniciales,
   } = props;
   const esEuroliga = deporte === 'EUROLIGA';
   const [cuartos, setCuartos] = useState(0);
-  const esCorteNBA = deporte === 'NBA' && cuartos > 0;
+  const esWnba = deporte === 'WNBA';
+  const esCorteNBA = (deporte === 'NBA' || esWnba) && cuartos > 0;
   const [parciales, setParciales] = useState<[string, string][]>([['', ''], ['', ''], ['', '']]);
   useEffect(() => { onCambiarModo?.(cuartos); }, [cuartos, onCambiarModo]);
   // Estado del formulario
@@ -132,6 +138,15 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
   const [temporadasSeleccionadas, setTemporadasSeleccionadas] = useState<string[]>([]);
   const [cargandoTemporadas, setCargandoTemporadas] = useState(false);
   const [errorTemporadas, setErrorTemporadas] = useState<string | null>(null);
+  useEffect(() => {
+    if (!valoresIniciales) return;
+    const v = valoresIniciales;
+    setFormulario({ equipoLocal:v.equipoLocal.toLowerCase(),equipoVisitante:v.equipoVisitante.toLowerCase(),
+      mercado:v.mercado,linea:v.linea,ladoApuesta:v.ladoApuesta,cuotaOver:v.cuotaOver,cuotaUnder:v.cuotaUnder });
+    setCuartos(v.parciales.length);
+    setParciales(Array.from({length:3},(_,i)=>v.parciales[i]?.map(String) as [string,string] ?? ['', '']));
+    setTemporadasSeleccionadas(v.temporadas);
+  }, [valoresIniciales]);
 
   // Estado del partido seleccionado (CRÍTICO para registro de predicciones)
   const [partidoInterno, setPartidoInterno] = useState<PartidoResumen | null>(null);
@@ -236,10 +251,15 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         }
         if (erroresEuro.length) { setErrores(erroresEuro); return; }
         if (props.deporte === 'WNBA') {
+          if (!cuartos && !temporadasSeleccionadas.length) { setErrores(['Selecciona al menos una temporada WNBA.']); return; }
+          const opuesta = formulario.ladoApuesta === 'OVER' ? formulario.cuotaUnder : formulario.cuotaOver;
+          const propia = formulario.ladoApuesta === 'OVER' ? formulario.cuotaOver : formulario.cuotaUnder;
+          if (!cuartos && opuesta.trim() && !propia.trim()) { setErrores([`Ingresaste cuota del lado contrario. Completa la cuota ${formulario.ladoApuesta} o cambia el lado de apuesta.`]); return; }
           props.onAnalizar({ equipo_local_id: equipoLocalSeleccionado!.id, equipo_visitante_id: equipoVisitanteSeleccionado!.id,
             mercado: formulario.mercado as Mercado, linea, partido_id: partidoSeleccionado?.id,
-            cuota_over: formulario.cuotaOver.trim() ? Number(formulario.cuotaOver) : undefined,
-            cuota_under: formulario.cuotaUnder.trim() ? Number(formulario.cuotaUnder) : undefined }, formulario.ladoApuesta);
+            temporadas: cuartos ? undefined : temporadasSeleccionadas, parciales: scores, modo: cuartos ? `CIERRE_Q${cuartos}` as FormularioWnba['modo'] : 'PREPARTIDO', lado: formulario.ladoApuesta,
+            cuota_over: !cuartos && formulario.cuotaOver.trim() ? Number(formulario.cuotaOver) : undefined,
+            cuota_under: !cuartos && formulario.cuotaUnder.trim() ? Number(formulario.cuotaUnder) : undefined }, formulario.ladoApuesta);
           return;
         }
         props.onAnalizar({ equipo_local: equipoLocalSeleccionado!.nombre, equipo_visitante: equipoVisitanteSeleccionado!.nombre,
@@ -335,7 +355,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
       Boolean
     ) as string[];
 
-    if (deporte !== 'NBA' || cuartos > 0 || ids.length === 0) {
+    if ((deporte !== 'NBA' && deporte !== 'WNBA') || cuartos > 0 || ids.length === 0) {
       setTemporadasDisponibles([]);
       setTemporadasSeleccionadas([]);
       setErrorTemporadas(null);
@@ -347,7 +367,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     setCargandoTemporadas(true);
     setErrorTemporadas(null);
 
-    obtenerTemporadasEquipos(ids)
+    (deporte === 'WNBA' ? obtenerTemporadasWnba(ids) : obtenerTemporadasEquipos(ids))
       .then((temporadas) => {
         if (!activo) return;
 
@@ -386,20 +406,23 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
   }, [deporte, cuartos, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
 
   const toggleTemporada = useCallback((temporadaId: string) => {
+    onCambiarParametros?.();
     setTemporadasSeleccionadas((prev) =>
       prev.includes(temporadaId)
         ? prev.filter((id) => id !== temporadaId)
         : [...prev, temporadaId]
     );
-  }, []);
+  }, [onCambiarParametros]);
 
   const seleccionarTodasTemporadas = useCallback(() => {
+    onCambiarParametros?.();
     setTemporadasSeleccionadas(temporadasDisponibles.map((temporada) => temporada.id));
-  }, [temporadasDisponibles]);
+  }, [temporadasDisponibles, onCambiarParametros]);
 
   const limpiarTemporadas = useCallback(() => {
+    onCambiarParametros?.();
     setTemporadasSeleccionadas([]);
-  }, []);
+  }, [onCambiarParametros]);
 
   return (
     <Tarjeta className="animate-entrada">
@@ -438,8 +461,9 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
             partidosDisponibles={partidosDisponibles}
-            modoRegistro={deporte === 'WNBA' ? 'wnba' : esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
+            modoRegistro={deporte === 'WNBA' ? (esCorteNBA ? 'wnba_cierre' : 'wnba') : esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
             onActualizar={onActualizarPartidos}
+            estadoCalendario={estadoCalendario}
           />
 
           {/* Equipo Local - deshabilitado si hay partido seleccionado */}
@@ -476,7 +500,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             }
           />
 
-          {!esEuroliga && deporte !== 'WNBA' && <PanelEstadisticasEquipo
+          {!esEuroliga && <PanelEstadisticasEquipo
             equipoLocal={buscarEstadisticas(formulario.equipoLocal)}
             equipoVisitante={buscarEstadisticas(formulario.equipoVisitante)}
             cargando={cargando}
@@ -501,11 +525,11 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
             unidadLabel={unidadLineaLabel ?? 'puntos'}
-            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga || deporte === 'WNBA' ? 'regulación de 40 minutos (sin OT)' : 'juego completo') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
+            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga || esCorteNBA ? `regulación de ${esWnba || esEuroliga ? 40 : 48} minutos (sin OT)` : 'juego completo (incluye OT)') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
             placeholderLinea={esEuroliga ? (esJuegoCompleto ? 'Ej: 170.5' : 'Ej: 42.5') : undefined}
           />
 
-          {(deporte === 'NBA' || esEuroliga) && <div className="space-y-3">
+          {(deporte === 'NBA' || esWnba || esEuroliga) && <div className="space-y-3">
             <label className="block etiqueta">Modo de análisis
               <select className="input-base w-full mt-2" value={cuartos} disabled={cargando} onChange={e => { setCuartos(Number(e.target.value)); onCambiarParametros?.(); setErrores([]); }}>
                 <option value={0}>Prepartido</option>
@@ -518,11 +542,11 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
               </label>)}
             </div>)}
             <p className="text-xs text-texto-secundario">{cuartos > 0 ? 'Puntos de cada cuarto completo, no acumulados. No admite reloj ni parciales del cuarto en curso.' : esEuroliga ? 'Cuartos de 10 minutos y total de 40 minutos, sin prórroga.' : 'Análisis previo al partido; no utiliza marcadores observados.'}</p>
-            {esCorteNBA && <p className="text-xs text-texto-secundario">Ajuste de ritmo heurístico con el modelo cargado, sin cuotas ni reajuste por temporadas. Probabilidades no calibradas para este corte; 48 minutos de regulación, sin prórroga. Solo consulta: no registra apuestas ni predicciones prepartido.</p>}
+            {esCorteNBA && <p className="text-xs text-texto-secundario">{esWnba ? 'Condicionamiento del modelo WNBA propio con todos los datos elegibles anteriores al corte' : 'Ajuste de ritmo heurístico con el modelo cargado'}, sin cuotas ni reajuste por temporadas. Probabilidades no calibradas para este corte; {esWnba ? 40 : 48} minutos de regulación, sin prórroga. Solo consulta: no registra apuestas ni predicciones prepartido.</p>}
           </div>}
 
           {/* Temporadas */}
-          {deporte === 'NBA' && !esCorteNBA && <div className="space-y-2">
+          {(deporte === 'NBA' || esWnba) && !esCorteNBA && <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                 Temporadas para el análisis
@@ -610,7 +634,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             <p className={`text-sm font-semibold ${formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
               }`}>
               {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} {unidadLineaLabel ?? 'puntos'}
-              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? (esEuroliga || deporte === 'WNBA' ? 'Regulación (sin OT)' : 'Juego completo') : deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'Primer tiempo' : 'Segundo tiempo') : `Cuarto ${formulario.mercado}`}`}
+              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? (esEuroliga || esCorteNBA ? 'Regulación (sin OT)' : 'Juego completo') : deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'Primer tiempo' : 'Segundo tiempo') : `Cuarto ${formulario.mercado}`}`}
             </p>
           </div>
         )}

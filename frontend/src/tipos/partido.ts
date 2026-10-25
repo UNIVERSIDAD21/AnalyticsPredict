@@ -13,6 +13,9 @@
  * Resumen de un partido para selección en UI
  */
 export interface PartidoResumen {
+  estado?: string;
+  precision_fecha?: 'HORA' | 'DIA' | 'PENDIENTE';
+  condicional?: boolean;
   /** UUID del partido */
   id: string;
   /** Fecha del partido (YYYY-MM-DD) */

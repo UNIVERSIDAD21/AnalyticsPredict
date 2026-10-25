@@ -2,6 +2,20 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
+## Paridad WNBA con el recorrido NBA — 2026-10-25
+
+Configuración/resultados NBA compartidos, sin resultado WNBA alternativo.
+PRE completo con OT empírico WNBA; cierres Q1–Q3 de regulación mediante
+covarianza condicional propia, sin reloj/posesiones ni parámetros NBA.
+Score/stake/confianza sin política acreditada conservan campos con N/D; RAW.
+Calendario móvil de tres meses: 25oct–25ene, tres fixtures oficiales publicados
+(26/29/31oct, último condicional); publicación íntegra oficial2027 no acreditada.
+Identidades/revisiones sin puntos ficticios; enlace posterior a FT canónico,
+guardado explícito con revisión vigente y combinadas WNBA conjuntas propias.
+V1/cohortes originales conservados; v2 evaluado por separado:450/616 por modo,
+166 abstenciones; no superioridad general/calibración/prospectiva.
+[Contrato, matriz, calendario y operación](reactivacion_single_user/PARIDAD_WNBA_2026-10-25.md).
+
 ## WNBA integrada y usable — 2026-10-25
 
 Baloncesto permite `?liga=wnba`, equipos y temporadas anuales efectivas, corte

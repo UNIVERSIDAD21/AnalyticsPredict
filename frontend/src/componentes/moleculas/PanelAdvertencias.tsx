@@ -302,7 +302,7 @@ export function PanelAdvertencias({ advertencias }: PropsPanelAdvertencias) {
               >
                 <Icono size={16} className={`${config.iconColor} flex-shrink-0 mt-0.5`} />
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${config.textColor}`}>
+                  <p className={`text-sm [overflow-wrap:anywhere] ${config.textColor}`}>
                     {adv.mensaje}
                   </p>
                   {/* Mostrar código si es diferente al mensaje */}

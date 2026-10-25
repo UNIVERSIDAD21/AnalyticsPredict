@@ -135,7 +135,7 @@ export function SeccionCalibracion({
               </span>
               <div className="group relative">
                 <HelpCircle size={12} className="text-texto-terciario cursor-help" />
-                <div className="absolute bottom-full left-0 mb-2 w-56 p-2 rounded-lg bg-futurista-oscuro border border-neon-cyan/20 text-[10px] text-texto-secundario opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                <div className="absolute bottom-full right-0 mb-2 w-56 p-2 rounded-lg bg-futurista-oscuro border border-neon-cyan/20 text-[10px] text-texto-secundario hidden group-hover:block transition-opacity duration-200 pointer-events-none z-10">
                   La calibración ajusta las probabilidades del modelo para que reflejen mejor la realidad histórica.
                 </div>
               </div>
@@ -162,7 +162,7 @@ export function SeccionCalibracion({
         </span>
         <div className="group relative ml-auto">
           <HelpCircle size={12} className="text-texto-terciario cursor-help" />
-          <div className="absolute bottom-full right-0 mb-2 w-56 p-2 rounded-lg bg-futurista-oscuro border border-neon-cyan/20 text-[10px] text-texto-secundario opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+          <div className="absolute bottom-full right-0 mb-2 w-56 p-2 rounded-lg bg-futurista-oscuro border border-neon-cyan/20 text-[10px] text-texto-secundario hidden group-hover:block transition-opacity duration-200 pointer-events-none z-10">
             <strong className="text-neon-cyan">Calibración</strong> ajusta las probabilidades del modelo basándose en resultados históricos para mejorar la precisión.
           </div>
         </div>

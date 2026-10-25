@@ -359,6 +359,10 @@ def test_journal_solo_wnba_pruebas_no_prospectivas_y_corrupto(
 
 
 def test_api_catalogo_aislado_ausencia_y_contrato(modelo, filas, tmp_path, monkeypatch):
+    from contextlib import nullcontext
+    from servicios import calendario_wnba, predictor_euroliga
+    monkeypatch.setattr(predictor_euroliga, "conexion_lectura", lambda: nullcontext(None))
+    monkeypatch.setattr(calendario_wnba, "listar", lambda conn: ([], {}))
     monkeypatch.setattr(svc, "leer_datos", lambda: filas)
     monkeypatch.setenv(
         "ANALYTICSPREDICT_MODELO_WNBA_ACTIVO", str(tmp_path / "activo.json")
@@ -526,3 +530,53 @@ def test_pg_catalogo_wnba_aislado_y_transaccion_lectura(tmp_path):
 def test_publicacion_rechaza_cortes_no_validos(filas, corte):
     with pytest.raises(ValueError):
         svc.construir(filas, corte)
+
+
+@pytest.mark.parametrize('q',[1,2,3])
+def test_api_v2_cortes_raw_sin_fallback_ni_guardado(modelo,filas,tmp_path,monkeypatch,q):
+    monkeypatch.setattr(svc,'leer_datos',lambda:filas)
+    monkeypatch.setenv('ANALYTICSPREDICT_MODELO_WNBA_ACTIVO',str(tmp_path/'activo.json'))
+    svc.publicar(modelo)
+    app=FastAPI();app.include_router(rutas.router);client=TestClient(app)
+    body=dict(equipo_local_id=uid('team0'),equipo_visitante_id=uid('team1'),temporadas=[uid('2023')],
+              corte='2026-10-25',mercado='COMPLETO',linea=160.5,es_prueba=True,
+              contrato='NBA_EQUIVALENTE_V2',modo=f'CIERRE_Q{q}',parciales=[[20,19]]*q,lado='UNDER')
+    response=client.post('/api/wnba/analizar',json=body)
+    assert response.status_code==200,response.text
+    r=response.json()['resultado']
+    assert r['lado_solicitado']=='UNDER' and r['modo']==f'CIERRE_Q{q}'
+    assert not r['incluye_ot'] and not r['guardar_bitacora_habilitado'] and not r['prospectiva_acreditada']
+    assert all(r['predicciones'][f'Q{i+1}']['desviacion_total']==0 for i in range(q))
+    assert client.post('/api/wnba/analizar',json=body|{'cuota_over':1.91}).status_code==422
+    assert client.post('/api/wnba/analizar',json=body|{'mercado':f'Q{q}'}).status_code==422
+    assert client.post('/api/wnba/analizar',json=body|{'parciales':[[True,19]]*q}).status_code==422
+    assert client.post('/api/wnba/analizar',json=body|{'modo':'PREPARTIDO'}).status_code==422
+    assert len(list(svc.journal().glob('*.json')))==1
+
+
+def test_historial_conserva_snapshot_original_tras_cambios_bd(modelo,filas,tmp_path,monkeypatch):
+    monkeypatch.setenv('ANALYTICSPREDICT_MODELO_WNBA_ACTIVO',str(tmp_path/'activo.json'))
+    svc.publicar(modelo)
+    r=svc.registrar(peticion(modelo,filas))
+    # La lectura viva contiene otro universo; el detalle de un análisis debe ignorarlo.
+    monkeypatch.setattr(rutas,'datos_bd',lambda:[])
+    from servicios.presentacion_wnba import historial_equipo
+    esperadas=motor.alcance(modelo['datos'],[s['id'] for s in r['temporadas_solicitadas']],r['corte_exclusivo'],r['fases_solicitadas'])
+    aid=r['analisis_id'];archivo=svc.journal()/(aid+'.json');antes=archivo.read_bytes()
+    app=FastAPI();app.include_router(rutas.router);client=TestClient(app)
+    tid=r['equipo_local_id']
+    response=client.get(f'/api/wnba/equipos/{tid}/historial',params={'analisis_id':aid})
+    assert response.status_code==200,response.text
+    assert response.json()==historial_equipo(esperadas,tid,regulacion=True)
+    assert client.get(f'/api/wnba/equipos/{uid("ajeno")}/historial',params={'analisis_id':aid}).status_code==422
+    assert archivo.read_bytes()==antes
+
+
+def test_cierre_wnba_respeta_ot_solo_si_snapshot_lo_declara():
+    from motor.resolucion_bitacora import valor_baloncesto
+    p={f'{lado}_q{i}':20 for lado in ('local','visitante') for i in range(1,5)}
+    p.update(local_ot=8,visitante_ot=4,local_total=88,visitante_total=84,
+             equipo_local_id='a',equipo_visitante_id='b',ganador_id='a')
+    assert valor_baloncesto('COMPLETO',p,'wnba',True)==172
+    assert valor_baloncesto('Q4',p,'wnba',True)==40
+    assert valor_baloncesto('COMPLETO',p,'euroleague',True)==160

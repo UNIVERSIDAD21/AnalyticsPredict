@@ -40,7 +40,10 @@ async def crear_combinada(
             detail="Una combinada requiere mínimo 2 selecciones.",
         )
 
-    combinada = crear_combinada_db(peticion)
+    try:
+        combinada = crear_combinada_db(peticion)
+    except (ValueError, OSError, KeyError) as exc:
+        raise HTTPException(422,str(exc)) from exc
     return RespuestaCombinada(exito=True, combinada=combinada)
 
 

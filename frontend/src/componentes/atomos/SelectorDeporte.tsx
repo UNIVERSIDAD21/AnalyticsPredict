@@ -33,6 +33,7 @@ const CONFIGURACION_DEPORTES: Record<Deporte, ConfiguracionDeporte> = {
     etiqueta: 'BALONCESTO',
     color: 'neon-cyan',
   },
+  WNBA: { icono: '🏀', etiqueta: 'WNBA', color: 'neon-cyan' },
   EUROLIGA: { icono: '🏀', etiqueta: 'EUROLIGA', color: 'neon-cyan' },
   FUTBOL: {
     icono: '⚽',
@@ -84,7 +85,7 @@ export function SelectorDeporte({
       `}
     >
       {(['NBA', 'FUTBOL'] as Deporte[]).map((grupo) => {
-        const deporte = grupo === 'NBA' && deporteActivo === 'EUROLIGA' ? 'EUROLIGA' : grupo;
+        const deporte = grupo === 'NBA' && deporteActivo !== 'FUTBOL' ? deporteActivo : grupo;
         const config = CONFIGURACION_DEPORTES[grupo];
         const esActivo = grupo === 'NBA' ? deporteActivo !== 'FUTBOL' : deporteActivo === 'FUTBOL';
 
@@ -143,7 +144,7 @@ export function SelectorDeporteCompacto({ className = '' }: { className?: string
       `}
     >
       {(['NBA', 'FUTBOL'] as Deporte[]).map((grupo) => {
-        const deporte = grupo === 'NBA' && deporteActivo === 'EUROLIGA' ? 'EUROLIGA' : grupo;
+        const deporte = grupo === 'NBA' && deporteActivo !== 'FUTBOL' ? deporteActivo : grupo;
         const config = CONFIGURACION_DEPORTES[grupo];
         const esActivo = grupo === 'NBA' ? deporteActivo !== 'FUTBOL' : deporteActivo === 'FUTBOL';
 

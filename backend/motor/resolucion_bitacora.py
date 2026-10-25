@@ -67,7 +67,7 @@ def valor_futbol(mercado: str, partido: dict) -> int | None:
     return sum(valores)
 
 
-def valor_baloncesto(mercado: str, partido: dict, liga: str) -> int | None:
+def valor_baloncesto(mercado: str, partido: dict, liga: str, incluye_ot: bool = False) -> int | None:
     cuartos = {lado: [entero(partido.get(f'{lado}_q{q}')) for q in range(1, 5)] for lado in ('local', 'visitante')}
     if any(v is None for vs in cuartos.values() for v in vs):
         return None
@@ -87,7 +87,7 @@ def valor_baloncesto(mercado: str, partido: dict, liga: str) -> int | None:
     if mercado in {'Q1', 'Q2', 'Q3', 'Q4'}:
         return sum(vs[int(mercado[1]) - 1] for vs in cuartos.values())
     if mercado == 'COMPLETO':
-        return sum(sum(vs) for vs in cuartos.values()) if liga in {'euroleague', 'wnba'} else sum(totales.values())
+        return sum(sum(vs) for vs in cuartos.values()) if liga == 'euroleague' or (liga == 'wnba' and not incluye_ot) else sum(totales.values())
     return None
 
 
@@ -112,7 +112,9 @@ def calcular_cierre(apuesta: dict, partido: dict | None, liga: str, *, hoy: date
     elif liga in {'nba', 'euroleague', 'wnba'}:
         if apuesta.get('competicion_id') and str(apuesta['competicion_id']) != str(partido.get('competicion_id')):
             return None, 'competicion_inconsistente'
-        valor = valor_baloncesto(apuesta['mercado'], partido, liga)
+        evidencias = apuesta.get('razones') or []
+        incluye_ot = liga == 'wnba' and any(isinstance(r,dict) and r.get('tipo')=='trazabilidad_wnba' and r.get('incluye_ot') is True for r in evidencias)
+        valor = valor_baloncesto(apuesta['mercado'], partido, liga, incluye_ot)
     else:
         return None, 'competicion_no_soportada'
     if valor is None:

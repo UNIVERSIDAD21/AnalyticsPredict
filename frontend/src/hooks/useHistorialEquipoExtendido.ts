@@ -194,7 +194,8 @@ function calcularEstadisticasOverUnder(
  */
 export function useHistorialEquipoExtendido(
   equipoId: string,
-  config: ConfiguracionHistorial
+  config: ConfiguracionHistorial,
+  fuenteWnba?: string
 ): UseHistorialEquipoExtendidoReturn {
   const [partidosBase, setPartidosBase] = useState<PartidoHistorial[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -217,6 +218,8 @@ export function useHistorialEquipoExtendido(
 
       const respuesta = await obtenerHistorialEquipo(equipoId, {
         limite: config.cantidad,
+        liga: fuenteWnba ? 'wnba' : undefined,
+        analisisId: fuenteWnba,
         comoLocal,
         orden: 'desc',
       });
@@ -230,7 +233,7 @@ export function useHistorialEquipoExtendido(
     } finally {
       setCargando(false);
     }
-  }, [equipoId, config.cantidad, config.ubicacion]);
+  }, [equipoId, config.cantidad, config.ubicacion, fuenteWnba]);
 
   // Efecto para cargar datos
   useEffect(() => {

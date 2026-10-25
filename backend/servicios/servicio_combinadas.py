@@ -114,21 +114,53 @@ def _mapear_seleccion(fila: dict) -> SeleccionCombinada:
 
 def crear_combinada_db(peticion: PeticionCrearCombinada) -> Combinada:
     selecciones_dict = [seleccion.model_dump() for seleccion in peticion.selecciones]
-    correlacion = calcular_correlacion_combinada(selecciones_dict)
+    from servicios.combinadas_wnba import es_wnba, evaluar
+    wnba = any(es_wnba(s) for s in selecciones_dict)
+    if wnba:
+        from types import SimpleNamespace
+        if len(selecciones_dict)>20:
+            raise ValueError('Máximo20 selecciones WNBA')
+        for s in selecciones_dict:
+            s['partido_id'] = str(s['partido_id']) if s.get('partido_id') else None
+        ev_wnba = evaluar(selecciones_dict,guardar=True)
+        producto_cuotas=__import__('math').prod(float(s['cuota']) for s in selecciones_dict)
+        if abs(peticion.cuota_total-producto_cuotas) > .011:
+            raise ValueError('Cuota total distinta del producto de selecciones WNBA')
+        peticion.etiquetas=list(dict.fromkeys((peticion.etiquetas or [])+['WNBA','RAW','NO_CERTIFICADO']))
+        correlacion = SimpleNamespace(factor_correlacion=ev_wnba['factor_correlacion'],
+            tiene_mismo_partido=ev_wnba['tiene_mismo_partido'],n_partidos_unicos=ev_wnba['n_partidos_unicos'],
+            advertencias=ev_wnba['advertencias'],detalles=[SimpleNamespace(**d) for d in ev_wnba['detalles']],grupos={},factores_grupo={})
+        # El UUID futuro vive en trazabilidad hasta existir su resultado canónico.
+        for s in selecciones_dict:
+            s['partido_id'] = None
+    else:
+        correlacion = calcular_correlacion_combinada(selecciones_dict)
 
     prob_independiente = _calcular_probabilidad_independiente(selecciones_dict)
     prob_ajustada = prob_independiente * correlacion.factor_correlacion
-    cuota_justa = 1 / prob_ajustada if prob_ajustada > 0 else None
+    cuota_justa = 1 / prob_ajustada if prob_ajustada > 0 and not wnba else None
     edge = (peticion.cuota_total / cuota_justa - 1) if cuota_justa else None
     valor_esperado = _calcular_valor_esperado(prob_ajustada, peticion.cuota_total, peticion.stake)
+    if wnba:
+        edge = ev_wnba['valor_esperado_unidad']
+        valor_esperado = peticion.stake * edge
 
     advertencias = correlacion.advertencias or []
     correlaciones = [detalle.__dict__ for detalle in correlacion.detalles]
-    confianza = _calcular_confianza(selecciones_dict)
+    confianza = None if wnba else _calcular_confianza(selecciones_dict)
 
     with obtener_pool().connection() as conexion:
         with conexion.cursor(row_factory=dict_row) as cursor:
             with conexion.transaction():
+                if wnba:
+                    for sel in selecciones_dict:
+                        traza=next(r for r in sel['razones'] if r.get('tipo')=='trazabilidad_wnba')
+                        cursor.execute("""SELECT f.id FROM fixtures_wnba f JOIN competiciones_baloncesto c ON c.id=f.competicion_id
+                            WHERE f.id=%s AND c.codigo='wnba' AND f.estado='PROGRAMADO' AND f.precision_fecha='HORA'
+                            AND f.inicio_utc>now() AND f.revision_sha256=%s FOR SHARE OF f""",
+                            (traza['partido_id'],traza.get('fixture_revision_sha256')))
+                        if not cursor.fetchone():
+                            raise ValueError('Fixture WNBA cambió o no está vigente; analizar de nuevo antes de guardar')
                 cursor.execute(
                     """
                     INSERT INTO apuestas_combinadas (

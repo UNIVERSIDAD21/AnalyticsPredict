@@ -20,7 +20,7 @@ import { leerLigaBaloncesto, rutaBaloncesto } from '../utilidades/ligasBaloncest
 /**
  * Deportes disponibles en la aplicación
  */
-export type Deporte = 'NBA' | 'EUROLIGA' | 'FUTBOL';
+export type Deporte = 'NBA' | 'WNBA' | 'EUROLIGA' | 'FUTBOL';
 
 /**
  * Tipo del contexto de deporte
@@ -53,6 +53,7 @@ const STORAGE_KEY = 'deporte_activo';
  */
 const RUTAS_BASE: Record<Deporte, string> = {
   NBA: rutaBaloncesto('nba'),
+  WNBA: rutaBaloncesto('wnba'),
   EUROLIGA: rutaBaloncesto('euroliga'),
   FUTBOL: '/futbol',
 };
@@ -62,7 +63,7 @@ const RUTAS_BASE: Record<Deporte, string> = {
  */
 function detectarDeporteDesdeURL(): Deporte {
   const pathname = window.location.pathname;
-  if (pathname === '/baloncesto') return leerLigaBaloncesto(window.location.search) === 'euroliga' ? 'EUROLIGA' : 'NBA';
+  if (pathname === '/baloncesto') return leerLigaBaloncesto(window.location.search).toUpperCase() as Deporte;
   if (pathname.startsWith('/euroliga')) return 'EUROLIGA';
   if (pathname.startsWith('/futbol')) {
     return 'FUTBOL';

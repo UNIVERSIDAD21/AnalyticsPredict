@@ -10,6 +10,7 @@ import { PartidoHistorial } from '../../tipos';
 
 interface PropsHistorialEquipo {
   equipoId: string;
+  liga?: 'wnba';
   onCerrar?: () => void;
   textoCerrar?: string;
 }
@@ -44,12 +45,13 @@ const obtenerOponente = (partido: PartidoHistorial) => {
 
 export function HistorialEquipo({
   equipoId,
+  liga,
   onCerrar,
   textoCerrar = 'Cerrar historial',
 }: PropsHistorialEquipo) {
-  const { equipos } = useEquipos();
+  const { equipos } = useEquipos(liga);
   const { partidos, equipo, cargando, error, filtrosDisponibles, aplicarFiltros } =
-    useHistorialEquipo(equipoId);
+    useHistorialEquipo(equipoId, liga);
   const [temporadaSeleccionada, setTemporadaSeleccionada] = useState('');
   const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState('todas');
   const [oponenteSeleccionado, setOponenteSeleccionado] = useState('');

@@ -21,6 +21,7 @@ import { FiltrosHistorial, TablaPartidosHistorial, EstadisticasOverUnder } from 
 interface PropsPanelHistorialEquipo {
   /** ID del equipo */
   equipoId: string;
+  fuenteWnba?: string;
   /** Nombre completo del equipo */
   equipoNombre: string;
   /** Abreviatura del equipo */
@@ -44,6 +45,7 @@ interface PropsPanelHistorialEquipo {
  */
 export function PanelHistorialEquipo({
   equipoId,
+  fuenteWnba,
   equipoNombre,
   equipoAbr,
   mercado,
@@ -61,8 +63,8 @@ export function PanelHistorialEquipo({
     ubicacion,
     mercado: (mercado as Mercado),
     linea,
-  });
-  const historialFutbol = useHistorialEquipoFutbolExtendido(equipoId, {
+  }, fuenteWnba);
+  const historialFutbol = useHistorialEquipoFutbolExtendido(fuenteWnba ? '' : equipoId, {
     cantidad,
     ubicacion,
     mercado: mercado as TipoMercadoFutbol,
