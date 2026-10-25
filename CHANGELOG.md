@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## Scraper WNBA robusto — 2026-10-24
+
+- Incorporar CLI WNBA aislada: plan sin red, fetch a archivos, replay offline,
+  calendario en Colombia/UTC, cuartos/OT y estadísticas opcionales.
+- Validar identidad, fases (Commissioner’s Cup separada), estados, sumas, ganador,
+  duplicados y conflictos; preservar NULLs y apartar datos inconsistentes.
+- Añadir caché por SHA-256, observaciones inmutables, checkpoints, lock, límites
+  HTTP/reintentos y reporte de cobertura; pruebas sin BD en CI.
+- Sin importación productiva, modelo WNBA, modificación de NBA/Euroliga ni cron.
+  [Manual y validación](docs/reactivacion_single_user/SCRAPER_WNBA_2026-10-24.md).
+
 ## Cierre de apuestas finalizadas — 2026-10-24
 
 Bitácora añade **Completar finalizadas** para apuestas simples NBA/Euroliga/fútbol.

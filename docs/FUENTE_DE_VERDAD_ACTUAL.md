@@ -2,6 +2,15 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
+## Scraper WNBA independiente — 2026-10-24
+
+Nuevo extractor ESPN con plan predeterminado, ejecución explícita a JSONL/CSV,
+contrato por partido, Q1–Q4/OT, estadísticas opcionales, UTC/Colombia, cuarentena,
+reanudación verificada por SHA-256 y límites HTTP. Separa Commissioner’s Cup de REG.
+Piloto acotado: cinco finales completos y estadísticas por ambos lados; no acredita
+cobertura histórica total. Sin importación a BD, frontend WNBA, modelo ni cron;
+NBA/Euroliga intactos. [Uso, revisión y validación](reactivacion_single_user/SCRAPER_WNBA_2026-10-24.md).
+
 > **Estado operativo 2026-10-05:** AnalyticsPredict funciona localmente como herramienta personal single-user, sin login, pagos, suscripciones ni tiers. Neon fue migrada tras backup verificado: 182 apuestas NBA, 13 de fútbol, 7 combinadas y 16 selecciones conservadas. La configuración proviene de la cuenta con mayor actividad; por instrucción posterior del propietario, **todos** los registros deportivos son historial personal visible. La procedencia original permanece en el backup privado. `docs/reactivacion_single_user/` gobierna el trabajo nuevo. C0–C7 y la estrategia comercial descritos debajo son históricos, no tareas vigentes.
 
 ## Cierre de apuestas finalizadas — 2026-10-24

@@ -4,6 +4,13 @@
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
+## Scraper WNBA — 2026-10-24
+
+Extractor independiente implementado y validado con pruebas sintéticas y piloto
+ESPN acotado de cinco finales. Exporta archivos y evidencia externa con cuarentena,
+hashes/reanudación; no conecta BD ni modelos. WNBA no está habilitada en el producto
+y su cobertura histórica no está certificada. [Contrato y límites](../reactivacion_single_user/SCRAPER_WNBA_2026-10-24.md).
+
 ## Cierre de apuestas finalizadas — 2026-10-24
 
 Bitácora añade **Completar finalizadas** para apuestas simples NBA/Euroliga/fútbol.
