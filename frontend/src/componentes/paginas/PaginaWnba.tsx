@@ -82,7 +82,7 @@ export function ModuloWnba() {
     cuotaOver:resultado.valor.over.cuota?.toString()??'',cuotaUnder:resultado.valor.under.cuota?.toString()??'',
     temporadas:resultado.temporadas_solicitadas.map(t=>t.id),parciales:resultado.parciales??[],
   }:undefined,[resultado,params,lado]);
-  const seleccionCombinada = useMemo<SeleccionCombinadaInput | null>(()=>resultado&&vista&&!vista.es_en_vivo&&cuota?{
+  const seleccionCombinada = useMemo<SeleccionCombinadaInput | null>(()=>resultado&&vista&&!vista.es_en_vivo&&cuota&&resultado.predicciones[resultado.mercado]&&resultado.probabilidades.over!==null?{
     partido_id:resultado.partido_id,equipo_local:resultado.equipo_local,equipo_visitante:resultado.equipo_visitante,
     fecha_partido:resultado.fecha_partido?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota'}).format(new Date(resultado.fecha_partido)):undefined,
     mercado:resultado.mercado,lado,linea:resultado.linea,cuota,probabilidad_sistema:resultado.probabilidades[lado==='OVER'?'over':'under'],
@@ -127,7 +127,7 @@ export function ModuloWnba() {
         advertencias={[...(resultado.es_prueba ? ['ANÁLISIS DE PRUEBA: no es un pronóstico oficial ni una apuesta. En los cortes de comprobación los parciales son entradas de prueba, no marcadores reales verificados.'] : []),...resultado.advertencias,`Publicación ${resultado.publicacion_version}; datos ${resultado.dataset_sha256}; ${resultado.muestras.partidos} partidos; último dato utilizado ${resultado.ultimo_dato_utilizado}.`,
           `Regulación: ${resultado.regulacion?.media_total.toFixed(2)??'N/D'} puntos. OT: ${resultado.ot?.n??'N/D'} casos del alcance. ${resultado.politica_corte}`]}
         seleccionUsuario={{lado,linea:resultado.linea}} equipoLocalId={resultado.equipo_local_id} equipoVisitanteId={resultado.equipo_visitante_id}
-        onGuardar={vista.es_en_vivo?undefined:()=>setGuardar(true)} onConfigurarBankroll={()=>window.location.assign('/configuracion')}
+        onGuardar={vista.es_en_vivo||!resultado.predicciones[resultado.mercado]?undefined:()=>setGuardar(true)} onConfigurarBankroll={()=>window.location.assign('/configuracion')}
         onNavegarlEquipo={id=>{setEquipoHistorialId(id);setTab('estadisticas');}}/></div>}
       {!resultado&&!cargando&&!error&&<div className="tarjeta h-full min-h-[500px]"><EstadoVacio/></div>}
       {cuartos===0&&!vista?.es_en_vivo&&<div className="mt-4"><CreadorCombinada liga="wnba" seleccionActual={seleccionCombinada}/></div>}

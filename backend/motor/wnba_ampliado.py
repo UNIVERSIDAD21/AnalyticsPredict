@@ -13,6 +13,7 @@ from scipy.stats import qmc
 from motor.wnba import MERCADOS, conocido, exigir, huella, medias
 
 VERSION = "wnba-condicional-ot-v2"
+POLITICA_MUESTRAS = "wnba-soporte-por-mercado-v1"
 MIN_OT = 10
 POTENCIA = 15
 
@@ -102,33 +103,40 @@ def predecir_ampliado(m, local, visita, mercado, linea, parciales, ot, potencia=
     incluye_ot = not parciales
     empate = h == a
     incremento = np.zeros((len(z), 2))
-    if incluye_ot:
-        exigir(ot["n"] >= MIN_OT, f"Abstención OT: requiere {MIN_OT} empates WNBA con prórroga en el alcance; disponibles {ot['n']}")
+    total_disponible = not incluye_ot or ot["n"] >= MIN_OT
+    no_disponibles = {} if total_disponible else {
+        "COMPLETO": f"Total con OT N/D: requiere {MIN_OT} empates WNBA con prórroga en el alcance; disponibles {ot['n']}. Q1–Q4 no requieren esa muestra."
+    }
+    if incluye_ot and total_disponible:
         ix = np.minimum((uot * ot["n"]).astype(int), ot["n"] - 1)
         incremento[empate] = np.asarray(ot["incrementos"])[ix[empate]]
     hf, af = h + incremento[:, 0], a + incremento[:, 1]
-    predictions["COMPLETO"] = resumen(hf, af)
+    if total_disponible:
+        predictions["COMPLETO"] = resumen(hf, af)
     if mercado == "COMPLETO":
-        objetivos = hf + af
+        objetivos = hf + af if total_disponible else None
     else:
         i = int(mercado[1]) - 1
         objetivos = muestras[:, i] + muestras[:, i+4]
     evaluacion = {}
     for key, corte_lineas in (lineas or {}).items():
+        if key in no_disponibles:
+            continue
         if key != "COMPLETO" and int(key[1]) <= len(parciales):
             continue
         vals = hf+af if key == "COMPLETO" else muestras[:, int(key[1])-1]+muestras[:, int(key[1])+3]
         evaluacion[key] = {str(l):masa(vals,l) for l in corte_lineas}
-    return {"predicciones": predictions, "probabilidades": masa(objetivos, linea),
-            **({"_muestras":{**{f"Q{i+1}":muestras[:,i]+muestras[:,i+4] for i in range(4)},"COMPLETO":hf+af}} if devolver_muestras else {}),
+    return {"predicciones": predictions, "probabilidades": masa(objetivos, linea) if objetivos is not None else dict.fromkeys(("over","under","push")),
+            "mercados_no_disponibles": no_disponibles, "politica_muestras": POLITICA_MUESTRAS,
+            **({"_muestras":{**{f"Q{i+1}":muestras[:,i]+muestras[:,i+4] for i in range(4)},**({"COMPLETO":hf+af} if total_disponible else {})}} if devolver_muestras else {}),
             **({"evaluacion_lineas":evaluacion} if lineas else {}),
             "ganador_regulacion": regulacion["ganador"], "regulacion": regulacion,
-            "ganador_mercado": predictions[mercado]["ganador"],
+            "ganador_mercado": predictions[mercado]["ganador"] if mercado in predictions else None,
             "incluye_ot": incluye_ot, "parciales": parciales,
             "ot": {**{k: v for k, v in ot.items() if k != "incrementos"},
                    "probabilidad_empate_regulacion": float(empate.mean()),
-                   "media_local": float(incremento[:, 0].mean()),
-                   "media_visitante": float(incremento[:, 1].mean())},
+                   "media_local": float(incremento[:, 0].mean()) if total_disponible else None,
+                   "media_visitante": float(incremento[:, 1].mean()) if total_disponible else None},
             "condicionamiento": {"version": VERSION, "integracion": "Sobol discreto determinista",
                  "simulaciones": len(z), "calibracion": "SIN_CALIBRAR",
                  "indices_observados": [i for i in range(8) if i not in pendientes],

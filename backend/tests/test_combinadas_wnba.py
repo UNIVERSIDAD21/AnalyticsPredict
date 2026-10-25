@@ -61,3 +61,16 @@ def test_rechaza_ligas_mezcladas_y_seleccion_duplicada(selecciones):
     selecciones[1]['razones']=[]
     with pytest.raises(ValueError,match='mezclar'):
         combinadas.evaluar(selecciones)
+
+
+def test_conjunta_de_cuartos_no_requiere_muestra_total_ot(selecciones,modelo,ot,monkeypatch):
+    pocos={**ot,'n':4,'incrementos':ot['incrementos'][:4]}
+    monkeypatch.setattr(combinadas,'ajustar_ot',lambda rows:pocos)
+    trace=selecciones[0]['razones'][0]
+    r=json.loads((svc.journal()/(trace['analisis_id']+'.json')).read_text())
+    p=predecir_ampliado(modelo,'h','a','Q1',40.5,[],pocos)
+    r=svc.registrar({**r,**p,'mercado':'Q1','linea':40.5})
+    selecciones[0].update(mercado='Q1',linea=40.5,probabilidad_sistema=p['probabilidades']['over'],
+                          razones=[{**trace,'analisis_id':r['analisis_id']}])
+    out=combinadas.evaluar(selecciones)
+    assert out['tiene_mismo_partido'] and out['probabilidad_ajustada']>0

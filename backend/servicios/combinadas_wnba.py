@@ -29,6 +29,7 @@ def evaluar(selecciones, guardar=False):
                and str(s.get('partido_id'))==str(r['partido_id']) and s['mercado']==r['mercado']
                and float(s['linea'])==r['linea'],'Selección distinta del snapshot WNBA')
         prob=r['probabilidades'][s['lado'].lower()]
+        exigir(prob is not None,'Mercado WNBA N/D: no permite evaluar una selección sin probabilidad')
         exigir(abs(float(s['probabilidad_sistema'])-prob)<1e-9,'Probabilidad WNBA alterada')
         key=(r['partido_id'] or (r['equipo_local_id'],r['equipo_visitante_id'],r['corte_exclusivo']))
         clave=(str(key),s['mercado'],s['lado'],s['linea'])
@@ -42,8 +43,9 @@ def evaluar(selecciones, guardar=False):
         ts=[t['id'] for t in r['temporadas_solicitadas']]
         rows=alcance(m['datos'],ts,r['corte_exclusivo'],r['fases_solicitadas'])
         model=svc.ajuste_cache(m['version'],m['dataset_sha256'],tuple(sorted(ts)),r['corte_exclusivo'],tuple(sorted(r['fases_solicitadas'])),json.dumps(rows,sort_keys=True,separators=(',',':')))
-        proy=predecir_ampliado(model,r['equipo_local_id'],r['equipo_visitante_id'],'COMPLETO',r['linea'],[],ajustar_ot(rows),devolver_muestras=True)
-        wins=np.ones(len(proy['_muestras']['COMPLETO']),bool);pay=np.ones(len(wins))
+        proy=predecir_ampliado(model,r['equipo_local_id'],r['equipo_visitante_id'],r['mercado'],r['linea'],[],ajustar_ot(rows),devolver_muestras=True)
+        exigir(all(s['mercado'] in proy['_muestras'] for s,_ in ls),'Mercado WNBA N/D en la distribución conjunta')
+        wins=np.ones(len(proy['_muestras'][r['mercado']]),bool);pay=np.ones(len(wins))
         for s,_ in ls:
             vals=proy['_muestras'][s['mercado']];line=float(s['linea'])
             win=vals>line if s['lado']=='OVER' else vals<line

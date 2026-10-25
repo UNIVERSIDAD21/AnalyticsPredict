@@ -130,12 +130,14 @@ export interface ResultadoWnba {
     desde: string;
   };
   predicciones: Record<string, PrediccionWnba>;
-  probabilidades: { over: number; under: number; push: number };
-  base_descompuesta?: { prediccion: PrediccionWnba; probabilidades: ResultadoWnba["probabilidades"]; definicion: string };
+  probabilidades: { over: number; under: number; push: number } | { over: null; under: null; push: null };
+  mercados_no_disponibles?: Partial<Record<Mercado, string>>;
+  politica_muestras?: string;
+  base_descompuesta?: { prediccion: PrediccionWnba; probabilidades: { over: number; under: number; push: number }; definicion: string };
   parciales?: [number, number][];
   regulacion?: PrediccionWnba;
   condicionamiento?: { version: string; metodo: string; simulaciones: number; media_base: number[]; media_condicional: number[] };
-  ot?: { n: number; metodo: string; media_local: number; media_visitante: number; hasta: string; partidos_sha256: string };
+  ot?: { n: number; metodo: string; media_local: number | null; media_visitante: number | null; hasta: string; partidos_sha256: string };
   ganador_regulacion: { local: number; empate: number; visitante: number };
   advertencias: string[];
   guardar_bitacora_habilitado: boolean;

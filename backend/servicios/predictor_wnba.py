@@ -306,15 +306,15 @@ def analizar(
     )
     parciales = [] if parciales is None else parciales
     if ampliar:
-        from motor.wnba_ampliado import ajustar_ot, predecir_ampliado
+        from motor.wnba_ampliado import ajustar_ot, predecir_ampliado, POLITICA_MUESTRAS
         ot = ajustar_ot(rows)
         result = predecir_ampliado(model, local, visita, mercado, linea, parciales, ot)
-        if not parciales:
+        if not parciales and mercado in result['predicciones']:
             neutral = {**model, "coeficientes": [model["coeficientes"][0]] + [[0.0]*4 for _ in model["coeficientes"][1:]]}
             base = predecir_ampliado(neutral, local, visita, mercado, linea, [], ot)
             result["base_descompuesta"] = {"prediccion":base["predicciones"][mercado],"probabilidades":base["probabilidades"],
                 "definicion":"Intercepto común del mismo Ridge WNBA, antes de identidad de ataque/defensa y localía nominal. No otro modelo ni ajuste adicional duplicado."}
-        version_calculo = "wnba-v2-" + huella({"ridge":model,"ot":ot,"algoritmo":"wnba-condicional-ot-v2","sobol":32768})[:24]
+        version_calculo = "wnba-v2-" + huella({"ridge":model,"ot":ot,"algoritmo":"wnba-condicional-ot-v2","sobol":32768,"politica_muestras":POLITICA_MUESTRAS})[:24]
     else:
         result = predecir(model, local, visita, mercado, linea)
     now = datetime.now(timezone.utc)
@@ -341,6 +341,7 @@ def analizar(
     if ampliar:
         warnings += ["Contrato WNBA condicional/OT v2: las métricas v1 NO validan esta ampliación.",
                      "Integración numérica Sobol discreta determinista; incertidumbre y probabilidades SIN CALIBRAR."]
+        warnings += list(result.get('mercados_no_disponibles',{}).values())
     if parciales:
         warnings.append("Corte entre cuartos completos, no análisis con reloj/posesiones. Solo consulta; sin apuestas ni predicciones prepartido.")
         modo = f"CIERRE_Q{len(parciales)}"
@@ -414,15 +415,16 @@ def analizar(
             "contexto": contexto(rows, local, visita),
             "advertencias": warnings,
             "prospectiva_acreditada": bool(
-                fixture and modo == "PREPARTIDO" and not es_prueba
+                fixture and modo == "PREPARTIDO" and not es_prueba and mercado in result['predicciones']
             ),
             "guardar_bitacora_habilitado": bool(
                 fixture
                 and (fixture.get("fixture_id") or fixture["partido_id"])
                 and modo == "PREPARTIDO"
                 and not es_prueba
+                and mercado in result['predicciones']
             ),
-            "motivo_bitacora": "Solo selección explícita de fixture oficial previo con ID canónico; manuales/históricos/pruebas no son apuestas oficiales.",
+            "motivo_bitacora": result.get('mercados_no_disponibles',{}).get(mercado) or "Solo selección explícita de fixture oficial previo con ID canónico; manuales/históricos/pruebas no son apuestas oficiales.",
         }
     )
     probs = result["probabilidades"]
@@ -432,7 +434,7 @@ def analizar(
             "cuota": cuota,
             "ev_sin_calibrar": (
                 probs[lado] * (cuota - 1) - probs["under" if lado == "over" else "over"]
-                if cuota is not None
+                if cuota is not None and probs[lado] is not None
                 else None
             ),
         }
@@ -501,6 +503,7 @@ def validar_guardado(p):
     )
     exigir(evidencias[0].get("incluye_ot", False) == r["incluye_ot"], "Convención OT distinta del análisis WNBA")
     esperado = r["probabilidades"][p.lado.lower()]
+    exigir(esperado is not None, "Mercado WNBA N/D: no permite guardar una probabilidad ausente")
     exigir(
         p.probabilidad_sistema is not None
         and abs(float(p.probabilidad_sistema) - esperado) < 1e-9

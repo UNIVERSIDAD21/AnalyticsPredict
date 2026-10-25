@@ -204,4 +204,33 @@ describe("WNBA dentro del recorrido NBA compartido", () => {
     await waitFor(()=>expect(sincronizarCalendarioWnba).toHaveBeenCalledTimes(1));
     expect(analizarWnba).not.toHaveBeenCalled();
   });
+  it.each(['Q1','COMPLETO'] as const)('2020 conserva cuartos y muestra solo total OT N/D al solicitar %s',async mercado=>{
+    const parcial:ResultadoWnba={...resultado,mercado,linea:mercado==='Q1'?40.5:160.5,incluye_ot:true,
+      temporadas_solicitadas:[{id:'2020',nombre:'2020'}],temporadas_utilizadas:['2020'],
+      predicciones:Object.fromEntries(['Q1','Q2','Q3','Q4'].map(q=>[q,{...pred,media_local:20,media_visitante:21,media_total:41,desviacion_total:7}])),
+      probabilidades:mercado==='Q1'?{over:.6,under:.4,push:0}:{over:null,under:null,push:null},
+      mercados_no_disponibles:{COMPLETO:'Total con OT N/D: requiere 10 casos; disponibles 4. Q1–Q4 calculables.'},
+      advertencias:['Total con OT N/D: requiere 10 casos; disponibles 4. Q1–Q4 calculables.']};
+    const d=datos();d.catalogo.temporadas=[{id:'2020',nombre:'2020',fases:{REG:132}}];
+    vi.mocked(cargarWnba).mockResolvedValue(d);
+    vi.mocked(obtenerTemporadasWnba).mockResolvedValue(d.catalogo.temporadas);
+    vi.mocked(analizarWnba).mockResolvedValue(parcial);
+    render(<MemoryRouter initialEntries={['/baloncesto?liga=wnba&prueba=1']}><ToastsProvider><ModuloWnba/></ToastsProvider></MemoryRouter>);
+    await screen.findByRole('combobox',{name:'Equipo Local'});completar();
+    await screen.findByRole('button',{name:'2020'});
+    fireEvent.change(screen.getByRole('combobox',{name:'Mercado'}),{target:{value:mercado}});
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Partido'}));
+    await screen.findByRole('heading',{name:'Proyección por periodo'});
+    expect(analizarWnba).toHaveBeenCalledWith(expect.objectContaining({temporadas:['2020'],mercado}),expect.any(AbortSignal));
+    expect(screen.getByRole('row',{name:/^Q1 /})).toHaveTextContent('41.00');
+    const total=screen.getByRole('row',{name:/^COMPLETO/});
+    expect(total.querySelectorAll('td')).toHaveLength(4);
+    expect([...total.querySelectorAll('td')].every(e=>e.textContent==='N/D')).toBe(true);
+    if(mercado==='Q1')expect(screen.getByText('60.0%')).toBeInTheDocument();
+    else {
+      expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})).toBeNull();
+      expect(screen.queryByRole('img')).toBeNull();
+    }
+    expect(document.body.textContent).not.toMatch(/NaN|undefined|Infinity/);
+  });
 });

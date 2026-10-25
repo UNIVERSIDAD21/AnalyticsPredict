@@ -580,3 +580,31 @@ def test_cierre_wnba_respeta_ot_solo_si_snapshot_lo_declara():
     assert valor_baloncesto('COMPLETO',p,'wnba',True)==172
     assert valor_baloncesto('Q4',p,'wnba',True)==40
     assert valor_baloncesto('COMPLETO',p,'euroleague',True)==160
+
+
+@pytest.mark.parametrize('mercado,linea',[('Q1',40.5),('COMPLETO',160.5)])
+def test_api_pre_2020_con_cuartos_suficientes_y_ot_insuficiente(modelo,filas,tmp_path,monkeypatch,mercado,linea):
+    monkeypatch.setenv('ANALYTICSPREDICT_MODELO_WNBA_ACTIVO',str(tmp_path/'activo.json'))
+    monkeypatch.setattr(svc,'leer_datos',lambda:filas)
+    svc.publicar(modelo)
+    app=FastAPI();app.include_router(rutas.router);client=TestClient(app)
+    response=client.post('/api/wnba/analizar',json={
+        'equipo_local_id':uid('team0'),'equipo_visitante_id':uid('team1'),
+        'temporadas':[uid('2020')],'mercado':mercado,'linea':linea,'es_prueba':True,
+        'contrato':'NBA_EQUIVALENTE_V2','cuota_over':1.91,'cuota_under':1.91})
+    assert response.status_code==200,response.text
+    r=response.json()['resultado']
+    assert r['temporadas_utilizadas']==['2020'] and r['ot']['n']<10
+    assert set(r['predicciones'])=={'Q1','Q2','Q3','Q4'}
+    assert set(r['mercados_no_disponibles'])=={'COMPLETO'}
+    assert all(r['predicciones'][q]['desviacion_total']>0 for q in r['predicciones'])
+    if mercado=='Q1':
+        assert sum(r['probabilidades'].values())==pytest.approx(1)
+        assert r['valor']['over']['ev_sin_calibrar'] is not None
+        assert 'base_descompuesta' in r
+    else:
+        assert all(x is None for x in r['probabilidades'].values())
+        assert r['valor']['over']['ev_sin_calibrar'] is None
+        assert r['valor']['under']['ev_sin_calibrar'] is None
+        assert 'base_descompuesta' not in r
+        assert not r['guardar_bitacora_habilitado'] and not r['prospectiva_acreditada']

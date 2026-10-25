@@ -169,6 +169,8 @@ export function ResultadoAnalisis({
   const mercado = resultado.metadata?.mercado as string;
   const esEuro = Boolean(fuenteEuroliga);
   const esWnba = resultado.metadata?.liga === 'wnba';
+  const mercadosNoDisponibles = (esWnba ? resultado.metadata?.mercados_no_disponibles : null) as Record<string,string> | undefined;
+  const motivoMercadoNoDisponible = mercadosNoDisponibles?.[mercado];
   const integral = (fuenteEuroliga?.analisis_integral ?? resultado.metadata?.analisis_integral) as AnalisisIntegral | undefined;
   const seccionIntegral = (seccion: 'ganador' | 'periodos' | 'contexto' | 'valor' | 'razones') => integral ? <SeccionesAnalisisIntegral key={`${resultado.fecha_analisis}-${seccion}`} datos={integral} seccion={seccion} local={resultado.equipo_nombre_completo} visitante={resultado.rival_nombre_completo} lado={seleccionUsuario?.lado} /> : null;
   const esCorte = resultado.es_en_vivo;
@@ -407,6 +409,11 @@ export function ResultadoAnalisis({
           {fuenteEuroliga && <p className="text-xs text-texto-secundario mt-2">{fuenteEuroliga.ventaja_regulacion.definicion}</p>}
         </div>
       )}
+      {motivoMercadoNoDisponible && <div className="tarjeta p-4 border border-neon-cyan/20">
+        <p className="text-xs uppercase tracking-wider text-neon-cyan font-semibold">{etiquetaGanador}</p>
+        <p className="text-lg font-futurista text-texto-principal">N/D</p>
+        <p className="text-sm text-texto-secundario">{motivoMercadoNoDisponible}</p>
+      </div>}
 
       {/* ═══════════════════════════════════════════════════════════
           5. PROBABILIDADES
@@ -427,7 +434,7 @@ export function ResultadoAnalisis({
 
       {metricaObjetivoInvalida && (
         <PanelAdvertencias advertencias={[
-          'Datos insuficientes del mercado objetivo: no se puede renderizar media/desviación/probabilidades sin degradación honesta.',
+          motivoMercadoNoDisponible ? `${motivoMercadoNoDisponible} Media, desviación, Over/Under y push de este mercado: N/D.` : 'Datos insuficientes del mercado objetivo: no se puede renderizar media/desviación/probabilidades sin degradación honesta.',
         ]} />
       )}
 
@@ -435,7 +442,11 @@ export function ResultadoAnalisis({
       {!integral && !esFutbol && <div className="tarjeta p-6 space-y-3">
         <h3 className="text-lg font-futurista">Proyección por periodo</h3>
         <p className="text-xs text-texto-secundario">{esEuro ? 'Cuartos de 10 minutos; regulación de 40 minutos, sin OT.' : esWnba ? `Cuartos de 10 minutos; regulación de 40 minutos. Juego completo ${resultado.metadata.incluye_ot ? 'incluye OT; la suma de cuartos conserva regulación' : 'sin OT en cortes entre cuartos'}.` : 'Cuartos de 12 minutos; la suma de cuartos no incluye prórroga.'} Observado no significa pronosticado.</p>
-        <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr><th className="p-2">Periodo</th><th className="p-2">Local</th><th className="p-2">Visitante</th><th className="p-2">Total</th><th className="p-2">Desviación</th></tr></thead><tbody>{Object.entries(resultado.predicciones).sort(([a],[b]) => ['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(a)-['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(b)).map(([m,p]) => <tr key={m} className="border-t border-neon-cyan/10"><th className="p-2">{m}{resultado.cuartos_reales?.[m] ? ' (observado)' : ''}</th><td className="p-2">{p.media_equipo.toFixed(2)}</td><td className="p-2">{p.media_rival.toFixed(2)}</td><td className="p-2">{p.media_total.toFixed(2)}</td><td className="p-2">{p.desviacion_total.toFixed(2)}</td></tr>)}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr><th className="p-2">Periodo</th><th className="p-2">Local</th><th className="p-2">Visitante</th><th className="p-2">Total</th><th className="p-2">Desviación</th></tr></thead><tbody>{[...new Set([...Object.keys(resultado.predicciones),...Object.keys(mercadosNoDisponibles??{})])].sort((a,b) => ['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(a)-['Q1','Q2','Q3','Q4','COMPLETO'].indexOf(b)).map(m => {
+          const p=resultado.predicciones[m];
+          return <tr key={m} title={mercadosNoDisponibles?.[m]} className="border-t border-neon-cyan/10"><th className="p-2">{m}{resultado.cuartos_reales?.[m] ? ' (observado)' : ''}</th><td className="p-2">{p?p.media_equipo.toFixed(2):'N/D'}</td><td className="p-2">{p?p.media_rival.toFixed(2):'N/D'}</td><td className="p-2">{p?p.media_total.toFixed(2):'N/D'}</td><td className="p-2">{p?p.desviacion_total.toFixed(2):'N/D'}</td></tr>;
+        })}</tbody></table></div>
+        {mercadosNoDisponibles && Object.entries(mercadosNoDisponibles).map(([m,motivo])=><p key={m} className="text-xs text-texto-secundario">{motivo}</p>)}
       </div>}
       {(esCorte || esEuro) && <div className="tarjeta p-4 text-sm text-texto-secundario space-y-2">
         <p>{modoLabel}. No es un pronóstico con reloj ni marcador parcial actualizado.</p>

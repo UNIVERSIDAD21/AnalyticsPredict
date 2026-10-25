@@ -2,6 +2,13 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
+## Muestra WNBA por mercado — 2026-10-25
+
+Q1–Q4 PRE no requieren muestra OT. Si faltan diez casos OT, solo el total con
+prórroga y sus derivados quedan N/D; se conservan cuartos y regulación separada.
+Regresión solo2020 y ocho temporadas aisladas verificadas; sin modificar artefactos
+ni journals. [Contrato y matriz de temporadas](reactivacion_single_user/MUESTRAS_WNBA_POR_MERCADO_2026-10-25.md).
+
 ## Paridad WNBA con el recorrido NBA — 2026-10-25
 
 Configuración/resultados NBA compartidos, sin resultado WNBA alternativo.

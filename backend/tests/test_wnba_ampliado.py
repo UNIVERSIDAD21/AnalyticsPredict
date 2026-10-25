@@ -59,10 +59,35 @@ def test_mercado_resuelto_no_acepta_ot_y_no_usa_ft(modelo,ot,n):
 
 
 def test_sin_ot_suficiente_abstiene_no_fallback(modelo,ot):
-    with pytest.raises(ValueError,match='Abstención OT'):
-        predecir_ampliado(modelo,'h','a','COMPLETO',160,[],{**ot,'n':0})
+    r=predecir_ampliado(modelo,'h','a','COMPLETO',160,[],{**ot,'n':0})
+    assert 'COMPLETO' not in r['predicciones']
+    assert r['probabilidades']=={'over':None,'under':None,'push':None}
+    assert r['ganador_mercado'] is None and r['ot']['media_local'] is None
+    assert set(r['mercados_no_disponibles'])=={'COMPLETO'}
+    assert r['incluye_ot'] and r['regulacion']['media_total']>0
     # Cortes no anuncian OT: no requieren su muestra.
     assert predecir_ampliado(modelo,'h','a','COMPLETO',160,[[20,20]],{**ot,'n':0})
+
+
+@pytest.mark.parametrize('mercado',['Q1','Q2','Q3','Q4'])
+def test_cuartos_prepartido_no_dependen_de_muestra_ot(modelo,ot,mercado):
+    suficiente=predecir_ampliado(modelo,'h','a',mercado,40,[],ot)
+    parcial=predecir_ampliado(modelo,'h','a',mercado,40,[],{**ot,'n':0},devolver_muestras=True,
+                             lineas={mercado:[40],'COMPLETO':[160]})
+    assert parcial['probabilidades']==suficiente['probabilidades']
+    assert parcial['ganador_mercado']==suficiente['ganador_mercado']
+    for q in ['Q1','Q2','Q3','Q4']:
+        assert parcial['predicciones'][q]==suficiente['predicciones'][q]
+    assert set(parcial['_muestras'])=={'Q1','Q2','Q3','Q4'}
+    assert set(parcial['evaluacion_lineas'])=={mercado}
+    assert 'COMPLETO' not in parcial['predicciones']
+
+
+@pytest.mark.parametrize('n,disponible',[(9,False),(10,True)])
+def test_umbral_ot_solo_habilita_total(modelo,ot,n,disponible):
+    r=predecir_ampliado(modelo,'h','a','Q1',40.5,[],{**ot,'n':n,'incrementos':ot['incrementos'][:n]})
+    assert ('COMPLETO' in r['predicciones']) is disponible
+    assert all(q in r['predicciones'] for q in ['Q1','Q2','Q3','Q4'])
 
 
 def test_ot_bootstrap_solo_regulacion_empatada():

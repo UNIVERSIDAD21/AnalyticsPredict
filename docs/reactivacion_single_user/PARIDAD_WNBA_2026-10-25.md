@@ -55,8 +55,11 @@ multivariada WNBA se condiciona mediante Schur, fija observados y reduce la
 covarianza a lo pendiente. Se integra con Sobol determinista (32.768 muestras),
 redondeo entero y censura en cero. Solo los empates a 40 minutos reciben un
 incremento OT remuestreado de empates WNBA reconciliados del mismo alcance;
-requiere diez casos. Sin muestra suficiente se abstiene, sin fallback ni 50%.
+requiere diez casos para el total con OT, no para Q1–Q4. Sin esa muestra el total
+queda N/D y los cuartos calculables se conservan, sin fallback ni 50%.
 Ganador corresponde al periodo y admite empate donde el contrato lo permite.
+
+[Corrección de muestra por mercado y comprobación de cada temporada](MUESTRAS_WNBA_POR_MERCADO_2026-10-25.md).
 
 La publicación de datos/Ridge v1 `wnba-v1-912782c821ae18d8895a723a` se conserva.
 Cada cálculo ampliado tiene ID `wnba-v2-<hash>` independiente. El contrato v1

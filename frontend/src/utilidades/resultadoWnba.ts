@@ -54,34 +54,35 @@ export function adaptarResultadoWnba(r: ResultadoWnba, lado: LadoApuesta): Resul
   const overround=qover&&qunder?1/qover+1/qunder:null;
   const prob=r.probabilidades[lado==='OVER'?'over':'under'];
   const fair=overround&&cuota?(1/cuota)/overround:null;
-  const cond=prob/(1-r.probabilidades.push);
+  const cond=prob!==null && r.probabilidades.push!==null && r.probabilidades.push<1 ? prob/(1-r.probabilidades.push) : null;
   const base=r.base_descompuesta;
-  const delta=base?p.media_total-base.prediccion.media_total:0;
+  const delta=base&&p?p.media_total-base.prediccion.media_total:0;
   const ajustes={ ajustes:base?[{factor:'Identidad y localía Ridge WNBA',valor:delta,direccion:delta>=0?'sube' as const:'baja' as const,confianza_ajuste:null,descripcion:base.definicion,datos_soporte:{version:r.modelo_version}}]:[],ajuste_total:delta,ajuste_total_capped:delta,fue_capped:false,advertencias:['Descomposición de coeficientes ya incluidos, no ajuste añadido por segunda vez.'],confianza_delta:null };
   return {
     equipo:r.equipo_local,rival:r.equipo_visitante,equipo_nombre_completo:r.equipo_local,rival_nombre_completo:r.equipo_visitante,
-    ubicacion:'LOCAL',fecha_analisis:r.fecha_analisis,predicciones,prediccion_juego_completo:predicciones.COMPLETO,
+    ubicacion:'LOCAL',fecha_analisis:r.fecha_analisis,predicciones,prediccion_juego_completo:predicciones.COMPLETO??null,
     prediccion_base:base?{media:base.prediccion.media_total,probabilidad_over:base.probabilidades.over,probabilidad_under:base.probabilidades.under}:undefined,
-    prediccion_ajustada:base?{media_base:base.prediccion.media_total,desviacion_base:p.desviacion_total,probabilidad_over_base:base.probabilidades.over,probabilidad_under_base:base.probabilidades.under,media_ajustada:p.media_total,probabilidad_over_ajustada:r.probabilidades.over,probabilidad_under_ajustada:r.probabilidades.under,ajustes_aplicados:ajustes,confianza_base:null,confianza_ajustada:null}:undefined,
+    prediccion_ajustada:base&&p&&r.probabilidades.over!==null&&r.probabilidades.under!==null?{media_base:base.prediccion.media_total,desviacion_base:p.desviacion_total,probabilidad_over_base:base.probabilidades.over,probabilidad_under_base:base.probabilidades.under,media_ajustada:p.media_total,probabilidad_over_ajustada:r.probabilidades.over,probabilidad_under_ajustada:r.probabilidades.under,ajustes_aplicados:ajustes,confianza_base:null,confianza_ajustada:null}:undefined,
     ajustes:base?ajustes:undefined,
     nivel_confianza:null,factores_confianza:null,analisis_mercado:null,mejor_apuesta:null,
     es_en_vivo:live,cuartos_reales:Object.fromEntries((r.parciales??[]).map((q,i)=>[`Q${i+1}`,q])),
     linea_analizada:r.linea,probabilidad_over:r.probabilidades.over,probabilidad_under:r.probabilidades.under,
-    razones:[{factor:'ataque_equipo',descripcion:`Proyección propia WNBA de ${r.equipo_local} en ${r.mercado}: ${p.media_local.toFixed(2)} puntos.`,direccion:'sube',impacto:p.media_local},
-      {factor:'ataque_rival',descripcion:`Proyección propia WNBA de ${r.equipo_visitante} en ${r.mercado}: ${p.media_visitante.toFixed(2)} puntos.`,direccion:'sube',impacto:p.media_visitante}],
+    razones:p?[{factor:'ataque_equipo',descripcion:`Proyección propia WNBA de ${r.equipo_local} en ${r.mercado}: ${p.media_local.toFixed(2)} puntos.`,direccion:'sube',impacto:p.media_local},
+      {factor:'ataque_rival',descripcion:`Proyección propia WNBA de ${r.equipo_visitante} en ${r.mercado}: ${p.media_visitante.toFixed(2)} puntos.`,direccion:'sube',impacto:p.media_visitante}]:[],
     contexto:r.contexto.equipos[r.equipo_local_id]?.recientes.length && r.contexto.equipos[r.equipo_visitante_id]?.recientes.length ? { h2h:{total_partidos:h2h.length,victorias_equipo:h2h.filter(x=>x.puntos_equipo>x.puntos_rival).length,victorias_rival:h2h.filter(x=>x.puntos_equipo<x.puntos_rival).length,promedio_total:avg('total'),promedio_equipo:avg('puntos_equipo'),promedio_rival:avg('puntos_rival'),tendencia_over:h2h.length?h2h.filter(x=>x.total>r.linea).length/h2h.length:0,ultimo_enfrentamiento:h2h[0]??null,partidos:h2h},
       forma_equipo:forma(r,r.equipo_local_id),forma_rival:forma(r,r.equipo_visitante_id),descanso_equipo:descanso(r,r.equipo_local_id),descanso_rival:descanso(r,r.equipo_visitante_id),stats_temporada_equipo:{},stats_temporada_rival:{} }:null,
     detalle_descriptivo:cuota&&!live?{mercado:r.mercado,lado,linea:r.linea,cuota,cuota_over:qover,cuota_under:qunder,probabilidad_sistema:prob,
       p_raw:prob,p_calibrada:null,calibrador_usado:null,devig_metodo:overround?'exacto':'no_aplicado',devig_overround:overround,
-      devig_p_mkt_raw:1/cuota,devig_p_mkt_fair:fair,edge_raw:cond-1/cuota,edge_real:fair===null?null:cond-fair,
+      devig_p_mkt_raw:1/cuota,devig_p_mkt_fair:fair,edge_raw:cond===null?null:cond-1/cuota,edge_real:fair===null||cond===null?null:cond-fair,
       devig_advertencias:overround?['Probabilidad WNBA RAW condicionada a no-push para comparar cuotas.']:['N/D sin cuota opuesta: no se inventa margen.'],
       valor_esperado:r.valor[lado.toLowerCase() as 'over'|'under'].ev_sin_calibrar,
-      score_total:null,score_componentes:{ev:null,edge_real:null,riesgo_valor:p.desviacion_total,riesgo_referencia:null,riesgo_normalizado:null,penalizacion_riesgo:null,penalizacion_devig:null},score_explicacion:'N/D: no hay política de score ni recomendación validada para WNBA.',score_penalizaciones:[],
+      score_total:null,score_componentes:{ev:null,edge_real:null,riesgo_valor:p?.desviacion_total??null,riesgo_referencia:null,riesgo_normalizado:null,penalizacion_riesgo:null,penalizacion_devig:null},score_explicacion:'N/D: no hay política de score ni recomendación validada para WNBA.',score_penalizaciones:[],
       sizing_advertencias:['N/D: sin política WNBA validada de stake, Kelly o riesgo. No se reutiliza la de NBA.'],sizing_penalizaciones:null,
       aplicaron_caps:false}:undefined,
     metadata:{deporte:'baloncesto',liga:'wnba',mercado:r.mercado,modo_analisis:live?r.modo:'PREPARTIDO',modelo_version:r.modelo_version,
       analisis_id:r.analisis_id,fixture_revision_sha256:r.fixture_revision_sha256,partido_id:r.partido_id,fecha_partido:r.fecha_partido,probabilidad_push:r.probabilidades.push,
       duracion_regulacion:40,incluye_ot:r.incluye_ot,metodo_live:r.condicionamiento?.metodo,
+      mercados_no_disponibles:r.mercados_no_disponibles,politica_muestras:r.politica_muestras,
       objetivo:{trazabilidad:{estado_operativo_mercado:'NO_CERTIFICADO',motivos_estado_operativo:['WNBA · SIN_CALIBRAR',`Alcance ${r.temporadas_utilizadas.join(', ')} · ${r.fases_utilizadas.join(', ')}`,`Corte exclusivo ${r.corte_exclusivo}`,`Modelo ${r.modelo_version}`]}}},
   };
 }
