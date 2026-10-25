@@ -1,8 +1,15 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-24**. Herramienta personal single-user, local y
+Última actualización: **2026-10-25**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
+
+## Ingesta WNBA desde lote local — 2026-10-25
+
+[Contrato y operación](../reactivacion_single_user/INGESTA_WNBA_2026-10-25.md):
+identidades y temporadas anuales WNBA, finales canónicos y fuente completa con
+no-finales NULL/evidencias/estadísticas/OT; cuarentena aparte. Backup, rollback,
+huellas ajenas e idempotencia. Sin nueva extracción ni modelos ni serving WNBA.
 
 ## Scraper WNBA — 2026-10-24
 

@@ -2,6 +2,15 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
+## Ingesta local WNBA — 2026-10-25
+
+Importador de archivos suministrados por el propietario, sin nuevas consultas ESPN.
+Identidades WNBA propias, temporadas anuales, finales en resultados compartidos y
+no finalizados persistidos en tabla fuente con NULL y sin resultado ficticio.
+Conserva estadísticas/OT detallado/evidencias y cuarentena separada; exige respaldo,
+ensayo revertido, hashes y postflight. Sin modelos ni interfaz de análisis WNBA.
+[Contrato y operación](reactivacion_single_user/INGESTA_WNBA_2026-10-25.md).
+
 ## Scraper WNBA independiente — 2026-10-24
 
 Nuevo extractor ESPN con plan predeterminado, ejecución explícita a JSONL/CSV,
