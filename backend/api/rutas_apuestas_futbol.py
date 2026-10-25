@@ -187,34 +187,8 @@ def _construir_partido_resumen(fila: Dict[str, Any]) -> Optional[PartidoResumen]
 
 
 def _calcular_resultado_real(mercado: str, partido: dict) -> Optional[float]:
-    """Calcula el resultado real para un mercado específico."""
-    mapping = {
-        "CORNERS_FT": (partido.get("local_corners_total") or 0) + (partido.get("visitante_corners_total") or 0),
-        "CORNERS_1T": (partido.get("local_corners_1t") or 0) + (partido.get("visitante_corners_1t") or 0),
-        "CORNERS_2T": (partido.get("local_corners_2t") or 0) + (partido.get("visitante_corners_2t") or 0),
-        "CORNERS_LOCAL_FT": partido.get("local_corners_total"),
-        "CORNERS_LOCAL_1T": partido.get("local_corners_1t"),
-        "CORNERS_LOCAL_2T": partido.get("local_corners_2t"),
-        "CORNERS_VISITANTE_FT": partido.get("visitante_corners_total"),
-        "CORNERS_VISITANTE_1T": partido.get("visitante_corners_1t"),
-        "CORNERS_VISITANTE_2T": partido.get("visitante_corners_2t"),
-        "GOLES_FT": (partido.get("local_goles_total") or 0) + (partido.get("visitante_goles_total") or 0),
-        "GOLES_1T": (partido.get("local_goles_1t") or 0) + (partido.get("visitante_goles_1t") or 0),
-        "GOLES_2T": (partido.get("local_goles_2t") or 0) + (partido.get("visitante_goles_2t") or 0),
-        "GOLES_LOCAL_FT": partido.get("local_goles_total"),
-        "GOLES_LOCAL_1T": partido.get("local_goles_1t"),
-        "GOLES_LOCAL_2T": partido.get("local_goles_2t"),
-        "GOLES_VISITANTE_FT": partido.get("visitante_goles_total"),
-        "GOLES_VISITANTE_1T": partido.get("visitante_goles_1t"),
-        "GOLES_VISITANTE_2T": partido.get("visitante_goles_2t"),
-        "DISPAROS_FT": (partido.get("local_disparos_total") or 0) + (partido.get("visitante_disparos_total") or 0),
-        "DISPAROS_ARCO_FT": (partido.get("local_disparos_arco") or 0) + (partido.get("visitante_disparos_arco") or 0),
-        "DISPAROS_LOCAL_FT": partido.get("local_disparos_total"),
-        "DISPAROS_LOCAL_ARCO_FT": partido.get("local_disparos_arco"),
-        "DISPAROS_VISITANTE_FT": partido.get("visitante_disparos_total"),
-        "DISPAROS_VISITANTE_ARCO_FT": partido.get("visitante_disparos_arco"),
-    }
-    return mapping.get(mercado)
+    from motor.resolucion_bitacora import valor_futbol
+    return valor_futbol(mercado, partido)
 
 
 @router.post(
@@ -454,7 +428,7 @@ async def listar_apuestas(
                     columnas, "ganancia_potencial", "ganancias_potenciales"
                 )
                 col_ganancia_real = _resolver_columna(columnas, "ganancia", "ganancia_real", "ganancia_neta")
-                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
+                col_resultado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_fecha_creacion = _resolver_columna(
                     columnas, "fecha_creacion", "creado_en", "created_at"
                 )
@@ -714,7 +688,7 @@ async def obtener_apuesta(
                     columnas, "ganancia_potencial", "ganancias_potenciales"
                 )
                 col_ganancia_real = _resolver_columna(columnas, "ganancia", "ganancia_real", "ganancia_neta")
-                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
+                col_resultado = _resolver_columna(columnas, "resultado", "estado", "status")
                 col_fecha_creacion = _resolver_columna(
                     columnas, "fecha_creacion", "creado_en", "created_at"
                 )
@@ -967,158 +941,14 @@ async def resolver_apuestas(
     partido_id: Optional[UUID] = Query(None, description="ID del partido a resolver"),
     version: Literal["v2", "legacy"] = Query("legacy", description="Versión de contrato de respuesta"),
 ) -> Dict[str, Any]:
-    """Resuelve apuestas pendientes."""
-    pool = obtener_pool()
-
-    # Usar partido_id de request o query param
-    partido_id_final = None
-    if request and request.partido_id:
-        partido_id_final = request.partido_id
-    elif partido_id:
-        partido_id_final = partido_id
-
+    """Cierra solo outcomes verificables; importe desconocido queda NULL."""
+    from motor.resolucion_bitacora import resolver_bitacora
+    partido_id_final = request.partido_id if request and request.partido_id else partido_id
     try:
-        with pool.connection() as conn:
-            with conn.cursor(row_factory=dict_row) as cursor:
-                columnas = _obtener_columnas_apuestas(cursor)
-                col_estado = _resolver_columna(columnas, "resultado", "estado", "status")
-                col_resultado = _resolver_columna(columnas, "resultado", "resultado_real")
-                col_ganancia_real = _resolver_columna(columnas, "ganancia", "ganancia_real", "ganancia_neta")
-                col_fecha_resolucion = _resolver_columna(
-                    columnas, "fecha_resolucion", "resuelto_en"
-                )
-
-                if not col_estado:
-                    payload_legacy = {
-                        "exito": True,
-                        "resueltas": 0,
-                        "errores": 0,
-                        "ganancia_neta": 0.0,
-                    }
-                    return _respuesta_contrato(payload_legacy, version, response, "resolver")
-
-                # Obtener apuestas pendientes con datos del partido
-                query = f"""
-                    SELECT
-                        a.id,
-                        a.partido_id,
-                        a.mercado,
-                        a.lado,
-                        a.linea,
-                        a.stake,
-                        COALESCE(a.cuota, 0) as cuota,
-                        p.estado as partido_estado,
-                        p.local_goles_total,
-                        p.visitante_goles_total,
-                        p.local_goles_1t,
-                        p.visitante_goles_1t,
-                        p.local_goles_2t,
-                        p.visitante_goles_2t,
-                        p.local_corners_total,
-                        p.visitante_corners_total,
-                        p.local_corners_1t,
-                        p.visitante_corners_1t,
-                        p.local_corners_2t,
-                        p.visitante_corners_2t,
-                        p.local_disparos_total,
-                        p.visitante_disparos_total,
-                        p.local_disparos_arco,
-                        p.visitante_disparos_arco
-                    FROM apuestas_futbol a
-                    JOIN partidos_futbol p ON a.partido_id = p.id
-                    WHERE a.{col_estado} = 'PENDIENTE'
-                      AND p.estado = 'FINALIZADO'
-                """
-                params: List[Any] = []
-
-                if partido_id_final:
-                    query += " AND a.partido_id = %s"
-                    params.append(str(partido_id_final))
-
-                cursor.execute(query, params)
-                apuestas = cursor.fetchall()
-
-                resueltas = 0
-                ganadas = 0
-                perdidas = 0
-                push = 0
-                errores = 0
-                ganancia_neta = 0.0
-
-                for apuesta in apuestas:
-                    try:
-                        resultado_real = _calcular_resultado_real(apuesta["mercado"], apuesta)
-
-                        if resultado_real is None:
-                            errores += 1
-                            continue
-
-                        linea = float(apuesta["linea"])
-                        lado = apuesta["lado"]
-                        stake = float(apuesta["stake"])
-                        cuota = float(apuesta.get("cuota") or 0)
-                        if cuota <= 1:
-                            cuota = 1.0
-
-                        # Determinar resultado
-                        if resultado_real == linea:
-                            estado = "PUSH"
-                            ganancia = 0.0
-                            push += 1
-                        elif (lado == "OVER" and resultado_real > linea) or \
-                             (lado == "UNDER" and resultado_real < linea):
-                            estado = "GANADA"
-                            ganancia = stake * (cuota - 1)
-                            ganadas += 1
-                        else:
-                            estado = "PERDIDA"
-                            ganancia = -stake
-                            perdidas += 1
-
-                        updates = []
-                        params_update: List[Any] = []
-
-                        if col_estado:
-                            updates.append(f"{col_estado} = %s")
-                            params_update.append(estado)
-                        if col_resultado:
-                            updates.append(f"{col_resultado} = %s")
-                            params_update.append(str(resultado_real))
-                        if col_ganancia_real:
-                            updates.append(f"{col_ganancia_real} = %s")
-                            params_update.append(ganancia)
-                        if col_fecha_resolucion:
-                            updates.append(f"{col_fecha_resolucion} = NOW()")
-
-                        if updates:
-                            params_update.append(str(apuesta["id"]))
-                            cursor.execute(
-                                f"UPDATE apuestas_futbol SET {', '.join(updates)} WHERE id = %s",
-                                params_update,
-                            )
-
-                        resueltas += 1
-                        ganancia_neta += ganancia
-
-                    except Exception as e:
-                        logger.error(f"Error resolviendo apuesta {apuesta['id']}: {e}")
-                        errores += 1
-
-                conn.commit()
-
-                payload_legacy = {
-                    "exito": True,
-                    "resueltas": resueltas,
-                    "ganadas": ganadas,
-                    "perdidas": perdidas,
-                    "push": push,
-                    "errores": errores,
-                    "ganancia_neta": round(ganancia_neta, 2),
-                }
-                return _respuesta_contrato(payload_legacy, version, response, "resolver")
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error resolviendo apuestas: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        resumen = resolver_bitacora(pool=obtener_pool(), deportes=('futbol',),
+                                   partido_id=partido_id_final)
+        return _respuesta_contrato({'exito': True, **resumen, 'ganancia_neta': None},
+                                    version, response, 'resolver')
+    except Exception:
+        logger.exception('Error resolviendo apuestas de fútbol')
+        raise HTTPException(status_code=500, detail='No se pudieron resolver las apuestas de fútbol')

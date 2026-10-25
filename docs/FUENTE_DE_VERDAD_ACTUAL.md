@@ -4,6 +4,16 @@ Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
 > **Estado operativo 2026-10-05:** AnalyticsPredict funciona localmente como herramienta personal single-user, sin login, pagos, suscripciones ni tiers. Neon fue migrada tras backup verificado: 182 apuestas NBA, 13 de fútbol, 7 combinadas y 16 selecciones conservadas. La configuración proviene de la cuenta con mayor actividad; por instrucción posterior del propietario, **todos** los registros deportivos son historial personal visible. La procedencia original permanece en el backup privado. `docs/reactivacion_single_user/` gobierna el trabajo nuevo. C0–C7 y la estrategia comercial descritos debajo son históricos, no tareas vigentes.
 
+## Cierre de apuestas finalizadas — 2026-10-24
+
+Bitácora añade **Completar finalizadas** para apuestas simples NBA/Euroliga/fútbol.
+Cierre idempotente por dominio, sin reabrir completadas ni usar NULL como cero;
+Euroliga sin OT y fútbol en regulación/mitades. Cuota legacy inválida permite
+outcome verificable, pero importe NULL/N/D. Sin descarga implícita ni cron.
+Reparación puntual autorizada con respaldo/rollback/postflight; sin modelos nuevos.
+[Contrato, diagnóstico y validación](reactivacion_single_user/CIERRE_BITACORA_FINALIZADAS_2026-10-24.md).
+
+
 ## Paridad completa de análisis Euroliga y fútbol — 2026-10-23
 
 Ganador (1X2 en fútbol), periodos propios, impacto/ajustes trazados, valor por cuotas,

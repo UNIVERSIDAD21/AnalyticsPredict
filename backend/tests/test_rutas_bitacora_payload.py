@@ -244,7 +244,7 @@ class _ConexionResolverNBA:
     def __init__(self, cursor):
         self.cursor_sintetico = cursor
 
-    def cursor(self):
+    def cursor(self, **_kwargs):
         return self.cursor_sintetico
 
     def __enter__(self):
@@ -268,6 +268,6 @@ def test_resolvedor_nba_no_toca_apuestas_de_euroliga():
     resumen = resolver_apuestas(pool=_PoolResolverNBA(cursor))
 
     assert resumen.resueltas == 0
-    assert len(cursor.consultas) == 2
+    assert len(cursor.consultas) == 1
     assert all("competiciones_baloncesto" in consulta for consulta in cursor.consultas)
-    assert all("cb.codigo = 'nba'" in consulta for consulta in cursor.consultas)
+    assert all("COALESCE(cp.codigo, ca.codigo, 'nba')=%s" in consulta for consulta in cursor.consultas)

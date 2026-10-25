@@ -1,12 +1,24 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clienteAPI } from './api';
-import { crearApuesta, listarApuestasAnalizadas, obtenerResumenApuestas } from './bitacora';
+import { crearApuesta, listarApuestasAnalizadas, obtenerResumenApuestas, resolverPendientesBitacora } from './bitacora';
 import { listarBitacoraUnificada } from './combinadas';
 import type { PeticionCrearApuesta, RespuestaApuesta } from '../tipos';
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('contrato v2 de bitácora', () => {
+  it('completa finalizadas solo por POST explícito y conserva motivos de pendientes', async () => {
+    const resumen = { resueltas: 3, pendientes: 1, errores: 0, importes_no_disponibles: 1,
+      motivos_pendientes: { sin_datos_mercado: 1 } };
+    const post = vi.spyOn(clienteAPI, 'post').mockResolvedValue({ data: { exito: true, resumen } });
+    expect(await resolverPendientesBitacora()).toEqual(resumen);
+    expect(post).toHaveBeenCalledWith('/api/bitacora/resolver');
+  });
+
+  it('no presenta un cierre fallido como completado', async () => {
+    vi.spyOn(clienteAPI, 'post').mockResolvedValue({ data: { exito: false } });
+    await expect(resolverPendientesBitacora()).rejects.toThrow('No se pudieron completar');
+  });
   it('envía cuota manual Euroliga a la bitácora y conserva analíticas no disponibles como null', async () => {
     const payload: PeticionCrearApuesta = {
       partido_id: 'fixture-euro', competicion_codigo: 'euroleague',

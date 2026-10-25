@@ -1,8 +1,18 @@
 # Estado vigente — AnalyticsPredict
 
-Última actualización: **2026-10-23**. Herramienta personal single-user, local y
+Última actualización: **2026-10-24**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
+
+## Cierre de apuestas finalizadas — 2026-10-24
+
+Bitácora añade **Completar finalizadas** para apuestas simples NBA/Euroliga/fútbol.
+Cierre idempotente por dominio, sin reabrir completadas ni usar NULL como cero;
+Euroliga sin OT y fútbol en regulación/mitades. Cuota legacy inválida permite
+outcome verificable, pero importe NULL/N/D. Sin descarga implícita ni cron.
+Reparación puntual autorizada con respaldo/rollback/postflight; sin modelos nuevos.
+[Contrato, diagnóstico y validación](../reactivacion_single_user/CIERRE_BITACORA_FINALIZADAS_2026-10-24.md).
+
 
 ## Paridad completa de análisis Euroliga y fútbol — 2026-10-23
 

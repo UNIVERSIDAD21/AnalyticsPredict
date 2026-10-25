@@ -18,7 +18,6 @@ from psycopg.rows import dict_row
 from db import obtener_pool
 from servicios.politica_pnl import publicar_pnl, no_concilia_sql
 from motor.resolucion_apuestas import (
-    resolver_apuestas,
     obtener_estadisticas_apuestas,
     obtener_apuestas_pendientes_por_mercado,
 )
@@ -43,7 +42,7 @@ class RegistroBitacoraUnificada(BaseModel):
     tipo_apuesta: str
     resultado: str
     stake: float
-    ganancia: float
+    ganancia: Optional[float] = None
     cuota: Optional[float] = None
     cuota_total: Optional[float] = None
     n_selecciones: Optional[int] = None
@@ -1164,7 +1163,8 @@ class RespuestaEstadisticas(BaseModel):
 
     ## Requisitos:
     - La apuesta debe tener `partido_id` válido
-    - El partido debe tener puntos registrados para el mercado
+    - El partido debe estar finalizado y tener datos válidos del mercado
+    - NBA incluye OT; Euroliga usa 40 minutos; fútbol usa 90 minutos/mitades
 
     ## Proceso:
     1. Busca apuestas PENDIENTE con partido_id
@@ -1180,7 +1180,7 @@ class RespuestaEstadisticas(BaseModel):
 async def resolver_apuestas_pendientes(
     mercado: Optional[str] = Query(
         None,
-        pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$",
+        pattern="^[A-Z][A-Z0-9_]{0,63}$",
         description="Filtrar por mercado específico",
     ),
     limite: int = Query(1000, ge=1, le=5000, description="Máximo de apuestas a procesar"),
@@ -1188,26 +1188,23 @@ async def resolver_apuestas_pendientes(
 ) -> RespuestaResolucion:
     """Resuelve apuestas pendientes automáticamente."""
     try:
-        resumen = resolver_apuestas(
-            mercado=mercado,
-            limite=limite,
-            solo_hasta_fecha=hasta,
-        )
+        from motor.resolucion_bitacora import resolver_bitacora
+        resumen = resolver_bitacora(mercado=mercado, limite=limite, hasta=hasta)
 
         logger.info(
             "Resolución completada: %d resueltas, %d pendientes, %d errores",
-            resumen.resueltas,
-            resumen.pendientes,
-            resumen.errores,
+            resumen["resueltas"],
+            resumen["pendientes"],
+            resumen["errores"],
         )
 
-        return RespuestaResolucion(exito=True, resumen=resumen.to_dict())
+        return RespuestaResolucion(exito=True, resumen=resumen)
 
     except Exception as e:
         logger.exception("Error resolviendo apuestas")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error resolviendo apuestas: {str(e)}",
+            detail="No se pudieron completar las apuestas pendientes",
         )
 
 

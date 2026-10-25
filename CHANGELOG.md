@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Cierre de apuestas finalizadas — 2026-10-24
+
+Bitácora añade **Completar finalizadas** para apuestas simples NBA/Euroliga/fútbol.
+Cierre idempotente por dominio, sin reabrir completadas ni usar NULL como cero;
+Euroliga sin OT y fútbol en regulación/mitades. Cuota legacy inválida permite
+outcome verificable, pero importe NULL/N/D. Sin descarga implícita ni cron.
+Reparación puntual autorizada con respaldo/rollback/postflight; sin modelos nuevos.
+[Contrato, diagnóstico y validación](docs/reactivacion_single_user/CIERRE_BITACORA_FINALIZADAS_2026-10-24.md).
+
+
 ## Paridad completa de análisis Euroliga y fútbol — 2026-10-23
 
 Ganador (1X2 en fútbol), periodos propios, impacto/ajustes trazados, valor por cuotas,

@@ -97,7 +97,7 @@ export interface RegistroBitacoraUnificada {
   tipo_apuesta: TipoApuesta;
   resultado: ResultadoApuesta | ResultadoCombinada;
   stake: number;
-  ganancia: number;
+  ganancia: number | null;
   cuota?: number | null;
   cuota_total?: number | null;
   n_selecciones?: number | null;

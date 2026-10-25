@@ -15,6 +15,22 @@ import {
   RespuestaPartidosGuardados,
 } from '../tipos';
 
+export interface ResumenResolucionBitacora {
+  resueltas: number;
+  pendientes: number;
+  errores: number;
+  importes_no_disponibles: number;
+  motivos_pendientes: Record<string, number>;
+}
+
+export async function resolverPendientesBitacora(): Promise<ResumenResolucionBitacora> {
+  const respuesta = await clienteAPI.post<{ exito: boolean; resumen: ResumenResolucionBitacora }>('/api/bitacora/resolver');
+  if (!respuesta.data.exito || !respuesta.data.resumen) {
+    throw new Error('No se pudieron completar las apuestas pendientes');
+  }
+  return respuesta.data.resumen;
+}
+
 export async function crearApuesta(payload: PeticionCrearApuesta): Promise<RespuestaApuesta> {
   const respuesta = await clienteAPI.post<RespuestaApuesta>('/api/bitacora', payload);
   if (!respuesta.data.exito) {

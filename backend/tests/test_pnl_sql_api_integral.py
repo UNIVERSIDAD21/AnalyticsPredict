@@ -26,7 +26,7 @@ def datos_pnl(monkeypatch):
         c.execute(sql.SQL('CREATE SCHEMA {}').format(sql.Identifier(schema)))
         c.execute(sql.SQL('SET LOCAL search_path TO {}').format(sql.Identifier(schema)))
         c.execute('''
-            CREATE TABLE partidos_baloncesto(id uuid, valido boolean,
+            CREATE TABLE partidos_baloncesto(id uuid, valido boolean, competicion_id uuid,
               local_total int,visitante_total int,local_q1 int,visitante_q1 int,
               local_q2 int,visitante_q2 int,local_q3 int,visitante_q3 int,local_q4 int,visitante_q4 int);
             CREATE TABLE apuestas(id uuid, mercado text,resultado text,stake numeric,cuota numeric,
@@ -181,6 +181,12 @@ def test_bitacora_futbol_recupera_identidad_por_id_sin_reescribir_historial(dato
         assert sin_vinculo['equipo_local'] is None and sin_vinculo['equipo_visitante'] is None
     with datos_pnl.connection() as c:
         assert c.execute('SELECT to_jsonb(a) FROM apuestas_futbol a ORDER BY id').fetchall() == antes
+        c.execute("UPDATE apuestas_futbol SET resultado='GANADA',ganancia=NULL WHERE partido_id=%s", [partido])
+    with TestClient(app, raise_server_exceptions=False) as client:
+        r = client.get('/api/bitacora/unificada', params={'version':'v2','deporte':'futbol','busqueda':'Visitante canónico'})
+        assert r.status_code == 200, r.text
+        assert r.json()['data']['registros'][0]['resultado'] == 'GANADA'
+        assert r.json()['data']['registros'][0]['ganancia'] is None
 
 
 def test_listado_futbol_resumen_filtrado_independiente_de_pagina(datos_pnl):

@@ -8,7 +8,7 @@ import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organism
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
 import { useBitacora } from '../../hooks';
-import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada, actualizarResultadoCombinada, archivarPartidoGuardado, listarPartidosGuardados } from '../../servicios';
+import { actualizarResultadoApuesta, eliminarApuesta, eliminarCombinada, actualizarResultadoCombinada, archivarPartidoGuardado, listarPartidosGuardados, resolverPendientesBitacora } from '../../servicios';
 import { RegistroBitacoraUnificada, ResultadoApuesta } from '../../tipos';
 import type { PartidoGuardadoFutbol } from '../../tipos';
 
@@ -32,6 +32,8 @@ export function PaginaBitacora() {
   const [apuestaSeleccionada, setApuestaSeleccionada] = useState<RegistroBitacoraUnificada | null>(null);
   const [mostrandoResultado, setMostrandoResultado] = useState(false);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
+  const [resolviendo, setResolviendo] = useState(false);
+  const [mensajeResolucion, setMensajeResolucion] = useState<string | null>(null);
   const [apuestaAEliminar, setApuestaAEliminar] = useState<RegistroBitacoraUnificada | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const [partidosGuardados, setPartidosGuardados] = useState<PartidoGuardadoFutbol[]>([]);
@@ -132,6 +134,31 @@ export function PaginaBitacora() {
     setMostrandoResultado(true);
   };
 
+  const completarPendientes = async () => {
+    setResolviendo(true);
+    setMensajeResolucion(null);
+    try {
+      const r = await resolverPendientesBitacora();
+      const motivos: Record<string, string> = {
+        sin_partido: 'sin partido vinculado', partido_no_valido: 'partido no válido',
+        partido_no_finalizado: 'partido aún no finalizado en los datos',
+        partido_futuro: 'partido futuro', fecha_no_disponible: 'fecha no disponible',
+        sin_datos_mercado: 'resultado o estadística del mercado incompletos',
+        competicion_inconsistente: 'competición del registro no coincide',
+        competicion_no_soportada: 'competición no compatible',
+        contrato_apuesta_invalido: 'selección o línea inválida',
+        linea_asiatica_no_soportada: 'línea asiática que requiere revisión',
+      };
+      const detalle = Object.entries(r.motivos_pendientes).map(([motivo, n]) => `${n} ${motivos[motivo] || motivo}`).join('; ');
+      setMensajeResolucion(`${r.resueltas} apuestas completadas con los resultados guardados. ${r.pendientes} pendientes${detalle ? `: ${detalle}` : ''}. ${r.errores} errores.${r.importes_no_disponibles ? ` ${r.importes_no_disponibles} completadas con importe N/D por cuota o stake ausentes/inválidos.` : ''}`);
+      await recargar();
+    } catch (errorResolucion) {
+      setMensajeError(errorResolucion instanceof Error ? errorResolucion.message : 'No se pudieron completar las apuestas');
+    } finally {
+      setResolviendo(false);
+    }
+  };
+
   const manejarEliminar = (apuesta: RegistroBitacoraUnificada) => {
     setApuestaAEliminar(apuesta);
   };
@@ -209,10 +236,16 @@ export function PaginaBitacora() {
 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-2xl font-futurista text-texto-principal">Bitácora</h2>
-          <Boton variante="secundario" onClick={recargar}>
-            Refrescar
-          </Boton>
+          <div className="flex gap-2 flex-wrap">
+            <Boton variante="secundario" disabled={resolviendo} onClick={() => void completarPendientes()}>
+              {resolviendo ? 'Completando…' : 'Completar finalizadas'}
+            </Boton>
+            <Boton variante="secundario" onClick={recargar}>Refrescar</Boton>
+          </div>
         </div>
+
+        <p className="text-xs text-texto-secundario">“Completar finalizadas” verifica apuestas simples NBA, Euroliga y fútbol con los datos guardados. No descarga marcadores; un resultado ausente sigue pendiente.</p>
+        {mensajeResolucion && <p role="status" className="text-sm text-neon-cyan">{mensajeResolucion}</p>}
 
         {mensajeError && (
           <MensajeError
