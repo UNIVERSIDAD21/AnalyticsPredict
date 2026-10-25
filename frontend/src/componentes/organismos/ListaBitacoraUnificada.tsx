@@ -278,7 +278,7 @@ export function ListaBitacoraUnificada({
                       <span className={`text-[10px] uppercase tracking-wider ${apuesta.deporte === 'futbol' ? 'text-neon-verde' : 'text-neon-cyan'}`}>
                         {apuesta.deporte === 'futbol'
                           ? 'FUT'
-                          : /euro/i.test(apuesta.competicion_nombre ?? '') ? 'EURO' : 'NBA'}
+                          : /wnba/i.test(apuesta.competicion_nombre ?? '') ? 'WNBA' : /euro/i.test(apuesta.competicion_nombre ?? '') ? 'EURO' : 'NBA'}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 pr-1">

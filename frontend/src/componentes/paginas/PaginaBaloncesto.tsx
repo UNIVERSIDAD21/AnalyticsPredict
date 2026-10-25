@@ -5,6 +5,7 @@ import { Encabezado } from '../organismos/Encabezado';
 import { leerLigaBaloncesto } from '../../utilidades/ligasBaloncesto';
 
 const ModuloNBA = lazy(async () => ({ default: (await import('./PaginaPrincipal')).PaginaPrincipal }));
+const ModuloWNBA = lazy(async () => ({ default: (await import('./PaginaWnba')).ModuloWnba }));
 const ModuloEuroliga = lazy(async () => ({ default: (await import('./PaginaEuroliga')).ModuloEuroliga }));
 
 export function PaginaBaloncesto() {
@@ -31,16 +32,17 @@ export function PaginaBaloncesto() {
           <select className="input-base mt-2 w-full" value={liga} onChange={e => cambiarLiga(e.target.value)}>
             <option value="nba">NBA</option>
             <option value="euroliga">Euroliga</option>
+            <option value="wnba">WNBA</option>
           </select>
         </label>
       </section>
-      <Suspense fallback={<p role="status">Cargando {liga === 'nba' ? 'NBA' : 'Euroliga'}…</p>}>
-        {liga === 'nba' ? <ModuloNBA key="nba" /> : <ModuloEuroliga key="euroliga" />}
+      <Suspense fallback={<p role="status">Cargando {liga === 'nba' ? 'NBA' : liga === 'wnba' ? 'WNBA' : 'Euroliga'}…</p>}>
+        {liga === 'nba' ? <ModuloNBA key="nba" /> : liga === 'wnba' ? <ModuloWNBA key="wnba" /> : <ModuloEuroliga key="euroliga" />}
       </Suspense>
     </main>
     <footer className="border-t border-neon-cyan/10 bg-futurista-negro/80">
       <div className="contenedor py-4 flex flex-wrap justify-between gap-2 text-xs text-texto-terciario">
-        <p>AnalyticsPredict · Baloncesto · {liga === 'nba' ? 'NBA' : 'Euroliga'}</p>
+        <p>AnalyticsPredict · Baloncesto · {liga === 'nba' ? 'NBA' : liga === 'wnba' ? 'WNBA' : 'Euroliga'}</p>
         <p>Análisis exploratorio; eficacia no certificada.</p>
       </div>
     </footer>

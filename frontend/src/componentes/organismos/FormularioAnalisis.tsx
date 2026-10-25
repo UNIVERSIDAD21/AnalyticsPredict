@@ -34,6 +34,7 @@ import {
 import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from '../../servicios';
 import { esCuotaValida } from '../../utilidades/validadores';
 import type { PeticionEuro } from '../../servicios/euroliga';
+import type { FormularioWnba } from '../../servicios/wnba';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -71,6 +72,7 @@ interface PropsBaseFormularioAnalisis {
 
 type PropsFormularioAnalisis = PropsBaseFormularioAnalisis & (
   | { deporte: 'EUROLIGA'; onAnalizar: (peticion: PeticionEuro, ladoSeleccionado?: LadoApuesta) => void }
+  | { deporte: 'WNBA'; onAnalizar: (peticion: FormularioWnba, ladoSeleccionado?: LadoApuesta) => void }
   | { deporte?: 'NBA' | 'FUTBOL'; onAnalizar: (peticion: PeticionAnalisisNBA, ladoSeleccionado?: LadoApuesta) => void }
 );
 
@@ -218,10 +220,10 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         setErrores(['Selecciona un cuarto posterior al corte observado o el total de regulación.']); return;
       }
 
-      if (props.deporte === 'EUROLIGA') {
+      if (props.deporte === 'EUROLIGA' || props.deporte === 'WNBA') {
         const erroresEuro: string[] = [];
         const scores = parciales.slice(0, cuartos).map(q => q.map(Number) as [number, number]);
-        if (!equipoLocalSeleccionado || !equipoVisitanteSeleccionado) erroresEuro.push('Selecciona los dos equipos Euroliga.');
+        if (!equipoLocalSeleccionado || !equipoVisitanteSeleccionado) erroresEuro.push(`Selecciona los dos equipos ${props.deporte === 'WNBA' ? 'WNBA' : 'Euroliga'}.`);
         if (equipoLocalSeleccionado?.id === equipoVisitanteSeleccionado?.id) erroresEuro.push('Los equipos deben ser distintos.');
         if (equipoLocalSeleccionado?.elegible === false || equipoVisitanteSeleccionado?.elegible === false) erroresEuro.push('Equipo sin muestra suficiente para el predictor.');
         if (!formulario.mercado) erroresEuro.push('Selecciona el mercado.');
@@ -233,6 +235,13 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
           if (valor.trim() && (!Number.isFinite(Number(valor)) || Number(valor) <= 1 || Number(valor) > 1000)) erroresEuro.push(`Cuota ${nombre} inválida (mayor a 1 y hasta 1000).`);
         }
         if (erroresEuro.length) { setErrores(erroresEuro); return; }
+        if (props.deporte === 'WNBA') {
+          props.onAnalizar({ equipo_local_id: equipoLocalSeleccionado!.id, equipo_visitante_id: equipoVisitanteSeleccionado!.id,
+            mercado: formulario.mercado as Mercado, linea, partido_id: partidoSeleccionado?.id,
+            cuota_over: formulario.cuotaOver.trim() ? Number(formulario.cuotaOver) : undefined,
+            cuota_under: formulario.cuotaUnder.trim() ? Number(formulario.cuotaUnder) : undefined }, formulario.ladoApuesta);
+          return;
+        }
         props.onAnalizar({ equipo_local: equipoLocalSeleccionado!.nombre, equipo_visitante: equipoVisitanteSeleccionado!.nombre,
           mercado: formulario.mercado as PeticionEuro['mercado'], linea, lado: formulario.ladoApuesta,
           cuota_over: formulario.cuotaOver.trim() ? Number(formulario.cuotaOver) : undefined, cuota_under: formulario.cuotaUnder.trim() ? Number(formulario.cuotaUnder) : undefined, partido_id: partidoSeleccionado?.id, parciales: scores }, formulario.ladoApuesta);
@@ -429,7 +438,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
             partidosDisponibles={partidosDisponibles}
-            modoRegistro={esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
+            modoRegistro={deporte === 'WNBA' ? 'wnba' : esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
             onActualizar={onActualizarPartidos}
           />
 
@@ -467,7 +476,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             }
           />
 
-          {!esEuroliga && <PanelEstadisticasEquipo
+          {!esEuroliga && deporte !== 'WNBA' && <PanelEstadisticasEquipo
             equipoLocal={buscarEstadisticas(formulario.equipoLocal)}
             equipoVisitante={buscarEstadisticas(formulario.equipoVisitante)}
             cargando={cargando}
@@ -492,11 +501,11 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
             unidadLabel={unidadLineaLabel ?? 'puntos'}
-            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga ? 'regulación de 40 minutos (sin OT)' : 'juego completo') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
+            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga || deporte === 'WNBA' ? 'regulación de 40 minutos (sin OT)' : 'juego completo') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
             placeholderLinea={esEuroliga ? (esJuegoCompleto ? 'Ej: 170.5' : 'Ej: 42.5') : undefined}
           />
 
-          {deporte !== 'FUTBOL' && <div className="space-y-3">
+          {(deporte === 'NBA' || esEuroliga) && <div className="space-y-3">
             <label className="block etiqueta">Modo de análisis
               <select className="input-base w-full mt-2" value={cuartos} disabled={cargando} onChange={e => { setCuartos(Number(e.target.value)); onCambiarParametros?.(); setErrores([]); }}>
                 <option value={0}>Prepartido</option>
@@ -601,7 +610,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             <p className={`text-sm font-semibold ${formulario.ladoApuesta === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'
               }`}>
               {formulario.ladoApuesta === 'OVER' ? 'Más de' : 'Menos de'} {formulario.linea} {unidadLineaLabel ?? 'puntos'}
-              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? (esEuroliga ? 'Regulación (sin OT)' : 'Juego completo') : deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'Primer tiempo' : 'Segundo tiempo') : `Cuarto ${formulario.mercado}`}`}
+              {formulario.mercado && ` en ${formulario.mercado === 'COMPLETO' ? (esEuroliga || deporte === 'WNBA' ? 'Regulación (sin OT)' : 'Juego completo') : deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'Primer tiempo' : 'Segundo tiempo') : `Cuarto ${formulario.mercado}`}`}
             </p>
           </div>
         )}

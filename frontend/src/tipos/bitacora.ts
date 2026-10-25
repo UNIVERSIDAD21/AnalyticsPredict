@@ -54,7 +54,7 @@ export interface RespuestaResumenApuestas {
 
 export interface PeticionCrearApuesta {
   partido_id?: string | null;
-  competicion_codigo?: 'nba' | 'euroleague';
+  competicion_codigo?: 'nba' | 'euroleague' | 'wnba';
   equipo_local: string;
   equipo_visitante: string;
   fecha_partido?: string | null;

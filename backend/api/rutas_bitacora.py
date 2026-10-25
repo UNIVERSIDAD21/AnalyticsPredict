@@ -304,6 +304,12 @@ async def guardar_apuesta(
     peticion: PeticionCrearApuesta,
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
+    if peticion.competicion_codigo == "wnba":
+        from servicios.predictor_wnba import validar_guardado
+        try:
+            validar_guardado(peticion)
+        except (ValueError, TypeError, KeyError) as exc:
+            raise HTTPException(422, str(exc)) from exc
     datos_apuesta = _construir_payload_apuesta(peticion)
 
     with obtener_pool().connection() as conexion:
@@ -354,7 +360,7 @@ async def guardar_apuesta(
                     fecha_fixture = fecha_fixture.date()
                 elif not isinstance(fecha_fixture, date):
                     fecha_fixture = date.fromisoformat(str(fecha_fixture)[:10])
-                if peticion.competicion_codigo == "euroleague" and (
+                if peticion.competicion_codigo in {"euroleague", "wnba"} and (
                     _normalizar_nombre_equipo(partido["equipo_local"])
                     != _normalizar_nombre_equipo(peticion.equipo_local)
                     or _normalizar_nombre_equipo(partido["equipo_visitante"])

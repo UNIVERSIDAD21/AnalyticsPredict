@@ -1,8 +1,9 @@
 /** La liga vive en la URL; recargar o compartir conserva el predictor elegido. */
-export type LigaBaloncesto = 'nba' | 'euroliga';
+export type LigaBaloncesto = 'nba' | 'euroliga' | 'wnba';
 
 export function leerLigaBaloncesto(search: string): LigaBaloncesto {
-  return new URLSearchParams(search).get('liga') === 'euroliga' ? 'euroliga' : 'nba';
+  const liga = new URLSearchParams(search).get('liga');
+  return liga === 'euroliga' || liga === 'wnba' ? liga : 'nba';
 }
 
 export function rutaBaloncesto(liga: LigaBaloncesto = 'nba'): string {

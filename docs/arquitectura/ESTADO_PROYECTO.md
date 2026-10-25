@@ -4,19 +4,31 @@
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
 
+## WNBA integrada y usable — 2026-10-25
+
+Baloncesto permite `?liga=wnba`, equipos y temporadas anuales efectivas, corte
+conservador y predictor Ridge **WNBA propio**, Q1–Q4/total40min sin OT ni live.
+1.997 REG/POST elegibles (1.840 REG), 15 equipos de liga, snapshot2019–2026.
+Publicación `wnba-v1-912782c821ae18d8895a723a`. Candidato temporal450/616 EVAL,166 abstenciones;
+MAEtotal15,2951 vs15,3209 referencia: sin superioridad general ni calibración
+acreditada. Refit/alcances personalizados no heredan métricas de ese candidato.
+Journal y versiones aislados; manual/histórico/prueba no son apuestas oficiales.
+Sin nuevas migraciones/DML, entrenamiento o cambios de modelos ajenos.
+[Uso, contrato, evaluación y actualización](../reactivacion_single_user/PREDICTOR_WNBA_2026-10-25.md).
+
 ## Ingesta WNBA desde lote local — 2026-10-25
 
 [Contrato y operación](../reactivacion_single_user/INGESTA_WNBA_2026-10-25.md):
 identidades y temporadas anuales WNBA, finales canónicos y fuente completa con
 no-finales NULL/evidencias/estadísticas/OT; cuarentena aparte. Backup, rollback,
-huellas ajenas e idempotencia. Sin nueva extracción ni modelos ni serving WNBA.
+huellas ajenas e idempotencia. Ese bloque no incluía extracción ni serving; la integración posterior se documenta arriba.
 
 ## Scraper WNBA — 2026-10-24
 
 Extractor independiente implementado y validado con pruebas sintéticas y piloto
 ESPN acotado de cinco finales. Exporta archivos y evidencia externa con cuarentena,
-hashes/reanudación; no conecta BD ni modelos. WNBA no está habilitada en el producto
-y su cobertura histórica no está certificada. [Contrato y límites](../reactivacion_single_user/SCRAPER_WNBA_2026-10-24.md).
+hashes/reanudación; no conecta BD ni modelos. Al cierre de ese bloque WNBA aún no estaba habilitada;
+su cobertura histórica sigue sin certificación independiente. [Contrato y límites](../reactivacion_single_user/SCRAPER_WNBA_2026-10-24.md).
 
 ## Cierre de apuestas finalizadas — 2026-10-24
 

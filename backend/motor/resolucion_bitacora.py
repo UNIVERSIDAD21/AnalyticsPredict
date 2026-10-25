@@ -87,7 +87,7 @@ def valor_baloncesto(mercado: str, partido: dict, liga: str) -> int | None:
     if mercado in {'Q1', 'Q2', 'Q3', 'Q4'}:
         return sum(vs[int(mercado[1]) - 1] for vs in cuartos.values())
     if mercado == 'COMPLETO':
-        return sum(sum(vs) for vs in cuartos.values()) if liga == 'euroleague' else sum(totales.values())
+        return sum(sum(vs) for vs in cuartos.values()) if liga in {'euroleague', 'wnba'} else sum(totales.values())
     return None
 
 
@@ -109,7 +109,7 @@ def calcular_cierre(apuesta: dict, partido: dict | None, liga: str, *, hoy: date
         if partido.get('estado') != 'FINALIZADO':
             return None, 'partido_no_finalizado'
         valor = valor_futbol(apuesta['mercado'], partido)
-    elif liga in {'nba', 'euroleague'}:
+    elif liga in {'nba', 'euroleague', 'wnba'}:
         if apuesta.get('competicion_id') and str(apuesta['competicion_id']) != str(partido.get('competicion_id')):
             return None, 'competicion_inconsistente'
         valor = valor_baloncesto(apuesta['mercado'], partido, liga)

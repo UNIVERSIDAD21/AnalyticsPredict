@@ -214,7 +214,7 @@ class PeticionCrearApuesta(BaseModel):
     """Solicitud para guardar una apuesta en la bitácora."""
 
     partido_id: Optional[str] = Field(None, description="ID opcional del partido")
-    competicion_codigo: Literal["nba", "euroleague"] = Field(
+    competicion_codigo: Literal["nba", "euroleague", "wnba"] = Field(
         "nba", description="Competición de baloncesto a la que pertenece la apuesta"
     )
     equipo_local: str = Field(..., min_length=1, description="Nombre del equipo local")

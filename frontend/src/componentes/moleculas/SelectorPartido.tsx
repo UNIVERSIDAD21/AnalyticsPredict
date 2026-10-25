@@ -44,7 +44,7 @@ interface PropsSelectorPartido {
   diasAdelante?: number;
   /** Partidos inyectados por módulo (si llega, no consulta servicio) */
   partidosDisponibles?: PartidoResumen[];
-  modoRegistro?: 'nba' | 'euroliga' | 'nba_cierre';
+  modoRegistro?: 'nba' | 'euroliga' | 'wnba' | 'nba_cierre';
   onActualizar?: () => void;
 }
 
@@ -61,7 +61,11 @@ export function SelectorPartido({
   modoRegistro = 'nba',
   onActualizar,
 }: PropsSelectorPartido) {
-  const esEuroliga = modoRegistro === 'euroliga';
+  const esEuroliga = modoRegistro === 'euroliga' || modoRegistro === 'wnba';
+  const nombreLiga = modoRegistro === 'wnba' ? 'WNBA' : 'Euroliga';
+  const fechaVisible = (fecha: string) => modoRegistro === 'wnba'
+    ? new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(fecha)) + ' COT'
+    : formatearFechaPartido(fecha);
   const esCorteNBA = modoRegistro === 'nba_cierre';
   const [partidos, setPartidos] = useState<PartidoResumen[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -129,7 +133,9 @@ export function SelectorPartido({
   }, [cargarPartidos]);
 
   const partidosAgrupados = useMemo(() => {
-    const hoy = new Date();
+    const hoy = modoRegistro === 'wnba'
+      ? new Date(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date()) + 'T00:00:00')
+      : new Date();
     hoy.setHours(0, 0, 0, 0);
     const manana = new Date(hoy);
     manana.setDate(manana.getDate() + 1);
@@ -141,7 +147,10 @@ export function SelectorPartido({
     };
 
     for (const partido of partidos) {
-      const fecha = new Date(`${partido.fecha_partido}T00:00:00`);
+      const dia = modoRegistro === 'wnba'
+        ? new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date(partido.fecha_partido))
+        : partido.fecha_partido;
+      const fecha = new Date(`${dia}T00:00:00`);
       fecha.setHours(0, 0, 0, 0);
 
       const liga = partido.temporada_nombre || 'Liga sin nombre';
@@ -154,7 +163,7 @@ export function SelectorPartido({
     }
 
     return porBloque;
-  }, [partidos]);
+  }, [partidos, modoRegistro]);
 
   const handleSeleccionar = (partido: PartidoResumen) => {
     onSeleccionar(partido);
@@ -188,7 +197,7 @@ export function SelectorPartido({
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50">
                 <div className="bg-futurista-medio border border-neon-cyan/30 rounded-lg px-3 py-2 shadow-lg min-w-[200px]">
                   <p className="text-xs text-texto-principal whitespace-nowrap">
-                    {esEuroliga ? 'Selecciona el partido para conservar su identidad en el historial Euroliga' : esCorteNBA ? 'Vincula el corte al partido; no acredita calibración ni aprendizaje automático.' : 'Selecciona un partido real para que el sistema aprenda de tus análisis'}
+                    {esEuroliga ? `Selecciona el partido para conservar su identidad en el historial ${nombreLiga}` : esCorteNBA ? 'Vincula el corte al partido; no acredita calibración ni aprendizaje automático.' : 'Selecciona un partido real para que el sistema aprenda de tus análisis'}
                   </p>
                 </div>
                 <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neon-cyan/30" />
@@ -209,8 +218,8 @@ export function SelectorPartido({
 
       {/* Panel informativo colapsable (Nivel 2) */}
       {mostrarInfo && esEuroliga && <div className="p-4 rounded-lg bg-futurista-oscuro/80 border border-neon-cyan/20 text-xs text-texto-secundario space-y-2">
-        <p>Seleccionar un partido conserva sus equipos, localía y fecha. Cada ejecución se guarda en el historial Euroliga, también en modo de solo cálculo.</p>
-        <p>Consultar o analizar no entrena el modelo ni acredita calibración. No existe comparación automática con resultados.</p>
+        <p>Seleccionar un partido conserva sus equipos, localía y fecha. Cada ejecución se guarda en el historial {nombreLiga}, también en modo de solo cálculo.</p>
+        <p>{modoRegistro === 'wnba' ? 'Cada análisis ajusta exclusivamente su alcance WNBA con el pasado seleccionado, sin cambiar la publicación ni otras ligas.' : 'Consultar o analizar no entrena el modelo.'} No acredita calibración ni existe comparación automática con resultados.</p>
       </div>}
       {mostrarInfo && esCorteNBA && <div className="p-4 rounded-lg bg-futurista-oscuro/80 border border-neon-cyan/20 text-xs text-texto-secundario">El modo NBA al cierre es solo consulta: no registra apuestas ni predicciones prepartido. Seleccionar partido vincula sus equipos y fecha; no activa aprendizaje ni calibración.</div>}
       {mostrarInfo && !esEuroliga && !esCorteNBA && (
@@ -280,7 +289,7 @@ export function SelectorPartido({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-neon-verde">
-                    {esEuroliga ? 'Partido Euroliga' : esCorteNBA ? 'Corte NBA' : 'Registrable'}
+                    {esEuroliga ? `Partido ${nombreLiga}` : esCorteNBA ? 'Corte NBA' : 'Registrable'}
                   </span>
                 </div>
                 <p className="text-sm font-semibold text-texto-principal">
@@ -288,11 +297,11 @@ export function SelectorPartido({
                   {partidoSeleccionado.equipo_visitante_nombre}
                 </p>
                 <p className="text-xs text-texto-secundario">
-                  {formatearFechaPartido(partidoSeleccionado.fecha_partido)} -{' '}
+                  {fechaVisible(partidoSeleccionado.fecha_partido)} -{' '}
                   {partidoSeleccionado.temporada_nombre}
                 </p>
                 <p className="text-xs text-neon-verde/80 mt-1">
-                  {esEuroliga ? 'Identidad del partido vinculada al historial Euroliga' : esCorteNBA ? 'Equipos y fecha vinculados; sin registro de apuestas ni predicción prepartido.' : 'Se guardará y comparará con resultado real'}
+                  {esEuroliga ? `Identidad del partido vinculada al historial ${nombreLiga}` : esCorteNBA ? 'Equipos y fecha vinculados; sin registro de apuestas ni predicción prepartido.' : 'Se guardará y comparará con resultado real'}
                 </p>
               </div>
             </div>
@@ -366,7 +375,7 @@ export function SelectorPartido({
                               {partido.equipo_local_nombre} vs {partido.equipo_visitante_nombre}
                             </p>
                             <p className="text-xs text-texto-terciario">
-                              {formatearFechaPartido(partido.fecha_partido)}
+                              {fechaVisible(partido.fecha_partido)}
                             </p>
                           </button>
                         ))}
@@ -391,7 +400,7 @@ export function SelectorPartido({
                   </span>
                 </div>
                 <p className="text-xs text-neon-amarillo/80">
-                  {esEuroliga ? 'Sin partido, se conserva como cálculo teórico en el historial Euroliga.' : 'Sin partido, el análisis es teórico y no se registra.'}
+                  {esEuroliga ? `Sin partido, se conserva como cálculo teórico en el historial ${nombreLiga}.` : 'Sin partido, el análisis es teórico y no se registra.'}
                 </p>
                 {!mostrarInfo && (
                   <button

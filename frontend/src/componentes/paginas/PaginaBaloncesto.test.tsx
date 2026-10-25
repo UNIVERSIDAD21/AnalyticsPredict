@@ -9,6 +9,7 @@ import { ProveedorDeporte } from '../../contextos/DeporteContext';
 // por separado: aquí interesa que nunca compartan selección/salida al cambiar liga.
 vi.mock('./PaginaPrincipal', () => ({ PaginaPrincipal: () => <div>Motor NBA<input aria-label="Selección NBA" /></div> }));
 vi.mock('./PaginaEuroliga', () => ({ ModuloEuroliga: () => <div>Motor Euroliga<input aria-label="Selección Euroliga" /></div> }));
+vi.mock('./PaginaWnba', () => ({ ModuloWnba: () => <div>Motor WNBA<input aria-label="Selección WNBA" /></div> }));
 afterEach(cleanup);
 
 function Ubicacion() {
@@ -21,6 +22,17 @@ function preparar(ruta: string) {
 }
 
 describe('una sola sección Baloncesto', () => {
+  it('WNBA conserva URL y se desmonta al cambiar de liga sin arrastrar selección', async () => {
+    preparar('/baloncesto?liga=wnba');
+    const liga=await screen.findByRole('combobox',{name:'Liga'});
+    expect(liga).toHaveValue('wnba');await screen.findByText('Motor WNBA');
+    fireEvent.change(screen.getByLabelText('Selección WNBA'),{target:{value:'Liberty'}});
+    fireEvent.change(liga,{target:{value:'nba'}});await screen.findByText('Motor NBA');
+    expect(screen.queryByText('Motor WNBA')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Atrás navegador'}));await screen.findByText('Motor WNBA');
+    expect(screen.getByLabelText('Selección WNBA')).toHaveValue('');
+    expect(screen.getByTestId('ruta')).toHaveTextContent('liga=wnba');
+  });
   it('cambia de motor en la misma pantalla y limpia las selecciones de la otra liga', async () => {
     preparar('/baloncesto?liga=nba');
     const liga = await screen.findByRole('combobox', { name: 'Liga' });

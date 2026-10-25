@@ -2,13 +2,25 @@
 
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
 
+## WNBA integrada y usable — 2026-10-25
+
+Baloncesto permite `?liga=wnba`, equipos y temporadas anuales efectivas, corte
+conservador y predictor Ridge **WNBA propio**, Q1–Q4/total40min sin OT ni live.
+1.997 REG/POST elegibles (1.840 REG), 15 equipos de liga, snapshot2019–2026.
+Publicación `wnba-v1-912782c821ae18d8895a723a`. Candidato temporal450/616 EVAL,166 abstenciones;
+MAEtotal15,2951 vs15,3209 referencia: sin superioridad general ni calibración
+acreditada. Refit/alcances personalizados no heredan métricas de ese candidato.
+Journal y versiones aislados; manual/histórico/prueba no son apuestas oficiales.
+Sin nuevas migraciones/DML, entrenamiento o cambios de modelos ajenos.
+[Uso, contrato, evaluación y actualización](reactivacion_single_user/PREDICTOR_WNBA_2026-10-25.md).
+
 ## Ingesta local WNBA — 2026-10-25
 
 Importador de archivos suministrados por el propietario, sin nuevas consultas ESPN.
 Identidades WNBA propias, temporadas anuales, finales en resultados compartidos y
 no finalizados persistidos en tabla fuente con NULL y sin resultado ficticio.
 Conserva estadísticas/OT detallado/evidencias y cuarentena separada; exige respaldo,
-ensayo revertido, hashes y postflight. Sin modelos ni interfaz de análisis WNBA.
+ensayo revertido, hashes y postflight. Ese bloque no incluía modelos/interfaz; la integración posterior se documenta arriba.
 [Contrato y operación](reactivacion_single_user/INGESTA_WNBA_2026-10-25.md).
 
 ## Scraper WNBA independiente — 2026-10-24

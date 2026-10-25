@@ -42,6 +42,7 @@ jobs:
           tests/test_actualizar_partidos_nba.py
           tests/scrapers/test_wnba.py
           tests/test_ingesta_wnba.py
+          tests/test_predictor_wnba.py
           tests/test_auditar_fuente_espn_soccer.py
           tests/test_capturas_espn_soccer.py -m "not integracion"
           tests/motor_futbol/test_forma_temporal.py
