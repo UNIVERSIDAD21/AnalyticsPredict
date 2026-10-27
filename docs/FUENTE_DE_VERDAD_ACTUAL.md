@@ -6,7 +6,8 @@ Corregido «Network Error» cuando una consulta falla: CORS envuelve también la
 respuestas generadas por el middleware HTTP y la agenda interpreta el error
 estructurado en español. La falta de conexión devuelve HTTP 503, sin mensajes
 del driver ni secretos; no se presenta como cero partidos. Reintento explícito
-y sin respuestas falsas ni caché del fallo.
+y sin respuestas falsas ni caché del fallo. Validación local: 49 comprobaciones
+backend (35 focalizadas + 14 de lecturas HTTP), 136 frontend, lint y compilación.
 
 Incidencia externa observada: Neon rechaza conexiones por cuota excedida.
 **Los datos no vuelven a estar disponibles hasta restablecer el servicio del

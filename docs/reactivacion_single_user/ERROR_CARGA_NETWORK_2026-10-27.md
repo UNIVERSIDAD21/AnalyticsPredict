@@ -29,7 +29,10 @@ locales anteriores quedan fuera de la publicación.
 
 Regresiones sobre el código previo reproducen el defecto: 16 casos backend y
 2 frontend fallan. Corrección: 35 pruebas backend focalizadas aprobadas (incluyen
-16 casos CORS) sin conexiones reales ni entrenamiento. UI y API locales
+16 casos CORS), más 14 de contexto y contratos de lecturas HTTP; la prueba que
+requiere PostgreSQL sintético fue excluida de esta corrida local (no se ejecuta
+contra Neon). 136 pruebas frontend/33 archivos, lint y compilación aprobados.
+Sin conexiones reales ni entrenamiento en las pruebas automatizadas. UI y API locales
 verificadas con 503 legible y cabeceras de origen; capturas auténticas externas.
 Los resultados finales frontend, compilación y CI por SHA constan en el acta
 externa; no se deducen de ejecuciones intermedias.
