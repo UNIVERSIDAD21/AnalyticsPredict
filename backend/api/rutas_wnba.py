@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from collections import Counter
 from typing import Literal, Annotated
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
@@ -177,7 +177,7 @@ def analizar(p: PeticionWNBA):
             raise ValueError("Los cortes WNBA requieren contrato v2 y no admiten cuotas prepartido")
         result = svc.analizar(
             m,
-            datos_para_analisis() if p.partido_id and p.contrato == "NBA_EQUIVALENTE_V2" else datos_bd(),
+            datos_para_analisis(p.partido_id) if p.partido_id and p.contrato == "NBA_EQUIVALENTE_V2" else datos_bd(),
             str(p.equipo_local_id),
             str(p.equipo_visitante_id),
             [str(x) for x in p.temporadas],
@@ -193,6 +193,15 @@ def analizar(p: PeticionWNBA):
             p.contrato == "NBA_EQUIVALENTE_V2",
         )
         result["lado_solicitado"] = p.lado
+        fecha_resultado = result.get('fecha_partido')
+        pasado = bool(p.partido_id and fecha_resultado and (
+            date.fromisoformat(fecha_resultado) <= datetime.now(BOGOTA).date() if len(fecha_resultado or '') == 10
+            else datetime.fromisoformat(fecha_resultado) <= datetime.now(BOGOTA)))
+        if result['modo'] == 'HISTORICO' or pasado:
+            result.update({'analisis_id': str(uuid4()), 'solo_consulta': True,
+                           'guardar_bitacora_habilitado': False,
+                           'motivo_bitacora': 'Reconstrucción histórica de solo consulta'})
+            return {'exito': True, 'resultado': result}
         return {"exito": True, "resultado": svc.registrar(result)}
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
@@ -203,17 +212,26 @@ def analizar(p: PeticionWNBA):
         ) from e
 
 
-def datos_para_analisis():
+def datos_para_analisis(partido_id=None):
     from servicios.calendario_wnba import listar
     from servicios.predictor_euroliga import conexion_lectura
     filas = datos_bd()
     with conexion_lectura() as conn:
         fixtures, _ = listar(conn)
+        if partido_id and not any(str(r['id']) == partido_id for r in fixtures):
+            from psycopg.rows import dict_row
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute('''SELECT f.*,e.nombre local,v.nombre visitante,
+                    t.nombre temporada_nombre,'wnba' competicion_codigo
+                    FROM fixtures_wnba f JOIN equipos e ON e.id=f.equipo_local_id
+                    JOIN equipos v ON v.id=f.equipo_visitante_id
+                    JOIN temporadas_baloncesto t ON t.id=f.temporada_id
+                    JOIN competiciones_baloncesto c ON c.id=f.competicion_id AND c.codigo='wnba'
+                    WHERE f.id::text=%s''', (partido_id,))
+                fixtures.extend(cur.fetchall())
     for r in fixtures:
-        if r["inicio_utc"] is None:
-            continue  # No acreditar una predicción oficial con una hora inventada.
         filas.append({**r,"fixture_id":str(r["id"]),"partido_id":str(r["resultado_id"]) if r["resultado_id"] else None,
-                      "inicio_utc":r["inicio_utc"].isoformat(),"valido":False})
+                      "inicio_utc":r["inicio_utc"].isoformat() if r["inicio_utc"] else None,"valido":False})
     return filas
 
 

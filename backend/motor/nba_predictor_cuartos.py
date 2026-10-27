@@ -522,6 +522,7 @@ def analizar_partido(
     calibrador_activo: Optional[object] = None,
     incluir_contexto: bool = True,
     h2h_limite: int = 10,
+    solo_historico: bool = False,
 ) -> ResultadoAnalisis:
     """Ejecuta el análisis completo para un partido."""
     media_equipo, desviacion_equipo, media_rival, desviacion_rival = predecir_cuartos(
@@ -581,7 +582,7 @@ def analizar_partido(
             float(np.sum(media_rival)),
             float(np.sqrt(np.sum(desviacion_rival ** 2))),
             linea=linea,
-            sigma_ganador_completo=not es_en_vivo,
+            sigma_ganador_completo=not es_en_vivo and not solo_historico,
         )
 
         if prediccion_juego_completo is not None and cuota_ganador_equipo is not None:
@@ -632,7 +633,10 @@ def analizar_partido(
     analisis_mercado = None
     if es_en_vivo:
         calibrador_activo = None
-    if calibrador_activo is None and not es_en_vivo:
+    if solo_historico:
+        calibrador_activo = None
+        incluir_contexto = False
+    if calibrador_activo is None and not es_en_vivo and not solo_historico:
         calibrador_activo = obtener_calibrador_activo(
             mercado=mercado,
             origen=origen_prediccion,
@@ -708,7 +712,7 @@ def analizar_partido(
         )
 
     candidatos: List[CandidatoApuesta] = []
-    if linea is not None and not es_en_vivo:
+    if linea is not None and not es_en_vivo and not solo_historico:
         if mercado == "COMPLETO" and prediccion_juego_completo is not None:
             media_equipo_total = float(np.sum(media_equipo))
             desviacion_equipo_total = float(np.sqrt(np.sum(desviacion_equipo ** 2)))

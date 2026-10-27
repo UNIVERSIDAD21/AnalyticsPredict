@@ -46,6 +46,7 @@ jobs:
           tests/test_wnba_ampliado.py
           tests/test_elegibilidad_futbol.py
           tests/test_analisis_historico_futbol.py
+          tests/test_agenda_baloncesto.py
           tests/test_calendario_wnba.py
           tests/test_combinadas_wnba.py
           tests/test_auditar_fuente_espn_soccer.py

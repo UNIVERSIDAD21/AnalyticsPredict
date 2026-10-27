@@ -19,14 +19,14 @@ import { extraerMensajeError } from '../../servicios/api';
 import { useToasts } from '../../contextos/Toasts';
 import type { Equipo, LadoApuesta, PartidoResumen, SeleccionCombinadaInput } from '../../tipos';
 
-export function ModuloWnba() {
+export function ModuloWnba({ partidoAgenda = null }: { partidoAgenda?: import('../../servicios/agendaBaloncesto').PartidoAgendaBaloncesto | null }) {
   const [params,setParams] = useSearchParams();
   const [datos, setDatos] = useState<Awaited<ReturnType<typeof cargarWnba>> | null>(null);
   const [resultado, setResultado] = useState<ResultadoWnba | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [tab, setTab] = useState<'analisis' | 'estadisticas'>('analisis');
-  const [fixture, setFixture] = useState<PartidoResumen | null>(null);
+  const [fixture, setFixture] = useState<PartidoResumen | null>(partidoAgenda);
   const [cuartos, setCuartos] = useState(0);
   const [lado, setLado] = useState<LadoApuesta>('OVER');
   const [guardar, setGuardar] = useState(false);
@@ -113,11 +113,12 @@ export function ModuloWnba() {
     catch(e){if(montado.current&&!c.signal.aborted)setError(extraerMensajeError(e));}
   };
   return <div aria-label="Analizador WNBA">
+    {partidoAgenda?.reconstruccion && <p role="note" className="tarjeta p-4 mb-4 text-sm text-neon-cyan">Reconstrucción histórica · datos anteriores al día del encuentro. Solo consulta; sin registrar apuestas ni predicciones.</p>}
     <CabeceraAnalizadorBaloncesto liga="WNBA" tabActivo={tab} onTab={setTab} />
     {cargandoDatos&&<div className="flex-1 flex items-center justify-center py-20"><div className="text-center"><Spinner tamano="lg" texto="Inicializando sistema..." centrado/><p className="text-texto-terciario text-sm mt-4 font-mono">Conectando con el servidor de análisis</p></div></div>}
     {!datos&&error&&<MensajeError titulo="Error de conexión" mensaje={error} onCerrar={()=>void recargar()}/>}
     {datos&&tab==='analisis'&&<PanelesAnalisisBaloncesto formulario={<FormularioAnalisis deporte="WNBA" equipos={equipos}
-      estadisticas={datos.estadisticas.equipos} partidosDisponibles={datos.proximos} partidoActual={fixture}
+      estadisticas={datos.estadisticas.equipos} partidosDisponibles={datos.proximos} partidoActual={fixture} ocultarSelectorPartido={Boolean(partidoAgenda)} consultaHistorica={Boolean(partidoAgenda?.reconstruccion)}
       onSeleccionarPartido={setFixture} onAnalizar={enviar} cargando={cargando} onCambiarParametros={invalidar}
       onCambiarModo={setCuartos} onActualizarPartidos={()=>void actualizar()}
       estadoCalendario={datos.comprobacion} valoresIniciales={valoresIniciales}/> }>
@@ -127,10 +128,10 @@ export function ModuloWnba() {
         advertencias={[...(resultado.es_prueba ? ['ANÁLISIS DE PRUEBA: no es un pronóstico oficial ni una apuesta. En los cortes de comprobación los parciales son entradas de prueba, no marcadores reales verificados.'] : []),...resultado.advertencias,`Publicación ${resultado.publicacion_version}; datos ${resultado.dataset_sha256}; ${resultado.muestras.partidos} partidos; último dato utilizado ${resultado.ultimo_dato_utilizado}.`,
           `Regulación: ${resultado.regulacion?.media_total.toFixed(2)??'N/D'} puntos. OT: ${resultado.ot?.n??'N/D'} casos del alcance. ${resultado.politica_corte}`]}
         seleccionUsuario={{lado,linea:resultado.linea}} equipoLocalId={resultado.equipo_local_id} equipoVisitanteId={resultado.equipo_visitante_id}
-        onGuardar={vista.es_en_vivo||!resultado.predicciones[resultado.mercado]?undefined:()=>setGuardar(true)} onConfigurarBankroll={()=>window.location.assign('/configuracion')}
+        onGuardar={partidoAgenda?.reconstruccion||vista.es_en_vivo||resultado.modo==='HISTORICO'||!resultado.predicciones[resultado.mercado]?undefined:()=>setGuardar(true)} onConfigurarBankroll={()=>window.location.assign('/configuracion')}
         onNavegarlEquipo={id=>{setEquipoHistorialId(id);setTab('estadisticas');}}/></div>}
       {!resultado&&!cargando&&!error&&<div className="tarjeta h-full min-h-[500px]"><EstadoVacio/></div>}
-      {cuartos===0&&!vista?.es_en_vivo&&<div className="mt-4"><CreadorCombinada liga="wnba" seleccionActual={seleccionCombinada}/></div>}
+      {cuartos===0&&!partidoAgenda?.reconstruccion&&resultado?.modo!=='HISTORICO'&&!vista?.es_en_vivo&&<div className="mt-4"><CreadorCombinada liga="wnba" seleccionActual={seleccionCombinada}/></div>}
     </PanelesAnalisisBaloncesto>}
     {datos&&tab==='estadisticas'&&<div className="space-y-4">
       <button type="button" onClick={()=>setTab('analisis')} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neon-cyan/30 bg-futurista-oscuro/50 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan/50 transition-all duration-200 text-sm font-medium"><ArrowLeft className="w-4 h-4"/><span>Volver a Análisis</span></button>
@@ -140,7 +141,7 @@ export function ModuloWnba() {
         onSeleccionarEquipo={setEquipoHistorialId} equipoResaltadoId={equipoHistorialId??undefined}/>
         {equipoHistorialId&&<HistorialEquipo equipoId={equipoHistorialId} liga="wnba" onCerrar={()=>setEquipoHistorialId(null)}/>}</div>
     </div>}
-    {resultado&&vista&&!vista.es_en_vivo&&<FormularioGuardarApuesta abierto={guardar} resultado={vista} competicionCodigo="wnba"
+    {resultado&&vista&&!partidoAgenda?.reconstruccion&&resultado.modo!=='HISTORICO'&&!vista.es_en_vivo&&<FormularioGuardarApuesta abierto={guardar} resultado={vista} competicionCodigo="wnba"
       ladoSeleccionado={lado} lineaSeleccionada={resultado.linea} cuotaSeleccionada={cuota} partidoId={resultado.partido_id??undefined}
       fechaPartido={resultado.fecha_partido?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota'}).format(new Date(resultado.fecha_partido)):undefined}
       bloqueoGuardado={resultado.guardar_bitacora_habilitado?undefined:resultado.motivo_bitacora}

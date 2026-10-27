@@ -6,12 +6,13 @@ db.py — Utilidades de conexión a PostgreSQL.
 from __future__ import annotations
 
 import os
+import threading
 from contextlib import contextmanager
 from typing import Optional
 
 from dotenv import load_dotenv
 from psycopg_pool import ConnectionPool
-from lecturas_http import solo_lectura_http
+from lecturas_http import solo_lectura_http, en_peticion_http
 
 
 class PoolAplicacion(ConnectionPool):
@@ -25,14 +26,20 @@ class PoolAplicacion(ConnectionPool):
     @contextmanager
     def connection(self, timeout=None):
         with super().connection(timeout=timeout) as conn:
+            # Un socket perdido no debe dejar una ventana esperando indefinidamente.
+            # SET LOCAL funciona también con el pooler transaccional de Neon;
+            # sus parámetros de startup no admiten statement_timeout.
             if not solo_lectura_http.get():
+                if en_peticion_http.get():
+                    conn.execute("SET LOCAL statement_timeout = '15s'; SET LOCAL lock_timeout = '5s'")
                 yield conn
                 return
             anterior = conn.read_only
             conn.read_only = True
             try:
                 with conn.transaction():
-                    conn.execute('SET TRANSACTION READ ONLY')
+                    conn.execute("SET TRANSACTION READ ONLY; SET LOCAL statement_timeout = '15s'; SET LOCAL lock_timeout = '5s'"
+                                 if en_peticion_http.get() else 'SET TRANSACTION READ ONLY')
                     yield conn
             finally:
                 # transaction() ya dejó la conexión en reposo incluso ante error.
@@ -47,6 +54,7 @@ if os.path.exists(_ENV_BACKEND):
     load_dotenv(_ENV_BACKEND, override=False)
 
 _pool: Optional[ConnectionPool] = None
+_pool_lock = threading.Lock()
 
 
 def _asegurar_ssl(url: str) -> str:
@@ -71,25 +79,31 @@ def obtener_database_url() -> str:
 def obtener_pool() -> ConnectionPool:
     """Obtiene el pool de conexiones, creándolo si no existe."""
     global _pool
-    if _pool is None:
-        _pool = PoolAplicacion(
-            conninfo=obtener_database_url(),
-            min_size=1,
-            max_size=5,
-            max_idle=300,
-            max_lifetime=1800,
-            check=ConnectionPool.check_connection,
-            open=True  # Abrir inmediatamente al crear
-        )
+    with _pool_lock:
+        if _pool is None:
+            _pool = PoolAplicacion(
+                conninfo=obtener_database_url(),
+                min_size=1,
+                max_size=5,
+                timeout=8,
+                max_idle=300,
+                max_lifetime=1800,
+                kwargs={"connect_timeout": 5, "keepalives_idle": 10,
+                        "keepalives_interval": 5, "keepalives_count": 3,
+                        "tcp_user_timeout": 15000},
+                check=ConnectionPool.check_connection,
+                open=True,
+            )
     return _pool
 
 
 def cerrar_pool() -> None:
     """Cierra el pool de conexiones si está abierto."""
     global _pool
-    if _pool is not None:
-        try:
-            _pool.close()
-        except Exception:
-            pass
-        _pool = None
+    with _pool_lock:
+        if _pool is not None:
+            try:
+                _pool.close()
+            except Exception:
+                pass
+            _pool = None

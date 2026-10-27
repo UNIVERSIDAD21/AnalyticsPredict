@@ -299,7 +299,7 @@ def test_endpoint_registra_con_contexto_completo():
         temporada_id=UUID("22222222-2222-2222-2222-222222222222"),
         equipo_local_id=UUID("33333333-3333-3333-3333-333333333333"),
         equipo_visitante_id=UUID("44444444-4444-4444-4444-444444444444"),
-        fecha_partido=date(2024, 1, 15),
+        fecha_partido=date(2099, 1, 15),
         tipo_partido="REG",
         equipo_local="Lakers",
         equipo_visitante="Heat",
@@ -316,7 +316,7 @@ def test_endpoint_registra_con_contexto_completo():
         return uuid4()
 
     fake_datos = {"predicciones": [], "mejor_apuesta": None}
-    with patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
+    with patch("api.rutas_analisis._resolver_fixture_nba", return_value={"fecha_partido": date(2099, 1, 15)}), patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
         with patch("api.rutas_analisis.validar_equipos"):  # Bypass validación
             with patch("api.rutas_analisis.analizar_partido", return_value=FakeResultado()):
                 with patch("api.rutas_analisis.resultado_a_dict", return_value=fake_datos):
@@ -341,7 +341,7 @@ def test_endpoint_no_rompe_si_registro_falla():
         temporada_id=UUID("22222222-2222-2222-2222-222222222222"),
         equipo_local_id=UUID("33333333-3333-3333-3333-333333333333"),
         equipo_visitante_id=UUID("44444444-4444-4444-4444-444444444444"),
-        fecha_partido=date(2024, 1, 15),
+        fecha_partido=date(2099, 1, 15),
         tipo_partido="REG",
         equipo_local="Lakers",
         equipo_visitante="Heat",
@@ -355,7 +355,7 @@ def test_endpoint_no_rompe_si_registro_falla():
         raise RuntimeError("BD caída simulada")
 
     fake_datos = {"predicciones": [], "mejor_apuesta": None}
-    with patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
+    with patch("api.rutas_analisis._resolver_fixture_nba", return_value={"fecha_partido": date(2099, 1, 15)}), patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
         with patch("api.rutas_analisis.validar_equipos"):  # Bypass validación
             with patch("api.rutas_analisis.analizar_partido", return_value=FakeResultado()):
                 with patch("api.rutas_analisis.resultado_a_dict", return_value=fake_datos):

@@ -2,6 +2,7 @@
 from contextvars import ContextVar
 
 solo_lectura_http = ContextVar('solo_lectura_http', default=False)
+en_peticion_http = ContextVar('en_peticion_http', default=False)
 
 
 class LecturasHTTPMiddleware:
@@ -14,7 +15,9 @@ class LecturasHTTPMiddleware:
         if scope['type'] != 'http':
             return await self.app(scope, receive, send)
         token = solo_lectura_http.set(scope['method'] in {'GET', 'HEAD'})
+        token_http = en_peticion_http.set(True)
         try:
             await self.app(scope, receive, send)
         finally:
+            en_peticion_http.reset(token_http)
             solo_lectura_http.reset(token)

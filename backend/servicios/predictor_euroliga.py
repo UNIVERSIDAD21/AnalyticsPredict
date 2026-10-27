@@ -14,7 +14,7 @@ from motor.euroliga import escribir_nuevo, final_valido, normalizar_nombre, prep
 
 
 @contextmanager
-def conexion_lectura(pool=None):
+def _conexion_lectura(pool=None):
     with (pool or obtener_pool()).connection() as conn:
         # GET/HEAD ya entra en una transacción READ ONLY de PoolAplicacion.
         # Psycopg no permite volver a asignar read_only mientras esté abierta.
@@ -33,6 +33,19 @@ def conexion_lectura(pool=None):
                 yield conn
         finally:
             conn.read_only = anterior
+
+
+@contextmanager
+def conexion_lectura(pool=None):
+    # POST de análisis también lee con PoolAplicacion en READ ONLY desde el
+    # inicio, antes de que el pool ejecute sus SET LOCAL de límites HTTP.
+    from lecturas_http import solo_lectura_http
+    token = solo_lectura_http.set(True)
+    try:
+        with _conexion_lectura(pool) as conn:
+            yield conn
+    finally:
+        solo_lectura_http.reset(token)
 
 
 def leer_datos(pool=None) -> list[dict]:

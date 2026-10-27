@@ -81,6 +81,15 @@ describe('resultados completos compartidos',()=>{
   expect(screen.getByText('15.980')).toBeInTheDocument();
   expect(screen.getByText(/no este refit final/)).toBeInTheDocument();
  });
+ it('el histórico de baloncesto es consulta RAW sin indicaciones de apostar ni botón de guardado',()=>{
+  const base=adaptarResultadoEuroliga({...euro,modo:'HISTORICO_RECONSTRUIDO'});
+  expect(base.es_en_vivo).toBe(false);
+  render(<ResultadoAnalisis resultado={{...base,mensaje_apuesta:'NO_APTO: SIN_CANDIDATOS',metadata:{...base.metadata,liga:'nba',modo_analisis:'HISTORICO_RECONSTRUIDO'}}} seleccionUsuario={{lado:'OVER',linea:170.5}} onGuardar={vi.fn()}/>);
+  expect(screen.getByText(/Consulta exploratoria RAW/)).toBeInTheDocument();
+  expect(screen.getByText('Tu análisis:')).toBeInTheDocument();
+  expect(screen.queryByText(/Busca otra línea/)).toBeNull();
+  expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})).toBeNull();
+ });
  it('el mismo renderer informa corte, observados y ausencia de calibración en NBA',()=>{
   const vista={...adaptarResultadoEuroliga(euro),es_en_vivo:true,cuartos_reales:{Q1:[20,21] as [number,number]},metadata:{mercado:'COMPLETO',modo_analisis:'CIERRE_Q1',metodo_live:'Ajuste heurístico no calibrado'}};
   render(<ResultadoAnalisis resultado={vista} />);

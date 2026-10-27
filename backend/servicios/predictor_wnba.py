@@ -253,6 +253,8 @@ def analizar(
         "Equipo ajeno/invitado o sin histórico WNBA elegible",
     )
     fixture = None
+    inicio_fixture = None
+    pasado_fixture = False
     if partido_id:
         fixture = next(
             (
@@ -264,12 +266,16 @@ def analizar(
             ),
             None,
         )
+        if fixture:
+            inicio_fixture = datetime.fromisoformat(fixture['inicio_utc']) if fixture.get('inicio_utc') else None
+            fecha_fixture = inicio_fixture.astimezone(BOGOTA).date() if inicio_fixture else date.fromisoformat(str(fixture.get('fecha_local')))
+            pasado_fixture = inicio_fixture <= datetime.now(timezone.utc) if inicio_fixture else fecha_fixture <= datetime.now(BOGOTA).date()
         exigir(
             fixture is not None
             and fixture["competicion_codigo"] == "wnba"
             and (fixture["fase"] in fases or (ampliar and fixture["fase"] == "POST"))
             and (fixture["estado"] in ("FINALIZADO", "PROGRAMADO") or
-                 (ampliar and parciales and fixture["estado"] in ("EN_VIVO", "DEMORADO"))),
+                 (ampliar and pasado_fixture and fixture["estado"] in ("EN_VIVO", "DEMORADO", "SUSPENDIDO", "POSPUESTO", "CANCELADO"))),
             "Partido no pertenece a WNBA/fases/estados elegibles",
         )
         exigir(
@@ -277,16 +283,11 @@ def analizar(
             and str(fixture["equipo_visitante_id"]) == visita,
             "Equipos/localía distintos del fixture WNBA",
         )
-        exigir(not (ampliar and parciales and datetime.fromisoformat(fixture['inicio_utc'])>datetime.now(timezone.utc))
+        exigir(not (ampliar and parciales and not pasado_fixture)
                or es_prueba, 'Fixture futuro con cuartos observados contradictorios; solo admitirlo como prueba explícita')
         if ampliar and fixture["fase"] == "POST" and "POST" not in fases:
             fases = ["REG", "POST"]
-        fecha = (
-            datetime.fromisoformat(fixture["inicio_utc"])
-            .astimezone(BOGOTA)
-            .date()
-            .isoformat()
-        )
+        fecha = fecha_fixture.isoformat()
         corte = corte or min(fecha, datetime.now(BOGOTA).date().isoformat())
         exigir(corte <= fecha, "Corte posterior al inicio del partido histórico")
     corte = corte or (datetime.now(BOGOTA).date().isoformat() if ampliar else None)
@@ -323,8 +324,8 @@ def analizar(
         if not fixture
         else (
             "HISTORICO"
-            if datetime.fromisoformat(fixture["inicio_utc"]) <= now
-            else "PREPARTIDO"
+            if pasado_fixture
+            else "PREPARTIDO" if inicio_fixture else "MANUAL"
         )
     )
     incluye_ot = result.get("incluye_ot", False)
@@ -372,7 +373,7 @@ def analizar(
             ),
             "fixture_fuente": fixture["source_game_id"] if fixture else None,
             "fixture_revision_sha256": fixture.get("revision_sha256") if fixture else None,
-            "fecha_partido": fixture["inicio_utc"] if fixture else None,
+            "fecha_partido": (fixture.get("inicio_utc") or fecha) if fixture else None,
             "modo": modo,
             "es_prueba": es_prueba,
             "incluye_ot": incluye_ot,

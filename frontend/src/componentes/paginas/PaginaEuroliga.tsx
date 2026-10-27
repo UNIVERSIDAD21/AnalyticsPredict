@@ -23,7 +23,7 @@ const OPCIONES = [
 ];
 const claseTab = (activo: boolean) => `px-4 py-2 rounded-md text-sm font-semibold border ${activo ? 'bg-neon-cyan/20 border-neon-cyan text-neon-cyan' : 'border-neon-cyan/20 text-texto-secundario'}`;
 
-export function ModuloEuroliga() {
+export function ModuloEuroliga({ partidoAgenda = null }: { partidoAgenda?: import('../../servicios/agendaBaloncesto').PartidoAgendaBaloncesto | null }) {
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -81,6 +81,7 @@ export function ModuloEuroliga() {
   };
 
   return <div aria-label="Analizador Euroliga">
+    {partidoAgenda?.reconstruccion && <p role="note" className="tarjeta p-4 mb-4 text-sm text-neon-cyan">Reconstrucción histórica · datos anteriores al día del encuentro. Solo consulta; sin registrar apuestas ni predicciones.</p>}
     <div className="mb-6 tarjeta p-4 border border-neon-cyan/20 space-y-2">
       <p className="text-xs uppercase tracking-wider text-neon-cyan">Euroliga · Predictor propio</p>
       <p className="text-sm text-texto-secundario">Cuartos de 10 minutos y total de 40 minutos, sin prórroga. Probabilidades RAW no calibradas; eficacia no certificada. Sin picks ni recomendaciones de apuestas.</p>
@@ -98,7 +99,7 @@ export function ModuloEuroliga() {
         <button type="button" aria-pressed={tab === 'historial'} onClick={() => setTab('historial')} className={claseTab(tab === 'historial')}>Historial Euroliga ({datos.historial.length})</button>
       </div>
       <div hidden={tab !== 'analisis'}><PanelesAnalisisBaloncesto formulario={
-        <FormularioAnalisis deporte="EUROLIGA" equipos={equipos} partidosDisponibles={datos.partidos}
+        <FormularioAnalisis deporte="EUROLIGA" equipos={equipos} partidosDisponibles={datos.partidos} partidoActual={partidoAgenda ?? undefined} ocultarSelectorPartido={Boolean(partidoAgenda)} consultaHistorica={Boolean(partidoAgenda?.reconstruccion)}
           opcionesMercado={OPCIONES} textoAyudaMercado="Q1–Q4: cuartos de 10 minutos. Total: regulación de 40 minutos, sin prórroga."
           onAnalizar={enviar} cargando={cargando || actualizando} onCambiarParametros={invalidar} onActualizarPartidos={actualizar} />
       }>

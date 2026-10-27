@@ -121,6 +121,7 @@ def test_flujo_con_calibrador_activo_usa_p_calibrada_para_ev(monkeypatch):
 
 
 def test_api_expone_p_raw_y_p_calibrada_y_registra_calibrador(monkeypatch):
+    monkeypatch.setattr("api.rutas_analisis._resolver_fixture_nba", lambda p: {"fecha_partido": date(2099, 1, 15)})
     modelo = _crear_modelo_simple()
     calibrador = DummyCalibrador("Q1")
     llamadas_registro = []
@@ -146,7 +147,7 @@ def test_api_expone_p_raw_y_p_calibrada_y_registra_calibrador(monkeypatch):
         temporada_id=UUID("33333333-3333-3333-3333-333333333333"),
         equipo_local_id=UUID("44444444-4444-4444-4444-444444444444"),
         equipo_visitante_id=UUID("55555555-5555-5555-5555-555555555555"),
-        fecha_partido=date(2024, 1, 15),
+        fecha_partido=date(2099, 1, 15),
         tipo_partido="REG",
         equipo_local="Lakers",
         equipo_visitante="Heat",

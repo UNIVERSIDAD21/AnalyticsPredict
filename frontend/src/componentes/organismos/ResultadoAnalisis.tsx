@@ -178,7 +178,7 @@ export function ResultadoAnalisis({
   const modo = String(resultado.metadata?.modo_analisis ?? (esCorte ? `CIERRE_Q${Object.keys(resultado.cuartos_reales ?? {}).length}` : 'PREPARTIDO'));
   const modoLabel = modo === 'HISTORICO_RECONSTRUIDO' ? 'Histórico reconstruido' : modo === 'PREPARTIDO' ? 'Prepartido' : `Corte al cierre de ${modo.replace('CIERRE_', '')}`;
   const esFutbol = resultado.metadata?.deporte === 'futbol';
-  const consultaFutbol = esFutbol && (modo === 'HISTORICO_RECONSTRUIDO' || resultado.metadata?.consulta_exploratoria === true);
+  const consultaExploratoria = modo === 'HISTORICO_RECONSTRUIDO' || (esFutbol && resultado.metadata?.consulta_exploratoria === true);
   const configConfianza = obtenerConfigConfianza(esCorte ? null : resultado.nivel_confianza);
 
   const detalle = extraerMejorApuestaDetalle(resultado);
@@ -250,7 +250,7 @@ export function ResultadoAnalisis({
   const tieneRecomendacionSistema = Boolean(detalle || resultado.mejor_apuesta);
   const sistemaRecomienda: LadoApuesta = (probabilidadOver !== null && probabilidadUnder !== null && probabilidadOver > probabilidadUnder) ? 'OVER' : 'UNDER';
   const coincideConSistema = Boolean(tieneRecomendacionSistema && seleccionUsuario?.lado === sistemaRecomienda);
-  const puedeGuardar = Boolean(seleccionUsuario && linea > 0 && onGuardar);
+  const puedeGuardar = Boolean(!consultaExploratoria && seleccionUsuario && linea > 0 && onGuardar);
   const probabilidadesNulas = probabilidadOver === null || probabilidadUnder === null;
   const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
   const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
@@ -292,7 +292,7 @@ export function ResultadoAnalisis({
       <div className="tarjeta p-3 border border-neon-cyan/20">
         <p className="text-xs uppercase tracking-wider text-texto-terciario">Estado operativo del mercado</p>
         <p className="text-sm font-semibold text-neon-cyan">{estadoOperativoMercado}</p>
-        {!esEuro && !esWnba && !esCorte && !consultaFutbol && estadoOperativoMercado !== 'PROMOCIONABLE' && (
+        {!esEuro && !esWnba && !esCorte && !consultaExploratoria && estadoOperativoMercado !== 'PROMOCIONABLE' && (
           <p className="text-xs text-advertencia-500 mt-1">Modo activo: PAPER/SHADOW (validación prolongada, no mercado promocionado).</p>
         )}
         {motivosEstadoOperativo.length > 0 && (
@@ -300,7 +300,7 @@ export function ResultadoAnalisis({
         )}
       </div>
 
-      {gateCriticoBeta && !consultaFutbol && (
+      {gateCriticoBeta && !consultaExploratoria && (
         <PanelAdvertencias advertencias={[
           'MODO VALIDACIÓN BETA: mercado no promocionable. Este resultado es solo para shadow/paper trading y monitoreo cuantitativo.',
           ...penalizacionesObjetivo.map((p) => `Gate crítico activo: ${p}`),
@@ -360,12 +360,12 @@ export function ResultadoAnalisis({
           3. ADVERTENCIA NO APTO (si aplica)
           Se muestra como aviso pero el análisis continúa visible
           ═══════════════════════════════════════════════════════════ */}
-      {consultaFutbol && <div className="tarjeta p-4 border border-neon-cyan/20">
+      {consultaExploratoria && <div className="tarjeta p-4 border border-neon-cyan/20">
         <p className="text-sm text-neon-cyan">Consulta exploratoria RAW · sin recomendación operativa</p>
         <p className="mt-1 text-xs text-texto-secundario">Las probabilidades no están calibradas ni acreditan rendimiento futuro. Una reconstrucción histórica no es un pronóstico emitido entonces.</p>
         <p className="mt-1 text-xs text-texto-secundario">Consulta realizada: {formatearFecha(resultado.fecha_analisis, 'America/Bogota')} COT.</p>
       </div>}
-      {noApto && !consultaFutbol && (
+      {noApto && !consultaExploratoria && (
         <TarjetaNoApta mensaje={resultado.mensaje_apuesta} candidatos={resultado.candidatos} />
       )}
 
@@ -382,7 +382,7 @@ export function ResultadoAnalisis({
             )}
             <div>
               <p className="text-sm text-texto-secundario">
-                {esEuro || esCorte || esFutbol ? 'Tu análisis: ' : 'Tu apuesta: '}<span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
+                {esEuro || esCorte || esFutbol || consultaExploratoria ? 'Tu análisis: ' : 'Tu apuesta: '}<span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
                   {seleccionUsuario.lado === 'OVER' ? 'Over' : 'Under'} {seleccionUsuario.linea}
                 </span>
               </p>
@@ -516,7 +516,7 @@ export function ResultadoAnalisis({
           7. BLOQUE DE-VIG + CALIBRACIÓN (Fase 2)
           Solo mostrar si hay detalle avanzado
           ═══════════════════════════════════════════════════════════ */}
-      {!integral && tieneDetalleAvanzado && detalleVista && (
+      {!consultaExploratoria && !integral && tieneDetalleAvanzado && detalleVista && (
         <div className="space-y-4">
           <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-2">
             <span className="w-8 h-[2px] bg-gradient-to-r from-neon-cyan to-transparent" />
@@ -553,7 +553,7 @@ export function ResultadoAnalisis({
           8. BLOQUE SCORE + SIZING (Fase 2)
           Solo mostrar si hay detalle avanzado
           ═══════════════════════════════════════════════════════════ */}
-      {!integral && tieneDetalleAvanzado && detalleVista && (
+      {!consultaExploratoria && !integral && tieneDetalleAvanzado && detalleVista && (
         <div className="space-y-4">
           <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-magenta flex items-center gap-2">
             <span className="w-8 h-[2px] bg-gradient-to-r from-neon-magenta to-transparent" />

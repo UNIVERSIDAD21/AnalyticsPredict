@@ -608,3 +608,32 @@ def test_api_pre_2020_con_cuartos_suficientes_y_ot_insuficiente(modelo,filas,tmp
         assert r['valor']['under']['ev_sin_calibrar'] is None
         assert 'base_descompuesta' not in r
         assert not r['guardar_bitacora_habilitado'] and not r['prospectiva_acreditada']
+
+
+@pytest.mark.parametrize('estado', ['PROGRAMADO','EN_VIVO','DEMORADO','POSPUESTO','SUSPENDIDO','CANCELADO'])
+def test_agenda_consulta_estados_pasados_sin_usar_el_resultado(modelo,filas,estado):
+    fixture={**filas[0],'fixture_id':'fixture-agenda','partido_id':None,'source_game_id':'fixture-agenda',
+             'estado':estado,'valido':False,'inicio_utc':'2026-05-01T20:00:00+00:00'}
+    r=peticion(modelo,[*filas,fixture],partido_id='fixture-agenda',corte='2026-05-01',ampliar=True)
+    assert r['modo']=='HISTORICO' and not r['guardar_bitacora_habilitado']
+    assert r['ultimo_dato_utilizado']<'2026-05-01'
+
+
+def test_agenda_fecha_sin_hora_no_inventa_pronostico_oficial(modelo,filas):
+    fixture={**filas[0],'fixture_id':'fixture-sin-hora','partido_id':None,'source_game_id':'fixture-sin-hora',
+             'estado':'PROGRAMADO','valido':False,'inicio_utc':None,'fecha_local':'2026-05-01'}
+    r=peticion(modelo,[*filas,fixture],partido_id='fixture-sin-hora',corte='2026-05-01',ampliar=True)
+    assert r['modo']=='HISTORICO' and r['fecha_partido']=='2026-05-01'
+    assert not r['prospectiva_acreditada'] and not r['guardar_bitacora_habilitado']
+
+
+def test_api_historico_no_crea_journal(modelo,filas,monkeypatch):
+    r={'modo':'HISTORICO'}
+    monkeypatch.setattr(rutas,'modelo',lambda:modelo)
+    monkeypatch.setattr(rutas,'datos_bd',lambda:filas)
+    monkeypatch.setattr(svc,'analizar',lambda *a,**kw:r)
+    def prohibido(*a,**kw):raise AssertionError('No se conserva journal de consulta histórica')
+    monkeypatch.setattr(svc,'registrar',prohibido)
+    p=rutas.PeticionWNBA(equipo_local_id=uid('team0'),equipo_visitante_id=uid('team1'),temporadas=[uid('2023')],mercado='Q1',linea=40.5)
+    resultado=rutas.analizar(p)['resultado']
+    assert resultado['solo_consulta'] and not resultado['guardar_bitacora_habilitado']

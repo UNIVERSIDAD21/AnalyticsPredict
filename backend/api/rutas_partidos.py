@@ -242,6 +242,23 @@ def _consultar_partidos(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+@router.get('/agenda')
+def agenda_baloncesto(
+    fecha: Optional[date] = None,
+    liga: Literal['', 'nba', 'wnba', 'euroliga'] = '',
+    buscar: str = QueryParam('', max_length=100),
+    estado: Literal['todos', 'pendientes', 'finalizados'] = 'todos',
+    pagina: int = QueryParam(1, ge=1),
+    tamano: int = QueryParam(50, ge=1, le=100),
+):
+    from servicios.agenda_baloncesto import ahora, consultar
+    try:
+        return consultar(fecha or ahora().date(), liga, buscar, estado, pagina, tamano)
+    except Exception as exc:
+        logger.exception('No se pudo consultar la agenda de baloncesto')
+        raise HTTPException(503, 'Agenda de baloncesto no disponible; reintenta la consulta') from exc
+
+
 @router.get(
     "",
     response_model=RespuestaPartidos,

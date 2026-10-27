@@ -532,6 +532,25 @@ def _registrar_bitacora_analisis_nba(
     )
 
 
+def _resolver_fixture_nba(peticion):
+    from servicios.predictor_euroliga import conexion_lectura
+    from psycopg.rows import dict_row
+    from motor_autoentrenamiento.entrenador_bd import normalizar_nombre
+    with conexion_lectura() as conn, conn.cursor(row_factory=dict_row) as cur:
+        cur.execute('''SELECT p.id,p.fecha_partido,p.valido,c.codigo,
+            e.nombre local,v.nombre visitante,p.equipo_local_id,p.equipo_visitante_id
+            FROM partidos_baloncesto p JOIN competiciones_baloncesto c ON c.id=p.competicion_id
+            JOIN equipos e ON e.id=p.equipo_local_id JOIN equipos v ON v.id=p.equipo_visitante_id
+            WHERE p.id=%s''', (peticion.partido_id,))
+        fixture = cur.fetchone()
+    if not fixture or fixture['codigo'] != 'nba' or fixture['valido'] is not True:
+        raise ErrorValidacion('El partido no pertenece a NBA válida')
+    if any(normalizar_nombre(fixture[k]) != normalizar_nombre(n) for k,n in (
+        ('local',peticion.equipo_local),('visitante',peticion.equipo_visitante))):
+        raise ErrorValidacion('Equipos/localía distintos del partido NBA')
+    return fixture
+
+
 def ejecutar_analisis(
     peticion: PeticionAnalisis,
     marcador_q1: Optional[str] = None,
@@ -541,6 +560,21 @@ def ejecutar_analisis(
 ) -> RespuestaAnalisis:
     """Ejecuta el análisis y retorna la respuesta de API."""
     advertencias_entrada = _validar_peticion_analisis(peticion)
+    # El catálogo NBA solo conserva día canónico, no hora de inicio. El mismo
+    # día se reconstruye conservadoramente, sin usar el modelo publicado actual.
+    if peticion.partido_id:
+        from servicios.agenda_baloncesto import ahora
+        fixture = _resolver_fixture_nba(peticion)
+        if fixture['fecha_partido'] <= ahora().date():
+            from servicios.reconstruccion_nba import reconstruir
+            try:
+                datos = reconstruir(peticion, fixture, (marcador_q1,marcador_q2,marcador_q3))
+            except ValueError as exc:
+                raise ErrorValidacion(str(exc)) from exc
+            return RespuestaAnalisis(exito=True, datos=datos, advertencias=[
+                'Reconstrucción histórica de solo consulta: corte al día anterior; no es un pronóstico emitido entonces.',
+                'Probabilidades RAW sin calibrar; regulación de 48 minutos sin prórroga. Dispersión del ajuste retrospectivo, sin validación temporal propia.',
+            ])
     
     # ═══════════════════════════════════════════════════════════════════════════
     # CAMBIO: obtener_modelo() ahora viene de motor_autoentrenamiento
@@ -734,7 +768,7 @@ def ejecutar_analisis(
     summary="Analizar partido",
     response_model=RespuestaAnalisis,
 )
-async def analizar(
+def analizar(
     peticion: PeticionAnalisis,
 ) -> RespuestaAnalisis:
     """
@@ -751,7 +785,7 @@ async def analizar(
     summary="Analizar partido en vivo",
     response_model=RespuestaAnalisis,
 )
-async def analizar_en_vivo(
+def analizar_en_vivo(
     peticion: PeticionAnalisisEnVivo,
 ) -> RespuestaAnalisis:
     """

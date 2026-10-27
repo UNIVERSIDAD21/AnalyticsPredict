@@ -1,16 +1,20 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { RutasAplicacion } from '../../App';
+import { consultarAgendaBaloncesto, type PartidoAgendaBaloncesto } from '../../servicios/agendaBaloncesto';
+import { fechaColombia } from '../../utilidades/agendaFutbol';
 import { ProveedorDeporte } from '../../contextos/DeporteContext';
 
 // Motores sustituidos en esta prueba de navegación. El formulario real se prueba
 // por separado: aquí interesa que nunca compartan selección/salida al cambiar liga.
-vi.mock('./PaginaPrincipal', () => ({ PaginaPrincipal: () => <div>Motor NBA<input aria-label="Selección NBA" /></div> }));
-vi.mock('./PaginaEuroliga', () => ({ ModuloEuroliga: () => <div>Motor Euroliga<input aria-label="Selección Euroliga" /></div> }));
+vi.mock('../../servicios/agendaBaloncesto', () => ({ consultarAgendaBaloncesto: vi.fn(async () => ({ fecha:'2026-10-26',total:0,pagina:1,tamano:50,partidos:[],competiciones:[] })) }));
+vi.mock('./PaginaPrincipal', () => ({ PaginaPrincipal: ({partidoAgenda}: {partidoAgenda?: {id:string}|null}) => <div>Motor NBA<output>{partidoAgenda?.id}</output><input aria-label="Selección NBA" /></div> }));
+vi.mock('./PaginaEuroliga', () => ({ ModuloEuroliga: ({partidoAgenda}: {partidoAgenda?: {id:string}|null}) => <div>Motor Euroliga<output>{partidoAgenda?.id}</output><input aria-label="Selección Euroliga" /></div> }));
 vi.mock('./PaginaWnba', () => ({ ModuloWnba: () => <div>Motor WNBA<input aria-label="Selección WNBA" /></div> }));
 afterEach(cleanup);
+beforeEach(() => { vi.mocked(consultarAgendaBaloncesto).mockResolvedValue({fecha:fechaColombia(),total:0,pagina:1,tamano:50,partidos:[],competiciones:[],consultado_en:new Date().toISOString(),datos_actualizados_en:null}); });
 
 function Ubicacion() {
   const l = useLocation(); const navegar = useNavigate();
@@ -22,6 +26,27 @@ function preparar(ruta: string) {
 }
 
 describe('una sola sección Baloncesto', () => {
+  it('la agenda selecciona la liga y el partido sin arrastrar el motor anterior', async () => {
+    const base: PartidoAgendaBaloncesto = {id:'partido-nba',liga:'nba',competicion_nombre:'NBA',fecha_partido:fechaColombia(),inicio_utc:null,
+      equipo_local_id:'l',equipo_visitante_id:'v',equipo_local_nombre:'Celtics',equipo_visitante_nombre:'Bulls',
+      temporada_id:'t',temporada_nombre:'2026',tipo_partido:'REG',local_total:null,visitante_total:null,finalizado:false,analizable:true,reconstruccion:true};
+    vi.mocked(consultarAgendaBaloncesto).mockResolvedValue({fecha:fechaColombia(),total:2,pagina:1,tamano:50,competiciones:['NBA','Euroliga'],consultado_en:new Date().toISOString(),datos_actualizados_en:null,
+      partidos:[base,{...base,id:'partido-euro',liga:'euroliga',competicion_nombre:'Euroliga',equipo_local_nombre:'Madrid'}]});
+    preparar('/baloncesto');
+    await screen.findByRole('button',{name:'Analizar Celtics vs Bulls'}, {timeout:5000});
+    expect(screen.queryByText('Motor NBA')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Celtics vs Bulls'}));
+    await screen.findByText('Motor NBA');expect(screen.getByText('partido-nba')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'Analizar Madrid vs Bulls'}));
+    await screen.findByText('Motor Euroliga');expect(screen.getByText('partido-euro')).toBeInTheDocument();
+    expect(screen.queryByText('Motor NBA')).toBeNull();
+    expect(screen.getByTestId('ruta')).toHaveTextContent('liga=euroliga');
+    fireEvent.click(screen.getByRole('button',{name:'Atrás navegador'}));
+    await screen.findByText('partido-nba');
+    fireEvent.click(screen.getByRole('button',{name:'Adelante navegador'}));
+    await screen.findByText('partido-euro');
+  });
+
   it('WNBA conserva URL y se desmonta al cambiar de liga sin arrastrar selección', async () => {
     preparar('/baloncesto?liga=wnba');
     const liga=await screen.findByRole('combobox',{name:'Liga'});
@@ -53,7 +78,7 @@ describe('una sola sección Baloncesto', () => {
     expect(screen.queryByLabelText('Selección NBA')).toBeNull();
     expect(screen.getByRole('button', { name: 'Baloncesto' })).toHaveAttribute('aria-current', 'page');
     expect(screen.queryByRole('button', { name: 'Euroliga' })).toBeNull();
-    expect(screen.getAllByRole('heading', { name: 'Baloncesto' })).toHaveLength(1);
+    expect(screen.getAllByRole('heading', { name: 'Partidos' })).toHaveLength(1);
     expect(screen.getAllByRole('banner')).toHaveLength(1);
     fireEvent.change(screen.getByLabelText('Selección Euroliga'), { target: { value: 'Madrid' } });
     fireEvent.change(liga, { target: { value: 'nba' } });

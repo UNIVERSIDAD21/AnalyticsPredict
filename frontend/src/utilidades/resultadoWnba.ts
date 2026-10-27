@@ -79,7 +79,7 @@ export function adaptarResultadoWnba(r: ResultadoWnba, lado: LadoApuesta): Resul
       score_total:null,score_componentes:{ev:null,edge_real:null,riesgo_valor:p?.desviacion_total??null,riesgo_referencia:null,riesgo_normalizado:null,penalizacion_riesgo:null,penalizacion_devig:null},score_explicacion:'N/D: no hay política de score ni recomendación validada para WNBA.',score_penalizaciones:[],
       sizing_advertencias:['N/D: sin política WNBA validada de stake, Kelly o riesgo. No se reutiliza la de NBA.'],sizing_penalizaciones:null,
       aplicaron_caps:false}:undefined,
-    metadata:{deporte:'baloncesto',liga:'wnba',mercado:r.mercado,modo_analisis:live?r.modo:'PREPARTIDO',modelo_version:r.modelo_version,
+    metadata:{deporte:'baloncesto',liga:'wnba',mercado:r.mercado,modo_analisis:r.modo==='HISTORICO'?'HISTORICO_RECONSTRUIDO':live?r.modo:'PREPARTIDO',modelo_version:r.modelo_version,
       analisis_id:r.analisis_id,fixture_revision_sha256:r.fixture_revision_sha256,partido_id:r.partido_id,fecha_partido:r.fecha_partido,probabilidad_push:r.probabilidades.push,
       duracion_regulacion:40,incluye_ot:r.incluye_ot,metodo_live:r.condicionamiento?.metodo,
       mercados_no_disponibles:r.mercados_no_disponibles,politica_muestras:r.politica_muestras,

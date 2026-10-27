@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Annotated, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -58,6 +58,7 @@ def partidos(dias: int = Query(30, ge=1, le=60)):
     hoy = datetime.now(timezone.utc).date()
     fin = hoy + timedelta(days=dias)
     filas = leer_datos()
+    historico = False
     resultados = [resumir_fixture(r) for r in filas if r["valido"] is True and hoy.isoformat() <= str(r["fecha_partido"])[:10] <= fin.isoformat() and not final_valido(r)]
     finales = [str(r["fecha_partido"])[:10] for r in filas if final_valido(r)]
     return {"exito": True, "partidos": resultados, "total": len(resultados), "ultimo_final_bd": max(finales) if finales else None,
@@ -68,6 +69,7 @@ def partidos(dias: int = Query(30, ge=1, le=60)):
 def analizar(p: PeticionEuroliga):
     m = modelo_actual()
     fixture = None
+    historico = False
     filas = leer_datos()
     if p.partido_id:
         fixture = next((r for r in filas if str(r["id"]) == str(p.partido_id)), None)
@@ -75,12 +77,24 @@ def analizar(p: PeticionEuroliga):
             raise HTTPException(422, "Fixture no pertenece a Euroliga válida")
         if any(normalizar_nombre(fixture[k]) != normalizar_nombre(nombre) for k, nombre in (("local", p.equipo_local), ("visitante", p.equipo_visitante))):
             raise HTTPException(422, "Equipos/localía no coinciden con el fixture Euroliga")
-        if final_valido(fixture) or str(fixture["fecha_partido"])[:10] < datetime.now(timezone.utc).date().isoformat():
-            raise HTTPException(422, "Fixture finalizado o pasado: usar evaluación offline, no pronóstico prepartido")
-        if str(fixture["fecha_partido"])[:10] <= m["fecha_max"]:
+        from servicios.agenda_baloncesto import ahora
+        historico = str(fixture['fecha_partido'])[:10] <= ahora().date().isoformat()
+        if not historico and str(fixture["fecha_partido"])[:10] <= m["fecha_max"]:
             raise HTTPException(422, "Fixture no es posterior al corte del modelo")
     try:
+        if historico:
+            from motor.euroliga import preparar_filas, entrenar
+            corte_historico = str(fixture['fecha_partido'])[:10]
+            previos = preparar_filas(filas, corte_historico)
+            if len(previos) < 600:
+                raise ValueError('Muestra Euroliga anterior al corte insuficiente para TRAIN/CAL/EVAL temporales')
+            m = entrenar(filas, corte_historico,
+                         inicio_cal=previos[len(previos)*6//10]['fecha_partido'],
+                         inicio_eval=previos[len(previos)*8//10]['fecha_partido'])
         resultado = predecir(m, p.equipo_local, p.equipo_visitante, p.mercado, p.linea, [list(q) for q in p.parciales])
+        if historico:
+            resultado['modo'] = 'HISTORICO_RECONSTRUIDO'
+            resultado['advertencias'].append('Reconstrucción con datos anteriores al día del encuentro. No es un pronóstico emitido entonces; solo consulta, sin publicar el refit ni conservar journal.')
         corte = str(fixture["fecha_partido"])[:10] if fixture else (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
         resultado["contexto"] = contexto(
             filas, p.equipo_local, p.equipo_visitante, corte, m.get("temporada_reciente")
@@ -113,6 +127,11 @@ def analizar(p: PeticionEuroliga):
             resultado, lado=p.lado, cuota_over=p.cuota_over, cuota_under=p.cuota_under
         )
         aplicar_escenario_euroliga(resultado, integral)
+        if historico:
+            resultado.update({'analisis_id': str(uuid4()), 'partido_id': str(fixture['id']),
+                              'prospectiva_acreditada_por_fecha': False,
+                              'corte_exclusivo': str(fixture['fecha_partido'])[:10], 'solo_consulta': True})
+            return {'exito': True, 'resultado': resultado}
         return {"exito": True, "resultado": registrar(resultado, fixture)}
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc

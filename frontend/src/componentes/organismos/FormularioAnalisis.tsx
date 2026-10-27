@@ -70,6 +70,7 @@ interface PropsBaseFormularioAnalisis {
   onCambiarModo?: (cuartosCompletos: number) => void;
   estadoCalendario?: import('../../servicios/wnba').ComprobacionCalendario;
   partidoActual?: PartidoResumen | null;
+  consultaHistorica?: boolean;
   /** La agenda de fútbol ya permite seleccionar y cambiar el encuentro. */
   ocultarSelectorPartido?: boolean;
   onSeleccionarPartido?: (partido: PartidoResumen | null) => void;
@@ -120,6 +121,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     unidadLineaLabel,
     deporte = 'NBA',
     partidoActual,
+    consultaHistorica = false,
     ocultarSelectorPartido = false,
     onSeleccionarPartido,
     onCambiarParametros,
@@ -537,7 +539,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
           {(deporte === 'NBA' || esWnba || esEuroliga) && <div className="space-y-3">
             <label className="block etiqueta">Modo de análisis
               <select className="input-base w-full mt-2" value={cuartos} disabled={cargando} onChange={e => { setCuartos(Number(e.target.value)); onCambiarParametros?.(); setErrores([]); }}>
-                <option value={0}>Prepartido</option>
+                <option value={0}>{consultaHistorica ? 'Reconstrucción anterior al encuentro' : 'Prepartido'}</option>
                 {[1, 2, 3].map(q => <option key={q} value={q}>Corte al cierre de Q{q}</option>)}
               </select>
             </label>
@@ -546,7 +548,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
                 <input type="number" min="0" max="100" step="1" disabled={cargando} className="input-base w-full mt-1" value={parciales[i][lado]} onChange={e => { setParciales(prev => prev.map((q, j) => j === i ? q.map((x, k) => k === lado ? e.target.value : x) as [string, string] : q)); onCambiarParametros?.(); setErrores([]); }} />
               </label>)}
             </div>)}
-            <p className="text-xs text-texto-secundario">{cuartos > 0 ? 'Puntos de cada cuarto completo, no acumulados. No admite reloj ni parciales del cuarto en curso.' : esEuroliga ? 'Cuartos de 10 minutos y total de 40 minutos, sin prórroga.' : 'Análisis previo al partido; no utiliza marcadores observados.'}</p>
+            <p className="text-xs text-texto-secundario">{cuartos > 0 ? 'Puntos de cada cuarto completo, no acumulados. No admite reloj ni parciales del cuarto en curso.' : esEuroliga ? 'Cuartos de 10 minutos y total de 40 minutos, sin prórroga.' : consultaHistorica ? 'Reconstrucción de solo consulta con datos anteriores al día del encuentro. No es un pronóstico emitido entonces.' : 'Análisis previo al partido; no utiliza marcadores observados.'}</p>
             {esCorteNBA && <p className="text-xs text-texto-secundario">{esWnba ? 'Condicionamiento del modelo WNBA propio con todos los datos elegibles anteriores al corte' : 'Ajuste de ritmo heurístico con el modelo cargado'}, sin cuotas ni reajuste por temporadas. Probabilidades no calibradas para este corte; {esWnba ? 40 : 48} minutos de regulación, sin prórroga. Solo consulta: no registra apuestas ni predicciones prepartido.</p>}
           </div>}
 

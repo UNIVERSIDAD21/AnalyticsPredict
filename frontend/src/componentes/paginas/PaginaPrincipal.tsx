@@ -35,7 +35,8 @@ const HistorialEquipo = lazy(async () => ({
 /**
  * Página principal del Analizador NBA con diseño futurista
  */
-export function PaginaPrincipal() {
+export function PaginaPrincipal({ partidoAgenda = null }: { partidoAgenda?: import('../../servicios/agendaBaloncesto').PartidoAgendaBaloncesto | null }) {
+  const historico = Boolean(partidoAgenda?.reconstruccion);
   const navegar = useNavigate();
   const [params, setParams] = useSearchParams();
   const {
@@ -256,6 +257,7 @@ export function PaginaPrincipal() {
 
   return (
     <div aria-label="Analizador NBA">
+        {historico && <p role="note" className="tarjeta p-4 mb-4 text-sm text-neon-cyan">Reconstrucción histórica · datos anteriores al día del encuentro. Solo consulta; sin registrar apuestas ni predicciones. No acredita un pronóstico emitido entonces.</p>}
         <CabeceraAnalizadorBaloncesto tabActivo={tabActivo} onTab={setTabActivo} />
 
         {/* Panel de salud removido por requerimiento */}
@@ -287,6 +289,8 @@ export function PaginaPrincipal() {
           <PanelesAnalisisBaloncesto formulario={
                 <FormularioAnalisis
                   equipos={equipos}
+                  partidoActual={partidoAgenda ?? undefined}
+                  ocultarSelectorPartido={Boolean(partidoAgenda)} consultaHistorica={Boolean(partidoAgenda?.reconstruccion)}
                   estadisticas={estadisticasEquipos}
                   onAnalizar={(peticion, lado) => {
                     if (lado && peticion.linea) {
@@ -325,7 +329,7 @@ export function PaginaPrincipal() {
                     seleccionUsuario={seleccionUsuario}
                     equipoLocalId={ultimaPeticion?.equipo_local_id}
                     equipoVisitanteId={ultimaPeticion?.equipo_visitante_id}
-                    onGuardar={resultado.es_en_vivo ? undefined : () => {
+                    onGuardar={(resultado.es_en_vivo || historico || resultado.metadata?.modo_analisis === 'HISTORICO_RECONSTRUIDO') ? undefined : () => {
                       setMostrarGuardar(true);
                       setErrorGuardar(null);
                     }}
@@ -342,7 +346,7 @@ export function PaginaPrincipal() {
                 </div>
               )}
 
-              {cuartosAnalisis === 0 && !resultado?.es_en_vivo && <div className="mt-4">
+              {cuartosAnalisis === 0 && !resultado?.es_en_vivo && !historico && resultado?.metadata?.modo_analisis !== 'HISTORICO_RECONSTRUIDO' && <div className="mt-4">
                 <CreadorCombinada seleccionActual={seleccionCombinadaActual} />
               </div>}
           </PanelesAnalisisBaloncesto>
@@ -407,7 +411,7 @@ export function PaginaPrincipal() {
           </div>
         )}
 
-      {resultado && !resultado.es_en_vivo && seleccionUsuario && (
+      {resultado && !resultado.es_en_vivo && !historico && resultado.metadata?.modo_analisis !== 'HISTORICO_RECONSTRUIDO' && seleccionUsuario && (
         <FormularioGuardarApuesta
           abierto={mostrarGuardar}
           resultado={resultado}
