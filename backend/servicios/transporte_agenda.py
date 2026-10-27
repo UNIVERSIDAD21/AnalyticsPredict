@@ -91,6 +91,15 @@ class ClienteAgenda:
             if hashlib.sha256(contenido).hexdigest() != anterior["sha256"]:
                 raise FuenteNoDisponible("Caché alterada: conservar e investigar")
             if self.reloj() - anterior["observado_epoch"] <= ttl:
+                # Migrar cachés previas sin volver a consultar la fuente ni
+                # rejuvenecer su fecha. Las revisiones nunca deben apuntar a
+                # un archivo de URL que otro ciclo pueda reemplazar.
+                blob = self.cache / 'blobs' / (anterior['sha256']+'.raw')
+                if not blob.exists():
+                    atomico(blob,contenido)
+                if anterior.get('archivo')!=str(blob):
+                    anterior={**anterior,'archivo':str(blob)}
+                    guardar(meta,anterior)
                 self.hits += 1
                 return contenido, {**anterior, "cache": True}
         if u.hostname in self.bloqueados:

@@ -177,3 +177,17 @@ def test_tres_capturas_contradictorias_no_rehabilitan_evento(tmp_path):
             'archivo':str(f),'sha256':hashlib.sha256(raw).hexdigest(),'observado_en':'2026-10-26T00:00:00Z'}})
     rows,issues,_=normalizar({'resultados':tasks},date(2026,10,26))
     assert not rows and any('contradictorias' in x['motivo'] for x in issues)
+
+
+def test_cache_heredada_conserva_snapshot_antes_de_refrescar(tmp_path):
+    import hashlib
+    s=Sesion();c=ClienteAgenda(tmp_path,session=s,reloj=lambda:1000,dormir=lambda _:None)
+    url='https://site.api.espn.com/heredada';raw,m=c.obtener(url)
+    key=hashlib.sha256(url.encode()).hexdigest();metadata=tmp_path/(key+'.json')
+    old=json.loads(metadata.read_text());old['archivo']=str(tmp_path/(key+'.raw'));metadata.write_text(json.dumps(old))
+    _,hit=c.obtener(url);blob=Path(hit['archivo'])
+    assert blob!=Path(old['archivo']) and blob.read_bytes()==raw and hit['observado_en']==m['observado_en']
+    def nueva(*a,**kw):return type('R',(),{'status_code':200,'content':b'{"events":[1]}','headers':{}})()
+    s.get=nueva
+    c.obtener(url,ttl=-1)
+    assert blob.read_bytes()==raw
