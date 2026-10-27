@@ -1,5 +1,5 @@
 """Agenda diaria de las tres ligas. Lectura local; nunca inventa horas ni FT."""
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from psycopg.rows import dict_row
@@ -16,9 +16,12 @@ def ahora():
 
 def resumir(r, instante):
     inicio = r.get('inicio_utc')
+    if inicio:
+        inicio=inicio.astimezone(timezone.utc)
     fecha = inicio.astimezone(BOGOTA).date() if inicio else r['fecha_local']
     final = r['estado'] == 'FINALIZADO'
     pasado = inicio <= instante if inicio else fecha <= instante.date()
+    reconstruccion = not inicio or pasado or r['estado']!='PROGRAMADO'
     permitido = pasado or r['estado'] == 'PROGRAMADO'
     return {
         **{k: str(r[k]) for k in ('id', 'equipo_local_id', 'equipo_visitante_id', 'temporada_id')},
@@ -32,7 +35,8 @@ def resumir(r, instante):
         'local_total': r['local_total'] if final else None,
         'visitante_total': r['visitante_total'] if final else None,
         'finalizado': final, 'analizable': permitido,
-        'reconstruccion': pasado,
+        'reconstruccion': reconstruccion,
+        'fuente_verificada_en': r.get('observado_en').isoformat() if r.get('observado_en') else None,
         'actualizado_en': r['actualizado_en'].isoformat() if r.get('actualizado_en') else None,
     }
 
@@ -41,18 +45,21 @@ def consultar(fecha: date, liga='', buscar='', estado='todos', pagina=1, tamano=
     instante = ahora()
     desde = datetime.combine(fecha, datetime.min.time(), BOGOTA)
     hasta = desde + timedelta(days=1)
-    # NBA/Euroliga: fecha canónica, sin hora. WNBA: día COT del instante verificado.
     with conexion_lectura() as conn, conn.cursor(row_factory=dict_row) as cur:
+        # Compatibilidad de lectura antes de la migración aditiva: no ejecuta DDL.
+        cur.execute("SELECT to_regclass('horarios_baloncesto') tabla")
+        metadata = cur.fetchone()['tabla'] is not None
+        join = 'LEFT JOIN horarios_baloncesto hb ON hb.partido_id=p.id' if metadata else 'LEFT JOIN (SELECT NULL::uuid partido_id,NULL::timestamptz inicio_utc,NULL::text estado,NULL::timestamptz observado_en,NULL::timestamptz actualizado_en) hb ON false'
         cur.execute("""
             SELECT DISTINCT ON (c.codigo,p.fecha_partido,p.equipo_local_id,p.equipo_visitante_id,p.tipo_partido)
               COALESCE(fx.id,p.id) id,c.codigo,p.fecha_partido fecha_local,
-              COALESCE(fx.inicio_utc,fw.inicio_utc) inicio_utc,
+              COALESCE(hb.inicio_utc,fx.inicio_utc,fw.inicio_utc) inicio_utc,
               p.equipo_local_id,p.equipo_visitante_id,p.temporada_id,
               e.nombre local,v.nombre visitante,t.nombre temporada,p.tipo_partido fase,
               CASE WHEN p.local_total>0 AND p.visitante_total>0 THEN 'FINALIZADO'
-                   ELSE COALESCE(fx.estado,fw.estado,'PROGRAMADO') END estado,
-              p.local_total,p.visitante_total,p.actualizado_en,
-              COALESCE((fx.registro->>'condicional')::boolean,false) condicional
+                   ELSE COALESCE(hb.estado,fx.estado,fw.estado,'PROGRAMADO') END estado,
+              p.local_total,p.visitante_total,GREATEST(p.actualizado_en,hb.actualizado_en,fx.actualizado_en) actualizado_en,
+              COALESCE((fx.registro->>'condicional')::boolean,false) condicional,hb.observado_en
             FROM partidos_baloncesto p
             JOIN competiciones_baloncesto c ON c.id=p.competicion_id
             JOIN equipos e ON e.id=p.equipo_local_id
@@ -60,10 +67,11 @@ def consultar(fecha: date, liga='', buscar='', estado='todos', pagina=1, tamano=
             JOIN temporadas_baloncesto t ON t.id=p.temporada_id
             LEFT JOIN partidos_fuente_wnba fw ON fw.partido_id=p.id AND fw.competicion_id=c.id
             LEFT JOIN fixtures_wnba fx ON fx.resultado_id=p.id AND fx.competicion_id=c.id
+            """ + join + """
             WHERE p.valido IS TRUE AND c.codigo IN ('nba','euroleague','wnba')
               AND p.tipo_partido IN ('PRE','REG','POST')
-              AND (CASE WHEN c.codigo='wnba' AND COALESCE(fx.inicio_utc,fw.inicio_utc) IS NOT NULL
-                   THEN COALESCE(fx.inicio_utc,fw.inicio_utc) >= %s AND COALESCE(fx.inicio_utc,fw.inicio_utc) < %s
+              AND (CASE WHEN COALESCE(hb.inicio_utc,fx.inicio_utc,fw.inicio_utc) IS NOT NULL
+                   THEN COALESCE(hb.inicio_utc,fx.inicio_utc,fw.inicio_utc) >= %s AND COALESCE(hb.inicio_utc,fx.inicio_utc,fw.inicio_utc) < %s
                    ELSE p.fecha_partido=%s END)
             ORDER BY c.codigo,p.fecha_partido,p.equipo_local_id,p.equipo_visitante_id,p.tipo_partido,
                      (p.espn_game_id IS NOT NULL) DESC,p.actualizado_en DESC,p.id

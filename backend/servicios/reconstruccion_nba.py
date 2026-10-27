@@ -1,5 +1,7 @@
 """Refit NBA efímero al corte. Sin publicar pesos/versiones ni registrar consultas."""
 from collections import Counter
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from hashlib import sha256
 import json
 
@@ -22,7 +24,9 @@ def reconstruir(peticion, fixture, marcadores=(None, None, None)):
 
 
 def _reconstruir(peticion, fixture, marcadores):
-    corte = fixture['fecha_partido']
+    # Un fixture futuro sin hora no acredita una emisión previa: tampoco puede
+    # incorporar filas accidentalmente fechadas después del reloj de consulta.
+    corte = min(fixture['fecha_partido'],datetime.now(ZoneInfo('America/Bogota')).date())
     filas = EntrenadorBD(obtener_pool())._obtener_partidos(
         temporadas=peticion.temporadas, cutoff_fecha=corte)
     # Defensa adicional: ni un dato del mismo día o posterior cruza el corte.
@@ -53,7 +57,7 @@ def _reconstruir(peticion, fixture, marcadores):
     huella = sha256(json.dumps(filas, default=str, sort_keys=True).encode()).hexdigest()
     datos.setdefault('metadata', {}).update({
         'modo_analisis': 'HISTORICO_RECONSTRUIDO', 'solo_consulta': True,
-        'partido_id': str(fixture['id']), 'fecha_partido': corte.isoformat(),
+        'partido_id': str(fixture['id']), 'fecha_partido': fixture['fecha_partido'].isoformat(),
         'corte_exclusivo': corte.isoformat(), 'partidos_entrenamiento': len(filas),
         'ultimo_dato_utilizado': max(r['fecha_partido'] for r in filas).isoformat(),
         'dataset_sha256': huella, 'modelo_version': None,

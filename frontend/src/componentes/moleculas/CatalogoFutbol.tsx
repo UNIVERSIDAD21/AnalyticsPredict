@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw, Search, SlidersHorizont
 import type { Competicion, PartidoFutbolResumen } from '../../tipos/futbol';
 import { listarAgenda, listarCompeticiones, resolverPartidoCatalogo, type AgendaFutbol, type FiltrosAgenda, type PartidoAgendaFutbol } from '../../servicios/futbol/catalogo';
 import { fechaColombia, puedeAnalizarPartido, requiereReconstruccion, sumarDias } from '../../utilidades/agendaFutbol';
+import { EstadoSincronizacionAgenda } from './EstadoSincronizacionAgenda';
 
 interface Props {
   revision: number; onInicio: () => void; onCargando: (valor: boolean) => void; onError: (valor: string | null) => void;
@@ -89,6 +90,7 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
   const filtrado = Boolean(filtros.competicionId || filtros.pais || filtros.estado !== 'todos' || soloGuardados);
   const fechaLarga = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${filtros.fecha}T12:00:00Z`));
   return <section id="agenda-futbol" aria-label="Agenda de partidos" className="tarjeta min-w-0 space-y-5 !p-4 sm:!p-6">
+    <EstadoSincronizacionAgenda />
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-neon-cyan">Fútbol · Todas tus competiciones</p><h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-texto-principal"><CalendarDays className="h-6 w-6 text-neon-cyan" />Partidos</h1><p className="mt-1 text-sm capitalize text-texto-secundario">{fechaLarga}<span className="normal-case"> · hora de Colombia</span></p></div>
       <button type="button" disabled={cargando} onClick={() => setRecarga(n => n + 1)} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-texto-secundario hover:border-neon-cyan/50 disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${cargando ? 'animate-spin' : ''}`} />Actualizar agenda</button>
@@ -121,7 +123,7 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
       {agenda?.partidos.map(p => {
         const permitido = p.analizable && puedeAnalizarPartido(p, ahora), seleccionado = seleccionadoId === p.id;
         return <article key={p.id} className={`min-w-0 rounded-2xl border p-4 transition-colors ${seleccionado ? 'border-neon-cyan bg-neon-cyan/5' : 'border-white/10 bg-futurista-negro/30 hover:border-neon-cyan/40'}`}>
-          <div className="mb-3 flex items-center justify-between gap-2"><time dateTime={p.fechaPartido} className="text-sm font-semibold text-texto-principal">{hora(p.fechaPartido)}</time><span className={`rounded-full px-2 py-1 text-[11px] ${estadoVisible(p, ahora) === 'Estado por verificar' ? 'bg-neon-amarillo/10 text-neon-amarillo' : p.estadoAgenda === 'EN_JUEGO' ? 'bg-neon-verde/10 text-neon-verde' : 'bg-white/5 text-texto-secundario'}`}>{estadoVisible(p, ahora)}</span></div>
+          <div className="mb-3 flex items-center justify-between gap-2"><time dateTime={p.fechaPartido} className="text-sm font-semibold text-texto-principal">{p.precisionFecha === 'DIA' ? 'Hora por confirmar' : hora(p.fechaPartido)}</time><span className={`rounded-full px-2 py-1 text-[11px] ${estadoVisible(p, ahora) === 'Estado por verificar' ? 'bg-neon-amarillo/10 text-neon-amarillo' : p.estadoAgenda === 'EN_JUEGO' ? 'bg-neon-verde/10 text-neon-verde' : 'bg-white/5 text-texto-secundario'}`}>{estadoVisible(p, ahora)}</span></div>
           <p className="mb-3 truncate text-xs text-texto-secundario" title={`${p.competicionNombre} · ${p.pais}`}>{p.competicionNombre} · {p.pais}</p>
           {[{ nombre: p.equipoLocalNombre, logo: p.equipoLocalLogo, goles: p.golesLocal }, { nombre: p.equipoVisitanteNombre, logo: p.equipoVisitanteLogo, goles: p.golesVisitante }].map((e, i) => <div key={i} className="mb-2 flex min-w-0 items-center gap-2.5"><Escudo nombre={e.nombre} url={e.logo} /><span className="min-w-0 flex-1 break-words text-sm font-medium text-texto-principal">{e.nombre}</span>{e.goles != null && <span className="text-lg font-semibold text-texto-principal">{e.goles}</span>}</div>)}
           <button type="button" aria-label={`${p.estado === 'FINALIZADO' ? 'Ver histórico' : 'Analizar'} ${p.equipoLocalNombre} vs ${p.equipoVisitanteNombre}`} disabled={!permitido || cargando || Boolean(error)} onClick={() => elegir(p)} className="mt-3 w-full rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 px-3 py-2 text-sm font-semibold text-neon-cyan hover:bg-neon-cyan/20 disabled:border-white/10 disabled:bg-white/5 disabled:text-texto-terciario">{seleccionado ? 'Seleccionado' : permitido ? p.estado === 'FINALIZADO' ? 'Ver resultado / Histórico' : requiereReconstruccion(p, ahora) ? 'Analizar con corte al inicio' : 'Analizar partido' : 'No disponible para prepartido'}</button>

@@ -15,5 +15,5 @@ export function puedeAnalizarPartido(partido: PartidoFutbolResumen, ahora = Date
 }
 
 export function requiereReconstruccion(partido: PartidoFutbolResumen, ahora = Date.now()): boolean {
-  return Date.parse(partido.fechaPartido) <= ahora;
+  return partido.precisionFecha === 'DIA' || partido.reconstruccion === true || Date.parse(partido.fechaPartido) <= ahora;
 }

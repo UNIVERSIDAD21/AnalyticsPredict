@@ -156,3 +156,16 @@ def test_euroliga_manual_sin_fixture_no_usa_historico_sin_inicializar(monkeypatc
         rutas.analizar(p)
     assert error.value.status_code == 422
     assert error.value.detail == 'Muestra sintética insuficiente'
+
+
+@pytest.mark.integracion
+def test_hora_verificada_agrupa_cot_sin_cambiar_fecha_canonica(agenda_sql,db_local):
+    c=db_local;pid=agenda_sql['nba']
+    c.execute('CREATE TABLE horarios_baloncesto(partido_id uuid,inicio_utc timestamptz,estado text,observado_en timestamptz,actualizado_en timestamptz)')
+    c.execute("INSERT INTO horarios_baloncesto VALUES(%s,'2020-03-11 06:00Z','FINALIZADO','2020-03-12 00:00Z','2020-03-12 00:00Z')",(pid,))
+    nuevo=agenda.consultar(date(2020,3,11))
+    assert nuevo['total']==1 and nuevo['partidos'][0]['id']==str(pid)
+    assert nuevo['partidos'][0]['inicio_utc']=='2020-03-11T06:00:00+00:00'
+    assert nuevo['partidos'][0]['fecha_partido']=='2020-03-11'
+    assert agenda.consultar(date(2020,3,10))['total']==2
+    assert c.execute('SELECT fecha_partido FROM partidos_baloncesto WHERE id=%s',(pid,)).fetchone()['fecha_partido']==date(2020,3,10)

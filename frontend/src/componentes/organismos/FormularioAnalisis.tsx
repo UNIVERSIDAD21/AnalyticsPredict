@@ -532,7 +532,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             deshabilitado={cargando}
             esJuegoCompleto={esJuegoCompleto}
             unidadLabel={unidadLineaLabel ?? 'puntos'}
-            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga || esCorteNBA ? `regulación de ${esWnba || esEuroliga ? 40 : 48} minutos (sin OT)` : 'juego completo (incluye OT)') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
+            periodoLabel={deporte === 'FUTBOL' ? (formulario.mercado === 'Q1' ? 'primer tiempo' : formulario.mercado === 'Q2' ? 'segundo tiempo' : 'juego completo') : (formulario.mercado === 'COMPLETO' ? (esEuroliga || esCorteNBA || (consultaHistorica && deporte === 'NBA') ? `regulación de ${esWnba || esEuroliga ? 40 : 48} minutos (sin OT)` : 'juego completo (incluye OT)') : formulario.mercado ? `cuarto ${formulario.mercado}` : undefined)}
             placeholderLinea={esEuroliga ? (esJuegoCompleto ? 'Ej: 170.5' : 'Ej: 42.5') : undefined}
           />
 

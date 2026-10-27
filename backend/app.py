@@ -302,6 +302,8 @@ app.include_router(router_apuestas_futbol)
 app.include_router(router_metricas_futbol)
 app.include_router(router_fuentes_futbol)
 app.include_router(router_operacion)
+from api.rutas_agendas import router as router_agendas
+app.include_router(router_agendas)
 
 
 @app.get(

@@ -1,6 +1,6 @@
 """Regresión Euroliga: aislamiento, cronología, probabilidades y persistencia."""
 from copy import deepcopy
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 import importlib.util
 import json
 from pathlib import Path
@@ -142,6 +142,7 @@ def test_abstencion_equipos_nba_y_muestra_pequena(modelo):
 @pytest.fixture
 def cliente(modelo, filas, monkeypatch, tmp_path):
     futuro = {**filas[0], "id": str(uuid5(NAMESPACE_URL, "fixture-euro")), "fecha_partido": (date.today()+timedelta(days=2)).isoformat(), "local_total": None, "visitante_total": None}
+    monkeypatch.setattr("servicios.horarios_agenda.horario_partido",lambda *a,**kw:{"precision_fecha":"HORA","inicio_utc":datetime.fromisoformat(futuro["fecha_partido"]).replace(tzinfo=timezone.utc),"estado":"PROGRAMADO"})
     monkeypatch.setattr(rutas, "modelo_actual", lambda: modelo)
     monkeypatch.setattr(rutas, "leer_datos", lambda: filas + [futuro])
     monkeypatch.setenv("ANALYTICSPREDICT_EUROLIGA_JOURNAL", str(tmp_path / "journal"))

@@ -107,6 +107,7 @@ def api_sintetica(monkeypatch):
     class Pool:
         @contextmanager
         def connection(self): yield Conn()
+    monkeypatch.setattr('servicios.horarios_agenda.horario_partido',lambda *a,**kw:None)
     monkeypatch.setattr(rutas,'obtener_pool',Pool)
     monkeypatch.setattr(rutas,'_obtener_predictor_futbol_ml',lambda pool:None)
     monkeypatch.setattr(rutas,'_resolver_filtro_temporal_futbol',lambda *a,**kw:{'temporada_ids':[partido['temporada_id']],'estrategia':'temporadas_explicitas'})

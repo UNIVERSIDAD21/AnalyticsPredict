@@ -1,0 +1,14 @@
+[Unit]
+Description=Actualizar calendarios y resultados de AnalyticsPredict sin entrenar modelos
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/.openclaw/workspace/repos/AnalyticsPredict
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OMP_NUM_THREADS=1
+# El entorno PostgreSQL del host se añade en un drop-in local, sin secretos.
+ExecStart=%h/.openclaw/workspace/repos/AnalyticsPredict/backend/.venv/bin/python backend/scripts/sincronizar_agendas.py --aplicar
+TimeoutStartSec=45min
+UMask=0077
+Nice=10

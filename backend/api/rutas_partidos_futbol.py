@@ -491,20 +491,32 @@ def agenda_partidos(
     }
     if estado in estados:
         expresion, valores = estados[estado]; filtros.append(expresion); params.extend(valores)
-    joins = """FROM partidos_futbol pf JOIN competiciones_futbol c ON c.id=pf.competicion_id
-        JOIN equipos_futbol el ON el.id=pf.equipo_local_id JOIN equipos_futbol ev ON ev.id=pf.equipo_visitante_id
-        LEFT JOIN paises p ON p.id=c.pais_id WHERE """ + " AND ".join(filtros)
     with obtener_pool().connection() as conn, conn.cursor(row_factory=dict_row) as cursor:
-        resumen = cursor.execute("SELECT count(*) AS total, max(pf.actualizado_en) AS actualizado " + joins, params).fetchone()
+        cursor.execute("SELECT to_regclass('horarios_futbol') tabla")
+        metadata = cursor.fetchone()['tabla'] is not None
+        horario_join = 'LEFT JOIN horarios_futbol hf ON hf.partido_id=pf.id' if metadata else ''
+        horario_select = "COALESCE(hf.precision_fecha,'HORA') precision_fecha,hf.observado_en fuente_verificada_en,hf.estado estado_fuente" if metadata else "'HORA' precision_fecha,NULL::timestamptz fuente_verificada_en,NULL::text estado_fuente"
+        # Fechas sin hora: día nominal de fuente, no conversión COT inventada.
+        if metadata:
+            filtros[1:3] = ["((hf.precision_fecha='DIA' AND hf.fecha_fuente=%s) OR (COALESCE(hf.precision_fecha,'HORA')='HORA' AND pf.fecha_partido>=%s AND pf.fecha_partido<%s))"]
+            params = [dia,*params]
+            filtros = [x.replace("pf.estado", "COALESCE(hf.estado,pf.estado::text)") for x in filtros]
+        joins = """FROM partidos_futbol pf JOIN competiciones_futbol c ON c.id=pf.competicion_id
+            JOIN equipos_futbol el ON el.id=pf.equipo_local_id JOIN equipos_futbol ev ON ev.id=pf.equipo_visitante_id
+            LEFT JOIN paises p ON p.id=c.pais_id """ + horario_join + " WHERE " + " AND ".join(filtros)
+        fecha_cambio = "GREATEST(pf.actualizado_en,hf.actualizado_en)" if metadata else "pf.actualizado_en"
+        resumen = cursor.execute("SELECT count(*) AS total, max("+fecha_cambio+") AS actualizado " + joins, params).fetchone()
         filas = cursor.execute("""SELECT pf.id,pf.competicion_id,pf.temporada_id,pf.equipo_local_id,pf.equipo_visitante_id,
             c.nombre AS competicion,COALESCE(p.nombre,'Internacional') AS pais,pf.fecha_partido,
             el.nombre AS equipo_local,ev.nombre AS equipo_visitante,el.logo_url AS equipo_local_logo,ev.logo_url AS equipo_visitante_logo,
-            pf.estado,pf.jornada,pf.local_goles_total AS goles_local,pf.visitante_goles_total AS goles_visitante,pf.actualizado_en
-            """ + joins + " ORDER BY pf.fecha_partido,pf.id LIMIT %s OFFSET %s", [*params, tamano, (pagina - 1) * tamano]).fetchall()
+            pf.estado,pf.jornada,pf.local_goles_total AS goles_local,pf.visitante_goles_total AS goles_visitante,pf.actualizado_en,
+            """ + horario_select + " " + joins + " ORDER BY pf.fecha_partido,pf.id LIMIT %s OFFSET %s", [*params, tamano, (pagina - 1) * tamano]).fetchall()
     partidos = []
     for fila in filas:
+        fila["estado"] = fila.pop("estado_fuente",None) or fila["estado"]
         presentacion = estado_agenda(fila["estado"], fila["fecha_partido"], ahora)
         partidos.append(PartidoAgenda(**fila, estado_agenda=presentacion,
+                                     reconstruccion=fila["precision_fecha"]!='HORA' or fila["fecha_partido"]<=ahora,
                                      analizable=permite_consulta(fila["estado"], fila["fecha_partido"], ahora)))
     return AgendaFutbolResponse(fecha=dia, consultado_en=ahora, datos_actualizados_en=resumen["actualizado"],
                                total=resumen["total"], pagina=pagina, tamano=tamano, partidos=partidos)

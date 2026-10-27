@@ -316,7 +316,7 @@ def test_endpoint_registra_con_contexto_completo():
         return uuid4()
 
     fake_datos = {"predicciones": [], "mejor_apuesta": None}
-    with patch("api.rutas_analisis._resolver_fixture_nba", return_value={"fecha_partido": date(2099, 1, 15)}), patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
+    with patch("api.rutas_analisis._resolver_fixture_nba", return_value={"fecha_partido": date(2099, 1, 15), "horario": {"precision_fecha":"HORA", "inicio_utc":__import__("datetime").datetime(2099,1,15,tzinfo=__import__("datetime").timezone.utc), "estado":"PROGRAMADO"}}), patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
         with patch("api.rutas_analisis.validar_equipos"):  # Bypass validación
             with patch("api.rutas_analisis.analizar_partido", return_value=FakeResultado()):
                 with patch("api.rutas_analisis.resultado_a_dict", return_value=fake_datos):
@@ -355,7 +355,7 @@ def test_endpoint_no_rompe_si_registro_falla():
         raise RuntimeError("BD caída simulada")
 
     fake_datos = {"predicciones": [], "mejor_apuesta": None}
-    with patch("api.rutas_analisis._resolver_fixture_nba", return_value={"fecha_partido": date(2099, 1, 15)}), patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
+    with patch("api.rutas_analisis._resolver_fixture_nba", return_value={"fecha_partido": date(2099, 1, 15), "horario": {"precision_fecha":"HORA", "inicio_utc":__import__("datetime").datetime(2099,1,15,tzinfo=__import__("datetime").timezone.utc), "estado":"PROGRAMADO"}}), patch("api.rutas_analisis.obtener_modelo", return_value=FakeModelo()):
         with patch("api.rutas_analisis.validar_equipos"):  # Bypass validación
             with patch("api.rutas_analisis.analizar_partido", return_value=FakeResultado()):
                 with patch("api.rutas_analisis.resultado_a_dict", return_value=fake_datos):

@@ -543,6 +543,9 @@ def _resolver_fixture_nba(peticion):
             JOIN equipos e ON e.id=p.equipo_local_id JOIN equipos v ON v.id=p.equipo_visitante_id
             WHERE p.id=%s''', (peticion.partido_id,))
         fixture = cur.fetchone()
+        if fixture:
+            from servicios.horarios_agenda import horario_partido
+            fixture['horario'] = horario_partido(fixture['id'], conexion=conn)
     if not fixture or fixture['codigo'] != 'nba' or fixture['valido'] is not True:
         raise ErrorValidacion('El partido no pertenece a NBA válida')
     if any(normalizar_nombre(fixture[k]) != normalizar_nombre(n) for k,n in (
@@ -565,7 +568,8 @@ def ejecutar_analisis(
     if peticion.partido_id:
         from servicios.agenda_baloncesto import ahora
         fixture = _resolver_fixture_nba(peticion)
-        if fixture['fecha_partido'] <= ahora().date():
+        from servicios.horarios_agenda import requiere_reconstruccion
+        if requiere_reconstruccion(fixture['fecha_partido'],fixture.get('horario'),ahora()):
             from servicios.reconstruccion_nba import reconstruir
             try:
                 datos = reconstruir(peticion, fixture, (marcador_q1,marcador_q2,marcador_q3))

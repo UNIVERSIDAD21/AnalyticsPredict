@@ -121,7 +121,7 @@ def test_flujo_con_calibrador_activo_usa_p_calibrada_para_ev(monkeypatch):
 
 
 def test_api_expone_p_raw_y_p_calibrada_y_registra_calibrador(monkeypatch):
-    monkeypatch.setattr("api.rutas_analisis._resolver_fixture_nba", lambda p: {"fecha_partido": date(2099, 1, 15)})
+    monkeypatch.setattr("api.rutas_analisis._resolver_fixture_nba", lambda p: {"fecha_partido": date(2099, 1, 15), "horario": {"precision_fecha":"HORA", "inicio_utc":__import__("datetime").datetime(2099,1,15,tzinfo=__import__("datetime").timezone.utc), "estado":"PROGRAMADO"}})
     modelo = _crear_modelo_simple()
     calibrador = DummyCalibrador("Q1")
     llamadas_registro = []

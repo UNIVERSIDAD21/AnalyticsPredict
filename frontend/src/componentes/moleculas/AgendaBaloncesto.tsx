@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { consultarAgendaBaloncesto, type AgendaBaloncesto as DatosAgenda, type PartidoAgendaBaloncesto } from '../../servicios/agendaBaloncesto';
 import { extraerMensajeError } from '../../servicios/api';
 import { fechaColombia, sumarDias } from '../../utilidades/agendaFutbol';
+import { EstadoSincronizacionAgenda } from './EstadoSincronizacionAgenda';
 
 interface Props { seleccionado: PartidoAgendaBaloncesto | null; onSeleccionar: (p: PartidoAgendaBaloncesto) => void; onCambiar: () => void }
 const campo = 'input-base w-full min-w-0';
@@ -73,14 +74,16 @@ export function AgendaBaloncesto({ seleccionado, onSeleccionar, onCambiar }: Pro
     {error && <div role="alert"><p>{error}</p><button type="button" className="text-neon-cyan mt-2" onClick={() => setRevision(n => n+1)}>Reintentar carga</button></div>}
     {!error && !cargando && !datos?.partidos.length && <p className="p-6 border border-dashed border-white/15 rounded-xl text-texto-secundario">No hay partidos registrados para esta fecha y estos filtros. Una agenda vacía no acredita que no haya encuentros.</p>}
     <div className={`grid lg:grid-cols-2 gap-4 ${cargando ? 'opacity-50' : ''}`}>
-      {datos?.partidos.map(original => { const reconstruccion = original.inicio_utc ? Date.parse(original.inicio_utc) <= reloj : original.fecha_partido <= fechaColombia(new Date(reloj)); const p = { ...original, reconstruccion }; return <article key={`${p.liga}-${p.id}`} className={`rounded-2xl border p-5 space-y-4 ${seleccionado?.id === p.id ? 'border-neon-cyan bg-neon-cyan/5' : 'border-white/10 bg-black/10'}`}>
+      {datos?.partidos.map(original => { const reconstruccion = !original.inicio_utc || original.estado !== 'PROGRAMADO' || Date.parse(original.inicio_utc) <= reloj; const p = { ...original, reconstruccion }; return <article key={`${p.liga}-${p.id}`} className={`rounded-2xl border p-5 space-y-4 ${seleccionado?.id === p.id ? 'border-neon-cyan bg-neon-cyan/5' : 'border-white/10 bg-black/10'}`}>
         <div className="flex flex-wrap justify-between gap-2 text-sm"><strong>{p.inicio_utc ? new Date(p.inicio_utc).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' }) : 'Hora por confirmar'}</strong><span className="text-texto-secundario">{p.finalizado ? 'Finalizado' : p.estado === 'PROGRAMADO' && p.reconstruccion ? 'Estado por verificar' : p.estado === 'PROGRAMADO' ? 'Programado' : p.estado}</span></div>
         <p className="text-xs text-neon-cyan">{p.competicion_nombre} · {p.temporada_nombre}{p.condicional ? ' · Condicional' : ''}</p>
+        {p.fuente_verificada_en && <p className="text-xs text-texto-terciario">Fuente observada: {new Date(p.fuente_verificada_en).toLocaleString('es-CO', {timeZone:'America/Bogota'})} COT</p>}
         <p className="font-semibold">{p.equipo_local_nombre}{p.finalizado ? ` · ${p.local_total}` : ''}</p><p className="font-semibold">{p.equipo_visitante_nombre}{p.finalizado ? ` · ${p.visitante_total}` : ''}</p>
         <button type="button" disabled={cargando || !p.analizable} aria-label={`Analizar ${p.equipo_local_nombre} vs ${p.equipo_visitante_nombre}`} className="w-full rounded-xl border border-neon-cyan/30 py-3 text-sm text-neon-cyan disabled:opacity-40" onClick={() => onSeleccionar(p)}>{seleccionado?.id === p.id ? 'Seleccionado' : p.analizable ? p.reconstruccion ? 'Analizar con corte histórico' : 'Analizar partido' : 'No disponible para análisis previo'}</button>
       </article>; })}
     </div>
     {datos && datos.total > datos.tamano && <nav aria-label="Páginas de la agenda" className="flex justify-between text-sm"><button disabled={pagina === 1 || cargando} onClick={() => setPagina(n => n-1)}>Anterior</button><span>Página {pagina} de {Math.ceil(datos.total/datos.tamano)}</span><button disabled={pagina*datos.tamano >= datos.total || cargando} onClick={() => setPagina(n => n+1)}>Siguiente</button></nav>}
-    <p className="text-xs text-texto-terciario">NBA y Euroliga conservan fecha canónica sin hora: no se acredita el orden horario entre esos encuentros. Los análisis históricos usan datos de días anteriores; no son pronósticos emitidos entonces. Actualizar agenda consulta la BD, sin descargar calendarios.</p>
+    <p className="text-xs text-texto-terciario">Las horas verificadas se muestran en Colombia. Hora por confirmar conserva el día de la fuente sin acreditar conversión exacta. Los históricos usan datos anteriores al corte; no son pronósticos emitidos entonces. Actualizar agenda sólo consulta la BD.</p>
+    <EstadoSincronizacionAgenda />
   </section>;
 }

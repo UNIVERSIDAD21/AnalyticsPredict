@@ -95,3 +95,15 @@ def test_todos_los_estados_pasados_permiten_consulta_con_corte(estado):
     ahora=datetime.now(timezone.utc)
     assert permite_consulta(estado,ahora-timedelta(hours=1),ahora)
     assert permite_consulta(estado,ahora,ahora)
+
+
+def test_hora_retirada_reconstruye_sin_cambiar_fecha_catalogo(api_sintetica,monkeypatch):
+    client,p,_,registros=api_sintetica
+    original=datetime.now(timezone.utc)+timedelta(days=2);p['fecha_partido']=original
+    monkeypatch.setattr('servicios.horarios_agenda.horario_partido',lambda *a,**kw:{
+        'precision_fecha':'DIA','fecha_fuente':original.date(),'estado':'PROGRAMADO','inicio_utc':None})
+    r=client.post('/api/futbol/analizar',json={'partido_id':p['id'],'mercado_objetivo':'GOLES_FT','linea_objetivo':2.5,'lado_objetivo':'OVER'})
+    assert r.status_code==200,r.text
+    assert r.json()['modo']=='HISTORICO_RECONSTRUIDO' and p['fecha_partido']==original
+    assert r.json()['objetivo']['trazabilidad']['registro_predicciones'] is False
+    assert not registros

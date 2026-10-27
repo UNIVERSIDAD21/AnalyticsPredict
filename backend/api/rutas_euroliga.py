@@ -78,13 +78,15 @@ def analizar(p: PeticionEuroliga):
         if any(normalizar_nombre(fixture[k]) != normalizar_nombre(nombre) for k, nombre in (("local", p.equipo_local), ("visitante", p.equipo_visitante))):
             raise HTTPException(422, "Equipos/localía no coinciden con el fixture Euroliga")
         from servicios.agenda_baloncesto import ahora
-        historico = str(fixture['fecha_partido'])[:10] <= ahora().date().isoformat()
+        from servicios.horarios_agenda import horario_partido, requiere_reconstruccion
+        fixture['horario'] = horario_partido(fixture['id'])
+        historico = requiere_reconstruccion(fixture['fecha_partido'],fixture['horario'],ahora())
         if not historico and str(fixture["fecha_partido"])[:10] <= m["fecha_max"]:
             raise HTTPException(422, "Fixture no es posterior al corte del modelo")
     try:
         if historico:
             from motor.euroliga import preparar_filas, entrenar
-            corte_historico = str(fixture['fecha_partido'])[:10]
+            corte_historico = min(str(fixture['fecha_partido'])[:10],ahora().date().isoformat())
             previos = preparar_filas(filas, corte_historico)
             if len(previos) < 600:
                 raise ValueError('Muestra Euroliga anterior al corte insuficiente para TRAIN/CAL/EVAL temporales')
@@ -95,7 +97,7 @@ def analizar(p: PeticionEuroliga):
         if historico:
             resultado['modo'] = 'HISTORICO_RECONSTRUIDO'
             resultado['advertencias'].append('Reconstrucción con datos anteriores al día del encuentro. No es un pronóstico emitido entonces; solo consulta, sin publicar el refit ni conservar journal.')
-        corte = str(fixture["fecha_partido"])[:10] if fixture else (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
+        corte = corte_historico if historico else str(fixture["fecha_partido"])[:10] if fixture else (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
         resultado["contexto"] = contexto(
             filas, p.equipo_local, p.equipo_visitante, corte, m.get("temporada_reciente")
         )
@@ -130,7 +132,7 @@ def analizar(p: PeticionEuroliga):
         if historico:
             resultado.update({'analisis_id': str(uuid4()), 'partido_id': str(fixture['id']),
                               'prospectiva_acreditada_por_fecha': False,
-                              'corte_exclusivo': str(fixture['fecha_partido'])[:10], 'solo_consulta': True})
+                              'corte_exclusivo': corte_historico, 'solo_consulta': True})
             return {'exito': True, 'resultado': resultado}
         return {"exito": True, "resultado": registrar(resultado, fixture)}
     except ValueError as exc:

@@ -2,7 +2,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Encabezado } from '../organismos/Encabezado';
-import { fechaColombia } from '../../utilidades/agendaFutbol';
 import { leerLigaBaloncesto } from '../../utilidades/ligasBaloncesto';
 import { AgendaBaloncesto } from '../moleculas/AgendaBaloncesto';
 import type { PartidoAgendaBaloncesto } from '../../servicios/agendaBaloncesto';
@@ -32,7 +31,7 @@ export function PaginaBaloncesto() {
   const partidoId = params.get('partidoId');
   const partido = useMemo(() => {
     if (seleccionado?.liga !== liga || seleccionado.id !== partidoId) return null;
-    const reconstruccion = seleccionado.inicio_utc ? Date.parse(seleccionado.inicio_utc) <= reloj : seleccionado.fecha_partido <= fechaColombia(new Date(reloj));
+    const reconstruccion = !seleccionado.inicio_utc || seleccionado.estado !== 'PROGRAMADO' || Date.parse(seleccionado.inicio_utc) <= reloj;
     return { ...seleccionado, reconstruccion };
   }, [seleccionado, liga, partidoId, reloj]);
   const idSeleccionado = partido?.id;

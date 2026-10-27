@@ -1,5 +1,21 @@
 # Estado vigente — AnalyticsPredict
 
+## Agendas, horarios y evaluación por dominio — 2026-10-26
+
+Agenda global de baloncesto publicada previamente; ampliación aditiva para horas
+UTC verificadas, agrupación COT, sincronización incremental y trazabilidad de
+revisiones por fuente. Consulta de BD separada de sincronizar; reconstrucciones
+conservadoras sin registro cuando no se acredita prepartido. Operación con
+respaldo restaurado, ensayo revertido, before-images, pipeline y postflight.
+Timer local del usuario solicitado: su instalación y próxima ejecución constan
+en el acta externa, no se deducen de las plantillas. Cobertura oficial íntegra
+no acreditada; horas TBD e identidades ambiguas permanecen en incidencias.
+Evaluación temporal de candidatos por liga y cohortes fútbol: ningún calibrador
+o modelo activo promovido; RAW/N/D y artefactos originales preservados.
+[Operación y límites](../reactivacion_single_user/SINCRONIZACION_AGENDAS_2026-10-26.md) ·
+[Métricas y alcance](../reactivacion_single_user/VALIDACION_AGENDAS_2026-10-26.md).
+
+
 ## Agenda global y consulta retrospectiva de fútbol — 2026-10-26
 
 `/futbol` permite navegar por día entre todas las competiciones y seleccionar

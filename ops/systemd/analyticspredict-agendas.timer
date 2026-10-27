@@ -1,0 +1,11 @@
+[Unit]
+Description=Ventanas móviles de las agendas de AnalyticsPredict (dos ciclos diarios)
+
+[Timer]
+OnCalendar=*-*-* 06,18:00:00 America/Bogota
+Persistent=true
+RandomizedDelaySec=5min
+Unit=analyticspredict-agendas.service
+
+[Install]
+WantedBy=timers.target

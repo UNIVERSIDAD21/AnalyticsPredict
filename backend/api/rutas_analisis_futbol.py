@@ -2860,6 +2860,18 @@ def analizar_partido(
                 estado_partido = str(partido["estado"] or "").upper()
                 ahora_consulta = datetime.now(timezone.utc)
                 inicio_vencido = partido["fecha_partido"] <= ahora_consulta
+                corte_hora_insuficiente = None
+                from servicios.horarios_agenda import horario_partido
+                horario = horario_partido(partido['id'],conexion=conn,tabla='horarios_futbol')
+                if horario:
+                    estado_partido = horario['estado']
+                if horario and horario['precision_fecha']!='HORA':
+                    # Una hora retirada por la fuente no acredita prepartido.
+                    # Corte conservador incluso respecto a zonas de origen no conocidas.
+                    from datetime import time as hora_dia
+                    corte_hora_insuficiente = min(partido['fecha_partido'],datetime.combine(
+                        horario['fecha_fuente']-timedelta(days=1),hora_dia.min,tzinfo=timezone.utc),ahora_consulta)
+                    inicio_vencido = True
                 if not partido.get("valido", True):
                     raise HTTPException(status_code=400, detail="Partido invalidado: no analizable.")
                 if request.modo_historico and not inicio_vencido:
@@ -2880,6 +2892,7 @@ def analizar_partido(
                     "POSPUESTO",
                     "APLAZADO",
                     "SUSPENDIDO",
+                    "DEMORADO",
                 }
                 if estado_partido in estados_no_analizables and not request.modo_historico:
                     raise HTTPException(
@@ -2964,7 +2977,7 @@ def analizar_partido(
 
                 # 2b. Contexto H2H + estadisticas recientes (hasta 100 partidos)
                 competicion_id = str(partido["competicion_id"])
-                fecha_corte = partido.get("fecha_partido") or datetime.now().astimezone()
+                fecha_corte = corte_hora_insuficiente or partido.get("fecha_partido") or datetime.now().astimezone()
                 if not request.modo_historico:
                     fecha_corte = min(fecha_corte, datetime.now(fecha_corte.tzinfo))
                 limite_h2h = _limitar_h2h_limite(request.h2h_limite)

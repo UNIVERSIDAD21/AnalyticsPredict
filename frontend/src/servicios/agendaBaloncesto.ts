@@ -8,6 +8,7 @@ export interface PartidoAgendaBaloncesto extends PartidoResumen {
   inicio_utc: string | null;
   analizable: boolean;
   reconstruccion: boolean;
+  fuente_verificada_en?: string | null;
 }
 export interface AgendaBaloncesto {
   fecha: string; total: number; pagina: number; tamano: number;

@@ -146,10 +146,12 @@ def registrar(resultado: dict, fixture: dict | None, directorio: Path | None = N
     fecha = str(fixture["fecha_partido"])[:10] if fixture else None
     # El catálogo no conserva hora de inicio. No acreditar una captura del mismo
     # día como anterior al kickoff; tampoco acreditar una condicionada live.
-    prospectiva = bool(fecha and ahora.date().isoformat() < fecha and resultado["modo"] == "PREPARTIDO")
+    from servicios.horarios_agenda import requiere_reconstruccion
+    prospectiva = bool(fixture and not requiere_reconstruccion(fecha,fixture.get('horario'),ahora)
+                       and resultado["modo"] == "PREPARTIDO")
     resultado.update({"analisis_id": identificador, "partido_id": str(fixture["id"]) if fixture else None,
                       "fecha_partido": fecha, "prospectiva_acreditada_por_fecha": prospectiva,
-                      "limite_temporal": "Solo fecha canónica, no hora de kickoff; mismo día no acredita anterioridad."})
+                      "limite_temporal": "Anterioridad sólo con inicio UTC verificado; una fecha canónica sin hora no la acredita."})
     escribir_nuevo((directorio or ruta_journal()) / (identificador + ".json"), resultado)
     return resultado
 

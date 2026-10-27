@@ -182,6 +182,9 @@ class PartidoAgenda(PartidoResumen):
     estado_agenda: Literal["PROXIMO", "POR_VERIFICAR", "EN_JUEGO", "FINALIZADO", "NO_DISPONIBLE"]
     analizable: bool
     actualizado_en: Optional[datetime] = None
+    precision_fecha: Literal['HORA','DIA'] = 'HORA'
+    fuente_verificada_en: Optional[datetime] = None
+    reconstruccion: bool = False
 
 
 class AgendaFutbolResponse(BaseModel):

@@ -44,6 +44,7 @@ export async function listarAgenda(filtros: FiltrosAgenda, signal: AbortSignal):
     partidos: data.partidos.map((p: Record<string, unknown>) => ({
       id: String(p.id), competicion: String(p.competicion_id), competicionNombre: String(p.competicion),
       temporadaId: String(p.temporada_id), fechaPartido: String(p.fecha_partido),
+      precisionFecha: p.precision_fecha === 'DIA' ? 'DIA' : 'HORA', reconstruccion: p.reconstruccion === true,
       equipoLocal: String(p.equipo_local_id), equipoLocalNombre: String(p.equipo_local),
       equipoVisitante: String(p.equipo_visitante_id), equipoVisitanteNombre: String(p.equipo_visitante),
       equipoLocalLogo: p.equipo_local_logo ? String(p.equipo_local_logo) : undefined,
