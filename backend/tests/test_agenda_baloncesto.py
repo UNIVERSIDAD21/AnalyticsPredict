@@ -59,6 +59,7 @@ def agenda_sql(db_local,monkeypatch):
     return ids
 
 
+@pytest.mark.integracion
 def test_sql_mezcla_ligas_pagina_busca_y_no_duplica_final_wnba(agenda_sql):
     r=agenda.consultar(date(2020,3,10))
     assert r['total']==3 and r['competiciones']==['Euroliga','NBA','WNBA']
@@ -118,14 +119,17 @@ def test_endpoint_pasado_ignora_modelo_actual_y_no_registra(monkeypatch):
     assert r.exito and r.datos['metadata']['modo_analisis']=='HISTORICO_RECONSTRUIDO'
 
 
+@pytest.mark.integracion
 def test_post_conexion_lectura_activa_proteccion_antes_de_adquirir_pool(db_local):
     from db import PoolAplicacion
     from servicios.predictor_euroliga import conexion_lectura
     from lecturas_http import en_peticion_http
     import psycopg
+    import os
+    from psycopg.conninfo import make_conninfo
     token=en_peticion_http.set(True)
     try:
-        with PoolAplicacion(conninfo=db_local.info.dsn,min_size=1,max_size=1) as pool:
+        with PoolAplicacion(conninfo=make_conninfo(os.environ["DATABASE_URL"], dbname=db_local.info.dbname),min_size=1,max_size=1) as pool:
             with conexion_lectura(pool) as c:
                 assert c.read_only
                 assert c.execute('SHOW transaction_read_only').fetchone()[0]=='on'
