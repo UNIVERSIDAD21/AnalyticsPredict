@@ -16,8 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import http_exception_handler
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from psycopg import Error as ErrorPostgres
+from psycopg import Error as ErrorPostgres, OperationalError
 from psycopg.errors import ReadOnlySqlTransaction
+from psycopg_pool import PoolTimeout
 
 from configuracion import CONFIGURACION
 from api.rutas_analisis import router as router_analisis
@@ -152,16 +153,16 @@ de Over/Under para mercados por cuarto y juego completo.
 )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CONFIGURACION.origenes_cors,
-    # Hardening local DX: aceptar localhost/127.0.0.1 en cualquier puerto
-    # para evitar bloqueos CORS intermitentes por cambio de host/puerto en frontend.
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def _registrar_fallo_conexion(request: Request, exc: Exception) -> None:
+    """Identifica indisponibilidad sin exponer mensajes ni credenciales del driver."""
+    vistos = set()
+    causa = exc
+    while causa is not None and id(causa) not in vistos:
+        vistos.add(id(causa))
+        if isinstance(causa, (OperationalError, PoolTimeout)):
+            request.state.base_datos_no_disponible = True
+            return
+        causa = causa.__cause__ or causa.__context__
 
 
 @app.middleware("http")
@@ -175,16 +176,20 @@ async def middleware_trace_id(request: Request, call_next):
         response = await call_next(request)
     except Exception as exc:
         logger.error('Error HTTP trace_id=%s clase=%s', trace_id, type(exc).__name__)
+        _registrar_fallo_conexion(request, exc)
         response = _respuesta_error(
-            request, 503 if isinstance(exc, ErrorPostgres) else 500,
+            request, 503 if isinstance(exc, (ErrorPostgres, PoolTimeout)) else 500,
             'LECTURA_NO_DISPONIBLE', 'No fue posible completar la consulta.',
         )
         request.state.escritura_bloqueada = isinstance(exc, ReadOnlySqlTransaction)
     if response.status_code >= 500:
         headers_lectura = {k: v for k, v in response.headers.items()
             if k.lower().startswith('access-control-') or k.lower() in {'vary', 'retry-after'}}
+        sin_conexion = getattr(request.state, 'base_datos_no_disponible', False)
         response = _respuesta_error(request, response.status_code,
-            'LECTURA_NO_DISPONIBLE', 'No fue posible completar la operación.')
+            'BASE_DATOS_NO_DISPONIBLE' if sin_conexion else 'LECTURA_NO_DISPONIBLE',
+            'No se pudo conectar con la base de datos. Intenta de nuevo cuando se restablezca el servicio.'
+            if sin_conexion else 'No fue posible completar la operación.')
         response.headers.update(headers_lectura)
     latencia_ms = (perf_counter() - inicio) * 1000.0
 
@@ -199,11 +204,25 @@ async def middleware_trace_id(request: Request, call_next):
 
 app.add_middleware(LecturasHTTPMiddleware)
 
+# Starlette ejecuta primero el último middleware registrado. CORS debe envolver
+# también las respuestas 5xx generadas por middleware_trace_id; de otro modo el
+# navegador las oculta y Axios informa «Network Error» en lugar del error real.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CONFIGURACION.origenes_cors,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Trace-Id"],
+)
+
 
 @app.exception_handler(StarletteHTTPException)
 async def manejador_http(request: Request, exc: StarletteHTTPException):
     if exc.status_code < 500:
         return await http_exception_handler(request, exc)
+    _registrar_fallo_conexion(request, exc)
     causa = exc
     while causa is not None:
         if isinstance(causa, ReadOnlySqlTransaction):

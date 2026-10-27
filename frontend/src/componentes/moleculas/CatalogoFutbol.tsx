@@ -4,6 +4,7 @@ import type { Competicion, PartidoFutbolResumen } from '../../tipos/futbol';
 import { listarAgenda, listarCompeticiones, resolverPartidoCatalogo, type AgendaFutbol, type FiltrosAgenda, type PartidoAgendaFutbol } from '../../servicios/futbol/catalogo';
 import { fechaColombia, puedeAnalizarPartido, requiereReconstruccion, sumarDias } from '../../utilidades/agendaFutbol';
 import { EstadoSincronizacionAgenda } from './EstadoSincronizacionAgenda';
+import { extraerMensajeError } from '../../servicios/api';
 
 interface Props {
   revision: number; onInicio: () => void; onCargando: (valor: boolean) => void; onError: (valor: string | null) => void;
@@ -71,7 +72,7 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
       ? Promise.resolve({ fecha: filtros.fecha, total: 0, consultadoEn: new Date().toISOString(), datosActualizadosEn: null, partidos: [] })
       : listarAgenda({ ...filtros, guardados: soloGuardados ? idsGuardados : undefined }, ctl.signal);
     consulta.then(data => { if (!ctl.signal.aborted) { setAgenda(data); onDatos(data.partidos); } })
-      .catch(err => { if (!ctl.signal.aborted) { const msg = err instanceof Error ? err.message : 'No se pudo cargar la agenda'; setError(msg); onError(msg); } })
+      .catch(err => { if (!ctl.signal.aborted) { const msg = extraerMensajeError(err); setError(msg); onError(msg); } })
       .finally(() => { if (!ctl.signal.aborted) { setCargando(false); onCargando(false); } });
     return () => ctl.abort();
   }, [filtros, soloGuardados, idsGuardados, revision, recarga, inicializado, onInicio, onCargando, onError, onDatos]);
@@ -116,7 +117,7 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
         </div>
       </details>
     </div>
-    <div aria-live="polite" className="flex flex-wrap justify-between gap-2 text-xs text-texto-secundario"><span>{cargando ? 'Cargando partidos…' : `${agenda?.total ?? 0} partidos registrados`}</span>{agenda && <span>Consulta: {hora(agenda.consultadoEn)} COT · {agenda.datosActualizadosEn ? `último cambio guardado ${new Date(agenda.datosActualizadosEn).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'short', timeStyle: 'short' })}` : 'sin fecha de actualización acreditada'}</span>}</div>
+    <div aria-live="polite" className="flex flex-wrap justify-between gap-2 text-xs text-texto-secundario"><span>{cargando ? 'Cargando partidos…' : error ? 'Datos no disponibles' : `${agenda?.total ?? 0} partidos registrados`}</span>{agenda && <span>Consulta: {hora(agenda.consultadoEn)} COT · {agenda.datosActualizadosEn ? `último cambio guardado ${new Date(agenda.datosActualizadosEn).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'short', timeStyle: 'short' })}` : 'sin fecha de actualización acreditada'}</span>}</div>
     {error && <div role="alert" className="rounded-xl border border-neon-amarillo/30 p-4 text-sm text-neon-amarillo">No se pudo actualizar la agenda. {error}<button type="button" onClick={() => setRecarga(n => n + 1)} className="ml-2 underline">Reintentar</button></div>}
     {!cargando && !error && agenda?.partidos.length === 0 && <div className="rounded-xl border border-dashed border-white/15 px-5 py-9 text-center"><CalendarDays className="mx-auto mb-3 h-8 w-8 text-texto-terciario" /><p className="text-texto-principal">No hay partidos registrados para esta fecha y estos filtros.</p><p className="mt-2 text-sm text-texto-secundario">Prueba Mañana, elige otra fecha o quita los filtros.</p></div>}
     <div aria-busy={cargando} className={`grid gap-3 md:grid-cols-2 xl:grid-cols-3 ${cargando || error ? 'pointer-events-none opacity-45' : ''}`}>

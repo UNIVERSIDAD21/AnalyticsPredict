@@ -82,8 +82,6 @@ export function extraerMensajeError(error: unknown): string {
       // Respuestas legacy
       data.mensaje,
       data.message,
-      // Fallback Axios
-      error.message,
     ];
 
     const mensajeDetectado = candidatos.find(

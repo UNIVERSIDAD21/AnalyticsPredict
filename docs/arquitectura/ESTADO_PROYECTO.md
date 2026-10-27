@@ -1,5 +1,20 @@
 # Estado vigente — AnalyticsPredict
 
+## Error de carga y respuestas de base de datos — 2026-10-27
+
+Corregido «Network Error» cuando una consulta falla: CORS envuelve también las
+respuestas generadas por el middleware HTTP y la agenda interpreta el error
+estructurado en español. La falta de conexión devuelve HTTP 503, sin mensajes
+del driver ni secretos; no se presenta como cero partidos. Reintento explícito
+y sin respuestas falsas ni caché del fallo.
+
+Incidencia externa observada: Neon rechaza conexiones por cuota excedida.
+**Los datos no vuelven a estar disponibles hasta restablecer el servicio del
+proveedor**; esta corrección no cambia cuotas, planes, credenciales ni destino
+de BD. Sin ingestas, DML, entrenamiento o cambios de modelos.
+[Diagnóstico y verificación](../reactivacion_single_user/ERROR_CARGA_NETWORK_2026-10-27.md).
+
+
 ## Agendas, horarios y evaluación por dominio — 2026-10-26
 
 Agenda global de baloncesto publicada previamente; ampliación aditiva para horas

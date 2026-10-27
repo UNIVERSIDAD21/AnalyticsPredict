@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { AxiosError, AxiosHeaders } from 'axios';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CatalogoFutbol } from './CatalogoFutbol';
@@ -72,6 +73,28 @@ describe('agenda global de fútbol', () => {
     vi.mocked(listarAgenda).mockRejectedValueOnce(new Error('Sin conexión')); render(<CatalogoFutbol {...props()} />);
     await screen.findByRole('alert'); fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     await screen.findByText('Atlanta'); expect(screen.queryByRole('alert')).toBeNull();
+  });
+  it.each([
+    [new AxiosError('Network Error', 'ERR_NETWORK'), 'No se pudo conectar con el servidor. Revisa tu conexión o el estado del backend.'],
+    [new AxiosError('Request failed with status code 503', 'ERR_BAD_RESPONSE', undefined, undefined, {
+      status: 503, statusText: 'Service Unavailable', headers: {}, config: { headers: new AxiosHeaders() },
+      data: { ok: false, error: { code: 'BASE_DATOS_NO_DISPONIBLE', message: 'No se pudo conectar con la base de datos.' } },
+    }), 'No se pudo conectar con la base de datos.'],
+  ])('explica el fallo de carga y permite recuperar datos al reintentar (%s)', async (error, mensaje) => {
+    vi.mocked(listarAgenda).mockRejectedValueOnce(error);
+    const p = props(); render(<CatalogoFutbol {...p} />);
+    const alerta = await screen.findByRole('alert');
+    expect(alerta).toHaveTextContent(mensaje);
+    expect(alerta).not.toHaveTextContent(/Network Error|Request failed/);
+    expect(p.onError).toHaveBeenLastCalledWith(mensaje);
+    expect(screen.queryByText(/No hay partidos registrados/)).toBeNull();
+    expect(screen.queryByText('0 partidos registrados')).toBeNull();
+    expect(screen.getByText('Datos no disponibles')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await screen.findByText('Atlanta');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(p.onError).toHaveBeenLastCalledWith(null);
+    expect(p.onSeleccionar).not.toHaveBeenCalled();
   });
   it('el enlace de un partido resuelve su propia fecha sin imponer el primer torneo', async () => {
     window.history.replaceState({}, '', '/?partidoId=00000000-0000-0000-0000-000000000001');
