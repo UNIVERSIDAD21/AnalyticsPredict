@@ -6,12 +6,14 @@ rutas_equipos_futbol.py — Endpoints para gestión de equipos de fútbol.
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Optional, List, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
+from servicios.calidad_futbol import normalizar_estadistico
 from db import obtener_pool
 from .schemas_futbol import (
     EquipoBase,
@@ -33,7 +35,7 @@ logger = logging.getLogger(__name__)
     summary="Listar equipos",
     description="Lista equipos con filtros y paginación.",
 )
-async def listar_equipos(
+def listar_equipos(
     competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
     pais: Optional[str] = Query(None, description="Filtrar por país"),
     busqueda: Optional[str] = Query(None, description="Búsqueda por nombre"),
@@ -147,7 +149,7 @@ async def listar_equipos(
     description="Obtiene el detalle de un equipo con sus estadísticas.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_equipo(equipo_id: UUID) -> EquipoDetalle:
+def obtener_equipo(equipo_id: UUID) -> EquipoDetalle:
     """Obtiene el detalle de un equipo."""
     pool = obtener_pool()
 
@@ -259,7 +261,7 @@ async def obtener_equipo(equipo_id: UUID) -> EquipoDetalle:
     description="Obtiene estadísticas detalladas de un equipo.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_estadisticas_equipo(
+def obtener_estadisticas_equipo(
     equipo_id: UUID,
     temporada: Optional[str] = Query(None, description="Filtrar por temporada"),
     competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
@@ -344,7 +346,7 @@ async def obtener_estadisticas_equipo(
     description="Obtiene el historial de partidos de un equipo.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_partidos_equipo(
+def obtener_partidos_equipo(
     equipo_id: UUID,
     limite: Optional[int] = Query(None, ge=1, description="Numero de partidos (omitido = todos)"),
     tipo: Literal["proximos", "pasados", "todos"] = Query(
@@ -438,13 +440,15 @@ async def obtener_partidos_equipo(
     description="Obtiene el historial de partidos con estadísticas clave.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_partidos_equipo_detalle(
+def obtener_partidos_equipo_detalle(
     equipo_id: UUID,
     limite: Optional[int] = Query(None, ge=1, description="Numero de partidos (omitido = todos)"),
     ubicacion: Literal["todos", "local", "visitante"] = Query(
         "todos",
         description="Filtra por condicion del equipo (todos/local/visitante)",
     ),
+    competicion_id: Optional[UUID] = None,
+    antes_de: Optional[datetime] = None,
 ) -> List[PartidoEstadistico]:
     """Obtiene historial detallado de partidos de un equipo."""
     pool = obtener_pool()
@@ -457,6 +461,8 @@ async def obtener_partidos_equipo_detalle(
             ev.id as equipo_visitante_id,
             el.nombre as equipo_local,
             ev.nombre as equipo_visitante,
+            pf.valido,pf.estado,pf.hubo_tiempo_extra,pf.local_goles_et,pf.visitante_goles_et,
+            pf.local_goles_1t,pf.local_goles_2t,pf.visitante_goles_1t,pf.visitante_goles_2t,
             pf.local_goles_total,
             pf.visitante_goles_total,
             pf.local_corners_total,
@@ -472,7 +478,7 @@ async def obtener_partidos_equipo_detalle(
         FROM partidos_futbol pf
         JOIN equipos_futbol el ON pf.equipo_local_id = el.id
         JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
-        WHERE pf.estado = 'FINALIZADO'
+        WHERE pf.estado = 'FINALIZADO' AND pf.valido IS TRUE AND pf.fecha_partido<CURRENT_TIMESTAMP
           AND (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
     """
     params = [str(equipo_id), str(equipo_id)]
@@ -483,7 +489,15 @@ async def obtener_partidos_equipo_detalle(
         query += " AND pf.equipo_visitante_id = %s"
         params.append(str(equipo_id))
 
-    query += " ORDER BY pf.fecha_partido DESC"
+    if competicion_id:
+        query += " AND pf.competicion_id=%s"
+        params.append(str(competicion_id))
+    if antes_de:
+        if antes_de.tzinfo is None:
+            raise HTTPException(status_code=400, detail="El corte histórico requiere zona horaria.")
+        query += " AND pf.fecha_partido<%s"
+        params.append(antes_de)
+    query += " ORDER BY pf.fecha_partido DESC,pf.id"
 
     if limite is not None:
         query += " LIMIT %s"
@@ -503,26 +517,7 @@ async def obtener_partidos_equipo_detalle(
                 filas = cursor.fetchall()
 
                 return [
-                    PartidoEstadistico(
-                        id=fila["id"],
-                        fecha_partido=fila["fecha_partido"],
-                        equipo_local_id=fila["equipo_local_id"],
-                        equipo_visitante_id=fila["equipo_visitante_id"],
-                        equipo_local=fila["equipo_local"],
-                        equipo_visitante=fila["equipo_visitante"],
-                        goles_local=fila["local_goles_total"],
-                        goles_visitante=fila["visitante_goles_total"],
-                        corners_local=fila["local_corners_total"],
-                        corners_visitante=fila["visitante_corners_total"],
-                        corners_local_1t=fila["local_corners_1t"],
-                        corners_local_2t=fila["local_corners_2t"],
-                        corners_visitante_1t=fila["visitante_corners_1t"],
-                        corners_visitante_2t=fila["visitante_corners_2t"],
-                        disparos_local=fila["local_disparos_total"],
-                        disparos_visitante=fila["visitante_disparos_total"],
-                        disparos_arco_local=fila["local_disparos_arco"],
-                        disparos_arco_visitante=fila["visitante_disparos_arco"],
-                    )
+                    PartidoEstadistico(**normalizar_estadistico(fila))
                     for fila in filas
                 ]
 

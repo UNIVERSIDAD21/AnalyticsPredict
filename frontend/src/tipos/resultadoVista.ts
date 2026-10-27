@@ -8,7 +8,7 @@ export type ResultadoVista = Omit<ResultadoAnalisis, 'predicciones' | 'prediccio
   contexto?: (Omit<NonNullable<ResultadoAnalisis['contexto']>, 'descanso_equipo' | 'descanso_rival' | 'forma_equipo' | 'forma_rival'> & {
     descanso_equipo: NonNullable<ResultadoAnalisis['contexto']>['descanso_equipo'] | null;
     descanso_rival: NonNullable<ResultadoAnalisis['contexto']>['descanso_rival'] | null;
-    forma_equipo: FormaVista; forma_rival: FormaVista;
+    forma_equipo: FormaVista | null; forma_rival: FormaVista | null;
   }) | null;
   nivel_confianza: NivelConfianza | null; factores_confianza: FactoresConfianza | null;
   prediccion_ajustada?: (Omit<PrediccionAjustada,'confianza_base'|'confianza_ajustada'|'ajustes_aplicados'> & { confianza_base: NivelConfianza | null; confianza_ajustada: NivelConfianza | null; ajustes_aplicados: AjustesVista }) | null;

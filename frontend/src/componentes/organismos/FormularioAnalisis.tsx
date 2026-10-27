@@ -364,10 +364,11 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     }
 
     let activo = true;
+    const controlador = new AbortController();
     setCargandoTemporadas(true);
     setErrorTemporadas(null);
 
-    (deporte === 'WNBA' ? obtenerTemporadasWnba(ids) : obtenerTemporadasEquipos(ids))
+    (deporte === 'WNBA' ? obtenerTemporadasWnba(ids, controlador.signal) : obtenerTemporadasEquipos(ids, controlador.signal))
       .then((temporadas) => {
         if (!activo) return;
 
@@ -402,6 +403,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
 
     return () => {
       activo = false;
+      controlador.abort();
     };
   }, [deporte, cuartos, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
 
@@ -461,7 +463,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
             partidosDisponibles={partidosDisponibles}
-            modoRegistro={deporte === 'WNBA' ? (esCorteNBA ? 'wnba_cierre' : 'wnba') : esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
+            modoRegistro={deporte === 'FUTBOL' ? 'futbol' : deporte === 'WNBA' ? (esCorteNBA ? 'wnba_cierre' : 'wnba') : esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
             onActualizar={onActualizarPartidos}
             estadoCalendario={estadoCalendario}
           />

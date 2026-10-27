@@ -31,6 +31,7 @@ function transformarPartidoResumen(
 ): PartidoFutbolResumen {
   return {
     id: String(data.id || ''),
+    temporadaId: data.temporada_id == null ? undefined : String(data.temporada_id),
     competicion: String(data.competicion_id || data.competicion || ''),
     competicionNombre: String(data.competicion_nombre || data.competicion || ''),
     fechaPartido: String(data.fecha_partido || ''),
@@ -90,42 +91,42 @@ function transformarPartidoDetalle(
     equipoLocalId: data.equipo_local_id ? String(data.equipo_local_id) : undefined,
     equipoVisitanteId: data.equipo_visitante_id ? String(data.equipo_visitante_id) : undefined,
     // Goles por tiempo
-    localGoles1t: data.local_goles_1t !== undefined ? Number(data.local_goles_1t) : undefined,
-    localGoles2t: data.local_goles_2t !== undefined ? Number(data.local_goles_2t) : undefined,
+    localGoles1t: data.local_goles_1t != null ? Number(data.local_goles_1t) : undefined,
+    localGoles2t: data.local_goles_2t != null ? Number(data.local_goles_2t) : undefined,
     localGolesTotal:
-      data.local_goles_total !== undefined ? Number(data.local_goles_total) : undefined,
+      data.local_goles_total != null ? Number(data.local_goles_total) : undefined,
     visitanteGoles1t:
-      data.visitante_goles_1t !== undefined ? Number(data.visitante_goles_1t) : undefined,
+      data.visitante_goles_1t != null ? Number(data.visitante_goles_1t) : undefined,
     visitanteGoles2t:
-      data.visitante_goles_2t !== undefined ? Number(data.visitante_goles_2t) : undefined,
+      data.visitante_goles_2t != null ? Number(data.visitante_goles_2t) : undefined,
     visitanteGolesTotal:
-      data.visitante_goles_total !== undefined ? Number(data.visitante_goles_total) : undefined,
+      data.visitante_goles_total != null ? Number(data.visitante_goles_total) : undefined,
     // Corners por tiempo
     localCorners1t:
-      data.local_corners_1t !== undefined ? Number(data.local_corners_1t) : undefined,
+      data.local_corners_1t != null ? Number(data.local_corners_1t) : undefined,
     localCorners2t:
-      data.local_corners_2t !== undefined ? Number(data.local_corners_2t) : undefined,
+      data.local_corners_2t != null ? Number(data.local_corners_2t) : undefined,
     localCornersTotal:
-      data.local_corners_total !== undefined ? Number(data.local_corners_total) : undefined,
+      data.local_corners_total != null ? Number(data.local_corners_total) : undefined,
     visitanteCorners1t:
-      data.visitante_corners_1t !== undefined ? Number(data.visitante_corners_1t) : undefined,
+      data.visitante_corners_1t != null ? Number(data.visitante_corners_1t) : undefined,
     visitanteCorners2t:
-      data.visitante_corners_2t !== undefined ? Number(data.visitante_corners_2t) : undefined,
+      data.visitante_corners_2t != null ? Number(data.visitante_corners_2t) : undefined,
     visitanteCornersTotal:
-      data.visitante_corners_total !== undefined
+      data.visitante_corners_total != null
         ? Number(data.visitante_corners_total)
         : undefined,
     // Disparos
     localDisparosTotal:
-      data.local_disparos_total !== undefined ? Number(data.local_disparos_total) : undefined,
+      data.local_disparos_total != null ? Number(data.local_disparos_total) : undefined,
     localDisparosArco:
-      data.local_disparos_arco !== undefined ? Number(data.local_disparos_arco) : undefined,
+      data.local_disparos_arco != null ? Number(data.local_disparos_arco) : undefined,
     visitanteDisparosTotal:
-      data.visitante_disparos_total !== undefined
+      data.visitante_disparos_total != null
         ? Number(data.visitante_disparos_total)
         : undefined,
     visitanteDisparosArco:
-      data.visitante_disparos_arco !== undefined
+      data.visitante_disparos_arco != null
         ? Number(data.visitante_disparos_arco)
         : undefined,
     // Estadísticas de equipos
@@ -141,9 +142,13 @@ function transformarPartidoDetalle(
 /**
  * Transforma un partido estadístico de snake_case a camelCase
  */
-function transformarPartidoEstadistico(
+export function transformarPartidoEstadistico(
   data: Record<string, unknown>
 ): PartidoFutbolEstadistico {
+  const leer = (...campos: string[]): number | null => {
+    const v = campos.map(c => data[c]).find(v => v !== null && v !== undefined);
+    return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null;
+  };
   return {
     id: String(data.id || ''),
     fechaPartido: String(data.fecha_partido || ''),
@@ -151,20 +156,22 @@ function transformarPartidoEstadistico(
     equipoVisitanteId: String(data.equipo_visitante_id || ''),
     equipoLocalNombre: String(data.equipo_local || ''),
     equipoVisitanteNombre: String(data.equipo_visitante || ''),
-    golesLocal: Number(data.goles_local ?? data.local_goles_total ?? 0),
-    golesVisitante: Number(data.goles_visitante ?? data.visitante_goles_total ?? 0),
-    cornersLocal: Number(data.corners_local ?? data.local_corners_total ?? 0),
-    cornersVisitante: Number(data.corners_visitante ?? data.visitante_corners_total ?? 0),
-    cornersLocal1t: Number(data.corners_local_1t ?? data.local_corners_1t ?? 0),
-    cornersLocal2t: Number(data.corners_local_2t ?? data.local_corners_2t ?? 0),
-    cornersVisitante1t: Number(data.corners_visitante_1t ?? data.visitante_corners_1t ?? 0),
-    cornersVisitante2t: Number(data.corners_visitante_2t ?? data.visitante_corners_2t ?? 0),
-    disparosLocal: Number(data.disparos_local ?? data.local_disparos_total ?? 0),
-    disparosVisitante: Number(data.disparos_visitante ?? data.visitante_disparos_total ?? 0),
-    disparosArcoLocal: Number(data.disparos_arco_local ?? data.local_disparos_arco ?? 0),
-    disparosArcoVisitante: Number(
-      data.disparos_arco_visitante ?? data.visitante_disparos_arco ?? 0
-    ),
+    golesLocal: leer('goles_local', 'local_goles_total'),
+    golesLocal1t: leer('goles_local_1t', 'local_goles_1t'),
+    golesLocal2t: leer('goles_local_2t', 'local_goles_2t'),
+    golesVisitante1t: leer('goles_visitante_1t', 'visitante_goles_1t'),
+    golesVisitante2t: leer('goles_visitante_2t', 'visitante_goles_2t'),
+    golesVisitante: leer('goles_visitante', 'visitante_goles_total'),
+    cornersLocal: leer('corners_local', 'local_corners_total'),
+    cornersVisitante: leer('corners_visitante', 'visitante_corners_total'),
+    cornersLocal1t: leer('corners_local_1t', 'local_corners_1t'),
+    cornersLocal2t: leer('corners_local_2t', 'local_corners_2t'),
+    cornersVisitante1t: leer('corners_visitante_1t', 'visitante_corners_1t'),
+    cornersVisitante2t: leer('corners_visitante_2t', 'visitante_corners_2t'),
+    disparosLocal: leer('disparos_local', 'local_disparos_total'),
+    disparosVisitante: leer('disparos_visitante', 'visitante_disparos_total'),
+    disparosArcoLocal: leer('disparos_arco_local', 'local_disparos_arco'),
+    disparosArcoVisitante: leer('disparos_arco_visitante', 'visitante_disparos_arco'),
   };
 }
 
@@ -269,9 +276,9 @@ export async function obtenerPartidosHoy(
 /**
  * Obtiene el detalle de un partido
  */
-export async function obtenerPartido(id: string): Promise<PartidoFutbolDetalle> {
+export async function obtenerPartido(id: string, incluirEstadisticas = true): Promise<PartidoFutbolDetalle> {
   try {
-    const respuesta = await clienteAPI.get(`/api/futbol/partidos/${id}`);
+    const respuesta = await clienteAPI.get(`/api/futbol/partidos/${id}`, { params: { incluir_estadisticas: incluirEstadisticas } });
     return transformarPartidoDetalle(respuesta.data);
   } catch (error) {
     throw new Error(extraerMensajeError(error));
@@ -284,7 +291,8 @@ export async function obtenerPartido(id: string): Promise<PartidoFutbolDetalle> 
 export async function obtenerH2HPartidos(
   equipoLocalId: string,
   equipoVisitanteId: string,
-  limite?: number
+  limite?: number,
+  ambito?: { competicionId: string; antesDe: string }
 ): Promise<PartidoFutbolEstadistico[]> {
   try {
     const params: Record<string, string | number> = {
@@ -294,6 +302,7 @@ export async function obtenerH2HPartidos(
     if (limite && limite > 0) {
       params.limite = limite;
     }
+    if (ambito) { params.competicion_id = ambito.competicionId; params.antes_de = ambito.antesDe; }
     const respuesta = await clienteAPI.get('/api/futbol/partidos/h2h', {
       params,
     });

@@ -1,4 +1,5 @@
 import type { ObjetivoCalidadDatosFutbol } from '../../tipos/futbol';
+import { ElegibilidadObjetivo } from './ElegibilidadFutbol';
 
 interface Props {
   calidad: ObjetivoCalidadDatosFutbol;
@@ -26,10 +27,11 @@ export function TarjetaCalidadDatosFutbol({ calidad }: Props) {
         Temporadas: {calidad.temporadasIncluidas.length} · Competiciones: {calidad.competicionesIncluidas.length}
       </p>
       {calidad.penalizacionesAplicadas.length > 0 && (
-        <p className="text-xs text-neon-magenta mt-2">
+        <p className="text-xs text-neon-magenta mt-2 break-words">
           Penalizaciones: {calidad.penalizacionesAplicadas.join(', ')}
         </p>
       )}
+      {calidad.elegibilidad && <ElegibilidadObjetivo datos={calidad.elegibilidad} />}
     </div>
   );
 }

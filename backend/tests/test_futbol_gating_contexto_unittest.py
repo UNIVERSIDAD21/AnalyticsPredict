@@ -118,7 +118,9 @@ class TestGatingContextoFutbol(unittest.TestCase):
             evaluacion_muestra={"muestra_suficiente": False, "bloques_insuficientes": ["h2h"]},
         )
 
-        self.assertEqual(objetivo.estado, "datos_insuficientes")
+        self.assertEqual(objetivo.estado, "degradacion_controlada")
+        self.assertEqual(objetivo.media_objetivo, 2.6)
+        self.assertEqual(objetivo.probabilidades_objetivo.over, 0.12)
         self.assertIn("muestra_insuficiente", objetivo.disponibilidad_datos.degradacion_controlada)
 
     def test_construir_calidad_datos_objetivo(self):

@@ -1,3 +1,4 @@
+import { valorHistoricoFutbol, sumarObservados } from '../datosHistoricosFutbol';
 import type { ResultadoVista } from '../../tipos/resultadoVista';
 import type { ResultadoAnalisis, PrediccionCuarto, NivelConfianza as NivelConfianzaNba, TipoRecomendacion } from '../../tipos/analisis';
 import type { AnalisisFutbolResponse, PrediccionMercadoFutbol, NivelConfianza as NivelConfianzaFutbol, PartidoFutbolEstadistico } from '../../tipos/futbol';
@@ -84,42 +85,9 @@ function clasificarEstadoCuotas(rec: AnalisisFutbolResponse['recomendaciones'][n
 }
 
 function _metricaMercadoPartido(partido: PartidoFutbolEstadistico, mercado: string, perspectiva: 'LOCAL' | 'VISITANTE' | 'TOTAL'): number {
-  const mercadoU = String(mercado || '').toUpperCase();
-  const esCorners = mercadoU.startsWith('CORNERS');
-  const esDisparos = mercadoU.startsWith('DISPAROS');
-  const esArco = mercadoU.includes('ARCO');
-  const es1T = mercadoU.endsWith('_1T');
-  const es2T = mercadoU.endsWith('_2T');
-
-  if (esCorners) {
-    const local = es1T ? (partido.cornersLocal1t ?? 0) : es2T ? (partido.cornersLocal2t ?? 0) : (partido.cornersLocal ?? 0);
-    const visitante = es1T ? (partido.cornersVisitante1t ?? 0) : es2T ? (partido.cornersVisitante2t ?? 0) : (partido.cornersVisitante ?? 0);
-    if (perspectiva === 'LOCAL') return local;
-    if (perspectiva === 'VISITANTE') return visitante;
-    return local + visitante;
-  }
-
-  if (esDisparos) {
-    const local = esArco ? (partido.disparosArcoLocal ?? 0) : (partido.disparosLocal ?? 0);
-    const visitante = esArco ? (partido.disparosArcoVisitante ?? 0) : (partido.disparosVisitante ?? 0);
-    if (perspectiva === 'LOCAL') return local;
-    if (perspectiva === 'VISITANTE') return visitante;
-    return local + visitante;
-  }
-
-  // GOLES (si no vienen columnas 1T/2T en el contrato actual, cae a total)
-  const partidoAny = partido as unknown as Record<string, unknown>;
-  const local1t = Number(partidoAny.localGoles1t ?? partidoAny.golesLocal1t ?? partido.golesLocal ?? 0);
-  const local2t = Number(partidoAny.localGoles2t ?? partidoAny.golesLocal2t ?? partido.golesLocal ?? 0);
-  const visita1t = Number(partidoAny.visitanteGoles1t ?? partidoAny.golesVisitante1t ?? partido.golesVisitante ?? 0);
-  const visita2t = Number(partidoAny.visitanteGoles2t ?? partidoAny.golesVisitante2t ?? partido.golesVisitante ?? 0);
-
-  const local = es1T ? local1t : es2T ? local2t : (partido.golesLocal ?? 0);
-  const visitante = es1T ? visita1t : es2T ? visita2t : (partido.golesVisitante ?? 0);
-
-  if (perspectiva === 'LOCAL') return local;
-  if (perspectiva === 'VISITANTE') return visitante;
-  return local + visitante;
+  const local=valorHistoricoFutbol(partido,mercado,'LOCAL');
+  const visitante=valorHistoricoFutbol(partido,mercado,'VISITANTE');
+  return (perspectiva==='LOCAL' ? local : perspectiva==='VISITANTE' ? visitante : sumarObservados(local,visitante)) ?? Number.NaN;
 }
 
 function desdePerspectiva(partido: PartidoFutbolEstadistico, equipoId: string, mercado: string): { equipo: number; rival: number } {
@@ -377,6 +345,10 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
     metadata: {
       analisis_integral: analisis.analisisIntegral,
       deporte: 'futbol',
+      modo_analisis: analisis.modo ?? 'PREPARTIDO',
+      fecha_partido: analisis.partido.fechaPartido,
+      fecha_corte: analisis.fechaCorte,
+      consulta_exploratoria: analisis.modo === 'HISTORICO_RECONSTRUIDO' || analisis.modeloVersion.startsWith('heuristico-americas::'),
       mercado: analisis.objetivo?.mercado ?? 'COMPLETO',
       policy_gate: 'POLICY_GATE_FUTBOL_MERCADOS_BLOQUEADOS',
       modelo_version: analisis.modeloVersion,
@@ -421,7 +393,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
           diferencia_puntos: desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).equipo - desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).rival,
         })),
       },
-      forma_equipo: {
+      forma_equipo: historialLocal.length ? {
         ultimos_n: historialLocal.length,
         victorias: historialLocal.filter((p) => desdePerspectiva(p, equipoAnalizadoId, 'GOLES_FT').equipo > desdePerspectiva(p, equipoAnalizadoId, 'GOLES_FT').rival).length,
         derrotas: historialLocal.filter((p) => desdePerspectiva(p, equipoAnalizadoId, 'GOLES_FT').equipo < desdePerspectiva(p, equipoAnalizadoId, 'GOLES_FT').rival).length,
@@ -431,8 +403,8 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
         opp_ppg: promedio(historialLocal.map((p) => desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).rival)),
         net_rating: promedio(historialLocal.map((p) => desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).equipo - desdePerspectiva(p, equipoAnalizadoId, mercadoContexto).rival)),
         tendencia: tendenciaDesdeHistorial(historialLocal, equipoAnalizadoId, mercadoContexto),
-      },
-      forma_rival: {
+      } : null,
+      forma_rival: historialVisitante.length ? {
         ultimos_n: historialVisitante.length,
         victorias: historialVisitante.filter((p) => desdePerspectiva(p, rivalAnalizadoId, 'GOLES_FT').equipo > desdePerspectiva(p, rivalAnalizadoId, 'GOLES_FT').rival).length,
         derrotas: historialVisitante.filter((p) => desdePerspectiva(p, rivalAnalizadoId, 'GOLES_FT').equipo < desdePerspectiva(p, rivalAnalizadoId, 'GOLES_FT').rival).length,
@@ -442,7 +414,7 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
         opp_ppg: promedio(historialVisitante.map((p) => desdePerspectiva(p, rivalAnalizadoId, mercadoContexto).rival)),
         net_rating: promedio(historialVisitante.map((p) => desdePerspectiva(p, rivalAnalizadoId, mercadoContexto).equipo - desdePerspectiva(p, rivalAnalizadoId, mercadoContexto).rival)),
         tendencia: tendenciaDesdeHistorial(historialVisitante, rivalAnalizadoId, mercadoContexto),
-      },
+      } : null,
       descanso_equipo: null,
       descanso_rival: null,
       stats_temporada_equipo: {},

@@ -88,9 +88,10 @@ function obtenerConfigConfianza(nivel: NivelConfianza | null) {
   }
 }
 
-function formatearFecha(fechaISO: string): string {
+function formatearFecha(fechaISO: string, zona?: string): string {
   const fecha = new Date(fechaISO);
   return fecha.toLocaleString('es-ES', {
+    ...(zona ? { timeZone: zona } : {}),
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -175,8 +176,9 @@ export function ResultadoAnalisis({
   const seccionIntegral = (seccion: 'ganador' | 'periodos' | 'contexto' | 'valor' | 'razones') => integral ? <SeccionesAnalisisIntegral key={`${resultado.fecha_analisis}-${seccion}`} datos={integral} seccion={seccion} local={resultado.equipo_nombre_completo} visitante={resultado.rival_nombre_completo} lado={seleccionUsuario?.lado} /> : null;
   const esCorte = resultado.es_en_vivo;
   const modo = String(resultado.metadata?.modo_analisis ?? (esCorte ? `CIERRE_Q${Object.keys(resultado.cuartos_reales ?? {}).length}` : 'PREPARTIDO'));
-  const modoLabel = modo === 'PREPARTIDO' ? 'Prepartido' : `Corte al cierre de ${modo.replace('CIERRE_', '')}`;
+  const modoLabel = modo === 'HISTORICO_RECONSTRUIDO' ? 'Histórico reconstruido' : modo === 'PREPARTIDO' ? 'Prepartido' : `Corte al cierre de ${modo.replace('CIERRE_', '')}`;
   const esFutbol = resultado.metadata?.deporte === 'futbol';
+  const consultaFutbol = esFutbol && (modo === 'HISTORICO_RECONSTRUIDO' || resultado.metadata?.consulta_exploratoria === true);
   const configConfianza = obtenerConfigConfianza(esCorte ? null : resultado.nivel_confianza);
 
   const detalle = extraerMejorApuestaDetalle(resultado);
@@ -290,7 +292,7 @@ export function ResultadoAnalisis({
       <div className="tarjeta p-3 border border-neon-cyan/20">
         <p className="text-xs uppercase tracking-wider text-texto-terciario">Estado operativo del mercado</p>
         <p className="text-sm font-semibold text-neon-cyan">{estadoOperativoMercado}</p>
-        {!esEuro && !esWnba && !esCorte && estadoOperativoMercado !== 'PROMOCIONABLE' && (
+        {!esEuro && !esWnba && !esCorte && !consultaFutbol && estadoOperativoMercado !== 'PROMOCIONABLE' && (
           <p className="text-xs text-advertencia-500 mt-1">Modo activo: PAPER/SHADOW (validación prolongada, no mercado promocionado).</p>
         )}
         {motivosEstadoOperativo.length > 0 && (
@@ -298,7 +300,7 @@ export function ResultadoAnalisis({
         )}
       </div>
 
-      {gateCriticoBeta && (
+      {gateCriticoBeta && !consultaFutbol && (
         <PanelAdvertencias advertencias={[
           'MODO VALIDACIÓN BETA: mercado no promocionable. Este resultado es solo para shadow/paper trading y monitoreo cuantitativo.',
           ...penalizacionesObjetivo.map((p) => `Gate crítico activo: ${p}`),
@@ -339,7 +341,9 @@ export function ResultadoAnalisis({
           </div>
           <div className="flex items-center gap-2">
             <Clock size={14} className="text-neon-magenta" />
-            <span className="font-mono">{formatearFecha(resultado.fecha_analisis)}</span>
+            <span className="font-mono">{esFutbol && typeof resultado.metadata?.fecha_partido === 'string'
+              ? `Partido: ${formatearFecha(resultado.metadata.fecha_partido, 'America/Bogota')} COT`
+              : formatearFecha(resultado.fecha_analisis)}</span>
             {fuenteEuroliga && <span>Datos hasta {fuenteEuroliga.corte_datos}</span>}
           </div>
           <div className="flex items-center gap-2">
@@ -356,7 +360,12 @@ export function ResultadoAnalisis({
           3. ADVERTENCIA NO APTO (si aplica)
           Se muestra como aviso pero el análisis continúa visible
           ═══════════════════════════════════════════════════════════ */}
-      {noApto && (
+      {consultaFutbol && <div className="tarjeta p-4 border border-neon-cyan/20">
+        <p className="text-sm text-neon-cyan">Consulta exploratoria RAW · sin recomendación operativa</p>
+        <p className="mt-1 text-xs text-texto-secundario">Las probabilidades no están calibradas ni acreditan rendimiento futuro. Una reconstrucción histórica no es un pronóstico emitido entonces.</p>
+        <p className="mt-1 text-xs text-texto-secundario">Consulta realizada: {formatearFecha(resultado.fecha_analisis, 'America/Bogota')} COT.</p>
+      </div>}
+      {noApto && !consultaFutbol && (
         <TarjetaNoApta mensaje={resultado.mensaje_apuesta} candidatos={resultado.candidatos} />
       )}
 
@@ -373,7 +382,7 @@ export function ResultadoAnalisis({
             )}
             <div>
               <p className="text-sm text-texto-secundario">
-                {esEuro || esCorte ? 'Tu análisis: ' : 'Tu apuesta: '}<span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
+                {esEuro || esCorte || esFutbol ? 'Tu análisis: ' : 'Tu apuesta: '}<span className={`font-semibold ${seleccionUsuario.lado === 'OVER' ? 'text-neon-verde' : 'text-neon-rojo'}`}>
                   {seleccionUsuario.lado === 'OVER' ? 'Over' : 'Under'} {seleccionUsuario.linea}
                 </span>
               </p>
@@ -607,7 +616,7 @@ export function ResultadoAnalisis({
       )}
 
       {/* Forma Reciente */}
-      {(!gateCriticoBeta || esFutbol) && resultado.contexto && resultado.contexto.forma_equipo && resultado.contexto.forma_rival && (
+      {(!gateCriticoBeta || esFutbol) && resultado.contexto && (esFutbol || resultado.contexto.forma_equipo || resultado.contexto.forma_rival) && (
         <SeccionFormaReciente
           nota={esFutbol ? "V/E/D y racha por goles; promedios de la métrica y periodo seleccionados." : undefined}
           formaEquipo={resultado.contexto.forma_equipo}

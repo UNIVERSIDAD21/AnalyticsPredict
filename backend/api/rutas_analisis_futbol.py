@@ -12,7 +12,8 @@ import json
 import logging
 import math
 import time
-from datetime import datetime, timedelta
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from uuid import NAMESPACE_URL, uuid4, uuid5
 from uuid import UUID
@@ -23,6 +24,9 @@ from psycopg.rows import dict_row
 from scipy import stats
 
 from db import obtener_pool
+from lecturas_http import solo_lectura_http
+from ingesta_futbol_americas import COMPETICIONES as COMPETICIONES_AMERICAS
+from calidad.elegibilidad_futbol import METRICAS, clasificar, seleccionar, configurar_mercado, evaluar_mercado
 from servicios.apuestas_analizadas import registrar_apuesta_analizada
 from servicios.analisis_integral import integral_futbol
 from servicios.b3_estabilizacion_futbol import (
@@ -84,9 +88,23 @@ _gestor_calibradores_futbol: Optional["GestorCalibradores"] = None
 DEFAULT_FALLBACK_WINDOW_DAYS = int(STATS_TEMPORAL_CONFIG["fallback_window_days"])
 DEFAULT_RECENCY_HALF_LIFE_DAYS = int(STATS_TEMPORAL_CONFIG["recency_half_life_days"])
 
+VERSION_HEURISTICO_AMERICAS = "heuristico-americas::1.0.0"
+
 MIN_MUESTRA_H2H_OBJETIVO = int(STATS_MIN_SAMPLE_CONFIG["h2h_objetivo"])
 MIN_MUESTRA_LOCAL_HOME_OBJETIVO = int(STATS_MIN_SAMPLE_CONFIG["local_home_objetivo"])
 MIN_MUESTRA_VISITANTE_AWAY_OBJETIVO = int(STATS_MIN_SAMPLE_CONFIG["visitante_away_objetivo"])
+
+
+@contextmanager
+def _conexion_analisis(pool, solo_consulta):
+    """También protege POST de consulta con el contrato READ ONLY del pool."""
+    token = solo_lectura_http.set(True) if solo_consulta else None
+    try:
+        with pool.connection() as conn:
+            yield conn
+    finally:
+        if token is not None:
+            solo_lectura_http.reset(token)
 
 
 def _obtener_predictor_futbol_ml(pool) -> Optional["PredictorFutbol"]:
@@ -794,16 +812,7 @@ MIN_PARTIDOS_MUESTRA = 30
 UMBRAL_ALINEACION = 0.05
 UMBRAL_ALERTA = 0.20
 
-METRIC_COLUMN_MAP: Dict[str, Tuple[str, str]] = {
-    "corners_ft": ("local_corners_total", "visitante_corners_total"),
-    "corners_1t": ("local_corners_1t", "visitante_corners_1t"),
-    "corners_2t": ("local_corners_2t", "visitante_corners_2t"),
-    "goles_ft": ("local_goles_total", "visitante_goles_total"),
-    "goles_1t": ("local_goles_1t", "visitante_goles_1t"),
-    "goles_2t": ("local_goles_2t", "visitante_goles_2t"),
-    "disparos_ft": ("local_disparos_total", "visitante_disparos_total"),
-    "disparos_arco_ft": ("local_disparos_arco", "visitante_disparos_arco"),
-}
+METRIC_COLUMN_MAP = METRICAS
 
 UNIDADES_MERCADO = {
     "corners": "corners",
@@ -971,39 +980,9 @@ def _construir_calidad_datos_objetivo(
 
 def _parsear_mercado(mercado: str) -> Dict[str, str]:
     """Deriva base, periodo, alcance y metric_key desde el mercado."""
-    mercado_upper = (mercado or "").upper()
+    config = configurar_mercado(mercado)
+    return {**config, "unidad": UNIDADES_MERCADO.get(config["base"], "valor")}
 
-    if mercado_upper.startswith("CORNERS"):
-        base = "corners"
-    elif mercado_upper.startswith("GOLES"):
-        base = "goles"
-    elif mercado_upper.startswith("DISPAROS_ARCO"):
-        base = "disparos_arco"
-    else:
-        base = "disparos"
-
-    if "_1T" in mercado_upper:
-        periodo = "1t"
-    elif "_2T" in mercado_upper:
-        periodo = "2t"
-    else:
-        periodo = "ft"
-
-    if "_LOCAL_" in mercado_upper:
-        alcance = "local"
-    elif "_VISITANTE_" in mercado_upper:
-        alcance = "visitante"
-    else:
-        alcance = "total"
-
-    metric_key = f"{base}_{periodo}"
-    return {
-        "base": base,
-        "periodo": periodo,
-        "alcance": alcance,
-        "metric_key": metric_key,
-        "unidad": UNIDADES_MERCADO.get(base, "valor"),
-    }
 
 
 def _extraer_valor_equipo(
@@ -1012,35 +991,14 @@ def _extraer_valor_equipo(
     metric_key: str,
 ) -> Optional[float]:
     """Extrae el valor del equipo para una metrica dada."""
-    columnas = METRIC_COLUMN_MAP.get(metric_key)
-    if not columnas:
-        return None
-    col_local, col_visitante = columnas
-
-    if str(partido.get("equipo_local_id")) == equipo_id:
-        valor = partido.get(col_local)
-    elif str(partido.get("equipo_visitante_id")) == equipo_id:
-        valor = partido.get(col_visitante)
-    else:
-        return None
-
-    return float(valor) if valor is not None else None
+    dato = seleccionar(partido, metric_key, equipo_id=equipo_id)
+    return dato.valor if dato.estado == "OBSERVADO" else None
 
 
-def _extraer_valor_total(
-    partido: Dict[str, Any],
-    metric_key: str,
-) -> Optional[float]:
-    """Extrae el total (local + visitante) para una metrica."""
-    columnas = METRIC_COLUMN_MAP.get(metric_key)
-    if not columnas:
-        return None
-    col_local, col_visitante = columnas
-    valor_local = partido.get(col_local)
-    valor_visitante = partido.get(col_visitante)
-    if valor_local is None or valor_visitante is None:
-        return None
-    return float(valor_local) + float(valor_visitante)
+def _extraer_valor_total(partido: Dict[str, Any], metric_key: str) -> Optional[float]:
+    dato = seleccionar(partido, metric_key)
+    return dato.valor if dato.estado == "OBSERVADO" else None
+
 
 
 def _resumen_valores(
@@ -1162,8 +1120,8 @@ def _resumen_metricas_liga(
     for partido in partidos:
         peso = _peso_recencia(partido.get("fecha_partido"), fecha_corte, recency_half_life_days)
         for metric_key, (col_local, col_visitante) in METRIC_COLUMN_MAP.items():
-            valor_local = partido.get(col_local)
-            valor_visitante = partido.get(col_visitante)
+            valor_local = clasificar(partido, metric_key, "local").valor
+            valor_visitante = clasificar(partido, metric_key, "visitante").valor
             if valor_local is not None:
                 acumulados_local[metric_key].append(float(valor_local))
                 acumulados_global[metric_key].append(float(valor_local))
@@ -1272,6 +1230,9 @@ def _resolver_filtro_temporal_futbol(
         )
         rows = cursor.fetchall() or []
         if rows:
+            reconocidos = {str(r["id"]) for r in rows} | {str(r.get("nombre")) for r in rows}
+            if any(token not in reconocidos for token in tokens):
+                raise HTTPException(status_code=400, detail="Alguna temporada solicitada no pertenece a esta competición.")
             ids = [str(r["id"]) for r in rows]
             nombres = [str(r.get("nombre") or r["id"]) for r in rows]
             return {
@@ -1283,14 +1244,18 @@ def _resolver_filtro_temporal_futbol(
                 "ventana_dias_fallback": ventana_fallback,
             }
 
-        return {
-            "estrategia": "fallback_fecha_minima",
-            "temporada_ids": [],
-            "temporadas_resueltas": [],
-            "fecha_minima": fallback_fecha_min,
-            "fuente": "request.temporadas_no_resueltas",
-            "ventana_dias_fallback": ventana_fallback,
-        }
+        raise HTTPException(status_code=400, detail="Las temporadas solicitadas no pertenecen a esta competición.")
+
+    if request.modo_historico:
+        cursor.execute("""SELECT id::text AS id,nombre FROM temporadas_futbol
+            WHERE competicion_id=%s AND anio_inicio <= %s
+            ORDER BY anio_inicio DESC,anio_fin DESC,nombre DESC LIMIT 2""",
+            [competicion_id, fecha_corte.year])
+        rows = cursor.fetchall() or []
+        if rows:
+            return {"estrategia": "temporadas_anteriores_al_corte", "temporada_ids": [str(r["id"]) for r in rows],
+                    "temporadas_resueltas": [r["nombre"] for r in rows], "fecha_minima": None,
+                    "fuente": "historico_sin_ventaja_temporal", "ventana_dias_fallback": ventana_fallback}
 
     cursor.execute(
         """
@@ -1340,6 +1305,8 @@ def _obtener_partidos_equipo(
     """Obtiene partidos recientes de un equipo (hasta limite)."""
     query = """
         SELECT
+            pf.id, pf.valido, pf.estado, pf.hubo_tiempo_extra,
+            pf.local_goles_et, pf.visitante_goles_et,
             pf.equipo_local_id,
             pf.equipo_visitante_id,
             pf.local_goles_1t,
@@ -1386,7 +1353,7 @@ def _obtener_partidos_equipo(
         query += " AND pf.equipo_visitante_id = %s"
         params.append(equipo_id)
 
-    query += " ORDER BY pf.fecha_partido DESC LIMIT %s"
+    query += " ORDER BY pf.fecha_partido DESC,pf.id DESC LIMIT %s"
     params.append(limite)
 
     cursor.execute(query, params)
@@ -1404,6 +1371,8 @@ def _obtener_partidos_liga(
     """Obtiene partidos recientes de una liga (hasta limite)."""
     query = """
         SELECT
+            pf.id, pf.valido, pf.estado, pf.hubo_tiempo_extra,
+            pf.local_goles_et, pf.visitante_goles_et,
             pf.equipo_local_id,
             pf.equipo_visitante_id,
             pf.local_goles_1t,
@@ -1438,7 +1407,7 @@ def _obtener_partidos_liga(
         query += " AND pf.fecha_partido >= %s"
         params.append(fecha_minima)
 
-    query += " ORDER BY pf.fecha_partido DESC LIMIT %s"
+    query += " ORDER BY pf.fecha_partido DESC,pf.id DESC LIMIT %s"
     params.append(limite)
     cursor.execute(query, params)
     return cursor.fetchall()
@@ -1457,6 +1426,8 @@ def _obtener_partidos_h2h(
     """Obtiene partidos H2H recientes entre dos equipos."""
     query = """
         SELECT
+            pf.id, pf.valido, pf.estado, pf.hubo_tiempo_extra,
+            pf.local_goles_et, pf.visitante_goles_et,
             pf.equipo_local_id,
             pf.equipo_visitante_id,
             pf.local_goles_1t,
@@ -1505,7 +1476,7 @@ def _obtener_partidos_h2h(
         query += " AND pf.fecha_partido >= %s"
         params.append(fecha_minima)
 
-    query += " ORDER BY pf.fecha_partido DESC LIMIT %s"
+    query += " ORDER BY pf.fecha_partido DESC,pf.id DESC LIMIT %s"
     params.append(limite)
     cursor.execute(query, params)
     return cursor.fetchall()
@@ -2479,31 +2450,12 @@ def _registrar_predicciones_futbol(
             %s::mercado_futbol, %s, %s, %s, %s,
             %s, %s, %s, %s, %s, %s, %s, %s
         )
-        ON CONFLICT ON CONSTRAINT uq_prediccion_futbol DO UPDATE SET
-            modelo_version_id = EXCLUDED.modelo_version_id,
-            competicion_id = EXCLUDED.competicion_id,
-            temporada_id = EXCLUDED.temporada_id,
-            equipo_local_id = EXCLUDED.equipo_local_id,
-            equipo_visitante_id = EXCLUDED.equipo_visitante_id,
-            equipo_local_nombre = EXCLUDED.equipo_local_nombre,
-            equipo_visitante_nombre = EXCLUDED.equipo_visitante_nombre,
-            fecha_partido = EXCLUDED.fecha_partido,
-            linea_es_sintetica = EXCLUDED.linea_es_sintetica,
-            media_predicha = EXCLUDED.media_predicha,
-            desviacion_predicha = EXCLUDED.desviacion_predicha,
-            prob_over = EXCLUDED.prob_over,
-            prob_under = EXCLUDED.prob_under,
-            prob_over_calibrada = EXCLUDED.prob_over_calibrada,
-            prob_under_calibrada = EXCLUDED.prob_under_calibrada,
-            calibrador_id = EXCLUDED.calibrador_id,
-            intervalo_inferior = EXCLUDED.intervalo_inferior,
-            intervalo_superior = EXCLUDED.intervalo_superior,
-            nivel_intervalo = EXCLUDED.nivel_intervalo
+        ON CONFLICT ON CONSTRAINT uq_prediccion_futbol DO NOTHING
         """,
         filas,
     )
 
-    # executemany+upsert no distingue insert/update por fila; devolvemos filas procesadas.
+    # Una emisión existente es inmutable; filas procesadas no equivalen a nuevas inserciones.
     return len(filas)
 
 
@@ -2709,7 +2661,7 @@ def _resolver_objetivo_canonico(
         degradacion.append("mercado_bloqueado_por_calidad")
 
     if evaluacion_muestra and not evaluacion_muestra.get("muestra_suficiente", True):
-        estado_obj = "datos_insuficientes"
+        estado_obj = "degradacion_controlada" if estado_obj == "disponible" else estado_obj
         degradacion.append("muestra_insuficiente")
         no_disponibles.append("muestra_contextual")
 
@@ -2858,7 +2810,7 @@ def _resolver_objetivo_canonico(
         503: {"model": ErrorResponse},
     },
 )
-async def analizar_partido(
+def analizar_partido(
     request: AnalisisRequest,
 ) -> AnalisisResponse:
     """
@@ -2880,7 +2832,7 @@ async def analizar_partido(
             pf.fecha_partido,
             el.nombre as equipo_local,
             ev.nombre as equipo_visitante,
-            pf.estado,
+            pf.estado, pf.valido,
             pf.jornada,
             pf.equipo_local_id,
             pf.equipo_visitante_id
@@ -2892,7 +2844,7 @@ async def analizar_partido(
     """
 
     try:
-        with pool.connection() as conn:
+        with _conexion_analisis(pool, request.modo_historico or request.solo_consulta) as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(partido_query, [str(request.partido_id)])
                 partido = cursor.fetchone()
@@ -2912,11 +2864,23 @@ async def analizar_partido(
                     "APLAZADO",
                     "SUSPENDIDO",
                 }
-                if estado_partido in estados_no_analizables:
+                if not partido.get("valido", True):
+                    raise HTTPException(status_code=400, detail="Partido invalidado: no analizable.")
+                if request.modo_historico and estado_partido != "FINALIZADO":
+                    raise HTTPException(status_code=400, detail="El modo histórico requiere un partido finalizado.")
+                if estado_partido in estados_no_analizables and not (request.modo_historico and estado_partido == "FINALIZADO"):
                     raise HTTPException(
                         status_code=400,
                         detail=f"No se puede analizar un partido con estado: {estado_partido}",
                     )
+
+                dominio_exploratorio = partido.get("competicion_codigo") in COMPETICIONES_AMERICAS
+                modelo_version_heuristico = VERSION_HEURISTICO_AMERICAS if dominio_exploratorio else "heuristico::1.0.0"
+                consulta_efectiva = request.modo_historico or request.solo_consulta or dominio_exploratorio
+                if dominio_exploratorio and not (request.modo_historico or request.solo_consulta):
+                    # Un cálculo nuevo sin modelo validado por dominio no debe
+                    # contaminar el registro/calibración de versiones de otra liga.
+                    cursor.execute("SET TRANSACTION READ ONLY")
 
                 # 2. Intentar flujo principal ML (P1: PredictorFutbol)
                 lineas_corners = _normalizar_lineas_grilla(request.lineas_corners or [], [8.5, 9.5, 10.5, 11.5])
@@ -2936,7 +2900,7 @@ async def analizar_partido(
                 prediccion_ganador_ml: Optional[ProbabilidadesGanadorFutbol] = None
                 modelo_version_ml: Optional[str] = None
 
-                if MOTOR_DISPONIBLE:
+                if MOTOR_DISPONIBLE and not request.modo_historico and partido.get("competicion_codigo") not in COMPETICIONES_AMERICAS:
                     predictor_ml = _obtener_predictor_futbol_ml(pool)
                     if predictor_ml is not None and predictor_ml.modelos_entrenados:
                         try:
@@ -2980,24 +2944,11 @@ async def analizar_partido(
                 equipo_local_id = str(partido["equipo_local_id"])
                 equipo_visitante_id = str(partido["equipo_visitante_id"])
 
-                stats_local = _obtener_estadisticas_equipo_cached(cursor, equipo_local_id)
-                stats_visitante = _obtener_estadisticas_equipo_cached(cursor, equipo_visitante_id)
-
-                if stats_local["partidos"] < 3:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Datos insuficientes para {partido['equipo_local']}"
-                    )
-
-                if stats_visitante["partidos"] < 3:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Datos insuficientes para {partido['equipo_visitante']}"
-                    )
-
                 # 2b. Contexto H2H + estadisticas recientes (hasta 100 partidos)
                 competicion_id = str(partido["competicion_id"])
-                fecha_corte = partido.get("fecha_partido") or datetime.now()
+                fecha_corte = partido.get("fecha_partido") or datetime.now().astimezone()
+                if not request.modo_historico:
+                    fecha_corte = min(fecha_corte, datetime.now(fecha_corte.tzinfo))
                 limite_h2h = _limitar_h2h_limite(request.h2h_limite)
                 filtro_temporal = _resolver_filtro_temporal_futbol(
                     cursor,
@@ -3006,6 +2957,8 @@ async def analizar_partido(
                     fecha_corte=fecha_corte,
                 )
 
+                partidos_h2h = partidos_local_global = partidos_local_home = []
+                partidos_visitante_global = partidos_visitante_away = partidos_liga = []
                 try:
                     partidos_h2h = _obtener_partidos_h2h(
                         cursor,
@@ -3066,13 +3019,6 @@ async def analizar_partido(
                         fecha_minima=filtro_temporal.get("fecha_minima"),
                     )
 
-                    evaluacion_muestra_objetivo = _evaluar_muestra_contextual_objetivo(
-                        request,
-                        partidos_h2h=len(partidos_h2h),
-                        partidos_local_home=len(partidos_local_home),
-                        partidos_visitante_away=len(partidos_visitante_away),
-                    )
-
                     resumen_h2h = _resumen_metricas_h2h(
                         partidos_h2h,
                         equipo_local_id,
@@ -3103,15 +3049,33 @@ async def analizar_partido(
                         partidos_liga,
                         fecha_corte=fecha_corte,
                     )
-                except Exception as e:
-                    logger.warning(f"Error calculando contexto H2H/estadisticas: {e}")
-                    resumen_h2h = {"local": {}, "visitante": {}, "total": {}}
-                    stats_local_global = {}
-                    stats_local_home = {}
-                    stats_visitante_global = {}
-                    stats_visitante_away = {}
-                    promedios_liga = {"local": {}, "visitante": {}, "global": {}, "total": {}}
+                except Exception as exc:
+                    logger.exception("No se pudo consultar el contexto temporal de fútbol")
+                    raise HTTPException(status_code=503, detail="Contexto histórico no disponible; no se sustituyó por ceros.") from exc
 
+                conjuntos_elegibilidad = {
+                    "h2h": partidos_h2h, "local_global": partidos_local_global,
+                    "local_home": partidos_local_home, "visitante_global": partidos_visitante_global,
+                    "visitante_away": partidos_visitante_away, "liga": partidos_liga,
+                }
+                elegibilidades = {}
+                def soporte(mercado):
+                    if mercado not in elegibilidades:
+                        elegibilidades[mercado] = evaluar_mercado(
+                            mercado, conjuntos_elegibilidad, equipo_local_id, equipo_visitante_id,
+                            STATS_MIN_SAMPLE_CONFIG,
+                        )
+                    return elegibilidades[mercado]
+                soporte_objetivo = soporte(str(request.mercado_objetivo or "GOLES_FT"))
+                evaluacion_muestra_objetivo = {
+                    "aplica_objetivo": bool(request.mercado_objetivo),
+                    "muestra_suficiente": not soporte_objetivo["bloques_insuficientes"],
+                    "bloques_insuficientes": soporte_objetivo["bloques_insuficientes"],
+                    "minimos": soporte_objetivo["minimos_contexto"],
+                    "conteos": {k: v["utilizables"] for k,v in soporte_objetivo["muestras"].items()},
+                }
+                stats_local = {"partidos": len(partidos_local_global)}
+                stats_visitante = {"partidos": len(partidos_visitante_global)}
                 trazas_contextuales = {}
 
                 # 3. Calcular predicciones base (robustas: contexto + global + liga)
@@ -3333,8 +3297,8 @@ async def analizar_partido(
 
                 corners_1t_total = corners_local_1t + corners_visitante_1t
                 corners_2t_total = corners_local_2t + corners_visitante_2t
-                corners_local_ft = corners_local_1t + corners_local_2t
-                corners_visitante_ft = corners_visitante_1t + corners_visitante_2t
+                corners_local_ft = corners_local
+                corners_visitante_ft = corners_visitante
 
                 corners_1t_std = _std_robusta(
                     std_ctx=local_corners_1t_ctx.get("std") or vis_corners_1t_ctx.get("std"),
@@ -3404,8 +3368,8 @@ async def analizar_partido(
 
                 goles_1t_total = goles_local_1t + goles_visitante_1t
                 goles_2t_total = goles_local_2t + goles_visitante_2t
-                goles_local_ft = goles_local_1t + goles_local_2t
-                goles_visitante_ft = goles_visitante_1t + goles_visitante_2t
+                goles_local_ft = goles_local
+                goles_visitante_ft = goles_visitante
 
                 goles_1t_std = _std_robusta(
                     std_ctx=local_goles_1t_ctx.get("std") or vis_goles_1t_ctx.get("std"),
@@ -3542,10 +3506,10 @@ async def analizar_partido(
 
                 # Mercados de Disparos
                 split_disparos = estimar_ratio_tiempo_disparos(
-                    corners_1t_total=corners_1t_total,
-                    corners_2t_total=corners_2t_total,
-                    goles_1t_total=goles_1t_total,
-                    goles_2t_total=goles_2t_total,
+                    corners_1t_total=corners_1t_total if soporte("CORNERS_1T")["calculable"] else None,
+                    corners_2t_total=corners_2t_total if soporte("CORNERS_2T")["calculable"] else None,
+                    goles_1t_total=goles_1t_total if soporte("GOLES_1T")["calculable"] else None,
+                    goles_2t_total=goles_2t_total if soporte("GOLES_2T")["calculable"] else None,
                 )
                 ratio_1t = float(split_disparos["ratio_1t"])
                 ratio_2t = float(split_disparos["ratio_2t"])
@@ -3624,6 +3588,16 @@ async def analizar_partido(
                     ),
                 }
 
+                def conservar_soportados(mercados):
+                    return {k:v for k,v in mercados.items() if soporte(k)["calculable"]}
+                mercados_corners = conservar_soportados(mercados_corners)
+                mercados_goles = conservar_soportados(mercados_goles)
+                mercados_disparos = conservar_soportados(mercados_disparos)
+                mercados_corners_ml = conservar_soportados(mercados_corners_ml)
+                mercados_goles_ml = conservar_soportados(mercados_goles_ml)
+                mercados_disparos_ml = conservar_soportados(mercados_disparos_ml)
+                recomendaciones_ml = [r for r in recomendaciones_ml if soporte(r.mercado)["calculable"]]
+
                 # 4b. Enriquecer con razones por linea
                 _agregar_razones_a_mercados(
                     mercados_corners,
@@ -3668,12 +3642,10 @@ async def analizar_partido(
                     mercados_disparos = _ensamblar_mercados(mercados_disparos_ml, mercados_disparos, peso_ml=0.65)
 
                 # 5a. Estado de calidad por mercado (insumo para scoring/arbitraje)
-                estado_mercados = _obtener_estado_mercados_futbol(
-                    cursor,
-                    min_muestras=100,
-                    warning_brier=0.24,
-                    bloquear_brier=0.28,
-                )
+                sin_validacion_dominio = partido.get("competicion_codigo") in COMPETICIONES_AMERICAS or request.modo_historico
+                estado_mercados = ({m: "amarillo" for m in {**mercados_corners, **mercados_goles, **mercados_disparos}}
+                    if sin_validacion_dominio else _obtener_estado_mercados_futbol(
+                        cursor, min_muestras=100, warning_brier=0.24, bloquear_brier=0.28))
                 estado_mercados_disponible = bool(estado_mercados)
                 if not estado_mercados_disponible:
                     logger.warning(
@@ -3699,22 +3671,42 @@ async def analizar_partido(
                     mercado_objetivo_en_estado=mercado_objetivo_en_estado,
                 )
 
+                calidad_datos_objetivo["elegibilidad"] = soporte_objetivo
+                calidad_datos_objetivo["muestras"] = {
+                    k:v["utilizables"] for k,v in soporte_objetivo["muestras"].items()
+                }
+                fechas_uso = [v for b in soporte_objetivo["muestras"].values() for v in (b["fecha_min"],b["fecha_max"]) if v]
+                calidad_datos_objetivo["rango_temporal"] = {
+                    "fecha_min": min(fechas_uso) if fechas_uso else None,
+                    "fecha_max": max(fechas_uso) if fechas_uso else None,
+                }
+                calidad_datos_objetivo["datos_incompletos"] = any(
+                    v["ausentes"] or v["invalidos"] for v in soporte_objetivo["muestras"].values()
+                )
+                if not soporte_objetivo["calculable"]:
+                    calidad_datos_objetivo["penalizaciones_aplicadas"].append("objetivo_sin_observaciones_utilizables")
+                if soporte_objetivo["naturaleza"] == "ESTIMADO":
+                    calidad_datos_objetivo["penalizaciones_aplicadas"].append("periodo_estimado_desde_ft")
+
                 # 5b. Generar recomendaciones heurísticas con pipeline de decisión completo
                 todos_mercados = {**mercados_corners, **mercados_goles, **mercados_disparos}
                 partidos_relevantes = min(
                     int(local_corners_ctx.get("n") or 0),
                     int(vis_corners_ctx.get("n") or 0),
                 )
-                recomendaciones_heur = _generar_recomendaciones(
-                    todos_mercados,
-                    stats_local["partidos"],
-                    stats_visitante["partidos"],
-                    partidos_relevantes,
-                    modelo_version_id=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
-                    cuotas_por_linea=request.cuotas_por_linea,
-                    estado_mercados=estado_mercados,
-                    fuente="HEURISTICO",
-                )
+                recomendaciones_heur = []
+                for codigo, prediccion in todos_mercados.items():
+                    muestras_mercado = soporte(codigo)["muestras"]
+                    contexto_relevante = [muestras_mercado[b]["utilizables"] for b in ("local_home", "visitante_away")
+                                           if ("LOCAL" not in codigo or b=="local_home") and ("VISITANTE" not in codigo or b=="visitante_away")]
+                    recomendaciones_heur.extend(_generar_recomendaciones(
+                        {codigo: prediccion},
+                        muestras_mercado["local_global"]["utilizables"],
+                        muestras_mercado["visitante_global"]["utilizables"],
+                        min(contexto_relevante, default=0),
+                        modelo_version_id=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else modelo_version_heuristico),
+                        cuotas_por_linea=request.cuotas_por_linea, estado_mercados=estado_mercados, fuente="HEURISTICO",
+                    ))
 
                 # 5c. Arbitraje/dedupe de señales (P5.1)
                 recomendaciones = _arbitrar_recomendaciones(
@@ -3747,10 +3739,12 @@ async def analizar_partido(
                 if not estado_mercados_disponible:
                     recomendaciones = []
 
-                recomendaciones = _aplicar_degradacion_recomendaciones_por_muestra(
-                    recomendaciones,
-                    evaluacion_muestra_objetivo,
-                )
+                recomendaciones = [
+                    _aplicar_degradacion_recomendaciones_por_muestra([r], {
+                        "muestra_suficiente": not soporte(r.mercado)["bloques_insuficientes"],
+                        "bloques_insuficientes": soporte(r.mercado)["bloques_insuficientes"],
+                    })[0] for r in recomendaciones
+                ]
 
                 # Priorizar selección explícita del usuario (contrato canónico)
                 if request.mercado_objetivo:
@@ -3777,29 +3771,36 @@ async def analizar_partido(
                         "Modo estricto fútbol activo: recomendaciones deshabilitadas por falta de resueltas con volumen suficiente."
                     )
 
-                # 5b. Registrar predicciones para calibración/métricas
-                try:
-                    # Un fallo de registro no debe dejar abortada la transacción
-                    # del análisis ni confirmar un lote parcial de predicciones.
-                    with conn.transaction():
-                        modelo_version_id_futbol = _obtener_modelo_version_futbol_id(cursor)
-                        total_registradas = _registrar_predicciones_futbol(
-                            cursor,
-                            partido=partido,
-                            mercados=todos_mercados,
-                            modelo_version_id=modelo_version_id_futbol,
+                if sin_validacion_dominio:
+                    recomendaciones = []
+                    calibradores_activos = 0
+                    calidad_datos_objetivo["validacion_predictiva"] = "SIN_VALIDACION_POR_COMPETICION"
+                    calidad_datos_objetivo["penalizaciones_aplicadas"].append("estimador_raw_exploratorio_sin_validacion_por_competicion")
+
+                if not consulta_efectiva:
+                    # 5b. Registrar predicciones para calibración/métricas
+                    try:
+                        # Un fallo de registro no debe dejar abortada la transacción
+                        # del análisis ni confirmar un lote parcial de predicciones.
+                        with conn.transaction():
+                            modelo_version_id_futbol = _obtener_modelo_version_futbol_id(cursor)
+                            total_registradas = _registrar_predicciones_futbol(
+                                cursor,
+                                partido=partido,
+                                mercados=todos_mercados,
+                                modelo_version_id=modelo_version_id_futbol,
+                            )
+                        logger.info(
+                            "Predicciones fútbol registradas: %s (partido_id=%s)",
+                            total_registradas,
+                            partido["id"],
                         )
-                    logger.info(
-                        "Predicciones fútbol registradas: %s (partido_id=%s)",
-                        total_registradas,
-                        partido["id"],
-                    )
-                except Exception as e:
-                    logger.exception(
-                        "Error registrando predicciones_futbol (partido_id=%s): %s",
-                        partido["id"],
-                        e,
-                    )
+                    except Exception as e:
+                        logger.exception(
+                            "Error registrando predicciones_futbol (partido_id=%s): %s",
+                            partido["id"],
+                            e,
+                        )
 
                 # 6. Construir respuesta
                 partido_resumen = PartidoResumen(
@@ -3828,24 +3829,88 @@ async def analizar_partido(
                             prob_empate / total_1x2,
                             prob_visitante / total_1x2,
                         )
-                ganador_probable = "LOCAL" if prob_local >= prob_empate and prob_local >= prob_visitante else ("VISITANTE" if prob_visitante >= prob_empate else "EMPATE")
+                ganador_calculable = soporte("GOLES_FT")["calculable"]
+                if not ganador_calculable:
+                    prob_local = prob_empate = prob_visitante = None
+                ganador_probable = "LOCAL" if ganador_calculable and prob_local >= prob_empate and prob_local >= prob_visitante else ("VISITANTE" if ganador_calculable and prob_visitante >= prob_empate else "EMPATE")
                 diferencial_xg = goles_local - goles_visitante
                 razones_1x2 = [
                     f"Diferencial de goles estimados: {diferencial_xg:+.2f} ({partido['equipo_local']} vs {partido['equipo_visitante']}).",
-                    f"Probabilidades 1X2: Local {prob_local*100:.1f}%, Empate {prob_empate*100:.1f}%, Visitante {prob_visitante*100:.1f}%.",
+                    f"Probabilidades 1X2: Local {prob_local*100:.1f}%, Empate {prob_empate*100:.1f}%, Visitante {prob_visitante*100:.1f}%." if ganador_calculable else "Ganador N/D: sin soporte observado de goles FT.",
                     f"Marcador más probable según modelo Dixon-Coles: {marcador_probable}.",
                     f"Base ofensiva del estimador: goles esperados local {goles_local:.2f} y visitante {goles_visitante:.2f}.",
                 ]
 
-                try:
-                    if recomendaciones:
-                        for rec in recomendaciones:
+                if not ganador_calculable:
+                    ganador_probable = marcador_probable = None
+                    razones_1x2 = ["Ganador N/D: sin observaciones utilizables de goles FT para ambos equipos."]
+
+                if not consulta_efectiva:
+                    try:
+                        if recomendaciones:
+                            for rec in recomendaciones:
+                                payload = {
+                                    "fuente": "analisis_futbol",
+                                    "partido": {
+                                        "equipo_local": partido["equipo_local"],
+                                        "equipo_visitante": partido["equipo_visitante"],
+                                    },
+                                    "prediccion_ganador": {
+                                        "prob_local": prob_local,
+                                        "prob_empate": prob_empate,
+                                        "prob_visitante": prob_visitante,
+                                        "ganador_probable": ganador_probable,
+                                        "marcador_probable": marcador_probable,
+                                    },
+                                    "decision": {
+                                        "p_raw": rec.p_raw,
+                                        "p_calibrada": rec.p_calibrada,
+                                        "edge_real": rec.edge_real,
+                                        "score": rec.score,
+                                        "sizing": rec.sizing,
+                                        "valor_esperado": rec.valor_esperado,
+                                        "calibrador_id": rec.calibrador_id,
+                                        "modelo_version_id": rec.modelo_version_id,
+                                        "fuente": rec.fuente,
+                                        "metadata_ensemble": rec.metadata_ensemble,
+                                        "devig_metodo": rec.devig_metodo,
+                                        "devig_overround": rec.devig_overround,
+                                        "devig_p_mkt_fair": rec.devig_p_mkt_fair,
+                                        "cuota": rec.cuota,
+                                        "cuota_over": rec.cuota_over,
+                                        "cuota_under": rec.cuota_under,
+                                        "advertencias": rec.advertencias,
+                                    },
+                                }
+                                registrar_apuesta_analizada(
+                                    deporte="futbol",
+                                    partido_id=str(partido["id"]),
+                                    mercado=rec.mercado,
+                                    lado=rec.lado,
+                                    linea=float(rec.linea),
+                                    probabilidad_sistema=float(rec.probabilidad),
+                                    confianza=rec.confianza,
+                                    payload_json=json.dumps(payload, ensure_ascii=False),
+                                    decision_p_raw=rec.p_raw,
+                                    decision_p_calibrada=rec.p_calibrada,
+                                    decision_edge_real=rec.edge_real,
+                                    decision_score=rec.score,
+                                    decision_sizing=rec.sizing,
+                                    decision_valor_esperado=rec.valor_esperado,
+                                    decision_calibrador_id=rec.calibrador_id,
+                                    decision_modelo_version_id=rec.modelo_version_id,
+                                    decision_fuente=rec.fuente,
+                                    decision_devig_metodo=rec.devig_metodo,
+                                    decision_devig_overround=rec.devig_overround,
+                                    decision_devig_p_mkt_fair=rec.devig_p_mkt_fair,
+                                    decision_cuota=rec.cuota,
+                                    decision_cuota_over=rec.cuota_over,
+                                    decision_cuota_under=rec.cuota_under,
+                                )
+                        else:
                             payload = {
                                 "fuente": "analisis_futbol",
-                                "partido": {
-                                    "equipo_local": partido["equipo_local"],
-                                    "equipo_visitante": partido["equipo_visitante"],
-                                },
+                                "sin_recomendaciones": True,
                                 "prediccion_ganador": {
                                     "prob_local": prob_local,
                                     "prob_empate": prob_empate,
@@ -3853,75 +3918,19 @@ async def analizar_partido(
                                     "ganador_probable": ganador_probable,
                                     "marcador_probable": marcador_probable,
                                 },
-                                "decision": {
-                                    "p_raw": rec.p_raw,
-                                    "p_calibrada": rec.p_calibrada,
-                                    "edge_real": rec.edge_real,
-                                    "score": rec.score,
-                                    "sizing": rec.sizing,
-                                    "valor_esperado": rec.valor_esperado,
-                                    "calibrador_id": rec.calibrador_id,
-                                    "modelo_version_id": rec.modelo_version_id,
-                                    "fuente": rec.fuente,
-                                    "metadata_ensemble": rec.metadata_ensemble,
-                                    "devig_metodo": rec.devig_metodo,
-                                    "devig_overround": rec.devig_overround,
-                                    "devig_p_mkt_fair": rec.devig_p_mkt_fair,
-                                    "cuota": rec.cuota,
-                                    "cuota_over": rec.cuota_over,
-                                    "cuota_under": rec.cuota_under,
-                                    "advertencias": rec.advertencias,
-                                },
                             }
                             registrar_apuesta_analizada(
                                 deporte="futbol",
                                 partido_id=str(partido["id"]),
-                                mercado=rec.mercado,
-                                lado=rec.lado,
-                                linea=float(rec.linea),
-                                probabilidad_sistema=float(rec.probabilidad),
-                                confianza=rec.confianza,
+                                mercado="ANALISIS_FT",
+                                lado=None,
+                                linea=None,
+                                probabilidad_sistema=max(prob_local, prob_empate, prob_visitante) if ganador_calculable else None,
+                                confianza=None,
                                 payload_json=json.dumps(payload, ensure_ascii=False),
-                                decision_p_raw=rec.p_raw,
-                                decision_p_calibrada=rec.p_calibrada,
-                                decision_edge_real=rec.edge_real,
-                                decision_score=rec.score,
-                                decision_sizing=rec.sizing,
-                                decision_valor_esperado=rec.valor_esperado,
-                                decision_calibrador_id=rec.calibrador_id,
-                                decision_modelo_version_id=rec.modelo_version_id,
-                                decision_fuente=rec.fuente,
-                                decision_devig_metodo=rec.devig_metodo,
-                                decision_devig_overround=rec.devig_overround,
-                                decision_devig_p_mkt_fair=rec.devig_p_mkt_fair,
-                                decision_cuota=rec.cuota,
-                                decision_cuota_over=rec.cuota_over,
-                                decision_cuota_under=rec.cuota_under,
                             )
-                    else:
-                        payload = {
-                            "fuente": "analisis_futbol",
-                            "sin_recomendaciones": True,
-                            "prediccion_ganador": {
-                                "prob_local": prob_local,
-                                "prob_empate": prob_empate,
-                                "prob_visitante": prob_visitante,
-                                "ganador_probable": ganador_probable,
-                                "marcador_probable": marcador_probable,
-                            },
-                        }
-                        registrar_apuesta_analizada(
-                            deporte="futbol",
-                            partido_id=str(partido["id"]),
-                            mercado="ANALISIS_FT",
-                            lado=None,
-                            linea=None,
-                            probabilidad_sistema=max(prob_local, prob_empate, prob_visitante),
-                            confianza="MEDIA",
-                            payload_json=json.dumps(payload, ensure_ascii=False),
-                        )
-                except Exception:
-                    logger.exception("No se pudo registrar análisis de fútbol en bitácora")
+                    except Exception:
+                        logger.exception("No se pudo registrar análisis de fútbol en bitácora")
 
                 objetivo = _resolver_objetivo_canonico(
                     request=request,
@@ -3931,6 +3940,13 @@ async def analizar_partido(
                     evaluacion_muestra=evaluacion_muestra_objetivo,
                     calidad_contexto=calidad_datos_objetivo,
                 )
+                if sin_validacion_dominio:
+                    objetivo.trazabilidad.update({
+                        "estado_operativo_mercado": "LABORATORIO",
+                        "estado_operativo_visible": mapear_status_promocion("EXPERIMENTAL"),
+                        "modo_operativo": "SOLO_CONSULTA", "registro_predicciones": False,
+                        "motivos_estado_operativo": ["reconstruccion_retrospectiva" if request.modo_historico else "dominio_sin_validacion_predictiva"],
+                    })
                 objetivo.trazabilidad.update(
                     {
                         "temporal": {
@@ -3974,21 +3990,21 @@ async def analizar_partido(
                 return AnalisisResponse(
                     exito=True,
                     partido=partido_resumen,
-                    timestamp_analisis=datetime.now(),
+                    timestamp_analisis=datetime.now(timezone.utc),
                     objetivo=objetivo,
                     mercados_corners=mercados_corners,
                     mercados_goles=mercados_goles,
                     mercados_disparos=mercados_disparos,
                     recomendaciones=recomendaciones,
-                    modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
+                    modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else modelo_version_heuristico),
                     calibradores_activos=calibradores_activos,
                     analisis_integral=integral_futbol(
                         mercados={k: v.model_dump() for k, v in todos_mercados.items()},
                         base=mercados_base_integral, objetivo=objetivo,
                         ganador={"prob_local": prob_local, "prob_empate": prob_empate, "prob_visitante": prob_visitante, "razones": razones_1x2},
-                        goles_local=goles_local, goles_visitante=goles_visitante,
+                        goles_local=goles_local if ganador_calculable else None, goles_visitante=goles_visitante if ganador_calculable else None,
                         trazas=trazas_contextuales, cuotas=request.cuotas_por_linea,
-                        modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else "heuristico::1.0.0"),
+                        modelo_version=(f"ensemble::{modelo_version_ml}" if modelo_version_ml else modelo_version_heuristico),
                     ),
                     prediccion_ganador=ProbabilidadesGanadorFutbol(
                         prob_local=prob_local,
@@ -3997,7 +4013,15 @@ async def analizar_partido(
                         ganador_probable=ganador_probable,
                         marcador_probable=marcador_probable,
                         razones=razones_1x2,
-                    ),
+                    ) if ganador_calculable else None,
+                    elegibilidad_mercados=elegibilidades,
+                    modo="HISTORICO_RECONSTRUIDO" if request.modo_historico else "PREPARTIDO",
+                    fecha_corte=fecha_corte,
+                    advertencias=([
+                        "Estimador heurístico exploratorio RAW, sin calibración ni validación prospectiva para esta competición. No se activó un modelo ML nuevo ni se registra en versiones de otra liga."
+                    ] if sin_validacion_dominio else []) + ([
+                        "Reconstrucción retrospectiva: solo datos anteriores al kickoff. La descarga posterior no acredita disponibilidad original; no se registra como pronóstico emitido."
+                    ] if request.modo_historico else []),
                 )
 
     except HTTPException:

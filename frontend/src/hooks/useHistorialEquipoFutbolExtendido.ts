@@ -1,3 +1,4 @@
+import { valorHistoricoFutbol, sumarObservados } from '../utilidades/datosHistoricosFutbol';
 /**
  * Hook de historial detallado para fútbol (sin dependencia NBA)
  */
@@ -41,24 +42,10 @@ function parsearMercado(mercado: TipoMercadoFutbol): MercadoParseado {
   return { categoria, periodo, alcance };
 }
 
-function valorPorLado(partido: PartidoFutbolEstadistico, categoria: MercadoParseado['categoria'], lado: 'LOCAL' | 'VISITANTE', periodo: '1T' | '2T' | 'FT'): number {
-  if (categoria === 'GOLES') return lado === 'LOCAL' ? partido.golesLocal : partido.golesVisitante;
-  if (categoria === 'CORNERS') {
-    if (periodo === '1T') return lado === 'LOCAL' ? (partido.cornersLocal1t ?? 0) : (partido.cornersVisitante1t ?? 0);
-    if (periodo === '2T') return lado === 'LOCAL' ? (partido.cornersLocal2t ?? 0) : (partido.cornersVisitante2t ?? 0);
-    return lado === 'LOCAL' ? partido.cornersLocal : partido.cornersVisitante;
-  }
-  if (categoria === 'DISPAROS_ARCO') return lado === 'LOCAL' ? partido.disparosArcoLocal : partido.disparosArcoVisitante;
-  return lado === 'LOCAL' ? partido.disparosLocal : partido.disparosVisitante;
-}
-
-function totalMercado(partido: PartidoFutbolEstadistico, mercado: MercadoParseado): number {
-  if (mercado.alcance === 'LOCAL' || mercado.alcance === 'VISITANTE') {
-    return valorPorLado(partido, mercado.categoria, mercado.alcance, mercado.periodo);
-  }
-  const local = valorPorLado(partido, mercado.categoria, 'LOCAL', mercado.periodo);
-  const visitante = valorPorLado(partido, mercado.categoria, 'VISITANTE', mercado.periodo);
-  return local + visitante;
+function totalMercado(p: PartidoFutbolEstadistico, m: MercadoParseado): number | null {
+  const codigo=`${m.categoria}_${m.periodo}`;
+  if(m.alcance!=='TOTAL') return valorHistoricoFutbol(p,codigo,m.alcance);
+  return sumarObservados(valorHistoricoFutbol(p,codigo,'LOCAL'),valorHistoricoFutbol(p,codigo,'VISITANTE'));
 }
 
 function calcularStats(partidos: PartidoConMercado[], linea: number): EstadisticasOverUnder {
@@ -126,13 +113,14 @@ export function useHistorialEquipoFutbolExtendido(equipoId: string, config: Conf
 
   const partidos = useMemo<PartidoConMercado[]>(() => {
     const m = parsearMercado(config.mercado);
-    return base.map((p) => {
+    return base.flatMap((p) => {
       const esLocal = String(p.equipoLocalId) === String(equipoId);
       const equipo = esLocal ? 'LOCAL' : 'VISITANTE';
       const marcadorEquipo = esLocal ? p.golesLocal : p.golesVisitante;
       const marcadorRival = esLocal ? p.golesVisitante : p.golesLocal;
       const total = totalMercado(p, m);
-      return {
+      if(total===null || marcadorEquipo===null || marcadorRival===null) return [];
+      return [{
         id: p.id,
         fecha: p.fechaPartido,
         temporada: null,
@@ -140,15 +128,15 @@ export function useHistorialEquipoFutbolExtendido(equipoId: string, config: Conf
         localAbr: p.equipoLocalNombre.slice(0, 3).toUpperCase(),
         equipoVisitante: p.equipoVisitanteNombre,
         visitanteAbr: p.equipoVisitanteNombre.slice(0, 3).toUpperCase(),
-        ubicacionEquipo: equipo,
+        ubicacionEquipo: equipo as 'LOCAL' | 'VISITANTE',
         puntosEquipo: { q1: 0, q2: 0, q3: 0, q4: 0, ot: 0, total: marcadorEquipo },
         puntosRival: { q1: 0, q2: 0, q3: 0, q4: 0, ot: 0, total: marcadorRival },
-        resultado: marcadorEquipo > marcadorRival ? 'VICTORIA' : 'DERROTA',
+        resultado: (marcadorEquipo > marcadorRival ? 'VICTORIA' : 'DERROTA') as 'VICTORIA' | 'DERROTA',
         totalMercado: total,
         resultadoMercado: `${marcadorEquipo}-${marcadorRival}`,
         esOver: total > config.linea,
         margenVsLinea: total - config.linea,
-      };
+      }];
     });
   }, [base, config.linea, config.mercado, equipoId]);
 

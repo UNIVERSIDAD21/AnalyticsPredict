@@ -78,12 +78,16 @@ export async function obtenerHistorialEquipo(
  * Obtiene las temporadas disponibles para uno o más equipos
  */
 export async function obtenerTemporadasEquipos(
-  equipoIds: string[]
+  equipoIds: string[],
+  signal?: AbortSignal
 ): Promise<TemporadaDisponible[]> {
   try {
     const respuesta = await clienteAPI.get<RespuestaTemporadasEquipos>(
       '/api/equipos/temporadas',
       {
+        signal,
+        // FastAPI espera equipo_ids=a&equipo_ids=b, no equipo_ids[]=a.
+        paramsSerializer: { indexes: null },
         params: {
           equipo_ids: equipoIds,
         },

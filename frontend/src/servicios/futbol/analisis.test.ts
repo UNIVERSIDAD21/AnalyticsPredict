@@ -2,6 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { transformarObjetivoAnalisis, transformarProbabilidadLinea } from './analisis';
 
 describe('procedencia de probabilidades fútbol', () => {
+  it('un objetivo no estimable conserva NULL en medias, calibración y riesgo', () => {
+    const r = transformarObjetivoAnalisis({ media_objetivo: null, desviacion_objetivo: null,
+      bloque_base: { media: null, desviacion: null }, score_riesgo: { score: null, sizing: null },
+      calibracion: { p_raw: null, p_calibrada: null },
+      calidad_datos: { elegibilidad: { estado: 'SIN_DATOS', calculable: false } } });
+    expect(r.mediaObjetivo).toBeNull(); expect(r.desviacionObjetivo).toBeNull();
+    expect(r.bloqueBase.media).toBeNull(); expect(r.scoreRiesgo.score).toBeNull();
+    expect(r.calibracion.pCalibrada).toBeNull();expect(r.calibracion.calibradorId).toBeNull(); expect(r.calidadDatos.elegibilidad?.calculable).toBe(false);
+  });
   it('conserva null cuando no hay salida calibrada', () => {
     const linea = transformarProbabilidadLinea({ linea: 2.5, over_raw: 0.2, under_raw: 0.8 });
     expect(linea.overCalibrada).toBeNull();

@@ -43,7 +43,7 @@ describe('formulario por dominio', () => {
     const seleccionar = vi.fn();
     render(<FormularioAnalisis equipos={equipos} partidoActual={partido} partidosDisponibles={[partido]}
       onAnalizar={vi.fn()} onSeleccionarPartido={seleccionar} />);
-    await waitFor(() => expect(obtenerTemporadasEquipos).toHaveBeenCalledWith(['club-2', 'club-3']));
+    await waitFor(() => expect(obtenerTemporadasEquipos).toHaveBeenCalledWith(['club-2', 'club-3'], expect.any(AbortSignal)));
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }));
     expect(seleccionar).toHaveBeenCalledWith(null);
   });

@@ -152,6 +152,10 @@ class PartidoEstadistico(BaseModel):
     equipo_visitante: str
     goles_local: Optional[int] = None
     goles_visitante: Optional[int] = None
+    goles_local_1t: Optional[int] = None
+    goles_local_2t: Optional[int] = None
+    goles_visitante_1t: Optional[int] = None
+    goles_visitante_2t: Optional[int] = None
     corners_local: Optional[int] = None
     corners_visitante: Optional[int] = None
     corners_local_1t: Optional[int] = None
@@ -178,6 +182,8 @@ class ListaPartidosResponse(BaseModel):
 class AnalisisRequest(BaseModel):
     """Request para análisis de un partido."""
     partido_id: UUID
+    modo_historico: bool = Field(default=False, description="Reconstrucción de un final con datos anteriores al kickoff; sin registro ni apuestas.")
+    solo_consulta: bool = Field(default=False, description="Calcula sin persistir predicciones ni bitácora.")
     h2h_limite: Optional[int] = Field(
         default=10,
         ge=5,
@@ -372,6 +378,7 @@ class ObjetivoRangoTemporalFutbol(BaseModel):
 
 
 class ObjetivoCalidadDatosFutbol(BaseModel):
+    validacion_predictiva: Optional[str] = None
     muestras: ObjetivoMuestraContextoFutbol = ObjetivoMuestraContextoFutbol()
     rango_temporal: ObjetivoRangoTemporalFutbol = ObjetivoRangoTemporalFutbol()
     temporadas_incluidas: List[str] = []
@@ -379,6 +386,7 @@ class ObjetivoCalidadDatosFutbol(BaseModel):
     muestra_insuficiente: bool = False
     datos_incompletos: bool = False
     penalizaciones_aplicadas: List[str] = []
+    elegibilidad: Optional[Dict[str, Any]] = None
 
 
 class ObjetivoAnalisisFutbol(BaseModel):
@@ -414,6 +422,10 @@ class AnalisisResponse(BaseModel):
     calibradores_activos: int = 0
     prediccion_ganador: Optional[ProbabilidadesGanadorFutbol] = None
     analisis_integral: Optional[Dict[str, Any]] = None
+    elegibilidad_mercados: Dict[str, Any] = {}
+    modo: str = "PREPARTIDO"
+    fecha_corte: Optional[datetime] = None
+    advertencias: List[str] = []
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

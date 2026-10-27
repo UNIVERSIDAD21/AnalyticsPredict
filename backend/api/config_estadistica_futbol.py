@@ -96,10 +96,10 @@ def winsorizar_valores(
 
 def estimar_ratio_tiempo_disparos(
     *,
-    corners_1t_total: float,
-    corners_2t_total: float,
-    goles_1t_total: float,
-    goles_2t_total: float,
+    corners_1t_total: Optional[float],
+    corners_2t_total: Optional[float],
+    goles_1t_total: Optional[float],
+    goles_2t_total: Optional[float],
 ) -> Dict[str, float]:
     cfg = STATS_SHOTS_SPLIT_CONFIG
 
@@ -107,11 +107,11 @@ def estimar_ratio_tiempo_disparos(
     ratio_corners = ratio_default
     ratio_goles = ratio_default
 
-    total_corners = max(float(corners_1t_total) + float(corners_2t_total), 0.0)
+    total_corners = float(corners_1t_total) + float(corners_2t_total) if corners_1t_total is not None and corners_2t_total is not None else 0.0
     if total_corners > 0:
         ratio_corners = float(corners_1t_total) / total_corners
 
-    total_goles = max(float(goles_1t_total) + float(goles_2t_total), 0.0)
+    total_goles = float(goles_1t_total) + float(goles_2t_total) if goles_1t_total is not None and goles_2t_total is not None else 0.0
     if total_goles > 0:
         ratio_goles = float(goles_1t_total) / total_goles
 

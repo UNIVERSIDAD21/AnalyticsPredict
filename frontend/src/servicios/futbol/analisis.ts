@@ -13,6 +13,7 @@ import type {
   TipoMercadoFutbol,
   NivelConfianza,
   ObjetivoAnalisisFutbol,
+  ElegibilidadObjetivoFutbol,
 } from '../../tipos/futbol';
 
 // ══════════════════════════════════════════════════════════════
@@ -121,21 +122,21 @@ function transformarRecomendacion(
     linea: Number(data.linea || 0),
     probabilidad: numeroDesde(data, 'probabilidad', 'p_calibrada', 'p_raw') ?? Number.NaN,
     confianza: (data.confianza as NivelConfianza) || 'MEDIA',
-    valorEsperado: data.valor_esperado !== undefined ? Number(data.valor_esperado) : undefined,
+    valorEsperado: numeroDesde(data, 'valor_esperado') ?? undefined,
     razon: String(data.razon || ''),
-    pRaw: data.p_raw !== undefined ? Number(data.p_raw) : undefined,
-    pCalibrada: data.p_calibrada !== undefined ? Number(data.p_calibrada) : undefined,
+    pRaw: numeroDesde(data, 'p_raw') ?? undefined,
+    pCalibrada: numeroDesde(data, 'p_calibrada') ?? undefined,
     calibracionAplicada: data.calibracion_aplicada !== undefined ? Boolean(data.calibracion_aplicada) : undefined,
-    edgeRaw: data.edge_raw !== undefined ? Number(data.edge_raw) : undefined,
-    edgeReal: data.edge_real !== undefined ? Number(data.edge_real) : undefined,
-    score: data.score !== undefined ? Number(data.score) : undefined,
-    sizing: data.sizing !== undefined ? Number(data.sizing) : undefined,
-    cuota: data.cuota !== undefined ? Number(data.cuota) : undefined,
-    cuotaOver: data.cuota_over !== undefined ? Number(data.cuota_over) : undefined,
-    cuotaUnder: data.cuota_under !== undefined ? Number(data.cuota_under) : undefined,
+    edgeRaw: numeroDesde(data, 'edge_raw') ?? undefined,
+    edgeReal: numeroDesde(data, 'edge_real') ?? undefined,
+    score: numeroDesde(data, 'score') ?? undefined,
+    sizing: numeroDesde(data, 'sizing') ?? undefined,
+    cuota: numeroDesde(data, 'cuota') ?? undefined,
+    cuotaOver: numeroDesde(data, 'cuota_over') ?? undefined,
+    cuotaUnder: numeroDesde(data, 'cuota_under') ?? undefined,
     devigMetodo: data.devig_metodo !== undefined ? String(data.devig_metodo) : undefined,
-    devigOverround: data.devig_overround !== undefined ? Number(data.devig_overround) : undefined,
-    devigPMktFair: data.devig_p_mkt_fair !== undefined ? Number(data.devig_p_mkt_fair) : undefined,
+    devigOverround: numeroDesde(data, 'devig_overround') ?? undefined,
+    devigPMktFair: numeroDesde(data, 'devig_p_mkt_fair') ?? undefined,
     advertencias: Array.isArray(data.advertencias) ? data.advertencias as string[] : undefined,
     fuente: data.fuente !== undefined ? String(data.fuente) : undefined,
     metadataEnsemble: (data.metadata_ensemble && typeof data.metadata_ensemble === 'object')
@@ -180,8 +181,8 @@ export function transformarObjetivoAnalisis(
     lado: (data.lado as 'OVER' | 'UNDER') || 'OVER',
     linea: Number(data.linea || 0),
     unidad: String(data.unidad || 'unidades'),
-    mediaObjetivo: data.media_objetivo !== undefined ? Number(data.media_objetivo) : null,
-    desviacionObjetivo: data.desviacion_objetivo !== undefined ? Number(data.desviacion_objetivo) : null,
+    mediaObjetivo: numeroDesde(data, 'media_objetivo'),
+    desviacionObjetivo: numeroDesde(data, 'desviacion_objetivo'),
     probabilidadesObjetivo: {
       over: data.probabilidades_objetivo && typeof data.probabilidades_objetivo === 'object'
         ? numeroDesde((data.probabilidades_objetivo as Record<string, unknown>), 'over')
@@ -192,8 +193,8 @@ export function transformarObjetivoAnalisis(
     },
     bloqueBase: {
       estado: (bloqueBase.estado as ObjetivoAnalisisFutbol['estado']) || 'datos_insuficientes',
-      media: bloqueBase.media !== undefined ? Number(bloqueBase.media) : null,
-      desviacion: bloqueBase.desviacion !== undefined ? Number(bloqueBase.desviacion) : null,
+      media: numeroDesde(bloqueBase, 'media'),
+      desviacion: numeroDesde(bloqueBase, 'desviacion'),
       probabilidades: {
         over: bloqueBase.probabilidades && typeof bloqueBase.probabilidades === 'object'
           ? numeroDesde((bloqueBase.probabilidades as Record<string, unknown>), 'over')
@@ -205,8 +206,8 @@ export function transformarObjetivoAnalisis(
     },
     bloqueAjustado: {
       estado: (bloqueAjustado.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
-      media: bloqueAjustado.media !== undefined ? Number(bloqueAjustado.media) : null,
-      desviacion: bloqueAjustado.desviacion !== undefined ? Number(bloqueAjustado.desviacion) : null,
+      media: numeroDesde(bloqueAjustado, 'media'),
+      desviacion: numeroDesde(bloqueAjustado, 'desviacion'),
       probabilidades: {
         over: bloqueAjustado.probabilidades && typeof bloqueAjustado.probabilidades === 'object'
           ? numeroDesde((bloqueAjustado.probabilidades as Record<string, unknown>), 'over')
@@ -218,26 +219,26 @@ export function transformarObjetivoAnalisis(
     },
     devig: {
       estado: (devig.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
-      metodo: devig.metodo !== undefined ? String(devig.metodo) : null,
-      overround: devig.overround !== undefined ? Number(devig.overround) : null,
-      pMktFair: devig.p_mkt_fair !== undefined ? Number(devig.p_mkt_fair) : null,
+      metodo: devig.metodo != null ? String(devig.metodo) : null,
+      overround: numeroDesde(devig, 'overround'),
+      pMktFair: numeroDesde(devig, 'p_mkt_fair'),
       advertencias: Array.isArray(devig.advertencias) ? devig.advertencias as string[] : [],
     },
     calibracion: {
       estado: (calibracion.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
-      pRaw: calibracion.p_raw !== undefined ? Number(calibracion.p_raw) : null,
-      pCalibrada: calibracion.p_calibrada !== undefined ? Number(calibracion.p_calibrada) : null,
-      calibracionAplicada: calibracion.calibracion_aplicada !== undefined ? Boolean(calibracion.calibracion_aplicada) : null,
-      calibradorId: calibracion.calibrador_id !== undefined ? String(calibracion.calibrador_id) : null,
+      pRaw: numeroDesde(calibracion, 'p_raw'),
+      pCalibrada: numeroDesde(calibracion, 'p_calibrada'),
+      calibracionAplicada: calibracion.calibracion_aplicada != null ? Boolean(calibracion.calibracion_aplicada) : null,
+      calibradorId: calibracion.calibrador_id != null ? String(calibracion.calibrador_id) : null,
     },
     scoreRiesgo: {
       estado: (scoreRiesgo.estado as ObjetivoAnalisisFutbol['estado']) || 'no_disponible',
-      score: scoreRiesgo.score !== undefined ? Number(scoreRiesgo.score) : null,
-      sizing: scoreRiesgo.sizing !== undefined ? Number(scoreRiesgo.sizing) : null,
-      edgeRaw: scoreRiesgo.edge_raw !== undefined ? Number(scoreRiesgo.edge_raw) : null,
-      edgeReal: scoreRiesgo.edge_real !== undefined ? Number(scoreRiesgo.edge_real) : null,
-      valorEsperado: scoreRiesgo.valor_esperado !== undefined ? Number(scoreRiesgo.valor_esperado) : null,
-      confianza: scoreRiesgo.confianza !== undefined ? String(scoreRiesgo.confianza) : null,
+      score: numeroDesde(scoreRiesgo, 'score'),
+      sizing: numeroDesde(scoreRiesgo, 'sizing'),
+      edgeRaw: numeroDesde(scoreRiesgo, 'edge_raw'),
+      edgeReal: numeroDesde(scoreRiesgo, 'edge_real'),
+      valorEsperado: numeroDesde(scoreRiesgo, 'valor_esperado'),
+      confianza: scoreRiesgo.confianza != null ? String(scoreRiesgo.confianza) : null,
     },
     disponibilidadDatos: {
       realesDisponibles: Array.isArray(disponibilidad.reales_disponibles) ? disponibilidad.reales_disponibles as string[] : [],
@@ -246,6 +247,7 @@ export function transformarObjetivoAnalisis(
       datosInsuficientes: Array.isArray(disponibilidad.datos_insuficientes) ? disponibilidad.datos_insuficientes as string[] : [],
     },
     calidadDatos: {
+      elegibilidad: calidad.elegibilidad as ElegibilidadObjetivoFutbol | null | undefined,
       muestras: {
         h2h: Number(muestras.h2h || 0),
         localHome: Number(muestras.local_home || 0),
@@ -278,12 +280,15 @@ export function transformarObjetivoAnalisis(
  * Analiza un partido de fútbol
  */
 export async function analizarPartido(
-  request: AnalisisFutbolRequest
+  request: AnalisisFutbolRequest,
+  signal?: AbortSignal
 ): Promise<AnalisisFutbolResponse> {
   try {
     // Preparar el cuerpo de la petición en snake_case
     const body: Record<string, unknown> = {
       partido_id: request.partidoId,
+      modo_historico: request.modoHistorico ?? false,
+      solo_consulta: request.soloConsulta ?? false,
     };
 
     if (request.lineasCorners) {
@@ -317,7 +322,7 @@ export async function analizarPartido(
       body.cuotas_por_linea = request.cuotasPorLinea;
     }
 
-    const respuesta = await clienteAPI.post('/api/futbol/analizar', body);
+    const respuesta = await clienteAPI.post('/api/futbol/analizar', body, { signal });
     const data = respuesta.data;
 
     // Transformar la respuesta a camelCase
@@ -330,10 +335,12 @@ export async function analizarPartido(
 
     return {
       exito: Boolean(data.exito ?? true),
+      modo: data.modo, fechaCorte: data.fecha_corte, advertencias: data.advertencias ?? [],
       partido: transformarPartidoResumen(data.partido || {}),
       analisisIntegral: data.analisis_integral ?? data.analisisIntegral,
       timestampAnalisis: String(data.timestamp_analisis || data.timestampAnalisis || new Date().toISOString()),
       objetivo: transformarObjetivoAnalisis((data.objetivo || {}) as Record<string, unknown>),
+      elegibilidadMercados: (data.elegibilidad_mercados ?? {}) as Record<string, ElegibilidadObjetivoFutbol>,
       mercadosCorners: transformarMercadosAgrupados(mercadosCorners),
       mercadosGoles: transformarMercadosAgrupados(mercadosGoles),
       mercadosDisparos: transformarMercadosAgrupados(mercadosDisparos),

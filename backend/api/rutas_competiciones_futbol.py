@@ -45,7 +45,7 @@ def _mapear_tipo_competicion(tipo: str) -> str:
     summary="Listar competiciones",
     description="Lista todas las competiciones disponibles con filtros opcionales.",
 )
-async def listar_competiciones(
+def listar_competiciones(
     tipo: Optional[str] = Query(
         None,
         description="Filtrar por tipo: liga, copa_nacional, continental"
@@ -115,6 +115,17 @@ async def listar_competiciones(
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
+@router.get("/{competicion_id}/temporadas", summary="Temporadas canónicas por competición")
+def temporadas_competicion(competicion_id: UUID):
+    with obtener_pool().connection() as conn, conn.cursor(row_factory=dict_row) as c:
+        if not c.execute("SELECT 1 FROM competiciones_futbol WHERE id=%s", [str(competicion_id)]).fetchone():
+            raise HTTPException(status_code=404, detail="Competición no encontrada")
+        return {"temporadas": c.execute("""SELECT t.id,t.nombre,t.anio_inicio,t.anio_fin,t.activa,
+            count(p.id) AS partidos,count(p.id) FILTER(WHERE p.estado='FINALIZADO' AND p.valido IS TRUE) AS finales
+            FROM temporadas_futbol t LEFT JOIN partidos_futbol p ON p.temporada_id=t.id
+            WHERE t.competicion_id=%s GROUP BY t.id ORDER BY t.anio_inicio DESC,t.nombre DESC""", [str(competicion_id)]).fetchall()}
+
+
 @router.get(
     "/{competicion_id}",
     response_model=CompeticionDetalle,
@@ -122,7 +133,7 @@ async def listar_competiciones(
     description="Obtiene el detalle de una competición específica.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_competicion(competicion_id: UUID) -> CompeticionDetalle:
+def obtener_competicion(competicion_id: UUID) -> CompeticionDetalle:
     """Obtiene el detalle de una competición."""
     pool = obtener_pool()
 
@@ -196,7 +207,7 @@ async def obtener_competicion(competicion_id: UUID) -> CompeticionDetalle:
     description="Lista los equipos que participan en una competición.",
     responses={404: {"model": ErrorResponse}},
 )
-async def listar_equipos_competicion(
+def listar_equipos_competicion(
     competicion_id: UUID,
     temporada: Optional[str] = Query(None, description="Filtrar por temporada"),
 ) -> List[EquipoBase]:

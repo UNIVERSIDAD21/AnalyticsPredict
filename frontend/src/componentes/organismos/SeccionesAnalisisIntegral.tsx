@@ -41,7 +41,7 @@ export function SeccionesAnalisisIntegral({ datos: d, seccion, local, visitante,
       <p className="text-xs text-texto-secundario">No incorpora bajas, alineaciones o clima sin datos suministrados. Los ajustes heurísticos no acreditan calibración.</p>
     </section>
   </>;
-  if (seccion === 'razones') return <section className="tarjeta p-5 space-y-3" aria-label="Razones del análisis"><h3 className="text-lg font-futurista">Razones del análisis</h3><ul className="space-y-2 list-disc pl-5 text-sm text-texto-secundario">{d.razones.map((r,i)=><li key={i}>{r}</li>)}</ul></section>;
+  if (seccion === 'razones') return <section className="tarjeta p-5 space-y-3" aria-label="Razones del análisis"><h3 className="text-lg font-futurista">Razones del análisis</h3><ul className="space-y-2 list-disc pl-5 text-sm text-texto-secundario break-words">{d.razones.map((r,i)=><li key={i}>{r}</li>)}</ul></section>;
 
   const cuotaOver = over.trim() ? Number(over) : null, cuotaUnder = under.trim() ? Number(under) : null;
   const cuota = eleccion === 'OVER' ? cuotaOver : cuotaUnder;

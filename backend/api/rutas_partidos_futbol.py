@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, time, timedelta
-from typing import Optional, List
+from typing import Optional, List, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
+from servicios.calidad_futbol import normalizar_estadistico
 from db import obtener_pool
 from .schemas_futbol import (
     PartidoResumen,
@@ -105,7 +106,7 @@ def _calcular_estadisticas_equipo(cursor, equipo_id: str) -> Optional[Estadistic
     summary="Calendario de hoy y próximos partidos",
     description="Lista partidos no terminales de hoy y los próximos días.",
 )
-async def listar_partidos_proximos(
+def listar_partidos_proximos(
     competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
     dias: int = Query(7, ge=1, le=30, description="Días hacia adelante"),
     equipo_id: Optional[UUID] = Query(None, description="Filtrar por equipo"),
@@ -221,7 +222,7 @@ async def listar_partidos_proximos(
     summary="Partidos recientes",
     description="Lista partidos finalizados recientemente.",
 )
-async def listar_partidos_recientes(
+def listar_partidos_recientes(
     competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
     dias: int = Query(7, ge=1, le=30, description="Días hacia atrás"),
     equipo_id: Optional[UUID] = Query(None, description="Filtrar por equipo"),
@@ -297,7 +298,7 @@ async def listar_partidos_recientes(
     summary="Partidos de hoy",
     description="Lista todos los partidos del dia actual, incluyendo programados, en curso y finalizados.",
 )
-async def listar_partidos_hoy(
+def listar_partidos_hoy(
     fecha: Optional[date] = Query(None, description="Fecha objetivo YYYY-MM-DD (por defecto, hoy servidor)"),
     competicion_id: Optional[UUID] = Query(None, description="Filtrar por competición"),
     equipo_id: Optional[UUID] = Query(None, description="Filtrar por equipo"),
@@ -373,10 +374,12 @@ async def listar_partidos_hoy(
     description="Obtiene enfrentamientos directos con estadísticas clave.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_h2h(
+def obtener_h2h(
     equipo_local_id: UUID = Query(..., description="ID del equipo local"),
     equipo_visitante_id: UUID = Query(..., description="ID del equipo visitante"),
     limite: Optional[int] = Query(None, ge=1, le=50, description="Número de partidos"),
+    competicion_id: Optional[UUID] = None,
+    antes_de: Optional[datetime] = None,
 ) -> List[PartidoEstadistico]:
     """Obtiene historial H2H entre dos equipos."""
     pool = obtener_pool()
@@ -389,6 +392,8 @@ async def obtener_h2h(
             ev.id as equipo_visitante_id,
             el.nombre as equipo_local,
             ev.nombre as equipo_visitante,
+            pf.valido,pf.estado,pf.hubo_tiempo_extra,pf.local_goles_et,pf.visitante_goles_et,
+            pf.local_goles_1t,pf.local_goles_2t,pf.visitante_goles_1t,pf.visitante_goles_2t,
             pf.local_goles_total,
             pf.visitante_goles_total,
             pf.local_corners_total,
@@ -404,12 +409,11 @@ async def obtener_h2h(
         FROM partidos_futbol pf
         JOIN equipos_futbol el ON pf.equipo_local_id = el.id
         JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
-        WHERE pf.estado = 'FINALIZADO'
+        WHERE pf.estado = 'FINALIZADO' AND pf.valido IS TRUE AND pf.fecha_partido<CURRENT_TIMESTAMP
           AND (
             (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
             OR (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
           )
-        ORDER BY pf.fecha_partido DESC
     """
     params = [
         str(equipo_local_id),
@@ -417,6 +421,15 @@ async def obtener_h2h(
         str(equipo_visitante_id),
         str(equipo_local_id),
     ]
+    if competicion_id:
+        query += " AND pf.competicion_id=%s"
+        params.append(str(competicion_id))
+    if antes_de:
+        if antes_de.tzinfo is None:
+            raise HTTPException(status_code=400, detail="El corte histórico requiere zona horaria.")
+        query += " AND pf.fecha_partido<%s"
+        params.append(antes_de)
+    query += " ORDER BY pf.fecha_partido DESC,pf.id"
     if limite is not None:
         query += " LIMIT %s"
         params.append(limite)
@@ -428,32 +441,51 @@ async def obtener_h2h(
                 filas = cursor.fetchall()
 
                 return [
-                    PartidoEstadistico(
-                        id=fila["id"],
-                        fecha_partido=fila["fecha_partido"],
-                        equipo_local_id=fila["equipo_local_id"],
-                        equipo_visitante_id=fila["equipo_visitante_id"],
-                        equipo_local=fila["equipo_local"],
-                        equipo_visitante=fila["equipo_visitante"],
-                        goles_local=fila["local_goles_total"],
-                        goles_visitante=fila["visitante_goles_total"],
-                        corners_local=fila["local_corners_total"],
-                        corners_visitante=fila["visitante_corners_total"],
-                        corners_local_1t=fila["local_corners_1t"],
-                        corners_local_2t=fila["local_corners_2t"],
-                        corners_visitante_1t=fila["visitante_corners_1t"],
-                        corners_visitante_2t=fila["visitante_corners_2t"],
-                        disparos_local=fila["local_disparos_total"],
-                        disparos_visitante=fila["visitante_disparos_total"],
-                        disparos_arco_local=fila["local_disparos_arco"],
-                        disparos_arco_visitante=fila["visitante_disparos_arco"],
-                    )
+                    PartidoEstadistico(**normalizar_estadistico(fila))
                     for fila in filas
                 ]
 
     except Exception as e:
         logger.error(f"Error obteniendo H2H: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get("/catalogo", response_model=ListaPartidosResponse, summary="Partidos por competición y temporada")
+def catalogo_partidos(
+    competicion_id: UUID,
+    temporada_id: Optional[UUID] = None,
+    modo: Literal["proximos", "historicos"] = "proximos",
+    pagina: int = Query(1, ge=1),
+    tamano: int = Query(50, ge=1, le=100),
+    hasta: Optional[date] = None,
+) -> ListaPartidosResponse:
+    """Paginación real: el calendario vacío no oculta el histórico de una copa."""
+    filtros = ["pf.competicion_id=%s", "pf.valido IS TRUE"]
+    params = [str(competicion_id)]
+    if temporada_id:
+        filtros.append("pf.temporada_id=%s")
+        params.append(str(temporada_id))
+    ahora = datetime.now(ZONA_HORARIA_USUARIO)
+    if modo == "historicos":
+        filtros.extend(["pf.estado='FINALIZADO'", "pf.fecha_partido<CURRENT_TIMESTAMP"])
+    else:
+        inicio = datetime.combine(ahora.date(), time.min, tzinfo=ZONA_HORARIA_USUARIO)
+        fin = datetime.combine((hasta or (ahora.date() + timedelta(days=90))) + timedelta(days=1), time.min, tzinfo=ZONA_HORARIA_USUARIO)
+        if fin <= inicio or (fin - inicio).days > 367:
+            raise HTTPException(status_code=400, detail="Ventana futura inválida (máximo 366 días).")
+        filtros.extend(["pf.estado='PROGRAMADO'", "pf.fecha_partido>=%s", "pf.fecha_partido<%s"])
+        params.extend([inicio, fin])
+    where = " AND ".join(filtros)
+    with obtener_pool().connection() as conn, conn.cursor(row_factory=dict_row) as c:
+        total = c.execute("SELECT count(*) AS n FROM partidos_futbol pf WHERE " + where, params).fetchone()["n"]
+        filas = c.execute("""SELECT pf.id,pf.competicion_id,pf.temporada_id,pf.equipo_local_id,pf.equipo_visitante_id,
+            c.nombre AS competicion,pf.fecha_partido,el.nombre AS equipo_local,ev.nombre AS equipo_visitante,
+            pf.estado,pf.jornada,pf.local_goles_total AS goles_local,pf.visitante_goles_total AS goles_visitante
+            FROM partidos_futbol pf JOIN competiciones_futbol c ON c.id=pf.competicion_id
+            JOIN equipos_futbol el ON el.id=pf.equipo_local_id JOIN equipos_futbol ev ON ev.id=pf.equipo_visitante_id
+            WHERE """ + where + " ORDER BY pf.fecha_partido " + ("DESC" if modo == "historicos" else "ASC")
+            + ",pf.id LIMIT %s OFFSET %s", [*params, tamano, (pagina - 1) * tamano]).fetchall()
+        return ListaPartidosResponse(total=total, partidos=[PartidoResumen(**r) for r in filas])
 
 
 @router.get(
@@ -463,13 +495,13 @@ async def obtener_h2h(
     description="Obtiene el detalle completo de un partido.",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_partido(partido_id: UUID) -> PartidoDetalle:
+def obtener_partido(partido_id: UUID, incluir_estadisticas: bool = True) -> PartidoDetalle:
     """Obtiene el detalle completo de un partido."""
     pool = obtener_pool()
 
     query = """
         SELECT
-            pf.id,
+            pf.id, pf.competicion_id, pf.temporada_id,
             c.nombre as competicion,
             pf.fecha_partido,
             el.nombre as equipo_local,
@@ -516,16 +548,14 @@ async def obtener_partido(partido_id: UUID) -> PartidoDetalle:
                         detail=f"Partido no encontrado: {partido_id}"
                     )
 
-                # Calcular estadísticas de equipos
-                estadisticas_local = _calcular_estadisticas_equipo(
-                    cursor, str(fila["equipo_local_id"])
-                )
-                estadisticas_visitante = _calcular_estadisticas_equipo(
-                    cursor, str(fila["equipo_visitante_id"])
-                )
+                # La pantalla canónica resuelve aquí identidad y usa historiales
+                # propios acotados por competición/kickoff para su contexto.
+                estadisticas_local = _calcular_estadisticas_equipo(cursor, str(fila["equipo_local_id"])) if incluir_estadisticas else None
+                estadisticas_visitante = _calcular_estadisticas_equipo(cursor, str(fila["equipo_visitante_id"])) if incluir_estadisticas else None
 
                 return PartidoDetalle(
                     id=fila["id"],
+                    competicion_id=fila.get("competicion_id"), temporada_id=fila.get("temporada_id"),
                     competicion=fila["competicion"],
                     fecha_partido=fila["fecha_partido"],
                     equipo_local=fila["equipo_local"],

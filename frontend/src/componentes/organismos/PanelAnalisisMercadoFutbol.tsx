@@ -1,3 +1,4 @@
+import { valorHistoricoFutbol, sumarObservados } from '../../utilidades/datosHistoricosFutbol';
 /**
  * PanelAnalisisMercadoFutbol.tsx — Analizador de líneas con H2H e historial individual.
  */
@@ -32,7 +33,7 @@ interface ResumenProbabilidad {
   total: number;
   over: number;
   under: number;
-  promedio: number;
+  promedio: number | null;
 }
 
 interface RecomendacionGuardado {
@@ -67,76 +68,24 @@ const tiposDisparoDisponibles: { id: TipoDisparo; label: string }[] = [
   { id: 'ARCO', label: 'Disparos a puerta' },
 ];
 
-function obtenerCornersEquipo(
-  partido: PartidoFutbolEstadistico,
-  esLocal: boolean,
-  segmento: SegmentoAnalisis
-) {
-  if (segmento === '1T') {
-    return esLocal ? partido.cornersLocal1t ?? 0 : partido.cornersVisitante1t ?? 0;
-  }
-  if (segmento === '2T') {
-    return esLocal ? partido.cornersLocal2t ?? 0 : partido.cornersVisitante2t ?? 0;
-  }
-  return esLocal ? partido.cornersLocal : partido.cornersVisitante;
+function codigo(mercado: MercadoAnalisis, segmento: SegmentoAnalisis, tipo: TipoDisparo) {
+  return `${mercado}${mercado==='DISPAROS' && tipo==='ARCO' ? '_ARCO' : ''}_${segmento}`;
+}
+function obtenerValorTotalPartido(p: PartidoFutbolEstadistico, mercado: MercadoAnalisis, segmento: SegmentoAnalisis, tipo: TipoDisparo) {
+  const m=codigo(mercado,segmento,tipo);
+  return sumarObservados(valorHistoricoFutbol(p,m,'LOCAL'),valorHistoricoFutbol(p,m,'VISITANTE'));
+}
+function obtenerValorEquipo(p: PartidoFutbolEstadistico, equipoId: string, mercado: MercadoAnalisis, segmento: SegmentoAnalisis, tipo: TipoDisparo) {
+  if(p.equipoLocalId!==equipoId && p.equipoVisitanteId!==equipoId) return null;
+  return valorHistoricoFutbol(p,codigo(mercado,segmento,tipo),p.equipoLocalId===equipoId ? 'LOCAL' : 'VISITANTE');
 }
 
-function obtenerCornersTotal(partido: PartidoFutbolEstadistico, segmento: SegmentoAnalisis) {
-  return (
-    obtenerCornersEquipo(partido, true, segmento) +
-    obtenerCornersEquipo(partido, false, segmento)
-  );
-}
-
-function obtenerValorTotalPartido(
-  partido: PartidoFutbolEstadistico,
-  mercado: MercadoAnalisis,
-  segmento: SegmentoAnalisis,
-  tipoDisparo: TipoDisparo
-) {
-  if (mercado === 'CORNERS') {
-    return obtenerCornersTotal(partido, segmento);
-  }
-
-  if (mercado === 'GOLES') {
-    return partido.golesLocal + partido.golesVisitante;
-  }
-
-  const disparosLocal =
-    tipoDisparo === 'ARCO' ? partido.disparosArcoLocal : partido.disparosLocal;
-  const disparosVisitante =
-    tipoDisparo === 'ARCO' ? partido.disparosArcoVisitante : partido.disparosVisitante;
-  return disparosLocal + disparosVisitante;
-}
-
-function obtenerValorEquipo(
-  partido: PartidoFutbolEstadistico,
-  equipoId: string,
-  mercado: MercadoAnalisis,
-  segmento: SegmentoAnalisis,
-  tipoDisparo: TipoDisparo
-) {
-  const esLocal = partido.equipoLocalId === equipoId;
-  if (mercado === 'CORNERS') {
-    return obtenerCornersEquipo(partido, esLocal, segmento);
-  }
-  if (mercado === 'GOLES') {
-    return esLocal ? partido.golesLocal : partido.golesVisitante;
-  }
-  return tipoDisparo === 'ARCO'
-    ? esLocal
-      ? partido.disparosArcoLocal
-      : partido.disparosArcoVisitante
-    : esLocal
-      ? partido.disparosLocal
-      : partido.disparosVisitante;
-}
-
-function calcularResumen(valores: number[], linea: number): ResumenProbabilidad {
+function calcularResumen(entrada: (number | null)[], linea: number): ResumenProbabilidad {
+  const valores=entrada.filter((v): v is number => v!==null && Number.isFinite(v) && v>=0);
   const total = valores.length;
   const over = valores.filter((valor) => valor > linea).length;
   const under = valores.filter((valor) => valor < linea).length;
-  const promedio = total > 0 ? valores.reduce((acc, v) => acc + v, 0) / total : 0;
+  const promedio = total > 0 ? valores.reduce((acc, v) => acc + v, 0) / total : null;
   return { total, over, under, promedio };
 }
 
@@ -492,7 +441,7 @@ export function PanelAnalisisMercadoFutbol({
                   Muestra: <span className="text-texto-principal">{datos.total}</span>
                 </p>
                 <p className="text-sm text-texto-secundario">
-                  Promedio: <span className="text-neon-cyan">{datos.promedio.toFixed(2)}</span>
+                  Promedio: <span className="text-neon-cyan">{datos.promedio?.toFixed(2) ?? 'N/D'}</span>
                 </p>
                 <p className="text-sm text-texto-secundario">
                   Over: <span className="text-neon-verde">{datos.over}</span> · Under:{' '}

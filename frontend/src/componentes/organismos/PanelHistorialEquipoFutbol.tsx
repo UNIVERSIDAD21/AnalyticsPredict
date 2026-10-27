@@ -46,8 +46,9 @@ function obtenerValoresEquipo(partido: PartidoFutbolEstadistico, equipoId: strin
   };
 }
 
-function calcularPromedio(valores: number[]): string {
-  if (valores.length === 0) return '0.0';
+function calcularPromedio(entrada: (number | null)[]): string {
+  const valores=entrada.filter((v): v is number => v!==null && Number.isFinite(v) && v>=0);
+  if (valores.length === 0) return 'N/D';
   const total = valores.reduce((acc, value) => acc + value, 0);
   return (total / valores.length).toFixed(1);
 }
@@ -172,16 +173,16 @@ export function PanelHistorialEquipoFutbol({
                     <td className="py-2 px-2 text-texto-principal">{valores.rival}</td>
                     <td className="py-2 px-2 text-texto-secundario">{valores.condicion}</td>
                     <td className="py-2 px-2 text-center font-mono text-neon-verde">
-                      {valores.golesFavor}-{valores.golesContra}
+                      {valores.golesFavor ?? 'N/D'}-{valores.golesContra ?? 'N/D'}
                     </td>
                     <td className="py-2 px-2 text-center font-mono text-neon-magenta">
-                      {valores.cornersFavor}-{valores.cornersContra}
+                      {valores.cornersFavor ?? 'N/D'}-{valores.cornersContra ?? 'N/D'}
                     </td>
                     <td className="py-2 px-2 text-center font-mono text-neon-amarillo">
-                      {valores.disparosFavor}-{valores.disparosContra}
+                      {valores.disparosFavor ?? 'N/D'}-{valores.disparosContra ?? 'N/D'}
                     </td>
                     <td className="py-2 px-2 text-center font-mono text-neon-cyan">
-                      {valores.disparosArcoFavor}-{valores.disparosArcoContra}
+                      {valores.disparosArcoFavor ?? 'N/D'}-{valores.disparosArcoContra ?? 'N/D'}
                     </td>
                   </tr>
                 );

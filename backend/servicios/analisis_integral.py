@@ -135,7 +135,7 @@ def integral_futbol(*, mercados, base, objetivo, ganador, goles_local, goles_vis
         for prob in (pb, pa):
             if prob["over"] is not None and prob["under"] is not None and abs(prob["over"] + prob["under"] - 1) < 1e-6:
                 prob["push"] = None
-    ajustes = deepcopy(trazas.get(mercado, []))
+    ajustes = deepcopy(trazas.get(mercado, [])) if seleccionado else []
     media_base, media_final = _numero(anterior.get("media")), _numero(seleccionado.get("media"))
     if ajustes and media_base is not None:
         media_base -= sum(x["delta"] for x in ajustes)
@@ -171,7 +171,7 @@ def integral_futbol(*, mercados, base, objetivo, ganador, goles_local, goles_vis
             "unidad": objetivo.unidad, "mercado": mercado, "linea": linea, "lado": objetivo.lado,
             "probabilidades": pa, "cuotas": {"over": q.get("cuota_over"), "under": q.get("cuota_under")},
             "ganador": {"local": ganador["prob_local"], "empate": ganador["prob_empate"], "visitante": ganador["prob_visitante"],
-                        "marcador": f"{goles_local:.2f} – {goles_visitante:.2f}",
+                        "marcador": f"{goles_local:.2f} – {goles_visitante:.2f}" if goles_local is not None and goles_visitante is not None else None,
                         "definicion": "1X2 por goles a 90 minutos más añadido, sin prórroga ni penales. Dixon-Coles/ensemble RAW; independiente del mercado de córners o disparos seleccionado."},
             "periodos": periodos, "comparacion": _comparacion(media_base, media_final, pb, pa),
             "ajustes": ajustes, "razones": razones, "muestras": muestras,

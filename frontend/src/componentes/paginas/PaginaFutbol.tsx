@@ -12,7 +12,7 @@ import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, ProgresoAnalisis, TarjetaCalidadDatosFutbol } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
-import { usePartidosFutbol } from '../../hooks';
+import { CatalogoFutbol } from '../moleculas/CatalogoFutbol';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
@@ -163,11 +163,27 @@ export function PaginaFutbol() {
   const h2hCacheRef = useRef<Map<string, PartidoFutbolEstadistico[]>>(new Map());
   const seleccionInicialAplicada = useRef(false);
 
-  const { partidos, cargando: cargandoPartidos, error: errorPartidos, recargar } = usePartidosFutbol({
-    tipo: 'proximos',
-    filtrosIniciales: { dias: 7, limite: 100 },
-    cargarAlMontar: true,
-  });
+  const [partidos, setPartidos] = useState<PartidoFutbolResumen[]>([]);
+  const [cargandoPartidos, setCargandoPartidos] = useState(true);
+  const [errorPartidos, setErrorPartidos] = useState<string | null>(null);
+  const [revisionCatalogo, setRevisionCatalogo] = useState(0);
+  const [temporadasCatalogo, setTemporadasCatalogo] = useState<string[]>([]);
+  const analisisSecuencia = useRef(0);
+  const analisisControlador = useRef<AbortController | null>(null);
+  const contextoSecuencia = useRef(0);
+  const limpiarResultado = useCallback(() => {
+    analisisSecuencia.current += 1;
+    analisisControlador.current?.abort();
+    setAnalisis(null); setSeleccionCanonicaActiva(null); setErrorAnalisis(null); setCargandoAnalisis(false);
+  }, []);
+  const cambiarCatalogo = useCallback(() => {
+    limpiarResultado(); contextoSecuencia.current += 1;
+    setPartidoSeleccionadoId(''); setPartidoFueraDeLista(null);
+    setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
+    setEquipoLocalIdReal(''); setEquipoVisitanteIdReal(''); setCargandoContexto(false);
+  }, [limpiarResultado]);
+  const recargar = useCallback(() => setRevisionCatalogo(n => n + 1), []);
+  useEffect(() => () => { analisisControlador.current?.abort(); analisisSecuencia.current += 1; contextoSecuencia.current += 1; }, []);
 
   const partidosVista = useMemo(() => {
     if (!partidoFueraDeLista || partidos.some((p) => p.id === partidoFueraDeLista.id)) return partidos;
@@ -187,7 +203,7 @@ export function PaginaFutbol() {
       seleccionInicialAplicada.current = true;
       setPartidoSeleccionadoId(porQuery);
       if (!partidos.some((p) => p.id === porQuery)) {
-        void obtenerPartido(porQuery)
+        void obtenerPartido(porQuery, false)
           .then(setPartidoFueraDeLista)
           .catch((error) => agregarToast({
             titulo: 'No se pudo abrir el partido guardado',
@@ -223,26 +239,27 @@ export function PaginaFutbol() {
   const partidosSelector: PartidoResumen[] = useMemo(() => (
     partidosVista.map((partido) => ({
       id: partido.id,
-      fecha_partido: partido.fechaPartido.split('T')[0],
+      fecha_partido: partido.fechaPartido,
       tipo_partido: 'REG',
       equipo_local_id: String(partido.equipoLocal),
       equipo_local_nombre: partido.equipoLocalNombre,
       equipo_visitante_id: String(partido.equipoVisitante),
       equipo_visitante_nombre: partido.equipoVisitanteNombre,
-      temporada_id: partido.competicion,
+      temporada_id: partido.temporadaId || partido.competicion,
       temporada_nombre: partido.competicionNombre,
-      local_total: null,
-      visitante_total: null,
-      finalizado: false,
+      local_total: partido.golesLocal ?? null,
+      visitante_total: partido.golesVisitante ?? null,
+      finalizado: partido.estado === 'FINALIZADO',
     }))
   ), [partidosVista]);
 
   const seleccionarPartidoFormulario = useCallback((partido: PartidoResumen | null) => {
+    limpiarResultado();
+    contextoSecuencia.current += 1;
+    setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
+    setEquipoLocalIdReal(''); setEquipoVisitanteIdReal('');
     setPartidoSeleccionadoId(partido?.id ?? '');
-    setAnalisis(null);
-    setSeleccionCanonicaActiva(null);
-    setErrorAnalisis(null);
-  }, []);
+  }, [limpiarResultado]);
 
   const manejarGuardarPartido = useCallback(async () => {
     if (!partidoSeleccionado) return;
@@ -358,11 +375,13 @@ export function PaginaFutbol() {
   }, [analisis, h2hPartidos, historialLocal, historialVisitante, partidoSeleccionado, seleccionCanonicaActiva]);
 
   const cargarContexto = useCallback(async (partido: PartidoFutbolResumen) => {
+    const secuencia = ++contextoSecuencia.current;
     try {
       setCargandoContexto(true);
       setErrorContexto(null);
 
-      const detalle = await obtenerPartido(partido.id);
+      const detalle = await obtenerPartido(partido.id, false);
+      if (secuencia !== contextoSecuencia.current) return;
       const localId = String(detalle.equipoLocalId || detalle.equipoLocal || '');
       const visitanteId = String(detalle.equipoVisitanteId || detalle.equipoVisitante || '');
 
@@ -379,14 +398,17 @@ export function PaginaFutbol() {
       setEquipoLocalIdReal(localId);
       setEquipoVisitanteIdReal(visitanteId);
 
-      const keyH2h = `${localId}|${visitanteId}|${limiteH2h}`;
-      const keyLocal = `${localId}|${limiteLocal}|${ubicacionLocal}`;
-      const keyVisit = `${visitanteId}|${limiteVisitante}|${ubicacionVisitante}`;
+      const ambito = { competicionId: partido.competicion, antesDe: new Date(Math.min(Date.now(), Date.parse(partido.fechaPartido))).toISOString() };
+      const llaveAmbito = `${partido.competicion}|${partido.fechaPartido}`;
+      const keyH2h = `${llaveAmbito}|${localId}|${visitanteId}|${limiteH2h}`;
+      const keyLocal = `${llaveAmbito}|${localId}|${limiteLocal}|${ubicacionLocal}`;
+      const keyVisit = `${llaveAmbito}|${visitanteId}|${limiteVisitante}|${ubicacionVisitante}`;
 
-      const h2h = h2hCacheRef.current.get(keyH2h) || await obtenerH2HPartidos(localId, visitanteId, limiteH2h);
-      const local = historialCacheRef.current.get(keyLocal) || await obtenerPartidosEquipoDetalle(localId, limiteLocal, ubicacionLocal);
-      const visit = historialCacheRef.current.get(keyVisit) || await obtenerPartidosEquipoDetalle(visitanteId, limiteVisitante, ubicacionVisitante);
+      const h2h = h2hCacheRef.current.get(keyH2h) || await obtenerH2HPartidos(localId, visitanteId, limiteH2h, ambito);
+      const local = historialCacheRef.current.get(keyLocal) || await obtenerPartidosEquipoDetalle(localId, limiteLocal, ubicacionLocal, ambito);
+      const visit = historialCacheRef.current.get(keyVisit) || await obtenerPartidosEquipoDetalle(visitanteId, limiteVisitante, ubicacionVisitante, ambito);
 
+      if (secuencia !== contextoSecuencia.current) return;
       h2hCacheRef.current.set(keyH2h, h2h);
       historialCacheRef.current.set(keyLocal, local);
       historialCacheRef.current.set(keyVisit, visit);
@@ -395,9 +417,9 @@ export function PaginaFutbol() {
       setHistorialLocal(local);
       setHistorialVisitante(visit);
     } catch (error) {
-      setErrorContexto(error instanceof Error ? error.message : 'No se pudo cargar el contexto del partido');
+      if (secuencia === contextoSecuencia.current) setErrorContexto(error instanceof Error ? error.message : 'No se pudo cargar el contexto del partido');
     } finally {
-      setCargandoContexto(false);
+      if (secuencia === contextoSecuencia.current) setCargandoContexto(false);
     }
   }, [limiteH2h, limiteLocal, limiteVisitante, ubicacionLocal, ubicacionVisitante]);
 
@@ -477,6 +499,11 @@ export function PaginaFutbol() {
       ? incluirLinea([22.5, 24.5, 26.5], seleccionCanonica.linea)
       : undefined;
 
+    const secuencia = ++analisisSecuencia.current;
+    analisisControlador.current?.abort();
+    const controlador = new AbortController();
+    analisisControlador.current = controlador;
+    const partidoObjetivo = partidosVista.find(p => p.id === seleccionCanonica.partidoId);
     try {
       setCargandoAnalisis(true);
       setErrorAnalisis(null);
@@ -491,14 +518,16 @@ export function PaginaFutbol() {
         lineasGoles,
         lineasDisparos,
         cuotasPorLinea,
-      });
-      setAnalisis(data);
+        modoHistorico: partidoObjetivo?.estado === 'FINALIZADO',
+        temporadas: temporadasCatalogo.length ? temporadasCatalogo : undefined,
+      }, controlador.signal);
+      if (secuencia === analisisSecuencia.current) setAnalisis(data);
     } catch (error) {
-      setErrorAnalisis(error instanceof Error ? error.message : 'No se pudo completar el análisis de fútbol');
+      if (!controlador.signal.aborted && secuencia === analisisSecuencia.current) setErrorAnalisis(error instanceof Error ? error.message : 'No se pudo completar el análisis de fútbol');
     } finally {
-      setCargandoAnalisis(false);
+      if (secuencia === analisisSecuencia.current) setCargandoAnalisis(false);
     }
-  }, [alcanceMercadoFutbol, categoriaMercadoFutbol, limiteH2h, partidoSeleccionadoId]);
+  }, [alcanceMercadoFutbol, categoriaMercadoFutbol, limiteH2h, partidoSeleccionadoId, partidosVista, temporadasCatalogo]);
 
   const recargarTodo = useCallback(() => {
     historialCacheRef.current.clear();
@@ -557,6 +586,8 @@ export function PaginaFutbol() {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
             <div className="lg:sticky lg:top-6 space-y-4">
+              <CatalogoFutbol revision={revisionCatalogo} onInicio={cambiarCatalogo} onCargando={setCargandoPartidos}
+                onError={setErrorPartidos} onDatos={setPartidos} onTemporadas={setTemporadasCatalogo} />
               {partidoSeleccionado && (
                 <Tarjeta className="border border-neon-verde/20">
                   <p className="text-xs uppercase tracking-wider text-texto-secundario">Partido seleccionado</p>
@@ -564,7 +595,7 @@ export function PaginaFutbol() {
                     {partidoSeleccionado.equipoLocalNombre} vs {partidoSeleccionado.equipoVisitanteNombre}
                   </p>
                   <p className="mt-1 text-xs text-texto-secundario">
-                    {partidoSeleccionado.competicionNombre} · {new Date(partidoSeleccionado.fechaPartido).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}
+                    {partidoSeleccionado.competicionNombre} · {new Date(partidoSeleccionado.fechaPartido).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' })} COT
                   </p>
                   {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
                     <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
@@ -588,7 +619,7 @@ export function PaginaFutbol() {
                 <select
                   id="categoria-futbol"
                   value={categoriaMercadoFutbol}
-                  onChange={(e) => setCategoriaMercadoFutbol(e.target.value as CategoriaSeleccionFutbol)}
+                  onChange={(e) => { limpiarResultado(); setCategoriaMercadoFutbol(e.target.value as CategoriaSeleccionFutbol); }}
                   className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
                 >
                   <option value="CORNERS">Corners</option>
@@ -601,7 +632,7 @@ export function PaginaFutbol() {
                 <select
                   id="alcance-futbol"
                   value={alcanceMercadoFutbol}
-                  onChange={(e) => setAlcanceMercadoFutbol(e.target.value as AlcanceSeleccionFutbol)}
+                  onChange={(e) => { limpiarResultado(); setAlcanceMercadoFutbol(e.target.value as AlcanceSeleccionFutbol); }}
                   className="mt-2 w-full bg-futurista-negro/60 border border-neon-cyan/30 rounded px-3 py-2 text-sm text-texto-principal"
                 >
                   <option value="TOTAL">Total</option>
@@ -612,6 +643,7 @@ export function PaginaFutbol() {
 
               <FormularioAnalisis
                 deporte="FUTBOL"
+                onCambiarParametros={limpiarResultado}
                 equipos={equiposAnalisis}
                 estadisticas={[]}
                 onAnalizar={ejecutarAnalisis}
@@ -621,7 +653,7 @@ export function PaginaFutbol() {
                 partidoActual={partidosSelector.find(p => p.id === partidoSeleccionadoId) ?? null}
                 onSeleccionarPartido={seleccionarPartidoFormulario}
                 opcionesMercado={opcionesMercadoFutbol}
-                textoAyudaMercado="Selecciona si quieres analizar primer tiempo, segundo tiempo o juego completo."
+                textoAyudaMercado="Primer/segundo tiempo o 90 minutos más añadido, sin prórroga ni penales. Los campos ausentes permanecen N/D."
                 unidadLineaLabel={unidadLineaLabel}
               />
               <Boton variante="secundario" anchoCompleto onClick={recargarTodo}>
@@ -643,6 +675,7 @@ export function PaginaFutbol() {
 
             {renderCanonico && !cargandoAnalisis && (
               <div className="space-y-4">
+                {(analisis?.advertencias ?? []).map(aviso => <p key={aviso} className="tarjeta text-sm text-neon-amarillo">{aviso}</p>)}
                 <TarjetaCalidadDatosFutbol calidad={renderCanonico.mercadoObjetivo.calidadDatos} />
 
                 <ResultadoAnalisis
@@ -651,7 +684,7 @@ export function PaginaFutbol() {
                   seleccionUsuario={{ lado: renderCanonico.seleccion.lado, linea: renderCanonico.seleccion.linea }}
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
-                  onGuardar={() => setMostrarGuardar(true)}
+                  onGuardar={partidoSeleccionado?.estado === 'FINALIZADO' ? undefined : () => setMostrarGuardar(true)}
                 />
 
                 {cargandoContexto && (
@@ -662,7 +695,7 @@ export function PaginaFutbol() {
               </div>
             )}
 
-            {renderCanonico && !cargandoAnalisis && (
+            {renderCanonico && !cargandoAnalisis && partidoSeleccionado?.estado !== 'FINALIZADO' && (
               <div className="mt-4">
                 <CreadorCombinada seleccionActual={renderCanonico.combinada} />
               </div>
@@ -677,7 +710,7 @@ export function PaginaFutbol() {
         </div>
       </main>
 
-      {renderCanonico?.guardar && partidoSeleccionado && (
+      {renderCanonico?.guardar && partidoSeleccionado && partidoSeleccionado.estado !== 'FINALIZADO' && (
         <ModalGuardarApuestaFutbol
           mostrar={mostrarGuardar}
           onCerrar={() => setMostrarGuardar(false)}

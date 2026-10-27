@@ -89,6 +89,7 @@ export type EstadoPartido =
  * Partido resumen (para listas)
  */
 export interface PartidoFutbolResumen {
+  temporadaId?: string;
   id: string;
   competicion: string;
   competicionNombre: string;
@@ -159,18 +160,22 @@ export interface PartidoFutbolEstadistico {
   equipoVisitanteId: string;
   equipoLocalNombre: string;
   equipoVisitanteNombre: string;
-  golesLocal: number;
-  golesVisitante: number;
-  cornersLocal: number;
-  cornersVisitante: number;
-  cornersLocal1t?: number;
-  cornersLocal2t?: number;
-  cornersVisitante1t?: number;
-  cornersVisitante2t?: number;
-  disparosLocal: number;
-  disparosVisitante: number;
-  disparosArcoLocal: number;
-  disparosArcoVisitante: number;
+  golesLocal: number | null;
+  golesVisitante: number | null;
+  cornersLocal: number | null;
+  cornersVisitante: number | null;
+  cornersLocal1t?: number | null;
+  cornersLocal2t?: number | null;
+  cornersVisitante1t?: number | null;
+  cornersVisitante2t?: number | null;
+  disparosLocal: number | null;
+  disparosVisitante: number | null;
+  disparosArcoLocal: number | null;
+  disparosArcoVisitante: number | null;
+  golesLocal1t?: number | null;
+  golesLocal2t?: number | null;
+  golesVisitante1t?: number | null;
+  golesVisitante2t?: number | null;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -299,6 +304,8 @@ export interface RecomendacionApuesta {
  * Request de análisis
  */
 export interface AnalisisFutbolRequest {
+  modoHistorico?: boolean;
+  soloConsulta?: boolean;
   partidoId: string;
   lineasCorners?: number[]; // Default: [8.5, 9.5, 10.5, 11.5]
   lineasGoles?: number[]; // Default: [1.5, 2.5, 3.5]
@@ -372,6 +379,7 @@ export interface ObjetivoDisponibilidadDatosFutbol {
 }
 
 export interface ObjetivoCalidadDatosFutbol {
+  elegibilidad?: ElegibilidadObjetivoFutbol | null;
   muestras: {
     h2h: number;
     localHome: number;
@@ -410,6 +418,10 @@ export interface ObjetivoAnalisisFutbol extends ObjetivoEstadoFutbol {
 }
 
 export interface AnalisisFutbolResponse {
+  modo?: string;
+  fechaCorte?: string;
+  advertencias?: string[];
+  elegibilidadMercados?: Record<string, ElegibilidadObjetivoFutbol>;
   analisisIntegral?: AnalisisIntegral;
   exito: boolean;
   partido: PartidoFutbolResumen;
@@ -425,6 +437,41 @@ export interface AnalisisFutbolResponse {
   modeloVersion: string;
   calibradoresActivos: number;
   prediccionGanador?: PrediccionGanadorFutbol;
+}
+
+export interface MuestraElegibilidadFutbol {
+  denominador: number;
+  observados: number;
+  estimados: number;
+  ausentes: number;
+  invalidos: number;
+  utilizables: number;
+  ceros: number;
+  motivos: Record<string, number>;
+  fecha_min?: string | null;
+  fecha_max: string | null;
+  con_null?: number;
+}
+
+export interface ElegibilidadObjetivoFutbol {
+  politica: string;
+  mercado: string;
+  estado: 'OBSERVADO' | 'ESTIMADO' | 'MUESTRA_LIMITADA' | 'SIN_DATOS';
+  naturaleza: 'OBSERVADO' | 'ESTIMADO';
+  calculable: boolean;
+  muestras: Record<string, MuestraElegibilidadFutbol>;
+  minimos_contexto: Record<string, number>;
+  bloques_insuficientes: string[];
+  advertencias: string[];
+}
+
+export interface InventarioElegibilidadFutbol {
+  finales_validos: number;
+  finales_sin_ft: number;
+  mercados: Record<string, MuestraElegibilidadFutbol>;
+  criterio: string;
+  corte: string;
+  por_temporada: { temporada_id: string; temporada: string; mercados: Record<string, MuestraElegibilidadFutbol> }[];
 }
 
 // ══════════════════════════════════════════════════════════════

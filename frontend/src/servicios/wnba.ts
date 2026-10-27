@@ -203,8 +203,8 @@ export async function cargarWnba(signal?: AbortSignal) {
 export interface ComprobacionCalendario {
   desde: string; hasta: string; comprobado_utc: string; estado: string; detalle: string; fuentes: { url: string; estado: string }[];
 }
-export async function obtenerTemporadasWnba(ids: string[]) {
-  const { data } = await clienteAPI.get<CatalogoWnba>("/api/wnba/catalogo");
+export async function obtenerTemporadasWnba(ids: string[], signal?: AbortSignal) {
+  const { data } = await clienteAPI.get<CatalogoWnba>("/api/wnba/catalogo", { signal });
   return data.temporadas.filter(t => !t.equipos || ids.some(id => t.equipos!.includes(id)));
 }
 export async function obtenerEquiposWnba(): Promise<Equipo[]> {

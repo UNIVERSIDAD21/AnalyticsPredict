@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ResultadoAnalisis } from '../../componentes/organismos/ResultadoAnalisis';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from './futbolToNbaAnalisis';
 import type { AnalisisFutbolResponse, PartidoFutbolEstadistico } from '../../tipos/futbol';
 
@@ -59,6 +62,27 @@ const contexto: { h2h: PartidoFutbolEstadistico[]; historialLocal: PartidoFutbol
 };
 
 describe('futbolToNbaAnalisis market-aware contexto', () => {
+  it('conserva modo, kickoff y corte sin presentar reconstrucciones como prepartido', () => {
+    const analisis = { ...baseAnalisis, modo: 'HISTORICO_RECONSTRUIDO' as const,
+      fechaCorte: '2026-04-03T10:00:00Z', modeloVersion: 'heuristico-americas::1.0.0' };
+    const out = adaptarAnalisisFutbolAResultadoAnalisis(analisis, contexto);
+    expect(out.metadata.modo_analisis).toBe('HISTORICO_RECONSTRUIDO');
+    expect(out.metadata.fecha_partido).toBe(analisis.partido.fechaPartido);
+    expect(out.metadata.fecha_corte).toBe(analisis.fechaCorte);
+    expect(out.metadata.consulta_exploratoria).toBe(true);
+    const futuro = adaptarAnalisisFutbolAResultadoAnalisis({ ...analisis, modo: 'PREPARTIDO' }, contexto);
+    expect(futuro.metadata.consulta_exploratoria).toBe(true);
+    const html = renderToStaticMarkup(createElement(ResultadoAnalisis, { resultado: out }));
+    expect(html).toContain('Histórico reconstruido');
+    expect(html).toContain('Consulta exploratoria RAW');
+    expect(html).toContain('Partido:');
+    expect(html).not.toContain('PAPER/SHADOW');
+    expect(html).not.toContain('Sin oportunidades de apuesta');
+  });
+  it('sin partidos no fabrica promedios 0–0 ni forma estable', () => {
+    const r=adaptarAnalisisFutbolAResultadoAnalisis(baseAnalisis,{h2h:[],historialLocal:[],historialVisitante:[]});
+    expect(r.contexto?.forma_equipo).toBeNull();expect(r.contexto?.forma_rival).toBeNull();
+  });
   it('calcula la forma desde el ID exacto de cada equipo y no atribuye filas ajenas al visitante', () => {
     const local = contexto.h2h[0];
     const vuelta = { ...local, id: 'vuelta', equipoLocalId: 'eq-visita', equipoVisitanteId: 'eq-local' };
@@ -67,10 +91,10 @@ describe('futbolToNbaAnalisis market-aware contexto', () => {
       h2h: [local,vuelta,ajeno], historialLocal: [local,vuelta,ajeno], historialVisitante: [local,vuelta,ajeno],
     });
     expect(out.contexto?.h2h?.total_partidos).toBe(2);
-    expect(out.contexto?.forma_equipo.victorias).toBe(1);
-    expect(out.contexto?.forma_equipo.derrotas).toBe(1);
-    expect(out.contexto?.forma_rival.victorias).toBe(1);
-    expect(out.contexto?.forma_rival.derrotas).toBe(1);
+    expect(out.contexto?.forma_equipo?.victorias).toBe(1);
+    expect(out.contexto?.forma_equipo?.derrotas).toBe(1);
+    expect(out.contexto?.forma_rival?.victorias).toBe(1);
+    expect(out.contexto?.forma_rival?.derrotas).toBe(1);
   });
   it('usa corners del mercado objetivo y no mezcla con goles', () => {
     const analisis = {
