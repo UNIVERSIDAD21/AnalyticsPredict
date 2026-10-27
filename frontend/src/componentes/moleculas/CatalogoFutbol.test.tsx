@@ -48,12 +48,14 @@ describe('agenda global de fútbol', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver histórico Atlanta vs Chicago' }));
     expect(p.onSeleccionar).toHaveBeenCalledWith(expect.objectContaining({ estado: 'FINALIZADO', golesLocal: 0 }));
   });
-  it('un horario vencido no se puede seleccionar aunque el servidor lo marque analizable', async () => {
+  it('permite seleccionar un horario vencido para reconstruir el análisis', async () => {
     vi.mocked(listarAgenda).mockResolvedValue(agenda([partido({ fechaPartido: '2000-01-01T12:00:00Z' })]));
     const p = props(); render(<CatalogoFutbol {...p} />);
     expect(await screen.findByText('Estado por verificar', { selector: 'span' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Analizar Atlanta vs Chicago' })).toBeDisabled();
-    expect(p.onSeleccionar).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Analizar Atlanta vs Chicago' })).toBeEnabled();
+    expect(screen.getByText('Analizar con corte al inicio')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Atlanta vs Chicago' }));
+    expect(p.onSeleccionar).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
   });
   it('aplica búsqueda, filtro opcional y paginación en el servidor', async () => {
     vi.mocked(listarAgenda).mockResolvedValue(agenda([partido()], 80)); render(<CatalogoFutbol {...props()} />);
@@ -83,14 +85,15 @@ describe('agenda global de fútbol', () => {
     await screen.findByText(/No hay partidos registrados para esta fecha/);
     expect(listarAgenda).toHaveBeenCalledTimes(1);
   });
-  it('cierra una tarjeta al cruzar el kickoff sin recargar la página', async () => {
+  it('al cruzar el kickoff ofrece reconstrucción sin bloquear la tarjeta', async () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-26T20:00:00Z'));
     vi.mocked(listarAgenda).mockResolvedValue(agenda([partido({ fechaPartido: '2026-10-26T20:00:01Z' })]));
     render(<CatalogoFutbol {...props()} />);
     await act(async () => {});
     expect(screen.getByRole('button', { name: 'Analizar Atlanta vs Chicago' })).toBeEnabled();
     await act(async () => { vi.advanceTimersByTime(15000); });
-    expect(screen.getByRole('button', { name: 'Analizar Atlanta vs Chicago' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Analizar Atlanta vs Chicago' })).toBeEnabled();
+    expect(screen.getByText('Analizar con corte al inicio')).toBeInTheDocument();
     expect(screen.getByText('Estado por verificar', { selector: 'span' })).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listarTemporadas, type TemporadaFutbol } from '../../servicios/futbol/catalogo';
 import type { PartidoFutbolResumen } from '../../tipos/futbol';
+import { requiereReconstruccion } from '../../utilidades/agendaFutbol';
 
 interface Props {
   partido: PartidoFutbolResumen;
@@ -33,7 +34,7 @@ export function HistoricoAnalisisFutbol({ partido, seleccion, onCambiar }: Props
         {temporadas.map(t => <label key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-texto-principal"><span className="flex items-center gap-2"><input type="checkbox" checked={seleccion.includes(t.id)} onChange={e => onCambiar(partido.competicion, e.target.checked ? [...seleccion, t.id] : seleccion.filter(id => id !== t.id))} />{t.nombre}</span><span className="text-xs text-texto-terciario">{t.finales} finales</span></label>)}
         {temporadas.length > 0 && <button type="button" onClick={() => onCambiar(partido.competicion, temporadas.map(t => t.id))} className="pt-1 text-xs text-neon-cyan">Usar todas las temporadas disponibles</button>}
       </fieldset>}
-      {partido.estado === 'FINALIZADO' && <p className="text-xs text-neon-amarillo">Reconstrucción histórica con corte anterior al partido; no es un pronóstico emitido entonces.</p>}
+      {requiereReconstruccion(partido) && <p className="text-xs text-neon-amarillo">Reconstrucción con corte anterior al partido; no utiliza estadísticas del encuentro ni es un pronóstico emitido entonces.</p>}
     </div>
   </details>;
 }

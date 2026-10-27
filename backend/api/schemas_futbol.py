@@ -202,7 +202,7 @@ class AgendaFutbolResponse(BaseModel):
 class AnalisisRequest(BaseModel):
     """Request para análisis de un partido."""
     partido_id: UUID
-    modo_historico: bool = Field(default=False, description="Reconstrucción de un final con datos anteriores al kickoff; sin registro ni apuestas.")
+    modo_historico: bool = Field(default=False, description="Reconstrucción con datos anteriores al kickoff de un encuentro ya iniciado, incluso con estado pendiente de actualizar; sin registro ni apuestas. Se aplica automáticamente si la hora de inicio ya pasó.")
     solo_consulta: bool = Field(default=False, description="Calcula sin persistir predicciones ni bitácora.")
     h2h_limite: Optional[int] = Field(
         default=10,

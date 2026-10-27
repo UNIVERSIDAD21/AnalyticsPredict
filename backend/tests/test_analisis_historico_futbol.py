@@ -36,7 +36,7 @@ def test_historico_no_invoca_persistencia_ni_ml(api_sintetica, monkeypatch):
     assert solo_lectura_http.get() is False
 
 
-def test_historico_exige_final_y_prepartido_no_reabre_final(api_sintetica):
+def test_reconstruccion_no_acepta_un_encuentro_futuro(api_sintetica):
     client, partido, _, _ = api_sintetica
     assert client.post("/api/futbol/analizar", json={"partido_id": partido["id"], "modo_historico": True}).status_code == 400
     partido["estado"] = "FINALIZADO"
@@ -67,3 +67,35 @@ def test_temporada_ajena_no_se_sustituye_por_otra_ventana():
         rutas._resolver_filtro_temporal_futbol(Cursor(), request=AnalisisRequest(partido_id="00000000-0000-0000-0000-000000000001", temporadas=["Otra liga"]),
                                               competicion_id="c", fecha_corte=datetime.now(timezone.utc))
     assert e.value.status_code == 400
+
+
+@pytest.mark.parametrize('estado', ['PROGRAMADO', 'EN_VIVO', 'ENTRETIEMPO', 'FINALIZADO', 'CANCELADO', 'SUSPENDIDO'])
+@pytest.mark.parametrize('explicito', [False, True])
+def test_consulta_de_iniciado_no_depende_del_estado_actualizado(api_sintetica, monkeypatch, estado, explicito):
+    from datetime import timedelta
+    client, partido, _, registrados = api_sintetica
+    corte=datetime.now(timezone.utc)-timedelta(hours=2)
+    partido.update(estado=estado, fecha_partido=corte)
+    def prohibido(*a, **kw):
+        pytest.fail('La reconstrucción no debe usar ML actual ni persistencia')
+    monkeypatch.setattr(rutas, '_obtener_predictor_futbol_ml', prohibido)
+    monkeypatch.setattr(rutas, '_registrar_predicciones_futbol', prohibido)
+    monkeypatch.setattr(rutas, 'registrar_apuesta_analizada', prohibido)
+    original=rutas._obtener_partidos_equipo
+    def leer(*a, **kw):
+        assert a[2]==corte
+        assert solo_lectura_http.get() is True
+        return original(*a, **kw)
+    monkeypatch.setattr(rutas, '_obtener_partidos_equipo', leer)
+    r=client.post('/api/futbol/analizar',json={'partido_id':partido['id'],'modo_historico':explicito,
+                  'mercado_objetivo':'GOLES_FT','linea_objetivo':2.5,'lado_objetivo':'OVER'})
+    assert r.status_code==200,r.text
+    d=r.json()
+    assert d['modo']=='HISTORICO_RECONSTRUIDO'
+    assert datetime.fromisoformat(d['fecha_corte'])==corte
+    assert d['objetivo']['trazabilidad']['registro_predicciones'] is False
+    assert not d['recomendaciones'] and not registrados
+    if estado!='FINALIZADO':
+        assert any('resultado final aún no está confirmado' in x for x in d['advertencias'])
+    assert partido['estado']==estado
+    assert solo_lectura_http.get() is False

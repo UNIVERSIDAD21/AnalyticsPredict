@@ -14,7 +14,7 @@ import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { CatalogoFutbol } from '../moleculas/CatalogoFutbol';
 import { HistoricoAnalisisFutbol } from '../moleculas/HistoricoAnalisisFutbol';
-import { puedeAnalizarPartido } from '../../utilidades/agendaFutbol';
+import { puedeAnalizarPartido, requiereReconstruccion } from '../../utilidades/agendaFutbol';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
@@ -207,9 +207,13 @@ export function PaginaFutbol() {
   );
   const temporadasCatalogo = useMemo(() => configuracionHistorico.competicionId === partidoSeleccionado?.competicion ? configuracionHistorico.ids : [], [configuracionHistorico, partidoSeleccionado?.competicion]);
   const seleccionAnalizable = partidoSeleccionado ? puedeAnalizarPartido(partidoSeleccionado, instanteAgenda) : false;
+  const seleccionRetrospectiva = Boolean(partidoSeleccionado && (requiereReconstruccion(partidoSeleccionado, instanteAgenda) || analisis?.modo === 'HISTORICO_RECONSTRUIDO'));
   useEffect(() => {
     if (partidoSeleccionadoId && !seleccionAnalizable) limpiarResultado();
   }, [partidoSeleccionadoId, seleccionAnalizable, limpiarResultado]);
+  useEffect(() => {
+    if (seleccionRetrospectiva) setMostrarGuardar(false);
+  }, [seleccionRetrospectiva]);
 
   useEffect(() => {
     if (seleccionInicialAplicada.current || cargandoPartidos) return;
@@ -459,7 +463,7 @@ export function PaginaFutbol() {
     const partidoVigente = partidosVista.find(p => p.id === partidoIdObjetivo);
     if (!partidoVigente || !puedeAnalizarPartido(partidoVigente)) {
       limpiarResultado();
-      setErrorAnalisis('Prepartido no disponible. La hora de inicio ya pasó o el estado requiere verificación. Actualiza la agenda.');
+      setErrorAnalisis('El estado o la fecha de este partido no permite consultar el análisis. Actualiza la agenda.');
       return;
     }
 
@@ -546,7 +550,8 @@ export function PaginaFutbol() {
         lineasGoles,
         lineasDisparos,
         cuotasPorLinea,
-        modoHistorico: partidoObjetivo?.estado === 'FINALIZADO',
+        modoHistorico: partidoObjetivo ? requiereReconstruccion(partidoObjetivo) : false,
+        soloConsulta: partidoObjetivo ? requiereReconstruccion(partidoObjetivo) : false,
         temporadas: temporadasCatalogo.length ? temporadasCatalogo : undefined,
       }, controlador.signal);
       if (secuencia === analisisSecuencia.current) setAnalisis(data);
@@ -567,7 +572,7 @@ export function PaginaFutbol() {
   }, [cargarContexto, partidoSeleccionado, recargar]);
 
   const guardarApuesta = useCallback(async (stake: number) => {
-    if (!partidoSeleccionado || !renderCanonico?.guardar) return;
+    if (!partidoSeleccionado || !renderCanonico?.guardar || requiereReconstruccion(partidoSeleccionado)) return;
     try {
       setGuardandoApuesta(true);
       await crearApuesta({
@@ -624,6 +629,7 @@ export function PaginaFutbol() {
                     {partidoSeleccionado.competicionNombre} · {new Date(partidoSeleccionado.fechaPartido).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' })} COT
                   </p>
                   {partidoSeleccionado.estado === 'FINALIZADO' && <p className="mt-2 text-sm text-texto-principal">Resultado final: {partidoSeleccionado.golesLocal ?? 'N/D'} – {partidoSeleccionado.golesVisitante ?? 'N/D'}</p>}
+                  {seleccionRetrospectiva && <p className="mt-2 text-xs leading-relaxed text-neon-cyan">Consulta con datos anteriores al inicio. {partidoSeleccionado.estado !== 'FINALIZADO' ? 'El estado y resultado del encuentro aún pueden estar pendientes de actualizar.' : 'El resultado de este partido no interviene en el cálculo.'}</p>}
                   <button type="button" className="my-3 text-xs text-neon-cyan" onClick={() => document.getElementById('agenda-futbol')?.scrollIntoView({ behavior: 'smooth' })}>← Elegir otro partido en la agenda</button>
                   {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
                     <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
@@ -641,7 +647,7 @@ export function PaginaFutbol() {
                 </Tarjeta>
               )}
 
-              {!seleccionAnalizable && <Tarjeta className="border border-neon-amarillo/30"><p className="text-sm text-neon-amarillo">Prepartido cerrado o estado por verificar</p><p className="mt-2 text-xs text-texto-secundario">La hora prevista ya pasó o el estado no permite un análisis prepartido. Actualiza la agenda para consultar su estado; los finalizados se abren en modo histórico.</p></Tarjeta>}
+              {!seleccionAnalizable && <Tarjeta className="border border-neon-amarillo/30"><p className="text-sm text-neon-amarillo">Estado o fecha por verificar</p><p className="mt-2 text-xs text-texto-secundario">El estado registrado no permite un análisis previo a este encuentro futuro. Actualiza la agenda para consultar sus datos.</p></Tarjeta>}
               {seleccionAnalizable && <>
               <HistoricoAnalisisFutbol key={`historico-${partidoSeleccionado.id}`} partido={partidoSeleccionado} seleccion={temporadasCatalogo} onCambiar={cambiarTemporadas} />
 
@@ -720,7 +726,7 @@ export function PaginaFutbol() {
                   seleccionUsuario={{ lado: renderCanonico.seleccion.lado, linea: renderCanonico.seleccion.linea }}
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
-                  onGuardar={partidoSeleccionado?.estado === 'FINALIZADO' ? undefined : () => setMostrarGuardar(true)}
+                  onGuardar={seleccionRetrospectiva ? undefined : () => setMostrarGuardar(true)}
                 />
 
                 {cargandoContexto && (
@@ -731,7 +737,7 @@ export function PaginaFutbol() {
               </div>
             )}
 
-            {renderCanonico && !cargandoAnalisis && partidoSeleccionado?.estado !== 'FINALIZADO' && (
+            {renderCanonico && !cargandoAnalisis && !seleccionRetrospectiva && (
               <div className="mt-4">
                 <CreadorCombinada seleccionActual={renderCanonico.combinada} />
               </div>
@@ -746,7 +752,7 @@ export function PaginaFutbol() {
         </div>}
       </main>
 
-      {renderCanonico?.guardar && partidoSeleccionado && partidoSeleccionado.estado !== 'FINALIZADO' && (
+      {renderCanonico?.guardar && partidoSeleccionado && !seleccionRetrospectiva && (
         <ModalGuardarApuestaFutbol
           mostrar={mostrarGuardar}
           onCerrar={() => setMostrarGuardar(false)}

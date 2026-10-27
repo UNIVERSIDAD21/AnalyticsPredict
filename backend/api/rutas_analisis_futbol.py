@@ -2821,6 +2821,7 @@ def analizar_partido(
     """
     inicio = time.time()
     pool = obtener_pool()
+    token_reconstruccion = None
 
     # 1. Validar que el partido existe y es analizable
     partido_query = """
@@ -2857,6 +2858,21 @@ def analizar_partido(
                     )
 
                 estado_partido = str(partido["estado"] or "").upper()
+                ahora_consulta = datetime.now(timezone.utc)
+                inicio_vencido = partido["fecha_partido"] <= ahora_consulta
+                if not partido.get("valido", True):
+                    raise HTTPException(status_code=400, detail="Partido invalidado: no analizable.")
+                if request.modo_historico and not inicio_vencido:
+                    raise HTTPException(status_code=400, detail="La reconstrucción requiere que la hora de inicio ya haya llegado.")
+                if inicio_vencido:
+                    # La actualización pendiente del estado no impide consultar
+                    # cómo se habría analizado el encuentro antes del kickoff.
+                    # Se fuerza solo lectura también para clientes antiguos que
+                    # envían una petición prepartido después de esa hora.
+                    if not (request.modo_historico or request.solo_consulta):
+                        cursor.execute("SET TRANSACTION READ ONLY")
+                        token_reconstruccion = solo_lectura_http.set(True)
+                    request = request.model_copy(update={"modo_historico": True, "solo_consulta": True})
                 estados_no_analizables = {
                     "FINALIZADO",
                     "CANCELADO",
@@ -2865,18 +2881,14 @@ def analizar_partido(
                     "APLAZADO",
                     "SUSPENDIDO",
                 }
-                if not partido.get("valido", True):
-                    raise HTTPException(status_code=400, detail="Partido invalidado: no analizable.")
-                if request.modo_historico and estado_partido != "FINALIZADO":
-                    raise HTTPException(status_code=400, detail="El modo histórico requiere un partido finalizado.")
-                if estado_partido in estados_no_analizables and not (request.modo_historico and estado_partido == "FINALIZADO"):
+                if estado_partido in estados_no_analizables and not request.modo_historico:
                     raise HTTPException(
                         status_code=400,
                         detail=f"No se puede analizar un partido con estado: {estado_partido}",
                     )
 
                 if not request.modo_historico and estado_agenda(
-                    estado_partido, partido["fecha_partido"], datetime.now(timezone.utc)
+                    estado_partido, partido["fecha_partido"], ahora_consulta
                 ) != "PROXIMO":
                     raise HTTPException(status_code=409, detail="Prepartido no disponible: el encuentro ya tiene su hora de inicio vencida o un estado no elegible. Actualiza y verifica su estado; los finalizados se consultan en modo histórico.")
 
@@ -4027,7 +4039,9 @@ def analizar_partido(
                         "Estimador heurístico exploratorio RAW, sin calibración ni validación prospectiva para esta competición. No se activó un modelo ML nuevo ni se registra en versiones de otra liga."
                     ] if sin_validacion_dominio else []) + ([
                         "Reconstrucción retrospectiva: solo datos anteriores al kickoff. La descarga posterior no acredita disponibilidad original; no se registra como pronóstico emitido."
-                    ] if request.modo_historico else []),
+                    ] if request.modo_historico else []) + ([
+                        f"Estado registrado: {estado_partido}. El resultado final aún no está confirmado en esta consulta; se reconstruye el análisis con datos anteriores al inicio, sin utilizar estadísticas del encuentro."
+                    ] if request.modo_historico and estado_partido != "FINALIZADO" else []),
                 )
 
     except HTTPException:
@@ -4035,3 +4049,6 @@ def analizar_partido(
     except Exception as e:
         logger.error(f"Error analizando partido {request.partido_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    finally:
+        if token_reconstruccion is not None:
+            solo_lectura_http.reset(token_reconstruccion)

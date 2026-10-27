@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
 from servicios.calidad_futbol import normalizar_estadistico
-from servicios.agenda_futbol import estado_agenda
+from servicios.agenda_futbol import estado_agenda, permite_consulta
 from db import obtener_pool
 from .schemas_futbol import (
     PartidoResumen,
@@ -504,7 +504,8 @@ def agenda_partidos(
     partidos = []
     for fila in filas:
         presentacion = estado_agenda(fila["estado"], fila["fecha_partido"], ahora)
-        partidos.append(PartidoAgenda(**fila, estado_agenda=presentacion, analizable=presentacion in {"PROXIMO", "FINALIZADO"}))
+        partidos.append(PartidoAgenda(**fila, estado_agenda=presentacion,
+                                     analizable=permite_consulta(fila["estado"], fila["fecha_partido"], ahora)))
     return AgendaFutbolResponse(fecha=dia, consultado_en=ahora, datos_actualizados_en=resumen["actualizado"],
                                total=resumen["total"], pagina=pagina, tamano=tamano, partidos=partidos)
 

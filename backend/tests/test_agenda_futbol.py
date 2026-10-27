@@ -5,7 +5,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from api import rutas_partidos_futbol as rutas
-from servicios.agenda_futbol import estado_agenda
+from servicios.agenda_futbol import estado_agenda, permite_consulta
 from ingesta_futbol_americas import aplicar, planificar
 from test_ingesta_futbol_americas import fila
 from test_ingesta_futbol_americas_pg import db_local, entrada  # noqa: F401
@@ -24,12 +24,14 @@ def test_preserva_estados_sin_inventar_resultados(estado,esperado):
     assert estado_agenda(estado, ahora-timedelta(hours=1), ahora)==esperado
 
 
-def test_endpoint_rechaza_hora_vencida_y_en_vivo_pero_acepta_reprogramado(api_sintetica):
+def test_endpoint_reconstruye_hora_vencida_y_conserva_prepartido_futuro(api_sintetica):
     client, partido, _, _=api_sintetica
     payload={'partido_id':partido['id'],'solo_consulta':True,'mercado_objetivo':'GOLES_FT','linea_objetivo':2.5,'lado_objetivo':'OVER'}
     partido['fecha_partido']=datetime.now(timezone.utc)-timedelta(seconds=1)
     r=client.post('/api/futbol/analizar',json=payload)
-    assert r.status_code==409 and 'verifica' in r.json()['detail']
+    assert r.status_code==200,r.text
+    assert r.json()['modo']=='HISTORICO_RECONSTRUIDO'
+    assert r.json()['objetivo']['trazabilidad']['registro_predicciones'] is False
     partido['fecha_partido']=datetime.now(timezone.utc)+timedelta(days=1)
     partido['estado']='EN_VIVO'
     assert client.post('/api/futbol/analizar',json=payload).status_code==409
@@ -64,7 +66,7 @@ def test_agenda_global_limites_cot_orden_y_paginacion(agenda_sql):
     r=client.get('/api/futbol/partidos/agenda',params={'fecha':'2020-03-10','tamano':1})
     assert r.status_code==200,r.text
     a=r.json();assert a['total']==2 and a['zona_horaria']=='America/Bogota'
-    assert a['partidos'][0]['estado_agenda']=='POR_VERIFICAR' and not a['partidos'][0]['analizable']
+    assert a['partidos'][0]['estado_agenda']=='POR_VERIFICAR' and a['partidos'][0]['analizable']
     b=client.get('/api/futbol/partidos/agenda',params={'fecha':'2020-03-10','tamano':1,'pagina':2}).json()
     assert b['partidos'][0]['estado_agenda']=='PROXIMO' and b['partidos'][0]['analizable']
     assert a['partidos'][0]['competicion_id']!=b['partidos'][0]['competicion_id']
@@ -86,3 +88,10 @@ def test_filtros_sql_por_equipo_pais_estado_competicion_y_guardados(agenda_sql):
     partido=get(buscar='Brasil')['partidos'][0]
     assert get(partido_ids=partido['id'])['total']==1
     assert client.get('/api/futbol/partidos/agenda?estado=inventado').status_code==422
+
+
+@pytest.mark.parametrize('estado',['PROGRAMADO','EN_VIVO','FINALIZADO','CANCELADO','SUSPENDIDO'])
+def test_todos_los_estados_pasados_permiten_consulta_con_corte(estado):
+    ahora=datetime.now(timezone.utc)
+    assert permite_consulta(estado,ahora-timedelta(hours=1),ahora)
+    assert permite_consulta(estado,ahora,ahora)

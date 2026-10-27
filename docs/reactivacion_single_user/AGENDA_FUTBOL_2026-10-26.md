@@ -9,7 +9,7 @@ hora, estado y marcador conocido. Buscar equipo y los filtros de país,
 competición, estado y partidos guardados son opcionales. La búsqueda y la
 paginación se realizan en el servidor; no filtran únicamente la página visible.
 
-Al seleccionar un próximo o un final válido se abre la configuración existente
+Al seleccionar cualquier encuentro válido con horario ya alcanzado, o un próximo programado, se abre la configuración existente
 con sus equipos, competición y fecha. El selector de partido duplicado del
 formulario se oculta exclusivamente en fútbol. El botón de volver a la agenda
 permite elegir otro encuentro. Los enlaces `partidoId` resuelven su fecha y
@@ -25,8 +25,11 @@ disponibles de esa competición. Cambiar de partido restablece el modo automáti
 Cambiar temporadas invalida el resultado anterior y las solicitudes conservan
 su ámbito de competición. Se preserva el corte temporal exclusivo existente.
 
-Los finales se abren con `modo_historico=true`: reconstrucción retrospectiva,
-sin apuestas ni registro de pronósticos. Las probabilidades continúan RAW.
+Los encuentros cuya hora de inicio ya llegó se abren con `modo_historico=true`,
+incluso si su estado sigue PROGRAMADO o ya están en juego/finalizados:
+reconstrucción retrospectiva sin apuestas ni registro de pronósticos. Se utiliza
+únicamente histórico anterior al kickoff, sin estadísticas del propio encuentro.
+Las probabilidades continúan RAW.
 
 ## API y estados
 
@@ -39,18 +42,22 @@ Se preserva `/catalogo` para consumidores anteriores.
 
 `estado_agenda` clasifica el estado guardado sin modificarlo: PROXIMO,
 POR_VERIFICAR, EN_JUEGO, FINALIZADO o NO_DISPONIBLE. Un PROGRAMADO con kickoff
-anterior o igual a ahora queda POR_VERIFICAR; no se inventa su resultado ni se
-declara que esté en vivo. El cliente reevalúa el reloj cada 15 segundos y al
-intentar analizar; el servidor vuelve a comprobarlo siempre.
+anterior o igual a ahora queda POR_VERIFICAR, pero permite abrir el análisis
+con corte anterior al inicio. No se inventa su resultado ni se declara que esté
+en vivo. El cliente reevalúa el reloj cada 15 segundos y al intentar analizar;
+el servidor elige también el modo de consulta correcto.
 
-`POST /api/futbol/analizar` rechaza con HTTP 409 un análisis prepartido fuera
-de PROGRAMADO futuro, incluso mediante ID directo. Los finales mantienen su
-validación propia y requieren modo histórico. La fuente debe confirmar una
-reprogramación antes de que vuelva a ser elegible.
+`POST /api/futbol/analizar` transforma automáticamente las solicitudes de
+encuentros iniciados en HISTORICO_RECONSTRUIDO, incluso desde clientes que no
+envíen modo_historico. Fuerza transacción READ ONLY y contexto de solo consulta;
+no carga ML actual ni persiste predicciones/apuestas. La reconstrucción puede
+usarse aunque el estado o resultado estén pendientes, y lo indica. Un encuentro
+futuro requiere PROGRAMADO para prepartido; no se admite reconstrucción con un
+corte futuro. No se modifica el estado de fuente para habilitar la consulta.
 
 ## Verificación y límites
 
-1.720 pruebas backend sobre el runner SQL global en PostgreSQL temporal propio;
+1.737 pruebas backend sobre el runner SQL global en PostgreSQL temporal propio;
 128 frontend; lint y TypeScript sin errores ni avisos; build aprobado con el
 aviso preexistente de import WNBA. Verificados en navegador real: Hoy/Mañana,
 fecha histórica, selección, cálculo, temporadas efectivas y ancho móvil.

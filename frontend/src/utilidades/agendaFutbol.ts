@@ -10,5 +10,10 @@ export function sumarDias(fecha: string, cantidad: number): string {
   return dia.toISOString().slice(0, 10);
 }
 export function puedeAnalizarPartido(partido: PartidoFutbolResumen, ahora = Date.now()): boolean {
-  return partido.estado === 'FINALIZADO' || (partido.estado === 'PROGRAMADO' && Date.parse(partido.fechaPartido) > ahora);
+  const inicio = Date.parse(partido.fechaPartido);
+  return Number.isFinite(inicio) && (inicio <= ahora || partido.estado === 'PROGRAMADO');
+}
+
+export function requiereReconstruccion(partido: PartidoFutbolResumen, ahora = Date.now()): boolean {
+  return Date.parse(partido.fechaPartido) <= ahora;
 }

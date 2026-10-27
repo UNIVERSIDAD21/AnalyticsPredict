@@ -1,5 +1,21 @@
 # Estado vigente — AnalyticsPredict
 
+## Agenda global y consulta retrospectiva de fútbol — 2026-10-26
+
+`/futbol` permite navegar por día entre todas las competiciones y seleccionar
+un encuentro sin mezclar la fecha de agenda con las temporadas del cálculo.
+Los encuentros iniciados se reconstruyen con corte exclusivo en el kickoff,
+incluso si su estado sigue pendiente: transacción de solo lectura, sin ML actual,
+registro de pronósticos ni apuestas. No se cambian estados para habilitar consultas.
+Actualizar agenda solo relee la BD; no descarga calendarios ni marcadores.
+
+Publicación acotada a agenda y prerrequisitos de fútbol (elegibilidad, contexto,
+catálogo y contratos compartidos); otros trabajos locales conservan su alcance.
+Validación del candidato aislado: 1.369 backend/0 omitidas y 125 frontend,
+lint/TypeScript/build y auditoría de producción aprobados. Estos son controles
+locales: la CI remota se verifica por SHA en el acta externa de publicación.
+[Contrato de agenda](../reactivacion_single_user/AGENDA_FUTBOL_2026-10-26.md).
+
 Última actualización: **2026-10-25**. Herramienta personal single-user, local y
 ligada a loopback. Sin login, pagos, suscripciones, tiers ni lanzamiento comercial.
 Responsable operativo: UNIVERSIDAD21. Dictamen analítico: **NO CERTIFICADO**.
