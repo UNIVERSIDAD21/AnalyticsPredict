@@ -175,6 +175,26 @@ class ListaPartidosResponse(BaseModel):
     partidos: List[PartidoResumen]
 
 
+class PartidoAgenda(PartidoResumen):
+    pais: str
+    equipo_local_logo: Optional[str] = None
+    equipo_visitante_logo: Optional[str] = None
+    estado_agenda: Literal["PROXIMO", "POR_VERIFICAR", "EN_JUEGO", "FINALIZADO", "NO_DISPONIBLE"]
+    analizable: bool
+    actualizado_en: Optional[datetime] = None
+
+
+class AgendaFutbolResponse(BaseModel):
+    fecha: date
+    zona_horaria: str = "America/Bogota"
+    consultado_en: datetime
+    datos_actualizados_en: Optional[datetime] = None
+    total: int
+    pagina: int
+    tamano: int
+    partidos: List[PartidoAgenda]
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCHEMAS DE ANÁLISIS
 # ═══════════════════════════════════════════════════════════════════════════════

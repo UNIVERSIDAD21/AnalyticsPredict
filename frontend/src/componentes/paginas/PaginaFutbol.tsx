@@ -13,6 +13,8 @@ import { MensajeError, ProgresoAnalisis, TarjetaCalidadDatosFutbol } from '../mo
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { CatalogoFutbol } from '../moleculas/CatalogoFutbol';
+import { HistoricoAnalisisFutbol } from '../moleculas/HistoricoAnalisisFutbol';
+import { puedeAnalizarPartido } from '../../utilidades/agendaFutbol';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
@@ -165,9 +167,10 @@ export function PaginaFutbol() {
 
   const [partidos, setPartidos] = useState<PartidoFutbolResumen[]>([]);
   const [cargandoPartidos, setCargandoPartidos] = useState(true);
+  const [instanteAgenda, setInstanteAgenda] = useState(Date.now());
   const [errorPartidos, setErrorPartidos] = useState<string | null>(null);
   const [revisionCatalogo, setRevisionCatalogo] = useState(0);
-  const [temporadasCatalogo, setTemporadasCatalogo] = useState<string[]>([]);
+  const [configuracionHistorico, setConfiguracionHistorico] = useState<{ competicionId: string; ids: string[] }>({ competicionId: '', ids: [] });
   const analisisSecuencia = useRef(0);
   const analisisControlador = useRef<AbortController | null>(null);
   const contextoSecuencia = useRef(0);
@@ -176,14 +179,22 @@ export function PaginaFutbol() {
     analisisControlador.current?.abort();
     setAnalisis(null); setSeleccionCanonicaActiva(null); setErrorAnalisis(null); setCargandoAnalisis(false);
   }, []);
+  const cambiarTemporadas = useCallback((competicionId: string, ids: string[]) => {
+    limpiarResultado(); setConfiguracionHistorico({ competicionId, ids });
+  }, [limpiarResultado]);
   const cambiarCatalogo = useCallback(() => {
     limpiarResultado(); contextoSecuencia.current += 1;
     setPartidoSeleccionadoId(''); setPartidoFueraDeLista(null);
+    setConfiguracionHistorico({ competicionId: '', ids: [] });
     setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
     setEquipoLocalIdReal(''); setEquipoVisitanteIdReal(''); setCargandoContexto(false);
   }, [limpiarResultado]);
   const recargar = useCallback(() => setRevisionCatalogo(n => n + 1), []);
   useEffect(() => () => { analisisControlador.current?.abort(); analisisSecuencia.current += 1; contextoSecuencia.current += 1; }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setInstanteAgenda(Date.now()), 15000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const partidosVista = useMemo(() => {
     if (!partidoFueraDeLista || partidos.some((p) => p.id === partidoFueraDeLista.id)) return partidos;
@@ -194,6 +205,11 @@ export function PaginaFutbol() {
     () => partidosVista.find((p) => p.id === partidoSeleccionadoId) ?? null,
     [partidoSeleccionadoId, partidosVista]
   );
+  const temporadasCatalogo = useMemo(() => configuracionHistorico.competicionId === partidoSeleccionado?.competicion ? configuracionHistorico.ids : [], [configuracionHistorico, partidoSeleccionado?.competicion]);
+  const seleccionAnalizable = partidoSeleccionado ? puedeAnalizarPartido(partidoSeleccionado, instanteAgenda) : false;
+  useEffect(() => {
+    if (partidoSeleccionadoId && !seleccionAnalizable) limpiarResultado();
+  }, [partidoSeleccionadoId, seleccionAnalizable, limpiarResultado]);
 
   useEffect(() => {
     if (seleccionInicialAplicada.current || cargandoPartidos) return;
@@ -213,11 +229,7 @@ export function PaginaFutbol() {
       }
       return;
     }
-    if (partidos.length === 0) return;
     seleccionInicialAplicada.current = true;
-    if (!partidoSeleccionadoId) {
-      setPartidoSeleccionadoId(partidos[0].id);
-    }
   }, [agregarToast, cargandoPartidos, partidoSeleccionadoId, partidos]);
 
   useEffect(() => {
@@ -259,6 +271,16 @@ export function PaginaFutbol() {
     setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
     setEquipoLocalIdReal(''); setEquipoVisitanteIdReal('');
     setPartidoSeleccionadoId(partido?.id ?? '');
+    setConfiguracionHistorico({ competicionId: '', ids: [] });
+  }, [limpiarResultado]);
+
+  const seleccionarDesdeAgenda = useCallback((partido: PartidoFutbolResumen) => {
+    if (!puedeAnalizarPartido(partido)) return;
+    limpiarResultado(); contextoSecuencia.current += 1;
+    setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
+    setEquipoLocalIdReal(''); setEquipoVisitanteIdReal(''); setErrorContexto(null);
+    setPartidoFueraDeLista(partido); setPartidoSeleccionadoId(partido.id);
+    setConfiguracionHistorico({ competicionId: partido.competicion, ids: [] });
   }, [limpiarResultado]);
 
   const manejarGuardarPartido = useCallback(async () => {
@@ -434,6 +456,12 @@ export function PaginaFutbol() {
       setErrorAnalisis('Selección inválida: falta partido_id en la selección canónica.');
       return;
     }
+    const partidoVigente = partidosVista.find(p => p.id === partidoIdObjetivo);
+    if (!partidoVigente || !puedeAnalizarPartido(partidoVigente)) {
+      limpiarResultado();
+      setErrorAnalisis('Prepartido no disponible. La hora de inicio ya pasó o el estado requiere verificación. Actualiza la agenda.');
+      return;
+    }
 
     const periodo: PeriodoSeleccionFutbol = peticion.mercado === 'Q1'
       ? '1T'
@@ -527,7 +555,7 @@ export function PaginaFutbol() {
     } finally {
       if (secuencia === analisisSecuencia.current) setCargandoAnalisis(false);
     }
-  }, [alcanceMercadoFutbol, categoriaMercadoFutbol, limiteH2h, partidoSeleccionadoId, partidosVista, temporadasCatalogo]);
+  }, [alcanceMercadoFutbol, categoriaMercadoFutbol, limiteH2h, partidoSeleccionadoId, partidosVista, temporadasCatalogo, limpiarResultado]);
 
   const recargarTodo = useCallback(() => {
     historialCacheRef.current.clear();
@@ -579,15 +607,13 @@ export function PaginaFutbol() {
           </div>
         )}
 
-        <div className="mb-5 rounded-lg border border-neon-amarillo/30 bg-neon-amarillo/5 px-4 py-3 text-sm text-texto-secundario">
-          Puedes consultar calendario, historial y estadísticas. Fútbol no tiene un modelo ML activo; estos datos no equivalen a una predicción certificada.
-        </div>
+        <CatalogoFutbol revision={revisionCatalogo} onInicio={cambiarCatalogo} onCargando={setCargandoPartidos}
+          onError={setErrorPartidos} onDatos={setPartidos} onSeleccionar={seleccionarDesdeAgenda}
+          seleccionadoId={partidoSeleccionadoId} guardadosIds={partidosGuardadosIds} />
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
+        {partidoSeleccionado && <div id="configuracion-futbol" className="mt-6 flex scroll-mt-5 flex-col lg:flex-row gap-6 lg:gap-8">
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
             <div className="lg:sticky lg:top-6 space-y-4">
-              <CatalogoFutbol revision={revisionCatalogo} onInicio={cambiarCatalogo} onCargando={setCargandoPartidos}
-                onError={setErrorPartidos} onDatos={setPartidos} onTemporadas={setTemporadasCatalogo} />
               {partidoSeleccionado && (
                 <Tarjeta className="border border-neon-verde/20">
                   <p className="text-xs uppercase tracking-wider text-texto-secundario">Partido seleccionado</p>
@@ -597,6 +623,8 @@ export function PaginaFutbol() {
                   <p className="mt-1 text-xs text-texto-secundario">
                     {partidoSeleccionado.competicionNombre} · {new Date(partidoSeleccionado.fechaPartido).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' })} COT
                   </p>
+                  {partidoSeleccionado.estado === 'FINALIZADO' && <p className="mt-2 text-sm text-texto-principal">Resultado final: {partidoSeleccionado.golesLocal ?? 'N/D'} – {partidoSeleccionado.golesVisitante ?? 'N/D'}</p>}
+                  <button type="button" className="my-3 text-xs text-neon-cyan" onClick={() => document.getElementById('agenda-futbol')?.scrollIntoView({ behavior: 'smooth' })}>← Elegir otro partido en la agenda</button>
                   {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
                     <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
                       {guardandoPartido ? 'Actualizando…' : 'Quitar de Bitácora'}
@@ -609,8 +637,13 @@ export function PaginaFutbol() {
                   <p className="mt-2 text-xs text-texto-secundario">
                     Guardar aquí solo marca el partido para volver a consultarlo; no crea apuesta ni pick.
                   </p>
+                  <p className="mt-2 text-xs text-neon-amarillo">Análisis exploratorio · probabilidades sin calibrar.</p>
                 </Tarjeta>
               )}
+
+              {!seleccionAnalizable && <Tarjeta className="border border-neon-amarillo/30"><p className="text-sm text-neon-amarillo">Prepartido cerrado o estado por verificar</p><p className="mt-2 text-xs text-texto-secundario">La hora prevista ya pasó o el estado no permite un análisis prepartido. Actualiza la agenda para consultar su estado; los finalizados se abren en modo histórico.</p></Tarjeta>}
+              {seleccionAnalizable && <>
+              <HistoricoAnalisisFutbol key={`historico-${partidoSeleccionado.id}`} partido={partidoSeleccionado} seleccion={temporadasCatalogo} onCambiar={cambiarTemporadas} />
 
               <Tarjeta className="border border-neon-cyan/20">
                 <label htmlFor="categoria-futbol" className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
@@ -642,7 +675,9 @@ export function PaginaFutbol() {
               </Tarjeta>
 
               <FormularioAnalisis
+                key={`formulario-${partidoSeleccionado.id}`}
                 deporte="FUTBOL"
+                ocultarSelectorPartido
                 onCambiarParametros={limpiarResultado}
                 equipos={equiposAnalisis}
                 estadisticas={[]}
@@ -656,6 +691,7 @@ export function PaginaFutbol() {
                 textoAyudaMercado="Primer/segundo tiempo o 90 minutos más añadido, sin prórroga ni penales. Los campos ausentes permanecen N/D."
                 unidadLineaLabel={unidadLineaLabel}
               />
+              </>}
               <Boton variante="secundario" anchoCompleto onClick={recargarTodo}>
                 Actualizar datos
               </Boton>
@@ -707,7 +743,7 @@ export function PaginaFutbol() {
               </div>
             )}
           </div>
-        </div>
+        </div>}
       </main>
 
       {renderCanonico?.guardar && partidoSeleccionado && partidoSeleccionado.estado !== 'FINALIZADO' && (

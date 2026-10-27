@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, Query
 from psycopg.rows import dict_row
 
 from servicios.calidad_futbol import normalizar_estadistico
+from servicios.agenda_futbol import estado_agenda
 from db import obtener_pool
 from .schemas_futbol import (
     PartidoResumen,
@@ -23,6 +24,8 @@ from .schemas_futbol import (
     EstadisticasEquipo,
     PartidoEstadistico,
     ErrorResponse,
+    PartidoAgenda,
+    AgendaFutbolResponse,
 )
 
 router = APIRouter(prefix="/api/futbol/partidos", tags=["Fútbol - Partidos"])
@@ -448,6 +451,62 @@ def obtener_h2h(
     except Exception as e:
         logger.error(f"Error obteniendo H2H: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+def _ahora_agenda() -> datetime:
+    return datetime.now(ZONA_HORARIA_USUARIO)
+
+
+@router.get("/agenda", response_model=AgendaFutbolResponse, summary="Agenda diaria de todas las competiciones")
+def agenda_partidos(
+    fecha: Optional[date] = None,
+    competicion_id: Optional[UUID] = None,
+    pais: Optional[str] = Query(None, max_length=100),
+    buscar: str = Query("", max_length=100),
+    estado: Literal["todos", "proximos", "en_juego", "finalizados", "pendientes"] = "todos",
+    partido_ids: Optional[List[UUID]] = Query(None, max_length=500),
+    pagina: int = Query(1, ge=1),
+    tamano: int = Query(50, ge=1, le=100),
+) -> AgendaFutbolResponse:
+    ahora = _ahora_agenda()
+    dia = fecha or ahora.date()
+    inicio = datetime.combine(dia, time.min, tzinfo=ZONA_HORARIA_USUARIO)
+    fin = inicio + timedelta(days=1)
+    filtros = ["pf.valido IS TRUE", "pf.fecha_partido >= %s", "pf.fecha_partido < %s"]
+    params = [inicio, fin]
+    if competicion_id:
+        filtros.append("pf.competicion_id=%s"); params.append(str(competicion_id))
+    if pais:
+        filtros.append("p.nombre=%s"); params.append(pais)
+    if buscar.strip():
+        patron = "%" + buscar.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        filtros.append("(el.nombre ILIKE %s OR ev.nombre ILIKE %s)"); params.extend([patron, patron])
+    if partido_ids is not None:
+        filtros.append("pf.id=ANY(%s::uuid[])"); params.append([str(x) for x in partido_ids])
+    estados = {
+        "proximos": ("pf.estado='PROGRAMADO' AND pf.fecha_partido>%s", [ahora]),
+        "en_juego": ("pf.estado::text IN ('EN_VIVO','EN_JUEGO','ENTRETIEMPO','PRIMER_TIEMPO','SEGUNDO_TIEMPO','TIEMPO_EXTRA','PENALES')", []),
+        "finalizados": ("pf.estado='FINALIZADO'", []),
+        "pendientes": ("pf.estado='PROGRAMADO' AND pf.fecha_partido<=%s", [ahora]),
+    }
+    if estado in estados:
+        expresion, valores = estados[estado]; filtros.append(expresion); params.extend(valores)
+    joins = """FROM partidos_futbol pf JOIN competiciones_futbol c ON c.id=pf.competicion_id
+        JOIN equipos_futbol el ON el.id=pf.equipo_local_id JOIN equipos_futbol ev ON ev.id=pf.equipo_visitante_id
+        LEFT JOIN paises p ON p.id=c.pais_id WHERE """ + " AND ".join(filtros)
+    with obtener_pool().connection() as conn, conn.cursor(row_factory=dict_row) as cursor:
+        resumen = cursor.execute("SELECT count(*) AS total, max(pf.actualizado_en) AS actualizado " + joins, params).fetchone()
+        filas = cursor.execute("""SELECT pf.id,pf.competicion_id,pf.temporada_id,pf.equipo_local_id,pf.equipo_visitante_id,
+            c.nombre AS competicion,COALESCE(p.nombre,'Internacional') AS pais,pf.fecha_partido,
+            el.nombre AS equipo_local,ev.nombre AS equipo_visitante,el.logo_url AS equipo_local_logo,ev.logo_url AS equipo_visitante_logo,
+            pf.estado,pf.jornada,pf.local_goles_total AS goles_local,pf.visitante_goles_total AS goles_visitante,pf.actualizado_en
+            """ + joins + " ORDER BY pf.fecha_partido,pf.id LIMIT %s OFFSET %s", [*params, tamano, (pagina - 1) * tamano]).fetchall()
+    partidos = []
+    for fila in filas:
+        presentacion = estado_agenda(fila["estado"], fila["fecha_partido"], ahora)
+        partidos.append(PartidoAgenda(**fila, estado_agenda=presentacion, analizable=presentacion in {"PROXIMO", "FINALIZADO"}))
+    return AgendaFutbolResponse(fecha=dia, consultado_en=ahora, datos_actualizados_en=resumen["actualizado"],
+                               total=resumen["total"], pagina=pagina, tamano=tamano, partidos=partidos)
 
 
 @router.get("/catalogo", response_model=ListaPartidosResponse, summary="Partidos por competición y temporada")

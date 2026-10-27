@@ -70,6 +70,8 @@ interface PropsBaseFormularioAnalisis {
   onCambiarModo?: (cuartosCompletos: number) => void;
   estadoCalendario?: import('../../servicios/wnba').ComprobacionCalendario;
   partidoActual?: PartidoResumen | null;
+  /** La agenda de fútbol ya permite seleccionar y cambiar el encuentro. */
+  ocultarSelectorPartido?: boolean;
   onSeleccionarPartido?: (partido: PartidoResumen | null) => void;
 }
 
@@ -118,6 +120,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     unidadLineaLabel,
     deporte = 'NBA',
     partidoActual,
+    ocultarSelectorPartido = false,
     onSeleccionarPartido,
     onCambiarParametros,
     onActualizarPartidos,
@@ -458,7 +461,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         {/* Campos */}
         <div className="space-y-4">
           {/* Selector de Partido - CRÍTICO para registro de predicciones */}
-          <SelectorPartido
+          {!ocultarSelectorPartido && <SelectorPartido
             partidoSeleccionado={partidoSeleccionado}
             onSeleccionar={manejarSeleccionPartido}
             deshabilitado={cargando}
@@ -466,7 +469,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             modoRegistro={deporte === 'FUTBOL' ? 'futbol' : deporte === 'WNBA' ? (esCorteNBA ? 'wnba_cierre' : 'wnba') : esEuroliga ? 'euroliga' : esCorteNBA ? 'nba_cierre' : 'nba'}
             onActualizar={onActualizarPartidos}
             estadoCalendario={estadoCalendario}
-          />
+          />}
 
           {/* Equipo Local - deshabilitado si hay partido seleccionado */}
           <SelectorEquipo

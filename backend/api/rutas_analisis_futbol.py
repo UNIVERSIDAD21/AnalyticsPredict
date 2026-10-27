@@ -28,6 +28,7 @@ from lecturas_http import solo_lectura_http
 from ingesta_futbol_americas import COMPETICIONES as COMPETICIONES_AMERICAS
 from calidad.elegibilidad_futbol import METRICAS, clasificar, seleccionar, configurar_mercado, evaluar_mercado
 from servicios.apuestas_analizadas import registrar_apuesta_analizada
+from servicios.agenda_futbol import estado_agenda
 from servicios.analisis_integral import integral_futbol
 from servicios.b3_estabilizacion_futbol import (
     combinar_valor_cross_liga,
@@ -2873,6 +2874,11 @@ def analizar_partido(
                         status_code=400,
                         detail=f"No se puede analizar un partido con estado: {estado_partido}",
                     )
+
+                if not request.modo_historico and estado_agenda(
+                    estado_partido, partido["fecha_partido"], datetime.now(timezone.utc)
+                ) != "PROXIMO":
+                    raise HTTPException(status_code=409, detail="Prepartido no disponible: el encuentro ya tiene su hora de inicio vencida o un estado no elegible. Actualiza y verifica su estado; los finalizados se consultan en modo histórico.")
 
                 dominio_exploratorio = partido.get("competicion_codigo") in COMPETICIONES_AMERICAS
                 modelo_version_heuristico = VERSION_HEURISTICO_AMERICAS if dominio_exploratorio else "heuristico::1.0.0"
