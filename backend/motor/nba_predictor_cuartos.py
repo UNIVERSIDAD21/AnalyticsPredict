@@ -1140,4 +1140,10 @@ def resultado_a_dict(resultado: ResultadoAnalisis) -> Dict[str, object]:
     if resultado.metadata and resultado.metadata.get("mensaje_apuesta"):
         salida["mensaje_apuesta"] = resultado.metadata["mensaje_apuesta"]
 
+    from servicios.contrato_probabilidad_nba import describir_probabilidad
+    # Metadatos de presentación: los campos numéricos legacy no se reescriben.
+    salida["metadata"] = dict(salida["metadata"])
+    salida["metadata"]["contrato_probabilidad"] = describir_probabilidad(mercado, linea, resultado.es_en_vivo)
+    salida["metadata"]["probabilidad_tipo"] = "RAW"
+    salida["metadata"]["incluye_ot"] = False
     return salida

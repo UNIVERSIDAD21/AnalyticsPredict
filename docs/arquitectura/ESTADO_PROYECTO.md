@@ -1,5 +1,13 @@
 # Estado vigente — AnalyticsPredict
 
+## Origen único de probabilidades — 2026-10-30
+
+19implementadas,2parciales,9pendientes. Tarjeta NBA usa media/sigma/p del mismo
+mercado/línea RAW; escenarios separados. Contrato de soporte y push explícito;
+eventos enteros legacy sin masa N/D sin reescribir porcentajes API/journals.
+399backendPGsintético aprobadas/0omitidas; sin nuevo modelo o calibración.
+[Detalle](../reactivacion_single_user/CONTRATO_PROBABILIDAD_NBA_2026-10-30.md).
+
 ## Cálculo/lecturas fuera de HTTP — 2026-10-30
 
 18implementadas,3parciales,9pendientes. Separada matemática contextual y lecturas

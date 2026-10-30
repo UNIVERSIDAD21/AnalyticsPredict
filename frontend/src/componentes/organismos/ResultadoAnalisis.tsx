@@ -5,6 +5,7 @@ import { TrazabilidadConsulta } from '../moleculas/TrazabilidadConsulta';
 import { ComparadorEuroliga } from '../moleculas/ComparadorEuroliga';
 import { alcanceConsulta } from '../../utilidades/alcanceConsulta';
 import { ComparadorGuardado } from '../moleculas/ComparadorGuardado';
+import { salidaPrincipalNba } from '../../utilidades/salidaPrincipalNba';
 // hace parte del diseño de analisis
 /**
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
@@ -183,6 +184,7 @@ export function ResultadoAnalisis({
   const modo = String(resultado.metadata?.modo_analisis ?? (esCorte ? `CIERRE_Q${Object.keys(resultado.cuartos_reales ?? {}).length}` : 'PREPARTIDO'));
   const modoLabel = modo === 'HISTORICO_RECONSTRUIDO' ? 'Histórico reconstruido' : modo === 'PREPARTIDO' ? 'Prepartido' : `Corte al cierre de ${modo.replace('CIERRE_', '')}`;
   const esFutbol = resultado.metadata?.deporte === 'futbol';
+  const esNba = !esEuro && !esWnba && !esFutbol;
   const consultaExploratoria = modo === 'HISTORICO_RECONSTRUIDO' || (esFutbol && resultado.metadata?.consulta_exploratoria === true);
   const configConfianza = obtenerConfigConfianza(esCorte ? null : resultado.nivel_confianza);
 
@@ -190,34 +192,36 @@ export function ResultadoAnalisis({
   const detalleVista = detalle ?? resultado.detalle_descriptivo;
   const tieneDetalleAvanzado = detalleVista != null;
 
-  const mercadoCanon = detalle?.mercado || mercado;
+  const mercadoCanon = esNba ? mercado : detalle?.mercado || mercado;
   const prediccionMercado = mercadoCanon === 'COMPLETO'
     ? resultado.prediccion_juego_completo
     : (mercadoCanon ? resultado.predicciones[mercadoCanon] : null);
 
   const linea = numeroValido(seleccionUsuario?.linea)
     ? seleccionUsuario!.linea
-    : (numeroValido(detalle?.linea) ? detalle!.linea : (resultado.linea_analizada ?? 0));
+    : (esNba ? resultado.linea_analizada ?? 0 : numeroValido(detalle?.linea) ? detalle!.linea : (resultado.linea_analizada ?? 0));
 
-  const probabilidadOver = numeroValido(resultado.probabilidad_over)
+  const principalNba = esNba ? salidaPrincipalNba(resultado, mercadoCanon, linea) : null;
+  const sinPushFutbol = esFutbol && Number.isInteger(linea) && integral?.probabilidades.push == null;
+  const probabilidadOver = principalNba ? principalNba.over : sinPushFutbol ? null : numeroValido(resultado.probabilidad_over)
     ? resultado.probabilidad_over!
     : (numeroValido(resultado.prediccion_ajustada?.probabilidad_over_ajustada)
       ? resultado.prediccion_ajustada!.probabilidad_over_ajustada
       : (numeroValido(prediccionMercado?.probabilidad_over) ? prediccionMercado!.probabilidad_over : null));
-  const probabilidadUnder = numeroValido(resultado.probabilidad_under)
+  const probabilidadUnder = principalNba ? principalNba.under : sinPushFutbol ? null : numeroValido(resultado.probabilidad_under)
     ? resultado.probabilidad_under!
     : (numeroValido(resultado.prediccion_ajustada?.probabilidad_under_ajustada)
       ? resultado.prediccion_ajustada!.probabilidad_under_ajustada
       : (numeroValido(prediccionMercado?.probabilidad_under) ? prediccionMercado!.probabilidad_under : null));
 
-  const mediaTotal = numeroValido(detalle?.prediccion_media)
+  const mediaTotal = principalNba ? principalNba.media : numeroValido(detalle?.prediccion_media)
     ? detalle!.prediccion_media
     : (numeroValido(resultado.prediccion_ajustada?.media_ajustada)
       ? resultado.prediccion_ajustada!.media_ajustada
       : (numeroValido(prediccionMercado?.media_total)
         ? prediccionMercado!.media_total
         : (numeroValido(resultado.prediccion_base?.media) ? resultado.prediccion_base!.media : null)));
-  const desviacion = numeroValido(detalle?.prediccion_desviacion)
+  const desviacion = principalNba ? principalNba.desviacion : numeroValido(detalle?.prediccion_desviacion)
     ? detalle!.prediccion_desviacion
     : (numeroValido(resultado.prediccion_ajustada?.desviacion_base)
       ? resultado.prediccion_ajustada!.desviacion_base
@@ -255,10 +259,10 @@ export function ResultadoAnalisis({
   const tieneRecomendacionSistema = Boolean(detalle || resultado.mejor_apuesta);
   const sistemaRecomienda: LadoApuesta = (probabilidadOver !== null && probabilidadUnder !== null && probabilidadOver > probabilidadUnder) ? 'OVER' : 'UNDER';
   const coincideConSistema = Boolean(tieneRecomendacionSistema && seleccionUsuario?.lado === sistemaRecomienda);
-  const puedeGuardar = Boolean(!consultaExploratoria && seleccionUsuario && linea > 0 && onGuardar);
   const probabilidadesNulas = probabilidadOver === null || probabilidadUnder === null;
   const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
   const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
+  const puedeGuardar = Boolean(!consultaExploratoria && seleccionUsuario && linea > 0 && onGuardar && !principalNba?.motivo && !sinPushFutbol && !metricaObjetivoInvalida);
 
   const objetivoMeta = resultado.metadata?.objetivo as { calidad_datos?: { muestra_insuficiente?: boolean; datos_incompletos?: boolean; penalizaciones_aplicadas?: string[] }; trazabilidad?: { estado_operativo_mercado?: string; motivos_estado_operativo?: string[] } } | undefined;
   const penalizacionesObjetivo = objetivoMeta?.calidad_datos?.penalizaciones_aplicadas || [];
@@ -437,6 +441,7 @@ export function ResultadoAnalisis({
       {/* ═══════════════════════════════════════════════════════════
           5. PROBABILIDADES
           ═══════════════════════════════════════════════════════════ */}
+      {principalNba && <div className="tarjeta text-sm space-y-2"><p>{principalNba.origen}</p><p className="text-texto-secundario">Media, desviación y probabilidades de esta tarjeta proceden del mismo mercado. El escenario contextual y las probabilidades de candidatos se conservan separados; no sustituyen esta salida.</p>{principalNba.motivo && <p>{principalNba.motivo} Media {principalNba.media?.toFixed(2) ?? 'N/D'} · desviación {principalNba.desviacion?.toFixed(2) ?? 'N/D'}.</p>}</div>}
       {linea > 0 && !metricaObjetivoInvalida && (
         <TarjetaProbabilidad
           linea={linea}
@@ -453,7 +458,7 @@ export function ResultadoAnalisis({
 
       {metricaObjetivoInvalida && (
         <PanelAdvertencias advertencias={[
-          motivoMercadoNoDisponible ? `${motivoMercadoNoDisponible} Media, desviación, Over/Under y push de este mercado: N/D.` : 'Datos insuficientes del mercado objetivo: no se puede renderizar media/desviación/probabilidades sin degradación honesta.',
+          principalNba?.motivo ?? (sinPushFutbol ? 'Línea entera de fútbol sin masa de push conservada: probabilidades de liquidación N/D. Los porcentajes legacy complementarios no separan empate/push.' : motivoMercadoNoDisponible ? `${motivoMercadoNoDisponible} Media, desviación, Over/Under y push de este mercado: N/D.` : 'Datos insuficientes del mercado objetivo: no se puede renderizar media/desviación/probabilidades sin degradación honesta.'),
         ]} />
       )}
 

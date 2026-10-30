@@ -2,7 +2,7 @@
 import type { ResultadoAnalisis, PrediccionCuarto, NivelConfianza, FactoresConfianza, ContextoForma, ContextoH2H, MejorApuestaDetalle, PrediccionAjustada, ResultadoAjustes, AjusteIndividual, ComponentesScore } from './analisis';
 export type PrediccionVista = Pick<PrediccionCuarto, 'media_equipo' | 'media_rival' | 'media_total' | 'desviacion_total' | 'probabilidad_over' | 'probabilidad_under'>
   & Partial<Pick<PrediccionCuarto, 'ganador_probable' | 'probabilidad_ganador'>>
-  & { ganador_tres_vias?: { local: number; empate: number; visitante: number } };
+  & { linea_analizada?: number | null; ganador_tres_vias?: { local: number; empate: number; visitante: number } };
 export type ResultadoVista = Omit<ResultadoAnalisis, 'predicciones' | 'prediccion_juego_completo' | 'nivel_confianza' | 'factores_confianza' | 'contexto' | 'prediccion_ajustada' | 'ajustes'> & {
   predicciones: Record<string, PrediccionVista>; prediccion_juego_completo: PrediccionVista | null;
   contexto?: (Omit<NonNullable<ResultadoAnalisis['contexto']>, 'descanso_equipo' | 'descanso_rival' | 'forma_equipo' | 'forma_rival'> & {

@@ -1,5 +1,15 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Contrato de probabilidad principal — 2026-10-30
+
+NBA vincula media/sigma/porcentajes de la tarjeta a una única distribución base
+del mercado/línea, no a parámetros de otro candidato/escenario. Serialización
+explicitaRAW/48min sinOT y soporte de línea; campos legacy originales intactos.
+Enteras NBA/fútbol sin masa discreta acreditada muestran evento/push N/D y no
+habilitan guardado desde esa tarjeta. Euro/WNBA conservan contratos discretos
+propios.399backendPGsintético/0omitidas.19implementadas,2parciales,9pendientes.
+[Contrato, compatibilidad y pruebas](reactivacion_single_user/CONTRATO_PROBABILIDAD_NBA_2026-10-30.md).
+
 ## Separación de cálculo y lecturas fútbol — 2026-10-30
 
 Nueve funciones extraídas a módulos de matemática y lecturas con cursor recibido,

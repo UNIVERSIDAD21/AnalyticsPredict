@@ -18,6 +18,7 @@ it('fútbol solo permite las líneas conservadas y no complementa ausencias', ()
   render(<ComparadorGuardado mercado="GOLES_FT" original={2} datos={{ formato: 'lineas-originales-futbol-v1', mercado: 'GOLES_FT',
     lineas: [{ linea: 2, over: .4, under: null, push: null, fuente: 'RAW', calibrador: null }] }} />);
   fireEvent.click(screen.getByText('Comparar líneas · misma corrida guardada'));
-  expect(screen.getByText('Over 40.0000% · Under N/D · Push N/D')).toBeInTheDocument();
+  expect(screen.getByText('Over N/D · Under N/D · Push N/D')).toBeInTheDocument();
+  expect(screen.getByText(/porcentajes legacy.*no separan el push/)).toBeInTheDocument();
   expect(screen.getAllByRole('option')).toHaveLength(2);
 });

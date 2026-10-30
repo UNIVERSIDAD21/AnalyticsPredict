@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Unificar origen de parámetros y probabilidades NBA — 2026-10-30
+
+- Evitar mezclar porcentajes base con media contextual/de candidato en la tarjeta.
+- Explicitar origenRAW,48min sinOT y soporte de líneas; eventos enteros sin masa
+  de push acreditada N/D. Mantener campos legacy y distribuciones activas intactos.
+  [Contrato y compatibilidad](docs/reactivacion_single_user/CONTRATO_PROBABILIDAD_NBA_2026-10-30.md).
+
 ## Extraer matemática y lecturas de fútbol — 2026-10-30
 
 - Separar nueve funciones de cálculo/lectura de la ruta HTTP conservando aliases,

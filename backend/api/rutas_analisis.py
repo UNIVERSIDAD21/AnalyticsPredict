@@ -778,8 +778,8 @@ def analizar(
     """
     Analiza un partido en modalidad pre-partido.
     
-    El modelo se entrena automáticamente desde la base de datos
-    y siempre contiene los datos más recientes.
+    Usa el artefacto publicado sin entrenarlo. El corte de datos se informa
+    en la respuesta; consultar no acredita que incluya resultados recientes.
     """
     return ejecutar_analisis(peticion)
 

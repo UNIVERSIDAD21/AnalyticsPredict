@@ -87,7 +87,7 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L02 | Implementada | UTF-8 de artefactos/journals/CLIs intervenidos; no conversión de archivos originales |
 | L03 | Implementada | PRE no ajusta/crea versiones; entrenamiento solo explícito |
 | L04 | Implementada | Sin factores/muestras/intervalos inventados; completar con evidencia real, no defaults |
-| L05 | Parcial | Contrato claro en base local; revisar contratos legacy enteros/OT por separado |
+| L05 | Implementada | Mismo origen de media/p NBA; contrato RAW/regulación/OT por liga. Enteras legacy sin push: evento N/D, campos originales preservados |
 | L06 | Parcial | Laboratorio expone comparaciones originales; falta nuevo benchmark NBA emparejado |
 | L07 | Pendiente de datos | Recencia/forma causal NBA: snapshot elegible y protocolo antes de medir |
 | L08 | Pendiente de datos | Errores fuera de muestra y covarianza por candidato/objetivo |
@@ -114,12 +114,13 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L29 | Pendiente de diseño/datos | Live por reloj/posesiones exige fuente temporal y evaluación nuevas |
 | L30 | Pendiente de fuentes | Lesiones/alineaciones/xG con cobertura y disponibilidad acreditadas |
 
-**18 implementadas,3 parciales,9 pendientes/bloqueadas.** El catálogo permanece
-abierto. No se presentan las tres parciales como funcionalidades completas.
+**19 implementadas,2 parciales,9 pendientes/bloqueadas.** El catálogo permanece
+abierto. No se presentan las dos parciales como funcionalidades completas.
 [Continuación, experimento WNBA y límites](CONTINUACION_MEJORAS_2026-10-30.md).
 [Comparadores por dominio y fecha nominal](COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
 [Teclado, legibilidad y alcance de revisión](ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
 [Extracción de cálculo/lecturas fútbol y equivalencia](CALCULO_FUTBOL_AISLADO_2026-10-30.md).
+[Contrato de origen, línea y push de probabilidades](CONTRATO_PROBABILIDAD_NBA_2026-10-30.md).
 
 ## Protocolo de continuación científica
 
