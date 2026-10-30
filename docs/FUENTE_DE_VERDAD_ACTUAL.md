@@ -1,5 +1,15 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Diagnóstico de probabilidades WNBA — 2026-10-30
+
+Laboratorio expone bins/Brier/cobertura80 originales del candidato, separados del
+refit final y OT. Auditoría offline sinfit reconcilia450proyecciones/166abstenciones
+de616finales; delta medias0 y métricas<=1.12e-16. Cobertura nominal80 del total
+observada76.67%, no certificación futura.405backend PG sintético aprobadas/0omitidas.
+19implementadas,4parciales,7pendientes. L09 parcial; ningún calibrador/artefacto
+activado, nueva selección o cohorte original reemplazada.
+[Método y límites](reactivacion_single_user/DIAGNOSTICO_PROBABILIDADES_WNBA_2026-10-30.md).
+
 ## Prioridades personales y cobertura — 2026-10-30
 
 Laboratorio ordena ligas por favoritos explícitos y copias guardadas; no infiere

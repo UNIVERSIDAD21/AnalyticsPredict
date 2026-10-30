@@ -1,5 +1,14 @@
 # Estado vigente — AnalyticsPredict
 
+## Evidencia RAW WNBA — 2026-10-30
+
+19implementadas,4parciales,7pendientes. Tabla de fiabilidad original por mercado y
+auditoría de450proyecciones conservadas/166abstenciones, sinfit ni calibración.
+Métricas reproducidas a tolerancia<=1.12e-16; total intervalo80 observó76.67%.
+405backend conPG sintético/0omitidas. No atribuir evaluación al refit final uOT;
+L09 sigue parcial por ausencia de evidencia independiente/prospectiva.
+[Detalle](../reactivacion_single_user/DIAGNOSTICO_PROBABILIDADES_WNBA_2026-10-30.md).
+
 ## Cobertura según preferencias — 2026-10-30
 
 19implementadas,3parciales,8pendientes. Prioridades locales transparentes e inventario

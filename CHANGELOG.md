@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Mostrar y auditar evidencia probabilística WNBA — 2026-10-30
+
+- Tabla por mercado con bins, definición Brier, cobertura80 y abstenciones del
+  candidato original, sin atribuirla al refit final ni al total conOT.
+- Auditoría offline de cohorte/métricas originales sinfit, selección o calibrador.
+  [Reproducción y límites](docs/reactivacion_single_user/DIAGNOSTICO_PROBABILIDADES_WNBA_2026-10-30.md).
+
 ## Priorizar cobertura por preferencias locales — 2026-10-30
 
 - Laboratorio ordena ligas por favoritos/copias y permite consultar explícitamente

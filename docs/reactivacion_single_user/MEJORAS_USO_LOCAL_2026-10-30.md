@@ -91,7 +91,7 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L06 | Parcial | Laboratorio expone comparaciones originales; falta nuevo benchmark NBA emparejado |
 | L07 | Pendiente de datos | Recencia/forma causal NBA: snapshot elegible y protocolo antes de medir |
 | L08 | Pendiente de datos | Errores fuera de muestra y covarianza por candidato/objetivo |
-| L09 | Pendiente de evidencia | CAL/TEST y cohorte futura suficientes; ninguna calibración activada |
+| L09 | Parcial | Diagnóstico RAW WNBA original visible y métricas reproducidas sin fit; falta evaluación/calibración independiente del refit y cohorte futura. Ningún calibrador activado |
 | L10 | Bloqueada por originales | Recuperar desarrollo/cohorte V4 corregidos y outcomes; no sustituirlos |
 | L11 | Pendiente de benchmark | Euro: comparación temporal nueva, no heredar evaluación del refit |
 | L12 | Parcial | WNBA evaluada: CAL eligió k0, sin mejora; fallback no activado. Euro aún sin snapshot |
@@ -114,14 +114,15 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L29 | Pendiente de diseño/datos | Live por reloj/posesiones exige fuente temporal y evaluación nuevas |
 | L30 | Pendiente de fuentes | Lesiones/alineaciones/xG con cobertura y disponibilidad acreditadas |
 
-**19 implementadas,3 parciales,8 pendientes/bloqueadas.** El catálogo permanece
-abierto. No se presentan las tres parciales como funcionalidades completas.
+**19 implementadas,4 parciales,7 pendientes/bloqueadas.** El catálogo permanece
+abierto. No se presentan las cuatro parciales como funcionalidades completas.
 [Continuación, experimento WNBA y límites](CONTINUACION_MEJORAS_2026-10-30.md).
 [Comparadores por dominio y fecha nominal](COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
 [Teclado, legibilidad y alcance de revisión](ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
 [Extracción de cálculo/lecturas fútbol y equivalencia](CALCULO_FUTBOL_AISLADO_2026-10-30.md).
 [Contrato de origen, línea y push de probabilidades](CONTRATO_PROBABILIDAD_NBA_2026-10-30.md).
 [Prioridades personales e inventario de registros](PRIORIZACION_COBERTURA_2026-10-30.md).
+[Diagnóstico probabilístico WNBA y reproducción](DIAGNOSTICO_PROBABILIDADES_WNBA_2026-10-30.md).
 
 ## Protocolo de continuación científica
 
