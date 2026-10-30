@@ -4,7 +4,7 @@ import { ListaBitacoraUnificada } from './ListaBitacoraUnificada';
 import type { RegistroBitacoraUnificada } from '../../tipos';
 
 afterEach(() => { cleanup(); vi.unstubAllEnvs(); });
-describe('fechas de la seguimiento', () => {
+describe('fechas del seguimiento', () => {
   it('conserva el día de una fecha sin hora en Bogotá y no inventa importes ausentes', () => {
     vi.stubEnv('TZ', 'America/Bogota');
     const registro = {

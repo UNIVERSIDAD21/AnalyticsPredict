@@ -24,7 +24,7 @@ export function BotonFavorito({ favorito }: { favorito: FavoritoLocal }) {
 export function PanelFavoritosLocales() {
   const { favoritos, error } = useFavoritosLocales();
   return <section className="tarjeta space-y-4" aria-label="Equipos y ligas favoritos"><h2 className="text-xl font-semibold">Equipos y ligas favoritos</h2>
-    <p className="text-sm text-texto-secundario">Preferencias de este navegador, separadas de las consultas favoritas y de la Seguimiento. No crean apuestas ni descargan datos.</p>
+    <p className="text-sm text-texto-secundario">Preferencias de este navegador, separadas de las consultas favoritas y de Seguimiento. No crean apuestas ni descargan datos.</p>
     {error ? <p role="alert">{error}</p> : <><div className="flex flex-wrap gap-5">{LIGAS_PERSONALES.map(l => <BotonFavorito key={l} favorito={favoritoLiga(l)} />)}</div>
       <p className="text-sm">Guarda equipos y competiciones desde Hoy, la ficha de fútbol o Base local. En Hoy puedes buscar tus favoritos en las páginas disponibles de la agenda.</p>
       {favoritos.filter(f => f.tipo !== 'liga').map(f => <div key={identidadFavorito(f)} className="flex flex-wrap gap-3 items-center"><span className="text-xs text-texto-secundario">{f.liga.toUpperCase()} · {f.tipo}{f.id.startsWith('nombre:') ? ' · nombre del catálogo local, sin ID de BD' : ''}</span><BotonFavorito favorito={f} /></div>)}

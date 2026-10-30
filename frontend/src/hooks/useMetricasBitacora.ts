@@ -1,5 +1,5 @@
 /**
- * useMetricasBitacora.ts — Hook para obtener métricas desde la seguimiento
+ * useMetricasBitacora.ts — Hook para obtener métricas desde Seguimiento
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -115,7 +115,7 @@ export function useMetricasBitacora(
       });
 
       if (!respuesta.data.exito) {
-        throw new Error('No se pudieron obtener las métricas de la seguimiento.');
+        throw new Error('No se pudieron obtener las métricas del seguimiento.');
       }
 
       setEstado({

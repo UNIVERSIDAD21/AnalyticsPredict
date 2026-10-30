@@ -19,7 +19,7 @@ describe('contrato v2 de seguimiento', () => {
     vi.spyOn(clienteAPI, 'post').mockResolvedValue({ data: { exito: false } });
     await expect(resolverPendientesBitacora()).rejects.toThrow('No se pudieron completar');
   });
-  it('envía cuota manual Euroliga a la seguimiento y conserva analíticas no disponibles como null', async () => {
+  it('envía cuota manual Euroliga a Seguimiento y conserva analíticas no disponibles como null', async () => {
     const payload: PeticionCrearApuesta = {
       partido_id: 'fixture-euro', competicion_codigo: 'euroleague',
       equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi', fecha_partido: '2026-10-22',

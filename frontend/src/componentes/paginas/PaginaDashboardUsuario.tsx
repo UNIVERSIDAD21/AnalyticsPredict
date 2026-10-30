@@ -23,7 +23,7 @@ export function PaginaDashboardUsuario() {
         const porDeporte = resumen.value.resumen.por_deporte;
         setSegmentos(Array.isArray(porDeporte) ? porDeporte as Segmento[] : []);
       } else {
-        setError('No se pudo cargar el resumen de la seguimiento.');
+        setError('No se pudo cargar el resumen del seguimiento.');
       }
       if (calidadFutbol.status === 'fulfilled') setCalidad(calidadFutbol.value);
       setCargando(false);

@@ -1,5 +1,5 @@
 /**
- * bitacora.ts — Servicios para la seguimiento de apuestas
+ * bitacora.ts — Servicios para Seguimiento de apuestas
  */
 
 import { clienteAPI } from './api';
