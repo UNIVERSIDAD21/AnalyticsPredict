@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Extraer matemática y lecturas de fútbol — 2026-10-30
+
+- Separar nueve funciones de cálculo/lectura de la ruta HTTP conservando aliases,
+  SQL, parámetros, NULLs y resultados. No nuevo modelo ni cambio de probabilidades.
+- Equivalencia536cálculos/72lecturas sintéticas y395regresiones backend aprobadas.
+  [Alcance](docs/reactivacion_single_user/CALCULO_FUTBOL_AISLADO_2026-10-30.md).
+
 ## Teclado y etiquetas accesibles — 2026-10-30
 
 - Asociar campos y mensajes de error de Configuración; exponer selección de perfil.

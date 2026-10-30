@@ -1,5 +1,13 @@
 # Estado vigente — AnalyticsPredict
 
+## Cálculo/lecturas fuera de HTTP — 2026-10-30
+
+18implementadas,3parciales,9pendientes. Separada matemática contextual y lecturas
+de fútbol,269líneas de cuerpos/9funciones sin cambio lógico.536cálculos y72SQL
+sintéticos idénticos;395backend PG18 aprobadas/0omitidas. Alias previos conservan
+compatibilidad; no nuevo estimador, caché, pool, escritura ni eficacia atribuida.
+[Detalle](../reactivacion_single_user/CALCULO_FUTBOL_AISLADO_2026-10-30.md).
+
 ## Teclado y nombres accesibles — 2026-10-30
 
 17implementadas,4parciales,9pendientes. Corregidas etiquetas/errores de cuatro

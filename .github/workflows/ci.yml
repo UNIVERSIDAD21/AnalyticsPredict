@@ -29,6 +29,7 @@ jobs:
         run: >-
           python -m pytest -q tests/test_mejoras_locales.py
           tests/test_contraccion_wnba_experimental.py
+          tests/test_calculo_futbol_aislado.py
           tests/test_serving_nba_sin_entrenamiento.py
           tests/test_predictor_euroliga.py tests/test_predictor_wnba.py
           tests/test_wnba_ampliado.py tests/explicabilidad/test_contrato.py
@@ -57,6 +58,7 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_analisis_integral.py
+          tests/test_calculo_futbol_aislado.py
           tests/test_contraccion_wnba_experimental.py
           tests/test_walk_forward.py
           tests/test_futbol_walkforward_scorecard.py

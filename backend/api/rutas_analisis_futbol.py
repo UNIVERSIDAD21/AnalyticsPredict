@@ -2,8 +2,9 @@
 """
 rutas_analisis_futbol.py — Endpoint principal de análisis de partidos de fútbol.
 
-Este es el endpoint más importante del sistema. Genera predicciones para los
-24 mercados de fútbol utilizando los modelos Ridge entrenados.
+Orquesta la consulta contextual/ML por mercado, sus controles temporales y
+contratos HTTP. Matemática reutilizable y lecturas parametrizadas se importan
+desde módulos propios; su disponibilidad técnica no acredita eficacia.
 """
 
 from __future__ import annotations
@@ -21,9 +22,21 @@ from uuid import UUID
 import numpy as np
 from fastapi import APIRouter, HTTPException
 from psycopg.rows import dict_row
-from scipy import stats
 
 from db import obtener_pool
+from motor_futbol.prediccion.distribuciones_contextuales import (
+    _tau_dixon_coles,
+    _calcular_1x2_dixon_coles,
+    _calcular_probabilidad_over_normal,
+    _calcular_probabilidad_over_poisson,
+    _calcular_probabilidad_over_nbinom,
+    _calcular_probabilidad_over,
+)
+from servicios.lecturas_analisis_futbol import (
+    _obtener_partidos_equipo,
+    _obtener_partidos_liga,
+    _obtener_partidos_h2h,
+)
 from lecturas_http import solo_lectura_http
 from ingesta_futbol_americas import COMPETICIONES as COMPETICIONES_AMERICAS
 from calidad.elegibilidad_futbol import METRICAS, clasificar, seleccionar, configurar_mercado, evaluar_mercado
@@ -754,54 +767,8 @@ def _obtener_estadisticas_equipo_cached(cursor, equipo_id: str) -> Dict[str, flo
 
 
 
-def _tau_dixon_coles(x: int, y: int, lambda_local: float, lambda_visitante: float, rho: float) -> float:
-    """Factor tau de Dixon-Coles para corregir correlación en marcadores bajos."""
-    if x == 0 and y == 0:
-        return max(0.01, 1.0 - (lambda_local * lambda_visitante * rho))
-    if x == 0 and y == 1:
-        return max(0.01, 1.0 + (lambda_local * rho))
-    if x == 1 and y == 0:
-        return max(0.01, 1.0 + (lambda_visitante * rho))
-    if x == 1 and y == 1:
-        return max(0.01, 1.0 - rho)
-    return 1.0
 
 
-def _calcular_1x2_dixon_coles(
-    goles_local: float,
-    goles_visitante: float,
-    max_goles: int = 10,
-    rho: float = -0.06,
-) -> tuple[float, float, float, str]:
-    """Calcula probabilidades 1X2 con Poisson corregido por Dixon-Coles."""
-    lambda_local = max(goles_local, 0.05)
-    lambda_visitante = max(goles_visitante, 0.05)
-
-    pl = np.array([stats.poisson.pmf(i, lambda_local) for i in range(max_goles + 1)])
-    pv = np.array([stats.poisson.pmf(i, lambda_visitante) for i in range(max_goles + 1)])
-    matriz = np.outer(pl, pv)
-
-    # Corrección Dixon-Coles en marcadores bajos
-    for x in range(min(2, max_goles + 1)):
-        for y in range(min(2, max_goles + 1)):
-            matriz[x, y] *= _tau_dixon_coles(x, y, lambda_local, lambda_visitante, rho)
-
-    # Renormalizar
-    total_prob = float(matriz.sum())
-    if total_prob > 0:
-        matriz = matriz / total_prob
-
-    prob_local = float(np.tril(matriz, -1).sum())
-    prob_empate = float(np.trace(matriz))
-    prob_visitante = float(np.triu(matriz, 1).sum())
-
-    total = prob_local + prob_empate + prob_visitante
-    if total > 0:
-        prob_local, prob_empate, prob_visitante = prob_local / total, prob_empate / total, prob_visitante / total
-
-    score_idx = np.unravel_index(np.argmax(matriz), matriz.shape)
-    marcador = f"{score_idx[0]}-{score_idx[1]}"
-    return prob_local, prob_empate, prob_visitante, marcador
 
 # ============================================================================
 # ANALISIS CONTEXTUAL PARA LINEAS (H2H + ESTADISTICAS INDIVIDUALES)
@@ -1293,194 +1260,10 @@ def _resolver_filtro_temporal_futbol(
     }
 
 
-def _obtener_partidos_equipo(
-    cursor,
-    equipo_id: str,
-    fecha_corte: datetime,
-    limite: int,
-    solo_local: Optional[bool] = None,
-    temporada_ids: Optional[List[str]] = None,
-    fecha_minima: Optional[datetime] = None,
-    competicion_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Obtiene partidos recientes de un equipo (hasta limite)."""
-    query = """
-        SELECT
-            pf.id, pf.valido, pf.estado, pf.hubo_tiempo_extra,
-            pf.local_goles_et, pf.visitante_goles_et,
-            pf.equipo_local_id,
-            pf.equipo_visitante_id,
-            pf.local_goles_1t,
-            pf.local_goles_2t,
-            pf.local_goles_total,
-            pf.visitante_goles_1t,
-            pf.visitante_goles_2t,
-            pf.visitante_goles_total,
-            pf.local_corners_1t,
-            pf.local_corners_2t,
-            pf.local_corners_total,
-            pf.visitante_corners_1t,
-            pf.visitante_corners_2t,
-            pf.visitante_corners_total,
-            pf.local_disparos_total,
-            pf.local_disparos_arco,
-            pf.visitante_disparos_total,
-            pf.visitante_disparos_arco,
-            pf.temporada_id,
-            pf.competicion_id,
-            pf.fecha_partido
-        FROM partidos_futbol pf
-        WHERE (pf.equipo_local_id = %s OR pf.equipo_visitante_id = %s)
-          AND pf.estado = 'FINALIZADO'
-          AND pf.fecha_partido < %s
-    """
-    params: List[Any] = [equipo_id, equipo_id, fecha_corte]
-
-    if competicion_id:
-        query += " AND pf.competicion_id::text = %s"
-        params.append(str(competicion_id))
-
-    if temporada_ids:
-        query += " AND pf.temporada_id::text = ANY(%s)"
-        params.append(temporada_ids)
-    elif fecha_minima is not None:
-        query += " AND pf.fecha_partido >= %s"
-        params.append(fecha_minima)
-
-    if solo_local is True:
-        query += " AND pf.equipo_local_id = %s"
-        params.append(equipo_id)
-    elif solo_local is False:
-        query += " AND pf.equipo_visitante_id = %s"
-        params.append(equipo_id)
-
-    query += " ORDER BY pf.fecha_partido DESC,pf.id DESC LIMIT %s"
-    params.append(limite)
-
-    cursor.execute(query, params)
-    return cursor.fetchall()
 
 
-def _obtener_partidos_liga(
-    cursor,
-    competicion_id: str,
-    fecha_corte: datetime,
-    limite: int,
-    temporada_ids: Optional[List[str]] = None,
-    fecha_minima: Optional[datetime] = None,
-) -> List[Dict[str, Any]]:
-    """Obtiene partidos recientes de una liga (hasta limite)."""
-    query = """
-        SELECT
-            pf.id, pf.valido, pf.estado, pf.hubo_tiempo_extra,
-            pf.local_goles_et, pf.visitante_goles_et,
-            pf.equipo_local_id,
-            pf.equipo_visitante_id,
-            pf.local_goles_1t,
-            pf.local_goles_2t,
-            pf.local_goles_total,
-            pf.visitante_goles_1t,
-            pf.visitante_goles_2t,
-            pf.visitante_goles_total,
-            pf.local_corners_1t,
-            pf.local_corners_2t,
-            pf.local_corners_total,
-            pf.visitante_corners_1t,
-            pf.visitante_corners_2t,
-            pf.visitante_corners_total,
-            pf.local_disparos_total,
-            pf.local_disparos_arco,
-            pf.visitante_disparos_total,
-            pf.visitante_disparos_arco,
-            pf.temporada_id,
-            pf.competicion_id,
-            pf.fecha_partido
-        FROM partidos_futbol pf
-        WHERE pf.competicion_id = %s
-          AND pf.estado = 'FINALIZADO'
-          AND pf.fecha_partido < %s
-    """
-    params: List[Any] = [competicion_id, fecha_corte]
-    if temporada_ids:
-        query += " AND pf.temporada_id::text = ANY(%s)"
-        params.append(temporada_ids)
-    elif fecha_minima is not None:
-        query += " AND pf.fecha_partido >= %s"
-        params.append(fecha_minima)
-
-    query += " ORDER BY pf.fecha_partido DESC,pf.id DESC LIMIT %s"
-    params.append(limite)
-    cursor.execute(query, params)
-    return cursor.fetchall()
 
 
-def _obtener_partidos_h2h(
-    cursor,
-    equipo_local_id: str,
-    equipo_visitante_id: str,
-    fecha_corte: datetime,
-    limite: int,
-    temporada_ids: Optional[List[str]] = None,
-    fecha_minima: Optional[datetime] = None,
-    competicion_id: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Obtiene partidos H2H recientes entre dos equipos."""
-    query = """
-        SELECT
-            pf.id, pf.valido, pf.estado, pf.hubo_tiempo_extra,
-            pf.local_goles_et, pf.visitante_goles_et,
-            pf.equipo_local_id,
-            pf.equipo_visitante_id,
-            pf.local_goles_1t,
-            pf.local_goles_2t,
-            pf.local_goles_total,
-            pf.visitante_goles_1t,
-            pf.visitante_goles_2t,
-            pf.visitante_goles_total,
-            pf.local_corners_1t,
-            pf.local_corners_2t,
-            pf.local_corners_total,
-            pf.visitante_corners_1t,
-            pf.visitante_corners_2t,
-            pf.visitante_corners_total,
-            pf.local_disparos_total,
-            pf.local_disparos_arco,
-            pf.visitante_disparos_total,
-            pf.visitante_disparos_arco,
-            pf.temporada_id,
-            pf.competicion_id,
-            pf.fecha_partido
-        FROM partidos_futbol pf
-        WHERE pf.estado = 'FINALIZADO'
-          AND (
-            (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
-            OR (pf.equipo_local_id = %s AND pf.equipo_visitante_id = %s)
-          )
-          AND pf.fecha_partido < %s
-    """
-    params = [
-        equipo_local_id,
-        equipo_visitante_id,
-        equipo_visitante_id,
-        equipo_local_id,
-        fecha_corte,
-    ]
-
-    if competicion_id:
-        query += " AND pf.competicion_id::text = %s"
-        params.append(str(competicion_id))
-
-    if temporada_ids:
-        query += " AND pf.temporada_id::text = ANY(%s)"
-        params.append(temporada_ids)
-    elif fecha_minima is not None:
-        query += " AND pf.fecha_partido >= %s"
-        params.append(fecha_minima)
-
-    query += " ORDER BY pf.fecha_partido DESC,pf.id DESC LIMIT %s"
-    params.append(limite)
-    cursor.execute(query, params)
-    return cursor.fetchall()
 
 
 def _calcular_pct_diferencia(valor: Optional[float], referencia: Optional[float]) -> Optional[float]:
@@ -1884,51 +1667,12 @@ def _agregar_razones_a_mercados(
             )
             prob.razones = razones
 
-def _calcular_probabilidad_over_normal(media: float, std: float, linea: float) -> float:
-    """Calcula P(over) usando distribución normal."""
-    if std <= 0:
-        std = 1.0
-    z = (linea - media) / std
-    return 1.0 - stats.norm.cdf(z)
 
 
-def _calcular_probabilidad_over_poisson(media: float, linea: float) -> float:
-    """Calcula P(over) para conteos discretos usando Poisson."""
-    lam = max(float(media), 0.05)
-    k = int(np.floor(linea))
-    return float(1.0 - stats.poisson.cdf(k, lam))
 
 
-def _calcular_probabilidad_over_nbinom(media: float, std: float, linea: float) -> float:
-    """Calcula P(over) usando Negative Binomial ajustada por media y varianza."""
-    mu = max(float(media), 0.05)
-    var = max(float(std) ** 2, mu + 1e-6)
-
-    # Si no hay sobredispersión suficiente, volver a Poisson
-    if var <= mu + 1e-6:
-        return _calcular_probabilidad_over_poisson(mu, linea)
-
-    r = (mu ** 2) / (var - mu)
-    r = max(r, 1e-3)
-    p = r / (r + mu)
-    p = float(min(max(p, 1e-6), 1.0 - 1e-6))
-    k = int(np.floor(linea))
-    return float(1.0 - stats.nbinom.cdf(k, r, p))
 
 
-def _calcular_probabilidad_over(
-    media: float,
-    std: float,
-    linea: float,
-    distribucion: str = "normal",
-) -> float:
-    """Calcula P(over) según la distribución configurada para el mercado."""
-    dist = str(distribucion or "normal").lower()
-    if dist == "poisson":
-        return _calcular_probabilidad_over_poisson(media, linea)
-    if dist in {"nbinom", "negative_binomial", "neg_binomial"}:
-        return _calcular_probabilidad_over_nbinom(media, std, linea)
-    return _calcular_probabilidad_over_normal(media, std, linea)
 
 
 def _determinar_confianza(

@@ -1,5 +1,14 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Separación de cálculo y lecturas fútbol — 2026-10-30
+
+Nueve funciones extraídas a módulos de matemática y lecturas con cursor recibido,
+sin duplicados ni pool nuevo.536cálculos sintéticos y72consultas SQL idénticos;
+395backend PG18 sintético aprobadas/0omitidas. No cambio numérico, distribución,
+modelos, gates o datos activos.18implementadas,3parciales,9pendientes; extracción
+acotada, no reescritura completa de rutas.
+[Arquitectura y límites](reactivacion_single_user/CALCULO_FUTBOL_AISLADO_2026-10-30.md).
+
 ## Accesibilidad de uso local — 2026-10-30
 
 Asociados cuatro campos/errores de Configuración y completado destino de foco
