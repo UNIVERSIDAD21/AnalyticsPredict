@@ -96,7 +96,7 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L11 | Pendiente de benchmark | Euro: comparación temporal nueva, no heredar evaluación del refit |
 | L12 | Parcial | WNBA evaluada: CAL eligió k0, sin mejora; fallback no activado. Euro aún sin snapshot |
 | L13 | Pendiente de datos | Conteos fútbol por competición/familia y disponibilidad causal |
-| L14 | Pendiente de inventario | Cobertura vigente y preferencias de uso; no llenado automático de gaps |
+| L14 | Parcial | Prioridad por favoritos/copias e inventario BD explícito de solo lectura implementados; medición vigente bloqueada por cuota. Sin denominador oficial ni llenado de gaps |
 | L15 | Implementada | Trazabilidad común NBA/Euro/WNBA/fútbol y base local; datos no conservados N/D |
 | L16 | Implementada | Hoy reutiliza agendas, enlace a ficha y estados parciales; BD real pendiente |
 | L17 | Implementada | Base visual sobria y preferencias; quedan componentes legados con colores propios |
@@ -114,13 +114,14 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L29 | Pendiente de diseño/datos | Live por reloj/posesiones exige fuente temporal y evaluación nuevas |
 | L30 | Pendiente de fuentes | Lesiones/alineaciones/xG con cobertura y disponibilidad acreditadas |
 
-**19 implementadas,2 parciales,9 pendientes/bloqueadas.** El catálogo permanece
-abierto. No se presentan las dos parciales como funcionalidades completas.
+**19 implementadas,3 parciales,8 pendientes/bloqueadas.** El catálogo permanece
+abierto. No se presentan las tres parciales como funcionalidades completas.
 [Continuación, experimento WNBA y límites](CONTINUACION_MEJORAS_2026-10-30.md).
 [Comparadores por dominio y fecha nominal](COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
 [Teclado, legibilidad y alcance de revisión](ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
 [Extracción de cálculo/lecturas fútbol y equivalencia](CALCULO_FUTBOL_AISLADO_2026-10-30.md).
 [Contrato de origen, línea y push de probabilidades](CONTRATO_PROBABILIDAD_NBA_2026-10-30.md).
+[Prioridades personales e inventario de registros](PRIORIZACION_COBERTURA_2026-10-30.md).
 
 ## Protocolo de continuación científica
 

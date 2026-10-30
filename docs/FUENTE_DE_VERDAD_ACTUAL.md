@@ -1,5 +1,15 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Prioridades personales y cobertura — 2026-10-30
+
+Laboratorio ordena ligas por favoritos explícitos y copias guardadas; no infiere
+frecuencia real ni eficacia. Inventario agregado de BD solo tras acción explícita,
+transacción de solo lectura y dos SELECT por ventana. Errores permanecen N/D;
+campos presentes no certifican aptitud ni calendario completo.403backend PG18
+sintético aprobadas/0omitidas.19implementadas,3parciales,8pendientes: L14 parcial
+hasta medir fuente vigente, aún bloqueada por cuota. Sin ingesta ni nuevos modelos.
+[Contrato y límites](reactivacion_single_user/PRIORIZACION_COBERTURA_2026-10-30.md).
+
 ## Contrato de probabilidad principal — 2026-10-30
 
 NBA vincula media/sigma/porcentajes de la tarjeta a una única distribución base

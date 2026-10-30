@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Priorizar cobertura por preferencias locales — 2026-10-30
+
+- Laboratorio ordena ligas por favoritos/copias y permite consultar explícitamente
+  registros presentes por competición/ventana, en transacción de solo lectura.
+- N/D ante fallo y denominador oficial desconocido; sin descargas, relleno de gaps
+  ni cambios de modelos. L14 parcial hasta medir fuente vigente.
+  [Contrato y alcance](docs/reactivacion_single_user/PRIORIZACION_COBERTURA_2026-10-30.md).
+
 ## Unificar origen de parámetros y probabilidades NBA — 2026-10-30
 
 - Evitar mezclar porcentajes base con media contextual/de candidato en la tarjeta.

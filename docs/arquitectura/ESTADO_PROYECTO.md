@@ -1,5 +1,14 @@
 # Estado vigente — AnalyticsPredict
 
+## Cobertura según preferencias — 2026-10-30
+
+19implementadas,3parciales,8pendientes. Prioridades locales transparentes e inventario
+por competición/ventana en lectura explícita. Sin conexión automática al abrir
+Laboratorio; no rellena gaps ni acredita cobertura oficial.403backend PG sintético
+aprobadas/0omitidas. L14 parcial: inventario productivo actual no medido por bloqueo
+de cuota; calibración y mejoras científicas restantes no se declaran completadas.
+[Detalle](../reactivacion_single_user/PRIORIZACION_COBERTURA_2026-10-30.md).
+
 ## Origen único de probabilidades — 2026-10-30
 
 19implementadas,2parciales,9pendientes. Tarjeta NBA usa media/sigma/p del mismo

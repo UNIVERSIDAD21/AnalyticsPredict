@@ -1,12 +1,26 @@
 """Superficie local acotada y ajena a las escrituras del análisis estándar."""
 from typing import Literal
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field, ConfigDict
 
 from motor_autoentrenamiento import obtener_modelo
 from servicios.consulta_local import consultar, identidad_modelo
 
 router = APIRouter(prefix="/api/local", tags=["Consulta base local"])
+
+
+@router.get('/cobertura')
+def cobertura_registrada(dias: int = Query(default=365, ge=1, le=1095)):
+    """Lectura explícita de BD; no la ejecuta el inventario de artefactos."""
+    from db import obtener_pool
+    from servicios.cobertura_uso import leer_cobertura
+    try:
+        with obtener_pool().connection() as conn:
+            conn.execute('SET TRANSACTION READ ONLY')
+            return leer_cobertura(conn, dias)
+    except Exception as exc:
+        raise HTTPException(503, detail={'estado': 'COBERTURA_NO_DISPONIBLE',
+            'mensaje': 'Cobertura de BD N/D. No se descargaron fuentes ni se actualizaron datos.'}) from exc
 
 
 class PeticionLocal(BaseModel):

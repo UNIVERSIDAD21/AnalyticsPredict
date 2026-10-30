@@ -1,0 +1,41 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { PrioridadesCobertura } from './PrioridadesCobertura';
+import { clienteAPI } from '../../servicios/api';
+import { cambiarFavorito, favoritoLiga } from '../../servicios/favoritosLocales';
+vi.mock('../../servicios/api', () => ({ clienteAPI: { get: vi.fn() }, extraerMensajeError: () => 'BD no disponible' }));
+beforeEach(() => { cleanup(); localStorage.clear(); vi.clearAllMocks(); });
+const abrir = () => render(<MemoryRouter><PrioridadesCobertura modelos={{ nba: { corte_modelo: '2026-06-14' } }} /></MemoryRouter>);
+it('no consulta al abrir o cambiar favoritos y un rechazo conserva conteos N/D', async () => {
+  vi.mocked(clienteAPI.get).mockRejectedValue(new Error('cuota'));
+  abrir();
+  expect(clienteAPI.get).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar cobertura de BD' }));
+  await screen.findByText(/Conteos N\/D, no cero/);
+  expect(clienteAPI.get).toHaveBeenCalledTimes(1);
+  fireEvent.change(screen.getByLabelText('Ventana del inventario'), { target: { value: '30' } });
+  expect(clienteAPI.get).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar cobertura de BD' }));
+  await screen.findByText(/Conteos N\/D, no cero/);
+  expect(clienteAPI.get).toHaveBeenLastCalledWith('/api/local/cobertura', expect.objectContaining({ params: { dias: 30 } }));
+});
+it('distingue cero observado, denominador oficial N/D y última lectura tras fallo', async () => {
+  vi.mocked(clienteAPI.get).mockResolvedValueOnce({ data: { formato: 'cobertura-registros-v1', observado_en: '2026-10-30T18:00Z', ventana: { dias: 365, desde: '2025-10-31', hasta: '2026-10-30' }, criterio: 'Prueba sintética', competiciones: [{ competicion_id: '1', liga: 'nba', nombre: 'NBA de prueba', registros: 0, finales_con_marcador: 0, completos_por_campo: { cuartos: 0 }, ultimo_final: null }] } }).mockRejectedValueOnce(new Error());
+  abrir(); fireEvent.click(screen.getByRole('button', { name: 'Consultar cobertura de BD' }));
+  await screen.findByText('0 / 0');
+  expect(screen.getByText(/Completitud frente al calendario oficial: N\/D/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar cobertura de BD' }));
+  await screen.findByText(/Se conserva la última lectura/);
+  expect(screen.getByText('0 / 0')).toBeInTheDocument();
+});
+it('favorece la preferencia explícita local y no repara datos dañados automáticamente', () => {
+  cambiarFavorito(favoritoLiga('wnba')); abrir();
+  const tabla = screen.getByRole('table', { name: /Prioridad personal/ });
+  expect(within(tabla).getAllByRole('row')[1]).toHaveTextContent('WNBA');
+  expect(clienteAPI.get).not.toHaveBeenCalled();
+  cleanup(); localStorage.setItem('analyticspredict-cuaderno-v1', 'roto'); abrir();
+  expect(screen.getByRole('alert')).toHaveTextContent('prioridades N/D');
+  expect(screen.getByRole('button', { name: 'Exportar plan y evidencia disponible' })).toBeDisabled();
+  expect(localStorage.getItem('analyticspredict-cuaderno-v1')).toBe('roto');
+});

@@ -4,6 +4,7 @@ import { Encabezado } from '../organismos/Encabezado';
 import { clienteAPI, extraerMensajeError } from '../../servicios/api';
 import { descargar } from '../../servicios/cuadernoLocal';
 import { VisorExperimentoWnba } from '../moleculas/VisorExperimentoWnba';
+import { PrioridadesCobertura } from '../moleculas/PrioridadesCobertura';
 interface ModeloLaboratorio { disponible: boolean | null; modelo_version?: string | number; corte_modelo?: string | null; dataset_hash?: string; validacion?: unknown; limite: string }
 interface Inventario { fuente: string; certificacion: string; modelos: Record<string, ModeloLaboratorio> }
 interface Medida { mae?: number; mae_media_liga?: number; mae_referencia?: number; n?: number }
@@ -33,6 +34,7 @@ export function PaginaLaboratorio() {
       <button className="boton-secundario" onClick={() => descargar('inventario-modelos.json', JSON.stringify(datos, null, 2))}>Exportar inventario</button>
     </>}
     <section className="tarjeta space-y-3"><h2 className="font-semibold">Criterio de comparación</h2><p className="text-sm text-texto-secundario">Comparar el modelo actual, una referencia y el candidato sobre los mismos encuentros: MAE, sesgo, cobertura, probabilidades e intervalos por liga y objetivo. Conservar abstenciones y límites temporales. Un refit no hereda la evaluación del candidato.</p><p className="text-sm">No se entrena ni activa ningún modelo desde esta pantalla. Las mejoras de recencia, covarianzas y calibración necesitan snapshots y evaluación propios.</p><Link className="text-neon-cyan text-sm" to="/base-local">Consultar el artefacto NBA →</Link></section>
+    <PrioridadesCobertura modelos={datos?.modelos ?? {}} />
     <VisorExperimentoWnba />
   </main></div>;
 }
