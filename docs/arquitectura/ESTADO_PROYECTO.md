@@ -1,5 +1,15 @@
 # Estado vigente — AnalyticsPredict
 
+## Continuación del catálogo local — 2026-10-30
+
+15 mejoras implementadas,6 parciales,9 pendientes: favoritos personales de equipos
+y ligas, ficha fútbol progresiva, trazabilidad común y comparador Euro discreto.
+Laboratorio abre evaluaciones guardadas sin servirlas. Experimento WNBA sin mejora
+de contracción (k0 elegido),450 predicciones originales reproducidas con delta0;
+fallback a equipos nuevos no habilitado por incertidumbre insuficiente.367backend
+PG sintético aprobadas/0omitidas. Sin migración, ingestas ni modelos promovidos.
+[Detalle y límites](../reactivacion_single_user/CONTINUACION_MEJORAS_2026-10-30.md).
+
 ## Mejoras locales: primera implementación — 2026-10-30
 
 Base Windows/UTF-8, consultas NBA sin ajuste implícito, Hoy/Cuaderno/Laboratorio,

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Favoritos, fichas y evaluación offline — 2026-10-30
+
+- Favoritos locales de equipos/ligas/competiciones, sin confundir Bitácora o copias.
+- Ficha fútbol progresiva, trazabilidad común y convención OT por objetivo WNBA.
+- Comparador Euroliga de su normal discretizada; push conservado en líneas enteras.
+- Visor de informes locales y experimento WNBA predeclarado, sin activar modelos.
+  CAL seleccionó k0, sin mejora; incertidumbre del fallback insuficiente. Cohorte
+  original preservada/reproducida. No se anuncia eficacia futura ni cierre total.
+  [Evidencia y continuidad](docs/reactivacion_single_user/CONTINUACION_MEJORAS_2026-10-30.md).
+
 ## Base e interfaz para uso local — 2026-10-30
 
 - Compatibilidad Windows de locks, permisos y textos UTF-8, conservando hashes.

@@ -6,13 +6,14 @@ import type { ResultadoVista } from '../../tipos/resultadoVista';
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, BarChart3, Trophy } from 'lucide-react';
 import { CreadorCombinada, Encabezado, FormularioAnalisis, ModalGuardarApuestaFutbol } from '../organismos';
 import { ResultadoAnalisis } from '../organismos/ResultadoAnalisis';
 import { MensajeError, ProgresoAnalisis, TarjetaCalidadDatosFutbol } from '../moleculas';
 import { Boton, Tarjeta } from '../atomos';
 import { Spinner } from '../atomos/Spinner';
 import { CatalogoFutbol } from '../moleculas/CatalogoFutbol';
+import { BotonFavorito } from '../moleculas/FavoritosLocales';
+import { favoritoEquipo } from '../../servicios/favoritosLocales';
 import { HistoricoAnalisisFutbol } from '../moleculas/HistoricoAnalisisFutbol';
 import { puedeAnalizarPartido, requiereReconstruccion } from '../../utilidades/agendaFutbol';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
@@ -100,42 +101,15 @@ function resolverMercadoCanonicoFutbol(
 }
 
 function EstadoVacioFutbol() {
-  return (
-    <div className="h-full flex flex-col items-center justify-center text-center p-8">
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-neon-cyan/10 blur-3xl rounded-full animate-pulse" />
-        <div className="relative w-32 h-32 rounded-2xl border border-neon-cyan/20 bg-futurista-oscuro/50 flex items-center justify-center">
-          <BarChart3 className="w-16 h-16 text-neon-cyan/50" />
-        </div>
-      </div>
-
-      <h3 className="text-2xl font-futurista text-texto-principal mb-3 tracking-wider">ESPERANDO ANÁLISIS</h3>
-      <p className="text-texto-secundario max-w-md mb-8">
-        Selecciona un partido de fútbol y ejecuta el análisis con trazabilidad completa del mercado objetivo.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl">
-        <div className="p-4 rounded-lg border border-neon-cyan/10 bg-futurista-oscuro/30">
-          <Activity className="w-6 h-6 text-neon-cyan mb-2 mx-auto" />
-          <p className="text-xs text-texto-secundario uppercase tracking-wider">Flujo canónico</p>
-        </div>
-        <div className="p-4 rounded-lg border border-neon-verde/10 bg-futurista-oscuro/30">
-          <Trophy className="w-6 h-6 text-neon-verde mb-2 mx-auto" />
-          <p className="text-xs text-texto-secundario uppercase tracking-wider">Mercados fútbol</p>
-        </div>
-        <div className="p-4 rounded-lg border border-neon-magenta/10 bg-futurista-oscuro/30">
-          <BarChart3 className="w-6 h-6 text-neon-magenta mb-2 mx-auto" />
-          <p className="text-xs text-texto-secundario uppercase tracking-wider">Resultados unificados</p>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="p-6 space-y-3" role="status"><h2 className="text-xl font-semibold">Configura la consulta</h2><p className="text-texto-secundario">Elige mercado, alcance, periodo y línea. El resultado aparecerá aquí cuando ejecutes el análisis.</p><p className="text-sm text-texto-secundario">90 minutos más añadido, sin prórroga ni penales. Las consultas retrospectivas usan un corte anterior al inicio; no son pronósticos emitidos entonces.</p></div>;
 }
 
 export function PaginaFutbol() {
   const { agregarToast } = useToasts();
 
   const [partidoSeleccionadoId, setPartidoSeleccionadoId] = useState('');
+  const [agendaAbierta, setAgendaAbierta] = useState(true);
+  useEffect(() => { if (partidoSeleccionadoId) setAgendaAbierta(false); }, [partidoSeleccionadoId]);
   const [partidoFueraDeLista, setPartidoFueraDeLista] = useState<PartidoFutbolResumen | null>(null);
   const [partidosGuardadosIds, setPartidosGuardadosIds] = useState<Set<string>>(new Set());
   const [guardandoPartido, setGuardandoPartido] = useState(false);
@@ -612,9 +586,14 @@ export function PaginaFutbol() {
           </div>
         )}
 
-        <CatalogoFutbol revision={revisionCatalogo} onInicio={cambiarCatalogo} onCargando={setCargandoPartidos}
-          onError={setErrorPartidos} onDatos={setPartidos} onSeleccionar={seleccionarDesdeAgenda}
-          seleccionadoId={partidoSeleccionadoId} guardadosIds={partidosGuardadosIds} />
+        <details open={!partidoSeleccionado || agendaAbierta} className="space-y-4">
+          <summary id="resumen-agenda-futbol" className="cursor-pointer text-neon-cyan py-2" onClick={e => { e.preventDefault(); if (partidoSeleccionado) setAgendaAbierta(v => !v); }}>
+            {partidoSeleccionado ? 'Agenda · elegir otro partido' : 'Agenda de fútbol · elige un partido'}
+          </summary>
+          <CatalogoFutbol revision={revisionCatalogo} onInicio={cambiarCatalogo} onCargando={setCargandoPartidos}
+            onError={setErrorPartidos} onDatos={setPartidos} onSeleccionar={seleccionarDesdeAgenda}
+            seleccionadoId={partidoSeleccionadoId} guardadosIds={partidosGuardadosIds} />
+        </details>
 
         {partidoSeleccionado && <div id="configuracion-futbol" className="mt-6 flex scroll-mt-5 flex-col lg:flex-row gap-6 lg:gap-8">
           <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0">
@@ -630,7 +609,9 @@ export function PaginaFutbol() {
                   </p>
                   {partidoSeleccionado.estado === 'FINALIZADO' && <p className="mt-2 text-sm text-texto-principal">Resultado final: {partidoSeleccionado.golesLocal ?? 'N/D'} – {partidoSeleccionado.golesVisitante ?? 'N/D'}</p>}
                   {seleccionRetrospectiva && <p className="mt-2 text-xs leading-relaxed text-neon-cyan">Consulta con datos anteriores al inicio. {partidoSeleccionado.estado !== 'FINALIZADO' ? 'El estado y resultado del encuentro aún pueden estar pendientes de actualizar.' : 'El resultado de este partido no interviene en el cálculo.'}</p>}
-                  <button type="button" className="my-3 text-xs text-neon-cyan" onClick={() => document.getElementById('agenda-futbol')?.scrollIntoView({ behavior: 'smooth' })}>← Elegir otro partido en la agenda</button>
+                  <button type="button" className="my-3 text-xs text-neon-cyan" onClick={() => { setAgendaAbierta(true); requestAnimationFrame(() => { const resumen = document.getElementById('resumen-agenda-futbol'); resumen?.focus(); resumen?.scrollIntoView({ behavior: 'instant', block: 'start' }); }); }}>← Elegir otro partido en la agenda</button>
+                  <div className="flex flex-wrap gap-x-5"><BotonFavorito favorito={{ tipo: 'competicion', liga: 'futbol', id: partidoSeleccionado.competicion, nombre: partidoSeleccionado.competicionNombre }} />{[[partidoSeleccionado.equipoLocal, partidoSeleccionado.equipoLocalNombre], [partidoSeleccionado.equipoVisitante, partidoSeleccionado.equipoVisitanteNombre]].map(([id, nombre]) => <BotonFavorito key={id} favorito={favoritoEquipo('futbol', id, nombre)} />)}</div>
+                  <details className="mt-3"><summary className="cursor-pointer text-sm">Seguimiento en Bitácora</summary><div className="pt-3">
                   {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
                     <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
                       {guardandoPartido ? 'Actualizando…' : 'Quitar de Bitácora'}
@@ -641,8 +622,8 @@ export function PaginaFutbol() {
                     </Boton>
                   )}
                   <p className="mt-2 text-xs text-texto-secundario">
-                    Guardar aquí solo marca el partido para volver a consultarlo; no crea apuesta ni pick.
-                  </p>
+                    Guardar aquí solo marca el partido en la BD para volver a consultarlo; no crea apuesta ni pick.
+                  </p></div></details>
                   <p className="mt-2 text-xs text-neon-amarillo">Análisis exploratorio · probabilidades sin calibrar.</p>
                 </Tarjeta>
               )}
@@ -744,7 +725,7 @@ export function PaginaFutbol() {
             )}
 
             {!analisis && !cargandoAnalisis && (
-              <div className="tarjeta h-full min-h-[500px]">
+              <div className="tarjeta">
                 <EstadoVacioFutbol />
               </div>
             )}

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { csvSnapshot, editarEntrada, guardarConsulta, leerCuaderno } from './cuadernoLocal';
-import { compararLinea } from './consultaLocal';
+import { compararLinea, compararNormalDiscreta } from './consultaLocal';
 beforeEach(() => localStorage.clear());
 describe('copias personales inmutables', () => {
   it('conserva originales, N/D y separación de ligas al editar notas y favoritos', () => {
@@ -24,6 +24,17 @@ describe('copias personales inmutables', () => {
   });
 });
 describe('comparador sin inferencia nueva', () => {
+  it('respeta la masa discreta y el caso determinista Euroliga, sin extrapolar a mezclas OT', () => {
+    const entero = compararNormalDiscreta(180, 10, 180)!;
+    expect(entero.over).toBeCloseTo(.48006119416, 6);
+    expect(entero.under).toBeCloseTo(.48006119416, 6);
+    expect(entero.push).toBeCloseTo(.03987761167, 6);
+    expect(entero.over + entero.under + entero.push).toBeCloseTo(1, 12);
+    expect(compararNormalDiscreta(180, 10, 180.5)?.push).toBe(0);
+    expect(compararNormalDiscreta(0, 1, 0)?.push).toBeCloseTo(.3829249225, 6);
+    expect(compararNormalDiscreta(180, 0, 180)).toEqual({ over: 0, under: 0, push: 1 });
+    expect(compararNormalDiscreta(180, 10, 180.25)).toBeNull();
+  });
   it('complementa y coincide con una CDF normal conocida sin cambiar la distribución', () => {
     expect(compararLinea(180.5, 10, 180.5)?.over).toBeCloseTo(.5, 6);
     expect(compararLinea(180.5, 10, 190.5)?.over).toBeCloseTo(.1586552539, 6);

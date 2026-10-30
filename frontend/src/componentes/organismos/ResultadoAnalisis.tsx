@@ -1,6 +1,9 @@
 import type { AnalisisIntegral } from '../../tipos/analisisIntegral';
 import { SeccionesAnalisisIntegral } from './SeccionesAnalisisIntegral';
 import { HerramientasConsulta } from '../moleculas/HerramientasConsulta';
+import { TrazabilidadConsulta } from '../moleculas/TrazabilidadConsulta';
+import { ComparadorEuroliga } from '../moleculas/ComparadorEuroliga';
+import { alcanceConsulta } from '../../utilidades/alcanceConsulta';
 // hace parte del diseño de analisis
 /**
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
@@ -313,10 +316,12 @@ export function ResultadoAnalisis({
           ═══════════════════════════════════════════════════════════ */}
       <div className="tarjeta relative overflow-hidden">
         <HerramientasConsulta titulo={`${resultado.equipo_nombre_completo} — ${resultado.rival_nombre_completo} · ${mercadoCanon ?? ''} · ${linea}`} liga={esEuro ? 'euroliga' : esWnba ? 'wnba' : esFutbol ? 'futbol' : 'nba'} snapshot={{ resultado, advertencias, seleccionUsuario, fuenteEuroliga }} />
+        <TrazabilidadConsulta resultado={resultado} />
+        {fuenteEuroliga && <ComparadorEuroliga key={fuenteEuroliga.analisis_id} fuente={fuenteEuroliga} />}
         {/* Línea decorativa superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan" />
 
-        <p className="text-center text-xs text-neon-cyan mb-4">{esEuro ? 'Euroliga' : esWnba ? 'WNBA' : esFutbol ? 'Fútbol' : 'NBA'} · {modoLabel}{esEuro || esCorte ? ' · Regulación sin OT · RAW' : ''}</p>
+        <p className="text-center text-xs text-neon-cyan mb-4">{esEuro ? 'Euroliga' : esWnba ? 'WNBA' : esFutbol ? 'Fútbol' : 'NBA'} · {modoLabel} · {alcanceConsulta(resultado.metadata, mercadoCanon)}</p>
         {!esFutbol && !esEuro && !esWnba && <p className="text-center text-xs text-texto-secundario mb-3">Modelo {String(resultado.metadata?.modelo_version ?? 'N/D')} · Corte de modelo {String(resultado.metadata?.corte_modelo ?? 'N/D')} · Regulación 48 min, sin OT · Confianza heurística no validada</p>}
         {/* Equipos */}
         <div className="text-center mb-6 pt-2">

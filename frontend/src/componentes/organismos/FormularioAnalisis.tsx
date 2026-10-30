@@ -474,6 +474,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
           />}
 
           {/* Equipo Local - deshabilitado si hay partido seleccionado */}
+          {!(ocultarSelectorPartido && deporte === 'FUTBOL' && partidoSeleccionado) && <>
           <SelectorEquipo
             etiqueta="Equipo Local"
             equipos={equipos}
@@ -507,7 +508,9 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
             }
           />
 
-          {!esEuroliga && <PanelEstadisticasEquipo
+          </>}
+
+          {!esEuroliga && !(deporte === 'FUTBOL' && !estadisticas.length) && <PanelEstadisticasEquipo
             equipoLocal={buscarEstadisticas(formulario.equipoLocal)}
             equipoVisitante={buscarEstadisticas(formulario.equipoVisitante)}
             cargando={cargando}

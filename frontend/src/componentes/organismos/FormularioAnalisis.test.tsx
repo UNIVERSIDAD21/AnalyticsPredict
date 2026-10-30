@@ -23,6 +23,18 @@ const partido: PartidoResumen = {
 };
 
 describe('formulario por dominio', () => {
+  it('la ficha fútbol oculta equipos redundantes sin perder los IDs ni la localía al enviar', () => {
+    const analizar = vi.fn();
+    render(<FormularioAnalisis equipos={equipos} deporte="FUTBOL" partidoActual={partido} ocultarSelectorPartido
+      partidosDisponibles={[partido]} onAnalizar={analizar} />);
+    expect(screen.queryByRole('combobox', { name: 'Equipo Local' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Equipo Visitante' })).toBeNull();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Mercado' }), { target: { value: 'COMPLETO' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea del análisis' }), { target: { value: '2.5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    expect(analizar).toHaveBeenCalledWith(expect.objectContaining({ partido_id: partido.id,
+      equipo_local_id: 'club-2', equipo_visitante_id: 'club-3', equipo_local: 'Betis', equipo_visitante: 'Barcelona' }), 'OVER');
+  });
   it('acepta un partido distinto del primero sin pedir temporadas NBA y conserva sus IDs', async () => {
     const analizar = vi.fn();
     render(<FormularioAnalisis equipos={equipos} deporte="FUTBOL" partidoActual={partido}

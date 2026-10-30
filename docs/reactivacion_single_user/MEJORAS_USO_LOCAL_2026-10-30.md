@@ -15,7 +15,7 @@ verificada en Windows. La fuente identificada sigue rechazando por cuota el30oct
   registro de predicciones ni apuestas. Q1–Q4/total48min sin OT, RAW. No verifica
   fixture ni resultado actual. Muestra versión, corte, dataset y muestra de ajuste.
 - `/cuaderno`: copias de consultas cross-liga, notas, etiquetas y favoritos de
-  **análisis**, no favoritos de equipos. Al reabrir no se repite un POST. Se guarda
+  **análisis**, más equipos/ligas/competiciones separados. Al reabrir no se repite un POST. Se guarda
   en este navegador, no en BD; no equivale a respaldo fuera del equipo.
 - `/laboratorio`: inventario de artefactos cargables y evaluación de desarrollo
   ya contenida en ellos. No mide nuevamente ni asigna esas métricas a los refits.
@@ -94,15 +94,15 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L09 | Pendiente de evidencia | CAL/TEST y cohorte futura suficientes; ninguna calibración activada |
 | L10 | Bloqueada por originales | Recuperar desarrollo/cohorte V4 corregidos y outcomes; no sustituirlos |
 | L11 | Pendiente de benchmark | Euro: comparación temporal nueva, no heredar evaluación del refit |
-| L12 | Pendiente de evaluación | Contracción/equipos nuevos por liga; no retirar abstenciones sin medir |
+| L12 | Parcial | WNBA evaluada: CAL eligió k0, sin mejora; fallback no activado. Euro aún sin snapshot |
 | L13 | Pendiente de datos | Conteos fútbol por competición/familia y disponibilidad causal |
 | L14 | Pendiente de inventario | Cobertura vigente y preferencias de uso; no llenado automático de gaps |
-| L15 | Parcial | Metadatos NBA y base local; completar trazabilidad en todas las vistas legadas |
+| L15 | Implementada | Trazabilidad común NBA/Euro/WNBA/fútbol y base local; datos no conservados N/D |
 | L16 | Implementada | Hoy reutiliza agendas, enlace a ficha y estados parciales; BD real pendiente |
 | L17 | Implementada | Base visual sobria y preferencias; quedan componentes legados con colores propios |
-| L18 | Parcial | Ficha baloncesto y agenda colapsada; simplificación adicional de fútbol pendiente |
-| L19 | Parcial | Favoritos de consultas/notas/etiquetas cross-liga; equipos/ligas favoritos pendientes |
-| L20 | Parcial | Comparador normal base sin API/fit; faltan distribuciones identificadas de otras ligas |
+| L18 | Implementada | Fichas baloncesto/fútbol progresivas; agenda y seguimiento separados de configuración |
+| L19 | Implementada | Favoritos de consultas, equipos, ligas/competiciones; notas/etiquetas y almacenamiento aislado |
+| L20 | Parcial | NBA base continua y Euro discretizada sin API; WNBA Sobol/OT y fútbol no se aproximan como normales |
 | L21 | Implementada | Snapshots/exportación/reapertura; no importador de respaldos del cuaderno |
 | L22 | Implementada | NBA local real, corte visible y bloqueo explícito de BD; no offline con contexto |
 | L23 | Implementada | Error no equivale a cero; fuentes ausentes N/D en superficies intervenidas |
@@ -114,8 +114,9 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L29 | Pendiente de diseño/datos | Live por reloj/posesiones exige fuente temporal y evaluación nuevas |
 | L30 | Pendiente de fuentes | Lesiones/alineaciones/xG con cobertura y disponibilidad acreditadas |
 
-**12 implementadas,8 parciales,10 pendientes/bloqueadas.** El catálogo permanece
-abierto. No se presentan las ocho parciales como funcionalidades completas.
+**15 implementadas,6 parciales,9 pendientes/bloqueadas.** El catálogo permanece
+abierto. No se presentan las seis parciales como funcionalidades completas.
+[Continuación, experimento WNBA y límites](CONTINUACION_MEJORAS_2026-10-30.md).
 
 ## Protocolo de continuación científica
 

@@ -1,5 +1,17 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Continuación del catálogo local — 2026-10-30
+
+Favoritos de equipos/ligas/competiciones, ficha fútbol progresiva y trazabilidad
+común implementados. Comparador Euro discreto con push; visor local de evaluación
+sin entrenamiento/activación.15 de30 implementadas,6 parciales,9 pendientes.
+Experimento WNBA sobre snapshot íntegro:450 proyecciones originales reproducidas
+con delta0; CAL eligió k0 (sin contracción adicional). Fallback616/616 no activado:
+incertidumbre insuficiente en equipos sin historial. Retrospectiva ya observada,
+no prueba intacta/prospectiva. PG sintético367pass,0omitidas; UI real/sintética
+distinguida en evidencias. Migración y modelos activos sin cambios.
+[Continuación y reproducción](reactivacion_single_user/CONTINUACION_MEJORAS_2026-10-30.md).
+
 ## Mejoras locales: primera implementación — 2026-10-30
 
 Hoy, Cuaderno, Laboratorio, tema claro/oscuro y consulta NBA base sin BD añadidos.

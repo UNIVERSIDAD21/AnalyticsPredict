@@ -8,6 +8,7 @@ import type { ConsultaLocal } from '../../servicios/consultaLocal';
 import type { ResultadoVista } from '../../tipos/resultadoVista';
 import type { LadoApuesta } from '../../tipos';
 import type { ResultadoEuro } from '../../servicios/euroliga';
+import { PanelFavoritosLocales } from '../moleculas/FavoritosLocales';
 
 interface CopiaResultado { resultado: ResultadoVista; advertencias?: string[]; seleccionUsuario?: { lado: LadoApuesta; linea: number } | null; fuenteEuroliga?: ResultadoEuro }
 function Entrada({ e, cambiar }: { e: EntradaCuaderno; cambiar: () => void }) {
@@ -40,6 +41,7 @@ export function PaginaCuaderno() {
   const visibles = entradas.filter(e => (!liga || e.liga === liga) && (!favoritos || e.favorito) && `${e.titulo} ${e.notas} ${e.etiquetas.join(' ')}`.toLocaleLowerCase().includes(buscar.toLocaleLowerCase()));
   return <div className="min-h-screen"><Encabezado /><main id="contenido-principal" className="contenedor py-8 space-y-6" data-revision={revision}>
     <div><h1 className="text-3xl font-semibold">Mi cuaderno</h1><p className="mt-3 text-texto-secundario">Consultas, notas y etiquetas de todas las ligas. Se guardan solo en este navegador: exporta una copia para respaldarlas.</p></div>
+    <PanelFavoritosLocales />
     <div className="flex flex-wrap gap-4 herramientas-consulta"><label>Buscar<input className="input-base mt-2" type="search" value={buscar} onChange={e => setBuscar(e.target.value)} /></label><label>Liga<select className="input-base mt-2" value={liga} onChange={e => setLiga(e.target.value)}><option value="">Todas</option>{['nba','euroliga','wnba','futbol'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}</select></label><label className="self-end pb-3"><input type="checkbox" checked={favoritos} onChange={e => setFavoritos(e.target.checked)} /> Solo favoritos</label><button onClick={() => descargar('cuaderno-analyticspredict.json', JSON.stringify(entradas, null, 2))}>Respaldar cuaderno JSON</button></div>
     {error ? <p role="alert">{error} No se sobrescribieron las entradas.</p> : <><p role="status" className="text-sm text-texto-secundario">{visibles.length} copias visibles de {entradas.length}</p>{!visibles.length && <p className="tarjeta">No hay copias para estos filtros. Puedes guardar una consulta desde el resultado o desde <Link className="text-neon-cyan" to="/base-local">Base local NBA</Link>.</p>}{visibles.map(e => <Entrada key={e.id} e={e} cambiar={() => setRevision(v => v+1)} />)}</>}
   </main></div>;

@@ -1,0 +1,27 @@
+{
+  "id": "wnba-contraccion-exploratoria-v1-20261030",
+  "declarado_en": "2026-10-30",
+  "estado": "DESARROLLO_OFFLINE_NO_ACTIVAR",
+  "datos": "Snapshot normalizado datos dentro de publicación WNBA íntegra. Solo REG; no descargas ni BD. Hash del archivo y del dataset en cada recibo.",
+  "datos_ya_observados": true,
+  "limitacion": "Las ventanas EVAL ya fueron observadas por el desarrollo anterior. Esta comparación es exploratoria, no un test intacto ni evidencia prospectiva. No sustituye candidatos/cohortes originales.",
+  "ventanas": {
+    "train_fin_exclusivo": "2024-01-01",
+    "seleccion_fin_exclusivo": "2024-07-15",
+    "dispersion_fin_exclusivo": "2025-01-01",
+    "eval_fin_exclusivo": "corte_publicacion_exclusivo"
+  },
+  "diseno": "Ridge WNBA existente: intercepto, localía, ataque y defensa por ID. alpha=5. Sin features que incorporen resultados de CAL/EVAL. Estado congelado TRAIN, sin actualización secuencial.",
+  "variantes": {
+    "semivida_dias": [null, 365, 730],
+    "k_contraccion": [0, 8, 24],
+    "contraccion": "Multiplicar columnas de identidad del equipo t por n_efectivo_train(t)/(n_efectivo_train(t)+k). k=0 conserva equipos conocidos. Equipos desconocidos tienen efecto cero; intercepto/localía actúan como prior de liga. No se inventa historial.",
+    "seleccion": "Menor MAE total sobre la misma CAL selección para las nueve variantes; empate por orden declarado. No elegir usando dispersión ni EVAL. Media de liga TRAIN como referencia adicional."
+  },
+  "dispersion": "Covarianza de ocho residuos sobre CAL dispersión del candidato seleccionado; contracción diagonal 0.1 existente. No es calibrador probabilístico. Soporte completo por candidato, mínimo40 partidos.",
+  "cobertura": "Denominador todos los finales REG en EVAL. Conservar predicciones y abstenciones de cada método; tabla emparejada en intersección, y tabla ampliada separada. Identificar sin historial, muestra insuficiente y soportados según gates originales8/6 efectivos. No retirar gates de serving.",
+  "metricas": ["MAE por Q1-Q4/total regulación", "Brier binario y log loss en línea fija TRAIN .5 por mercado", "cobertura nominal80 RAW", "n y cobertura", "delta MAE emparejado con IC95 bootstrap por día,1000 réplicas,seed20261030"],
+  "referencias": ["Candidato congelado original de la publicación: verificar reproducción de medias sobre cohorte original sin refit", "Media de liga TRAIN con dispersión CAL propia", "Variante k0 sin gate solo como diagnóstico, no modelo original"],
+  "persistencia": "Coeficientes, mapping, pesos, orden de features, selección, covarianza, protocolo/hash/dataset, predicciones y abstenciones completas, métricas emparejadas. Solo salida externa nueva, rechazar sobrescritura.",
+  "promocion": "NINGUNA. Antes de considerar servir: nueva política explícita y cohorte futura congelada antes del evento; mínimo100 finales y10 encuentros de equipos nuevos/baja muestra, cobertura>=0.90; evaluación de incertidumbre/calibración independiente. Esta prueba no activa ni certifica modelos."
+}

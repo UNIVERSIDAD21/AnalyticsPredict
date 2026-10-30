@@ -17,10 +17,21 @@ export async function consultarLocal(p: { equipo_local: string; equipo_visitante
   return (await clienteAPI.post<ConsultaLocal>('/api/local/nba/consultar', p, { signal })).data;
 }
 /** CDF aproximada (error absoluto < 1e-6). Comparador, no nueva salida del modelo. */
+function colaNormal(z: number) {
+  const x = Math.abs(z), t = 1 / (1 + .2316419 * x);
+  const cola = Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * t * (.319381530 + t * (-.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return Math.max(0, Math.min(1, z >= 0 ? cola : 1 - cola));
+}
 export function compararLinea(media: number, sigma: number, linea: number) {
   if (![media, sigma, linea].every(Number.isFinite) || sigma <= 0 || Math.abs((linea % 1) - 0.5) > 1e-9) return null;
-  const z = (linea - media) / sigma, x = Math.abs(z), t = 1 / (1 + .2316419 * x);
-  const cola = Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * t * (.319381530 + t * (-.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
-  const over = Math.max(0, Math.min(1, z >= 0 ? cola : 1 - cola));
+  const over = colaNormal((linea - media) / sigma);
   return { over, under: 1 - over };
+}
+/** Contrato Euroliga: normal discretizada, distinta de la normal continua NBA. */
+export function compararNormalDiscreta(media: number, sigma: number, linea: number) {
+  if (![media, sigma, linea].every(Number.isFinite) || media < 0 || sigma < 0 || linea < 0 || linea > 600 || !Number.isInteger(2 * linea)) return null;
+  if (sigma * sigma <= 1e-10) return { over: Number(media > linea), under: Number(media < linea), push: Number(media === linea) };
+  const over = colaNormal((Math.floor(linea) + .5 - media) / sigma);
+  const under = Number.isInteger(linea) ? 1 - colaNormal((Math.ceil(linea) - .5 - media) / sigma) : 1 - over;
+  return { over, under, push: Number.isInteger(linea) ? Math.max(0, 1 - over - under) : 0 };
 }

@@ -3,6 +3,8 @@ import { Encabezado } from '../organismos/Encabezado';
 import { HerramientasConsulta } from '../moleculas/HerramientasConsulta';
 import { catalogoLocal, consultarLocal, compararLinea, type ConsultaLocal } from '../../servicios/consultaLocal';
 import { extraerMensajeError } from '../../servicios/api';
+import { BotonFavorito } from '../moleculas/FavoritosLocales';
+import { favoritoEquipo, favoritoLiga } from '../../servicios/favoritosLocales';
 
 const prob = (p: number | null) => p == null ? 'N/D' : `${(p * 100).toFixed(2)}%`;
 export function VistaBaseLocal({ r }: { r: ConsultaLocal }) {
@@ -11,6 +13,7 @@ export function VistaBaseLocal({ r }: { r: ConsultaLocal }) {
   return <article className="tarjeta space-y-5 min-w-0" aria-label="Consulta base local">
     <p className="text-neon-cyan text-sm">NBA · Base local · {r.periodo} · 48 min sin OT · RAW</p>
     <h2 className="text-xl font-semibold">{r.equipo_local} — {r.equipo_visitante}</h2>
+    <div className="flex flex-wrap gap-5"><BotonFavorito favorito={favoritoLiga('nba')} />{[r.equipo_local, r.equipo_visitante].map(nombre => <BotonFavorito key={nombre} favorito={favoritoEquipo('nba', undefined, nombre)} />)}</div>
     <p className="text-texto-secundario">Consulta: {new Date(r.generado_en).toLocaleString('es-CO', { timeZone: 'America/Bogota' })} COT. No se verifica el estado actual del encuentro.</p>
     <div className="grid sm:grid-cols-3 gap-4">
       <div><p className="text-sm text-texto-secundario">Media / desviación</p><strong>{r.distribucion.media.toFixed(2)} / {r.distribucion.desviacion.toFixed(2)} pts</strong></div>
