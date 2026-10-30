@@ -5,7 +5,7 @@ rutas_analisis.py — Endpoints de análisis ACTUALIZADO.
 CAMBIOS RESPECTO A LA VERSIÓN ANTERIOR:
 - Ya NO usa cargar_modelo() desde archivo .npz
 - Usa obtener_modelo() del sistema de auto-entrenamiento
-- El modelo siempre está actualizado con los últimos datos de la BD
+- Una consulta usa el artefacto publicado; actualizar datos no lo reentrena.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from psycopg.rows import dict_row
 # AHORA:
 from motor import analizar_partido, resultado_a_dict
 from motor.registro_predicciones import registrar_prediccion
-from motor_autoentrenamiento import EntrenadorBD, ModeloEnMemoria, obtener_modelo  # ← NUEVO
+from motor_autoentrenamiento import obtener_modelo
 from motor_autoentrenamiento.dominio_nba import FILTRO_NBA
 from motor.tipos import ConfiguracionSizing, Ubicacion
 from motor.utilidades import resolver_nombre_en_modelo
@@ -580,17 +580,15 @@ def ejecutar_analisis(
                 'Probabilidades RAW sin calibrar; regulación de 48 minutos sin prórroga. Dispersión del ajuste retrospectivo, sin validación temporal propia.',
             ])
     
-    # ═══════════════════════════════════════════════════════════════════════════
-    # CAMBIO: obtener_modelo() ahora viene de motor_autoentrenamiento
-    # Siempre retorna el modelo más actualizado desde BD
-    # ═══════════════════════════════════════════════════════════════════════════
+    # Los alcances históricos se resuelven arriba, sin registrar versiones.
+    # Una consulta PRE no puede ajustar/publicar un modelo por efecto lateral.
+    if peticion.temporadas:
+        raise ErrorValidacion(
+            'La consulta NBA usa el modelo publicado, sin reajustarlo. '
+            'No admite temporadas de entrenamiento; utiliza el entrenamiento explícito.'
+        )
     try:
-        if peticion.temporadas:
-            entrenador = EntrenadorBD(obtener_pool())
-            datos_modelo = entrenador.entrenar(temporadas=peticion.temporadas)
-            modelo = ModeloEnMemoria(datos_modelo)
-        else:
-            modelo = obtener_modelo()
+        modelo = obtener_modelo()
     except RuntimeError as exc:
         raise ErrorAnalisis(
             "El modelo no está disponible. "
@@ -744,6 +742,8 @@ def ejecutar_analisis(
 
     datos_respuesta = resultado_a_dict(resultado)
     datos_respuesta.setdefault("metadata", {})["modelo_version"] = getattr(modelo, "version", None)
+    from servicios.consulta_local import identidad_modelo
+    datos_respuesta["metadata"].update(identidad_modelo(modelo))
     datos_respuesta.pop("advertencias", None)
     if datos_respuesta.get("mejor_apuesta") is not None:
         mejor = datos_respuesta["mejor_apuesta"]

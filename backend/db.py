@@ -12,6 +12,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from psycopg_pool import ConnectionPool
+from psycopg import OperationalError
 from lecturas_http import solo_lectura_http, en_peticion_http
 
 
@@ -79,6 +80,8 @@ def obtener_database_url() -> str:
 def obtener_pool() -> ConnectionPool:
     """Obtiene el pool de conexiones, creándolo si no existe."""
     global _pool
+    if os.getenv('ANALYTICSPREDICT_SOLO_BASE_LOCAL') == '1':
+        raise OperationalError('Modo base local: conexión a BD deshabilitada explícitamente')
     with _pool_lock:
         if _pool is None:
             _pool = PoolAplicacion(

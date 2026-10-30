@@ -600,7 +600,7 @@ export function PaginaFutbol() {
     <div className="min-h-screen flex flex-col">
       <Encabezado />
 
-      <main className="flex-1 contenedor py-6 lg:py-8">
+      <main id="contenido-principal" tabIndex={-1} className="flex-1 contenedor py-6 lg:py-8">
 
         {(errorPartidos || errorContexto) && (
           <div className="mb-6">

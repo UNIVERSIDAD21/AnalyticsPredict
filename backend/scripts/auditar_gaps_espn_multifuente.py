@@ -45,7 +45,8 @@ def _guardar_exclusivo(path: Path, contenido: bytes) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     fd, temporal = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
-        os.fchmod(fd, 0o600)
+        if os.name != "nt":
+            os.fchmod(fd, 0o600)
         with os.fdopen(fd, "wb") as archivo:
             archivo.write(contenido)
             archivo.flush()

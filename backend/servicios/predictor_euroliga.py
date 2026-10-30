@@ -161,4 +161,4 @@ def historial(limite: int = 50) -> list[dict]:
     if not ruta.is_dir():
         return []
     archivos = sorted(ruta.glob("*.json"), key=lambda p: p.stat().st_mtime_ns, reverse=True)[:limite]
-    return [json.loads(p.read_text()) for p in archivos]
+    return [json.loads(p.read_text(encoding="utf-8")) for p in archivos]

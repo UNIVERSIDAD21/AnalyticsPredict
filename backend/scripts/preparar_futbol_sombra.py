@@ -23,7 +23,7 @@ def escribir_nuevo(path, datos):
 
 
 def cargar_partidos(path):
-    datos = json.loads(path.read_text())
+    datos = json.loads(path.read_text(encoding="utf-8"))
     partidos = datos['partidos']
     # Verificar antes de convertir fechas; un JSON alterado no conserva la huella.
     if datos.get('sha256_datos') != sha256(partidos):
@@ -60,7 +60,7 @@ def main(argv=None):
         return 0
     if not all((args.snapshot, args.fixtures, args.salida)):
         parser.error('Preparar requiere --snapshot, --fixtures y --salida')
-    declaracion = json.loads(args.politica.read_text())
+    declaracion = json.loads(args.politica.read_text(encoding="utf-8"))
     declarado, inicio, fin = [exigir_utc(datetime.fromisoformat(declaracion[k]))
                              for k in ('declarado_en', 'inicio_eval', 'fin_eval')]
     if declaracion['politica'] != politica.to_dict() or not declarado < ahora < inicio < fin:

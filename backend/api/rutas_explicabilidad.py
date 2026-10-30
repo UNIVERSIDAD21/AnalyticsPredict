@@ -40,13 +40,13 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
               p.fecha_partido::timestamp AS game_date,
               'NBA'::text AS league,
               COALESCE(pr.linea, 0)::numeric AS line,
-              COALESCE(pr.linea, 0)::numeric AS value,
+              pr.media_predicha::numeric AS value,
               CASE WHEN UPPER(COALESCE(pr.lado,'')) LIKE 'OVER%%' THEN 'over' ELSE 'under' END AS recommendation,
-              COALESCE(CASE WHEN pr.calibrador_id IS NOT NULL THEN pr.p_calibrada END, pr.p_raw, 0.5) * 100.0 AS confidence_numeric,
+              COALESCE(CASE WHEN pr.calibrador_id IS NOT NULL THEN pr.p_calibrada END, pr.p_raw) * 100.0 AS confidence_numeric,
               CASE WHEN pr.calibrador_id IS NOT NULL AND pr.p_calibrada IS NOT NULL THEN 'p_calibrada' ELSE 'p_raw' END AS calibration_source,
               TRUE AS market_valid,
-              GREATEST(COALESCE(pr.linea,0) - 3, 0)::numeric AS interval_lower,
-              (COALESCE(pr.linea,0) + 3)::numeric AS interval_upper,
+              NULL::numeric AS interval_lower,
+              NULL::numeric AS interval_upper,
               'points'::text AS unit,
               COALESCE(pr.origen, 'ridge_nba_v3')::text AS model_version,
               'api-2.x'::text AS backend_version
@@ -80,13 +80,13 @@ def _fetch_prediccion(cursor: Any, prediction_id: str) -> Optional[Dict[str, Any
               COALESCE(pf.fecha_partido, NOW())::timestamp AS game_date,
               'FOOTBALL'::text AS league,
               COALESCE(pf.linea, 2.5)::numeric AS line,
-              COALESCE(pf.linea, 2.5)::numeric AS value,
+              NULL::numeric AS value,
               CASE WHEN COALESCE(CASE WHEN pf.calibrador_id IS NOT NULL THEN pf.prob_over_calibrada END, pf.prob_over, 0.5) >= 0.5 THEN 'over' ELSE 'under' END AS recommendation,
-              COALESCE(CASE WHEN pf.calibrador_id IS NOT NULL THEN pf.prob_over_calibrada END, pf.prob_over, 0.5) * 100.0 AS confidence_numeric,
+              COALESCE(CASE WHEN pf.calibrador_id IS NOT NULL THEN pf.prob_over_calibrada END, pf.prob_over) * 100.0 AS confidence_numeric,
               CASE WHEN pf.calibrador_id IS NOT NULL AND pf.prob_over_calibrada IS NOT NULL THEN 'p_calibrada' ELSE 'p_raw' END AS calibration_source,
               TRUE AS market_valid,
-              GREATEST(COALESCE(pf.linea,2.5) - 0.5, 0)::numeric AS interval_lower,
-              (COALESCE(pf.linea,2.5) + 0.5)::numeric AS interval_upper,
+              NULL::numeric AS interval_lower,
+              NULL::numeric AS interval_upper,
               'goals'::text AS unit,
               'football_beta_v1'::text AS model_version,
               'api-2.x'::text AS backend_version
@@ -205,26 +205,9 @@ async def get_explicacion_prediccion(
             },
         )
 
-    factores = [
-        {
-            "factor_name": "form_recent",
-            "contribution": 18.0,
-            "value": 1.0,
-            "description": "Tendencia reciente relevante",
-        },
-        {
-            "factor_name": "matchup_context",
-            "contribution": 12.0,
-            "value": 1.0,
-            "description": "Contexto del enfrentamiento",
-        },
-    ]
-
-    historico = {
-        "similar_predictions": 100,
-        "accuracy_rate": 0.7,
-        "sample_size": 100,
-    }
+    # No existen contribuciones ni cohorte emparejada acreditadas para esta fila.
+    factores = []
+    historico = None
 
     try:
         contrato = construir_contrato(pred, scorecard, alertas, factores, historico)

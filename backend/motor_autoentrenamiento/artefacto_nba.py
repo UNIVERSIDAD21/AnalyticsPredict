@@ -59,7 +59,10 @@ def guardar_artefacto(datos: dict[str, Any], ruta: Path | None = None) -> Path:
     destino.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporal = tempfile.mkstemp(prefix=".modelo_nba_", suffix=".npz", dir=destino.parent)
     try:
-        os.fchmod(descriptor, 0o600)
+        # mkstemp ya crea 0600 en POSIX. Windows usa las ACL heredadas del
+        # directorio del usuario: chmod no representa permisos POSIX allí.
+        if os.name != "nt":
+            os.fchmod(descriptor, 0o600)
         with os.fdopen(descriptor, "wb") as archivo:
             np.savez_compressed(
                 archivo,

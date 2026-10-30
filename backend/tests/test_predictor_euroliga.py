@@ -203,7 +203,7 @@ def test_capturas_concurrentes_publican_un_json_completo(tmp_path):
     with ThreadPoolExecutor(max_workers=2) as ejecutor:
         resultados = list(ejecutor.map(escribir, (1, 2)))
     assert sum(resultados) == 1
-    assert json.loads(destino.read_text())['datos'] == list(range(100))
+    assert json.loads(destino.read_text(encoding="utf-8"))['datos'] == list(range(100))
     assert len(list(tmp_path.iterdir())) == 1
 
 

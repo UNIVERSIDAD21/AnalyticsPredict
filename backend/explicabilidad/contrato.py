@@ -16,7 +16,7 @@ class QualityCoherenceError(ValueError):
 
 Sport = Literal["NBA", "FOOTBALL"]
 Recommendation = Literal["over", "under", "skip"]
-ConfidenceLevel = Literal["high", "medium", "low"]
+ConfidenceLevel = Literal["high", "medium", "low", "unknown"]
 QualityLevel = Literal["A", "B", "C", "UNKNOWN"]
 
 
@@ -34,12 +34,12 @@ class PredictionInterval(BaseModel):
 
 class PredictionConfidence(BaseModel):
     level: ConfidenceLevel
-    numeric: float = Field(ge=0, le=100)
-    interval: PredictionInterval
+    numeric: Optional[float] = Field(default=None, ge=0, le=100)
+    interval: Optional[PredictionInterval] = None
 
 
 class PredictionData(BaseModel):
-    value: float
+    value: Optional[float]
     unit: Literal["points", "goals"]
     line: float
     recommendation: Recommendation
@@ -197,8 +197,8 @@ def construir_contrato(
     if level == "A" and has_critical_warning:
         raise QualityCoherenceError("Nivel A no puede coexistir con warning crítico")
 
-    base_conf = float(prediccion.get("confidence_numeric", 50.0))
-    conf_level, conf_numeric = _apply_quality_aware_confidence(base_conf, level)
+    base_conf = prediccion.get("confidence_numeric")
+    conf_level, conf_numeric = ("unknown", None) if base_conf is None else _apply_quality_aware_confidence(float(base_conf), level)
 
     warnings: List[ExplanationWarning] = [
         ExplanationWarning(
@@ -271,14 +271,14 @@ def construir_contrato(
             league=prediccion["league"],
         ),
         prediction=PredictionData(
-            value=float(prediccion["value"]),
+            value=None if prediccion.get("value") is None else float(prediccion["value"]),
             unit=prediccion["unit"],
             line=float(prediccion["line"]),
             recommendation=prediccion["recommendation"],
             confidence=PredictionConfidence(
                 level=conf_level,
                 numeric=conf_numeric,
-                interval=PredictionInterval(
+                interval=None if prediccion.get("interval_lower") is None or prediccion.get("interval_upper") is None else PredictionInterval(
                     lower=float(prediccion["interval_lower"]),
                     upper=float(prediccion["interval_upper"]),
                 ),

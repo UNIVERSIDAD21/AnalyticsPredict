@@ -2,7 +2,7 @@ export type Sport = 'NBA' | 'FOOTBALL';
 export type MarketType = 'over_under';
 export type PredictionUnit = 'points' | 'goals';
 export type Recommendation = 'over' | 'under' | 'skip';
-export type ConfidenceLevel = 'high' | 'medium' | 'low';
+export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
 export type QualityLevel = 'A' | 'B' | 'C';
 
 export type QualityFlagType =
@@ -34,12 +34,12 @@ export interface PredictionInterval {
 
 export interface PredictionConfidence {
   level: ConfidenceLevel;
-  numeric: number; // 0..100
-  interval: PredictionInterval;
+  numeric: number | null; // 0..100; ausente no equivale a cero.
+  interval: PredictionInterval | null;
 }
 
 export interface PredictionPayload {
-  value: number;
+  value: number | null;
   unit: PredictionUnit;
   line: number;
   recommendation: Recommendation;

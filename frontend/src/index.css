@@ -1,6 +1,20 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+:root {
+  --ap-fondo: #11151c; --ap-superficie: #191f29; --ap-elevado: #242e3d;
+  --ap-texto: #f0f3f8; --ap-secundario: #b5bfce; --ap-terciario: #a1aec1;
+  --ap-acento: #76c9bf; --ap-borde: #3b485b; --ap-peligro: #ff8b9d; --ap-aviso: #f5d278; --ap-exito: #8ad7ac;
+  color-scheme: dark;
+}
+:root[data-tema="claro"] {
+  --ap-fondo: #f3f5f7; --ap-superficie: #ffffff; --ap-elevado: #e8edf2;
+  --ap-texto: #192536; --ap-secundario: #43556d; --ap-terciario: #52627a;
+  --ap-acento: #11675e; --ap-borde: #bbc7d3; --ap-peligro: #b52b46; --ap-aviso: #765000; --ap-exito: #23683e;
+  color-scheme: light;
+}
+:root[data-texto="grande"] { font-size: 18px; }
+
 /* ══════════════════════════════════════════════════════════════
    ESTILOS BASE - TEMA FUTURISTA
    ══════════════════════════════════════════════════════════════ */
@@ -8,13 +22,12 @@
 @layer base {
   html {
     @apply scroll-smooth bg-futurista-negro;
-    color-scheme: dark;
   }
 
   body {
     @apply bg-futurista-negro text-texto-principal antialiased font-principal;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background: linear-gradient(135deg, #0a0a0f 0%, #0d1b2a 50%, #1b263b 100%);
+    background: var(--ap-fondo);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -300,11 +313,9 @@
 
 @utility tarjeta {
     @apply rounded-xl p-6;
-    background: linear-gradient(135deg, rgba(27, 38, 59, 0.6) 0%, rgba(13, 27, 42, 0.8) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 245, 255, 0.1);
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.05), inset 0 0 60px rgba(0, 245, 255, 0.02);
+    background: var(--ap-superficie);
+    border: 1px solid var(--ap-borde);
+    box-shadow: 0 2px 8px #00000008;
 
 }
 
@@ -312,12 +323,37 @@
     @apply w-full px-4 py-3 rounded-lg
            text-texto-principal placeholder-texto-terciario
            transition-all duration-300;
-    background: rgba(13, 27, 42, 0.8);
-    border: 1px solid rgba(0, 245, 255, 0.2);
+    background: var(--ap-superficie);
+    border: 1px solid var(--ap-borde);
 
 }
 
 @utility insignia {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
 
+}
+
+/* Escritorio anal?tico: sobrio, accesible y utilizable sin fuentes remotas. */
+body { font-variant-numeric: tabular-nums; }
+h1, h2, h3, .font-futurista { letter-spacing: -.015em; text-transform: none; }
+.boton-primario { background: var(--ap-acento); color: var(--ap-fondo); box-shadow: none; text-transform: none; letter-spacing: 0; }
+.boton-secundario { color: var(--ap-acento); border-color: var(--ap-borde); }
+.boton-primario:hover:not(:disabled), .boton-secundario:hover:not(:disabled), .tarjeta-hover:hover { box-shadow: none; transform: none; }
+.input-base:focus { border-color: var(--ap-acento); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ap-acento) 25%, transparent); }
+:focus-visible { outline: 3px solid var(--ap-acento); outline-offset: 3px; }
+.saltar-contenido { position: fixed; left: 1rem; top: -10rem; z-index: 100; background: var(--ap-superficie); padding: 1rem; border: 2px solid var(--ap-acento); }
+.saltar-contenido:focus { top: 1rem; }
+.ficha-hoy { display: grid; gap: .6rem; padding: 1rem; border: 1px solid var(--ap-borde); border-radius: .8rem; }
+.ficha-hoy:hover { background: var(--ap-elevado); }
+[data-densidad="compacta"] .tarjeta { padding: 1rem; }
+::selection { background: var(--ap-acento); color: var(--ap-fondo); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media print {
+  :root { --ap-texto: #000; --ap-secundario: #333; --ap-terciario: #444; --ap-fondo: #fff; --ap-superficie: #fff; --ap-borde: #bbb; color-scheme: light; }
+  header, footer, .herramientas-consulta, .preferencias-visuales, form { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .tarjeta { box-shadow: none !important; break-inside: avoid; }
+  details { display: block; } details > * { display: block !important; }
 }

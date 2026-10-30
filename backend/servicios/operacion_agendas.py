@@ -1,7 +1,6 @@
 """Operación local: exclusión mutua, respaldos y evidencia sin secretos."""
 from contextlib import contextmanager
 from datetime import datetime, timezone
-import fcntl
 import hashlib
 import json
 import os
@@ -12,6 +11,7 @@ import subprocess
 from psycopg.conninfo import conninfo_to_dict
 
 from servicios.transporte_agenda import guardar
+from servicios.locks_archivo import adquirir
 
 
 def directorio_estado():
@@ -24,7 +24,7 @@ def exclusion(raiz):
     fd=os.open(raiz/'ejecucion.lock',os.O_CREAT|os.O_RDWR,0o600)
     try:
         try:
-            fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            adquirir(fd)
         except BlockingIOError as exc:
             raise RuntimeError('Ya hay una sincronización en curso') from exc
         yield
@@ -52,7 +52,7 @@ def respaldar(url, destino):
         # No expone stderr de libpq, que podría incluir configuración sensible.
         raise RuntimeError('Falló pg_dump; no se aplica el lote')
     destino.chmod(0o600)
-    restore=os.environ.get('AP_PG_RESTORE') or str(Path(binary).with_name('pg_restore'))
+    restore=os.environ.get('AP_PG_RESTORE') or str(Path(binary).with_name('pg_restore.exe' if os.name == 'nt' else 'pg_restore'))
     check=subprocess.run([restore,'--list',str(destino)],env=env,capture_output=True,timeout=30,check=False)
     if check.returncode:
         raise RuntimeError('Archivo de respaldo inválido; no se aplica el lote')
@@ -67,12 +67,12 @@ def estado_local():
     p=directorio_estado()/'estado.json'
     if not p.exists():
         return {'estado':'SIN_SINCRONIZAR','detalle':'Consultar la agenda sólo lee la BD. No se verificó aún este mecanismo de fuentes.'}
-    estado=json.loads(p.read_text())
+    estado=json.loads(p.read_text(encoding="utf-8"))
     if estado.get('estado')=='EN_CURSO':
         fd=os.open(p.parent/'ejecucion.lock',os.O_CREAT|os.O_RDWR,0o600)
         try:
             try:
-                fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                adquirir(fd)
                 estado={**estado,'estado':'INTERRUMPIDA','detalle':'La ejecución no está activa. Puede reanudarse conservando caché y datos previos; revisar recibos si alcanzó el commit.'}
             except BlockingIOError:
                 pass

@@ -107,7 +107,7 @@ def consultar(desde=None, *, sesion=None, pausa=1.5, cache=None):
         try:
             if cache and (Path(cache)/(str(dia)+'.json')).exists():
                 path = Path(cache)/(str(dia)+'.json')
-                j = json.loads(path.read_text())
+                j = json.loads(path.read_text(encoding="utf-8"))
                 fuentes.append({'url':url,'http':200,'sha256':__import__('hashlib').sha256(path.read_bytes()).hexdigest(),'estado':'CACHE_OBSERVADA'})
             else:
                 j = obtener_json(url, s, fuentes)

@@ -174,7 +174,7 @@ def test_cli_declaracion_no_conecta_db_y_no_sobrescribe(tmp_path, monkeypatch):
     args = ['declarar', '--salida', str(path), '--inicio', inicio.isoformat(),
             '--fin', (inicio + timedelta(days=40)).isoformat()]
     assert main(args) == 0
-    ml.verificar(json.loads(path.read_text()))
+    ml.verificar(json.loads(path.read_text(encoding="utf-8")))
     with pytest.raises(FileExistsError):
         main(args)
     with pytest.raises(Exception, match='fuera del repositorio'):

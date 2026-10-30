@@ -110,7 +110,7 @@ class PeticionAnalisis(BaseModel):
     )
     temporadas: Optional[List[str]] = Field(
         None,
-        description="Lista opcional de temporadas (IDs) para filtrar el análisis",
+        description="Alcance de reconstrucción histórica NBA. La consulta del modelo publicado no admite temporadas ni ejecuta entrenamiento; devuelve 422 si se envían.",
     )
     config_sizing: Optional[ConfiguracionSizingPeticion] = Field(
         None,

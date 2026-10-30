@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
-from functools import lru_cache
 from typing import Dict, Any, Optional, Tuple
 
 from psycopg.rows import dict_row
@@ -137,7 +136,6 @@ def _recolectar_contexto_ids(
     )
 
 
-@lru_cache(maxsize=256)
 def _contexto_cache(
     equipo_id: str,
     rival_id: str,
@@ -156,7 +154,11 @@ def recolectar_contexto(
     limite_h2h: int = 10,
     ultimos_n_forma: int = 10,
 ) -> ContextoCompleto:
-    """Recolecta contexto del partido con cache simple."""
+    """Consulta el alcance actual. Sin caché persistente sin revisión de dataset.
+
+    No existe una revisión común acreditada para todas las ingestas. Releer evita
+    servir contexto viejo tras cambiar datos; no confunde TTL con invalidación.
+    """
     pool = obtener_pool()
     equipo_id, _ = _obtener_equipo_id(pool, equipo)
     rival_id, _ = _obtener_equipo_id(pool, rival)

@@ -27,7 +27,7 @@ export function PaginaOperacion() {
     finally { setCargando(false); }
   };
   useEffect(() => { void actualizar(); }, []);
-  return <><Encabezado /><main className="contenedor py-8 space-y-5 text-texto-principal">
+  return <><Encabezado /><main id="contenido-principal" tabIndex={-1} className="contenedor py-8 space-y-5 text-texto-principal">
     <h1 className="text-2xl font-bold">Estado del sistema</h1>
     <p className="text-amber-300">Uso exploratorio · rendimiento no certificado</p>
     <button type="button" className="border rounded px-4 py-2" disabled={cargando} onClick={() => void actualizar()}>{cargando ? 'Consultando…' : 'Actualizar estado'}</button>

@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## Base e interfaz para uso local — 2026-10-30
+
+- Compatibilidad Windows de locks, permisos y textos UTF-8, conservando hashes.
+- Consulta NBA publicada sin entrenamiento implícito por temporadas; explicaciones
+  sin contribuciones/muestras/intervalos ficticios y contexto sin LRU obsoleto.
+- Hoy, ficha baloncesto progresiva, cuaderno local cross-liga, snapshots JSON/CSV,
+  temas/fuentes locales/accesibilidad y laboratorio de publicaciones/desarrollo.
+- Consulta base NBA sin BD ni registro y comparador de la misma distribución;
+  lanzador propio que no libera puertos ni detiene procesos ajenos.
+- CI Windows y pruebas nativas/PG sintético. No activar modelos ni calibradores,
+  ejecutar ingestas, completar migración ni declarar finalizadas las30 mejoras.
+  [Uso, pruebas y pendientes](docs/reactivacion_single_user/MEJORAS_USO_LOCAL_2026-10-30.md).
+
 ## Scraper WNBA robusto — 2026-10-24
 
 - Incorporar CLI WNBA aislada: plan sin red, fetch a archivos, replay offline,

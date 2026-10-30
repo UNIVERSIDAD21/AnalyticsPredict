@@ -13,13 +13,13 @@ describe('navegación deportiva', () => {
     render(<ProveedorDeporte><MemoryRouter initialEntries={['/futbol/partidos/partido-1']}>
       <Encabezado /><Ruta />
     </MemoryRouter></ProveedorDeporte>);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a FÚTBOL' })).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(screen.getByText('Deporte actual: FUTBOL')).toBeInTheDocument());
     expect(screen.getByTestId('ruta')).toHaveTextContent('/futbol/partidos/partido-1');
     fireEvent.click(screen.getByRole('button', { name: 'Baloncesto' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a BALONCESTO' })).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Baloncesto' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.getByTestId('ruta')).toHaveTextContent('/baloncesto?liga=nba');
     fireEvent.click(screen.getByRole('button', { name: 'Fútbol' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Cambiar a FÚTBOL' })).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Fútbol' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.getByTestId('ruta')).toHaveTextContent('/futbol');
   });
 });

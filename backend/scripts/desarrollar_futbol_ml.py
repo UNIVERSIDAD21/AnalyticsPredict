@@ -32,7 +32,7 @@ def ruta_externa(valor):
 
 
 def cargar_politica(path):
-    declaracion = json.loads(path.read_text())
+    declaracion = json.loads(path.read_text(encoding="utf-8"))
     verificar(declaracion)
     if declaracion['politica'] != PoliticaForma().to_dict():
         raise ValueError('Política distinta de la V4 predeclarada')
@@ -154,7 +154,7 @@ def main(argv=None):
               'abstenciones_futuras': len(cohorte['familias'][k]['abstenciones'])}
               for k, v in informe['familias'].items()}, ensure_ascii=False))
     else:
-        cohorte = json.loads(args.cohorte.read_text())
+        cohorte = json.loads(args.cohorte.read_text(encoding="utf-8"))
         snapshot, partidos = cargar_partidos(args.snapshot)
         observado = exigir_utc(datetime.fromisoformat(snapshot['observado_en']))
         if observado > ahora:

@@ -35,6 +35,7 @@ from api.rutas_explicabilidad import router as router_explicabilidad
 from api.rutas_match_analysis_nba import router as router_match_analysis_nba
 from api.rutas_euroliga import router as router_euroliga
 from api.rutas_wnba import router as router_wnba
+from api.rutas_local import router as router_local
 
 # Routers de Fútbol
 from api.rutas_competiciones_futbol import router as router_competiciones_futbol
@@ -151,6 +152,7 @@ de Over/Under para mercados por cuarto y juego completo.
     },
     lifespan=ciclo_de_vida,
 )
+app.include_router(router_local)
 
 
 def _registrar_fallo_conexion(request: Request, exc: Exception) -> None:

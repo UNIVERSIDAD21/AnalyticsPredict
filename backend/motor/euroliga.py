@@ -262,7 +262,7 @@ def cargar(ruta: Path | None = None) -> dict:
     origen = ruta or ruta_activa()
     if not origen.is_file():
         raise RuntimeError("No hay modelo Euroliga publicado; requiere entrenamiento explícito offline")
-    modelo = json.loads(origen.read_text())
+    modelo = json.loads(origen.read_text(encoding="utf-8"))
     validar_modelo(modelo)
     return modelo
 

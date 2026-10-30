@@ -1,0 +1,20 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { PaginaHoy } from './PaginaHoy';
+import { consultarAgendaBaloncesto } from '../../servicios/agendaBaloncesto';
+import { listarAgenda } from '../../servicios/futbol/catalogo';
+vi.mock('../organismos/Encabezado', () => ({ Encabezado: () => <header>AnalyticsPredict</header> }));
+vi.mock('../../servicios/agendaBaloncesto', () => ({ consultarAgendaBaloncesto: vi.fn() }));
+vi.mock('../../servicios/futbol/catalogo', () => ({ listarAgenda: vi.fn() }));
+beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); });
+it('conserva el dominio disponible y no transforma un error en cero partidos', async () => {
+  vi.mocked(consultarAgendaBaloncesto).mockRejectedValue(new Error('BD no disponible'));
+  vi.mocked(listarAgenda).mockResolvedValue({ fecha: '2026-01-01', total: 0, consultadoEn: '2026-01-01T00:00:00Z', datosActualizadosEn: null, partidos: [] });
+  render(<MemoryRouter><PaginaHoy /></MemoryRouter>);
+  await screen.findByText('Partidos: N/D. BD no disponible');
+  expect(screen.getByText(/0 registrados · Fuente actualizada: N\/D/)).toBeInTheDocument();
+  expect(screen.queryByText(/0 partidos registrados/)).toBeNull();
+  fireEvent.change(screen.getByLabelText('Liga'), { target: { value: 'wnba' } });
+  await waitFor(() => expect(consultarAgendaBaloncesto).toHaveBeenLastCalledWith(expect.objectContaining({ liga: 'wnba' }), expect.any(AbortSignal)));
+});
