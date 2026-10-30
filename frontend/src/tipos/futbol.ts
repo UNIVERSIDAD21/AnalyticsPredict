@@ -90,6 +90,7 @@ export type EstadoPartido =
  */
 export interface PartidoFutbolResumen {
   precisionFecha?: 'HORA' | 'DIA';
+  fechaFuente?: string | null;
   reconstruccion?: boolean;
   temporadaId?: string;
   id: string;

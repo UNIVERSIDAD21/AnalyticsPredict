@@ -183,6 +183,7 @@ class PartidoAgenda(PartidoResumen):
     analizable: bool
     actualizado_en: Optional[datetime] = None
     precision_fecha: Literal['HORA','DIA'] = 'HORA'
+    fecha_fuente: Optional[date] = None
     fuente_verificada_en: Optional[datetime] = None
     reconstruccion: bool = False
 

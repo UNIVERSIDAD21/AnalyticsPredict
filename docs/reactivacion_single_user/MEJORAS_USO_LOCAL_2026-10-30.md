@@ -102,7 +102,7 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L17 | Implementada | Base visual sobria y preferencias; quedan componentes legados con colores propios |
 | L18 | Implementada | Fichas baloncesto/fútbol progresivas; agenda y seguimiento separados de configuración |
 | L19 | Implementada | Favoritos de consultas, equipos, ligas/competiciones; notas/etiquetas y almacenamiento aislado |
-| L20 | Parcial | NBA base continua y Euro discretizada sin API; WNBA Sobol/OT y fútbol no se aproximan como normales |
+| L20 | Implementada | NBA base/Euro y PMF WNBA de la misma corrida; fútbol solo líneas ya calculadas. Copias sin contrato N/D |
 | L21 | Implementada | Snapshots/exportación/reapertura; no importador de respaldos del cuaderno |
 | L22 | Implementada | NBA local real, corte visible y bloqueo explícito de BD; no offline con contexto |
 | L23 | Implementada | Error no equivale a cero; fuentes ausentes N/D en superficies intervenidas |
@@ -114,9 +114,10 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L29 | Pendiente de diseño/datos | Live por reloj/posesiones exige fuente temporal y evaluación nuevas |
 | L30 | Pendiente de fuentes | Lesiones/alineaciones/xG con cobertura y disponibilidad acreditadas |
 
-**15 implementadas,6 parciales,9 pendientes/bloqueadas.** El catálogo permanece
-abierto. No se presentan las seis parciales como funcionalidades completas.
+**16 implementadas,5 parciales,9 pendientes/bloqueadas.** El catálogo permanece
+abierto. No se presentan las cinco parciales como funcionalidades completas.
 [Continuación, experimento WNBA y límites](CONTINUACION_MEJORAS_2026-10-30.md).
+[Comparadores por dominio y fecha nominal](COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
 
 ## Protocolo de continuación científica
 

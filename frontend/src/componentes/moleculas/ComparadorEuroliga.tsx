@@ -4,7 +4,7 @@ import { compararNormalDiscreta } from '../../servicios/consultaLocal';
 export function ComparadorEuroliga({ fuente }: { fuente: ResultadoEuro }) {
   const [linea, setLinea] = useState(String(fuente.linea));
   const p = fuente.predicciones[fuente.mercado];
-  const r = p && compararNormalDiscreta(p.media_total, p.desviacion_total, Number(linea));
+  const r = p && compararNormalDiscreta(p.media_total, p.desviacion_total, linea.trim() ? Number(linea) : Number.NaN);
   const porcentaje = (v: number) => `${(100 * v).toFixed(2)}%`;
   return <details className="my-4 border-t border-white/10 pt-3"><summary className="cursor-pointer text-sm text-neon-cyan">Comparar líneas · misma distribución Euroliga</summary><div className="space-y-3 pt-3 text-sm">
     <p>{fuente.mercado} · {fuente.modo} · 40 minutos sin OT. Se conservan los parámetros de esta corrida, incluido su escenario contextual cuando se aplicó.</p>

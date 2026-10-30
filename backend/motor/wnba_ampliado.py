@@ -67,6 +67,21 @@ def masa(valores, linea):
             "push": float(np.mean(valores == linea))}
 
 
+def conservar_masa(valores, mercado, incluye_ot):
+    """Histograma exacto de las mismas muestras; no otra integración ni ajuste."""
+    if valores is None:
+        return None
+    valores = np.asarray(valores)
+    soporte, frecuencias = np.unique(valores, return_counts=True)
+    exigir(np.isfinite(soporte).all() and (soporte >= 0).all() and (soporte == np.rint(soporte)).all(),
+           "Masa WNBA fuera de soporte")
+    r = {"formato": "pmf-wnba-sobol-v1", "mercado": mercado,
+         "incluye_ot": mercado == "COMPLETO" and incluye_ot, "simulaciones": len(valores),
+         "valores": soporte.astype(int).tolist(), "frecuencias": frecuencias.tolist(),
+         "probabilidad_tipo": "SIN_CALIBRAR"}
+    return {**r, "sha256": huella(r)}
+
+
 def ganador(local, visita):
     return {"local": float(np.mean(local > visita)),
             "empate": float(np.mean(local == visita)),
@@ -127,6 +142,7 @@ def predecir_ampliado(m, local, visita, mercado, linea, parciales, ot, potencia=
         vals = hf+af if key == "COMPLETO" else muestras[:, int(key[1])-1]+muestras[:, int(key[1])+3]
         evaluacion[key] = {str(l):masa(vals,l) for l in corte_lineas}
     return {"predicciones": predictions, "probabilidades": masa(objetivos, linea) if objetivos is not None else dict.fromkeys(("over","under","push")),
+            "distribucion_comparable": conservar_masa(objetivos, mercado, incluye_ot),
             "mercados_no_disponibles": no_disponibles, "politica_muestras": POLITICA_MUESTRAS,
             **({"_muestras":{**{f"Q{i+1}":muestras[:,i]+muestras[:,i+4] for i in range(4)},**({"COMPLETO":hf+af} if total_disponible else {})}} if devolver_muestras else {}),
             **({"evaluacion_lineas":evaluacion} if lineas else {}),

@@ -350,6 +350,15 @@ export function adaptarAnalisisFutbolAResultadoAnalisis(
       fecha_corte: analisis.fechaCorte,
       consulta_exploratoria: analisis.modo === 'HISTORICO_RECONSTRUIDO' || analisis.modeloVersion.startsWith('heuristico-americas::'),
       mercado: analisis.objetivo?.mercado ?? 'COMPLETO',
+      comparacion_guardada: {
+        formato: 'lineas-originales-futbol-v1', mercado: analisis.objetivo?.mercado,
+        lineas: (mercadoMain?.probabilidades ?? []).map(l => {
+          const p = resolverProbabilidadFutbol(l);
+          return { linea: l.linea, over: numeroNullable(p.over), under: numeroNullable(p.under),
+            push: Number.isInteger(l.linea) ? null : (numeroNullable(p.over) !== null && numeroNullable(p.under) !== null ? 0 : null),
+            fuente: p.fuente, calibrador: p.fuente === 'CALIBRADA' ? l.calibradorId ?? null : null };
+        }),
+      },
       policy_gate: 'POLICY_GATE_FUTBOL_MERCADOS_BLOQUEADOS',
       modelo_version: analisis.modeloVersion,
       estado_cuotas: estadoCuotas.estado,

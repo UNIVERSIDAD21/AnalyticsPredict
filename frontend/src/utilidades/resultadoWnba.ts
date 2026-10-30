@@ -82,6 +82,7 @@ export function adaptarResultadoWnba(r: ResultadoWnba, lado: LadoApuesta): Resul
     metadata:{deporte:'baloncesto',liga:'wnba',mercado:r.mercado,modo_analisis:r.modo==='HISTORICO'?'HISTORICO_RECONSTRUIDO':live?r.modo:'PREPARTIDO',modelo_version:r.modelo_version,
       analisis_id:r.analisis_id,fixture_revision_sha256:r.fixture_revision_sha256,partido_id:r.partido_id,fecha_partido:r.fecha_partido,probabilidad_push:r.probabilidades.push,
       dataset_sha256:r.dataset_sha256,corte_exclusivo:r.corte_exclusivo,ultimo_dato_utilizado:r.ultimo_dato_utilizado,probabilidad_tipo:r.calibracion,
+      comparacion_guardada:r.distribucion_comparable,
       duracion_regulacion:40,incluye_ot:r.incluye_ot,incluye_ot_mercado:r.mercado==='COMPLETO'&&r.incluye_ot,metodo_live:r.condicionamiento?.metodo,
       mercados_no_disponibles:r.mercados_no_disponibles,politica_muestras:r.politica_muestras,
       objetivo:{trazabilidad:{estado_operativo_mercado:'NO_CERTIFICADO',motivos_estado_operativo:['WNBA · SIN_CALIBRAR',`Alcance ${r.temporadas_utilizadas.join(', ')} · ${r.fases_utilizadas.join(', ')}`,`Corte exclusivo ${r.corte_exclusivo}`,`Modelo ${r.modelo_version}`]}}},

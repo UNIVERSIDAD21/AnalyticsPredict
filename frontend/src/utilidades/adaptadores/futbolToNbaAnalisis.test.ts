@@ -62,6 +62,18 @@ const contexto: { h2h: PartidoFutbolEstadistico[]; historialLocal: PartidoFutbol
 };
 
 describe('futbolToNbaAnalisis market-aware contexto', () => {
+  it('conserva solo líneas originales y no inventa push entero ni calibrador', () => {
+    const a = { ...baseAnalisis, mercadosGoles: { GOLES_FT: { ...baseAnalisis.mercadosGoles.GOLES_FT,
+      probabilidades: [
+        { linea: 2, overRaw: .4, underRaw: .6, overCalibrada: null, underCalibrada: null },
+        { linea: 2.5, overRaw: .3, underRaw: .7, overCalibrada: .35, underCalibrada: .65, calibradorId: 'identificado-no-certificado' },
+      ] } } };
+    const r = adaptarAnalisisFutbolAResultadoAnalisis(a);
+    expect(r.metadata.comparacion_guardada).toEqual({ formato: 'lineas-originales-futbol-v1', mercado: 'GOLES_FT', lineas: [
+      { linea: 2, over: .4, under: .6, push: null, fuente: 'RAW', calibrador: null },
+      { linea: 2.5, over: .35, under: .65, push: 0, fuente: 'CALIBRADA', calibrador: 'identificado-no-certificado' },
+    ] });
+  });
   it('conserva modo, kickoff y corte sin presentar reconstrucciones como prepartido', () => {
     const analisis = { ...baseAnalisis, modo: 'HISTORICO_RECONSTRUIDO' as const,
       fechaCorte: '2026-04-03T10:00:00Z', modeloVersion: 'heuristico-americas::1.0.0' };

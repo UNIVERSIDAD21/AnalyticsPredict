@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## Comparación reproducible y fechas nominales — 2026-10-30
+
+- Retener masa de la misma integración WNBA para comparar enteras/.5 y push sin
+  repetir análisis; fútbol conserva líneas originales y ausencias, sin interpolar.
+- Mostrar día nominal de fuente y hora pendiente en fútbol cuando falta kickoff.
+- Validar frecuencias/corrupción, contratos por liga, cortes/OT y precisión temporal.
+  No modifica modelos activos, probabilidades originales, gates ni BD de producto.
+  [Detalle](docs/reactivacion_single_user/COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
+
 ## Favoritos, fichas y evaluación offline — 2026-10-30
 
 - Favoritos locales de equipos/ligas/competiciones, sin confundir Bitácora o copias.

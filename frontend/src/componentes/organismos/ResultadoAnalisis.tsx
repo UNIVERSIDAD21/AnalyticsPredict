@@ -4,6 +4,7 @@ import { HerramientasConsulta } from '../moleculas/HerramientasConsulta';
 import { TrazabilidadConsulta } from '../moleculas/TrazabilidadConsulta';
 import { ComparadorEuroliga } from '../moleculas/ComparadorEuroliga';
 import { alcanceConsulta } from '../../utilidades/alcanceConsulta';
+import { ComparadorGuardado } from '../moleculas/ComparadorGuardado';
 // hace parte del diseño de analisis
 /**
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
@@ -318,6 +319,7 @@ export function ResultadoAnalisis({
         <HerramientasConsulta titulo={`${resultado.equipo_nombre_completo} — ${resultado.rival_nombre_completo} · ${mercadoCanon ?? ''} · ${linea}`} liga={esEuro ? 'euroliga' : esWnba ? 'wnba' : esFutbol ? 'futbol' : 'nba'} snapshot={{ resultado, advertencias, seleccionUsuario, fuenteEuroliga }} />
         <TrazabilidadConsulta resultado={resultado} />
         {fuenteEuroliga && <ComparadorEuroliga key={fuenteEuroliga.analisis_id} fuente={fuenteEuroliga} />}
+        {(esWnba || esFutbol) && <ComparadorGuardado key={String(resultado.metadata.analisis_id ?? resultado.fecha_analisis)} datos={resultado.metadata.comparacion_guardada} mercado={mercadoCanon} original={linea} />}
         {/* Línea decorativa superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan" />
 

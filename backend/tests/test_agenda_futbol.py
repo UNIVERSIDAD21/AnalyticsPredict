@@ -107,3 +107,17 @@ def test_hora_retirada_reconstruye_sin_cambiar_fecha_catalogo(api_sintetica,monk
     assert r.json()['modo']=='HISTORICO_RECONSTRUIDO' and p['fecha_partido']==original
     assert r.json()['objetivo']['trazabilidad']['registro_predicciones'] is False
     assert not registros
+
+
+def test_agenda_conserva_dia_nominal_fuente_sin_hora_inventada(agenda_sql,db_local):
+    client,_=agenda_sql
+    c=db_local
+    c.execute('CREATE TABLE horarios_futbol (partido_id uuid PRIMARY KEY, precision_fecha text, fecha_fuente date, observado_en timestamptz, estado text, actualizado_en timestamptz)')
+    p=c.execute('SELECT id,fecha_partido FROM partidos_futbol ORDER BY fecha_partido LIMIT 1').fetchone()
+    c.execute("INSERT INTO horarios_futbol VALUES (%s,'DIA','2020-03-10',CURRENT_TIMESTAMP,'PROGRAMADO',CURRENT_TIMESTAMP)",[p['id']])
+    r=client.get('/api/futbol/partidos/agenda?fecha=2020-03-10')
+    assert r.status_code==200,r.text
+    conservado=next(x for x in r.json()['partidos'] if x['id']==str(p['id']))
+    assert conservado['precision_fecha']=='DIA' and conservado['fecha_fuente']=='2020-03-10'
+    assert conservado['reconstruccion'] is True
+    assert datetime.fromisoformat(conservado['fecha_partido'])==p['fecha_partido']

@@ -86,6 +86,7 @@ export interface EvaluacionWnba {
   };
 }
 export interface ResultadoWnba {
+  distribucion_comparable?: import('./comparacionGuardada').MasaWnba | null;
   analisis_id: string;
   dominio: "wnba";
   equipo_local: string;

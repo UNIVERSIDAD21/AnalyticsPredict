@@ -495,7 +495,7 @@ def agenda_partidos(
         cursor.execute("SELECT to_regclass('horarios_futbol') tabla")
         metadata = cursor.fetchone()['tabla'] is not None
         horario_join = 'LEFT JOIN horarios_futbol hf ON hf.partido_id=pf.id' if metadata else ''
-        horario_select = "COALESCE(hf.precision_fecha,'HORA') precision_fecha,hf.observado_en fuente_verificada_en,hf.estado estado_fuente" if metadata else "'HORA' precision_fecha,NULL::timestamptz fuente_verificada_en,NULL::text estado_fuente"
+        horario_select = "COALESCE(hf.precision_fecha,'HORA') precision_fecha,hf.fecha_fuente,hf.observado_en fuente_verificada_en,hf.estado estado_fuente" if metadata else "'HORA' precision_fecha,NULL::date fecha_fuente,NULL::timestamptz fuente_verificada_en,NULL::text estado_fuente"
         # Fechas sin hora: día nominal de fuente, no conversión COT inventada.
         if metadata:
             filtros[1:3] = ["((hf.precision_fecha='DIA' AND hf.fecha_fuente=%s) OR (COALESCE(hf.precision_fecha,'HORA')='HORA' AND pf.fecha_partido>=%s AND pf.fecha_partido<%s))"]

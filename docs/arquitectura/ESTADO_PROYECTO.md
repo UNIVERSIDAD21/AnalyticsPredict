@@ -1,5 +1,13 @@
 # Estado vigente — AnalyticsPredict
 
+## Comparadores y precisión temporal — 2026-10-30
+
+16 implementadas,5 parciales,9 pendientes. Comparadores con evidencia de la misma
+corrida por dominio; PMF WNBA conservada sin reintegrar y tabla original fútbol.
+Fecha nominal de fuente sin kickoff ficticio en ficha.388pruebas backend PG18
+sintético aprobadas/0omitidas, sin modelos/gates/BD de producto modificados.
+[Alcance y límites](../reactivacion_single_user/COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
+
 ## Continuación del catálogo local — 2026-10-30
 
 15 mejoras implementadas,6 parciales,9 pendientes: favoritos personales de equipos

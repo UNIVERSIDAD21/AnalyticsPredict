@@ -1,5 +1,15 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Comparación de la misma corrida y fechas nominales — 2026-10-30
+
+WNBA conserva su masa discreta Sobol/OT para comparar sin repetir análisis;
+fútbol conserva las líneas ya calculadas, fuentes y ausencias. No se infieren
+distribuciones desde parámetros redondeados. La ficha fútbol distingue día de
+fuente y kickoff: con precisiónDIA no muestra hora inventada.388backend con PG
+sintético aprobadas/0omitidas.16mejoras implementadas,5parciales,9pendientes.
+Sin alterar probabilidades originales, modelos activos, gates o datos de producto.
+[Contratos y validación](reactivacion_single_user/COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
+
 ## Continuación del catálogo local — 2026-10-30
 
 Favoritos de equipos/ligas/competiciones, ficha fútbol progresiva y trazabilidad

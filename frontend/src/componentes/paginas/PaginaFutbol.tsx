@@ -15,7 +15,7 @@ import { CatalogoFutbol } from '../moleculas/CatalogoFutbol';
 import { BotonFavorito } from '../moleculas/FavoritosLocales';
 import { favoritoEquipo } from '../../servicios/favoritosLocales';
 import { HistoricoAnalisisFutbol } from '../moleculas/HistoricoAnalisisFutbol';
-import { puedeAnalizarPartido, requiereReconstruccion } from '../../utilidades/agendaFutbol';
+import { puedeAnalizarPartido, requiereReconstruccion, fechaVisiblePartido } from '../../utilidades/agendaFutbol';
 import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obtenerPartidosEquipoDetalle } from '../../servicios/futbol';
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
@@ -605,7 +605,7 @@ export function PaginaFutbol() {
                     {partidoSeleccionado.equipoLocalNombre} vs {partidoSeleccionado.equipoVisitanteNombre}
                   </p>
                   <p className="mt-1 text-xs text-texto-secundario">
-                    {partidoSeleccionado.competicionNombre} · {new Date(partidoSeleccionado.fechaPartido).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' })} COT
+                    {partidoSeleccionado.competicionNombre} · {fechaVisiblePartido(partidoSeleccionado)}
                   </p>
                   {partidoSeleccionado.estado === 'FINALIZADO' && <p className="mt-2 text-sm text-texto-principal">Resultado final: {partidoSeleccionado.golesLocal ?? 'N/D'} – {partidoSeleccionado.golesVisitante ?? 'N/D'}</p>}
                   {seleccionRetrospectiva && <p className="mt-2 text-xs leading-relaxed text-neon-cyan">Consulta con datos anteriores al inicio. {partidoSeleccionado.estado !== 'FINALIZADO' ? 'El estado y resultado del encuentro aún pueden estar pendientes de actualizar.' : 'El resultado de este partido no interviene en el cálculo.'}</p>}

@@ -65,6 +65,7 @@ def test_sin_ot_suficiente_abstiene_no_fallback(modelo,ot):
     assert r['ganador_mercado'] is None and r['ot']['media_local'] is None
     assert set(r['mercados_no_disponibles'])=={'COMPLETO'}
     assert r['incluye_ot'] and r['regulacion']['media_total']>0
+    assert r['distribucion_comparable'] is None
     # Cortes no anuncian OT: no requieren su muestra.
     assert predecir_ampliado(modelo,'h','a','COMPLETO',160,[[20,20]],{**ot,'n':0})
 
@@ -106,3 +107,21 @@ def test_determinismo_inmutabilidad_media_linea_y_ganador_del_periodo(modelo,ot)
     assert a['ganador_mercado']==a['predicciones']['Q4']['ganador']
     c=predecir_ampliado(modelo,'h','a','Q4',40,[[20,22]],ot)
     assert c['probabilidades']['push']>0
+
+
+@pytest.mark.parametrize('mercado,parciales', [('COMPLETO', []), ('COMPLETO', [[20,22]]), ('Q1', [])])
+def test_histograma_reproduce_cada_linea_sin_nuevas_muestras(modelo,ot,mercado,parciales):
+    from motor.wnba_ampliado import masa
+    r=predecir_ampliado(modelo,'h','a',mercado,160.5,parciales,ot,devolver_muestras=True,
+                        lineas={mercado:[40,40.5,160,160.5,200]})
+    d=r['distribucion_comparable']
+    assert d['incluye_ot'] is (mercado=='COMPLETO' and not parciales)
+    assert d['simulaciones']==32768 and sum(d['frecuencias'])==32768
+    assert d['sha256']==huella({k:v for k,v in d.items() if k!='sha256'})
+    v=np.asarray(d['valores']);f=np.asarray(d['frecuencias'])
+    for linea,prob in r['evaluacion_lineas'][mercado].items():
+        linea=float(linea)
+        p={'over':float(f[v>linea].sum()/d['simulaciones']),
+           'under':float(f[v<linea].sum()/d['simulaciones']),
+           'push':float(f[v==linea].sum()/d['simulaciones'])}
+        assert p==prob==masa(r['_muestras'][mercado],linea)
