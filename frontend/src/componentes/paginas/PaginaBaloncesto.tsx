@@ -50,7 +50,7 @@ export function PaginaBaloncesto() {
 
   return <div className="min-h-screen flex flex-col">
     <Encabezado />
-    <main id="contenido-principal" className="flex-1 contenedor py-6 lg:py-8 min-w-0">
+    <main id="contenido-principal" tabIndex={-1} className="flex-1 contenedor py-6 lg:py-8 min-w-0">
       {partido && <div className="flex flex-wrap justify-between gap-3 mb-5"><h1 className="text-2xl font-semibold">Ficha del partido</h1><button className="text-neon-cyan" onClick={limpiarSeleccion}>Cambiar partido</button></div>}
       <details open={!partido} className="mb-5"><summary className="text-sm text-texto-secundario cursor-pointer mb-3">{partido ? 'Ver agenda y otros encuentros' : 'Agenda de baloncesto'}</summary>
         <AgendaBaloncesto seleccionado={partido} onSeleccionar={seleccionar} onCambiar={limpiarSeleccion} />

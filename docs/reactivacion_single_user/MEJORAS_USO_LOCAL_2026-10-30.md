@@ -106,7 +106,7 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L21 | Implementada | Snapshots/exportación/reapertura; no importador de respaldos del cuaderno |
 | L22 | Implementada | NBA local real, corte visible y bloqueo explícito de BD; no offline con contexto |
 | L23 | Implementada | Error no equivale a cero; fuentes ausentes N/D en superficies intervenidas |
-| L24 | Parcial | Teclado/foco/reduced-motion y pantallas verificadas; auditoría exhaustiva pendiente |
+| L24 | Implementada | Etiquetas/errores y salto de foco verificados en36estados; no certificación WCAG de todos los estados |
 | L25 | Implementada | CI Windows, UTF-8 real y fixture futura sin fecha de caducidad fija |
 | L26 | Implementada | Relectura conservadora sin LRU; no clave de revisión inventada |
 | L27 | Parcial | Cálculo base extraído a servicio; no reescritura de rutas monolíticas |
@@ -114,10 +114,11 @@ deportiva certificada ni E2E de todas las pantallas con BD real.
 | L29 | Pendiente de diseño/datos | Live por reloj/posesiones exige fuente temporal y evaluación nuevas |
 | L30 | Pendiente de fuentes | Lesiones/alineaciones/xG con cobertura y disponibilidad acreditadas |
 
-**16 implementadas,5 parciales,9 pendientes/bloqueadas.** El catálogo permanece
-abierto. No se presentan las cinco parciales como funcionalidades completas.
+**17 implementadas,4 parciales,9 pendientes/bloqueadas.** El catálogo permanece
+abierto. No se presentan las cuatro parciales como funcionalidades completas.
 [Continuación, experimento WNBA y límites](CONTINUACION_MEJORAS_2026-10-30.md).
 [Comparadores por dominio y fecha nominal](COMPARACION_REPRODUCIBLE_Y_FECHAS_2026-10-30.md).
+[Teclado, legibilidad y alcance de revisión](ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
 
 ## Protocolo de continuación científica
 

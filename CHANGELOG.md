@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Teclado y etiquetas accesibles — 2026-10-30
+
+- Asociar campos y mensajes de error de Configuración; exponer selección de perfil.
+- Completar foco programático del salto al contenido en las cinco rutas pendientes.
+- Verificar36estados de nueve rutas con teclado y dos temas/tamaños, sin controles
+  visibles innombrados ni overflow. No declaración de conformidad WCAG global.
+  [Alcance](docs/reactivacion_single_user/ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
+
 ## Comparación reproducible y fechas nominales — 2026-10-30
 
 - Retener masa de la misma integración WNBA para comparar enteras/.5 y push sin

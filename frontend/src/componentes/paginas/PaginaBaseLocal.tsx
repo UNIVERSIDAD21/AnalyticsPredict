@@ -56,7 +56,7 @@ export function PaginaBaseLocal() {
     catch (e) { if (!c.signal.aborted) setError(extraerMensajeError(e)); }
     finally { if (!c.signal.aborted) setCargando(false); }
   };
-  return <div className="min-h-screen"><Encabezado /><main id="contenido-principal" className="contenedor py-8 space-y-6">
+  return <div className="min-h-screen"><Encabezado /><main id="contenido-principal" tabIndex={-1} className="contenedor py-8 space-y-6">
     <div><p className="text-neon-cyan text-sm">Consulta sin base de datos</p><h1 className="text-3xl font-semibold mt-2">Base local NBA</h1><p className="text-texto-secundario mt-3">Artefacto publicado, sin contexto reciente ni verificación del fixture. No registra apuestas ni predicciones.</p></div>
     {error && <div role="alert" className="tarjeta"><p>{error}</p>{!catalogo && <button type="button" className="mt-3 text-neon-cyan" onClick={() => setRevision(v => v+1)}>Reintentar catálogo local</button>}</div>}
     {cargaCatalogo && <p role="status">Cargando artefacto local…</p>}

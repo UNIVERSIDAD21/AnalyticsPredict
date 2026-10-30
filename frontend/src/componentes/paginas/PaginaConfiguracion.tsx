@@ -197,10 +197,13 @@ export function PaginaConfiguracion() {
             </label>
 
             <div>
-              <label className="text-xs uppercase tracking-widest text-texto-secundario">
+              <label htmlFor="config-bankroll" className="text-xs uppercase tracking-widest text-texto-secundario">
                 Bankroll actual (USD)
               </label>
               <input
+                id="config-bankroll"
+                aria-invalid={Boolean(errores.bankroll)}
+                aria-describedby={errores.bankroll ? 'error-config-bankroll' : undefined}
                 type="number"
                 min="0"
                 step="0.01"
@@ -213,7 +216,7 @@ export function PaginaConfiguracion() {
                 placeholder="Ej: 2500"
               />
               {errores.bankroll && (
-                <p className="mt-1 text-xs text-neon-rojo">{errores.bankroll}</p>
+                <p id="error-config-bankroll" className="mt-1 text-xs text-neon-rojo">{errores.bankroll}</p>
               )}
             </div>
 
@@ -257,6 +260,7 @@ export function PaginaConfiguracion() {
                   key={perfil}
                   type="button"
                   onClick={() => setPerfilRiesgo(perfil)}
+                  aria-pressed={perfilRiesgo === perfil}
                   className={`px-4 py-3 rounded-lg border text-xs uppercase tracking-widest ${
                     perfilRiesgo === perfil
                       ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/10'
@@ -331,10 +335,13 @@ export function PaginaConfiguracion() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs uppercase tracking-widest text-texto-secundario">
+                <label htmlFor="config-cap-apuesta" className="text-xs uppercase tracking-widest text-texto-secundario">
                   Cap por apuesta (%)
                 </label>
                 <input
+                  id="config-cap-apuesta"
+                  aria-invalid={Boolean(errores.capPorApuesta)}
+                  aria-describedby={errores.capPorApuesta ? 'error-config-cap-apuesta' : undefined}
                   type="number"
                   min="0"
                   max="100"
@@ -346,15 +353,18 @@ export function PaginaConfiguracion() {
                   } text-texto-principal focus:outline-none focus:border-neon-cyan`}
                 />
                 {errores.capPorApuesta && (
-                  <p className="mt-1 text-xs text-neon-rojo">{errores.capPorApuesta}</p>
+                  <p id="error-config-cap-apuesta" className="mt-1 text-xs text-neon-rojo">{errores.capPorApuesta}</p>
                 )}
               </div>
 
               <div>
-                <label className="text-xs uppercase tracking-widest text-texto-secundario">
+                <label htmlFor="config-cap-diario" className="text-xs uppercase tracking-widest text-texto-secundario">
                   Cap diario (%)
                 </label>
                 <input
+                  id="config-cap-diario"
+                  aria-invalid={Boolean(errores.capDiario)}
+                  aria-describedby={errores.capDiario ? 'error-config-cap-diario' : undefined}
                   type="number"
                   min="0"
                   max="100"
@@ -366,15 +376,18 @@ export function PaginaConfiguracion() {
                   } text-texto-principal focus:outline-none focus:border-neon-cyan`}
                 />
                 {errores.capDiario && (
-                  <p className="mt-1 text-xs text-neon-rojo">{errores.capDiario}</p>
+                  <p id="error-config-cap-diario" className="mt-1 text-xs text-neon-rojo">{errores.capDiario}</p>
                 )}
               </div>
 
               <div>
-                <label className="text-xs uppercase tracking-widest text-texto-secundario">
+                <label htmlFor="config-stake-minimo" className="text-xs uppercase tracking-widest text-texto-secundario">
                   Stake mínimo (USD)
                 </label>
                 <input
+                  id="config-stake-minimo"
+                  aria-invalid={Boolean(errores.stakeMinimo)}
+                  aria-describedby={errores.stakeMinimo ? 'error-config-stake-minimo' : undefined}
                   type="number"
                   min="0"
                   step="0.01"
@@ -385,7 +398,7 @@ export function PaginaConfiguracion() {
                   } text-texto-principal focus:outline-none focus:border-neon-cyan`}
                 />
                 {errores.stakeMinimo && (
-                  <p className="mt-1 text-xs text-neon-rojo">{errores.stakeMinimo}</p>
+                  <p id="error-config-stake-minimo" className="mt-1 text-xs text-neon-rojo">{errores.stakeMinimo}</p>
                 )}
               </div>
             </div>

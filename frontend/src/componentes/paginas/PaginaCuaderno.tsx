@@ -39,7 +39,7 @@ export function PaginaCuaderno() {
   let entradas: EntradaCuaderno[] = [], error = '';
   try { entradas = leerCuaderno(); } catch (e) { error = e instanceof Error ? e.message : 'No se pudo abrir el cuaderno.'; }
   const visibles = entradas.filter(e => (!liga || e.liga === liga) && (!favoritos || e.favorito) && `${e.titulo} ${e.notas} ${e.etiquetas.join(' ')}`.toLocaleLowerCase().includes(buscar.toLocaleLowerCase()));
-  return <div className="min-h-screen"><Encabezado /><main id="contenido-principal" className="contenedor py-8 space-y-6" data-revision={revision}>
+  return <div className="min-h-screen"><Encabezado /><main id="contenido-principal" tabIndex={-1} className="contenedor py-8 space-y-6" data-revision={revision}>
     <div><h1 className="text-3xl font-semibold">Mi cuaderno</h1><p className="mt-3 text-texto-secundario">Consultas, notas y etiquetas de todas las ligas. Se guardan solo en este navegador: exporta una copia para respaldarlas.</p></div>
     <PanelFavoritosLocales />
     <div className="flex flex-wrap gap-4 herramientas-consulta"><label>Buscar<input className="input-base mt-2" type="search" value={buscar} onChange={e => setBuscar(e.target.value)} /></label><label>Liga<select className="input-base mt-2" value={liga} onChange={e => setLiga(e.target.value)}><option value="">Todas</option>{['nba','euroliga','wnba','futbol'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}</select></label><label className="self-end pb-3"><input type="checkbox" checked={favoritos} onChange={e => setFavoritos(e.target.checked)} /> Solo favoritos</label><button onClick={() => descargar('cuaderno-analyticspredict.json', JSON.stringify(entradas, null, 2))}>Respaldar cuaderno JSON</button></div>

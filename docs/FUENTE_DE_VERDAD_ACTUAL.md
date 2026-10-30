@@ -1,5 +1,14 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Accesibilidad de uso local — 2026-10-30
+
+Asociados cuatro campos/errores de Configuración y completado destino de foco
+del salto al contenido en cinco rutas.36estados iniciales reales revisados con
+teclado, claro/oscuro y1366/390px:0controles sin nombre/0JS/0overflow. Revisión
+orientativa, no certificación WCAG ni cobertura de todos los estados con datos.
+17mejoras implementadas,4parciales,9pendientes; sin cambio backend/modelos/BD.
+[Alcance y evidencia](reactivacion_single_user/ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
+
 ## Comparación de la misma corrida y fechas nominales — 2026-10-30
 
 WNBA conserva su masa discreta Sobol/OT para comparar sin repetir análisis;

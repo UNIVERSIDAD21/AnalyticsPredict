@@ -1,5 +1,13 @@
 # Estado vigente — AnalyticsPredict
 
+## Teclado y nombres accesibles — 2026-10-30
+
+17implementadas,4parciales,9pendientes. Corregidas etiquetas/errores de cuatro
+campos y foco del salto al contenido en cinco rutas.36estados iniciales con
+teclado real/temas/tamaños,0controles sin nombre/0JS/0overflow. No certifica todos
+los diálogos/datos ni WCAG. Backend, modelos activos y datos no modificados.
+[Detalle](../reactivacion_single_user/ACCESIBILIDAD_USO_LOCAL_2026-10-30.md).
+
 ## Comparadores y precisión temporal — 2026-10-30
 
 16 implementadas,5 parciales,9 pendientes. Comparadores con evidencia de la misma
