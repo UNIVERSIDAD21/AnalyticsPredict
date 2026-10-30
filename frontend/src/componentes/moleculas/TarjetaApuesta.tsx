@@ -1,5 +1,5 @@
 /**
- * TarjetaApuesta.tsx — Tarjeta visual para una apuesta de bitácora
+ * TarjetaApuesta.tsx — Tarjeta visual para una apuesta de seguimiento
  */
 
 import { useState } from 'react';

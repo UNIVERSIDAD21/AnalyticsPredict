@@ -1,5 +1,5 @@
 /**
- * FiltrosApuestas.tsx — Controles de filtros para bitácora
+ * FiltrosApuestas.tsx — Controles de filtros para seguimiento
  */
 
 import { Input, Select } from '../atomos';

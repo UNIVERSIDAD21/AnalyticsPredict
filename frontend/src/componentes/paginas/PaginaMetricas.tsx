@@ -299,14 +299,14 @@ export function PaginaMetricas() {
         </div>
 
         {estadoBitacora === 'error' && errorBitacora && (
-          <MensajeError titulo="Error al cargar métricas de bitácora" mensaje={errorBitacora} />
+          <MensajeError titulo="Error al cargar métricas de seguimiento" mensaje={errorBitacora} />
         )}
 
         <div className="tarjeta p-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-futurista font-bold uppercase tracking-wider text-neon-cyan">
-                Métricas de bitácora
+                Métricas de seguimiento
               </h3>
               <p className="text-xs text-texto-terciario">
                 Resumen histórico registrado; ganancia no certificada. ROI N/D en cortes con P&amp;L incompatible.
@@ -321,7 +321,7 @@ export function PaginaMetricas() {
 
           {estadoBitacora === 'cargando' && (
             <div className="flex items-center justify-center min-h-[140px]">
-              <Spinner tamano="md" texto="Cargando métricas de bitácora..." centrado />
+              <Spinner tamano="md" texto="Cargando métricas de seguimiento..." centrado />
             </div>
           )}
 
@@ -370,7 +370,7 @@ export function PaginaMetricas() {
 
           {estadoBitacora === 'exito' && !resumenBitacora && (
             <div className="text-sm text-texto-secundario">
-              No hay métricas de bitácora disponibles para el periodo seleccionado.
+              No hay métricas de seguimiento disponibles para el periodo seleccionado.
             </div>
           )}
         </div>

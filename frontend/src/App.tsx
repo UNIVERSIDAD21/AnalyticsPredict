@@ -24,13 +24,21 @@ function RedireccionBaloncesto({ liga }: { liga: LigaBaloncesto }) {
   return <Navigate to={`/baloncesto?${params}${hash}`} replace />;
 }
 
+/** Conserva enlaces guardados, selección de entrada y fragmentos anteriores. */
+function RedireccionPersonal({ ruta }: { ruta: string }) {
+  const { search, hash } = useLocation();
+  return <Navigate to={`${ruta}${search}${hash}`} replace />;
+}
+
 export function RutasAplicacion() {
   return (
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-texto-secundario">Cargando módulo...</div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/hoy" replace />} />
           <Route path="/hoy" element={<PaginaHoy />} />
-          <Route path="/cuaderno" element={<PaginaCuaderno />} />
+          <Route path="/mis-analisis" element={<PaginaCuaderno />} />
+          <Route path="/cuaderno" element={<RedireccionPersonal ruta="/mis-analisis" />} />
+          <Route path="/mi-espacio" element={<RedireccionPersonal ruta="/mis-analisis" />} />
           <Route path="/base-local" element={<PaginaBaseLocal />} />
           <Route path="/laboratorio" element={<PaginaLaboratorio />} />
           <Route path="/centro-analitico" element={<Navigate to="/dashboard" replace />} />
@@ -39,12 +47,13 @@ export function RutasAplicacion() {
           <Route path="/baloncesto" element={<PaginaBaloncesto />} />
           <Route path="/app" element={<RedireccionBaloncesto liga="nba" />} />
           <Route path="/euroliga" element={<RedireccionBaloncesto liga="euroliga" />} />
-          <Route path="/bitacora" element={<PaginaBitacora />} />
+          <Route path="/seguimiento" element={<PaginaBitacora />} />
+          <Route path="/bitacora" element={<RedireccionPersonal ruta="/seguimiento" />} />
           <Route path="/configuracion" element={<PaginaConfiguracion />} />
           <Route path="/admin/nba-analysis" element={<PaginaAnalisisNbaAdmin />} />
           <Route path="/futbol" element={<PaginaFutbol />} />
           <Route path="/futbol/partidos/:id" element={<AnalisisPartidoFutbol />} />
-          <Route path="/futbol/bitacora" element={<Navigate to="/bitacora" replace />} />
+          <Route path="/futbol/bitacora" element={<RedireccionPersonal ruta="/seguimiento" />} />
           <Route path="/futbol/dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

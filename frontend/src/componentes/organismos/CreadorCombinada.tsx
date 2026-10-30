@@ -121,7 +121,7 @@ export function CreadorCombinada({ seleccionActual, onCreada, liga }: PropsCread
     agregarToast({
       tipo: 'success',
       titulo: 'Combinada creada',
-      mensaje: 'Tu parlay se guardó en la bitácora.',
+      mensaje: 'Tu parlay se guardó en la seguimiento.',
     });
     setSelecciones([]);
     setStake('');

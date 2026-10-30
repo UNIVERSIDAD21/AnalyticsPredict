@@ -1,10 +1,11 @@
 /**
- * PaginaBitacora.tsx — Página de bitácora
+ * PaginaBitacora.tsx — Página de seguimiento
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Encabezado, FiltrosApuestas, ListaBitacoraUnificada } from '../organismos';
+import { NavegacionPersonal } from '../moleculas/NavegacionPersonal';
 import { ModalResultado, MensajeError } from '../moleculas';
 import { Boton } from '../atomos';
 import { useBitacora } from '../../hooks';
@@ -219,6 +220,7 @@ export function PaginaBitacora() {
     <div className="min-h-screen flex flex-col">
       <Encabezado />
       <main id="contenido-principal" tabIndex={-1} className="flex-1 contenedor py-6 lg:py-8 space-y-6">
+        <NavegacionPersonal />
         {/* Botón de regresar al inicio */}
         <button
           type="button"
@@ -235,7 +237,7 @@ export function PaginaBitacora() {
         </button>
 
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-2xl font-futurista text-texto-principal">Bitácora</h2>
+          <h1 className="text-2xl font-futurista text-texto-principal">Seguimiento</h1>
           <div className="flex gap-2 flex-wrap">
             <Boton variante="secundario" disabled={resolviendo} onClick={() => void completarPendientes()}>
               {resolviendo ? 'Completando…' : 'Completar finalizadas'}
@@ -249,7 +251,7 @@ export function PaginaBitacora() {
 
         {mensajeError && (
           <MensajeError
-            titulo="Error en bitácora"
+            titulo="Error en seguimiento"
             mensaje={mensajeError}
             onCerrar={() => setMensajeError(null)}
           />

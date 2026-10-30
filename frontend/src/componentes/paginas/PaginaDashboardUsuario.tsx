@@ -23,7 +23,7 @@ export function PaginaDashboardUsuario() {
         const porDeporte = resumen.value.resumen.por_deporte;
         setSegmentos(Array.isArray(porDeporte) ? porDeporte as Segmento[] : []);
       } else {
-        setError('No se pudo cargar el resumen de la bitácora.');
+        setError('No se pudo cargar el resumen de la seguimiento.');
       }
       if (calidadFutbol.status === 'fulfilled') setCalidad(calidadFutbol.value);
       setCargando(false);
@@ -62,7 +62,7 @@ export function PaginaDashboardUsuario() {
         <div className="flex flex-wrap gap-3">
           <Boton variante="primario" onClick={() => navegar('/baloncesto')}>Análisis de baloncesto</Boton>
           <Boton variante="secundario" onClick={() => navegar('/futbol')}>Fútbol</Boton>
-          <Boton variante="secundario" onClick={() => navegar('/bitacora')}>Bitácora</Boton>
+          <Boton variante="secundario" onClick={() => navegar('/seguimiento')}>Seguimiento</Boton>
           <Boton variante="secundario" onClick={() => navegar('/admin/nba-analysis')}>Análisis NBA interno</Boton>
         </div>
       </main>

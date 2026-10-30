@@ -1,20 +1,24 @@
 import { clienteAPI } from './api';
+export type LigaBaseLocal = 'nba' | 'euroliga' | 'wnba';
+export interface EquipoBaseLocal { clave: string; nombre: string; id?: string; muestra?: number; disponible: boolean }
 export interface IdentidadLocal {
-  modelo_version: number; dataset_hash: string | null; corte_modelo: string | null;
-  modelo_generado_en: string; muestra_entrenamiento: number | null; incluye_ot: false;
+  modelo_version: number | string; dataset_hash: string | null; corte_modelo: string | null;
+  modelo_generado_en: string | null; muestra_entrenamiento: number | null; incluye_ot: false;
+  minutos_regulacion?: number; alcance?: string; ajuste_version?: string; publicacion_dataset_hash?: string;
 }
 export interface ConsultaLocal {
-  formato: 'consulta-local-v1'; analisis_id: string; liga: 'nba'; equipo_local: string; equipo_visitante: string;
+  formato: 'consulta-local-v1' | 'consulta-local-v2'; analisis_id: string; liga: LigaBaseLocal; equipo_local: string; equipo_visitante: string;
+  equipo_local_id?: string; equipo_visitante_id?: string;
   periodo: string; linea: number; generado_en: string; modo: 'BASE_LOCAL'; metadata: IdentidadLocal;
-  distribucion: { familia: 'normal_continua'; media: number; desviacion: number; origen: string; probabilidad_tipo: 'RAW' };
+  distribucion: { familia: 'normal_continua' | 'normal_discretizada'; media: number; desviacion: number; origen: string; probabilidad_tipo: 'RAW' };
   probabilidad_over: number | null; probabilidad_under: number | null; probabilidad_push: number | null;
   motivo_nd: string | null; advertencias: string[];
 }
-export async function catalogoLocal(signal: AbortSignal) {
-  return (await clienteAPI.get<{ equipos: string[]; metadata: IdentidadLocal }>('/api/local/nba/catalogo', { signal })).data;
+export async function catalogoLocal(signal: AbortSignal, liga: LigaBaseLocal = 'nba') {
+  return (await clienteAPI.get<{ equipos: (string | EquipoBaseLocal)[]; metadata: IdentidadLocal }>(`/api/local/${liga}/catalogo`, { signal })).data;
 }
-export async function consultarLocal(p: { equipo_local: string; equipo_visitante: string; periodo: string; linea: number }, signal?: AbortSignal) {
-  return (await clienteAPI.post<ConsultaLocal>('/api/local/nba/consultar', p, { signal })).data;
+export async function consultarLocal(p: { equipo_local: string; equipo_visitante: string; periodo: string; linea: number }, signal?: AbortSignal, liga: LigaBaseLocal = 'nba') {
+  return (await clienteAPI.post<ConsultaLocal>(`/api/local/${liga}/consultar`, p, { signal })).data;
 }
 /** CDF aproximada (error absoluto < 1e-6). Comparador, no nueva salida del modelo. */
 function colaNormal(z: number) {

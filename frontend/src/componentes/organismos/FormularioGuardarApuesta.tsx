@@ -277,7 +277,7 @@ export function FormularioGuardarApuesta({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-lg rounded-xl border border-neon-cyan/30 bg-futurista-oscuro p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-futurista text-texto-principal mb-4">
-          Guardar en Bitácora{competicionCodigo === 'euroleague' ? ' · Euroliga' : ''}
+          Guardar en Seguimiento{competicionCodigo === 'euroleague' ? ' · Euroliga' : ''}
         </h3>
 
         {/* Resumen de la apuesta (readonly) */}

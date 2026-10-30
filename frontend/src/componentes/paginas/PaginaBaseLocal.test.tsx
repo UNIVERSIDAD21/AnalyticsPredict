@@ -25,10 +25,11 @@ it('consulta una vez, compara sin POST y reabre exactamente la copia guardada', 
   fireEvent.change(screen.getByLabelText('Línea terminada en .5'), { target: { value: '230.5' } });
   expect(consultarLocal).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Guardar consulta' }));
-  await screen.findByText(/Copia guardada en Mi cuaderno/);
+  await screen.findByText(/Copia guardada en Mis análisis/);
   vista.unmount();
   render(<MemoryRouter><PaginaCuaderno /></MemoryRouter>);
-  fireEvent.click(screen.getByText('Reabrir resultado original · sin nueva consulta'));
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Ver resultado original' }));
   await waitFor(() => expect(screen.getByText('48.01%')).toBeInTheDocument());
   expect(screen.getByText(/Corte: 2026-01-01/)).toBeInTheDocument();
   expect(consultarLocal).toHaveBeenCalledTimes(1);

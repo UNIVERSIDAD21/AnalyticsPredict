@@ -4,6 +4,10 @@ import { clienteAPI } from '../../servicios/api';
 import { PaginaOperacion } from './PaginaOperacion';
 
 vi.mock('../organismos/Encabezado', () => ({ Encabezado: () => <nav>Estado</nav> }));
+vi.mock('../../servicios/estadoLocal', () => ({ leerEstadoLocal: vi.fn().mockResolvedValue({
+  formato: 'diagnostico-local-v1', observado_en: '2026-10-30T20:00:00Z', modo: 'CON_BD_CONFIGURADA',
+  bd: { deshabilitada: false, conexion_comprobada: false, estado: 'NO_COMPROBADA' }, modelos: {}, limites: [],
+}) }));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe('Estado operativo', () => {

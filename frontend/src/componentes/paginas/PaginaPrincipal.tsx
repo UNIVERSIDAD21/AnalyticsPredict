@@ -432,7 +432,7 @@ export function PaginaPrincipal({ partidoAgenda = null }: { partidoAgenda?: impo
               await crearApuesta(apuesta);
               setMostrarGuardar(false);
               agregarToast({
-                titulo: 'Guardado en bitácora',
+                titulo: 'Guardado en seguimiento',
                 mensaje: 'La apuesta se registró correctamente.',
                 tipo: 'success',
               });

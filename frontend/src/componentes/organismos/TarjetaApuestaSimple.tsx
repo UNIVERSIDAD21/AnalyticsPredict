@@ -1,5 +1,5 @@
 /**
- * TarjetaApuestaSimple.tsx — Tarjeta para apuestas simples en bitácora
+ * TarjetaApuestaSimple.tsx — Tarjeta para apuestas simples en seguimiento
  */
 
 import { Trash2, CheckCircle } from 'lucide-react';

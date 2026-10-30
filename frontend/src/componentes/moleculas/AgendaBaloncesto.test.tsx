@@ -21,6 +21,17 @@ function preparar(ruta='/baloncesto?liga=wnba') {
 afterEach(cleanup);
 beforeEach(()=>{vi.resetAllMocks();vi.mocked(consultarAgendaBaloncesto).mockResolvedValue(agenda());});
 describe('agenda global de baloncesto',()=>{
+  it('abre desde Hoy la página y el filtro explícitos del encuentro',async()=>{
+    vi.mocked(consultarAgendaBaloncesto).mockResolvedValue({...agenda([partido({id:'segundo',liga:'wnba'})]),pagina:2,total:60});
+    const p=preparar('/baloncesto?liga=wnba&ligaAgenda=wnba&paginaAgenda=2&partidoId=segundo');
+    await waitFor(()=>expect(p.seleccionar).toHaveBeenCalledWith(expect.objectContaining({id:'segundo',liga:'wnba'})));
+    expect(consultarAgendaBaloncesto).toHaveBeenCalledWith(expect.objectContaining({liga:'wnba',pagina:2}),expect.any(AbortSignal));
+    expect(screen.getByLabelText('Filtrar por liga')).toHaveValue('wnba');
+  });
+  it('rechaza una página de enlace inválida sin alterar la liga del motor',async()=>{
+    preparar('/baloncesto?liga=wnba&ligaAgenda=desconocida&paginaAgenda=-7');
+    await waitFor(()=>expect(consultarAgendaBaloncesto).toHaveBeenCalledWith(expect.objectContaining({liga:'',pagina:1}),expect.any(AbortSignal)));
+  });
   it('ignora la liga del motor como filtro y mezcla las competiciones',async()=>{
     vi.mocked(consultarAgendaBaloncesto).mockResolvedValue(agenda([partido(),partido({id:'e1',liga:'euroliga',competicion_nombre:'Euroliga',equipo_local_nombre:'Real Madrid'})]));
     const p=preparar();await screen.findByText('Real Madrid');

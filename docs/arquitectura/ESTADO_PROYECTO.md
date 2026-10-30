@@ -1,5 +1,49 @@
 # Estado vigente — AnalyticsPredict
 
+## Mi espacio y runtime Windows autónomo — 2026-10-30
+
+Mi espacio agrupa Mis análisis/Seguimiento, con rutas previas compatibles y sin
+migrar ni mezclar registros. El preparador autónomo incluye intérprete Windows,
+dependencias, licencias, build y artefactos con hashes/rutas relativas. La
+continuación local se consolida sin arrastrar cambios previos ajenos. BD y
+validación científica mantienen sus bloqueos; autonomía solo del modo base.
+[Detalle](../reactivacion_single_user/MI_ESPACIO_Y_RUNTIME_AUTONOMO_2026-10-30.md).
+
+## Base local multiliga y copia Windows vigente — 2026-10-30, continuación Codex
+
+- [x] Consultas NBA/Euroliga/WNBA desde publicaciones congeladas, sin BD, entrenamiento o journal. Identidad, corte y muestra del ajuste realmente utilizado; persistencia de resultados v2 en el cuaderno, compatible con v1.
+- [x] Estado local descargable y disponibilidad por artefacto; sin consulta SQL del estado operativo cuando el proceso se inició en modo base.
+- [x] Preparador de instalación nueva que incluye modificaciones y archivos nuevos del working tree, frontend compilado y estado original verificado. Inicio y preflight separados de la migración real.
+- [ ] Exportación del origen y migración real aún bloqueadas por cuota. No hay nuevos modelos acreditados ni cierre de L06–L14/L29/L30 por estas mejoras de uso.
+
+[Detalle y continuidad](../reactivacion_single_user/BASE_LOCAL_MULTILIGA_Y_PAQUETE_WINDOWS_2026-10-30.md).
+
+## Hoy: páginas, favoritos y navegación — 2026-10-30, continuación Codex
+
+Paginación acumulativa y favoritos fuera de la primera página, con trabajo
+acotado/cancelable. GET exclusivamente del dominio seleccionado y reintentos
+independientes. Conservación de páginas leídas ante fallo posterior, detección de
+duplicados/cambios de fuente y descarte de respuestas antiguas. Enlace al partido
+con filtro/página de origen y acceso directo al cuaderno reciente. 212 pruebas
+frontend aprobadas, 0 fallidas/omitidas; lint aprobado. No acredita inventario
+deportivo actual, migración ni eficacia nueva.
+[Detalle](../reactivacion_single_user/HOY_PAGINACION_FAVORITOS_2026-10-30.md).
+
+
+## Cuaderno y respaldo personal — 2026-10-30, continuación Codex
+
+Consultas, notas, etiquetas, favoritos y apariencia exportables/restaurables como
+respaldo personal versionado. Vista previa y mezcla conservadora, validación de
+capacidad y protección frente a cambios posteriores de los datos. Importa cuadernos
+anteriores; conserva timestamps, snapshots, NULL/ceros y notas locales en conflictos.
+Cuaderno rediseñado con búsqueda sin tildes, fechas Colombia, ordenación, capacidad
+y enlace a cada entrada; vista original bajo demanda. 199 frontend aprobadas,
+0 fallidas/omitidas y lint aprobado. Verificación real de consulta base/guardado/
+exportación/restauración sin BD. Cambios en R, HEAD e índice preservados; no nuevo
+modelo, publicación remota ni migración acreditada.
+[Detalle y límites](../reactivacion_single_user/CUADERNO_RESPALDO_PERSONAL_2026-10-30.md).
+
+
 ## Evidencia RAW WNBA — 2026-10-30
 
 19implementadas,4parciales,7pendientes. Tabla de fiabilidad original por mercado y

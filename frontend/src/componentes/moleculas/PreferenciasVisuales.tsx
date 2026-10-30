@@ -1,20 +1,20 @@
-import { useState } from 'react';
-type Preferencias = { tema: 'oscuro' | 'claro'; densidad: 'comoda' | 'compacta'; texto: 'normal' | 'grande' };
-const CLAVE = 'analyticspredict-visual-v1';
-function iniciales(): Preferencias {
-  try { const p = JSON.parse(localStorage.getItem(CLAVE) ?? '{}'); return {
-    tema: p.tema === 'claro' ? 'claro' : 'oscuro', densidad: p.densidad === 'compacta' ? 'compacta' : 'comoda', texto: p.texto === 'grande' ? 'grande' : 'normal' }; }
-  catch { return { tema: 'oscuro', densidad: 'comoda', texto: 'normal' }; }
-}
+import { useEffect, useState } from 'react';
+import { aplicarPreferencias, CLAVE_VISUAL, leerPreferencias, type PreferenciasVisualesLocal as Preferencias } from '../../servicios/preferenciasVisuales';
 export function PreferenciasVisuales() {
-  const [p, setP] = useState(iniciales);
+  const [p, setP] = useState(leerPreferencias);
   const [error, setError] = useState('');
   const cambiar = (c: Partial<Preferencias>) => {
     const n = { ...p, ...c }; setP(n);
-    Object.assign(document.documentElement.dataset, n);
-    try { localStorage.setItem(CLAVE, JSON.stringify(n)); setError(''); }
+    aplicarPreferencias(n);
+    try { localStorage.setItem(CLAVE_VISUAL, JSON.stringify(n)); setError(''); window.dispatchEvent(new Event('preferencias-visuales-actualizadas')); }
     catch { setError('La preferencia se aplica solo a esta sesión.'); }
   };
+  useEffect(() => {
+    const actualizar = () => { const actuales = leerPreferencias(); setP(actuales); aplicarPreferencias(actuales); };
+    window.addEventListener('preferencias-visuales-actualizadas', actualizar);
+    window.addEventListener('storage', actualizar);
+    return () => { window.removeEventListener('preferencias-visuales-actualizadas', actualizar); window.removeEventListener('storage', actualizar); };
+  }, []);
   return <details className="text-sm preferencias-visuales"><summary className="cursor-pointer">Apariencia</summary><div className="flex flex-wrap gap-3 py-3">
     <label>Tema<select aria-label="Tema" className="input-base" value={p.tema} onChange={e => cambiar({ tema: e.target.value as Preferencias['tema'] })}><option value="oscuro">Oscuro</option><option value="claro">Claro</option></select></label>
     <label>Densidad<select aria-label="Densidad" className="input-base" value={p.densidad} onChange={e => cambiar({ densidad: e.target.value as Preferencias['densidad'] })}><option value="comoda">Cómoda</option><option value="compacta">Compacta</option></select></label>

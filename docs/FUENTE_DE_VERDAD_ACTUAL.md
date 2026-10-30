@@ -1,5 +1,48 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Mi espacio y ejecución Windows autónoma — 2026-10-30
+
+- Mis análisis y Seguimiento agrupados en Mi espacio; marcadores previos conservan parámetros/fragmentos. Claves locales y contratos API sin cambios.
+- Preparador `--autonomo` incluye Python Windows y dependencias con rutas relativas y aislamiento. Sin Node ni Python externos para ejecutar el modo base; BD no incluida.
+- Continuación de Codex consolidada en rama propia sobre `78f434ed`, sin incorporar cambios previos ajenos. Checkout activo preservado mediante deltas.
+- Migración y eficacia de modelos siguen pendientes; autonomía de ejecución no equivale a datos restaurados.
+
+[Contratos, reproducción y límites](reactivacion_single_user/MI_ESPACIO_Y_RUNTIME_AUTONOMO_2026-10-30.md).
+
+## Base local multiliga y copia Windows vigente — 2026-10-30, continuación Codex
+
+- [x] NBA/Euroliga/WNBA consultables sin BD usando exclusivamente sus ajustes publicados; sin fit/journal ni activación. WNBA separa hash/muestra del ajuste REG de la publicación completa. Copias v2 y v1 reabribles en el cuaderno.
+- [x] Diagnóstico del modo/artefactos y descarga JSON sin datos personales. Estado omite SQL en modo base; las funciones dependientes de BD se muestran N/D.
+- [x] Preparador de carpeta Windows nueva a partir del working tree integrado y build actual, con hashes e inicio local comprobable. Preflight de migración separado de la restauración real.
+- [ ] Origen vigente volvió a rechazar por cuota el 30oct; no se completó exportación/restauración Windows. Pendientes científicos y de fuentes conservan sus límites; el catálogo 19/4/7 no se reclasifica como terminado.
+
+[Uso, contratos y límites](reactivacion_single_user/BASE_LOCAL_MULTILIGA_Y_PAQUETE_WINDOWS_2026-10-30.md).
+
+## Hoy: páginas, favoritos y navegación — 2026-10-30, continuación Codex
+
+Hoy permite incorporar páginas sin perder las anteriores y buscar favoritos en
+páginas posteriores (hasta 10 por acción, con cancelación y continuación explícita).
+Lecturas solo del deporte seleccionado; reintento independiente por dominio.
+Errores parciales, páginas repetidas o cambios de fuente no se presentan como
+calendario completo. Enlaces de baloncesto conservan liga/página de origen;
+consultas recientes enlazan a su entrada del cuaderno. 212 pruebas frontend
+aprobadas, 0 fallidas/omitidas; lint aprobado. Sin nuevas ingestas, modelos o DML.
+[Contratos y verificación](reactivacion_single_user/HOY_PAGINACION_FAVORITOS_2026-10-30.md).
+
+## Cuaderno y respaldo personal — 2026-10-30, continuación Codex
+
+Uso personal local: respaldo versionado de consultas/notas/etiquetas/favoritos y
+apariencia, restauración con vista previa y mezcla que conserva la versión local
+de cada ID. Compatible con el JSON de cuaderno anterior. Comprobación de capacidad,
+datos cambiados desde la vista previa y reversión de escrituras si falla el almacenamiento.
+Cuaderno con fechas Colombia, búsqueda sin tildes, ordenación, capacidad y apertura
+por enlace. El resultado se carga al abrirlo; no se repite la consulta deportiva.
+199 pruebas frontend aprobadas, 0 fallidas/omitidas; lint aprobado. Recorrido real
+con artefacto NBA y respaldo descargado/restaurado en almacenamiento vacío.
+Integrado en R conservando HEAD/índice; no publicación remota nueva. Sin cambios
+de modelos ni cierre de migración BD. El 19/4/7 del catálogo L01–L30 no se reclasifica.
+[Uso, contratos y alcance](reactivacion_single_user/CUADERNO_RESPALDO_PERSONAL_2026-10-30.md).
+
 ## Diagnóstico de probabilidades WNBA — 2026-10-30
 
 Laboratorio expone bins/Brier/cobertura80 originales del candidato, separados del

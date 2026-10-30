@@ -1,0 +1,89 @@
+.cuaderno-pagina { max-width: 1320px; padding-top: 2.5rem; padding-bottom: 4rem; display: grid; gap: 1.5rem; }
+.cuaderno-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
+.cuaderno-cabecera h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 650; letter-spacing: -.045em; margin: .5rem 0; }
+.cuaderno-cabecera p:not(.cuaderno-kicker) { max-width: 42rem; color: var(--ap-secundario); line-height: 1.6; }
+.cuaderno-kicker { display: flex; align-items: center; gap: .55rem; font-size: .7rem; font-weight: 700; letter-spacing: .16em; color: var(--ap-acento); }
+.cuaderno-boton { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; padding: .7rem 1rem; border: 1px solid var(--ap-borde); border-radius: .65rem; font-size: .8rem; font-weight: 600; background: var(--ap-superficie); color: var(--ap-texto); text-align: center; }
+.cuaderno-boton:hover:not(:disabled) { background: var(--ap-elevado); border-color: var(--ap-acento); }
+.cuaderno-boton:disabled { opacity: .5; cursor: not-allowed; }
+.cuaderno-boton-acento { background: var(--ap-acento); color: var(--ap-fondo); border-color: var(--ap-acento); }
+.cuaderno-boton-acento:hover:not(:disabled) { background: var(--ap-acento); filter: brightness(.94); }
+.cuaderno-estadisticas { display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; border: 1px solid var(--ap-borde); border-radius: .9rem; background: var(--ap-superficie); padding: 1.25rem 0; }
+.cuaderno-estadisticas > div { padding: 0 1.5rem; border-right: 1px solid var(--ap-borde); }
+.cuaderno-estadisticas > div:last-child { border: 0; }
+.cuaderno-estadisticas span { display: block; color: var(--ap-secundario); font-size: .75rem; }
+.cuaderno-estadisticas strong { display: block; font-size: 2rem; font-weight: 550; letter-spacing: -.04em; margin-top: .4rem; }
+.cuaderno-estadisticas strong small { font-size: 1rem; margin-left: .15rem; }
+.cuaderno-capacidad meter { width: 100%; height: .45rem; display: block; margin-top: .35rem; appearance: none; background: var(--ap-elevado); border: 0; border-radius: 1rem; }
+.cuaderno-capacidad meter::-webkit-meter-bar { background: var(--ap-elevado); border: none; }
+.cuaderno-capacidad meter::-webkit-meter-optimum-value { background: var(--ap-acento); }
+.cuaderno-capacidad meter::-moz-meter-bar { background: var(--ap-acento); }
+.cuaderno-capacidad p { margin-top: .5rem; color: var(--ap-secundario); font-size: .65rem; line-height: 1.5; }
+.cuaderno-respaldo { display: flex; flex-wrap: wrap; gap: 1.25rem; justify-content: space-between; align-items: center; }
+.cuaderno-respaldo-info { display: flex; gap: 1rem; align-items: flex-start; flex: 1 1 25rem; }
+.cuaderno-icono { display: grid; place-items: center; background: var(--ap-elevado); border: 1px solid var(--ap-borde); color: var(--ap-acento); width: 2.8rem; height: 2.8rem; border-radius: .8rem; flex-shrink: 0; }
+.cuaderno-respaldo h2 { font-size: .95rem; font-weight: 650; }
+.cuaderno-respaldo p { color: var(--ap-secundario); font-size: .78rem; line-height: 1.65; margin-top: .3rem; }
+.cuaderno-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.cuaderno-aviso { width: 100%; padding: .8rem 1rem; border: 1px solid var(--ap-borde); border-radius: .6rem; background: var(--ap-elevado); font-size: .8rem; }
+.cuaderno-aviso.cuaderno-exito { display: flex; align-items: center; gap: .6rem; }
+.cuaderno-error, .cuaderno-error p { color: var(--ap-peligro); }
+.cuaderno-exito { color: var(--ap-exito); }
+.cuaderno-enlace { display: inline-flex; gap: .4rem; align-items: center; font-size: .8rem; color: var(--ap-acento); text-decoration: underline; text-underline-offset: .2rem; padding: .3rem 0; }
+.cuaderno-importacion { flex-basis: 100%; padding-top: 1.2rem; border-top: 1px solid var(--ap-borde); display: grid; gap: .9rem; }
+.cuaderno-importacion h3 { font-weight: 650; }
+.cuaderno-resumen-importacion { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
+.cuaderno-resumen-importacion > div { padding: .8rem; border-radius: .5rem; background: var(--ap-elevado); }
+.cuaderno-resumen-importacion dt { font-size: .7rem; color: var(--ap-secundario); }
+.cuaderno-resumen-importacion dd { font-size: 1.6rem; font-weight: 600; }
+.cuaderno-filtros { display: grid; gap: 1rem; }
+.cuaderno-filtros-principales { display: grid; grid-template-columns: minmax(0, 2fr) 1fr 1fr; gap: 1rem; }
+.cuaderno-filtros label, .cuaderno-editor label { font-size: .75rem; color: var(--ap-secundario); display: grid; gap: .5rem; }
+.cuaderno-busqueda > span { display: flex; align-items: center; gap: .5rem; }
+.cuaderno-filtros .input-base, .cuaderno-editor .input-base { font-size: .85rem; }
+.cuaderno-filtros-secundarios { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; }
+.cuaderno-checkbox, .cuaderno-filtros .cuaderno-checkbox { display: flex; align-items: center; gap: .5rem; font-size: .8rem; min-height: 2rem; }
+.cuaderno-checkbox input { accent-color: var(--ap-acento); width: 1rem; height: 1rem; }
+.cuaderno-filtros details { flex: 1 1 14rem; }
+.cuaderno-filtros summary { display: flex; align-items: center; gap: .5rem; font-size: .8rem; min-height: 2rem; cursor: pointer; }
+.cuaderno-filtros-avanzados { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin-top: .8rem; }
+.cuaderno-ayuda { color: var(--ap-secundario); font-size: .75rem; line-height: 1.6; }
+.cuaderno-lista-cabecera { display: flex; align-items: center; justify-content: space-between; }
+.cuaderno-lista-cabecera h2 { font-size: 1.1rem; font-weight: 600; }
+.cuaderno-lista-cabecera p { font-size: .8rem; color: var(--ap-secundario); }
+.cuaderno-lista { display: grid; gap: .75rem; }
+.cuaderno-entrada { min-width: 0; padding: 1.2rem; }
+.cuaderno-entrada-abierta { border-color: var(--ap-acento); }
+.cuaderno-fila { display: flex; align-items: center; gap: 1rem; }
+.cuaderno-liga { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: .7rem; flex-shrink: 0; font-size: .65rem; font-weight: 750; letter-spacing: .03em; color: var(--ap-acento); background: var(--ap-elevado); border: 1px solid var(--ap-borde); }
+.cuaderno-identidad { flex: 1; min-width: 0; }
+.cuaderno-titulo { text-align: left; font-size: .95rem; font-weight: 600; overflow-wrap: anywhere; }
+.cuaderno-titulo:hover { color: var(--ap-acento); }
+.cuaderno-identidad p { font-size: .72rem; color: var(--ap-secundario); margin-top: .35rem; }
+.cuaderno-etiquetas { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+.cuaderno-etiquetas span { font-size: .65rem; color: var(--ap-secundario); border: 1px solid var(--ap-borde); padding: .15rem .45rem; border-radius: .3rem; overflow-wrap: anywhere; }
+.cuaderno-icon-button { display: grid; place-items: center; padding: .7rem; color: var(--ap-secundario); border-radius: .5rem; }
+.cuaderno-icon-button:hover { background: var(--ap-elevado); }
+.cuaderno-favorito-activo { color: var(--ap-aviso); }
+.cuaderno-detalle { border-top: 1px solid var(--ap-borde); margin-top: 1.2rem; padding-top: 1.2rem; display: grid; gap: 1rem; }
+.cuaderno-editor { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; }
+.cuaderno-resultado { min-width: 0; overflow-wrap: anywhere; }
+.cuaderno-resultado pre { white-space: pre-wrap; word-break: break-word; font-size: .7rem; margin-top: 1rem; max-height: 25rem; overflow-y: auto; }
+.cuaderno-vacio { display: grid; justify-items: center; gap: 1rem; padding: 3rem 1.5rem; text-align: center; color: var(--ap-secundario); }
+.cuaderno-vacio h2 { color: var(--ap-texto); font-size: 1.2rem; font-weight: 600; }
+.cuaderno-vacio p { max-width: 32rem; font-size: .9rem; line-height: 1.7; }
+.cuaderno-favoritos > summary { cursor: pointer; font-size: .85rem; font-weight: 600; }
+.cuaderno-favoritos .tarjeta { margin-top: 1rem; box-shadow: none; }
+@media (max-width: 760px) {
+  .cuaderno-cabecera { align-items: flex-start; flex-direction: column; }
+  .cuaderno-estadisticas { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 1.5rem; }
+  .cuaderno-estadisticas > div:nth-child(2) { border-right: 0; }
+  .cuaderno-estadisticas > div { padding: 0 1rem; }
+  .cuaderno-filtros-principales { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cuaderno-busqueda { grid-column: 1 / -1; }
+  .cuaderno-filtros-avanzados, .cuaderno-editor { grid-template-columns: 1fr; }
+  .cuaderno-fila { flex-wrap: wrap; gap: .75rem; }
+  .cuaderno-fila > .cuaderno-acciones { width: 100%; justify-content: flex-end; }
+  .cuaderno-resumen-importacion { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cuaderno-pagina { padding-top: 1.5rem; }
+}

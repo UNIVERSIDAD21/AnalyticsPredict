@@ -13,11 +13,14 @@ export function AgendaBaloncesto({ seleccionado, onSeleccionar, onCambiar }: Pro
   const fechaUrl = params.get('fecha');
   const fecha = fechaUrl && /^\d{4}-\d{2}-\d{2}$/.test(fechaUrl) && Number.isFinite(Date.parse(fechaUrl)) ? fechaUrl : fechaColombia();
   // La liga del motor no restringe la agenda. El filtro es explícito y visible.
-  const [liga, setLiga] = useState('');
+  const [liga, setLiga] = useState(() => ['nba', 'wnba', 'euroliga'].includes(params.get('ligaAgenda') ?? '') ? params.get('ligaAgenda')! : '');
   const [estado, setEstado] = useState('todos');
   const [buscar, setBuscar] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [pagina, setPagina] = useState(1);
+  const [pagina, setPagina] = useState(() => {
+    const numero = Number(params.get('paginaAgenda'));
+    return Number.isSafeInteger(numero) && numero >= 1 && numero <= 10_000 ? numero : 1;
+  });
   const [revision, setRevision] = useState(0);
   const [reloj, setReloj] = useState(Date.now);
   useEffect(() => { const id = setInterval(() => setReloj(Date.now()), 15000); return () => clearInterval(id); }, []);
@@ -49,7 +52,7 @@ export function AgendaBaloncesto({ seleccionado, onSeleccionar, onCambiar }: Pro
   const cambiarFecha = (valor: string) => {
     if (!valor || valor === fecha) return;
     onCambiar(); setPagina(1);
-    setParams(prev => { const p = new URLSearchParams(prev); p.set('fecha', valor); p.delete('partidoId'); return p; });
+    setParams(prev => { const p = new URLSearchParams(prev); p.set('fecha', valor); p.delete('partidoId'); p.delete('paginaAgenda'); p.delete('ligaAgenda'); return p; });
   };
   const filtrado = Boolean(liga || buscar || estado !== 'todos');
   return <section className="tarjeta p-4 sm:p-6 mb-6 space-y-5 min-w-0" aria-label="Agenda de baloncesto">

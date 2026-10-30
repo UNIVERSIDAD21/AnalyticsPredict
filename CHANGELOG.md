@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Consolidar continuación, Mi espacio y runtime autónomo — 2026-10-30
+
+- Consolidados respaldo/restauración personal, Hoy paginado y consultas locales multiliga de la continuación Codex.
+- Mi espacio agrupa Mis análisis y Seguimiento; rutas antiguas, datos locales y contratos de BD compatibles.
+- Paquete Windows opcional autónomo con Python/dependencias/licencias, rutas relativas, aislamiento y comprobador. No requiere Python/Node externos en modo base.
+- Pruebas de compatibilidad de enlaces, aislamiento y empaquetado; BD y mejoras predictivas no declaradas completas.
+- [Uso y límites](docs/reactivacion_single_user/MI_ESPACIO_Y_RUNTIME_AUTONOMO_2026-10-30.md).
+
 ## Mostrar y auditar evidencia probabilística WNBA — 2026-10-30
 
 - Tabla por mercado con bins, definición Brier, cobertura80 y abstenciones del

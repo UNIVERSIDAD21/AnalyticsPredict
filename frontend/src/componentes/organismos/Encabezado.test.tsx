@@ -9,6 +9,14 @@ afterEach(cleanup);
 function Ruta() { return <output data-testid="ruta">{useLocation().pathname}{useLocation().search}</output>; }
 
 describe('navegación deportiva', () => {
+  it('agrupa análisis y seguimiento en una sola entrada sin duplicar navegación', () => {
+    render(<ProveedorDeporte><MemoryRouter initialEntries={['/seguimiento']}><Encabezado /><Ruta /></MemoryRouter></ProveedorDeporte>);
+    expect(screen.getByRole('button', { name: 'Mi espacio' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('button', { name: 'Mis análisis' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Seguimiento' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Mi espacio' }));
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/mis-analisis');
+  });
   it('sincroniza el deporte al navegar sin reemplazar rutas de detalle', async () => {
     render(<ProveedorDeporte><MemoryRouter initialEntries={['/futbol/partidos/partido-1']}>
       <Encabezado /><Ruta />

@@ -28,6 +28,7 @@ jobs:
       - name: Contratos locales y round-trip íntegro
         run: >-
           python -m pytest -q tests/test_mejoras_locales.py
+          tests/test_consulta_local_ligas.py tests/test_preparar_instalacion_local.py tests/test_inicio_local.py
           tests/test_contraccion_wnba_experimental.py
           tests/test_calculo_futbol_aislado.py
           tests/test_contrato_probabilidad_nba.py
@@ -61,6 +62,9 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_analisis_integral.py
+          tests/test_consulta_local_ligas.py
+          tests/test_preparar_instalacion_local.py
+          tests/test_inicio_local.py
           tests/test_contrato_probabilidad_nba.py
           tests/test_cobertura_uso.py
           tests/test_auditoria_probabilidades_wnba.py

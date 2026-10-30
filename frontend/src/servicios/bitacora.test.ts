@@ -6,7 +6,7 @@ import type { PeticionCrearApuesta, RespuestaApuesta } from '../tipos';
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('contrato v2 de bitácora', () => {
+describe('contrato v2 de seguimiento', () => {
   it('completa finalizadas solo por POST explícito y conserva motivos de pendientes', async () => {
     const resumen = { resueltas: 3, pendientes: 1, errores: 0, importes_no_disponibles: 1,
       motivos_pendientes: { sin_datos_mercado: 1 } };
@@ -19,7 +19,7 @@ describe('contrato v2 de bitácora', () => {
     vi.spyOn(clienteAPI, 'post').mockResolvedValue({ data: { exito: false } });
     await expect(resolverPendientesBitacora()).rejects.toThrow('No se pudieron completar');
   });
-  it('envía cuota manual Euroliga a la bitácora y conserva analíticas no disponibles como null', async () => {
+  it('envía cuota manual Euroliga a la seguimiento y conserva analíticas no disponibles como null', async () => {
     const payload: PeticionCrearApuesta = {
       partido_id: 'fixture-euro', competicion_codigo: 'euroleague',
       equipo_local: 'Real Madrid', equipo_visitante: 'Maccabi', fecha_partido: '2026-10-22',
@@ -59,7 +59,7 @@ describe('contrato v2 de bitácora', () => {
     expect(get).toHaveBeenCalledWith('/api/bitacora/unificada', { params: { pagina: 1, version: 'v2' } });
   });
 
-  it('no convierte un error o un contrato desconocido en una bitácora vacía', async () => {
+  it('no convierte un error o un contrato desconocido en una seguimiento vacía', async () => {
     vi.spyOn(clienteAPI, 'get').mockResolvedValueOnce({ data: { ok: false, data: { registros: [] } } })
       .mockResolvedValueOnce({ data: { exito: true, registros: [] } });
     await expect(listarBitacoraUnificada({})).rejects.toThrow();

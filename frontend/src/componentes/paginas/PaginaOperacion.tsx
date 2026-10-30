@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Encabezado } from '../organismos/Encabezado';
 import { clienteAPI } from '../../servicios/api';
+import { leerEstadoLocal, type EstadoLocal } from '../../servicios/estadoLocal';
+import { descargar } from '../../servicios/cuadernoLocal';
 
 type Serie = { n: number; ultimo_final: string | null; por_fase?: { fase: string; n: number; finales_validos: number; ultimo_final: string | null }[] };
 type Estado = {
@@ -13,25 +15,52 @@ type Estado = {
   notas: string[];
 };
 const fecha = (valor?: string | null) => !valor ? 'N/D' : /^\d{4}-\d{2}-\d{2}$/.test(valor)
-  ? valor : new Date(valor).toLocaleString('es-CO');
+  ? valor : new Date(valor).toLocaleString('es-CO', { timeZone: 'America/Bogota' });
 const fase = (valor: string) => ({ PRE: 'Pretemporada', REG: 'Temporada regular', POST: 'Postemporada' }[valor] ?? valor);
 
 export function PaginaOperacion() {
+  const [local, setLocal] = useState<EstadoLocal | null>(null);
   const [estado, setEstado] = useState<Estado | null>(null);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
-  const actualizar = async () => {
+  const consultaInicial = useRef(false);
+  const consultando = useRef(false);
+  const actualizar = useCallback(async () => {
+    if (consultando.current) return;
+    consultando.current = true;
     setCargando(true); setError('');
-    try { setEstado((await clienteAPI.get<Estado>('/api/operacion/estado')).data); }
-    catch { setError('No se pudo consultar el estado. La ausencia de respuesta no significa que no haya datos.'); }
-    finally { setCargando(false); }
-  };
-  useEffect(() => { void actualizar(); }, []);
+    try {
+      const diagnostico = await leerEstadoLocal(); setLocal(diagnostico);
+      if (diagnostico.bd.deshabilitada) setEstado(null);
+      else setEstado((await clienteAPI.get<Estado>('/api/operacion/estado')).data);
+    }
+    catch { setError('No se pudo completar la consulta del estado. La ausencia de respuesta no significa que no haya datos.'); }
+    finally { consultando.current = false; setCargando(false); }
+  }, []);
+  useEffect(() => {
+    if (consultaInicial.current) return;
+    consultaInicial.current = true;
+    void actualizar();
+  }, [actualizar]);
   return <><Encabezado /><main id="contenido-principal" tabIndex={-1} className="contenedor py-8 space-y-5 text-texto-principal">
     <h1 className="text-2xl font-bold">Estado del sistema</h1>
     <p className="text-amber-300">Uso exploratorio · rendimiento no certificado</p>
     <button type="button" className="border rounded px-4 py-2" disabled={cargando} onClick={() => void actualizar()}>{cargando ? 'Consultando…' : 'Actualizar estado'}</button>
     {error && <p role="alert">{error}</p>}
+    {local && <section className="tarjeta space-y-3" aria-label="Disponibilidad local">
+      <h2 className="text-xl font-semibold">Disponibilidad local</h2>
+      <p>{local.bd.deshabilitada ? 'Modo base local: la BD está deshabilitada en esta ejecución.' : 'Modo con BD configurada: el diagnóstico de artefactos no comprueba la conexión.'}</p>
+      <p className="text-sm text-texto-secundario">Observado: {fecha(local.observado_en)}{error ? ' · Última respuesta recibida; puede estar desactualizada.' : ''}</p>
+      <div className="grid gap-3 md:grid-cols-3">{Object.entries(local.modelos).map(([liga, m]) => <section key={liga} className="min-w-0 border border-neon-cyan/20 rounded p-3 space-y-1">
+        <h3 className="font-semibold">{liga === 'euroliga' ? 'Euroliga' : liga.toUpperCase()}</h3>
+        <p>{m.disponible ? `Artefacto disponible · ${m.equipos_disponibles ?? 'N/D'} equipos con soporte` : 'Artefacto N/D'}</p>
+        {m.disponible ? <><p className="break-all">Versión: {m.modelo_version ?? 'N/D'}</p><p>Corte del ajuste: {m.corte_modelo ?? 'N/D'}</p><p>Muestra de ajuste: {m.muestra_entrenamiento ?? 'N/D'} · {m.minutos_regulacion ?? 'N/D'} min sin OT · RAW</p></> : <p>{m.motivo}</p>}
+      </section>)}</div>
+      <p>Base local permite consultar NBA, Euroliga y WNBA cuando su artefacto está disponible. Mis análisis conserva notas, favoritos y copias en este navegador.</p>
+      {local.bd.deshabilitada && <p>Agendas, contexto reciente, estadísticas de fútbol y seguimiento en BD: N/D en este modo. No se intenta acceder a Neon.</p>}
+      <p className="text-sm text-texto-secundario">{local.limites.join(' ')}</p>
+      <div className="flex flex-wrap gap-4 text-sm text-neon-cyan"><a href="/base-local">Abrir Base local</a><a href="/mis-analisis">Abrir Mis análisis</a><button type="button" onClick={() => descargar(`diagnostico-local-${local.observado_en.slice(0, 10)}.json`, JSON.stringify(local, null, 2))}>Descargar diagnóstico local</button></div>
+    </section>}
     {estado && <>
       <p className="text-texto-secundario">Consultado: {fecha(estado.observado_en)}{error ? ' · Se conserva la última respuesta; puede estar desactualizada.' : ''}</p>
       <div className="grid gap-4 md:grid-cols-2">

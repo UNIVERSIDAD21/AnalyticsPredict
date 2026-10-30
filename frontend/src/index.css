@@ -346,6 +346,12 @@ h1, h2, h3, .font-futurista { letter-spacing: -.015em; text-transform: none; }
 .ficha-hoy { display: grid; gap: .6rem; padding: 1rem; border: 1px solid var(--ap-borde); border-radius: .8rem; }
 .ficha-hoy:hover { background: var(--ap-elevado); }
 [data-densidad="compacta"] .tarjeta { padding: 1rem; }
+/* Los avisos legacy usaban tonos pálidos de Tailwind sobre fondo claro. */
+:root[data-tema="claro"] :is(.text-amber-100, .text-amber-200, .text-amber-300, .text-amber-400, .text-yellow-200, .text-yellow-300) { color: var(--ap-aviso); }
+:root[data-tema="claro"] :is(.text-red-100, .text-red-200, .text-red-300, .text-red-400, .text-rose-200, .text-rose-300) { color: var(--ap-peligro); }
+:root[data-tema="claro"] :is(.text-green-200, .text-green-300, .text-green-400, .text-emerald-200, .text-emerald-300) { color: var(--ap-exito); }
+:root[data-tema="claro"] :is(.text-cyan-200, .text-cyan-300, .text-cyan-400, .text-blue-200, .text-blue-300) { color: var(--ap-acento); }
+:root[data-tema="claro"] .input-base:disabled { background: var(--ap-elevado); }
 ::selection { background: var(--ap-acento); color: var(--ap-fondo); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

@@ -1,5 +1,5 @@
 /**
- * TarjetaCombinada.tsx — Tarjeta para combinadas en bitácora
+ * TarjetaCombinada.tsx — Tarjeta para combinadas en seguimiento
  */
 
 import { useState } from 'react';

@@ -4,23 +4,30 @@ export interface EntradaCuaderno {
   id: string; titulo: string; liga: LigaCuaderno; guardadoEn: string;
   tipo: 'base' | 'resultado'; snapshot: unknown; notas: string; etiquetas: string[]; favorito: boolean;
 }
-const CLAVE = 'analyticspredict-cuaderno-v1';
-export function leerCuaderno(): EntradaCuaderno[] {
-  const raw = localStorage.getItem(CLAVE);
-  if (!raw) return [];
-  const parsed: unknown = JSON.parse(raw);
-  if (!Array.isArray(parsed) || !parsed.every(e => e && typeof e.id === 'string' && typeof e.titulo === 'string' &&
+export const CLAVE_CUADERNO = 'analyticspredict-cuaderno-v1';
+export const LIMITE_CONSULTAS = 100;
+export const LIMITE_CUADERNO = 4_000_000;
+export function validarCuaderno(parsed: unknown): EntradaCuaderno[] {
+  if (!Array.isArray(parsed) || parsed.length > LIMITE_CONSULTAS || !parsed.every(e => e && typeof e === 'object' &&
+    typeof e.id === 'string' && e.id.length > 0 && e.id.length <= 300 && typeof e.titulo === 'string' && e.titulo.length <= 1000 &&
     ['nba', 'wnba', 'euroliga', 'futbol'].includes(e.liga) && ['base', 'resultado'].includes(e.tipo) &&
-    typeof e.guardadoEn === 'string' && typeof e.notas === 'string' && typeof e.favorito === 'boolean' &&
-    Array.isArray(e.etiquetas) && e.etiquetas.every((t: unknown) => typeof t === 'string') && 'snapshot' in e)) {
-    throw new Error('El cuaderno local no tiene un formato válido. No se sobrescribió.');
+    typeof e.guardadoEn === 'string' && Number.isFinite(Date.parse(e.guardadoEn)) && typeof e.notas === 'string' && e.notas.length <= 5000 && typeof e.favorito === 'boolean' &&
+    Array.isArray(e.etiquetas) && e.etiquetas.length <= 12 && e.etiquetas.every((t: unknown) => typeof t === 'string' && t.length <= 300) && 'snapshot' in e) ||
+    new Set(parsed.map(e => e.id)).size !== parsed.length || JSON.stringify(parsed).length > LIMITE_CUADERNO) {
+    throw new Error('El cuaderno local no tiene un formato válido o supera su capacidad. No se sobrescribió.');
   }
   return parsed as EntradaCuaderno[];
 }
+export function leerCuaderno(): EntradaCuaderno[] {
+  const raw = localStorage.getItem(CLAVE_CUADERNO);
+  if (!raw) return [];
+  const parsed: unknown = JSON.parse(raw);
+  return validarCuaderno(parsed);
+}
 function persistir(entradas: EntradaCuaderno[]) {
   const json = JSON.stringify(entradas);
-  if (json.length > 4_000_000 || entradas.length > 100) throw new Error('El cuaderno alcanzó su límite local. Exporta una copia antes de quitar entradas.');
-  try { localStorage.setItem(CLAVE, json); }
+  if (json.length > LIMITE_CUADERNO || entradas.length > LIMITE_CONSULTAS) throw new Error('El cuaderno alcanzó su límite local. Exporta una copia antes de quitar entradas.');
+  try { localStorage.setItem(CLAVE_CUADERNO, json); }
   catch { throw new Error('No se pudo guardar: almacenamiento del navegador lleno o no disponible. Exporta JSON para conservar la consulta.'); }
   window.dispatchEvent(new Event('cuaderno-actualizado'));
 }

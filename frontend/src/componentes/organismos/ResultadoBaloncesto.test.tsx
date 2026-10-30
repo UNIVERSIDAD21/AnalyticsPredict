@@ -30,7 +30,7 @@ describe('resultados completos compartidos',()=>{
   render(<ResultadoAnalisis resultado={{...comun,metadata:{...comun.metadata,liga:'wnba',incluye_ot:!q}}} {...props}/>);
   expect(campos()).toEqual(nba);
   expect(screen.queryByTestId('barra-push')).toBeNull();
-  expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})!==null).toBe(q===0);
+  expect(screen.queryByRole('button',{name:'Guardar en Seguimiento'})!==null).toBe(q===0);
  });
  it('conserva la masa push WNBA en líneas enteras sin crear una tarjeta vacía en medias líneas',()=>{
   const base=adaptarResultadoEuroliga(euro);
@@ -50,7 +50,7 @@ describe('resultados completos compartidos',()=>{
   expect(screen.getByRole('heading',{name:'Forma Reciente'})).toBeInTheDocument();
   expect(screen.getByRole('heading',{name:'Head-to-Head'})).toBeInTheDocument();
   expect(screen.getByText('Tu análisis:')).toBeInTheDocument();
-  expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})).toBeNull();
+  expect(screen.queryByRole('button',{name:'Guardar en Seguimiento'})).toBeNull();
   expect(get).not.toHaveBeenCalled();
  });
  it('deriva solo descriptivos observados, reconoce claves normalizadas y no fabrica tendencia',()=>{
@@ -88,7 +88,7 @@ describe('resultados completos compartidos',()=>{
   expect(screen.getByText(/Consulta exploratoria RAW/)).toBeInTheDocument();
   expect(screen.getByText('Tu análisis:')).toBeInTheDocument();
   expect(screen.queryByText(/Busca otra línea/)).toBeNull();
-  expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})).toBeNull();
+  expect(screen.queryByRole('button',{name:'Guardar en Seguimiento'})).toBeNull();
  });
  it('el mismo renderer informa corte, observados y ausencia de calibración en NBA',()=>{
   const vista={...adaptarResultadoEuroliga(euro),es_en_vivo:true,cuartos_reales:{Q1:[20,21] as [number,number]},metadata:{mercado:'COMPLETO',modo_analisis:'CIERRE_Q1',metodo_live:'Ajuste heurístico no calibrado'}};

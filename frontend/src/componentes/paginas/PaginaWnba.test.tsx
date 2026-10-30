@@ -228,7 +228,7 @@ describe("WNBA dentro del recorrido NBA compartido", () => {
     expect([...total.querySelectorAll('td')].every(e=>e.textContent==='N/D')).toBe(true);
     if(mercado==='Q1')expect(screen.getByText('60.0%')).toBeInTheDocument();
     else {
-      expect(screen.queryByRole('button',{name:'Guardar en Bitácora'})).toBeNull();
+      expect(screen.queryByRole('button',{name:'Guardar en Seguimiento'})).toBeNull();
       expect(screen.queryByRole('img')).toBeNull();
     }
     expect(document.body.textContent).not.toMatch(/NaN|undefined|Infinity/);

@@ -267,7 +267,7 @@ export function PaginaFutbol() {
     try {
       await guardarPartidoParaRevisar(partidoSeleccionado.id);
       setPartidosGuardadosIds((actuales) => new Set(actuales).add(partidoSeleccionado.id));
-      agregarToast({ titulo: 'Partido guardado', mensaje: 'Quedó en Bitácora para volver a revisarlo. No se registró una apuesta.', tipo: 'success' });
+      agregarToast({ titulo: 'Partido guardado', mensaje: 'Quedó en Seguimiento para volver a revisarlo. No se registró una apuesta.', tipo: 'success' });
     } catch (error) {
       agregarToast({ titulo: 'No se pudo guardar', mensaje: error instanceof Error ? error.message : 'Intenta de nuevo.', tipo: 'error' });
     } finally {
@@ -562,7 +562,7 @@ export function PaginaFutbol() {
         notas: `${renderCanonico.guardar.tieneRecomendacion ? 'Recomendación exacta' : 'Selección manual'} desde análisis fútbol (${renderCanonico.guardar.trazabilidad})`,
       });
       setMostrarGuardar(false);
-      agregarToast({ titulo: 'Apuesta guardada', mensaje: 'Se registró en bitácora.', tipo: 'success' });
+      agregarToast({ titulo: 'Apuesta guardada', mensaje: 'Se registró en seguimiento.', tipo: 'success' });
     } catch (error) {
       agregarToast({ titulo: 'Error al guardar', mensaje: error instanceof Error ? error.message : 'No se pudo guardar', tipo: 'error' });
     } finally {
@@ -611,10 +611,10 @@ export function PaginaFutbol() {
                   {seleccionRetrospectiva && <p className="mt-2 text-xs leading-relaxed text-neon-cyan">Consulta con datos anteriores al inicio. {partidoSeleccionado.estado !== 'FINALIZADO' ? 'El estado y resultado del encuentro aún pueden estar pendientes de actualizar.' : 'El resultado de este partido no interviene en el cálculo.'}</p>}
                   <button type="button" className="my-3 text-xs text-neon-cyan" onClick={() => { setAgendaAbierta(true); requestAnimationFrame(() => { const resumen = document.getElementById('resumen-agenda-futbol'); resumen?.focus(); resumen?.scrollIntoView({ behavior: 'instant', block: 'start' }); }); }}>← Elegir otro partido en la agenda</button>
                   <div className="flex flex-wrap gap-x-5"><BotonFavorito favorito={{ tipo: 'competicion', liga: 'futbol', id: partidoSeleccionado.competicion, nombre: partidoSeleccionado.competicionNombre }} />{[[partidoSeleccionado.equipoLocal, partidoSeleccionado.equipoLocalNombre], [partidoSeleccionado.equipoVisitante, partidoSeleccionado.equipoVisitanteNombre]].map(([id, nombre]) => <BotonFavorito key={id} favorito={favoritoEquipo('futbol', id, nombre)} />)}</div>
-                  <details className="mt-3"><summary className="cursor-pointer text-sm">Seguimiento en Bitácora</summary><div className="pt-3">
+                  <details className="mt-3"><summary className="cursor-pointer text-sm">Seguimiento en Seguimiento</summary><div className="pt-3">
                   {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
                     <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
-                      {guardandoPartido ? 'Actualizando…' : 'Quitar de Bitácora'}
+                      {guardandoPartido ? 'Actualizando…' : 'Quitar de Seguimiento'}
                     </Boton>
                   ) : (
                     <Boton variante="secundario" anchoCompleto onClick={manejarGuardarPartido} disabled={guardandoPartido}>

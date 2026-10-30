@@ -1,5 +1,5 @@
 /**
- * useBitacora.ts — Hook para gestionar la bitácora
+ * useBitacora.ts — Hook para gestionar la seguimiento
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -60,7 +60,7 @@ export function useBitacora(filtros: FiltrosBitacora, pagina: number, tamano: nu
         estado: 'exito',
       });
     } catch (error) {
-      const mensaje = error instanceof Error ? error.message : 'Error al cargar la bitácora';
+      const mensaje = error instanceof Error ? error.message : 'Error al cargar la seguimiento';
       setEstado((prev) => ({ ...prev, estado: 'error', error: mensaje }));
     }
   }, [parametros]);

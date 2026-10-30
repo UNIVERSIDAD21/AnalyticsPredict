@@ -64,7 +64,7 @@ describe('predictor Euroliga integrado', () => {
     }
     expect(screen.getByRole('heading', { name: 'Historial detallado Euroliga' })).toBeInTheDocument();
     expect(screen.getByText('50.00 %', { selector: 'strong.text-sm' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Guardar en Bitácora' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar en Seguimiento' })).toBeInTheDocument();
   });
   it('manda exactamente fixture, modo y línea a Euro; muestra porcentajes y conserva historial sin repetir POST', async () => {
     preparar(); await completar();
@@ -79,20 +79,20 @@ describe('predictor Euroliga integrado', () => {
     expect(obtenerPartidosProximos).not.toHaveBeenCalled();
     expect(screen.queryByText('Temporadas para el análisis')).toBeNull();
     expect(screen.queryByLabelText(/Cuota decimal/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Guardar en Bitácora' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar en Seguimiento' })).toBeInTheDocument();
     expect(screen.getByText('Probabilidades RAW no calibradas.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Historial Euroliga (1)' }));
     expect(screen.getByText(/21.*Real Madrid — Maccabi/)).toBeInTheDocument();
     expect(analizarEuroliga).toHaveBeenCalledTimes(1);
   });
 
-  it('permite ingresar cuota decimal y guarda la apuesta en bitácora con liga y campos honestos', async () => {
+  it('permite ingresar cuota decimal y guarda la apuesta en seguimiento con liga y campos honestos', async () => {
     preparar(); await completar();
     fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
     await screen.findByRole('region', { name: 'Resultado Euroliga' });
     const guardar = vi.spyOn(bitacora, 'crearApuesta').mockResolvedValue({ exito: true, apuesta: {} as never });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar en Bitácora' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar en Seguimiento' }));
     fireEvent.change(screen.getByLabelText('Cuota decimal (obligatoria)'), { target: { value: '1.91' } });
     fireEvent.change(screen.getByLabelText(/Cuanto vas a apostar/), { target: { value: '25' } });
     expect(document.body.textContent).toContain('30.0%');

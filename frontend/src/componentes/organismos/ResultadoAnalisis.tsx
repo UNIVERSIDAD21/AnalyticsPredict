@@ -67,7 +67,7 @@ interface PropsResultadoAnalisis {
   /** ID del equipo visitante (para navegación a estadísticas) */
   equipoVisitanteId?: string;
 
-  /** Acción para guardar en bitácora */
+  /** Acción para guardar en seguimiento */
   onGuardar?: () => void;
 
   /** Acción para configurar bankroll (Fase 4 placeholder) */
@@ -698,7 +698,7 @@ export function ResultadoAnalisis({
       {puedeGuardar && (
         <div className="tarjeta p-4 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu bitácora</p>
+            <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu seguimiento</p>
             <p className="text-xs text-texto-terciario">
               {noApto
                 ? 'Se guardará el análisis aunque no haya candidatos aptos'
@@ -706,7 +706,7 @@ export function ResultadoAnalisis({
             </p>
           </div>
           <Boton variante="primario" iconoInicio={<BookOpen size={16} />} onClick={onGuardar}>
-            Guardar en Bitácora
+            Guardar en Seguimiento
           </Boton>
         </div>
       )}

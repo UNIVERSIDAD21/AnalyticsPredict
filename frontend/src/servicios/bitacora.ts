@@ -1,5 +1,5 @@
 /**
- * bitacora.ts — Servicios para la bitácora de apuestas
+ * bitacora.ts — Servicios para la seguimiento de apuestas
  */
 
 import { clienteAPI } from './api';
@@ -51,7 +51,7 @@ export async function obtenerResumenApuestas(): Promise<RespuestaResumenApuestas
   const respuesta = await clienteAPI.get('/api/bitacora/resumen', { params: { version: 'v2' } });
   const data = leerDatosBitacora<Omit<RespuestaResumenApuestas, 'exito'>>(respuesta.data, { resumen: 'object' });
   if (!Array.isArray(data.resumen.por_deporte) || !Array.isArray(data.resumen.por_mercado)) {
-    throw new Error('Contrato de resumen de bitácora inválido');
+    throw new Error('Contrato de resumen de seguimiento inválido');
   }
   return { ...data, exito: true };
 }

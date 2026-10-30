@@ -70,7 +70,7 @@ export function ModuloEuroliga({ partidoAgenda = null }: { partidoAgenda?: impor
     try {
       await crearApuesta(apuesta);
       setMostrarGuardar(false);
-      agregarToast({ titulo: 'Guardado en Bitácora', mensaje: 'La selección Euroliga quedó registrada.', tipo: 'success' });
+      agregarToast({ titulo: 'Guardado en Seguimiento', mensaje: 'La selección Euroliga quedó registrada.', tipo: 'success' });
     } catch (e) {
       const mensaje = extraerMensajeError(e);
       setErrorGuardar(mensaje);

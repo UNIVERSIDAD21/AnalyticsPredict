@@ -1,6 +1,6 @@
 // hace parte del diseño de analisis
 /**
- * bitacora.ts — Tipos para bitácora de apuestas
+ * bitacora.ts — Tipos para seguimiento de apuestas
  */
 
 import { LadoApuesta, Mercado, NivelConfianza } from './analisis';

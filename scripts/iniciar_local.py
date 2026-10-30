@@ -4,6 +4,7 @@ Ejecutar con el Python de backend/.venv. Requiere frontend/dist ya compilado.
 No instala dependencias, construye modelos, sincroniza fuentes ni libera puertos.
 """
 import argparse
+import json
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import os
@@ -76,14 +77,16 @@ def preparar_entorno(estado, con_bd):
         env['ANALYTICSPREDICT_SOLO_BASE_LOCAL'] = '1'
     if estado:
         estado = estado.expanduser().resolve()
+        encontrados = []
         for nombre, variable in (('modelo_nba_activo.npz', 'ANALYTICSPREDICT_MODELO_NBA_ACTIVO'),
                                  ('euroliga/activo.json', 'ANALYTICSPREDICT_MODELO_EUROLIGA_ACTIVO'),
                                  ('wnba/activo.json', 'ANALYTICSPREDICT_MODELO_WNBA_ACTIVO')):
             path = estado / nombre
             if path.is_file():
                 env[variable] = str(path)
-        if not (estado / 'modelo_nba_activo.npz').is_file():
-            raise ValueError('No se encontró el artefacto NBA en --estado. No se intentará entrenar.')
+                encontrados.append(path)
+        if not encontrados:
+            raise ValueError('No se encontró ningún artefacto de baloncesto en --estado. No se intentará entrenar.')
     return env
 
 
@@ -93,7 +96,10 @@ def main(argv=None):
     parser.add_argument('--con-bd', action='store_true', help='Solo tras restaurar y verificar PostgreSQL local')
     parser.add_argument('--sin-abrir', action='store_true')
     parser.add_argument('--comprobar', action='store_true', help='Verifica el arranque y cierra solo sus propios procesos')
+    parser.add_argument('--espera-api', type=float, default=90, help='Máximo de segundos para un arranque en frío (1 a 180)')
     args = parser.parse_args(argv)
+    if not 1 <= args.espera_api <= 180:
+        raise ValueError('--espera-api debe estar entre 1 y 180 segundos')
     if not (RAIZ / 'frontend/dist/index.html').is_file():
         raise ValueError('Falta frontend/dist: ejecuta npm ci y npm run build en frontend antes de iniciar.')
     env = preparar_entorno(args.estado, args.con_bd)
@@ -102,10 +108,11 @@ def main(argv=None):
     servidor.daemon_threads = True
     backend = None
     try:
-        backend = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', '8000'],
+        backend = subprocess.Popen([sys.executable, '-X', 'utf8', '-B', '-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', '8000'],
             cwd=RAIZ / 'backend', env=env, stdin=subprocess.DEVNULL,
             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-        for _ in range(60):
+        limite_arranque = time.monotonic() + args.espera_api
+        while time.monotonic() < limite_arranque:
             if backend.poll() is not None:
                 raise ValueError('La API no pudo iniciar. No se abrió la interfaz.')
             try:
@@ -122,6 +129,12 @@ def main(argv=None):
         print('Abre ' + url + ' · Ctrl+C cierra solo esta ejecución.', flush=True)
         if not args.con_bd:
             print('Modo base local: BD y sincronización deshabilitadas. No acredita migración terminada.', flush=True)
+        if args.comprobar:
+            with urlopen('http://127.0.0.1:8000/api/local/estado', timeout=10) as respuesta:
+                diagnostico = json.load(respuesta)
+            if not any(m['disponible'] for m in diagnostico['modelos'].values()):
+                raise ValueError('La API inició, pero no hay ningún artefacto de baloncesto utilizable.')
+            print(json.dumps(diagnostico, ensure_ascii=False), flush=True)
         if not args.sin_abrir and not args.comprobar:
             webbrowser.open(url)
         if not args.comprobar:

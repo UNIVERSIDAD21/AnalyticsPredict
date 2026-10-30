@@ -1,5 +1,5 @@
 /**
- * TablaApuestas.tsx — Tabla profesional de apuestas para bitácora
+ * TablaApuestas.tsx — Tabla profesional de apuestas para seguimiento
  *
  * Diseño compacto estilo libro de trading con:
  * - Columnas ordenables
