@@ -19,6 +19,24 @@ import webbrowser
 RAIZ = Path(__file__).resolve().parents[1]
 
 
+def cerrar_backend(backend):
+    """Solo el Popen creado aquí; NT puede tener un redirector de la venv."""
+    if backend is None or backend.poll() is not None:
+        return
+    if os.name == 'nt':
+        # Terminar únicamente el redirector deja el Python real y sus handles
+        # abiertos. /T se limita al árbol del PID que acabamos de crear.
+        subprocess.run(['taskkill', '/PID', str(backend.pid), '/T', '/F'],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=10, check=False, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    else:
+        backend.terminate()
+    try:
+        backend.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        backend.kill(); backend.wait(timeout=5)
+
+
 def comprobar_puertos(puertos):
     for puerto in puertos:
         with socket.socket() as s:
@@ -112,12 +130,7 @@ def main(argv=None):
         pass
     finally:
         # Los procesos ajenos nunca se enumeran, matan ni reutilizan.
-        if backend is not None and backend.poll() is None:
-            backend.terminate()
-            try:
-                backend.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                backend.kill(); backend.wait(timeout=5)
+        cerrar_backend(backend)
         # shutdown requiere que serve_forever esté en curso.
         if backend is not None and 'ruta' in locals():
             servidor.shutdown()

@@ -135,7 +135,7 @@ calibradores ni eficacia NBA. V4 solo se evalúa desde su cohorte original.
 
 ## Validación de esta entrega
 
-- 362 backend aprobadas/0 omitidas con PostgreSQL18 sintético exclusivo en55434;
+- 363 backend aprobadas/0 omitidas con PostgreSQL18 sintético exclusivo en55434;
   solo datos de fixtures, bases/esquemas propios eliminados y cluster detenido.
   No se usaron los servicios5432 ni55433 ni datos de aplicación.
 - Control adicional sin BD:354aprobadas/8omitidas, cero intentos de red Python

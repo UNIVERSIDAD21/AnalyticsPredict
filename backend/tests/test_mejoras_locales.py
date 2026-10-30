@@ -2,6 +2,7 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 from datetime import datetime, timezone
 
@@ -48,11 +49,11 @@ finally:
 '''
     try:
         adquirir(fd)
-        ocupado = subprocess.run([sys.executable, "-c", script, str(path)], capture_output=True, timeout=15)
+        ocupado = subprocess.run([sys.executable, "-c", script, str(path)], cwd=Path(__file__).resolve().parents[1], capture_output=True, timeout=15)
         assert ocupado.returncode == 23, ocupado.stderr
     finally:
         os.close(fd)
-    libre = subprocess.run([sys.executable, "-c", script, str(path)], capture_output=True, timeout=15)
+    libre = subprocess.run([sys.executable, "-c", script, str(path)], cwd=Path(__file__).resolve().parents[1], capture_output=True, timeout=15)
     assert libre.returncode == 0, libre.stderr
 
 
@@ -164,3 +165,20 @@ def test_contexto_relee_despues_de_un_cambio_de_datos(monkeypatch):
     assert ctx.recolectar_contexto('l', 'v', date(2026, 1, 1)) == {'n': 1}
     revision['n'] = 2
     assert ctx.recolectar_contexto('l', 'v', date(2026, 1, 1)) == {'n': 2}
+
+
+def test_cierre_windows_se_limita_al_arbol_del_proceso_propio(monkeypatch):
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location('inicio_cierre', Path(__file__).resolve().parents[2] / 'scripts/iniciar_local.py')
+    launcher = importlib.util.module_from_spec(spec); spec.loader.exec_module(launcher)
+    llamadas = []
+    monkeypatch.setattr(launcher, 'os', SimpleNamespace(name='nt'))
+    monkeypatch.setattr(launcher.subprocess, 'run', lambda args, **kw: llamadas.append((args, kw)))
+    propio = SimpleNamespace(pid=12345, poll=lambda: None, wait=lambda **kw: None)
+    launcher.cerrar_backend(propio)
+    assert llamadas[0][0] == ['taskkill', '/PID', '12345', '/T', '/F']
+    assert llamadas[0][1]['stdout'] == subprocess.DEVNULL
+    assert not llamadas[0][1].get('shell', False)
+    launcher.cerrar_backend(SimpleNamespace(pid=99999, poll=lambda: 0))
+    assert len(llamadas) == 1

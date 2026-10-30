@@ -4,7 +4,7 @@
 
 Base Windows/UTF-8, consultas NBA sin ajuste implícito, Hoy/Cuaderno/Laboratorio,
 temas y consulta base del artefacto sin BD implementados y probados.12 de30 mejoras
-completadas en el alcance descrito;8 parciales,10 pendientes/bloqueadas.362 pruebas
+completadas en el alcance descrito;8 parciales,10 pendientes/bloqueadas.363 pruebas
 backend con PG18 sintético sin omitidas,143 frontend,lint/build y6vistas reales.
 No eficacia certificada, activación ni cierre de migración. Fuente rechazada por
 cuota el30oct; conservar modelos/cohortes y trabajos previos sin publicar.

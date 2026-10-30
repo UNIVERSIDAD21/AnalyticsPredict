@@ -6,7 +6,7 @@ Hoy, Cuaderno, Laboratorio, tema claro/oscuro y consulta NBA base sin BD añadid
 Consulta NBA publicada sin entrenamiento implícito por temporadas; metadatos de
 versión/corte y ausencias explícitas. Compatibilidad nativa Windows de locks,
 permisos y UTF-8, sin eludir integridad. Lanzador loopback no destructivo.
-362 backend con PostgreSQL sintético/0 omitidas,143 frontend,lint/build y6vistas
+363 backend con PostgreSQL sintético/0 omitidas,143 frontend,lint/build y6vistas
 API/UI reales; artefactos intactos. No son pruebas de eficacia deportiva.
 **12 mejoras implementadas,8 parciales y10 pendientes/bloqueadas**, no cierre
 del catálogo completo. Sin nuevos modelos/calibradores, ingestas ni migración
