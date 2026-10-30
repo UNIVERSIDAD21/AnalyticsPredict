@@ -30,11 +30,15 @@ def atomico(path: Path, data: bytes) -> None:
             f.flush()
             os.fsync(f.fileno())
         os.replace(temp, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+        # NT no permite abrir directorios con os.open para fsync. El archivo
+        # sí se sincroniza arriba y la publicación continúa siendo atómica.
+        # No se promete la misma garantía de durabilidad del directorio POSIX.
+        if os.name != "nt":
+            directory = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
     finally:
         if os.path.exists(temp):
             os.unlink(temp)
@@ -55,13 +59,13 @@ def append_json(path: Path, value) -> None:
 @contextmanager
 def bloqueo(root: Path):
     """Lock del sistema operativo: también se libera al interrumpir el proceso."""
-    import fcntl
+    from servicios.locks_archivo import adquirir
 
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd = os.open(root / ".wnba.lock", os.O_CREAT | os.O_RDWR, 0o600)
     try:
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            adquirir(fd)
         except BlockingIOError as exc:
             raise ArchivoError("Otro scraper WNBA está usando esta carpeta") from exc
         yield

@@ -50,22 +50,26 @@ export function PaginaBaloncesto() {
 
   return <div className="min-h-screen flex flex-col">
     <Encabezado />
-    <main className="flex-1 contenedor py-6 lg:py-8 min-w-0">
-      <AgendaBaloncesto seleccionado={partido} onSeleccionar={seleccionar} onCambiar={limpiarSeleccion} />
+    <main id="contenido-principal" className="flex-1 contenedor py-6 lg:py-8 min-w-0">
+      {partido && <div className="flex flex-wrap justify-between gap-3 mb-5"><h1 className="text-2xl font-semibold">Ficha del partido</h1><button className="text-neon-cyan" onClick={limpiarSeleccion}>Cambiar partido</button></div>}
+      <details open={!partido} className="mb-5"><summary className="text-sm text-texto-secundario cursor-pointer mb-3">{partido ? 'Ver agenda y otros encuentros' : 'Agenda de baloncesto'}</summary>
+        <AgendaBaloncesto seleccionado={partido} onSeleccionar={seleccionar} onCambiar={limpiarSeleccion} />
+      </details>
       <section id="configurar-baloncesto" className="mb-6 tarjeta p-5 flex flex-wrap items-center justify-between gap-4" aria-label="Baloncesto y liga activa">
         <div>
           <h2 className="text-xl font-futurista text-texto-principal">Baloncesto · {partido ? 'Configurar análisis' : 'Análisis manual y estadísticas'}</h2>
           <p className="text-sm text-texto-secundario mt-2">{partido ? `${partido.equipo_local_nombre} — ${partido.equipo_visitante_nombre}` : 'Selecciona un partido en la agenda o abre el análisis manual de una liga.'}</p>
           {!partido && <button type="button" className="mt-3 text-sm text-neon-cyan" onClick={() => cambiarLiga(liga)}>Abrir análisis manual</button>}
         </div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-texto-secundario w-full sm:w-52">
+        {!partido && <label className="block text-xs font-semibold uppercase tracking-wider text-texto-secundario w-full sm:w-52">
           Liga
           <select className="input-base mt-2 w-full" value={liga} onChange={e => cambiarLiga(e.target.value)}>
             <option value="nba">NBA</option>
             <option value="euroliga">Euroliga</option>
             <option value="wnba">WNBA</option>
           </select>
-        </label>
+        </label>}
+        {partido && <p className="text-sm text-neon-cyan">Liga: {liga.toUpperCase()} · Localía del encuentro seleccionado</p>}
       </section>
       {(partido || params.has('liga') || params.has('tab')) && <Suspense fallback={<p role="status">Cargando {liga === 'nba' ? 'NBA' : liga === 'wnba' ? 'WNBA' : 'Euroliga'}…</p>}>
         {liga === 'nba' ? <ModuloNBA key={`nba-${partido?.id ?? 'manual'}`} partidoAgenda={partido} /> : liga === 'wnba' ? <ModuloWNBA key={`wnba-${partido?.id ?? 'manual'}`} partidoAgenda={partido} /> : <ModuloEuroliga key={`euroliga-${partido?.id ?? 'manual'}`} partidoAgenda={partido} />}

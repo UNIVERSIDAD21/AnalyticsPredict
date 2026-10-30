@@ -44,7 +44,8 @@ def _datos_modelo():
 def test_artefacto_versionado_se_guarda_fuera_de_la_bd_y_carga_sin_pickle(tmp_path):
     ruta = tmp_path / "modelo.npz"
     guardar_artefacto(_datos_modelo(), ruta)
-    assert os.stat(ruta).st_mode & 0o777 == 0o600
+    if os.name != "nt":  # Windows protege mediante ACL, no bits POSIX.
+        assert os.stat(ruta).st_mode & 0o777 == 0o600
     recuperado = cargar_artefacto(ruta)
     assert recuperado["modelo_version_id"] == 17
     assert recuperado["metricas"]["modelo_version"] == 5

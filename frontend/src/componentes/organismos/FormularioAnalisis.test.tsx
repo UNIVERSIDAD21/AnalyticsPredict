@@ -39,13 +39,23 @@ describe('formulario por dominio', () => {
     }), 'OVER');
   });
 
-  it('NBA conserva la consulta de temporadas y limpiar notifica la selección controlada', async () => {
-    const seleccionar = vi.fn();
+  it('NBA PRE no consulta temporadas ni solicita ajuste y limpiar notifica la selección controlada', async () => {
+    const seleccionar = vi.fn(), analizar = vi.fn();
     render(<FormularioAnalisis equipos={equipos} partidoActual={partido} partidosDisponibles={[partido]}
-      onAnalizar={vi.fn()} onSeleccionarPartido={seleccionar} />);
-    await waitFor(() => expect(obtenerTemporadasEquipos).toHaveBeenCalledWith(['club-2', 'club-3'], expect.any(AbortSignal)));
+      onAnalizar={analizar} onSeleccionarPartido={seleccionar} />);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Equipo Local' })).toHaveValue('betis'));
+    expect(obtenerTemporadasEquipos).not.toHaveBeenCalled();
+    expect(screen.queryByText('Temporadas para el análisis')).toBeNull();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Mercado' }), { target: { value: 'COMPLETO' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Línea del análisis' }), { target: { value: '220.5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar Partido' }));
+    expect(analizar).toHaveBeenCalledWith(expect.objectContaining({ temporadas: undefined, partido_id: partido.id }), 'OVER');
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }));
     expect(seleccionar).toHaveBeenCalledWith(null);
+  });
+  it('NBA conserva la consulta de temporadas solo para reconstrucción histórica', async () => {
+    render(<FormularioAnalisis equipos={equipos} partidoActual={partido} partidosDisponibles={[partido]} consultaHistorica onAnalizar={vi.fn()} />);
+    await waitFor(() => expect(obtenerTemporadasEquipos).toHaveBeenCalledWith(['club-2', 'club-3'], expect.any(AbortSignal)));
   });
   it('NBA envía solo cuartos completos a la petición live y vuelve limpiamente a prepartido', async () => {
     const analizar=vi.fn(), invalidar=vi.fn();

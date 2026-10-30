@@ -51,7 +51,7 @@ def ejecutar(a):
         hoy=iniciado.astimezone(BOGOTA).date()
         state=raiz/'estado.json'
         if state.exists() and not a.fuentes:
-            prev=json.loads(state.read_text())
+            prev=json.loads(state.read_text(encoding="utf-8"))
             if prev.get('estado') in ('COMPLETO','PARCIAL') and prev.get('iniciado_en') and (iniciado-datetime.fromisoformat(prev['iniciado_en'])).total_seconds()<1800:
                 print('Fuentes verificadas hace menos de 30 minutos; no se repiten consultas.')
                 return 0
@@ -59,7 +59,7 @@ def ejecutar(a):
         estado={'estado':'EN_CURSO','iniciado_en':iniciado.isoformat(),'directorio':str(run)}
         guardar(state,estado)
         try:
-            sources=json.loads(a.fuentes.read_text()) if a.fuentes else recopilar(raiz/'cache',run/'fuentes.json',hoy)
+            sources=json.loads(a.fuentes.read_text(encoding="utf-8")) if a.fuentes else recopilar(raiz/'cache',run/'fuentes.json',hoy)
             # Replay operativo sólo de la fecha declarada: no afirmar ventana
             # móvil nueva con una captura antigua. Los ensayos tienen otro CLI.
             if sources.get('fecha_cot') and sources['fecha_cot']!=str(hoy):
@@ -79,7 +79,7 @@ def ejecutar(a):
                     c.execute("SET LOCAL lock_timeout='5s'")
                     c.execute("SET LOCAL statement_timeout='60s'")
                     if a.migrar:
-                        c.execute(MIGRACION.read_text())
+                        c.execute(MIGRACION.read_text(encoding="utf-8"))
                     if not existe(c,'sincronizaciones_agenda'):
                         raise ValueError('Falta migración aditiva: ensayar y ejecutar --migrar')
                     aplicar(c,plan)

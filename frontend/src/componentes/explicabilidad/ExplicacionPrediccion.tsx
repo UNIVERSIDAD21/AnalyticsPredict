@@ -76,7 +76,7 @@ export default function ExplicacionPrediccion({ predictionId, fallbackData }: Pr
       <section className="rounded-xl border border-slate-700 bg-[#1a1f3a] p-4">
         <p className="text-xs text-slate-400">Predicción</p>
         <p className="text-2xl font-bold text-cyan-300">
-          {data.prediction.value} {data.prediction.unit}
+          {data.prediction.value ?? 'N/D'} {data.prediction.unit}
         </p>
         <p className="text-sm text-slate-300">
           Recomendación: <strong className="uppercase">{data.prediction.recommendation}</strong> {data.prediction.line}

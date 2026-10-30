@@ -128,7 +128,7 @@ export function PaginaHistorialPredicciones() {
     <div className="min-h-screen flex flex-col">
       <Encabezado />
 
-      <main className="flex-1 contenedor py-6 lg:py-8 space-y-6">
+      <main id="contenido-principal" tabIndex={-1} className="flex-1 contenedor py-6 lg:py-8 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-futurista text-texto-principal flex items-center gap-2">

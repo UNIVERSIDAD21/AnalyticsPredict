@@ -1,5 +1,6 @@
 import type { AnalisisIntegral } from '../../tipos/analisisIntegral';
 import { SeccionesAnalisisIntegral } from './SeccionesAnalisisIntegral';
+import { HerramientasConsulta } from '../moleculas/HerramientasConsulta';
 // hace parte del diseño de analisis
 /**
  * ResultadoAnalisis.tsx — Contenedor principal de resultados con estilo futurista
@@ -311,10 +312,12 @@ export function ResultadoAnalisis({
           2. ENCABEZADO DEL PARTIDO
           ═══════════════════════════════════════════════════════════ */}
       <div className="tarjeta relative overflow-hidden">
+        <HerramientasConsulta titulo={`${resultado.equipo_nombre_completo} — ${resultado.rival_nombre_completo} · ${mercadoCanon ?? ''} · ${linea}`} liga={esEuro ? 'euroliga' : esWnba ? 'wnba' : esFutbol ? 'futbol' : 'nba'} snapshot={{ resultado, advertencias, seleccionUsuario, fuenteEuroliga }} />
         {/* Línea decorativa superior */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-cyan" />
 
         <p className="text-center text-xs text-neon-cyan mb-4">{esEuro ? 'Euroliga' : esWnba ? 'WNBA' : esFutbol ? 'Fútbol' : 'NBA'} · {modoLabel}{esEuro || esCorte ? ' · Regulación sin OT · RAW' : ''}</p>
+        {!esFutbol && !esEuro && !esWnba && <p className="text-center text-xs text-texto-secundario mb-3">Modelo {String(resultado.metadata?.modelo_version ?? 'N/D')} · Corte de modelo {String(resultado.metadata?.corte_modelo ?? 'N/D')} · Regulación 48 min, sin OT · Confianza heurística no validada</p>}
         {/* Equipos */}
         <div className="text-center mb-6 pt-2">
           <div className="flex items-center justify-center gap-3 md:gap-6 flex-wrap">
@@ -348,7 +351,7 @@ export function ResultadoAnalisis({
           </div>
           <div className="flex items-center gap-2">
             <Activity size={14} className={configConfianza.textColor} />
-            <span>Confianza:</span>
+            <span>Confianza heurística:</span>
             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${configConfianza.color} ${resultado.nivel_confianza && !esCorte ? 'text-futurista-negro' : 'text-texto-secundario'}`}>
               {configConfianza.texto}
             </span>

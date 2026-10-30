@@ -374,7 +374,8 @@ def evidence_write(path: Path, payload: dict[str, Any]) -> None:
     os.chmod(path.parent, 0o700)
     fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
-        os.fchmod(fd, 0o600)
+        if os.name != "nt":
+            os.fchmod(fd, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, ensure_ascii=False, indent=2, default=str)
             handle.write("\n")

@@ -294,7 +294,7 @@ export function PaginaAnalisisNbaAdmin() {
 
   return (
     <><Encabezado />
-    <main className="min-h-screen bg-futurista-negro px-4 py-8 text-texto-principal md:px-8">
+    <main id="contenido-principal" tabIndex={-1} className="min-h-screen bg-futurista-negro px-4 py-8 text-texto-principal md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="space-y-3">
           <p className="text-sm uppercase tracking-[0.3em] text-neon-cyan">Admin interno</p>

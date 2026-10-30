@@ -329,7 +329,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         lado: ladoSeleccionado,
         modo_devig: modoDevig,
         // Contexto
-        temporadas: !esCorteNBA && temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas : undefined,
+        temporadas: consultaHistorica && !esCorteNBA && temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas : undefined,
         partido_id: partidoSeleccionado?.id,
         temporada_id: partidoSeleccionado?.temporada_id
           ?? (temporadasSeleccionadas.length > 0 ? temporadasSeleccionadas[0] : undefined),
@@ -352,7 +352,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
         props.onAnalizar(live, ladoSeleccionado);
       } else props.onAnalizar(peticion as PeticionAnalisis, ladoSeleccionado);
     },
-    [formulario, props, cargando, cuartos, parciales, esCorteNBA, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado]
+    [formulario, props, cargando, cuartos, parciales, esCorteNBA, equipoLocalSeleccionado, equipoVisitanteSeleccionado, temporadasSeleccionadas, partidoSeleccionado, consultaHistorica]
   );
 
   useEffect(() => {
@@ -360,7 +360,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
       Boolean
     ) as string[];
 
-    if ((deporte !== 'NBA' && deporte !== 'WNBA') || cuartos > 0 || ids.length === 0) {
+    if ((deporte !== 'NBA' && deporte !== 'WNBA') || (deporte === 'NBA' && !consultaHistorica) || cuartos > 0 || ids.length === 0) {
       setTemporadasDisponibles([]);
       setTemporadasSeleccionadas([]);
       setErrorTemporadas(null);
@@ -410,7 +410,7 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
       activo = false;
       controlador.abort();
     };
-  }, [deporte, cuartos, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
+  }, [deporte, consultaHistorica, cuartos, equipoLocalSeleccionado?.id, equipoVisitanteSeleccionado?.id]);
 
   const toggleTemporada = useCallback((temporadaId: string) => {
     onCambiarParametros?.();
@@ -553,7 +553,8 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
           </div>}
 
           {/* Temporadas */}
-          {(deporte === 'NBA' || esWnba) && !esCorteNBA && <div className="space-y-2">
+          {deporte === 'NBA' && !consultaHistorica && !esCorteNBA && <p className="text-xs text-texto-secundario">Consulta del modelo publicado: no entrena ni registra una nueva versión. Su corte se muestra en el resultado; actualizar la BD no actualiza el modelo.</p>}
+          {((deporte === 'NBA' && consultaHistorica) || esWnba) && !esCorteNBA && <div className="space-y-2" data-alcance-temporadas>
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-texto-secundario">
                 Temporadas para el análisis

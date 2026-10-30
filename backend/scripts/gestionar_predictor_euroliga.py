@@ -50,12 +50,12 @@ def congelar(modelo: dict, filas: list[dict], destino: Path, dias: int = 30) -> 
 
 def evaluar_cohorte(directorio: Path, filas: list[dict]) -> dict:
     """Une IDs originales y final canónico. Nunca reentrena/regenera/sobrescribe."""
-    manifiesto = json.loads((directorio / "MANIFIESTO.json").read_text())
+    manifiesto = json.loads((directorio / "MANIFIESTO.json").read_text(encoding="utf-8"))
     for nombre in ("MODELO.json", "COHORTE.json"):
         if sha256((directorio / nombre).read_bytes()).hexdigest() != manifiesto[nombre]:
             raise ValueError("Hash de cohorte/modelo no coincide")
-    cohorte = json.loads((directorio / "COHORTE.json").read_text())
-    modelo = json.loads((directorio / "MODELO.json").read_text())
+    cohorte = json.loads((directorio / "COHORTE.json").read_text(encoding="utf-8"))
+    modelo = json.loads((directorio / "MODELO.json").read_text(encoding="utf-8"))
     validar_modelo(modelo)
     if cohorte["modelo_version"] != modelo["version"] or cohorte["artefacto_sha256"] != sha256(json_bytes(modelo)).hexdigest():
         raise ValueError("Cohorte de otra versión")
@@ -119,7 +119,7 @@ def main():
         p.error("Indicar --snapshot o --exportar")
     if a.evaluar and not a.informe:
         p.error("--evaluar requiere --informe nuevo")
-    filas = json.loads(a.snapshot.read_text()) if a.snapshot else leer_datos()
+    filas = json.loads(a.snapshot.read_text(encoding="utf-8")) if a.snapshot else leer_datos()
     if a.exportar:
         escribir_nuevo(a.exportar, {"observado_en": datetime.now(timezone.utc).isoformat(), "filas": filas})
     if isinstance(filas, dict):

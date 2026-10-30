@@ -463,8 +463,9 @@ def determinar_confianza(
         elif distancia_z >= 1.0:
             puntaje_edge = 1
 
-    tamano_muestra = "moderado"
-    frescura = "aceptable"
+    # No se recibieron ni conteos efectivos ni fechas: no inventar suficiencia.
+    tamano_muestra = "N/D"
+    frescura = "N/D"
     puntaje_total = puntaje_volatilidad + puntaje_probabilidad + puntaje_edge
 
     return FactoresConfianza(

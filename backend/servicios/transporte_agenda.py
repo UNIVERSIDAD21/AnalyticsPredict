@@ -6,7 +6,6 @@ La caché y el turno entre procesos se conservan fuera del repositorio.
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-import fcntl
 import hashlib
 import json
 import os
@@ -15,6 +14,7 @@ import time
 from urllib.parse import urlencode, urlsplit
 
 import requests
+from servicios.locks_archivo import adquirir
 
 HOSTS = {"site.api.espn.com", "api-live.euroleague.net", "live.euroleague.net"}
 MAX_BYTES = 8 * 1024 * 1024
@@ -61,14 +61,14 @@ class ClienteAgenda:
             plazo = self.reloj() + 30
             while True:
                 try:
-                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    adquirir(fd)
                     break
                 except BlockingIOError:
                     if self.reloj() >= plazo:
                         raise FuenteNoDisponible("Turno HTTP ocupado; reanudar en próximo ciclo")
                     self.dormir(0.2)
             estado_path = self.cache / "red.json"
-            estado = json.loads(estado_path.read_text()) if estado_path.exists() else {}
+            estado = json.loads(estado_path.read_text(encoding="utf-8")) if estado_path.exists() else {}
             if estado.get("pausa_hasta", 0) > self.reloj():
                 raise FuenteNoDisponible("Fuente en pausa por 429; no se elude el límite")
             self.dormir(max(0, estado.get("siguiente", 0) - self.reloj()))
@@ -86,7 +86,7 @@ class ClienteAgenda:
         clave = hashlib.sha256(direccion.encode()).hexdigest()
         raw, meta = self.cache / (clave + ".raw"), self.cache / (clave + ".json")
         if meta.exists() and raw.exists():
-            anterior = json.loads(meta.read_text())
+            anterior = json.loads(meta.read_text(encoding="utf-8"))
             contenido = raw.read_bytes()
             if hashlib.sha256(contenido).hexdigest() != anterior["sha256"]:
                 raise FuenteNoDisponible("Caché alterada: conservar e investigar")

@@ -93,7 +93,7 @@ def api_sintetica(monkeypatch):
              'equipo_local_id':str(uuid4()),'equipo_visitante_id':str(uuid4()),
              'competicion':'Competición sintética','competicion_codigo':'TEST',
              'equipo_local':'Local sintético','equipo_visitante':'Visitante sintético',
-             'fecha_partido':datetime(2026,10,30,tzinfo=timezone.utc),'estado':'PROGRAMADO','jornada':1}
+             'fecha_partido':datetime.now(timezone.utc)+timedelta(days=1),'estado':'PROGRAMADO','jornada':1}
     datos=[fila(equipo_local_id=partido['equipo_local_id'],equipo_visitante_id=partido['equipo_visitante_id']) for _ in range(30)]
     class Cursor:
         def __enter__(self): return self

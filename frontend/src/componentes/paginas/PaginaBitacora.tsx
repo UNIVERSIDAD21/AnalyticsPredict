@@ -218,7 +218,7 @@ export function PaginaBitacora() {
   return (
     <div className="min-h-screen flex flex-col">
       <Encabezado />
-      <main className="flex-1 contenedor py-6 lg:py-8 space-y-6">
+      <main id="contenido-principal" tabIndex={-1} className="flex-1 contenedor py-6 lg:py-8 space-y-6">
         {/* Botón de regresar al inicio */}
         <button
           type="button"

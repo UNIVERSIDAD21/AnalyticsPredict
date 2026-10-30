@@ -206,7 +206,8 @@ def main() -> int:
         args.salida.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporal = tempfile.mkstemp(prefix=".auditoria_pnl_", suffix=".json", dir=args.salida.parent)
         try:
-            os.fchmod(descriptor, 0o600)
+            if os.name != "nt":
+                os.fchmod(descriptor, 0o600)
             with os.fdopen(descriptor, "w", encoding="utf-8") as archivo:
                 json.dump({"resumen": resumen, "detalle": detalle}, archivo, indent=2, ensure_ascii=False)
                 archivo.write("\n")

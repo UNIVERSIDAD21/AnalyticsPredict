@@ -57,7 +57,7 @@ def escribir(path, value, reemplazar=False):
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd, tmp = tempfile.mkstemp(prefix=".wnba-", dir=path.parent)
     try:
-        with os.fdopen(fd, "w") as f:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
             json.dump(value, f, ensure_ascii=False, sort_keys=True, allow_nan=False)
             f.flush()
             os.fsync(f.fileno())
@@ -139,7 +139,7 @@ def cargar():
         raise RuntimeError(
             "Modelo WNBA no publicado. Ejecutar gestionar_predictor_wnba.py; no se utiliza NBA/Euroliga."
         )
-    m = json.loads(path.read_text())
+    m = json.loads(path.read_text(encoding="utf-8"))
     exigir(
         m.get("formato") == FORMATO
         and m.get("dominio") == "wnba"
@@ -157,7 +157,7 @@ def cargar_publicacion(version):
     if version==actual['version']:
         return actual
     exigir(bool(re.fullmatch(r'wnba-v1-[0-9a-f]{24}',str(version))), 'Identidad de publicación WNBA inválida')
-    m=json.loads((ruta_activa().parent/'versiones'/(version+'.json')).read_text())
+    m=json.loads((ruta_activa().parent/'versiones'/(version+'.json')).read_text(encoding="utf-8"))
     exigir(m.get('version')==version and m.get('dominio')=='wnba' and m.get('formato')==FORMATO
            and identidad_modelo(m)==version and huella(m['datos'])==m['dataset_sha256'],'Publicación WNBA no íntegra')
     return m
@@ -456,7 +456,7 @@ def historial(limite=20):
     paths = sorted(
         journal().glob("*.json"), key=lambda p: p.stat().st_mtime_ns, reverse=True
     )[:limite]
-    return [json.loads(p.read_text()) for p in paths]
+    return [json.loads(p.read_text(encoding="utf-8")) for p in paths]
 
 
 def historial_para_vista(limite=20):
@@ -483,7 +483,7 @@ def validar_guardado(p):
     exigir(len(evidencias) == 1, "Falta la trazabilidad del análisis WNBA")
     aid = str(UUID(evidencias[0].get("analisis_id", "")))
     try:
-        r = json.loads((journal() / (aid + ".json")).read_text())
+        r = json.loads((journal() / (aid + ".json")).read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         raise ValueError("Análisis WNBA no encontrado") from e
     exigir(

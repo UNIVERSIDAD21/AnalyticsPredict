@@ -13,7 +13,7 @@ afterEach(cleanup);
 const equipos:Equipo[]=[{id:'h',nombre:'Casa sintética',nombre_corto:'Casa',abreviatura:'CAS'},{id:'v',nombre:'Visita sintética',nombre_corto:'Visita',abreviatura:'VIS'}];
 function controles() {
   const form=document.querySelector('form')!;
-  return Array.from(form.querySelectorAll('button,input,select')).map(e=>({
+  return Array.from(form.querySelectorAll('button,input,select')).filter(e => !e.closest('[data-alcance-temporadas]')).map(e=>({
     tag:e.tagName,tipo:e.getAttribute('type'),label:e.getAttribute('aria-label')||e.closest('label')?.childNodes[0]?.textContent?.trim()||e.textContent?.trim(),
     disabled:e.hasAttribute('disabled'),clase:e.className,
   }));
@@ -24,7 +24,8 @@ async function abrir(liga:'NBA'|'WNBA',q:number,cuotas:number,elegidos:boolean,c
   if(elegidos) {
     fireEvent.change(screen.getByRole('combobox',{name:'Equipo Local'}),{target:{value:'casa sintética'}});
     fireEvent.change(screen.getByRole('combobox',{name:'Equipo Visitante'}),{target:{value:'visita sintética'}});
-    await screen.findByRole('button',{name:'2026'});
+    if (liga === 'WNBA') await screen.findByRole('button',{name:'2026'});
+    else expect(screen.queryByText('Temporadas para el análisis')).toBeNull();
   }
   fireEvent.change(screen.getByRole('combobox',{name:'Modo de análisis'}),{target:{value:String(q)}});
   if(q)await waitFor(()=>expect(screen.queryByText('Temporadas para el análisis')).toBeNull());
@@ -37,8 +38,8 @@ async function abrir(liga:'NBA'|'WNBA',q:number,cuotas:number,elegidos:boolean,c
   }
 }
 
-describe('paridad observable, campo/orden/estilo/visibilidad por estado',()=>{
-  it.each([0,1,2,3].flatMap(q=>[0,1,2].map(c=>[q,c])))('mismo DOM de controles NBA/WNBA modo%i cuotas%i',async(q,c)=>{
+describe('controles comunes NBA/WNBA; alcance propio sin ajuste NBA implícito',()=>{
+  it.each([0,1,2,3].flatMap(q=>[0,1,2].map(c=>[q,c])))('mismos controles comunes NBA/WNBA modo%i cuotas%i',async(q,c)=>{
     await abrir('NBA',q,c,true);const nba=controles();cleanup();await abrir('WNBA',q,c,true);
     expect(controles()).toEqual(nba);
     expect(document.querySelectorAll('input[type=date],input[type=checkbox]')).toHaveLength(0);

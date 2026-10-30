@@ -351,7 +351,7 @@ def test_journal_solo_wnba_pruebas_no_prospectivas_y_corrupto(
                 razones=[{"tipo": "trazabilidad_wnba", "analisis_id": r["analisis_id"]}]
             )
         )
-    bad = json.loads(dest.read_text())
+    bad = json.loads(dest.read_text(encoding="utf-8"))
     bad["datos"][0]["y"][0] += 1
     dest.write_text(json.dumps(bad))
     with pytest.raises(ValueError, match="dañado"):
@@ -490,9 +490,9 @@ def test_pg_catalogo_wnba_aislado_y_transaccion_lectura(tmp_path):
                 c.execute(
                     (
                         Path(__file__).parent / "integracion/wnba_legacy_fixture.sql"
-                    ).read_text()
+                    ).read_text(encoding="utf-8")
                 )
-                c.execute(MIGRACION.read_text())
+                c.execute(MIGRACION.read_text(encoding="utf-8"))
                 importar(
                     c,
                     leer_lote(

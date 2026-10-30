@@ -1,5 +1,15 @@
 # Estado vigente — AnalyticsPredict
 
+## Mejoras locales: primera implementación — 2026-10-30
+
+Base Windows/UTF-8, consultas NBA sin ajuste implícito, Hoy/Cuaderno/Laboratorio,
+temas y consulta base del artefacto sin BD implementados y probados.12 de30 mejoras
+completadas en el alcance descrito;8 parciales,10 pendientes/bloqueadas.362 pruebas
+backend con PG18 sintético sin omitidas,143 frontend,lint/build y6vistas reales.
+No eficacia certificada, activación ni cierre de migración. Fuente rechazada por
+cuota el30oct; conservar modelos/cohortes y trabajos previos sin publicar.
+[Estado completo y límites](../reactivacion_single_user/MEJORAS_USO_LOCAL_2026-10-30.md).
+
 ## Error de carga y respuestas de base de datos — 2026-10-27
 
 Corregido «Network Error» cuando una consulta falla: CORS envuelve también las

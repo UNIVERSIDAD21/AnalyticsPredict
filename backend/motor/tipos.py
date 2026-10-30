@@ -560,6 +560,7 @@ class FactoresConfianza:
             "tamano_muestra": self.tamano_muestra,
             "volatilidad": self.volatilidad,
             "frescura_datos": self.frescura_datos,
+            "metodo": "heuristico_no_validado",
         }
 
 
