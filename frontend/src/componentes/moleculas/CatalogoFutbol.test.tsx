@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CatalogoFutbol } from './CatalogoFutbol';
 import { listarAgenda, listarCompeticiones, resolverPartidoCatalogo, type AgendaFutbol, type PartidoAgendaFutbol } from '../../servicios/futbol/catalogo';
 import { fechaColombia, sumarDias } from '../../utilidades/agendaFutbol';
+import { clienteAPI } from '../../servicios/api';
 vi.mock('../../servicios/futbol/catalogo', () => ({ listarAgenda: vi.fn(), listarCompeticiones: vi.fn(), resolverPartidoCatalogo: vi.fn() }));
 const partido = (cambios: Partial<PartidoAgendaFutbol> = {}): PartidoAgendaFutbol => ({
   id: 'p1', competicion: 'mls', competicionNombre: 'MLS', pais: 'Estados Unidos', temporadaId: 'mls-2026',
@@ -15,6 +16,8 @@ const props = () => ({ revision: 0, onInicio: vi.fn(), onCargando: vi.fn(), onEr
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); window.history.replaceState({}, '', '/'); });
 beforeEach(() => {
   vi.resetAllMocks();
+  // El panel de fuentes es independiente de la agenda simulada: nada de red real.
+  vi.spyOn(clienteAPI, 'get').mockResolvedValue({ data: { estado: 'SIN_CONSULTAR' } });
   vi.mocked(listarCompeticiones).mockResolvedValue([{ id: 'mls', nombre: 'MLS', codigo: 'USA_MLS', pais: 'Estados Unidos', tipo: 'liga', prioridad: 1, activa: true }]);
   vi.mocked(listarAgenda).mockResolvedValue(agenda());
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { cb(0); return 1; });
