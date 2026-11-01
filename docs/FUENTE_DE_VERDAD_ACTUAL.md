@@ -1,5 +1,15 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Recordatorio de actualización por liga — 2026-11-01
+
+La agenda muestra la última revisión general y la última actualización integral
+completa acreditada; un ciclo parcial no actualiza esta última fecha. El detalle
+separa resultados, estadísticas, cambios y verificación por competición. GET es
+READ ONLY y el modo base no abre BD. La operación incremental autorizada utiliza
+el PostgreSQL local habitual, sin Neon ni cambios de modelos. Las cifras del
+lote se acreditan mediante los recibos externos, no por esta funcionalidad.
+[Contrato](reactivacion_single_user/ACTUALIZACION_LIGAS_Y_RECORDATORIO_2026-11-01.md).
+
 ## Seguimiento y configuración de fútbol — 2026-11-01
 
 Registro manual prepartido disponible también en MLS/Argentina exploratorias,

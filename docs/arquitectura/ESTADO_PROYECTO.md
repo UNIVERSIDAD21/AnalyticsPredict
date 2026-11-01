@@ -1,5 +1,12 @@
 # Estado vigente — AnalyticsPredict
 
+## Recordatorio de actualización por liga — 2026-11-01
+
+Fecha general integral completa y última revisión visibles, con detalle de todo
+el catálogo y separación agenda/resultados/estadísticas. Recibos SQL persistentes,
+lectura sin efectos y N/D ante falta de evidencia. No certifica cobertura íntegra
+por una fecha máxima ni actualiza modelos. [Contrato](../reactivacion_single_user/ACTUALIZACION_LIGAS_Y_RECORDATORIO_2026-11-01.md).
+
 ## Seguimiento y configuración de fútbol — 2026-11-01
 
 Corregida la ocultación del registro personal para fútbol exploratorio de MLS y

@@ -5,13 +5,22 @@ from pathlib import Path
 import sys
 from fastapi import APIRouter, HTTPException
 from servicios.operacion_agendas import estado_local
+from servicios.actualizacion_ligas import obtener_actualizacion_ligas
 
 router=APIRouter(prefix='/api/agendas',tags=['Agendas'])
 
 
 @router.get('/sincronizacion')
 def estado_sincronizacion():
-    return estado_local()
+    estado = estado_local()
+    if os.environ.get('ANALYTICSPREDICT_SOLO_BASE_LOCAL') == '1':
+        return {**estado, 'actualizacion_ligas': None}
+    try:
+        return {**estado, 'actualizacion_ligas': obtener_actualizacion_ligas()}
+    except Exception:
+        # El fallo de frescura no bloquea el calendario ni expone detalles SQL.
+        return {**estado, 'actualizacion_ligas': None,
+                'error_actualizacion': 'No se pudo consultar la última actualización de las ligas.'}
 
 
 @router.post('/sincronizar',status_code=202)

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Recordatorio de actualización de todas las ligas — 2026-11-01
+
+- Fecha integral completa y última revisión general visibles en las agendas, con estado parcial explícito.
+- Detalle de las competiciones desde PostgreSQL: verificación, cambios y cortes separados de resultados/estadísticas.
+- Lectura sin ingesta por render ni entrenamiento; recibos persistentes y N/D si no existe evidencia.
+- [Contrato y operación](docs/reactivacion_single_user/ACTUALIZACION_LIGAS_Y_RECORDATORIO_2026-11-01.md).
+
 ## Seguimiento y configuración por partido de fútbol — 2026-11-01
 
 - Registro personal explícito en MLS/Argentina aunque el motor sea exploratorio; cuota real obligatoria cuando no hay proveedor, sin inventar analítica.
