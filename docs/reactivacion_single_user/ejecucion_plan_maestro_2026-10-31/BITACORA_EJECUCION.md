@@ -2313,3 +2313,11 @@ B03.06: structure → EN_CURSO. Matriz L01–L30 conciliada con B04–B12: los e
 Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\ACTUALIZACION_MATRIZ_L.json #sha256=783aa1de8529fa6b87aca7c04149601714a8d86c154aa18e0cbeeda0eb4da287
 
 Siguiente: Publicar el cierre documental con evidencia verificada y conservar los ocho bloqueos reales.
+
+## Revisión 290 · 2026-11-01T11:50:44.354525-05:00 / 2026-11-01T16:50:44.354525+00:00 · Borlty-Predict
+
+B03.06: done → HECHO. Cierre ejecutable conciliado:66/75 originales HECHO,8 bloqueados,1 no aplicable; informe acumulado/mapa/matriz30IDs y recibos preparados. Documentación b6a85fb publicada con CI41328041466 cincojobs aprobados; backup final53tablas/108199filas/38estado restaurado exacto. Ninguna activación ni importación ficticia.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\CIERRE_ACREDITADO.json #sha256=d2de5fc160a9c32178b7aea7108a9a667f49ab6ef859fb0143e2780f1b62437d
+
+Siguiente: Publicar snapshot final del control y verificar CI exacta antes de entregar; después retomar solo bloqueos con insumo nuevo acreditado. Plan global no terminado.

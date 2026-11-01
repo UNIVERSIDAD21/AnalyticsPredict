@@ -1,6 +1,6 @@
 # Checklist maestra — AnalyticsPredict
 
-Revisión del control: 289
+Revisión del control: 290
 
 Control canónico, derivado resumido en ESTADO_ACTUAL.json e historia append-only en BITACORA_EJECUCION.md.
 Única raíz editable: C:/Users/ING-ERIK/.openclaw/workspace/repos/AnalyticsPredict/docs/reactivacion_single_user/ejecucion_plan_maestro_2026-10-31. Las copias empaquetadas son snapshots históricos; no retomarlas como un tablero rival.
@@ -245,7 +245,7 @@ Usar el helper externo control.py o conservar el mismo protocolo de revisión. E
   - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
   - Revisión de última transición: 111
 
-## B03 — PARCIAL
+## B03 — HECHO
 
 - [x] **B03.01** — Comparar R/A/P y clasificar deltas por objetivo/procedencia; no confundir archivos modificados con funcionalidades nuevas ni con deltas ya publicados.
   - Estado: HECHO
@@ -302,16 +302,16 @@ Usar el helper externo control.py o conservar el mismo protocolo de revisión. E
   - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
   - Revisión de última transición: 155
 
-- [ ] **B03.06** — Conciliar evidencias y estado final; publicar documentación atribuible y entregar el informe acumulado con bloqueos honestos.
-  - Estado: EN_CURSO
+- [x] **B03.06** — Conciliar evidencias y estado final; publicar documentación atribuible y entregar el informe acumulado con bloqueos honestos.
+  - Estado: HECHO
   - Depende de: B03.05, B12.05
-  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T11:45:13.204871-05:00 / 2026-11-01T16:45:13.204871+00:00
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T11:50:44.354525-05:00 / 2026-11-01T16:50:44.354525+00:00
   - Criterio de aceptación: Conciliar evidencias y estado final; publicar documentación atribuible y entregar el informe acumulado con bloqueos honestos.
-  - Resultado observado: Matriz L01–L30 conciliada con B04–B12: los ensayos/censos ya ejecutados no figuran pendientes, manteniendo los límites y la clasificación heredada conservadora19/4/7.
-  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\ACTUALIZACION_MATRIZ_L.json #sha256=783aa1de8529fa6b87aca7c04149601714a8d86c154aa18e0cbeeda0eb4da287
+  - Resultado observado: Cierre ejecutable conciliado:66/75 originales HECHO,8 bloqueados,1 no aplicable; informe acumulado/mapa/matriz30IDs y recibos preparados. Documentación b6a85fb publicada con CI41328041466 cincojobs aprobados; backup final53tablas/108199filas/38estado restaurado exacto. Ninguna activación ni importación ficticia.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\CIERRE_ACREDITADO.json #sha256=d2de5fc160a9c32178b7aea7108a9a667f49ab6ef859fb0143e2780f1b62437d
   - Bloqueo o incidencia: Ninguno pendiente observado en este check.
-  - Siguiente acción exacta: Publicar el cierre documental con evidencia verificada y conservar los ocho bloqueos reales.
-  - Revisión de última transición: 289
+  - Siguiente acción exacta: Publicar snapshot final del control y verificar CI exacta antes de entregar; después retomar solo bloqueos con insumo nuevo acreditado. Plan global no terminado.
+  - Revisión de última transición: 290
 
 ## B04 — HECHO
 
