@@ -10,6 +10,6 @@ export function NavegacionPersonal() {
           {nombre}
         </NavLink>)}
     </nav>
-    <p className="text-sm text-texto-secundario">Mis análisis conserva copias y notas en este navegador. Seguimiento reúne los registros y resultados de la base de datos.</p>
+    <p className="text-sm text-texto-secundario">Mis análisis conserva copias y notas en este PC, fuera del navegador. Seguimiento reúne los registros y resultados de la base de datos deportiva.</p>
   </section>;
 }

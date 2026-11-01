@@ -6,6 +6,7 @@ import { consultarAgendaBaloncesto, type PartidoAgendaBaloncesto, type AgendaBal
 import { listarAgenda, type AgendaFutbol } from '../../servicios/futbol/catalogo';
 import { cambiarFavorito, favoritoEquipo, favoritoLiga } from '../../servicios/favoritosLocales';
 import { guardarConsulta } from '../../servicios/cuadernoLocal';
+vi.mock('../../servicios/almacenPersonal', () => ({ cargarPersonal: () => Promise.resolve(undefined), cambiarFavoritoDuradero: () => Promise.resolve(undefined) }));
 const partido = (id: string, cambios: Partial<PartidoAgendaBaloncesto> = {}): PartidoAgendaBaloncesto => ({
   id, liga: 'nba', competicion_nombre: 'NBA', fecha_partido: '2026-10-30', inicio_utc: null,
   equipo_local_id: id, equipo_visitante_id: 'visita', equipo_local_nombre: id, equipo_visitante_nombre: 'Atlanta',

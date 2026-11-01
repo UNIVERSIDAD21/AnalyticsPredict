@@ -98,7 +98,7 @@ export function PaginaOperacion() {
         <p>{m.disponible ? `Artefacto disponible · ${m.equipos_disponibles ?? 'N/D'} equipos con soporte` : `N/D · ${m.motivo ?? 'Artefacto no disponible'}`}</p>
         {m.disponible && <><p className="break-all">Versión: {m.modelo_version}</p><p>Corte del ajuste: {m.corte_modelo ?? 'N/D'}</p><p>Muestra de ajuste: {m.muestra_entrenamiento ?? 'N/D'} · {m.minutos_regulacion ?? (liga === 'nba' ? 48 : 40)} min sin OT · RAW</p></>}
       </div>)}</div>
-      <p>Base local permite consultar NBA, Euroliga y WNBA cuando su artefacto está disponible. Mis análisis conserva notas, favoritos y copias en este navegador.</p>
+      <p>Base local permite consultar NBA, Euroliga y WNBA cuando su artefacto está disponible. Mis análisis conserva notas, favoritos y copias en el almacén privado de este PC.</p>
       {local.bd.deshabilitada && <p>Agendas, contexto reciente, estadísticas de fútbol y seguimiento en BD: N/D en este modo. No se intenta acceder a Neon.</p>}
       <p className="text-sm text-texto-secundario">{local.limites.join(' ')}</p>
       <div className="flex flex-wrap gap-4 text-sm text-neon-cyan"><a href="/base-local">Abrir Base local</a><a href="/mis-analisis">Abrir Mis análisis</a><button type="button" onClick={() => descargar(`diagnostico-local-${local.observado_en.slice(0, 10)}.json`, JSON.stringify(local, null, 2))}>Descargar diagnóstico local</button></div>

@@ -1,12 +1,14 @@
 import { CLAVE_CUADERNO, leerCuaderno, validarCuaderno, type EntradaCuaderno } from './cuadernoLocal';
 import { CLAVE_FAVORITOS, identidadFavorito, leerFavoritos, validarFavoritos, type FavoritoLocal } from './favoritosLocales';
 import { aplicarPreferencias, CLAVE_VISUAL, leerAparienciaGuardada, validarPreferencias, type PreferenciasVisualesLocal } from './preferenciasVisuales';
+import { cachePersonal } from './personalCache';
 
 export const LIMITE_ARCHIVO_RESPALDO = 12_000_000;
 const CLAVES = [CLAVE_CUADERNO, CLAVE_FAVORITOS, CLAVE_VISUAL] as const;
 interface DatosPersonales { cuaderno: EntradaCuaderno[]; favoritos: FavoritoLocal[]; apariencia: PreferenciasVisualesLocal | null }
 export interface RespaldoPersonal { formato: 'analyticspredict-respaldo-personal'; version: 1; creadoEn: string; datos: DatosPersonales }
 export interface PlanRestauracion {
+  revisionServidor?: number;
   base: string;
   origen: string;
   creadoEn: string | null;
@@ -21,7 +23,7 @@ const objeto = (v: unknown): v is Record<string, unknown> => v !== null && typeo
 function estadoActual(): string { return JSON.stringify(CLAVES.map(k => localStorage.getItem(k))); }
 export function crearRespaldo(): RespaldoPersonal {
   return { formato: 'analyticspredict-respaldo-personal', version: 1, creadoEn: new Date().toISOString(),
-    datos: { cuaderno: leerCuaderno(), favoritos: leerFavoritos(), apariencia: leerAparienciaGuardada() } };
+    datos: { cuaderno: leerCuaderno(), favoritos: leerFavoritos(), apariencia: cachePersonal()?.datos.apariencia ?? leerAparienciaGuardada() } };
 }
 /** Rescate literal de las tres claves personales, incluso si alguna está dañada. */
 export function crearCopiaRecuperacion() {
@@ -78,7 +80,7 @@ export function prepararRestauracion(texto: string, aplicarApariencia = false): 
     apariencia: aplicarApariencia && recibidos.apariencia ? recibidos.apariencia : actual.apariencia,
   };
   if (estadoActual() !== base) throw new Error('Tus datos cambiaron mientras se preparaba el respaldo. Vuelve a leer el archivo.');
-  return { base, origen, creadoEn, siguientes, nuevas: nuevas.length, repetidas, conflictos,
+  return { base, revisionServidor: cachePersonal()?.revision, origen, creadoEn, siguientes, nuevas: nuevas.length, repetidas, conflictos,
     favoritosNuevos: favoritosNuevos.length, aplicarApariencia: Boolean(aplicarApariencia && recibidos.apariencia) };
 }
 /** Mezcla conservadora: un ID existente conserva siempre su versión local. */

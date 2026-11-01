@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { instalarAlmacenPersonalSimulado } from '../../test/almacenPersonalSimulado';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PaginaBaseLocal } from './PaginaBaseLocal';
@@ -14,7 +15,7 @@ const metadata = { modelo_version: 'sintetico', corte_modelo: '2026-01-01', mode
 const catalogo = { equipos: [{ clave: 'a', nombre: 'Equipo A', disponible: true }, { clave: 'b', nombre: 'Equipo B', disponible: true }, { clave: 'c', nombre: 'Sin muestra', disponible: false }], metadata };
 afterEach(cleanup);
 beforeEach(() => {
-  localStorage.clear(); vi.resetAllMocks();
+  vi.restoreAllMocks(); localStorage.clear(); vi.resetAllMocks(); instalarAlmacenPersonalSimulado();
   vi.mocked(catalogoLocal).mockResolvedValue(catalogo);
   vi.mocked(consultarLocal).mockImplementation(async (p, _signal, liga = 'nba') => ({
     formato: 'consulta-local-v2', analisis_id: 'sintetico', liga, equipo_local: 'Equipo A', equipo_visitante: 'Equipo B',
@@ -41,7 +42,7 @@ it.each(['euroliga', 'wnba'] as const)('consulta %s y reabre el snapshot con su 
   fireEvent.change(screen.getByLabelText('Línea entera o terminada en .5'), { target: { value: '165' } });
   expect(consultarLocal).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Guardar consulta' }));
-  await screen.findByText(/Copia guardada en Mis análisis/);
+  await screen.findByText(/Copia guardada y verificada en Mis análisis/);
   vista.unmount(); render(<MemoryRouter><PaginaCuaderno /></MemoryRouter>);
   fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
   fireEvent.click(screen.getByRole('button', { name: 'Ver resultado original' }));

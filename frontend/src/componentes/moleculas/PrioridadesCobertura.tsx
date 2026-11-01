@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { clienteAPI, extraerMensajeError } from '../../servicios/api';
+import { cargarPersonal } from '../../servicios/almacenPersonal';
 import { descargar, leerCuaderno } from '../../servicios/cuadernoLocal';
 import { leerFavoritos } from '../../servicios/favoritosLocales';
 import { priorizarCobertura, type CoberturaRegistrada } from '../../servicios/prioridadesCobertura';
@@ -12,6 +13,7 @@ export function PrioridadesCobertura({ modelos }: { modelos: Record<string, { co
   const [dias, setDias] = useState(365);
   const peticion = useRef<AbortController | null>(null);
   useEffect(() => {
+    void cargarPersonal().catch(() => { /* No se hace fallback escrito ni consulta SQL. */ });
     const leer = () => {
       try { setPrioridades(priorizarCobertura(leerFavoritos(), leerCuaderno())); setErrorLocal(''); }
       catch { setPrioridades([]); setErrorLocal('Preferencias o cuaderno no legibles: prioridades N/D. No se sobrescribieron.'); }

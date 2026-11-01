@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { PrioridadesCobertura } from './PrioridadesCobertura';
 import { clienteAPI } from '../../servicios/api';
 import { cambiarFavorito, favoritoLiga } from '../../servicios/favoritosLocales';
+vi.mock('../../servicios/almacenPersonal', () => ({ cargarPersonal: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('../../servicios/api', () => ({ clienteAPI: { get: vi.fn() }, extraerMensajeError: () => 'BD no disponible' }));
 beforeEach(() => { cleanup(); localStorage.clear(); vi.clearAllMocks(); });
 const abrir = () => render(<MemoryRouter><PrioridadesCobertura modelos={{ nba: { corte_modelo: '2026-06-14' } }} /></MemoryRouter>);

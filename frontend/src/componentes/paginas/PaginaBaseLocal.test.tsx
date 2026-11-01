@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { PaginaBaseLocal } from './PaginaBaseLocal';
 import { PaginaCuaderno } from './PaginaCuaderno';
 import { consultarLocal } from '../../servicios/consultaLocal';
+import { instalarAlmacenPersonalSimulado } from '../../test/almacenPersonalSimulado';
 vi.mock('../organismos/Encabezado', () => ({ Encabezado: () => <header>AnalyticsPredict</header> }));
 vi.mock('../../servicios/consultaLocal', async importOriginal => ({
   ...await importOriginal<typeof import('../../servicios/consultaLocal')>(),
@@ -13,7 +14,7 @@ vi.mock('../../servicios/consultaLocal', async importOriginal => ({
     metadata: { modelo_version: 17, corte_modelo: '2026-01-01', modelo_generado_en: '2026-01-02', dataset_hash: 'sintetico', muestra_entrenamiento: null },
     distribucion: { media: 220, desviacion: 10, familia: 'normal_continua' }, probabilidad_over: .4800611942, probabilidad_under: .5199388058, motivo_nd: null, advertencias: ['Datos sintéticos de prueba.'] }),
 }));
-beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); });
+beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); vi.clearAllMocks(); instalarAlmacenPersonalSimulado(); });
 it('consulta una vez, compara sin POST y reabre exactamente la copia guardada', async () => {
   const vista = render(<MemoryRouter><PaginaBaseLocal /></MemoryRouter>);
   await screen.findByRole('button', { name: 'Consultar artefacto' });
@@ -25,7 +26,7 @@ it('consulta una vez, compara sin POST y reabre exactamente la copia guardada', 
   fireEvent.change(screen.getByLabelText('Línea terminada en .5'), { target: { value: '230.5' } });
   expect(consultarLocal).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Guardar consulta' }));
-  await screen.findByText(/Copia guardada en Mis análisis/);
+  await screen.findByText(/Copia guardada y verificada en Mis análisis/);
   vista.unmount();
   render(<MemoryRouter><PaginaCuaderno /></MemoryRouter>);
   fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));

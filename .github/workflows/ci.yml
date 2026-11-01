@@ -37,6 +37,7 @@ jobs:
           tests/test_serving_nba_sin_entrenamiento.py
           tests/test_predictor_euroliga.py tests/test_predictor_wnba.py
           tests/test_wnba_ampliado.py tests/explicabilidad/test_contrato.py
+          tests/test_almacen_personal.py
           tests/scrapers/test_wnba.py
 
   backend-unit-and-contract:
@@ -65,6 +66,7 @@ jobs:
           tests/test_consulta_local_ligas.py
           tests/test_preparar_instalacion_local.py
           tests/test_inicio_local.py tests/test_orquestacion_local.py
+          tests/test_almacen_personal.py
           tests/test_contrato_probabilidad_nba.py
           tests/test_cobertura_uso.py
           tests/test_auditoria_probabilidades_wnba.py

@@ -35,7 +35,7 @@ def estado_local():
         'bd': {'deshabilitada': deshabilitada, 'conexion_comprobada': False,
                'estado': 'DESHABILITADA_POR_MODO' if deshabilitada else 'NO_COMPROBADA'},
         'modelos': modelos, 'fuente': 'proceso_y_artefactos_locales',
-        'capacidades': {'consulta_base': True, 'cuaderno': 'almacen_del_navegador',
+        'capacidades': {'consulta_base': True, 'cuaderno': 'almacen_local_duradero',
                         'agendas_y_contexto': 'requiere_BD', 'futbol_sin_BD': False},
         'limites': ['No verifica datos deportivos actuales ni conectividad SQL.',
                     'No acredita migración, calibración ni rendimiento predictivo.',

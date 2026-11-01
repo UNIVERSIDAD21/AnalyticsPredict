@@ -1,4 +1,5 @@
 import type { LigaCuaderno } from './cuadernoLocal';
+import { cachePersonal } from './personalCache';
 
 export interface FavoritoLocal {
   tipo: 'liga' | 'equipo' | 'competicion'; liga: LigaCuaderno; id: string; nombre: string;
@@ -14,6 +15,9 @@ export function favoritoLiga(liga: LigaCuaderno): FavoritoLocal {
   return { liga, tipo: 'liga', id: liga, nombre: liga.toUpperCase() };
 }
 export function leerFavoritos(): FavoritoLocal[] {
+  return cachePersonal()?.datos.favoritos ?? leerFavoritosNavegador();
+}
+export function leerFavoritosNavegador(): FavoritoLocal[] {
   const raw = localStorage.getItem(CLAVE_FAVORITOS);
   if (raw === null) return [];
   let parsed: { version?: unknown; elementos?: unknown };

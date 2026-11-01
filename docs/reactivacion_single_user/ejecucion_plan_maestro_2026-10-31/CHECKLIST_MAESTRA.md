@@ -1,6 +1,6 @@
 # Checklist maestra — AnalyticsPredict
 
-Revisión del control: 134
+Revisión del control: 172
 
 Control canónico, derivado resumido en ESTADO_ACTUAL.json e historia append-only en BITACORA_EJECUCION.md.
 Única raíz editable: C:/Users/ING-ERIK/.openclaw/workspace/repos/AnalyticsPredict/docs/reactivacion_single_user/ejecucion_plan_maestro_2026-10-31. Las copias empaquetadas son snapshots históricos; no retomarlas como un tablero rival.
@@ -245,7 +245,7 @@ Usar el helper externo control.py o conservar el mismo protocolo de revisión. E
   - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
   - Revisión de última transición: 111
 
-## B03 — PARCIAL
+## B03 — HECHO
 
 - [x] **B03.01** — Comparar R/A/P y clasificar deltas por objetivo/procedencia; no confundir archivos modificados con funcionalidades nuevas ni con deltas ya publicados.
   - Estado: HECHO
@@ -280,84 +280,84 @@ Usar el helper externo control.py o conservar el mismo protocolo de revisión. E
   - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
   - Revisión de última transición: 118
 
-- [ ] **B03.04** — Validar el lote, usar identidad Git acordada `UNIVERSIDAD21 <efuentes1@udi.edu.co>`, publicar sin force y comprobar CI del SHA exacto conforme a las autorizaciones existentes.
-  - Estado: EN_CURSO
+- [x] **B03.04** — Validar el lote, usar identidad Git acordada `UNIVERSIDAD21 <efuentes1@udi.edu.co>`, publicar sin force y comprobar CI del SHA exacto conforme a las autorizaciones existentes.
+  - Estado: HECHO
   - Depende de: B03.03
-  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T09:43:35.497014-05:00 / 2026-11-01T14:43:35.497014+00:00
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T09:54:29.398792-05:00 / 2026-11-01T14:54:29.398792+00:00
   - Criterio de aceptación: Validar el lote, usar identidad Git acordada `UNIVERSIDAD21 <efuentes1@udi.edu.co>`, publicar sin force y comprobar CI del SHA exacto conforme a las autorizaciones existentes.
-  - Resultado observado: Validación frontend final registrada; revisar todos los controles antes de commit/push.
-  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B03_FRONTEND_FINAL.json #sha256=0b09318e4bec2fddab903c5aa73c9f1d596767d294545d89a32be8bc833347ec
+  - Resultado observado: Lote publicado sin force con identidad exacta; SHA remoto coincidente y cinco jobs CI aprobados.1865 backend/0omitidas;225 frontend previas,13 focales de aislamiento y servicios/build/audit finales acreditados. Primer fallo CI preservado y corregido.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B03_CI_41318153861_20261101T145429Z_41ed15.json #sha256=fac0befd6da8f1568f6032fbb4f7bd1d7e2acd244c5d5badd3999676c13bbb44
   - Bloqueo o incidencia: Ninguno pendiente observado en este check.
   - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
-  - Revisión de última transición: 134
+  - Revisión de última transición: 140
 
-- [ ] **B03.05** — Emitir una release/paquete identificado y la matriz delta → commit → CI → paquete; actualizar documentación vigente sin borrar recibos históricos.
-  - Estado: PENDIENTE
+- [x] **B03.05** — Emitir una release/paquete identificado y la matriz delta → commit → CI → paquete; actualizar documentación vigente sin borrar recibos históricos.
+  - Estado: HECHO
   - Depende de: B03.04
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T10:05:57.044768-05:00 / 2026-11-01T15:05:57.044768+00:00
   - Criterio de aceptación: Emitir una release/paquete identificado y la matriz delta → commit → CI → paquete; actualizar documentación vigente sin borrar recibos históricos.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Emitir una release/paquete identificado y la matriz delta → commit → CI → paquete; actualizar documentación vigente sin borrar recibos históricos.
-  - Revisión de última transición: 0
+  - Resultado observado: Paquete nuevo atribuible a60af3ce/CI5success: integridad, Python aislado y modo base real aprobados,38archivos de estado intactos. Acceso diario/BD local privados y paquetes previos conservados; matriz delta→commit→CI→paquete emitida.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B03_05_PAQUETE.json #sha256=d6b52ca04be8e57dac5a1677e956a6a918dd4bae9ca5e8bafe4d38a764bebf40
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 155
 
-## B04 — PENDIENTE
+## B04 — HECHO
 
-- [ ] **B04.01** — Medir censo local por deporte/competición/temporada/fase: identidades, estados, fechas, fuentes, nulos, duplicados y conflictos.
-  - Estado: PENDIENTE
+- [x] **B04.01** — Medir censo local por deporte/competición/temporada/fase: identidades, estados, fechas, fuentes, nulos, duplicados y conflictos.
+  - Estado: HECHO
   - Depende de: B02.08
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T09:58:27.980068-05:00 / 2026-11-01T14:58:27.980068+00:00
   - Criterio de aceptación: Medir censo local por deporte/competición/temporada/fase: identidades, estados, fechas, fuentes, nulos, duplicados y conflictos.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Medir censo local por deporte/competición/temporada/fase: identidades, estados, fechas, fuentes, nulos, duplicados y conflictos.
-  - Revisión de última transición: 0
+  - Resultado observado: Censo local por competición/temporada/fase y cada columna, identidades/estados/fuentes/NULL/ceros/duplicados medidos en snapshot READ ONLY. Denominador oficial y disponibilidad histórica no se inventan.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B04_01_CENSO.json #sha256=4d5c55d3800145581f3c0f5d19f1e0919d22477346f9c8cb2462d28c1bec7a69
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 142
 
-- [ ] **B04.02** — Verificar periodos, OT, conciliación de totales y targets por familia, manteniendo NULL/ceros y fechas sin hora correctamente diferenciados.
-  - Estado: PENDIENTE
+- [x] **B04.02** — Verificar periodos, OT, conciliación de totales y targets por familia, manteniendo NULL/ceros y fechas sin hora correctamente diferenciados.
+  - Estado: HECHO
   - Depende de: B04.01
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T09:58:34.265604-05:00 / 2026-11-01T14:58:34.265604+00:00
   - Criterio de aceptación: Verificar periodos, OT, conciliación de totales y targets por familia, manteniendo NULL/ceros y fechas sin hora correctamente diferenciados.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Verificar periodos, OT, conciliación de totales y targets por familia, manteniendo NULL/ceros y fechas sin hora correctamente diferenciados.
-  - Revisión de última transición: 0
+  - Resultado observado: Q1–Q4/FT/OT y targets fútbol conciliados por política; mitades de tiros siguen ESTIMADO, no observaciones. NULL/ceros y ET/penales separados.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B04_02_PERIODOS.json #sha256=f33521e3e3abf81396d2851369f62f8149bba4dd98484ddaaa4236b96cc4ce31
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 144
 
-- [ ] **B04.03** — Construir la matriz objetivo × campos necesarios × elegibles × abstenciones × disponibilidad temporal; no inflar muestras con filas espejadas.
-  - Estado: PENDIENTE
+- [x] **B04.03** — Construir la matriz objetivo × campos necesarios × elegibles × abstenciones × disponibilidad temporal; no inflar muestras con filas espejadas.
+  - Estado: HECHO
   - Depende de: B04.02
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T09:58:43.617674-05:00 / 2026-11-01T14:58:43.617674+00:00
   - Criterio de aceptación: Construir la matriz objetivo × campos necesarios × elegibles × abstenciones × disponibilidad temporal; no inflar muestras con filas espejadas.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Construir la matriz objetivo × campos necesarios × elegibles × abstenciones × disponibilidad temporal; no inflar muestras con filas espejadas.
-  - Revisión de última transición: 0
+  - Resultado observado: Matriz por liga/objetivo con elegibles y exclusiones sin inflar filas espejadas. Disponibilidad histórica preevento no acreditada; solo aptitud estructural retrospectiva.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B04_03_APTITUD.json #sha256=59fb8b140692c6a51e937783d7c59d0f27cb2ce80a1e0b2f8461e94b24d8bf18
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 146
 
-- [ ] **B04.04** — Conciliar artefactos, calibradores realmente aplicados, versiones y políticas; inventariar originales y cohortes presentes/ausentes.
-  - Estado: PENDIENTE
+- [x] **B04.04** — Conciliar artefactos, calibradores realmente aplicados, versiones y políticas; inventariar originales y cohortes presentes/ausentes.
+  - Estado: HECHO
   - Depende de: B04.03
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T10:03:15.449759-05:00 / 2026-11-01T15:03:15.449759+00:00
   - Criterio de aceptación: Conciliar artefactos, calibradores realmente aplicados, versiones y políticas; inventariar originales y cohortes presentes/ausentes.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Conciliar artefactos, calibradores realmente aplicados, versiones y políticas; inventariar originales y cohortes presentes/ausentes.
-  - Revisión de última transición: 0
+  - Resultado observado: 38 archivos de estado y tres publicaciones conciliados con políticas por ruta;5/24 calibradores activos de BD no se transfieren a otros modelos. OriginalesV4 no presentes en estado instalado; B06 conserva recuperación específica.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B04_04_ARTEFACTOS.json #sha256=e188c788e9a55a63ef0c7be076de29fdc9541f678ec114086df66d3d936986d7
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 148
 
-- [ ] **B04.05** — Congelar datasets aptos con consultas/filtros/manifiestos/hashes y emitir backlog medido; mantener N/D cuando no exista denominador oficial de cobertura.
-  - Estado: PENDIENTE
+- [x] **B04.05** — Congelar datasets aptos con consultas/filtros/manifiestos/hashes y emitir backlog medido; mantener N/D cuando no exista denominador oficial de cobertura.
+  - Estado: HECHO
   - Depende de: B04.04
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T10:03:15.922448-05:00 / 2026-11-01T15:03:15.922448+00:00
   - Criterio de aceptación: Congelar datasets aptos con consultas/filtros/manifiestos/hashes y emitir backlog medido; mantener N/D cuando no exista denominador oficial de cobertura.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Congelar datasets aptos con consultas/filtros/manifiestos/hashes y emitir backlog medido; mantener N/D cuando no exista denominador oficial de cobertura.
-  - Revisión de última transición: 0
+  - Resultado observado: Snapshots privados con consultas/política/hashes y backlog medido verificados. NBA9564/Euro2578/WNBA1840REG aptos estructurales; fútbol por objetivo. Sin eficacia, disponibilidad causal o calendario íntegro inventados.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B04_05_CONGELADO.json #sha256=5bbfc3b522ef0031d96f998aa4de4cf9738132d84d80a112f0ae1e97160219da
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 150
 
 ## B05 — PENDIENTE
 
@@ -677,29 +677,29 @@ Usar el helper externo control.py o conservar el mismo protocolo de revisión. E
   - Siguiente acción exacta: Determinar el estado de cada versión/objetivo según su política. Activar únicamente si cumple los criterios y existe la autorización aplicable; conservar rollback y decisión registrada.
   - Revisión de última transición: 0
 
-## B10 — PENDIENTE
+## B10 — PARCIAL
 
-- [ ] **B10.01** — Definir contrato y ubicación estable fuera de releases para el almacén personal. Preferencia: SQLite de la biblioteca estándar, manteniendo PostgreSQL deportivo y el modo base independientes. Cambiar esa elección solo por una razón técnica concreta documentada.
-  - Estado: PENDIENTE
+- [x] **B10.01** — Definir contrato y ubicación estable fuera de releases para el almacén personal. Preferencia: SQLite de la biblioteca estándar, manteniendo PostgreSQL deportivo y el modo base independientes. Cambiar esa elección solo por una razón técnica concreta documentada.
+  - Estado: HECHO
   - Depende de: B00.02
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T10:11:10.407627-05:00 / 2026-11-01T15:11:10.407627+00:00
   - Criterio de aceptación: Definir contrato y ubicación estable fuera de releases para el almacén personal. Preferencia: SQLite de la biblioteca estándar, manteniendo PostgreSQL deportivo y el modo base independientes. Cambiar esa elección solo por una razón técnica concreta documentada.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Definir contrato y ubicación estable fuera de releases para el almacén personal. Preferencia: SQLite de la biblioteca estándar, manteniendo PostgreSQL deportivo y el modo base independientes. Cambiar esa elección solo por una razón técnica concreta documentada.
-  - Revisión de última transición: 0
+  - Resultado observado: Contrato fijado: SQLite estándar en directorio privado estable, CAS/idempotencia, GET sin escrituras,100/4M y200favoritos preservados; originales navegador y PostgreSQL separados.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_01_CONTRATO.json #sha256=5b0ecfb2e53459bd16ea1293d4ab82da7e73e0c7ea8d2ee2c2f93ccba833ec91
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 157
 
 - [ ] **B10.02** — Implementar persistencia explícita de snapshots, IDs, notas, etiquetas, favoritos y revisiones; validación, conflictos y confirmación real de guardado.
-  - Estado: PENDIENTE
+  - Estado: EN_CURSO
   - Depende de: B10.01, B03.04
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T10:51:35.636867-05:00 / 2026-11-01T15:51:35.636867+00:00
   - Criterio de aceptación: Implementar persistencia explícita de snapshots, IDs, notas, etiquetas, favoritos y revisiones; validación, conflictos y confirmación real de guardado.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Implementar persistencia explícita de snapshots, IDs, notas, etiquetas, favoritos y revisiones; validación, conflictos y confirmación real de guardado.
-  - Revisión de última transición: 0
+  - Resultado observado: Validación local acreditada:1887backend/232frontend sin omitidas,UIreal1366/390,conflictos/reinicio/capacidad100/backuprestore final. Falta revisión final,commit/push/CI y aplicación a instalación habitual.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_02_VALIDACION_LOCAL.json #sha256=57457652ae74f2e3a33d2ec9aea31b6983ff806d623ebeb86b9044562242710f
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 172
 
 - [ ] **B10.03** — Importar el contenido actual del navegador mediante acción visible, vista previa y respaldo anterior; conservar el original hasta verificar la migración y su reversión.
   - Estado: PENDIENTE
@@ -715,13 +715,13 @@ Usar el helper externo control.py o conservar el mismo protocolo de revisión. E
 - [ ] **B10.04** — Mantener import/export JSON y compatibilidad declarada con respaldos anteriores; fijar capacidad medida sin truncar datos ni quitar límites sin verificar consecuencias.
   - Estado: PENDIENTE
   - Depende de: B10.03
-  - Agente y actualización COT / UTC: Sin ejecutar
+  - Agente y actualización COT / UTC: Borlty-Predict / 2026-11-01T10:51:35.411258-05:00 / 2026-11-01T15:51:35.411258+00:00
   - Criterio de aceptación: Mantener import/export JSON y compatibilidad declarada con respaldos anteriores; fijar capacidad medida sin truncar datos ni quitar límites sin verificar consecuencias.
-  - Resultado observado: No ejecutado.
-  - Evidencia y versión/corte: Sin evidencia de cierre.
-  - Bloqueo o incidencia: Ninguno observado.
-  - Siguiente acción exacta: Mantener import/export JSON y compatibilidad declarada con respaldos anteriores; fijar capacidad medida sin truncar datos ni quitar límites sin verificar consecuencias.
-  - Revisión de última transición: 0
+  - Resultado observado: Compatibilidad sin cerrar todavía. Las entradas operation heredadas del ayudante eran validación técnica de B10.02, no ejecución o cierre de este check. Historial conservado.
+  - Evidencia y versión/corte: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_INCIDENCIA_ETIQUETA_VALIDACION.json #sha256=d15a0df1859b03215d83c8db1fead2579c2678f072cd7c3b7c97b1e49e74847b
+  - Bloqueo o incidencia: Ninguno pendiente observado en este check.
+  - Siguiente acción exacta: Continuar con el siguiente check ejecutable tras verificar dependencias.
+  - Revisión de última transición: 171
 
 - [ ] **B10.05** — Probar navegadores/pestañas independientes, conflictos, almacenamiento lleno, cierre abrupto y conservación exacta de resultados/timestamps.
   - Estado: PENDIENTE

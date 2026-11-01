@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Conservar Mis análisis fuera del navegador — 2026-11-01
+
+- SQLite estándar en datos privados estables, independiente de releases/PostgreSQL. Guardado confirmado, CAS/idempotencia y snapshots originales inmutables.
+- Notas, etiquetas y favoritos duraderos; importación visible conserva las claves antiguas y los conflictos mantienen la versión del PC.
+- JSON compatible, capacidad medida100consultas sin truncar, recuperación tras cierre abrupto y backup/restore en archivo nuevo.
+- Pruebas de dos contextos web, disco lleno, almacenamiento del navegador rechazado y reinicio. Sin migrar el perfil habitual ni modificar modelos/ingestas.
+- [Contrato y límites](docs/reactivacion_single_user/ALMACEN_PERSONAL_DURADERO_2026-11-01.md).
+
 ## Migración local recuperable y consolidación de previos — 2026-11-01
 
 - Orquestación Windows con bootstrap aislado, registro inmediato de PID/identidad/log, espera monotónica y limpieza de fallos parciales. Acceso diario identifica/reutiliza/cierra exclusivamente el clúster y procesos propios.

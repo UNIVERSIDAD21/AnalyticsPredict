@@ -1,4 +1,5 @@
 /** Copias de consulta personales, no apuestas ni registros analíticos oficiales. */
+import { cachePersonal } from './personalCache';
 export type LigaCuaderno = 'nba' | 'wnba' | 'euroliga' | 'futbol';
 export interface EntradaCuaderno {
   id: string; titulo: string; liga: LigaCuaderno; guardadoEn: string;
@@ -19,6 +20,9 @@ export function validarCuaderno(parsed: unknown): EntradaCuaderno[] {
   return parsed as EntradaCuaderno[];
 }
 export function leerCuaderno(): EntradaCuaderno[] {
+  return cachePersonal()?.datos.cuaderno ?? leerCuadernoNavegador();
+}
+export function leerCuadernoNavegador(): EntradaCuaderno[] {
   const raw = localStorage.getItem(CLAVE_CUADERNO);
   if (!raw) return [];
   const parsed: unknown = JSON.parse(raw);

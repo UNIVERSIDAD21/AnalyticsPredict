@@ -1,5 +1,30 @@
 # Estado vigente — AnalyticsPredict
 
+## Git, censo local y almacén personal — 2026-11-01
+
+Consolidación previa publicada en `60af3ce` sobre `fbbb001`, CI41318153861 con
+cinco jobs aprobados. Paquete `2026-11-01_01_consolidado` autónomo identificado;
+la instalación con BD y el acceso diario permanecen privados y separados.
+
+Censo READ ONLY:15704 registros de baloncesto y39385 fútbol. Muestras REG
+estructurales congeladas: NBA9564/Euro2578/WNBA1840. No equivale a disponibilidad
+histórica causal, calendario íntegro o eficacia. Cinco pares fútbol contienen
+solo un final cada uno;25 finales tienen FT incompleto. Los NULL no se rellenan
+por su mera existencia; el residual WEB sigue fuera del lote.
+
+Nuevo almacén personal SQLite fuera de releases, sin dependencia de PostgreSQL:
+guardado explícito/releído, revisión optimista, idempotencia, originales
+inmutables, notas/etiquetas/favoritos y respaldo/restore en destino nuevo.
+GET no crea ni migra archivos. Los JSON anteriores siguen compatibles mediante
+vista previa; importar el perfil habitual requiere la acción visible del Jefe,
+no se acredita por las pruebas técnicas aisladas. Límites100/4M y200 favoritos
+conservados. Pruebas locales1887 backend/232 frontend sin omisiones; CI y uso
+habitual de esta continuación se acreditan exclusivamente en el control vigente.
+
+[Contrato y recuperación](../reactivacion_single_user/ALMACEN_PERSONAL_DURADERO_2026-11-01.md).
+La referencia canónica es la checklist de la copia activa; las copias en paquetes
+o commits son snapshots históricos y no otro tablero editable.
+
 ## Hito operativo H2 — 2026-11-01, MIGRADO_LOCAL_VERIFICADO
 
 Origen exportado con corte consistente, destino local Unicode conciliado (53 tablas/108190 filas), API/UI, escrituras técnicas en clon, reinicio, respaldo local y restauración real verificados. Acceso habitual apunta al destino local; no hay fallback a Neon. El control canónico de ejecución contiene las evidencias B01/B02. Los análisis personales no exportados del navegador aún esperan B10; todos los respaldos disponibles permanecen en el mismo SSD. Esto no cierra calibración, prospectiva ni el catálogo científico. Los bloqueos históricos de cuota/migración descritos más abajo son antecedentes superados por este hito, no el estado operativo actual.
