@@ -1,31 +1,80 @@
 {
-  "revision_control": 172,
-  "actualizado_cot": "2026-11-01T10:51:35.668902-05:00",
-  "actualizado_utc": "2026-11-01T15:51:35.668902+00:00",
+  "revision_control": 289,
+  "actualizado_cot": "2026-11-01T11:45:13.234434-05:00",
+  "actualizado_utc": "2026-11-01T16:45:13.234434+00:00",
   "agente_activo": "Borlty-Predict",
   "repositorio": "C:\\Users\\ING-ERIK\\.openclaw\\workspace\\repos\\AnalyticsPredict",
   "rama": "reactivacion/implementacion-single-user",
   "head": "5a608895c341b0c7371c74c1eb8efd097a6d73c4",
-  "bloque_actual": "B10",
-  "check_actual": "B10.02",
+  "bloque_actual": "B03",
+  "check_actual": "B03.06",
   "estado_check": "EN_CURSO",
-  "ultimo_check_verificado": "B10.01",
-  "siguiente_check_ejecutable": "B05.01",
+  "ultimo_check_verificado": "B12.05",
+  "siguiente_check_ejecutable": null,
   "operacion_en_curso": null,
-  "bloqueos": [],
+  "bloqueos": [
+    {
+      "check": "B06.02",
+      "causa": "Faltan originales corregidos V4 en las ubicaciones ya revisadas; ninguna pista nueva. No puede reproducirse ni evaluarse L10 desde textos o loaderlegacy.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B06_02_V4_ORIGINALES_FALTANTES.json #sha256=517e167ee50338e4fa7da009f12918a1cae0ed6d4972c5a120116564a008f574",
+      "condicion": "Propietario: recuperar originales/hash/política de la copia que los conserva; no recrear cohorte."
+    },
+    {
+      "check": "B09.02",
+      "causa": "No hay CALprob/TEST independientes aptos para estas versiones; no se recicla EVAL observado ni calibradoreslegacy. Probabilidades nuevas siguenRAW.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B09_02_CALIBRACION_NO_APTA.json #sha256=5fcf111d0bd84b6123be5046ea28aebf74b44d65eb5903a1033fd42b5fa5fb6f",
+      "condicion": "Recoger muestra separada segúnpolítica, sin cambiar modelos ni rebajar gates."
+    },
+    {
+      "check": "B09.04",
+      "causa": "3outcomes posteriores exactos incorporados sinfit; PRE/REGseparados, fuenteESPNnoindependiente. Cohorte1nov aúnfutura/muestra insuficiente: evaluación finalpendiente.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B09_04_OUTCOMES_PARCIALES_20261101T162742Z_ca7441.json #sha256=bf37467ad098ac9d76ce445c9e47a85c58c40ab428d8250421a0e99b493f0db0",
+      "condicion": "Tras finalizar eventos1nov, resolver porID/hora sinfit; acumular evidencia independiente de la misma versión segúnpolítica, sincron."
+    },
+    {
+      "check": "B09.05",
+      "causa": "No promover: calibración/evidencia futura independiente insuficientes; RAWno certificado. Se conservan modelos/calibradores y rollback actual, ningunaactivación.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B09_04_OUTCOMES_PARCIALES_20261101T162742Z_ca7441.json #sha256=bf37467ad098ac9d76ce445c9e47a85c58c40ab428d8250421a0e99b493f0db0",
+      "condicion": "Solo revisar promoción cuando B09.02/B09.04 cumplan la política de cada versión/objetivo y autorización aplicable."
+    },
+    {
+      "check": "B10.03",
+      "causa": "Falta acción visible del propietario en su perfil habitual; se conserva íntegro y no se accede automáticamente. La importación aislada probada no acredita sus datos reales.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B10_03_IMPORTACION_PENDIENTE.json #sha256=d47601f13ec920be7ded6e5ff67f0360a8c7441d91ae833ae677af1243e17bec",
+      "condicion": "Jefe: revisar/importar desde Mis análisis; agente continúa checks independientes."
+    },
+    {
+      "check": "B12.02",
+      "causa": "Dosobservacionesfuente no acreditan archivo causal de reloj/posesión/revisiones/ordenllegada ni contrato dereutilización. El predictoractual sigue entrecuartos, no tiempo real.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B12_02_LIVE_INSUFICIENTE.json #sha256=648cfb8cc759251060655c16ed591ee06474cdb35d3a353c92bc6011a27f57ad",
+      "condicion": "Obtener fuente/contrato permitidos y archivo causal verificable antes de implementar live."
+    },
+    {
+      "check": "B12.03",
+      "causa": "La presencia puntual de lesiones/boxscore o columnas no acredita cobertura/definición/asof histórico; xG específico y fuera delmergevigente. Faltan insumoscausales y permiso de reutilización verificados.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B12_03_VARIABLES_NO_ACREDITADAS.json #sha256=75b36ccbc73075c26445d8c8301c622173d9638663eb2c7e7901de0a62aa5e98",
+      "condicion": "Proveer fuente gratuita permitida y cohortecausal/semántica antes de añadir variables; residualWEB queda pendiente."
+    },
+    {
+      "check": "B12.04",
+      "causa": "No construir candidato ni ablación: no se cumplen insumos reales B12.02/B12.03. Falta de archivo causal no se suple con simulación o datos futuros.",
+      "evidencia": "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B12_04_CANDIDATO_CONDICIONADO.json #sha256=85de51093af09c2ff4ad7f6f702c8d8fe596249d8ac047c1f3f42e5b28908570",
+      "condicion": "Retomar solo tras inputs suficientes y protocoloaislado predeclarado."
+    }
+  ],
   "evidencias_recientes": [
-    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B04_03_APTITUD.json #sha256=59fb8b140692c6a51e937783d7c59d0f27cb2ce80a1e0b2f8461e94b24d8bf18",
-    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B04_04_ARTEFACTOS.json #sha256=e188c788e9a55a63ef0c7be076de29fdc9541f678ec114086df66d3d936986d7",
-    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B04_05_CONGELADO.json #sha256=5bbfc3b522ef0031d96f998aa4de4cf9738132d84d80a112f0ae1e97160219da",
-    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B03_05_PAQUETE.json #sha256=d6b52ca04be8e57dac5a1677e956a6a918dd4bae9ca5e8bafe4d38a764bebf40",
-    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B10_01_CONTRATO.json #sha256=5b0ecfb2e53459bd16ea1293d4ab82da7e73e0c7ea8d2ee2c2f93ccba833ec91"
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B11_03_CONCURRENCIA.json #sha256=4b991f9281d8ec0683c7530bd419b18d54e00d820a7d455a80936812a0ef0608",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B11_04_EQUIVALENCIA.json #sha256=23302969fd350a653b6f9be99baeac61650c34fa1e28d707bb650a6c6d36857c",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B11_05_UI_ACCESIBILIDAD.json #sha256=3a81aa3a753dea02586bdecd6f248540f100b38ed1080eaee6e0d9af55507cda",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B12_01_CONTRATO_VIABILIDAD.json #sha256=0f568c0c46136a6d39789730b4c59e0bee6b224ac01538782cf499e65c59a51e",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B12_05_DICTAMEN.json #sha256=b396f8702183e6ad9b30a9350514cbd2083a8c2a8e681a44b301618209c97aa8"
   ],
   "conteos": {
-    "PENDIENTE": 42,
+    "PENDIENTE": 0,
     "EN_CURSO": 1,
-    "HECHO": 32,
-    "BLOQUEADO": 0,
-    "NO_APLICA": 0
+    "HECHO": 66,
+    "BLOQUEADO": 8,
+    "NO_APLICA": 1
   },
   "instruccion_reanudacion": "Leer instrucciones, checklist y bitácora; verificar PID/destino/resultado antes de repetir operaciones. No modificar paquetes anteriores. Un solo agente escritor."
 }

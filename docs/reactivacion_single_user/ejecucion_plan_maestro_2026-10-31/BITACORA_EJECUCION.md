@@ -1377,3 +1377,939 @@ B10.02: operation → EN_CURSO. Validación local acreditada:1887backend/232fron
 Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_02_VALIDACION_LOCAL.json #sha256=57457652ae74f2e3a33d2ec9aea31b6983ff806d623ebeb86b9044562242710f
 
 Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 173 · 2026-11-01T10:56:05.586997-05:00 / 2026-11-01T15:56:05.586997+00:00 · Borlty-Predict
+
+B10.02: operation → EN_CURSO. SHA remoto16af437 coincidente. CI del nuevo almacén consultada; no cerrar ni activar instalación hasta cinco jobs success.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_CI_41323491994.json #sha256=50ca11836f2b2b671edd0f9c79e809f7ea83d7c83b62932a6e628af0dda77eb9
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 174 · 2026-11-01T11:03:24.680663-05:00 / 2026-11-01T16:03:24.680663+00:00 · Borlty-Predict
+
+B10.02: operation → EN_CURSO. SHA remoto16af437 coincidente. CI del nuevo almacén consultada; no cerrar ni activar instalación hasta cinco jobs success.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_CI_41323491994.json #sha256=50ca11836f2b2b671edd0f9c79e809f7ea83d7c83b62932a6e628af0dda77eb9
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 175 · 2026-11-01T11:05:58.627200-05:00 / 2026-11-01T16:05:58.627200+00:00 · Borlty-Predict
+
+B10.02: operation → EN_CURSO. Payload y nueva instalación privada preparados; la anterior permanece intacta. La activación exige CI final y lectura local acreditada.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_PAQUETES_PREPARADOS.json #sha256=6ad8274d20e5ea5685e6619ba38f6355ed0365ab2e96dd9c23df648ba4c70844
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 176 · 2026-11-01T11:07:34.287666-05:00 / 2026-11-01T16:07:34.287666+00:00 · Borlty-Predict
+
+B10.02: operation → EN_CURSO. Payload y nueva instalación privada preparados; la anterior permanece intacta. La activación exige CI final y lectura local acreditada.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_PAQUETES_PREPARADOS.json #sha256=6ad8274d20e5ea5685e6619ba38f6355ed0365ab2e96dd9c23df648ba4c70844
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 177 · 2026-11-01T11:09:16.666255-05:00 / 2026-11-01T16:09:16.666255+00:00 · Borlty-Predict
+
+B10.02: operation → EN_CURSO. Payload y nueva instalación privada preparados; la anterior permanece intacta. La activación exige CI final y lectura local acreditada.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_PAQUETES_PREPARADOS.json #sha256=6ad8274d20e5ea5685e6619ba38f6355ed0365ab2e96dd9c23df648ba4c70844
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 178 · 2026-11-01T11:09:34.849581-05:00 / 2026-11-01T16:09:34.849581+00:00 · Borlty-Predict
+
+B10.02: operation → EN_CURSO. CI final5success, paquete y nueva instalación privada verificados; acceso habitual actualizado y CMD real0. Backend en BDlocal, almacén PC independiente sin crear/migrar datos al arrancar. Instalación anterior íntegra.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_INSTALACION_ACTIVA.json #sha256=3efcacef65193504d026f3aacb835487c368e6fbfc1a54ae512be94b3f182744
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 179 · 2026-11-01T11:09:47.217855-05:00 / 2026-11-01T16:09:47.217855+00:00 · Borlty-Predict
+
+B10.02: done → HECHO. Persistencia PC completa, publicada y activa; CI5/5,1887backend/232frontend sin omisiones, guardado releído/CAS/idempotencia. Incidencia del comprobador recuperada; datos deportivos/modelos sin cambios.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_02_IMPLEMENTACION.json #sha256=10caf3bab3f14a9bfedb7b80437e057858598c7223c00003638c3d8902d3d17e
+
+Siguiente: B10.03: registrar acción visible pendiente del propietario; continuar compatibilidad y recuperación independientes.
+
+## Revisión 180 · 2026-11-01T11:09:47.486538-05:00 / 2026-11-01T16:09:47.486538+00:00 · Borlty-Predict
+
+B10.03: structure → PENDIENTE. Separadas dependencias técnicas de la acción personal del navegador.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_DEPENDENCIAS_INDEPENDIENTES.json #sha256=12617c9fb0ecefe35804abbdecef940a9364037a60a3686e281db7ce31c6db0f
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 181 · 2026-11-01T11:09:47.738600-05:00 / 2026-11-01T16:09:47.738600+00:00 · Borlty-Predict
+
+B10.03: block → BLOQUEADO. Falta acción visible del propietario en su perfil habitual; se conserva íntegro y no se accede automáticamente. La importación aislada probada no acredita sus datos reales.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_03_IMPORTACION_PENDIENTE.json #sha256=d47601f13ec920be7ded6e5ff67f0360a8c7441d91ae833ae677af1243e17bec
+
+Siguiente: Jefe: revisar/importar desde Mis análisis; agente continúa checks independientes.
+
+## Revisión 182 · 2026-11-01T11:09:47.996867-05:00 / 2026-11-01T16:09:47.996867+00:00 · Borlty-Predict
+
+B10.04: begin → EN_CURSO. Conciliando evidencias ya ejecutadas; sin repetir escrituras ni usar el perfil habitual.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_INCIDENCIA_ETIQUETA_VALIDACION.json #sha256=d15a0df1859b03215d83c8db1fead2579c2678f072cd7c3b7c97b1e49e74847b
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 183 · 2026-11-01T11:09:48.270659-05:00 / 2026-11-01T16:09:48.270659+00:00 · Borlty-Predict
+
+B10.04: done → HECHO. JSON anterior compatible con vista previa;100consultas/4MUTF16 y200favoritos conservados. Ensayo100consultas/3769845UTF16;101rechazada422 sin truncar.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_04_COMPATIBILIDAD.json #sha256=9ad159304a1f7b9dd2941805af30395b3cc52b98f8d0f3d0ba9dfd393bc23284
+
+Siguiente: Continuar B05 y los demás checks autorizados.
+
+## Revisión 184 · 2026-11-01T11:09:48.533230-05:00 / 2026-11-01T16:09:48.533230+00:00 · Borlty-Predict
+
+B10.05: begin → EN_CURSO. Conciliando evidencias ya ejecutadas; sin repetir escrituras ni usar el perfil habitual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 185 · 2026-11-01T11:09:48.808749-05:00 / 2026-11-01T16:09:48.808749+00:00 · Borlty-Predict
+
+B10.05: done → HECHO. Dos contextos independientes, conflicto sin pisar/borrador intacto, navegador sin espacio, disco lleno/rollback/cierre abrupto y reinicio con IDs/snapshots/fechas exactos; datos sintéticos.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_05_CONFLICTOS.json #sha256=b9d3bea0b9306ee8a2c332d3f2e32642a650b0433d61a0128e0f38d4d8a3f716
+
+Siguiente: Continuar B05 y los demás checks autorizados.
+
+## Revisión 186 · 2026-11-01T11:09:49.047995-05:00 / 2026-11-01T16:09:49.047995+00:00 · Borlty-Predict
+
+B10.06: begin → EN_CURSO. Conciliando evidencias ya ejecutadas; sin repetir escrituras ni usar el perfil habitual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 187 · 2026-11-01T11:09:49.286692-05:00 / 2026-11-01T16:09:49.286692+00:00 · Borlty-Predict
+
+B10.06: done → HECHO. Backup SQLite transaccional revisión5/2consultas sintéticas restaurado exacto en destino nuevo. Guía integra cortes independientes SQLite/PG/artefactos/config privada. Perfil real no importado y mismoSSD explícitos.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B10_06_RECUPERACION.json #sha256=af05396d43a899343146eff124c1f1eaba308c65a219f7095786abcf1e8785a6
+
+Siguiente: Continuar B05 y los demás checks autorizados.
+
+## Revisión 188 · 2026-11-01T11:10:37.432119-05:00 / 2026-11-01T16:10:37.432119+00:00 · Borlty-Predict
+
+B05.01: begin → EN_CURSO. Prioridad acotada: NBA25–31oct (25 como solape) y acceso a fuente Euro tras23oct. WNBAREG cerrada y residualWEB fuera del lote; sin writes/fit.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 189 · 2026-11-01T11:10:48.555566-05:00 / 2026-11-01T16:10:48.555566+00:00 · Borlty-Predict
+
+B05.01: done → HECHO. Captura acotada NBA: 52eventos/52finales fuente; accesoEuro registrado sin evadir bloqueos. Próximo conciliar IDs y diferencias, no inferir inserciones de los finales.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_01_PRIORIZACION.json #sha256=26114c07a1cb59dca897225ead01777416c5d4635fed115178a47a7a6b6cff5b
+
+Siguiente: B05.02: conciliar captura contra ambas claves y equipos/fecha; backup antes de cualquier lote.
+
+## Revisión 190 · 2026-11-01T11:12:16.634707-05:00 / 2026-11-01T16:12:16.634707+00:00 · Borlty-Predict
+
+B05.02: begin → EN_CURSO. Conciliar52finales archivados por2IDs/equipos/temporada/REG/periodos; excluir conflictos y respaldar BDlocal antes del ensayo.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 191 · 2026-11-01T11:12:17.656241-05:00 / 2026-11-01T16:12:17.656241+00:00 · Borlty-Predict
+
+B05.02: operation → EN_CURSO. Conciliar52finales archivados por2IDs/equipos/temporada/REG/periodos; excluir conflictos y respaldar BDlocal antes del ensayo.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 192 · 2026-11-01T11:12:21.163537-05:00 / 2026-11-01T16:12:21.163537+00:00 · Borlty-Predict
+
+B05.02: operation → EN_CURSO. Backuplocal consistente terminado; ensayo/restore todavía pendiente.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_02_PLAN_Y_BACKUP.json #sha256=b697675bb641b65ee882e33cacf33e8f1ce8b41274ebc11ddabb25f9431c4534
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 193 · 2026-11-01T11:12:21.645209-05:00 / 2026-11-01T16:12:21.645209+00:00 · Borlty-Predict
+
+B05.02: done → HECHO. 43placeholders elegibles/6finales coincidentes/3cuarentena;0inserciones. Plan y backup local consistente preservados; recuperar y ensayar en B05.03.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_02_PLAN_Y_BACKUP.json #sha256=b697675bb641b65ee882e33cacf33e8f1ce8b41274ebc11ddabb25f9431c4534
+
+Siguiente: Restaurar backup en BD nueva propia, ensayar fallo/rollback/aplicación y postflight completo.
+
+## Revisión 194 · 2026-11-01T11:13:36.217737-05:00 / 2026-11-01T16:13:36.217737+00:00 · Borlty-Predict
+
+B05.02: begin → EN_CURSO. Conciliar52finales archivados por2IDs/equipos/temporada/REG/periodos; excluir conflictos y respaldar BDlocal antes del ensayo.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_02_PLAN_Y_BACKUP.json #sha256=b697675bb641b65ee882e33cacf33e8f1ce8b41274ebc11ddabb25f9431c4534
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 195 · 2026-11-01T11:13:37.077673-05:00 / 2026-11-01T16:13:37.077673+00:00 · Borlty-Predict
+
+B05.02: done → HECHO. Alias LAC acreditado por regla vigente+ID12+abreviatura: 45pendientes/7coincidentes/0cuarentena. PlanV1 intacto; backup previo reutilizado porhash sin repetir export.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_02_PLAN_ALIAS_CONCILIADO.json #sha256=d4d1699ac7ac08aee1e617eabc1061fd8f498952801eefe2a29761a6c286e887
+
+Siguiente: B05.03 restaurar y ensayar planV2 exacto.
+
+## Revisión 196 · 2026-11-01T11:14:41.602569-05:00 / 2026-11-01T16:14:41.602569+00:00 · Borlty-Predict
+
+B05.03: begin → EN_CURSO. Restauración real en clon nuevo del backup previo; comparar53tablas y probar fallo intermedio, rollback, aplicación y segunda diferencia0.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 197 · 2026-11-01T11:14:51.733945-05:00 / 2026-11-01T16:14:51.733945+00:00 · Borlty-Predict
+
+B05.03: operation → EN_CURSO. Restauración real en clon nuevo del backup previo; comparar53tablas y probar fallo intermedio, rollback, aplicación y segunda diferencia0.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 198 · 2026-11-01T11:15:58.878837-05:00 / 2026-11-01T16:15:58.878837+00:00 · Borlty-Predict
+
+B05.03: operation → EN_CURSO. Restauración real en clon nuevo del backup previo; comparar53tablas y probar fallo intermedio, rollback, aplicación y segunda diferencia0.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_03_ENSAYO.json #sha256=562d04ca9ff5191e79434dbe5092c30db183db01a455ca715982f42d5d310ce4
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 199 · 2026-11-01T11:15:59.118996-05:00 / 2026-11-01T16:15:59.118996+00:00 · Borlty-Predict
+
+B05.03: done → HECHO. Backup restaurado53tablas exactas; fallo tras3 y rollback completo sin diferencias.45resultados aplicados en clon,0cambios ajenos/identidad/fechas y segunda diferencia0; clon propio retirado.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_03_ENSAYO.json #sha256=562d04ca9ff5191e79434dbe5092c30db183db01a455ca715982f42d5d310ce4
+
+Siguiente: B05.04: rollback real y aplicación atómica local bajo comparación del antes.
+
+## Revisión 200 · 2026-11-01T11:16:12.294271-05:00 / 2026-11-01T16:16:12.294271+00:00 · Borlty-Predict
+
+B05.04: begin → EN_CURSO. Rollback real local y lote atómico45resultados; comparar antes bajo locks, preservar fechas/identidades y verificar sin repetir escrituras.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 201 · 2026-11-01T11:16:30.891507-05:00 / 2026-11-01T16:16:30.891507+00:00 · Borlty-Predict
+
+B05.04: operation → EN_CURSO. Rollback real local y lote atómico45resultados; comparar antes bajo locks, preservar fechas/identidades y verificar sin repetir escrituras.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 202 · 2026-11-01T11:16:49.481457-05:00 / 2026-11-01T16:16:49.481457+00:00 · Borlty-Predict
+
+B05.04: operation → EN_CURSO. Rollback real local y lote atómico45resultados; comparar antes bajo locks, preservar fechas/identidades y verificar sin repetir escrituras.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_04_APLICADO.json #sha256=0c21be920a514ff87b8b6c25cff75e95d3fe2a49354a5db6ae2192b968107a5a
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 203 · 2026-11-01T11:16:49.733584-05:00 / 2026-11-01T16:16:49.733584+00:00 · Borlty-Predict
+
+B05.04: done → HECHO. 45placeholders NBAREG actualizados localmente de forma atómica;7finales previos intactos. Postflight independiente exacto y segunda diferencia0 sin reescribir timestamps. Euro403 y residualWEB sin cambios.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_04_APLICADO.json #sha256=0c21be920a514ff87b8b6c25cff75e95d3fe2a49354a5db6ae2192b968107a5a
+
+Siguiente: B05.05: resultado y alcance, después originales/modelos en experimentos separados.
+
+## Revisión 204 · 2026-11-01T11:19:01.771074-05:00 / 2026-11-01T16:19:01.771074+00:00 · Borlty-Predict
+
+B05.05: begin → EN_CURSO. Publicar corte y alcance real; GET de agenda sin crear análisis, huellas de38artefactos y modelos originales.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 205 · 2026-11-01T11:19:16.444961-05:00 / 2026-11-01T16:19:16.444961+00:00 · Borlty-Predict
+
+B05.05: begin → EN_CURSO. Publicar corte y alcance real; GET de agenda sin crear análisis, huellas de38artefactos y modelos originales.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 206 · 2026-11-01T11:19:17.458232-05:00 / 2026-11-01T16:19:17.458232+00:00 · Borlty-Predict
+
+B05.05: done → HECHO. Lote local NBA45 finalizado y agenda200;38artefactos intactos. Euro403 y residualWEB expresamente sin actualizar. Informe externo distingue snapshotB04 y datos posteriores.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B05_05_RESULTADO.json #sha256=1de59a66c6bb621c3c517deb3c62b6a7b777d88417b95b5d8d5aae1bd020277a
+
+Siguiente: B06 inventariar/reproducir originales disponibles, luego B07 experimentos aislados.
+
+## Revisión 207 · 2026-11-01T11:19:17.916014-05:00 / 2026-11-01T16:19:17.916014+00:00 · Borlty-Predict
+
+B06.01: begin → EN_CURSO. Inventario de estado instalado y referencias ya verificadas; sin repetir búsqueda Windows agotada ni acceder a memoria ajena.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 208 · 2026-11-01T11:19:18.182193-05:00 / 2026-11-01T16:19:18.182193+00:00 · Borlty-Predict
+
+B06.01: done → HECHO. 38archivos inventariados; WNBA conserva datos/candidato/cohorte originales. V4 corregidos no instalados, sin pista nueva que justifique repetir búsquedas agotadas. Euro conserva métricas pero no cohorte de predicciones completa.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B06_01_INVENTARIO.json #sha256=79a08bdaa86639ab8209ae9d062ae537d41c420f54d312e9f4c32aa321459a7a
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 209 · 2026-11-01T11:19:19.188396-05:00 / 2026-11-01T16:19:19.188396+00:00 · Borlty-Predict
+
+B06.02: block → BLOQUEADO. Faltan originales corregidos V4 en las ubicaciones ya revisadas; ninguna pista nueva. No puede reproducirse ni evaluarse L10 desde textos o loaderlegacy.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B06_02_V4_ORIGINALES_FALTANTES.json #sha256=517e167ee50338e4fa7da009f12918a1cae0ed6d4972c5a120116564a008f574
+
+Siguiente: Propietario: recuperar originales/hash/política de la copia que los conserva; no recrear cohorte.
+
+## Revisión 210 · 2026-11-01T11:19:19.476152-05:00 / 2026-11-01T16:19:19.476152+00:00 · Borlty-Predict
+
+B06.03: begin → EN_CURSO. Reproducir exclusivamente candidato/cohorte WNBA disponibles con funciones de ajuste bloqueadas; no retocar originales ni seleccionar de nuevo.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 211 · 2026-11-01T11:19:21.307046-05:00 / 2026-11-01T16:19:21.307046+00:00 · Borlty-Predict
+
+B06.03: done → HECHO. WNBA450proyecciones/166abstenciones conciliadas sinfit, delta0.0;38originales intactos. V4 y cohorteEuro no se sustituyeron.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B06_03_REPRODUCCION.json #sha256=3d233e4e28893a585b834f3daedaca4bcd83588dd94a1aa36ccc147e3c01302b
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 212 · 2026-11-01T11:19:21.537603-05:00 / 2026-11-01T16:19:21.537603+00:00 · Borlty-Predict
+
+B06.04: begin → EN_CURSO. Cotejar fechas de outcomes contra freeze/publicación; EVAL anterior no se etiqueta prospectivo y POST no sustituye REG.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 213 · 2026-11-01T11:19:21.907515-05:00 / 2026-11-01T16:19:21.907515+00:00 · Borlty-Predict
+
+B06.04: done → HECHO. WNBA0finalesREG posteriores al día de publicación;0pares prospectivos acreditados. Los450originales son retrospectivos. V4 no evaluable sin originales/ventana completa.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B06_04_OUTCOMES.json #sha256=a5ec9b6dc92cc346d308df877c8d98344560ddfddb803c6677682eeab8983f22
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 214 · 2026-11-01T11:19:22.188337-05:00 / 2026-11-01T16:19:22.188337+00:00 · Borlty-Predict
+
+B06.05: begin → EN_CURSO. Dictamen por cohorte, conservando bloqueo L10 y sin activar por mera acumulación de resultados.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 215 · 2026-11-01T11:19:22.445799-05:00 / 2026-11-01T16:19:22.445799+00:00 · Borlty-Predict
+
+B06.05: done → HECHO. Dictamen emitido: WNBA reproducible retrospectiva, Euro sin cohorte completa, V4/L10 bloqueada por originales. Ningún modelo/cohorte reemplazado ni activado.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B06_05_DECISION.json #sha256=e01d8ffa54371254832a494c1bf75f57c7e7da8601b6c89751eca00f28193a7b
+
+Siguiente: Continuar B07 NBA y B08 por dominios independientes.
+
+## Revisión 216 · 2026-11-01T11:21:21.521284-05:00 / 2026-11-01T16:21:21.521284+00:00 · Borlty-Predict
+
+B07.01: begin → EN_CURSO. Predeclarar ensayoNBA/Euro antes de medir: snapshotB04 inmutable, TRAIN/SELECT/DISP/EVAL porfechas, referencia diseño vigente no pesos activos con futuro.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 217 · 2026-11-01T11:21:22.377061-05:00 / 2026-11-01T16:21:22.377061+00:00 · Borlty-Predict
+
+B07.01: done → HECHO. Protocolo previoNBA congelado: TRAIN/SELECT/DISP/EVAL separados, baselineTRAIN y alpha5vigente frente alpha1/5/20, sin usar EVAL para seleccionar.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B07_01_PROTOCOLO.json #sha256=12a733ae05e74b6bcb3a6217af5fc17344e67574e4b890ab3d4f9993141d78c1
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 218 · 2026-11-01T11:21:22.647132-05:00 / 2026-11-01T16:21:22.647132+00:00 · Borlty-Predict
+
+B07.02: begin → EN_CURSO. Verificar identidades/periodos/particiones causales y reutilización de construir_matriz_diseno/ajustar_ridge; sin registro de versiones ni acceso SQL.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 219 · 2026-11-01T11:21:22.919210-05:00 / 2026-11-01T16:21:22.919210+00:00 · Borlty-Predict
+
+B07.02: done → HECHO. Particiones no solapadas porfecha,1fila porencuentro/2perspectivas solo diseño; targetsREG coherentes y fuentes de transformación guardadas. No confundir adquisición actual con disponibilidad histórica.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B07_02_TEMPORALIDAD.json #sha256=31efd96b83ebcdfb0290606053f453d8a57664a085a8eae201273ae554a7234d
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 220 · 2026-11-01T11:21:36.066206-05:00 / 2026-11-01T16:21:36.066206+00:00 · Borlty-Predict
+
+B07.03: begin → EN_CURSO. Benchmarknba offline sobre snapshot inmutable. Una carga numérica, modelos activos preservados; selección soloSELECT.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 221 · 2026-11-01T11:21:36.784364-05:00 / 2026-11-01T16:21:36.784364+00:00 · Borlty-Predict
+
+B07.03: done → HECHO. Comparación ajustada soloTRAIN y selección soloSELECT: elegidoalpha20.0; pesos experimentales externos, referencia vigentealpha5 y baselineTRAIN conservados.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B07_03_BENCHMARK.json #sha256=a997e93ae3c129b55097c22c913330aaac31a3ff0e6a7859a69fa7986c73e770
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 222 · 2026-11-01T11:21:37.021058-05:00 / 2026-11-01T16:21:37.021058+00:00 · Borlty-Predict
+
+B07.04: begin → EN_CURSO. Estimar segundo momento/covarianza con residuosDISP fuera de muestra y medir intervalosEVAL sin volver a ajustar.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 223 · 2026-11-01T11:21:37.522860-05:00 / 2026-11-01T16:21:37.522860+00:00 · Borlty-Predict
+
+B07.04: done → HECHO. Covarianza8x8 de residuosDISP fuera de muestra; intervalos80/90 y anchurasQ1–Q4/TOTAL_REG medidosEVAL. ProbabilidadesRAW, no calibrador ni refitfinal.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B07_04_DISPERSION.json #sha256=10af0bd943a937cdeb2bea2f11372f9bd2b2890ebccfe326c296626d98c50322
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 224 · 2026-11-01T11:21:37.802086-05:00 / 2026-11-01T16:21:37.802086+00:00 · Borlty-Predict
+
+B07.05: begin → EN_CURSO. Reportar denominadorEVAL completo, soporte/abstenciones y comparación emparejada porpartido/día; EVAL no selecciona diseño.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 225 · 2026-11-01T11:21:38.408700-05:00 / 2026-11-01T16:21:38.408700+00:00 · Borlty-Predict
+
+B07.05: done → HECHO. EVAL1274/1274partidos, cobertura1.0000, métricas/ICpareados/abstenciones completos; líneasTRAIN y RAW sin resultados económicos.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B07_05_RESULTADOS.json #sha256=9dff4b885e4d577c06031d1057ab9e30038c98b6a470739ed48576a48c6902c8
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 226 · 2026-11-01T11:21:38.657704-05:00 / 2026-11-01T16:21:38.657704+00:00 · Borlty-Predict
+
+B07.06: begin → EN_CURSO. Decidir con política previa, no elegir otro candidato después de consultarEVAL; conservar activo2123.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 227 · 2026-11-01T11:21:38.902435-05:00 / 2026-11-01T16:21:38.902435+00:00 · Borlty-Predict
+
+B07.06: done → HECHO. DecisiónNBA: no_mejora_acreditada; experimento aislado y reproducible, sin activación ni sustitución2123. El resultado no certifica rendimiento/calibración futura.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B07_06_DECISION.json #sha256=fa49cb253877910b92e67a724f0980d4653fc65c9dfeab950c3f7671be6d0aec
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 228 · 2026-11-01T11:21:48.393599-05:00 / 2026-11-01T16:21:48.393599+00:00 · Borlty-Predict
+
+B08.01: begin → EN_CURSO. Adoptar protocoloEuro predeclarado independiente40m/REG/push, sin compartir pesos NBA ni cambiar cortes al ver métricas.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 229 · 2026-11-01T11:21:49.358155-05:00 / 2026-11-01T16:21:49.358155+00:00 · Borlty-Predict
+
+B08.01: done → HECHO. Euro: población/cortes/grid propios congelados,40minutos y masa push explícita. Equipos nuevos siguen como abstención; ningún fallback activado.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_01_PROTOCOLO.json #sha256=18c5ab45ea0251a0ef3e995b0a4cfff397cf468f3d6de47161fb8591ea830653
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 230 · 2026-11-01T11:21:49.599700-05:00 / 2026-11-01T16:21:49.599700+00:00 · Borlty-Predict
+
+B08.02: begin → EN_CURSO. Benchmarkeuroleague offline sobre snapshot inmutable. Una carga numérica, modelos activos preservados; selección soloSELECT.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 231 · 2026-11-01T11:21:50.199595-05:00 / 2026-11-01T16:21:50.199595+00:00 · Borlty-Predict
+
+B08.02: done → HECHO. Eurobenchmark independiente: evidencia_insuficiente; EVAL315/450, cobertura0.7000. Contracción/alpha elegidossoloSELECT; nuevos equipos sin soporte abstienen, no refit/activación.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_02_RESULTADOS.json #sha256=03a8bd62edf8b6eb14685125ec8188af24eada8846c6236da84266d0043ba97e
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 232 · 2026-11-01T11:22:47.165432-05:00 / 2026-11-01T16:22:47.165432+00:00 · Borlty-Predict
+
+B08.03: begin → EN_CURSO. Comprobar si existe hipótesis/insumo nuevo respecto al ensayoWNBA que eligiók0; no repetir grid por rutina.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 233 · 2026-11-01T11:22:47.445081-05:00 / 2026-11-01T16:22:47.445081+00:00 · Borlty-Predict
+
+B08.03: done → HECHO. No hay hipótesisWNBA nueva sustentada ni nuevosREG; repetir gridk0 consumiría otra vezEVAL sin evidencia distinta. Se conserva decisión y reproducción original.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_03_WNBA_SIN_NUEVA_HIPOTESIS.json #sha256=90e5b99d75c6e2742a9fb71dfa0793c42d15f121e9651c6ba967808da77f78e3
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 234 · 2026-11-01T11:22:47.700761-05:00 / 2026-11-01T16:22:47.700761+00:00 · Borlty-Predict
+
+B08.04: na → NO_APLICA. No aplica nuevo ensayo: B08.03 documenta ausencia de hipótesis admisible. No retira gates ni activafallback; calidad/prospectiva siguen pendientes.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_03_WNBA_SIN_NUEVA_HIPOTESIS.json #sha256=90e5b99d75c6e2742a9fb71dfa0793c42d15f121e9651c6ba967808da77f78e3
+
+Siguiente: Continuar fútbol, no repetir gridWNBA.
+
+## Revisión 235 · 2026-11-01T11:22:48.996478-05:00 / 2026-11-01T16:22:48.996478+00:00 · Borlty-Predict
+
+B08.05: begin → EN_CURSO. Predeclarar ensayo fútbol porfamilia/5ligas con runner temporal vigente, sin V4 y con denominador de todos los finales además del condicional del runner.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 236 · 2026-11-01T11:22:49.206385-05:00 / 2026-11-01T16:22:49.206385+00:00 · Borlty-Predict
+
+B08.05: done → HECHO. Protocolo fútbol porfamilia/cortes vigentes predeclarado;CALselecciona alpha, EVAL no selecciona. NULLexcluidos sin imputar, denominadorglobal adicional, V4separada.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_05_PROTOCOLO_FUTBOL.json #sha256=bb8053f60dfc9dc80384d993370c9669542ac85ec2f5e918bcd25451d50e8b1f
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 237 · 2026-11-01T11:23:00.105785-05:00 / 2026-11-01T16:23:00.105785+00:00 · Borlty-Predict
+
+B08.06: begin → EN_CURSO. Ejecutar runner fútbol offline porfamilia sobre snapshotB04 verificado, una carga numérica y sin BD/legacy/V4.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 238 · 2026-11-01T11:23:01.358378-05:00 / 2026-11-01T16:23:01.358378+00:00 · Borlty-Predict
+
+B08.06: operation → EN_CURSO. Ejecutar runner fútbol offline porfamilia sobre snapshotB04 verificado, una carga numérica y sin BD/legacy/V4.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 239 · 2026-11-01T11:23:08.257558-05:00 / 2026-11-01T16:23:08.257558+00:00 · Borlty-Predict
+
+B08.06: operation → EN_CURSO. Ejecutar runner fútbol offline porfamilia sobre snapshotB04 verificado, una carga numérica y sin BD/legacy/V4.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_06_RESULTADOS_FUTBOL.json #sha256=e332a34543d2136df9df705fd0a2c4576d29f5a657a53347c5fb9cc34c8af2a2
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 240 · 2026-11-01T11:23:08.484244-05:00 / 2026-11-01T16:23:08.484244+00:00 · Borlty-Predict
+
+B08.06: done → HECHO. Runner fútbol por3familias ejecutado; errores/IC/abstenciones y cobertura sobre todos los finales reportados además de la condicional. Retrospectiva exploratoria, no probabilidades ni V4/activación.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_06_RESULTADOS_FUTBOL.json #sha256=e332a34543d2136df9df705fd0a2c4576d29f5a657a53347c5fb9cc34c8af2a2
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 241 · 2026-11-01T11:25:57.963186-05:00 / 2026-11-01T16:25:57.963186+00:00 · Borlty-Predict
+
+B08.07: begin → EN_CURSO. Consolidar resultados independientes por deporte, sin sumar muestras ni convertir mejoras puntuales en activación.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 242 · 2026-11-01T11:25:59.129523-05:00 / 2026-11-01T16:25:59.129523+00:00 · Borlty-Predict
+
+B08.07: done → HECHO. Dictamen porliga/familia emitido: Euro70%cobertura, WNBAk0no repetido, fútbol3familias con cobertura/gates propios; ninguna activación ni mezcla V4legacy.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B08_07_DICTAMEN_POR_DOMINIO.json #sha256=12fa5b335ed273b143e7ab9912e51d5b74d5d87084303709a72b6f643f68b5d5
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 243 · 2026-11-01T11:25:59.385323-05:00 / 2026-11-01T16:25:59.385323+00:00 · Borlty-Predict
+
+B09.01: begin → EN_CURSO. Políticas porversión/objetivo; separarSELECT/DISP/CALprob/TEST y prospectiva, no aplicar umbrales universales a todos los dominios.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 244 · 2026-11-01T11:25:59.652509-05:00 / 2026-11-01T16:25:59.652509+00:00 · Borlty-Predict
+
+B09.01: done → HECHO. Políticas separadas porversión/objetivo: CALselección/DISP no sonCALcalibrador; protocolos26oct y fútbolbeta identificados porhash. Umbrales no extrapolados universalmente.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_01_POLITICAS.json #sha256=a19a90f4f14fe7f0a36f90c5f82e8f3d9bedbe68ad32ff622c5d3fbefbbf1196
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 245 · 2026-11-01T11:25:59.927849-05:00 / 2026-11-01T16:25:59.927849+00:00 · Borlty-Predict
+
+B09.02: block → BLOQUEADO. No hay CALprob/TEST independientes aptos para estas versiones; no se recicla EVAL observado ni calibradoreslegacy. Probabilidades nuevas siguenRAW.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_02_CALIBRACION_NO_APTA.json #sha256=5fcf111d0bd84b6123be5046ea28aebf74b44d65eb5903a1033fd42b5fa5fb6f
+
+Siguiente: Recoger muestra separada segúnpolítica, sin cambiar modelos ni rebajar gates.
+
+## Revisión 246 · 2026-11-01T11:26:01.873666-05:00 / 2026-11-01T16:26:01.873666+00:00 · Borlty-Predict
+
+B09.03: begin → EN_CURSO. CohorteNBAREG Q1RAW técnica55.5 predeclarada, todos los eventos futuros del feed1nov; congelar antes deeventos con relojBD, sinpicks/stakes/fit.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 247 · 2026-11-01T11:27:09.598315-05:00 / 2026-11-01T16:27:09.598315+00:00 · Borlty-Predict
+
+B09.03: done → HECHO. 4/4eventosNBAREG1nov congeladosQ1RAW55.5 antesdelinicio; incidencia de transacción del comprobador conciliada. Rollbackcorregido exacto y reimportación0;19predicciones totales/9outcomes previos. Sinfit/picks/stakes.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_03_CONGELADO.json #sha256=c63d664de915cf7bc2fff933cdabc2a2c8198ff5654108f90c7e5cb71ca863da
+
+Siguiente: B09.04 solooutcomesposteriores exactos; futuros esperaneventos sinautomatismos.
+
+## Revisión 248 · 2026-11-01T11:27:11.268161-05:00 / 2026-11-01T16:27:11.268161+00:00 · Borlty-Predict
+
+B09.04: begin → EN_CURSO. Resolver solo emisiones previas con outcome posterior exacto; separarPRE/REG y fuente noindependiente. No repetir los9outcomesyaexistentes.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 249 · 2026-11-01T11:27:11.548249-05:00 / 2026-11-01T16:27:11.548249+00:00 · Borlty-Predict
+
+B09.04: operation → EN_CURSO. Resolver solo emisiones previas con outcome posterior exacto; separarPRE/REG y fuente noindependiente. No repetir los9outcomesyaexistentes.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 250 · 2026-11-01T11:27:13.311462-05:00 / 2026-11-01T16:27:13.311462+00:00 · Borlty-Predict
+
+B09.04: block → BLOQUEADO. 2outcomes posteriores exactos incorporados sinfit; PRE/REGseparados, fuenteESPNnoindependiente. Cohorte1nov aúnfutura/muestra insuficiente: evaluación finalpendiente.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_04_OUTCOMES_PARCIALES.json #sha256=786dcd5a92db96ce8f01682b52a2fe8d6a163c9fa0530c1a4f1963ee47652967
+
+Siguiente: Tras finalizar eventos1nov, resolver porID/hora sinfit; acumular evidencia independiente de la misma versión segúnpolítica, sincron.
+
+## Revisión 251 · 2026-11-01T11:27:13.543897-05:00 / 2026-11-01T16:27:13.543897+00:00 · Borlty-Predict
+
+B09.05: block → BLOQUEADO. No promover: calibración/evidencia futura independiente insuficientes; RAWno certificado. Se conservan modelos/calibradores y rollback actual, ningunaactivación.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_04_OUTCOMES_PARCIALES.json #sha256=786dcd5a92db96ce8f01682b52a2fe8d6a163c9fa0530c1a4f1963ee47652967
+
+Siguiente: Solo revisar promoción cuando B09.02/B09.04 cumplan la política de cada versión/objetivo y autorización aplicable.
+
+## Revisión 252 · 2026-11-01T11:27:40.636192-05:00 / 2026-11-01T16:27:40.636192+00:00 · Borlty-Predict
+
+B09.04: begin → EN_CURSO. Resolver solo emisiones previas con outcome posterior exacto; separarPRE/REG y fuente noindependiente. No repetir los9outcomesyaexistentes.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_04_OUTCOMES_PARCIALES.json #sha256=786dcd5a92db96ce8f01682b52a2fe8d6a163c9fa0530c1a4f1963ee47652967
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 253 · 2026-11-01T11:27:40.962010-05:00 / 2026-11-01T16:27:40.962010+00:00 · Borlty-Predict
+
+B09.04: operation → EN_CURSO. Resolver solo emisiones previas con outcome posterior exacto; separarPRE/REG y fuente noindependiente. No repetir los9outcomesyaexistentes.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_04_OUTCOMES_PARCIALES.json #sha256=786dcd5a92db96ce8f01682b52a2fe8d6a163c9fa0530c1a4f1963ee47652967
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 254 · 2026-11-01T11:27:42.874614-05:00 / 2026-11-01T16:27:42.874614+00:00 · Borlty-Predict
+
+B09.04: block → BLOQUEADO. 3outcomes posteriores exactos incorporados sinfit; PRE/REGseparados, fuenteESPNnoindependiente. Cohorte1nov aúnfutura/muestra insuficiente: evaluación finalpendiente.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_04_OUTCOMES_PARCIALES_20261101T162742Z_ca7441.json #sha256=bf37467ad098ac9d76ce445c9e47a85c58c40ab428d8250421a0e99b493f0db0
+
+Siguiente: Tras finalizar eventos1nov, resolver porID/hora sinfit; acumular evidencia independiente de la misma versión segúnpolítica, sincron.
+
+## Revisión 255 · 2026-11-01T11:27:43.116938-05:00 / 2026-11-01T16:27:43.116938+00:00 · Borlty-Predict
+
+B09.05: block → BLOQUEADO. No promover: calibración/evidencia futura independiente insuficientes; RAWno certificado. Se conservan modelos/calibradores y rollback actual, ningunaactivación.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B09_04_OUTCOMES_PARCIALES_20261101T162742Z_ca7441.json #sha256=bf37467ad098ac9d76ce445c9e47a85c58c40ab428d8250421a0e99b493f0db0
+
+Siguiente: Solo revisar promoción cuando B09.02/B09.04 cumplan la política de cada versión/objetivo y autorización aplicable.
+
+## Revisión 256 · 2026-11-01T11:30:55.645843-05:00 / 2026-11-01T16:30:55.645843+00:00 · Borlty-Predict
+
+B11.01: begin → EN_CURSO. Recorrer interfaz real Hoy→ficha→Mi espacio/Seguimiento con perfil efímero, sin volver a ejecutar análisis; integrar evidenciaB10 de guardado/reapertura real sintética.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 257 · 2026-11-01T11:30:59.137388-05:00 / 2026-11-01T16:30:59.137388+00:00 · Borlty-Predict
+
+B11.01: done → HECHO. Recorrido realHoy→ficha identificada→Mi espacio/Seguimiento correcto sinPOST niJS. Guardado/reapertura conresultadoexacto acreditadosenB10aislado, no simulados en datos delJefe.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B11_01_RECORRIDO.json #sha256=a48c2b2cd077660af9d8cc8f3c498eb58712911d16cc508cd9adda784db9fff3
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 258 · 2026-11-01T11:30:59.350873-05:00 / 2026-11-01T16:30:59.350873+00:00 · Borlty-Predict
+
+B11.02: begin → EN_CURSO. Medir3arranques de proceso propio8003 (sin vaciar cachéSO), GETsimultáneos7/20grupos y7pestañas auténticas; nointerrumpir el servicio habitual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 259 · 2026-11-01T11:31:01.618494-05:00 / 2026-11-01T16:31:01.618494+00:00 · Borlty-Predict
+
+B11.02: operation → EN_CURSO. Medir3arranques de proceso propio8003 (sin vaciar cachéSO), GETsimultáneos7/20grupos y7pestañas auténticas; nointerrumpir el servicio habitual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 260 · 2026-11-01T11:31:15.319682-05:00 / 2026-11-01T16:31:15.319682+00:00 · Borlty-Predict
+
+B11.02: operation → EN_CURSO. Medir3arranques de proceso propio8003 (sin vaciar cachéSO), GETsimultáneos7/20grupos y7pestañas auténticas; nointerrumpir el servicio habitual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 261 · 2026-11-01T11:31:28.470651-05:00 / 2026-11-01T16:31:28.470651+00:00 · Borlty-Predict
+
+B11.02: operation → EN_CURSO. Medir3arranques de proceso propio8003 (sin vaciar cachéSO), GETsimultáneos7/20grupos y7pestañas auténticas; nointerrumpir el servicio habitual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 262 · 2026-11-01T11:32:01.263626-05:00 / 2026-11-01T16:32:01.263626+00:00 · Borlty-Predict
+
+B11.02: operation → EN_CURSO. Medir3arranques de proceso propio8003 (sin vaciar cachéSO), GETsimultáneos7/20grupos y7pestañas auténticas; nointerrumpir el servicio habitual.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B11_02_MEDICIONES.json #sha256=66039e0c50064709e2076e5c82e875df3fd3ea271f07bc77067306f6c17119b2
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 263 · 2026-11-01T11:32:01.505560-05:00 / 2026-11-01T16:32:01.505560+00:00 · Borlty-Predict
+
+B11.02: done → HECHO. 3arranques de proceso conGETBDreal medidos (no cachéSOfría),35/35y100/100GET200,7pestañas auténticas y recursoCPU/RAM puntual. Límites delescenario/SLA explícitos.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B11_02_MEDICIONES.json #sha256=66039e0c50064709e2076e5c82e875df3fd3ea271f07bc77067306f6c17119b2
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 264 · 2026-11-01T11:32:01.755068-05:00 / 2026-11-01T16:32:01.755068+00:00 · Borlty-Predict
+
+B11.03: begin → EN_CURSO. Verificar reparaciones de concurrencia ya publicadas y regresiones dirigidas; no añadir código/TTL/timeouts si no hay uncuello reproducido.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 265 · 2026-11-01T11:34:01.966843-05:00 / 2026-11-01T16:34:01.966843+00:00 · Borlty-Predict
+
+B11.03: begin → EN_CURSO. Verificar reparaciones de concurrencia ya publicadas y regresiones dirigidas; no añadir código/TTL/timeouts si no hay uncuello reproducido.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 266 · 2026-11-01T11:34:02.317961-05:00 / 2026-11-01T16:34:02.317961+00:00 · Borlty-Predict
+
+B11.03: operation → EN_CURSO. Verificar reparaciones de concurrencia ya publicadas y regresiones dirigidas; no añadir código/TTL/timeouts si no hay uncuello reproducido.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 267 · 2026-11-01T11:34:03.157557-05:00 / 2026-11-01T16:34:03.157557+00:00 · Borlty-Predict
+
+B11.03: operation → EN_CURSO. Verificar reparaciones de concurrencia ya publicadas y regresiones dirigidas; no añadir código/TTL/timeouts si no hay uncuello reproducido.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 268 · 2026-11-01T11:34:25.985816-05:00 / 2026-11-01T16:34:25.985816+00:00 · Borlty-Predict
+
+B11.03: operation → EN_CURSO. 22regresiones PGsintéticas aprobadas,0omitidas yclústerpropio detenido. PrimeraejecuciónsinPG20pass/2skip preservada, no fallo deproducto.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 269 · 2026-11-01T11:34:26.299734-05:00 / 2026-11-01T16:34:26.299734+00:00 · Borlty-Predict
+
+B11.03: done → HECHO. 22regresiones dirigidas aprobadas: trabajolento no bloqueasalud, singleton/clavecompleta/READONLY/SQLagregado. No cuello nuevo reproducido; no reparacionesficticias niTTL/timeouts mayores.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B11_03_CONCURRENCIA.json #sha256=4b991f9281d8ec0683c7530bd419b18d54e00d820a7d455a80936812a0ef0608
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 270 · 2026-11-01T11:34:26.542873-05:00 / 2026-11-01T16:34:26.542873+00:00 · Borlty-Predict
+
+B11.04: begin → EN_CURSO. Contrastar respuestas completas y38artefactos antes/después de lecturas/carga. Sin cambio matemático, fit,POST o contexto compartidoentreligas.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 271 · 2026-11-01T11:34:27.490040-05:00 / 2026-11-01T16:34:27.490040+00:00 · Borlty-Predict
+
+B11.04: done → HECHO. 5respuestas completas equivalentes salvo3claves de reloj declaradas y38artefactos idénticos antes/después. No cambio decódigo/matemática niPOST; no inventar mejora contra versiónprevia.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B11_04_EQUIVALENCIA.json #sha256=23302969fd350a653b6f9be99baeac61650c34fa1e28d707bb650a6c6d36857c
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 272 · 2026-11-01T11:34:27.730914-05:00 / 2026-11-01T16:34:27.730914+00:00 · Borlty-Predict
+
+B11.05: begin → EN_CURSO. Inspección teclado/foco,claro/oscuro,datos/vacío/error y1366/390aplicados. Erroresinyectados en perfilpropio sinmutaciónBD; no certificaciónWCAGtotal.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 273 · 2026-11-01T11:34:37.401831-05:00 / 2026-11-01T16:34:37.401831+00:00 · Borlty-Predict
+
+B11.05: done → HECHO. Teclado/skiplink y foco,temas claro/oscuro,datos/vacío/error503 y1366/390 reales aprobados; capturasprivadas,0POST. Sin lectorespantalla/Safari/Firefox ni certificaciónWCAGtotal.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B11_05_UI_ACCESIBILIDAD.json #sha256=3a81aa3a753dea02586bdecd6f248540f100b38ed1080eaee6e0d9af55507cda
+
+Siguiente: B12 viabilidad de fuentes; después publicación documental y cierre completo con límites.
+
+## Revisión 274 · 2026-11-01T11:35:09.922929-05:00 / 2026-11-01T16:35:09.922929+00:00 · Borlty-Predict
+
+B12.01: begin → EN_CURSO. Acotar viabilidad de reloj/posesión/revisiones y lesiones/alineaciones/xG; evidencia de esquema/código y doslecturasfuente acotadas, sinnewAPI/pagos/WEBresidual.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 275 · 2026-11-01T11:35:10.178461-05:00 / 2026-11-01T16:35:10.178461+00:00 · Borlty-Predict
+
+B12.01: done → HECHO. Contrato de insumos y criterio de posponer fijados; móduloactual entrecuartos no acredita reloj/posesión. No autoriza comprar, configurar proveedor nuevo ni ampliar el residualWEB.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_01_CONTRATO_VIABILIDAD.json #sha256=0f568c0c46136a6d39789730b4c59e0bee6b224ac01538782cf499e65c59a51e
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 276 · 2026-11-01T11:35:10.411471-05:00 / 2026-11-01T16:35:10.411471+00:00 · Borlty-Predict
+
+B12.03: structure → PENDIENTE. Separadas capacidades de fuente y dictamencondicional; no se omiten verificacionesni insumos delcandidato.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_DEPENDENCIAS_POR_CAPACIDAD.json #sha256=5a96b989dd99c9b6c8fab227b9b84f7ffb7a8b3a055ef8ad202a5734e7ec98c1
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 277 · 2026-11-01T11:35:11.347263-05:00 / 2026-11-01T16:35:11.347263+00:00 · Borlty-Predict
+
+B12.02: begin → EN_CURSO. Evaluar capturas reales de summaryNBA contra contrato: datos terminales/futuros no equivalen a archivo de streamcausal conrevisiones/orden de llegada.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 278 · 2026-11-01T11:35:11.562293-05:00 / 2026-11-01T16:35:11.562293+00:00 · Borlty-Predict
+
+B12.02: block → BLOQUEADO. Dosobservacionesfuente no acreditan archivo causal de reloj/posesión/revisiones/ordenllegada ni contrato dereutilización. El predictoractual sigue entrecuartos, no tiempo real.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_02_LIVE_INSUFICIENTE.json #sha256=648cfb8cc759251060655c16ed591ee06474cdb35d3a353c92bc6011a27f57ad
+
+Siguiente: Obtener fuente/contrato permitidos y archivo causal verificable antes de implementar live.
+
+## Revisión 279 · 2026-11-01T11:35:11.799041-05:00 / 2026-11-01T16:35:11.799041+00:00 · Borlty-Predict
+
+B12.03: begin → EN_CURSO. Inspeccionar presencia/esquema y semántica de lesiones/alineaciones/xG sin inferir disponibilidad histórica de una página actual.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_DEPENDENCIAS_POR_CAPACIDAD.json #sha256=5a96b989dd99c9b6c8fab227b9b84f7ffb7a8b3a055ef8ad202a5734e7ec98c1
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 280 · 2026-11-01T11:35:12.332893-05:00 / 2026-11-01T16:35:12.332893+00:00 · Borlty-Predict
+
+B12.03: block → BLOQUEADO. La presencia puntual de lesiones/boxscore o columnas no acredita cobertura/definición/asof histórico; xG específico y fuera delmergevigente. Faltan insumoscausales y permiso de reutilización verificados.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_03_VARIABLES_NO_ACREDITADAS.json #sha256=75b36ccbc73075c26445d8c8301c622173d9638663eb2c7e7901de0a62aa5e98
+
+Siguiente: Proveer fuente gratuita permitida y cohortecausal/semántica antes de añadir variables; residualWEB queda pendiente.
+
+## Revisión 281 · 2026-11-01T11:35:12.574768-05:00 / 2026-11-01T16:35:12.574768+00:00 · Borlty-Predict
+
+B12.04: block → BLOQUEADO. No construir candidato ni ablación: no se cumplen insumos reales B12.02/B12.03. Falta de archivo causal no se suple con simulación o datos futuros.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_04_CANDIDATO_CONDICIONADO.json #sha256=85de51093af09c2ff4ad7f6f702c8d8fe596249d8ac047c1f3f42e5b28908570
+
+Siguiente: Retomar solo tras inputs suficientes y protocoloaislado predeclarado.
+
+## Revisión 282 · 2026-11-01T11:35:12.810125-05:00 / 2026-11-01T16:35:12.810125+00:00 · Borlty-Predict
+
+B12.05: begin → EN_CURSO. Emitir dictamen de viabilidad porcapacidad, manteniendo L29/L30abiertos y sinparalizar hitosoperativos.
+
+Evidencia: Sin evidencia de cierre.
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 283 · 2026-11-01T11:35:13.048917-05:00 / 2026-11-01T16:35:13.048917+00:00 · Borlty-Predict
+
+B12.05: done → HECHO. Dictamen porcapacidad: live y nuevasvariables pospuestos por insumos noacreditados; L29/L30no cerrados. No candidato/compra/cron/activación; migraciónoperativa y mejoras deuso permanecen válidas.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\EJECUCION_PLAN_MAESTRO_2026-10-31\B12_05_DICTAMEN.json #sha256=b396f8702183e6ad9b30a9350514cbd2083a8c2a8e681a44b301618209c97aa8
+
+Siguiente: Revisión final delcontrol, publicaciones y evidencias; entregar cierre conbloqueosreales y condiciones.
+
+## Revisión 284 · 2026-11-01T11:39:23.734518-05:00 / 2026-11-01T16:39:23.734518+00:00 · Borlty-Predict
+
+B03.06: alta → PENDIENTE. Check adicional de cierre; 75 originales conservados. Reanudación por orden directa del Jefe.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\REANUDACION_Y_ALCANCE.json #sha256=4664d18d37764b8855773f2fbb24b2271057ee33da0e7a039eda82f812b552b5
+
+Siguiente: ejecutar cierre acumulado sin declarar resueltos los ocho bloqueos.
+
+## Revisión 285 · 2026-11-01T11:39:23.971069-05:00 / 2026-11-01T16:39:23.971069+00:00 · Borlty-Predict
+
+B03.06: begin → EN_CURSO. Cierre acumulado en ejecución tras reanudación; verificar evidencias, recuperación del corte final y publicación sin tocar modelos ni perfil habitual.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\REANUDACION_Y_ALCANCE.json #sha256=4664d18d37764b8855773f2fbb24b2271057ee33da0e7a039eda82f812b552b5
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 286 · 2026-11-01T11:40:35.442940-05:00 / 2026-11-01T16:40:35.442940+00:00 · Borlty-Predict
+
+B03.06: operation → EN_CURSO. Cierre acumulado en ejecución tras reanudación; verificar evidencias, recuperación del corte final y publicación sin tocar modelos ni perfil habitual.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\REANUDACION_Y_ALCANCE.json #sha256=4664d18d37764b8855773f2fbb24b2271057ee33da0e7a039eda82f812b552b5
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 287 · 2026-11-01T11:40:39.108559-05:00 / 2026-11-01T16:40:39.108559+00:00 · Borlty-Predict
+
+B03.06: operation → EN_CURSO. Cierre acumulado en ejecución tras reanudación; verificar evidencias, recuperación del corte final y publicación sin tocar modelos ni perfil habitual.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\REANUDACION_Y_ALCANCE.json #sha256=4664d18d37764b8855773f2fbb24b2271057ee33da0e7a039eda82f812b552b5
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 288 · 2026-11-01T11:42:37.684791-05:00 / 2026-11-01T16:42:37.684791+00:00 · Borlty-Predict
+
+B03.06: operation → EN_CURSO. Corte final posterior a B05/B09 respaldado y restaurado:53 tablas/huellas/esquema y38 artefactos exactos; clon retirado sin forzar. No se repitió export/restore. Cierre documental/publicación pendientes.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\RECUPERACION_CORTE_FINAL.json #sha256=d9c27691f9bafb0b169d9279388a74e13f4552e69dfaf48336439e7a13af82ec
+
+Siguiente: Continuar con el siguiente check ejecutable tras verificar dependencias.
+
+## Revisión 289 · 2026-11-01T11:45:13.204871-05:00 / 2026-11-01T16:45:13.204871+00:00 · Borlty-Predict
+
+B03.06: structure → EN_CURSO. Matriz L01–L30 conciliada con B04–B12: los ensayos/censos ya ejecutados no figuran pendientes, manteniendo los límites y la clasificación heredada conservadora19/4/7.
+
+Evidencia: C:\Users\ING-ERIK\AnalyticsPredict\Carpeta de Entregas de Borlty\CIERRE_PLAN_MAESTRO_2026-11-01\ACTUALIZACION_MATRIZ_L.json #sha256=783aa1de8529fa6b87aca7c04149601714a8d86c154aa18e0cbeeda0eb4da287
+
+Siguiente: Publicar el cierre documental con evidencia verificada y conservar los ocho bloqueos reales.

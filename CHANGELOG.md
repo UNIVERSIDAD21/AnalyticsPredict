@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Cierre ejecutable del plan maestro (parcial) — 2026-11-01
+
+- Documentados migración local, persistencia personal, actualizaciónNBA45 y ensayos por dominio con sus límites.
+- MatrizL y continuidad conciliadas:75 checks originales66 verificados/8 bloqueados/1 no aplicable, másB03.06 de cierre.
+- Fuentes de verdad distinguen código instalado236cb99 de documentación posterior; sin fit, activación ni cambio funcional.
+- [Resultados, recuperación y bloqueos](docs/reactivacion_single_user/CIERRE_EJECUTABLE_PLAN_MAESTRO_2026-11-01.md).
+
 ## Conservar Mis análisis fuera del navegador — 2026-11-01
 
 - SQLite estándar en datos privados estables, independiente de releases/PostgreSQL. Guardado confirmado, CAS/idempotencia y snapshots originales inmutables.

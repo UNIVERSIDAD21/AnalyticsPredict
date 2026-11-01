@@ -1,5 +1,37 @@
 # Estado vigente — AnalyticsPredict
 
+## Cierre ejecutable del plan maestro — 2026-11-01 (parcial)
+
+Los75 checks originales quedan en66 HECHO,8 BLOQUEADO y1 NO_APLICA;
+B03.06 añade el cierre documental/publicación y no elimina ningún objetivo.
+El estado vivo, la revisión y el cierre de publicación se consultan en la
+[checklist canónica](../reactivacion_single_user/ejecucion_plan_maestro_2026-10-31/CHECKLIST_MAESTRA.md).
+Las copias en Git o paquetes son snapshots, no tableros rivales.
+
+- H1/H2: PostgreSQL local conciliado y recuperación probada; acceso diario
+  privado AP_Personal_20261101, sin fallback a Neon. Los respaldos siguen en
+  el mismo SSD; no son protección ante fallo físico del dispositivo.
+- H3: código funcional236cb99 publicado, CI41324057431 cinco jobs aprobados;
+  paquete2026-11-01_02_personal. Documentación de cierre posterior se identifica
+  por su commit/CI propios en el recibo externo, no como otro binario instalado.
+- Datos: censo15704 baloncesto/39385 fútbol y snapshotREG9564/2578/1840;
+  después se actualizaron45 placeholders NBA. Euro respondió403, sin evasión;
+  residualWEB intacto. Censo previo y actualización posterior no se confunden.
+- Ciencia: NBA1274 EVAL sin mejora acreditada; Euro315/450 (70%) insuficiente;
+  WNBA450 predicciones reproducidas sinfit/delta0, k0 conservado. Fútbol tres
+  familias con cobertura global79,03–79,16%, gates no aptos. Ninguna activación.
+- H5: SQLite personal durable instalado;1887 pruebas backend sintéticas y232
+  frontend en suites finalesB10,0 omitidas. La importación del navegador real
+  sigue esperando acción visible; las pruebas sintéticas no la sustituyen.
+- Rendimiento:35/35 y100/100 lecturas concurrentes correctas, siete pestañas
+  reales coexistentes y tres arranques10,40–11,00s. Medición puntual, noSLA.
+- Ocho bloqueos: originalesV4; calibración; outcomes/evidencia suficiente;
+  promoción; importación del navegador; reloj/posesiones causal; nuevas
+  variables causales; candidato avanzado dependiente de esas fuentes.
+
+[Alcance, límites y continuidad](../reactivacion_single_user/CIERRE_EJECUTABLE_PLAN_MAESTRO_2026-11-01.md).
+No se declara el plan completo terminado ni eficacia futura certificada.
+
 ## Git, censo local y almacén personal — 2026-11-01
 
 Consolidación previa publicada en `60af3ce` sobre `fbbb001`, CI41318153861 con
