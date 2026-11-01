@@ -51,7 +51,7 @@ clienteAPI.interceptors.response.use(
     return respuesta;
   },
   async (error: AxiosError<ErrorAPI>) => {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && error.code !== 'ERR_CANCELED') {
       console.error(`❌ Error en petición:`, error.response?.data || error.message);
     }
 
@@ -109,7 +109,7 @@ export function extraerMensajeError(error: unknown): string {
     }
 
     if (error.code === 'ECONNABORTED') {
-      return 'La petición tardó demasiado. Verifica tu conexión o reintenta.';
+      return 'El servidor tardó demasiado en responder. Intenta cargar de nuevo.';
     }
 
     if (error.code === 'ERR_NETWORK') {

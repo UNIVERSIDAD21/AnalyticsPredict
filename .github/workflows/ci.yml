@@ -28,7 +28,7 @@ jobs:
       - name: Contratos locales y round-trip íntegro
         run: >-
           python -m pytest -q tests/test_mejoras_locales.py
-          tests/test_consulta_local_ligas.py tests/test_preparar_instalacion_local.py tests/test_inicio_local.py
+          tests/test_consulta_local_ligas.py tests/test_preparar_instalacion_local.py tests/test_inicio_local.py tests/test_orquestacion_local.py
           tests/test_contraccion_wnba_experimental.py
           tests/test_calculo_futbol_aislado.py
           tests/test_contrato_probabilidad_nba.py
@@ -64,7 +64,7 @@ jobs:
           tests/test_analisis_integral.py
           tests/test_consulta_local_ligas.py
           tests/test_preparar_instalacion_local.py
-          tests/test_inicio_local.py
+          tests/test_inicio_local.py tests/test_orquestacion_local.py
           tests/test_contrato_probabilidad_nba.py
           tests/test_cobertura_uso.py
           tests/test_auditoria_probabilidades_wnba.py
@@ -84,9 +84,16 @@ jobs:
           tests/test_ingesta_wnba.py
           tests/test_predictor_wnba.py
           tests/test_wnba_ampliado.py
+          tests/test_auditoria_wnba.py
+          tests/test_frescura_nba.py
+          tests/test_futbol_gating_contexto_unittest.py
           tests/test_elegibilidad_futbol.py
           tests/test_analisis_historico_futbol.py
           tests/test_agenda_baloncesto.py
+          tests/test_resolucion_analitica.py
+          tests/test_estado_competiciones.py
+          tests/test_concurrencia_http.py
+          tests/test_estado_operacion.py
           tests/test_calendario_wnba.py
           tests/test_combinadas_wnba.py
           tests/test_auditar_fuente_espn_soccer.py

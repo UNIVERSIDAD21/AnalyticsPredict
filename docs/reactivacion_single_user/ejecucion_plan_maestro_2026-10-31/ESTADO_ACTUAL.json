@@ -1,0 +1,31 @@
+{
+  "revision_control": 134,
+  "actualizado_cot": "2026-11-01T09:43:35.540469-05:00",
+  "actualizado_utc": "2026-11-01T14:43:35.540469+00:00",
+  "agente_activo": "Borlty-Predict",
+  "repositorio": "C:\\Users\\ING-ERIK\\.openclaw\\workspace\\repos\\AnalyticsPredict",
+  "rama": "reactivacion/implementacion-single-user",
+  "head": "5a608895c341b0c7371c74c1eb8efd097a6d73c4",
+  "bloque_actual": "B03",
+  "check_actual": "B03.04",
+  "estado_check": "EN_CURSO",
+  "ultimo_check_verificado": "B03.03",
+  "siguiente_check_ejecutable": "B04.01",
+  "operacion_en_curso": null,
+  "bloqueos": [],
+  "evidencias_recientes": [
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B02_07_ACCESO_HABITUAL.json #sha256=8e202aa5f14c28e2a029e3d1f202bca21d7d289efb37ba56051d45d6fd8e2793",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B02_08_H2_VERIFICADO.json #sha256=8ac13ae0b8a2c720fd68cb23e9c7090120b882d14206fe5aa557f3b03bff6821",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B03_01_CLASIFICACION.json #sha256=e14e95ceecc760da746a9c920eb2eee50f893e678c58764926c4e644691e8304",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B03_02_CONSOLIDACION.json #sha256=8f93049594dca9796c7ac2cd11efcf05024cdb31f4b3e96152a0ef8b7acb79c8",
+    "C:\\Users\\ING-ERIK\\AnalyticsPredict\\Carpeta de Entregas de Borlty\\EJECUCION_PLAN_MAESTRO_2026-10-31\\B03_03_HALLAZGO_REVISADO.json #sha256=7cca80d37150fb723ec9cb12f735ac3eae8ca97f5e0f9e88f05a112c03b81bc8"
+  ],
+  "conteos": {
+    "PENDIENTE": 50,
+    "EN_CURSO": 1,
+    "HECHO": 24,
+    "BLOQUEADO": 0,
+    "NO_APLICA": 0
+  },
+  "instruccion_reanudacion": "Leer instrucciones, checklist y bitácora; verificar PID/destino/resultado antes de repetir operaciones. No modificar paquetes anteriores. Un solo agente escritor."
+}

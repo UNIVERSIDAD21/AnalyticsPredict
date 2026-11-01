@@ -504,7 +504,7 @@ def _registrar_bitacora_analisis_nba(
             registrar_apuesta_analizada(
                 deporte="baloncesto",
                 partido_id=partido_id,
-                mercado=str(candidato.cuarto),
+                mercado=str(getattr(candidato.cuarto, 'value', candidato.cuarto)),
                 lado=str(candidato.lado.value),
                 linea=float(candidato.linea),
                 probabilidad_sistema=float(candidato.probabilidad),

@@ -147,7 +147,7 @@ def _calcular_sunset(conn: Any, domain: str) -> str:
         422: {"description": "Predicción no encontrada o inconsistencia de calidad"},
     },
 )
-async def get_explicacion_prediccion(
+def get_explicacion_prediccion(
     prediction_id: str,
     version: str = Query(default="v1", pattern="^(v1|legacy)$"),
     accept: Optional[str] = Header(default=None),

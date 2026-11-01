@@ -178,7 +178,7 @@ def test_guardar_apuesta_euroliga_persiste_cuota_y_competencia_sin_confianza(mon
     cursor = _CursorGuardarEuro()
     monkeypatch.setattr(rutas_bitacora, "obtener_pool", lambda: _PoolGuardarEuro(cursor))
 
-    respuesta = asyncio.run(rutas_bitacora.guardar_apuesta(_peticion_euro()))
+    respuesta = rutas_bitacora.guardar_apuesta(_peticion_euro())
 
     assert cursor.insert is not None
     consulta, payload = cursor.insert
@@ -197,7 +197,7 @@ def test_guardar_apuesta_euroliga_con_probabilidad_no_disponible_conserva_null(m
     cursor = _CursorGuardarEuro()
     monkeypatch.setattr(rutas_bitacora, "obtener_pool", lambda: _PoolGuardarEuro(cursor))
 
-    respuesta = asyncio.run(rutas_bitacora.guardar_apuesta(_peticion_euro(probabilidad_sistema=None)))
+    respuesta = rutas_bitacora.guardar_apuesta(_peticion_euro(probabilidad_sistema=None))
 
     assert cursor.insert is not None
     _, payload = cursor.insert
@@ -213,7 +213,7 @@ def test_guardar_apuesta_rechaza_fixture_de_otra_competencia(monkeypatch):
     monkeypatch.setattr(rutas_bitacora, "obtener_pool", lambda: _PoolGuardarEuro(cursor))
 
     try:
-        asyncio.run(rutas_bitacora.guardar_apuesta(_peticion_euro()))
+        rutas_bitacora.guardar_apuesta(_peticion_euro())
     except HTTPException as exc:
         assert exc.status_code == 422
         assert "no pertenece" in exc.detail

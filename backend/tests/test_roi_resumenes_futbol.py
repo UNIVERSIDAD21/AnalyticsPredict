@@ -69,9 +69,9 @@ def test_listado_apuestas_roi_solo_resueltas_y_sin_ganancias_faltantes(monkeypat
     for faltantes, roi, ganancia in ((0, 10.0, 2.0), (1, None, None)):
         cursor = _CursorApuestas(faltantes)
         monkeypatch.setattr(rutas_apuestas_futbol, "obtener_pool", lambda: _Pool(cursor))
-        respuesta = asyncio.run(rutas_apuestas_futbol.listar_apuestas(
+        respuesta = rutas_apuestas_futbol.listar_apuestas(
             estado=None, mercado=None, desde=None, hasta=None,
-            pagina=1, tamano=20, limite=None, offset=None))
+            pagina=1, tamano=20, limite=None, offset=None)
         assert respuesta.resumen.roi is None
         assert respuesta.resumen.ganancia_neta is None
         assert respuesta.resumen.stake_total is None
@@ -79,7 +79,7 @@ def test_listado_apuestas_roi_solo_resueltas_y_sin_ganancias_faltantes(monkeypat
 
 
 def test_resumen_sistema_no_imputa_ganancia_faltante(monkeypatch):
-    async def sin_modelos():
+    def sin_modelos():
         return rutas_metricas_futbol.EstadoModelos(modelos=[])
     monkeypatch.setattr(rutas_metricas_futbol, 'obtener_estado_modelos', sin_modelos)
     monkeypatch.setattr(rutas_metricas_futbol, "_resolver_columna_estado_apuestas", lambda *_: "estado")
@@ -87,7 +87,7 @@ def test_resumen_sistema_no_imputa_ganancia_faltante(monkeypatch):
     for faltantes, roi in ((0, 10.0), (1, None)):
         cursor = _CursorSistema(faltantes)
         monkeypatch.setattr(rutas_metricas_futbol, "obtener_pool", lambda: _Pool(cursor))
-        respuesta = asyncio.run(rutas_metricas_futbol.obtener_resumen_sistema())
+        respuesta = rutas_metricas_futbol.obtener_resumen_sistema()
         assert respuesta.roi_global is None
         assert respuesta.win_rate_global == 0.5
         assert respuesta.modelo_activo is False

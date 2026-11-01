@@ -242,7 +242,7 @@ class RespuestaListadoCalibradores(BaseModel):
     - No hay data leakage: solo usa datos de partidos ya terminados
     """,
 )
-async def resolver_predicciones_endpoint(
+def resolver_predicciones_endpoint(
     peticion: PeticionResolverPredicciones,
 ) -> RespuestaResolucion:
     """Resuelve predicciones pendientes."""
@@ -301,7 +301,7 @@ async def resolver_predicciones_endpoint(
     - PUSH cuando valor_real == línea.
     """,
 )
-async def resolver_predicciones_futbol_endpoint(
+def resolver_predicciones_futbol_endpoint(
     peticion: PeticionResolverPrediccionesFutbol,
 ) -> RespuestaResolucion:
     logger.info(
@@ -349,14 +349,14 @@ async def resolver_predicciones_futbol_endpoint(
     response_model=RespuestaCicloCalidad,
     summary="Ejecutar ciclo de calidad (resolver baloncesto + fútbol)",
 )
-async def ejecutar_ciclo_calidad(
+def ejecutar_ciclo_calidad(
     limite_baloncesto: int = Query(1000, ge=1, le=20000),
     limite_futbol: int = Query(2000, ge=1, le=20000),
 ) -> RespuestaCicloCalidad:
     try:
         resumen_b = resolver_predicciones(limite=limite_baloncesto)
         resumen_f = resolver_predicciones_futbol(limite=limite_futbol)
-        resumen_apuestas = resolver_apuestas_analizadas()
+        resumen_apuestas = resolver_apuestas_analizadas(limite=limite_baloncesto)
         resumen_bitacora = resumen_apuestas_analizadas()
 
         mensaje = (
@@ -387,7 +387,7 @@ async def ejecutar_ciclo_calidad(
     summary="Estadísticas de predicciones",
     description="Obtiene estadísticas actuales de predicciones registradas.",
 )
-async def estadisticas_predicciones_endpoint() -> RespuestaEstadisticas:
+def estadisticas_predicciones_endpoint() -> RespuestaEstadisticas:
     """Obtiene estadísticas de predicciones."""
     try:
         estadisticas = obtener_estadisticas_predicciones()
@@ -415,7 +415,7 @@ async def estadisticas_predicciones_endpoint() -> RespuestaEstadisticas:
     summary="Iniciar backtest walk-forward",
     description="Crea y ejecuta un backtest walk-forward con tracking en BD.",
 )
-async def iniciar_backtest_endpoint(peticion: PeticionBacktest) -> RespuestaBacktest:
+def iniciar_backtest_endpoint(peticion: PeticionBacktest) -> RespuestaBacktest:
     if not peticion.ejecutar_sincrono:
         raise HTTPException(
             status_code=501,
@@ -449,7 +449,7 @@ async def iniciar_backtest_endpoint(peticion: PeticionBacktest) -> RespuestaBack
     response_model=RespuestaBacktest,
     summary="Estado de ejecución de backtest",
 )
-async def estado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
+def estado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
     try:
         estado = obtener_estado_backtest(backtest_id)
         estado = {k: v for k, v in estado.items() if k not in {"ultimo_error", "errores_json"}}
@@ -470,7 +470,7 @@ async def estado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
     response_model=RespuestaBacktest,
     summary="Resultado de ejecución de backtest",
 )
-async def resultado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
+def resultado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
     try:
         resultado = obtener_resultado_backtest(backtest_id)
         resultado = {k: v for k, v in resultado.items() if k not in {"ultimo_error", "errores_json"}}
@@ -496,7 +496,7 @@ async def resultado_backtest_endpoint(backtest_id: str) -> RespuestaBacktest:
     response_model=RespuestaAlertasCalibracion,
     summary="Evaluar alertas de calibración",
 )
-async def evaluar_alertas_calibracion_endpoint(
+def evaluar_alertas_calibracion_endpoint(
     peticion: PeticionEvaluarAlertasCalibracion,
 ) -> RespuestaAlertasCalibracion:
     try:
@@ -526,7 +526,7 @@ async def evaluar_alertas_calibracion_endpoint(
     response_model=RespuestaListadoAlertas,
     summary="Listar alertas de calibración",
 )
-async def listar_alertas_calibracion_endpoint(
+def listar_alertas_calibracion_endpoint(
     mercado: Optional[str] = Query(default=None),
     origen: Optional[str] = Query(default=None),
     severidad: Optional[str] = Query(default=None),
@@ -549,7 +549,7 @@ async def listar_alertas_calibracion_endpoint(
     response_model=RespuestaResolverAlerta,
     summary="Resolver alerta de calibración",
 )
-async def resolver_alerta_calibracion_endpoint(
+def resolver_alerta_calibracion_endpoint(
     peticion: PeticionResolverAlerta,
 ) -> RespuestaResolverAlerta:
     try:
@@ -579,7 +579,7 @@ async def resolver_alerta_calibracion_endpoint(
     response_model=RespuestaSugerenciaRecalibracion,
     summary="Sugerir recalibración por alertas",
 )
-async def sugerir_recalibracion_endpoint(
+def sugerir_recalibracion_endpoint(
     peticion: PeticionSugerirRecalibracion,
 ) -> RespuestaSugerenciaRecalibracion:
     try:
@@ -610,7 +610,7 @@ async def sugerir_recalibracion_endpoint(
     response_model=RespuestaRecalibracion,
     summary="Ejecutar recalibración",
 )
-async def recalibrar_endpoint(peticion: PeticionRecalibracion) -> RespuestaRecalibracion:
+def recalibrar_endpoint(peticion: PeticionRecalibracion) -> RespuestaRecalibracion:
     try:
         resultado = recalibrar_mercado(
             mercado=peticion.mercado,
@@ -643,7 +643,7 @@ async def recalibrar_endpoint(peticion: PeticionRecalibracion) -> RespuestaRecal
     response_model=RespuestaListadoCalibradores,
     summary="Listar calibradores",
 )
-async def listar_calibradores_endpoint(
+def listar_calibradores_endpoint(
     mercado: Optional[str] = Query(default=None),
     activo: Optional[bool] = Query(default=None),
 ) -> RespuestaListadoCalibradores:

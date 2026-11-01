@@ -198,7 +198,7 @@ def _calcular_resultado_real(mercado: str, partido: dict) -> Optional[float]:
     description="Registra una nueva apuesta de futbol.",
     responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
-async def crear_apuesta(
+def crear_apuesta(
     request: ApuestaRequest,
 ) -> ApuestaResponse:
     """Registra una nueva apuesta."""
@@ -402,7 +402,7 @@ async def crear_apuesta(
     summary="Listar apuestas",
     description="Lista las apuestas con filtros.",
 )
-async def listar_apuestas(
+def listar_apuestas(
     estado: Optional[str] = Query(None, description="Filtrar por estado"),
     mercado: Optional[str] = Query(None, description="Filtrar por mercado"),
     desde: Optional[date] = Query(None, description="Fecha inicio"),
@@ -619,7 +619,7 @@ async def listar_apuestas(
 
 
 @router.get("/contract-usage", summary="Métricas de adopción contrato apuestas fútbol")
-async def obtener_metricas_contrato(days: int = Query(7, ge=1, le=90)) -> dict:
+def obtener_metricas_contrato(days: int = Query(7, ge=1, le=90)) -> dict:
     data = _leer_uso_contrato()
     by_date = data.get("by_date", {})
     fechas = sorted(by_date.keys())[-days:]
@@ -669,7 +669,7 @@ async def obtener_metricas_contrato(days: int = Query(7, ge=1, le=90)) -> dict:
     summary="Obtener apuesta",
     responses={404: {"model": ErrorResponse}},
 )
-async def obtener_apuesta(
+def obtener_apuesta(
     apuesta_id: UUID,
 ) -> ApuestaResponse:
     """Obtiene una apuesta por su ID."""
@@ -785,7 +785,7 @@ async def obtener_apuesta(
     summary="Actualizar apuesta",
     responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
-async def actualizar_apuesta(
+def actualizar_apuesta(
     apuesta_id: UUID,
     request: ApuestaUpdateRequest,
 ) -> ApuestaResponse:
@@ -860,7 +860,7 @@ async def actualizar_apuesta(
                 conn.commit()
 
                 # Obtener apuesta actualizada
-                return await obtener_apuesta(apuesta_id)
+                return obtener_apuesta(apuesta_id)
 
     except HTTPException:
         raise
@@ -874,7 +874,7 @@ async def actualizar_apuesta(
     summary="Cancelar apuesta",
     responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
-async def cancelar_apuesta(
+def cancelar_apuesta(
     apuesta_id: UUID,
 ) -> dict:
     """Cancela una apuesta pendiente."""
@@ -935,7 +935,7 @@ async def cancelar_apuesta(
     summary="Resolver apuestas",
     description="Resuelve apuestas pendientes basándose en resultados de partidos.",
 )
-async def resolver_apuestas(
+def resolver_apuestas(
     response: Response,
     request: ResolucionRequest = None,
     partido_id: Optional[UUID] = Query(None, description="ID del partido a resolver"),

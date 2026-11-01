@@ -198,7 +198,7 @@ def _estado_mercados_futbol(cursor, min_muestras: int = 100, warning_brier: floa
     summary="Estado operativo vigente por mercado (fútbol)",
     description="Retorna estado vigente por mercado desde tabla canónica si existe.",
 )
-async def obtener_estado_operativo_mercados(
+def obtener_estado_operativo_mercados(
 ) -> Dict[str, Any]:
     pool = obtener_pool()
     with pool.connection() as conn:
@@ -237,7 +237,7 @@ def _days_by_window(window: str) -> int:
     summary="Métricas operativas de shadow/paper mode por mercado",
     description="Reporte operativo longitudinal por mercado (análisis emitidos, resolubles, resueltos, coverage, degradación y estabilidad).",
 )
-async def obtener_shadow_operativo_futbol(
+def obtener_shadow_operativo_futbol(
     ventana: str = Query("mensual", description="semanal|quincenal|mensual"),
 ) -> Dict[str, Any]:
     days = _days_by_window(ventana)
@@ -294,7 +294,7 @@ async def obtener_shadow_operativo_futbol(
     summary="Política formal de salida beta y promoción parcial por mercado",
     description="Retorna la política canónica de estados operativos por mercado para fútbol.",
 )
-async def obtener_politica_promocion_futbol(
+def obtener_politica_promocion_futbol(
 ) -> Dict[str, Any]:
     path = Path(__file__).resolve().parents[1] / "config" / "futbol_politica_promocion.json"
     if not path.exists():
@@ -308,7 +308,7 @@ async def obtener_politica_promocion_futbol(
     summary="Gate cuantitativo de salida beta del módulo de fútbol",
     description="Clasifica madurez por mercado con criterios cuantitativos reproducibles (NO_APTO/EXPERIMENTAL/VALIDACION/PROMOCIONABLE).",
 )
-async def obtener_madurez_beta_futbol(
+def obtener_madurez_beta_futbol(
     dias: int = Query(120, ge=30, le=720, description="Ventana principal de evaluación"),
 ) -> ReporteMadurezFutbolResponse:
     pool = obtener_pool()
@@ -495,7 +495,7 @@ async def obtener_madurez_beta_futbol(
     summary="Métricas de calibración",
     description="Obtiene métricas de calibración por mercado.",
 )
-async def obtener_metricas_calibracion(
+def obtener_metricas_calibracion(
     mercado: Optional[str] = Query(None, description="Mercado específico o 'todos'"),
     periodo: Literal["semana", "mes", "temporada", "todo"] = Query("todo"),
 ) -> ListaMetricasCalibracionResponse:
@@ -618,7 +618,7 @@ async def obtener_metricas_calibracion(
     summary="Métricas de rendimiento",
     description="Obtiene métricas de rendimiento de apuestas por mercado.",
 )
-async def obtener_metricas_rendimiento(
+def obtener_metricas_rendimiento(
     mercado: Optional[str] = Query(None),
     periodo: Literal["semana", "mes", "temporada", "todo"] = Query("todo"),
 ) -> ListaMetricasRendimientoResponse:
@@ -714,7 +714,7 @@ async def obtener_metricas_rendimiento(
     summary="Serie temporal de ROI acumulado (30 días)",
     description="Retorna ROI acumulado diario para el usuario autenticado, sin datos mock.",
 )
-async def obtener_roi_temporal(
+def obtener_roi_temporal(
     dias: int = Query(30, ge=7, le=90),
 ) -> dict:
     pool = obtener_pool()
@@ -795,7 +795,7 @@ async def obtener_roi_temporal(
     response_model=EstadoModelos,
     include_in_schema=False,
 )
-async def obtener_estado_modelos() -> EstadoModelos:
+def obtener_estado_modelos() -> EstadoModelos:
     """Artefactos activos verificados, nunca ejemplos ni reentrenamiento ficticio."""
     from motor_futbol.modelos.artefacto import cargar_registro
     from api.rutas_analisis_futbol import _predictor_futbol_ml
@@ -847,13 +847,13 @@ async def obtener_estado_modelos() -> EstadoModelos:
     summary="Resumen del sistema",
     description="Obtiene un resumen ejecutivo del sistema de fútbol.",
 )
-async def obtener_resumen_sistema(
+def obtener_resumen_sistema(
 ) -> ResumenSistema:
     """Obtiene resumen del sistema."""
     pool = obtener_pool()
 
     try:
-        estado_modelos = await obtener_estado_modelos()
+        estado_modelos = obtener_estado_modelos()
         with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cursor:
                 # Partidos próximos
@@ -1059,7 +1059,7 @@ def _clasificar_estabilidad_b3(
     "/b3-estabilidad",
     summary="Estado semanal de estabilidad B3 por liga",
 )
-async def obtener_estado_b3_estabilidad(
+def obtener_estado_b3_estabilidad(
 ) -> dict:
     pool = obtener_pool()
     try:
@@ -1130,7 +1130,7 @@ async def obtener_estado_b3_estabilidad(
     "/resumen-calidad-1x2",
     summary="Resumen de calidad de predicción 1X2 (fútbol)",
 )
-async def resumen_calidad_1x2() -> dict:
+def resumen_calidad_1x2() -> dict:
     pool = obtener_pool()
     with pool.connection() as conn:
         with conn.cursor() as cursor:

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import os
+import json
+from math import isfinite
 from datetime import datetime
 from typing import Optional, Any
 
@@ -14,6 +16,11 @@ from db import obtener_pool
 
 def asegurar_tabla_apuestas_analizadas(pool=None) -> None:
     pool = pool or obtener_pool()
+    if os.getenv("APUESTAS_ANALIZADAS_RUNTIME_DDL", "0") != "1":
+        with pool.connection() as conn:
+            if conn.execute("SELECT to_regclass('apuestas_analizadas')").fetchone()[0] is None:
+                raise RuntimeError('Falta migración de registros analíticos; no se instala durante el análisis')
+        return
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -130,6 +137,20 @@ def registrar_apuesta_analizada(
     decision_cuota_under: Optional[float] = None,
     pool=None,
 ) -> None:
+    from motor.resolucion_analitica import objeto
+    payload = objeto(payload_json)
+    if not payload:
+        raise ValueError('El registro analítico requiere un payload JSON objeto')
+    payload_json = json.dumps(payload, ensure_ascii=False, allow_nan=False)
+    mercado = str(getattr(mercado, 'value', mercado)) if mercado is not None else None
+    lado = str(getattr(lado, 'value', lado)).upper() if lado is not None else None
+    if probabilidad_sistema is not None and (
+        isinstance(probabilidad_sistema, bool) or not isfinite(probabilidad_sistema)
+        or not 0 <= probabilidad_sistema <= 1
+    ):
+        raise ValueError('Probabilidad analítica fuera de contrato')
+    if probabilidad_sistema is None:
+        confianza = None
     pool = pool or obtener_pool()
     asegurar_tabla_apuestas_analizadas(pool)
     with pool.connection() as conn:
@@ -143,12 +164,15 @@ def registrar_apuesta_analizada(
                     decision_sizing, decision_valor_esperado, decision_calibrador_id,
                     decision_modelo_version_id, decision_fuente, decision_devig_metodo,
                     decision_devig_overround, decision_devig_p_mkt_fair,
-                    decision_cuota, decision_cuota_over, decision_cuota_under
+                    decision_cuota, decision_cuota_over, decision_cuota_under, estado, creado_en
                 )
                 VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s::jsonb,
+                    %s, %s, %s, %s, %s, %s, %s,
+                    jsonb_set(%s::jsonb, '{registro_analitico}',
+                        jsonb_build_object('politica','registro-analitico-v1',
+                          'emision_utc',clock_timestamp(),'prospectiva_certificada',false), true),
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s
+                    %s, %s, %s, %s, clock_timestamp()
                 )
                 """,
                 [
@@ -175,94 +199,15 @@ def registrar_apuesta_analizada(
                     decision_cuota,
                     decision_cuota_over,
                     decision_cuota_under,
+                    "PENDIENTE" if lado in {"OVER", "UNDER"} and linea is not None and probabilidad_sistema is not None else "INFORMATIVO",
                 ],
             )
 
 
-def resolver_apuestas_analizadas(pool=None) -> dict:
-    pool = pool or obtener_pool()
-    asegurar_tabla_apuestas_analizadas(pool)
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            # Baloncesto: soporte Q1-Q4/COMPLETO con outcome over-under
-            cur.execute(
-                """
-                UPDATE apuestas_analizadas a
-                SET estado = 'FINALIZADA',
-                    valor_real = CASE
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                        WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
-                        ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
-                    END,
-                    resultado_outcome = CASE
-                        WHEN a.lado IS NULL OR a.linea IS NULL THEN NULL
-                        WHEN (
-                            CASE
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
-                                ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
-                            END
-                        ) = a.linea THEN 'PUSH'
-                        WHEN UPPER(COALESCE(a.lado, '')) = 'OVER' AND (
-                            CASE
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
-                                ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
-                            END
-                        ) > a.linea THEN 'GANADA'
-                        WHEN UPPER(COALESCE(a.lado, '')) = 'UNDER' AND (
-                            CASE
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q1' THEN COALESCE(pb.local_q1, 0) + COALESCE(pb.visitante_q1, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q2' THEN COALESCE(pb.local_q2, 0) + COALESCE(pb.visitante_q2, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q3' THEN COALESCE(pb.local_q3, 0) + COALESCE(pb.visitante_q3, 0)
-                                WHEN UPPER(COALESCE(a.mercado, '')) = 'Q4' THEN COALESCE(pb.local_q4, 0) + COALESCE(pb.visitante_q4, 0)
-                                ELSE COALESCE(pb.local_total, 0) + COALESCE(pb.visitante_total, 0)
-                            END
-                        ) < a.linea THEN 'GANADA'
-                        ELSE 'PERDIDA'
-                    END,
-                    resultado_resumen = CONCAT('Resultado final: ', pb.local_total, '-', pb.visitante_total),
-                    actualizado_en = now()
-                FROM partidos_baloncesto pb
-                WHERE a.deporte = 'baloncesto'
-                  AND a.estado = 'PENDIENTE'
-                  AND pb.id = a.partido_id
-                  AND pb.local_total IS NOT NULL
-                  AND pb.visitante_total IS NOT NULL;
-                """
-            )
-            res_b = cur.rowcount
-
-            # Fútbol: default sobre total goles FT
-            cur.execute(
-                """
-                UPDATE apuestas_analizadas a
-                SET estado = 'FINALIZADA',
-                    valor_real = COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0),
-                    resultado_outcome = CASE
-                        WHEN a.lado IS NULL OR a.linea IS NULL THEN NULL
-                        WHEN (COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0)) = a.linea THEN 'PUSH'
-                        WHEN UPPER(COALESCE(a.lado, '')) = 'OVER' AND (COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0)) > a.linea THEN 'GANADA'
-                        WHEN UPPER(COALESCE(a.lado, '')) = 'UNDER' AND (COALESCE(pf.local_goles_total, 0) + COALESCE(pf.visitante_goles_total, 0)) < a.linea THEN 'GANADA'
-                        ELSE 'PERDIDA'
-                    END,
-                    resultado_resumen = CONCAT('Resultado final: ', pf.local_goles_total, '-', pf.visitante_goles_total),
-                    actualizado_en = now()
-                FROM partidos_futbol pf
-                WHERE a.deporte = 'futbol'
-                  AND a.estado = 'PENDIENTE'
-                  AND pf.id = a.partido_id
-                  AND pf.estado = 'FINALIZADO';
-                """
-            )
-            res_f = cur.rowcount
-    return {"baloncesto": res_b, "futbol": res_f, "total": res_b + res_f}
+def resolver_apuestas_analizadas(pool=None, *, simular=False, limite=1000, ids=None) -> dict:
+    """Solo pendientes; no DDL, descargas ni reparación de outcomes históricos."""
+    from servicios.resolucion_analitica import procesar
+    return procesar(pool=pool, simular=simular, limite=limite, ids=ids)
 
 
 def resumen_apuestas_analizadas(pool=None) -> dict:
@@ -542,6 +487,8 @@ def obtener_auditoria_decisiones_futbol(
 
     return {
         "total": int(resumen.get("total") or 0),
+        "alcance_metricas": "DESCRIPTIVO_LEGACY_NO_ACREDITA_PROSPECTIVA_NI_CORRECCION_OUTCOME",
+        "diagnostico_outcomes": "/api/bitacora/apuestas-analizadas/diagnostico",
         "totales": {
             "ml": int(resumen.get("total_ml") or 0),
             "heuristico": int(resumen.get("total_heuristico") or 0),

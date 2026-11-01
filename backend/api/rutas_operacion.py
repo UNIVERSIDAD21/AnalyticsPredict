@@ -9,6 +9,8 @@ from motor_autoentrenamiento.artefacto_nba import cargar_artefacto
 from motor_autoentrenamiento.dominio_nba import FILTRO_NBA_ENTRENABLE
 from motor_futbol.modelos.artefacto import cargar_registro
 from motor_futbol.entrenamiento.gestor_versiones import MERCADOS
+from servicios.estado_competiciones import leer_competiciones
+from servicios.frescura_nba import leer_frescura_nba
 
 router=APIRouter(prefix='/api/operacion',tags=['Operación local'])
 
@@ -68,7 +70,7 @@ def leer_estado(conn):
             familias[tipo.value]={'estado':estado,'version_id':versiones[0]['id'] if len(versiones)==1 else None}
         resumen=[{k:v.get(k) for k in ('id','mercado_principal','version','fecha_entrenamiento','cutoff_entrenamiento','partidos_entrenamiento')} for v in modelos_futbol]
         estado_ml='SIN_VERSION_ACTIVA' if not modelos_futbol else 'VERSIONES_REGISTRADAS'
-        return {'nba':dict(nba),'futbol':dict(futbol),'capturas_futbol':capturas,
+        return {'frescura_modelo_nba':leer_frescura_nba(conn), 'competiciones':leer_competiciones(conn), 'nba':dict(nba),'futbol':dict(futbol),'capturas_futbol':capturas,
                 'ultimo_job_nba':nba_job,'prospectiva':prospectiva,'versiones_futbol_registradas':resumen,
                 'predictor_ml_futbol': {'estado':estado_ml,'familias':familias,
                     'motivo':'La consulta verifica artefactos registrados; no inicializa el predictor ni activa modelos.'}}

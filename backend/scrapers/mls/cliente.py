@@ -1,0 +1,231 @@
+"""Cliente HTTP serial, acotado, identificable y sin evasión de bloqueos."""
+
+from __future__ import annotations
+
+import json
+import math
+import random
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from urllib.parse import urlencode
+
+import requests
+
+from .archivo import Archivo, ArchivoError, append_json
+from .contrato import LIMITE, identificador
+
+BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1"
+MAX_BYTES = 8 * 1024 * 1024
+
+
+class FuenteError(RuntimeError):
+    """Error operativo: debe generar reporte incompleto y exit code no cero."""
+
+
+class ConsultaError(FuenteError):
+    """Fallo aislado de una consulta; no impide procesar las demás."""
+
+    def __init__(
+        self, mensaje, *, url, http_status=None, reintentar=True, codigo="CONSULTA_NO_DISPONIBLE"
+    ):
+        super().__init__(mensaje)
+        self.url, self.http_status, self.reintentar = url, http_status, reintentar
+        self.codigo = codigo
+
+
+def url_consulta(endpoint: str, parametro: str) -> str:
+    if endpoint == "scoreboard":
+        if len(parametro) not in (6, 8) or not parametro.isascii() or not parametro.isdigit():
+            raise ValueError("dates debe ser YYYYMM o YYYYMMDD")
+        datetime.strptime(parametro, "%Y%m" if len(parametro) == 6 else "%Y%m%d")
+        params = {"dates": parametro, "limit": LIMITE}
+    elif endpoint == "summary":
+        params = {"event": identificador(parametro, "event")}
+    else:
+        raise ValueError("Endpoint MLS no permitido")
+    return f"{BASE}/{endpoint}?{urlencode(params)}"
+
+
+class ClienteESPN:
+    def __init__(
+        self,
+        archivo: Archivo,
+        *,
+        offline=False,
+        refresh=False,
+        intervalo=1.5,
+        max_requests=1000,
+        intentos=5,
+        session=None,
+        dormir=time.sleep,
+        reloj=time.monotonic,
+        ahora=None,
+        jitter=None,
+    ):
+        if not math.isfinite(intervalo) or intervalo < 1.25:
+            raise ValueError("Intervalo mínimo: 1.25 segundos")
+        if not 1 <= intentos <= 8 or not 1 <= max_requests <= 20000:
+            raise ValueError("Presupuesto/intentos fuera de límites")
+        if offline and refresh:
+            raise ValueError("Offline y refresh son incompatibles")
+        self.archivo, self.offline, self.refresh = archivo, offline, refresh
+        self.intervalo, self.max_requests, self.intentos = intervalo, max_requests, intentos
+        self.dormir, self.reloj = dormir, reloj
+        self.ahora = ahora or (lambda: datetime.now(timezone.utc))
+        self.jitter = jitter or (lambda: random.uniform(0, 0.25))
+        self.obtenidas = set()
+        self.refrescar_urls = set()
+        self.ultimo_inicio = None
+        self.rate_limited = False
+        self.contadores = {"requests": 0, "cache_hits": 0, "bytes_red": 0, "reintentos": 0}
+        self.session = session or requests.Session()
+        self.session.trust_env = False  # Sin proxies/credenciales implícitos del entorno.
+        self.session.headers.update(
+            {"User-Agent": "AnalyticsPredict-MLS/1.0", "Accept": "application/json"}
+        )
+
+    def close(self):
+        self.session.close()
+
+    def _retry_after(self, raw: str | None) -> float:
+        if raw is None:
+            raise FuenteError("HTTP 429 sin Retry-After: fuente detenida")
+        try:
+            if raw.isdigit():
+                seconds = float(raw)
+            else:
+                dt = parsedate_to_datetime(raw)
+                if dt.tzinfo is None:
+                    raise ValueError("timezone")
+                seconds = (dt - self.ahora()).total_seconds()
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise FuenteError("Retry-After inválido: fuente detenida") from exc
+        if not math.isfinite(seconds) or not 0 <= seconds <= 60:
+            raise FuenteError("Retry-After fuera del presupuesto de espera; reanudar más tarde")
+        return seconds
+
+    def obtener(self, endpoint: str, parametro: str, *, max_age=86400) -> tuple[dict, dict]:
+        url = url_consulta(endpoint, parametro)
+        cached = self.archivo.cargar(url)  # Verifica integridad incluso antes de refresh.
+        if cached:
+            try:
+                observed = datetime.fromisoformat(cached[1]["observado_utc"])
+                if observed.tzinfo is None:
+                    raise ValueError("timezone")
+                age = (self.ahora() - observed).total_seconds()
+                if age < 0:
+                    raise ValueError("futuro")
+            except (ValueError, KeyError, TypeError) as exc:
+                raise ArchivoError("Fecha de observación de caché inválida") from exc
+            forzar = (self.refresh or url in self.refrescar_urls) and url not in self.obtenidas
+            if self.offline or (
+                not forzar and (url in self.obtenidas or max_age is None or age <= max_age)
+            ):
+                self.contadores["cache_hits"] += 1
+                return cached
+        if self.offline:
+            raise ConsultaError("OFFLINE: falta una respuesta archivada", url=url, reintentar=False)
+        for attempt in range(self.intentos):
+            if self.contadores["requests"] >= self.max_requests:
+                raise FuenteError("Presupuesto HTTP agotado; reanudación disponible")
+            if self.ultimo_inicio is not None:
+                self.dormir(max(0, self.intervalo - (self.reloj() - self.ultimo_inicio)))
+            self.ultimo_inicio = self.reloj()
+            self.contadores["requests"] += 1
+            if attempt:
+                self.contadores["reintentos"] += 1
+            observado = self.ahora().isoformat()
+            response = None
+            delay = None
+            try:
+                response = self.session.get(
+                    url, timeout=(5, 20), allow_redirects=False, stream=True
+                )
+                code = response.status_code
+                append_json(
+                    self.archivo.root / "http.jsonl",
+                    {
+                        "url": url,
+                        "observado_utc": observado,
+                        "intento": attempt + 1,
+                        "http_status": code,
+                    },
+                )
+                if code in (401, 403) or 300 <= code < 400:
+                    raise FuenteError(f"HTTP {code}: acceso/redirect detenido, sin evasión")
+                if code == 429:
+                    if self.rate_limited:
+                        raise FuenteError("HTTP 429 repetido: fuente detenida")
+                    self.rate_limited = True
+                    delay = self._retry_after(response.headers.get("Retry-After"))
+                elif code in (500, 502, 503, 504):
+                    delay = 2**attempt + self.jitter()
+                elif code == 413:
+                    raise ConsultaError(
+                        "HTTP 413: respuesta demasiado grande",
+                        url=url,
+                        http_status=code,
+                        reintentar=False,
+                        codigo="RESPUESTA_EXCESIVA",
+                    )
+                elif code != 200:
+                    raise ConsultaError(
+                        f"HTTP {code}: respuesta no utilizable",
+                        url=url,
+                        http_status=code,
+                        reintentar=False,
+                    )
+                else:
+                    ctype = response.headers.get("Content-Type", "").split(";", 1)[0].lower()
+                    if ctype != "application/json" and not ctype.endswith("+json"):
+                        raise ConsultaError("HTTP 200 sin Content-Type JSON", url=url)
+                    chunks, size = [], 0
+                    for chunk in response.iter_content(chunk_size=65536):
+                        size += len(chunk)
+                        self.contadores["bytes_red"] += len(chunk)
+                        if size > MAX_BYTES:
+                            raise ConsultaError(
+                                "Respuesta excede el límite de bytes",
+                                url=url,
+                                reintentar=False,
+                                codigo="RESPUESTA_EXCESIVA",
+                            )
+                        if self.reloj() - self.ultimo_inicio > 60:
+                            raise ConsultaError("Respuesta excede el límite de tiempo", url=url)
+                        chunks.append(chunk)
+                    raw = b"".join(chunks)
+                    try:
+                        value = json.loads(raw)
+                    except (ValueError, UnicodeError) as exc:
+                        raise ConsultaError(
+                            "JSON inválido; no se considera vacío", url=url
+                        ) from exc
+                    if not isinstance(value, dict):
+                        raise ConsultaError("Raíz JSON distinta de objeto", url=url)
+                    meta = self.archivo.guardar(url, raw, self.ahora().isoformat())
+                    self.obtenidas.add(url)
+                    return value, meta
+            except (requests.Timeout, requests.ConnectionError) as exc:
+                append_json(
+                    self.archivo.root / "http.jsonl",
+                    {
+                        "url": url,
+                        "observado_utc": observado,
+                        "intento": attempt + 1,
+                        "error": type(exc).__name__,
+                    },
+                )
+                delay = 2**attempt + self.jitter()
+            except requests.RequestException as exc:
+                raise ConsultaError(f"Error HTTP {type(exc).__name__}", url=url) from exc
+            finally:
+                if response is not None:
+                    response.close()
+            if attempt + 1 < self.intentos and delay is not None:
+                self.dormir(delay)
+        raise ConsultaError(
+            "Intentos HTTP agotados; no se considera ventana vacía",
+            url=url,
+            http_status=code if response is not None else None,
+        )

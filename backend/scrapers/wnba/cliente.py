@@ -22,6 +22,14 @@ class FuenteError(RuntimeError):
     """Error operativo: debe generar reporte incompleto y exit code no cero."""
 
 
+class ConsultaError(FuenteError):
+    """Fallo aislado de una consulta; no impide procesar las demás."""
+
+    def __init__(self, mensaje, *, url, http_status=None, reintentar=True):
+        super().__init__(mensaje)
+        self.url, self.http_status, self.reintentar = url, http_status, reintentar
+
+
 def url_consulta(endpoint: str, parametro: str) -> str:
     if endpoint == "scoreboard":
         if len(parametro) != 8 or not parametro.isascii() or not parametro.isdigit():
@@ -41,7 +49,7 @@ class ClienteESPN:
                  reloj=time.monotonic, ahora=None, jitter=None):
         if not math.isfinite(intervalo) or intervalo < 1.25:
             raise ValueError("Intervalo mínimo: 1.25 segundos")
-        if not 1 <= intentos <= 3 or not 1 <= max_requests <= 20000:
+        if not 1 <= intentos <= 8 or not 1 <= max_requests <= 20000:
             raise ValueError("Presupuesto/intentos fuera de límites")
         if offline and refresh:
             raise ValueError("Offline y refresh son incompatibles")
@@ -55,7 +63,7 @@ class ClienteESPN:
         self.contadores = {"requests": 0, "cache_hits": 0, "bytes_red": 0, "reintentos": 0}
         self.session = session or requests.Session()
         self.session.trust_env = False  # Sin proxies/credenciales implícitos del entorno.
-        self.session.headers.update({"User-Agent": "AnalyticsPredict-WNBA/1.0", "Accept": "application/json"})
+        self.session.headers.update({"User-Agent": "AnalyticsPredict-WNBA/2.1", "Accept": "application/json"})
 
     def close(self):
         self.session.close()
@@ -90,11 +98,11 @@ class ClienteESPN:
                     raise ValueError("futuro")
             except (ValueError, KeyError, TypeError) as exc:
                 raise ArchivoError("Fecha de observación de caché inválida") from exc
-            if self.offline or (not self.refresh and age <= max_age):
+            if self.offline or (not self.refresh and (max_age is None or age <= max_age)):
                 self.contadores["cache_hits"] += 1
                 return cached
         if self.offline:
-            raise FuenteError("OFFLINE: falta una respuesta archivada para la ventana solicitada")
+            raise ConsultaError("OFFLINE: falta una respuesta archivada", url=url, reintentar=False)
         for attempt in range(self.intentos):
             if self.contadores["requests"] >= self.max_requests:
                 raise FuenteError("Presupuesto HTTP agotado; reanudación disponible")
@@ -122,25 +130,26 @@ class ClienteESPN:
                 elif code in (500, 502, 503, 504):
                     delay = 2 ** attempt + self.jitter()
                 elif code != 200:
-                    raise FuenteError(f"HTTP {code}: respuesta no utilizable")
+                    raise ConsultaError(f"HTTP {code}: respuesta no utilizable", url=url,
+                                        http_status=code, reintentar=False)
                 else:
                     ctype = response.headers.get("Content-Type", "").split(";", 1)[0].lower()
                     if ctype != "application/json" and not ctype.endswith("+json"):
-                        raise FuenteError("HTTP 200 sin Content-Type JSON")
+                        raise ConsultaError("HTTP 200 sin Content-Type JSON", url=url)
                     chunks, size = [], 0
                     for chunk in response.iter_content(chunk_size=65536):
                         size += len(chunk)
                         self.contadores["bytes_red"] += len(chunk)
                         if size > MAX_BYTES or self.reloj() - self.ultimo_inicio > 60:
-                            raise FuenteError("Respuesta excede el límite de bytes/tiempo")
+                            raise ConsultaError("Respuesta excede el límite de bytes/tiempo", url=url)
                         chunks.append(chunk)
                     raw = b"".join(chunks)
                     try:
                         value = json.loads(raw)
                     except (ValueError, UnicodeError) as exc:
-                        raise FuenteError("JSON inválido; no reintentar como si fuera vacío") from exc
+                        raise ConsultaError("JSON inválido; no se considera vacío", url=url) from exc
                     if not isinstance(value, dict):
-                        raise FuenteError("Raíz JSON distinta de objeto")
+                        raise ConsultaError("Raíz JSON distinta de objeto", url=url)
                     meta = self.archivo.guardar(url, raw, self.ahora().isoformat())
                     return value, meta
             except (requests.Timeout, requests.ConnectionError) as exc:
@@ -148,10 +157,11 @@ class ClienteESPN:
                             "intento": attempt + 1, "error": type(exc).__name__})
                 delay = 2 ** attempt + self.jitter()
             except requests.RequestException as exc:
-                raise FuenteError(f"Error HTTP {type(exc).__name__}") from exc
+                raise ConsultaError(f"Error HTTP {type(exc).__name__}", url=url) from exc
             finally:
                 if response is not None:
                     response.close()
             if attempt + 1 < self.intentos and delay is not None:
                 self.dormir(delay)
-        raise FuenteError("Intentos HTTP agotados; no se considera ventana vacía")
+        raise ConsultaError("Intentos HTTP agotados; no se considera ventana vacía", url=url,
+                            http_status=code if response is not None else None)

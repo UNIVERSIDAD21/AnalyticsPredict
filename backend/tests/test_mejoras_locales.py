@@ -38,6 +38,7 @@ def test_lock_excluye_otro_proceso_y_se_libera_al_cerrar(tmp_path):
     fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
     script = '''
 import os, sys
+sys.path.insert(0, os.getcwd())  # También con el runtime embebido y su ._pth aislado.
 from servicios.locks_archivo import adquirir
 fd = os.open(sys.argv[1], os.O_RDWR)
 try:

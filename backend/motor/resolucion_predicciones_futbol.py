@@ -22,6 +22,8 @@ class ResumenResolucionFutbol:
     sin_datos_partido: int = 0
     errores: int = 0
     detalles_errores: List[str] = field(default_factory=list)
+    motivos_pendientes: Dict[str, int] = field(default_factory=dict)
+    simulacion: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -32,209 +34,92 @@ class ResumenResolucionFutbol:
             "sin_datos_partido": self.sin_datos_partido,
             "errores": self.errores,
             "detalles_errores": self.detalles_errores[:10],
+            "motivos_pendientes": self.motivos_pendientes,
+            "simulacion": self.simulacion,
         }
 
 
 def _valor_real_futbol(mercado: str, fila_partido: Dict[str, Any]) -> Optional[float]:
-    m = (mercado or "").upper()
-
-    if m.startswith("GOLES"):
-        if "_1T" in m:
-            loc, vis = fila_partido.get("local_goles_1t"), fila_partido.get("visitante_goles_1t")
-        elif "_2T" in m:
-            loc, vis = fila_partido.get("local_goles_2t"), fila_partido.get("visitante_goles_2t")
-        else:
-            loc, vis = fila_partido.get("local_goles_total"), fila_partido.get("visitante_goles_total")
-    elif m.startswith("CORNERS"):
-        if "_1T" in m:
-            loc, vis = fila_partido.get("local_corners_1t"), fila_partido.get("visitante_corners_1t")
-        elif "_2T" in m:
-            loc, vis = fila_partido.get("local_corners_2t"), fila_partido.get("visitante_corners_2t")
-        else:
-            loc, vis = fila_partido.get("local_corners_total"), fila_partido.get("visitante_corners_total")
-    elif m.startswith("DISPAROS_ARCO"):
-        loc, vis = fila_partido.get("local_disparos_arco"), fila_partido.get("visitante_disparos_arco")
-    elif m.startswith("DISPAROS"):
-        loc, vis = fila_partido.get("local_disparos_total"), fila_partido.get("visitante_disparos_total")
-    else:
-        return None
-
-    if "_LOCAL_" in m:
-        return float(loc) if loc is not None else None
-    if "_VISITANTE_" in m:
-        return float(vis) if vis is not None else None
-
-    if loc is None or vis is None:
-        return None
-    return float(loc) + float(vis)
+    """Mismo contrato observado que la elegibilidad, nunca FT por una mitad."""
+    from motor.resolucion_analitica import valor_futbol
+    return valor_futbol(mercado, fila_partido)[0]
 
 
 def resolver_predicciones_futbol(
-    *,
-    limite: int = 2000,
-    mercado: Optional[str] = None,
-    solo_hasta_fecha: Optional[date] = None,
-    force: bool = False,
-    pool=None,
+    *, limite: int = 2000, mercado: Optional[str] = None,
+    solo_hasta_fecha: Optional[date] = None, force: bool = False,
+    pool=None, simular: bool = False,
 ) -> ResumenResolucionFutbol:
-    pool = pool or obtener_pool()
-    resumen = ResumenResolucionFutbol()
+    """Solo no resueltas; POSPUESTO/SUSPENDIDO no son outcomes terminales.
 
-    condiciones = [] if force else ["(pfu.resuelto = false OR pfu.resuelto IS NULL)"]
-    params: List[Any] = []
-
-    if mercado:
-        condiciones.append("pfu.mercado::text = %s")
-        params.append(mercado.upper())
-
-    if solo_hasta_fecha:
-        condiciones.append("pfu.fecha_partido <= %s")
-        params.append(solo_hasta_fecha)
-
-    where_sql = " AND ".join(condiciones) if condiciones else "1=1"
-    params.append(limite)
-
-    query = f"""
-        SELECT
-            pfu.id,
-            pfu.partido_id,
-            pfu.mercado::text,
-            pfu.linea,
-            pf.estado::text as estado_partido,
-            pf.local_goles_1t,
-            pf.local_goles_2t,
-            pf.local_goles_total,
-            pf.visitante_goles_1t,
-            pf.visitante_goles_2t,
-            pf.visitante_goles_total,
-            pf.local_corners_1t,
-            pf.local_corners_2t,
-            pf.local_corners_total,
-            pf.visitante_corners_1t,
-            pf.visitante_corners_2t,
-            pf.visitante_corners_total,
-            pf.local_disparos_total,
-            pf.local_disparos_arco,
-            pf.visitante_disparos_total,
-            pf.visitante_disparos_arco
-        FROM predicciones_futbol pfu
-        JOIN partidos_futbol pf ON pfu.partido_id = pf.id
-        WHERE {where_sql}
-        ORDER BY pfu.fecha_partido ASC
-        LIMIT %s
-        FOR UPDATE SKIP LOCKED
+    Los resultados antiguos requieren auditoría y reparación expresamente acotada;
+    force no puede reescribir silenciosamente cohortes utilizadas para métricas.
     """
+    from collections import Counter
+    from psycopg.rows import dict_row
+    from motor.resolucion_analitica import valor_futbol, comparar, instante
 
-    with pool.connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(query, params)
-            filas = cursor.fetchall()
-
-            if not filas:
-                return resumen
-
-            for fila in filas:
-                try:
-                    (
-                        pred_id,
-                        _partido_id,
-                        mercado_row,
-                        linea,
-                        estado_partido,
-                        local_goles_1t,
-                        local_goles_2t,
-                        local_goles_total,
-                        visitante_goles_1t,
-                        visitante_goles_2t,
-                        visitante_goles_total,
-                        local_corners_1t,
-                        local_corners_2t,
-                        local_corners_total,
-                        visitante_corners_1t,
-                        visitante_corners_2t,
-                        visitante_corners_total,
-                        local_disparos_total,
-                        local_disparos_arco,
-                        visitante_disparos_total,
-                        visitante_disparos_arco,
-                    ) = fila
-
-                    if estado_partido in {"CANCELADO", "POSPUESTO", "SUSPENDIDO", "ABANDONADO"}:
-                        cursor.execute(
-                            """
-                            UPDATE predicciones_futbol
-                            SET valor_real = NULL,
-                                outcome_binario = NULL,
-                                resultado = 'VOID',
-                                resuelto = true,
-                                timestamp_resolucion = NOW(),
-                                actualizado_en = NOW()
-                            WHERE id = %s
-                            """,
-                            [pred_id],
-                        )
-                        resumen.anuladas += 1
-                        continue
-
-                    if estado_partido != "FINALIZADO":
-                        resumen.pendientes += 1
-                        continue
-
-                    valor_real = _valor_real_futbol(
-                        mercado_row,
-                        {
-                            "local_goles_1t": local_goles_1t,
-                            "local_goles_2t": local_goles_2t,
-                            "local_goles_total": local_goles_total,
-                            "visitante_goles_1t": visitante_goles_1t,
-                            "visitante_goles_2t": visitante_goles_2t,
-                            "visitante_goles_total": visitante_goles_total,
-                            "local_corners_1t": local_corners_1t,
-                            "local_corners_2t": local_corners_2t,
-                            "local_corners_total": local_corners_total,
-                            "visitante_corners_1t": visitante_corners_1t,
-                            "visitante_corners_2t": visitante_corners_2t,
-                            "visitante_corners_total": visitante_corners_total,
-                            "local_disparos_total": local_disparos_total,
-                            "local_disparos_arco": local_disparos_arco,
-                            "visitante_disparos_total": visitante_disparos_total,
-                            "visitante_disparos_arco": visitante_disparos_arco,
-                        },
-                    )
-
-                    if valor_real is None:
+    if force:
+        raise ValueError('No se reabren predicciones resueltas; auditar antes de reparar')
+    if not 1 <= limite <= 20000:
+        raise ValueError('Límite fuera de rango')
+    resumen = ResumenResolucionFutbol()
+    motivos = Counter()
+    condiciones = ['pfu.resuelto IS NOT TRUE']
+    params = []
+    if mercado:
+        condiciones.append('pfu.mercado::text=%s')
+        params.append(mercado.upper())
+    if solo_hasta_fecha:
+        condiciones.append('pfu.fecha_partido<=%s')
+        params.append(solo_hasta_fecha)
+    params.append(limite)
+    consulta = f"""SELECT pfu.id,pfu.mercado::text, pfu.linea,to_jsonb(pf) partido
+        FROM predicciones_futbol pfu LEFT JOIN partidos_futbol pf ON pf.id=pfu.partido_id
+        WHERE {' AND '.join(condiciones)} ORDER BY pfu.fecha_partido,pfu.id LIMIT %s"""
+    if not simular:
+        consulta += ' FOR UPDATE OF pfu SKIP LOCKED'
+    with (pool or obtener_pool()).connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cursor:
+            if simular:
+                cursor.execute('SET TRANSACTION READ ONLY')
+            ahora = cursor.execute('SELECT clock_timestamp() ahora').fetchone()['ahora']
+            for fila in cursor.execute(consulta, params).fetchall():
+                p = fila['partido']
+                motivo = None
+                if not p or p.get('valido') is not True:
+                    motivo = 'PARTIDO_AUSENTE_O_INVALIDO'
+                elif p.get('estado') != 'FINALIZADO':
+                    motivo = 'PARTIDO_NO_FINALIZADO'
+                else:
+                    fecha = instante(p.get('fecha_partido'))
+                    if fecha is None or fecha > ahora:
+                        motivo = 'FECHA_NO_ACREDITADA_O_FUTURA'
+                if motivo is None:
+                    valor, motivo = valor_futbol(fila['mercado'], p)
+                if motivo is None:
+                    relacion, motivo = comparar(valor, fila['linea'])
+                if motivo:
+                    motivos[motivo] += 1
+                    resumen.pendientes += 1
+                    if motivo != 'PARTIDO_NO_FINALIZADO':
                         resumen.sin_datos_partido += 1
-                        continue
-
-                    if abs(valor_real - float(linea)) < 1e-9:
-                        outcome = None
-                        resultado = "PUSH"
-                        resumen.push += 1
-                    elif valor_real > float(linea):
-                        outcome = True
-                        resultado = "OVER"
-                    else:
-                        outcome = False
-                        resultado = "UNDER"
-
-                    cursor.execute(
-                        """
-                        UPDATE predicciones_futbol
-                        SET valor_real = %s,
-                            outcome_binario = %s,
-                            resultado = %s,
-                            resuelto = true,
-                            timestamp_resolucion = NOW(),
-                            actualizado_en = NOW()
-                        WHERE id = %s
-                        """,
-                        [valor_real, outcome, resultado, pred_id],
-                    )
+                    continue
+                try:
+                    if not simular:
+                        with conn.transaction():
+                            cursor.execute("""UPDATE predicciones_futbol SET valor_real=%s,
+                                outcome_binario=%s,resultado=%s,resuelto=true,
+                                timestamp_resolucion=clock_timestamp(),actualizado_en=clock_timestamp()
+                                WHERE id=%s AND resuelto IS NOT TRUE""",
+                                (valor, None if relacion == 'PUSH' else relacion == 'OVER', relacion, fila['id']))
+                            if cursor.rowcount != 1:
+                                raise RuntimeError('Predicción cambió durante resolución')
                     resumen.resueltas += 1
-                except Exception as exc:
+                    resumen.push += int(relacion == 'PUSH')
+                except Exception:
                     resumen.errores += 1
-                    detalle = f"prediccion_id={fila[0]} error={exc}"
-                    resumen.detalles_errores.append(detalle)
-                    logger.exception("Error resolviendo predicción fútbol")
-
+                    resumen.detalles_errores.append(f"prediccion_id={fila['id']}: no se modificó el registro")
+    resumen.motivos_pendientes = dict(motivos)
+    resumen.simulacion = simular
     return resumen

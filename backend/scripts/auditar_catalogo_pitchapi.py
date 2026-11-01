@@ -21,6 +21,7 @@ import tempfile
 from typing import Any
 
 from servicios.proveedor_pitchapi import ClientePitchAPI
+from servicios.archivos_privados import proteger_privado
 from servicios.resolucion_multifuente_futbol import sha256_json
 
 
@@ -30,9 +31,8 @@ def _guardar_sin_sobrescribir(path: Path, payload: dict[str, Any]) -> None:
     contenido = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     fd, temporal = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
-        if os.name != "nt":
-            os.fchmod(fd, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as archivo:
+            proteger_privado(Path(temporal))
             archivo.write(contenido)
             archivo.flush()
             os.fsync(archivo.fileno())

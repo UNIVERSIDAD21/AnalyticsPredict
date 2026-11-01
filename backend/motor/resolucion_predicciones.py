@@ -84,33 +84,12 @@ def _calcular_valor_real(
 
     Retorna None si faltan datos necesarios para el mercado.
     """
-    if mercado == "Q1":
-        if local_q1 is None or visitante_q1 is None:
-            return None
-        return local_q1 + visitante_q1
-
-    if mercado == "Q2":
-        if local_q2 is None or visitante_q2 is None:
-            return None
-        return local_q2 + visitante_q2
-
-    if mercado == "Q3":
-        if local_q3 is None or visitante_q3 is None:
-            return None
-        return local_q3 + visitante_q3
-
-    if mercado == "Q4":
-        if local_q4 is None or visitante_q4 is None:
-            return None
-        return local_q4 + visitante_q4
-
-    if mercado == "COMPLETO":
-        if local_total is None or visitante_total is None:
-            return None
-        return local_total + visitante_total
-
-    # Mercado no reconocido
-    return None
+    from motor.resolucion_bitacora import entero
+    pares = {"Q1": (local_q1, visitante_q1), "Q2": (local_q2, visitante_q2),
+             "Q3": (local_q3, visitante_q3), "Q4": (local_q4, visitante_q4),
+             "COMPLETO": (local_total, visitante_total)}
+    valores = [entero(v) for v in pares.get(mercado, (None, None))]
+    return None if any(v is None for v in valores) else sum(valores)
 
 
 def _calcular_outcome_binario(
@@ -209,6 +188,11 @@ def resolver_predicciones(
 
     # Construir query con filtros
     condiciones = ["pr.resuelto = false"] if not force else []
+    condiciones += [
+        "EXISTS (SELECT 1 FROM competiciones_baloncesto cp WHERE cp.id=p.competicion_id AND cp.codigo='nba')",
+        "p.valido IS TRUE", "p.fecha_partido<=CURRENT_DATE",
+        "p.local_total>0", "p.visitante_total>0", "p.local_total<>p.visitante_total",
+    ]
     parametros: List[Any] = []
 
     if mercado:
@@ -249,7 +233,7 @@ def resolver_predicciones(
         WHERE {where_clause}
         ORDER BY pr.fecha_partido ASC
         LIMIT %s
-        for update SKIP LOCKED
+        FOR UPDATE OF pr SKIP LOCKED
     """
 
     try:
@@ -350,28 +334,36 @@ def resolver_predicciones(
                         )
                         continue
 
-                    # Calcular outcome_binario
-                    outcome = _calcular_outcome_binario(lado, valor_real, float(linea))
+                    # Un contrato inválido no es un PUSH. Nunca dar métricas a
+                    # medias de cuarto ni a líneas asiáticas no implementadas.
+                    from motor.resolucion_analitica import comparar
+                    from motor.resolucion_bitacora import entero
+                    relacion, motivo = comparar(valor_real, linea)
+                    if lado not in {"OVER", "UNDER"} or motivo or entero(valor_real) is None:
+                        resumen.pendientes += 1
+                        continue
+                    outcome = None if relacion == "PUSH" else (lado == relacion)
 
                     # Actualizar predicción
                     try:
-                        cursor.execute(
-                            """
-                            UPDATE predicciones_registradas
-                            SET
-                                valor_real = %s,
-                                outcome_binario = %s,
-                                resuelto = true,
-                                timestamp_resolucion = %s
-                            WHERE id = %s
-                            """,
-                            [
-                                valor_real,
-                                outcome,
-                                datetime.now(timezone.utc),
-                                str(prediccion_id),
-                            ],
-                        )
+                        with conexion.transaction():
+                            cursor.execute(
+                                """
+                                UPDATE predicciones_registradas
+                                SET
+                                    valor_real = %s,
+                                    outcome_binario = %s,
+                                    resuelto = true,
+                                    timestamp_resolucion = %s
+                                WHERE id = %s
+                                """,
+                                [
+                                    valor_real,
+                                    outcome,
+                                    datetime.now(timezone.utc),
+                                    str(prediccion_id),
+                                ],
+                            )
 
                         resumen.resueltas += 1
                         if outcome is None:

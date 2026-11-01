@@ -131,7 +131,7 @@ def test_analizadas_total_no_es_tamano_de_pagina(tmp_path, monkeypatch):
     monkeypatch.setattr(rutas_bitacora, "obtener_pool", lambda: pool)
     monkeypatch.setattr(rutas_bitacora, "BITACORA_USAGE_PATH", tmp_path / "usage.json")
 
-    payload = asyncio.run(rutas_bitacora.listar_apuestas_analizadas(Response(), version="v2", limite=1, offset=0))
+    payload = rutas_bitacora.listar_apuestas_analizadas(Response(), version="v2", limite=1, offset=0)
     assert payload["data"]["total"] == 16
     assert payload["data"]["items"] == [{"id": 1, "estado": "FINALIZADA"}]
     assert all("PARTIDO_GUARDADO" in consulta and "PARTIDO_ARCHIVADO" in consulta for consulta in pool.cursors[0].consultas)

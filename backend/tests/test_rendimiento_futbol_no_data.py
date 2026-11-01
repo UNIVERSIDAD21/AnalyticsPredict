@@ -48,8 +48,8 @@ def test_roi_futbol_porcentaje_y_ausencia_de_ganancia(monkeypatch):
     monkeypatch.setattr(rutas_metricas_futbol, "_resolver_columna_estado_apuestas", lambda *_: "estado")
     monkeypatch.setattr(rutas_metricas_futbol, "_resolver_columna_ganancia_apuestas", lambda *_: "ganancia")
 
-    respuesta = asyncio.run(rutas_metricas_futbol.obtener_metricas_rendimiento(
-        mercado=None, periodo="todo"))
+    respuesta = rutas_metricas_futbol.obtener_metricas_rendimiento(
+        mercado=None, periodo="todo")
     medidas = {m.mercado: m for m in respuesta.metricas}
     assert medidas["GOLES_FT"].roi is None
     assert medidas["GOLES_FT"].calidad_pnl["n_excluidas"] == 2

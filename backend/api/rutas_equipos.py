@@ -12,6 +12,7 @@ from psycopg.rows import dict_row
 
 from configuracion import CONFIGURACION
 from db import obtener_pool
+from servicios.lecturas_concurrentes import compartir_lectura
 from motor_autoentrenamiento import obtener_modelo
 from motor.utilidades import resolver_nombre_en_modelo
 from .modelos_respuesta import (
@@ -73,7 +74,8 @@ def cargar_estadisticas_equipos() -> dict:
     summary="Listar equipos",
     response_model=RespuestaEquipos,
 )
-async def listar_equipos() -> RespuestaEquipos:
+@compartir_lectura
+def listar_equipos() -> RespuestaEquipos:
     """Retorna la lista de equipos disponibles."""
     equipos = filtrar_equipos_por_modelo(cargar_equipos())
     equipos_ordenados = sorted(equipos, key=lambda e: e.nombre)
@@ -89,7 +91,8 @@ async def listar_equipos() -> RespuestaEquipos:
     summary="Listar temporadas disponibles por equipos",
     response_model=RespuestaTemporadasEquipos,
 )
-async def listar_temporadas_por_equipos(
+@compartir_lectura
+def listar_temporadas_por_equipos(
     equipo_ids: List[str] = Query(default=[], description="IDs de equipos"),
 ) -> RespuestaTemporadasEquipos:
     """Retorna las temporadas disponibles para los equipos indicados."""
@@ -136,7 +139,7 @@ async def listar_temporadas_por_equipos(
     summary="Buscar equipos en catálogo",
     response_model=RespuestaEquipos,
 )
-async def buscar_equipos(
+def buscar_equipos(
     conferencia: Optional[str] = Query(None, description="Filtrar por conferencia"),
     division: Optional[str] = Query(None, description="Filtrar por división"),
     busqueda: Optional[str] = Query(None, description="Texto de búsqueda"),
@@ -247,42 +250,32 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
             division_games_count: Dict[str, int] = defaultdict(int)
 
             estadisticas = []
+            # Una consulta para la temporada, no una consulta por cada equipo.
+            # Mismos filtros, columnas y orden; cada partido alimenta ambos lados.
+            condiciones = ["p.local_q1 IS NOT NULL", "p.tipo_partido = 'REG'",
+                           "p.valido = true", "p.ganador_id IS NOT NULL"]
+            parametros = []
+            if temporada_filtro:
+                condiciones.append("p.temporada_id = %s")
+                parametros.append(temporada_filtro)
+            cursor.execute(
+                f"""SELECT p.equipo_local_id, p.equipo_visitante_id,
+                    p.local_q1, p.local_q2, p.local_q3, p.local_q4, p.local_ot, p.local_total,
+                    p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_ot, p.visitante_total,
+                    p.fecha_partido, p.ganador_id
+                    FROM partidos_baloncesto p
+                    WHERE {' AND '.join(condiciones)}
+                    ORDER BY p.fecha_partido DESC""", parametros,
+            )
+            partidos_por_equipo = defaultdict(list)
+            for partido in cursor.fetchall():
+                partidos_por_equipo[str(partido["equipo_local_id"])].append(partido)
+                partidos_por_equipo[str(partido["equipo_visitante_id"])].append(partido)
+
             for equipo in equipos_base:
                 equipo_id = equipo["id"]
 
-                # Query para obtener partidos del equipo en la temporada
-                # ✅ CRÍTICO: Solo contar partidos con resultado definitivo (ganador_id presente)
-                condiciones = [
-                    "(p.equipo_local_id = %s OR p.equipo_visitante_id = %s)",
-                    "p.local_q1 IS NOT NULL",
-                    "p.tipo_partido = 'REG'",
-                    "p.valido = true",
-                    "p.ganador_id IS NOT NULL",  # ✅ Solo partidos con ganador confirmado
-                ]
-                parametros: list = [equipo_id, equipo_id]
-
-                if temporada_filtro:
-                    condiciones.append("p.temporada_id = %s")
-                    parametros.append(temporada_filtro)
-
-                where_sql = " AND ".join(condiciones)
-
-                cursor.execute(
-                    f"""
-                    SELECT
-                        p.equipo_local_id,
-                        p.equipo_visitante_id,
-                        p.local_q1, p.local_q2, p.local_q3, p.local_q4, p.local_ot, p.local_total,
-                        p.visitante_q1, p.visitante_q2, p.visitante_q3, p.visitante_q4, p.visitante_ot, p.visitante_total,
-                        p.fecha_partido,
-                        p.ganador_id
-                    FROM partidos_baloncesto p
-                    WHERE {where_sql}
-                    ORDER BY p.fecha_partido DESC
-                    """,
-                    parametros,
-                )
-                partidos = cursor.fetchall()
+                partidos = partidos_por_equipo.get(str(equipo_id), [])
 
                 if not partidos:
                     continue
@@ -564,7 +557,8 @@ def calcular_estadisticas_desde_bd(temporada_id: Optional[str] = None) -> dict:
     summary="Estadísticas de equipos",
     response_model=RespuestaEstadisticasEquipos,
 )
-async def listar_estadisticas_equipos(
+@compartir_lectura
+def listar_estadisticas_equipos(
     temporada_id: Optional[str] = Query(None, description="Filtrar por temporada específica"),
 ) -> RespuestaEstadisticasEquipos:
     """Retorna estadísticas agregadas de los equipos calculadas desde la BD."""
@@ -587,7 +581,7 @@ async def listar_estadisticas_equipos(
     summary="Historial de partidos por equipo",
     response_model=RespuestaHistorialEquipo,
 )
-async def listar_historial_equipo(
+def listar_historial_equipo(
     equipo_id: str,
     temporada_id: Optional[str] = Query(None, description="Filtrar por temporada"),
     como_local: Optional[bool] = Query(

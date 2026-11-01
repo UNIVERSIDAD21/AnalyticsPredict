@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/calidad", tags=["Calidad"])
     summary="Obtener alertas activas de calidad",
     description="Retorna alertas activas con filtro opcional por dominio y severidad mínima.",
 )
-async def get_alertas_activas(
+def get_alertas_activas(
     domain: str | None = Query(default=None, description="NBA o FUTBOL"),
     severidad_min: str = Query(default="MEDIA", description="MEDIA|ALTA|CRITICA"),
     ventana_dias: int = Query(default=14, ge=1, le=90),
@@ -53,7 +53,7 @@ async def get_alertas_activas(
     summary="Estado integral del sistema de calidad/explicabilidad",
     description="Retorna flags activos, scorecards por dominio, alertas críticas y deuda residual bloque 05.",
 )
-async def get_estado_sistema():
+def get_estado_sistema():
     flags = estado_flags()
 
     pool = obtener_pool()

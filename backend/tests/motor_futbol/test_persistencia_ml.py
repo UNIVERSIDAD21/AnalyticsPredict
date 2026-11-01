@@ -266,21 +266,21 @@ def test_metricas_sin_ejemplos_ni_reentrenamiento_ficticio(registro_db, modelos,
     from api import rutas_analisis_futbol as analisis
     monkeypatch.setattr(rutas, 'obtener_pool', lambda: registro_db)
     monkeypatch.setattr(analisis, '_predictor_futbol_ml', None)
-    vacio = asyncio.run(rutas.obtener_estado_modelos())
+    vacio = rutas.obtener_estado_modelos()
     assert vacio.modelos == [] and vacio.proximo_reentrenamiento is None
     ids = GestorVersiones(registro_db).guardar_lote(modelos, activar=True)
-    registrados = asyncio.run(rutas.obtener_estado_modelos())
+    registrados = rutas.obtener_estado_modelos()
     assert len(registrados.modelos) == 3
     assert all(m.ambito_metricas == 'AJUSTE_IN_SAMPLE_NO_VALIDACION' and not m.cargado for m in registrados.modelos)
     primero = analisis._obtener_predictor_futbol_ml(registro_db)
-    assert all(m.cargado for m in asyncio.run(rutas.obtener_estado_modelos()).modelos)
+    assert all(m.cargado for m in rutas.obtener_estado_modelos().modelos)
     with registro_db.connection() as c:
         c.execute('UPDATE modelo_versiones_futbol SET activo=false WHERE id=%s', [ids['corners']])
     segundo = analisis._obtener_predictor_futbol_ml(registro_db)
     assert segundo is not primero and primero.modelo_corners is not None and segundo.modelo_corners is None
     with registro_db.connection() as c:
         c.execute("UPDATE modelo_versiones_futbol SET metadata='{}' WHERE id=%s", [ids['goles']])
-    corrupto = asyncio.run(rutas.obtener_estado_modelos())
+    corrupto = rutas.obtener_estado_modelos()
     assert corrupto.artefactos_no_aptos == 1
     assert [m.tipo_modelo for m in corrupto.modelos] == ['disparos']
 
@@ -292,5 +292,5 @@ def test_metricas_fallo_bd_no_devuelve_ejemplos_ni_detalle_privado(monkeypatch):
     def fallo(): raise RuntimeError('informacion privada')
     monkeypatch.setattr(rutas, 'obtener_pool', fallo)
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(rutas.obtener_estado_modelos())
+        rutas.obtener_estado_modelos()
     assert exc.value.status_code == 503 and 'privada' not in str(exc.value.detail)

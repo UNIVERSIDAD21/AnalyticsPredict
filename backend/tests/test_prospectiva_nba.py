@@ -133,6 +133,14 @@ def test_estado_operativo_respeta_contrato_sql_y_no_escribe(prospectiva_db):
         INSERT INTO partidos_baloncesto VALUES(1,'2026-10-10',true,100,100,25,25,25,25,25,25,25,25,'PRE'),
           (1,'2026-10-11',false,0,0,0,0,0,0,0,0,0,0,'REG'),
           (2,'2026-10-14',true,100,100,25,25,25,25,25,25,25,25,'REG');''')
+    # El panel Estado incluye inventario por competición; esta fixture conserva
+    # un esquema completo de lectura sin añadir datos deportivos reales.
+    c.execute('''ALTER TABLE competiciones_baloncesto ADD COLUMN nombre text DEFAULT 'Sintética';
+        ALTER TABLE partidos_baloncesto ADD COLUMN id serial, ADD COLUMN local_ot int, ADD COLUMN visitante_ot int;
+        CREATE TABLE competiciones_futbol(id int,codigo text,nombre text);
+        ALTER TABLE partidos_futbol ADD COLUMN id serial, ADD COLUMN competicion_id int,
+            ADD COLUMN local_corners_total int,ADD COLUMN visitante_corners_total int,
+            ADD COLUMN local_disparos_arco int,ADD COLUMN visitante_disparos_arco int;''')
     with c.transaction():
         c.execute('SET TRANSACTION READ ONLY')
         estado = leer_estado(c)

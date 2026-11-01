@@ -162,7 +162,11 @@ def preparar(repo, estado, original, salida, runtime, *, autonomo=False):
             copiar(source, relative, estado)
         elif relative.startswith('herramientas/'):
             if digest(original / relative) != fingerprint: raise ValueError('Herramienta original modificada: ' + relative)
-            copiar(original / relative, relative, original)
+            versionada=repo/'scripts/herramientas_windows'/PurePosixPath(relative).name
+            if versionada.is_file():
+                copiar(versionada,relative,repo)
+            else:
+                copiar(original / relative, relative, original)
     identity = hashlib.sha256(json.dumps({k: v for k, v in files.items() if k.startswith('producto/')}, sort_keys=True).encode()).hexdigest()
     runtime = dict(runtime)
     runtime_info = None

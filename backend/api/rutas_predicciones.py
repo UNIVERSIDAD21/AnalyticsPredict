@@ -105,7 +105,7 @@ def _construir_filtros(
     response_model=RespuestaHistorialPredicciones,
     summary="Historial paginado de predicciones",
 )
-async def obtener_historial_predicciones(
+def obtener_historial_predicciones(
     mercado: Optional[str] = Query(
         default=None,
         pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$",

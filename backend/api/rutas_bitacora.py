@@ -300,7 +300,7 @@ def _construir_where(
 
 
 @router.post("", summary="Guardar apuesta", response_model=RespuestaApuesta)
-async def guardar_apuesta(
+def guardar_apuesta(
     peticion: PeticionCrearApuesta,
 ) -> RespuestaApuesta:
     """Crea una apuesta con snapshot del análisis."""
@@ -487,7 +487,7 @@ async def guardar_apuesta(
 
 
 @router.get("", summary="Listar apuestas", response_model=None)
-async def listar_apuestas(
+def listar_apuestas(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     resultado: Optional[str] = Query(None),
@@ -556,7 +556,7 @@ async def listar_apuestas(
 
 
 @router.get("/resumen", summary="Resumen de apuestas")
-async def resumen_apuestas(
+def resumen_apuestas(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
 ):
@@ -623,7 +623,7 @@ async def resumen_apuestas(
 
 
 @router.get("/contract-usage", summary="Métricas de adopción contrato bitácora")
-async def contract_usage(days: int = Query(default=7, ge=1, le=90)):
+def contract_usage(days: int = Query(default=7, ge=1, le=90)):
     data = _leer_uso_contrato().get("by_date", {})
     fechas = sorted(data.keys(), reverse=True)[:days]
 
@@ -673,7 +673,7 @@ async def contract_usage(days: int = Query(default=7, ge=1, le=90)):
 
 
 @router.get("/unificada", summary="Bitácora unificada")
-async def listar_bitacora_unificada(
+def listar_bitacora_unificada(
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     resultado: Optional[str] = Query(None),
@@ -887,8 +887,17 @@ async def listar_bitacora_unificada(
     return _respuesta_contrato(payload_legacy, version, response, "unificada")
 
 
+@router.get('/apuestas-analizadas/diagnostico', summary='Auditar outcomes analíticos sin escribir')
+def diagnosticar_apuestas_analizadas(
+    limite: int = Query(default=1000, ge=1, le=20000),
+    auditar_finalizadas: bool = True,
+):
+    from servicios.resolucion_analitica import procesar
+    return procesar(simular=True, limite=limite, auditar_finalizadas=auditar_finalizadas)
+
+
 @router.get('/apuestas-analizadas', summary='Listar apuestas analizadas automáticas')
-async def listar_apuestas_analizadas(
+def listar_apuestas_analizadas(
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     limite: int = 200,
@@ -925,7 +934,7 @@ async def listar_apuestas_analizadas(
 
 
 @router.get("/partidos-guardados", summary="Listar partidos de fútbol guardados para consulta")
-async def listar_partidos_guardados(
+def listar_partidos_guardados(
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
     partido_id: Optional[UUID] = None,
@@ -939,7 +948,7 @@ async def listar_partidos_guardados(
 
 
 @router.post("/partidos-guardados", status_code=status.HTTP_201_CREATED, summary="Guardar un partido para revisar")
-async def guardar_partido_para_revisar(
+def guardar_partido_para_revisar(
     peticion: PeticionPartidoGuardado,
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
@@ -955,7 +964,7 @@ async def guardar_partido_para_revisar(
 
 
 @router.post("/partidos-guardados/{partido_id}/archivar", summary="Quitar un partido guardado")
-async def archivar_partido_guardado(
+def archivar_partido_guardado(
     partido_id: UUID,
     response: Response,
     version: str = Query(default="v2", pattern="^(v2|legacy)$"),
@@ -1073,7 +1082,7 @@ class AuditoriaDecisionFutbolResponse(BaseModel):
 
 
 @router.get('/apuestas-analizadas/auditoria-futbol', summary='Auditoría canónica de decisiones fútbol (v2)', response_model=AuditoriaDecisionFutbolResponse)
-async def auditoria_apuestas_analizadas_futbol(
+def auditoria_apuestas_analizadas_futbol(
     limite: int = 200,
     offset: int = 0,
     mercado: Optional[str] = None,
@@ -1119,7 +1128,7 @@ async def auditoria_apuestas_analizadas_futbol(
 
 
 @router.get('/apuestas-analizadas/auditoria-futbol/legacy', summary='Auditoría decisiones fútbol (legacy)')
-async def auditoria_apuestas_analizadas_futbol_legacy(
+def auditoria_apuestas_analizadas_futbol_legacy(
     response: Response,
     limite: int = 200,
     offset: int = 0,
@@ -1142,7 +1151,7 @@ async def auditoria_apuestas_analizadas_futbol_legacy(
 
 
 @router.post('/apuestas-analizadas/auditoria-futbol/backfill', summary='Backfill canónico de auditoría fútbol')
-async def backfill_auditoria_futbol(
+def backfill_auditoria_futbol(
     limite: int = 5000,
     batch_size: int = 500,
     checkpoint_id: Optional[int] = None,
@@ -1203,7 +1212,7 @@ class RespuestaEstadisticas(BaseModel):
     - `limite`: Máximo de apuestas a procesar (default 1000)
     """,
 )
-async def resolver_apuestas_pendientes(
+def resolver_apuestas_pendientes(
     mercado: Optional[str] = Query(
         None,
         pattern="^[A-Z][A-Z0-9_]{0,63}$",
@@ -1248,7 +1257,7 @@ async def resolver_apuestas_pendientes(
     - Pendientes por mercado
     """,
 )
-async def obtener_estadisticas(
+def obtener_estadisticas(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
 ):
@@ -1358,7 +1367,7 @@ class RespuestaMetricasBitacora(BaseModel):
     - `mercado`: Filtrar por mercado específico
     """,
 )
-async def obtener_metricas_bitacora(
+def obtener_metricas_bitacora(
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
     desde: Optional[date] = Query(None, description="Fecha inicio"),
@@ -1594,7 +1603,7 @@ async def obtener_metricas_bitacora(
         )
 
 @router.get("/{apuesta_id}", summary="Detalle de apuesta")
-async def obtener_apuesta(
+def obtener_apuesta(
     apuesta_id: UUID,
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),
@@ -1619,7 +1628,7 @@ async def obtener_apuesta(
 
 
 @router.patch("/{apuesta_id}/resultado", summary="Actualizar resultado")
-async def actualizar_resultado(
+def actualizar_resultado(
     apuesta_id: UUID,
     peticion: PeticionActualizarResultado,
     response: Response,
@@ -1662,7 +1671,7 @@ async def actualizar_resultado(
 
 
 @router.delete("/{apuesta_id}", summary="Eliminar apuesta")
-async def eliminar_apuesta(
+def eliminar_apuesta(
     apuesta_id: UUID,
     response: Response,
     version: str = Query(default="legacy", pattern="^(v2|legacy)$"),

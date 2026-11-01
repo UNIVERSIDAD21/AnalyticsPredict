@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Migración local recuperable y consolidación de previos — 2026-11-01
+
+- Orquestación Windows con bootstrap aislado, registro inmediato de PID/identidad/log, espera monotónica y limpieza de fallos parciales. Acceso diario identifica/reutiliza/cierra exclusivamente el clúster y procesos propios.
+- Restauración nueva con locale Unicode explícito; datos, DDL lógico, API/UI, reinicio y recuperación real del backup acreditados. Datos y configuración protegida permanecen fuera del producto.
+- Consolidados cambios previos de resolución analítica, HTTP concurrente, catálogos y fuentes Américas/WNBA que seguían locales; no se repiten sus ingestas ni reparaciones históricas.
+- Compatibilidad nativa de archivos/locks LATAM/MLS reutiliza la protección multiplataforma existente. Sin desactivar exclusión ni cambiar los targets deportivos.
+- Evidencia privada con ACL usuario/SYSTEM en Windows y modo600 en POSIX; pruebas HTTP y subprocesos compatibles con rutas Windows y Python embebido. Dependencia `follow-redirects` actualizada puntualmente a1.16.2 tras auditoría de producción.
+- Checklist canónica, estado derivado y bitácora append-only para continuidad entre agentes. El hito operativo no certifica eficacia deportiva ni cierra la prospectiva.
+- [Control de ejecución](docs/reactivacion_single_user/ejecucion_plan_maestro_2026-10-31/CHECKLIST_MAESTRA.md).
+
 ## Consolidar continuación, Mi espacio y runtime autónomo — 2026-10-30
 
 - Consolidados respaldo/restauración personal, Hoy paginado y consultas locales multiliga de la continuación Codex.

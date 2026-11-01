@@ -1,5 +1,13 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Hito operativo H2 — 2026-11-01, MIGRADO_LOCAL_VERIFICADO
+
+Origen exportado con corte consistente, destino local Unicode conciliado (53 tablas/108190 filas), API/UI, escrituras técnicas en clon, reinicio, respaldo local y restauración real verificados. Acceso habitual apunta al destino local; no hay fallback a Neon. El control canónico de ejecución contiene las evidencias B01/B02. Los análisis personales no exportados del navegador aún esperan B10; todos los respaldos disponibles permanecen en el mismo SSD. Esto no cierra calibración, prospectiva ni el catálogo científico. Los bloqueos históricos de cuota/migración descritos más abajo son antecedentes superados por este hito, no el estado operativo actual.
+
+## Ejecución del plan maestro — 2026-10-31, en curso
+
+Control compartido canónico: [CHECKLIST_MAESTRA](reactivacion_single_user/ejecucion_plan_maestro_2026-10-31/CHECKLIST_MAESTRA.md), [ESTADO_ACTUAL](reactivacion_single_user/ejecucion_plan_maestro_2026-10-31/ESTADO_ACTUAL.json) y [BITACORA_EJECUCION](reactivacion_single_user/ejecucion_plan_maestro_2026-10-31/BITACORA_EJECUCION.md). Son la referencia para retomar entre Borlty y Codex; leerlos antes de repetir una operación. Acceso Neon acreditado puntualmente el 31-oct 22:41 COT; migración y validación científica todavía no cerradas. La checklist registra el último check verificado, el actual, el siguiente y sus evidencias durante el trabajo.
+
 ## Mi espacio y ejecución Windows autónoma — 2026-10-30
 
 - Mis análisis y Seguimiento agrupados en Mi espacio; marcadores previos conservan parámetros/fragmentos. Claves locales y contratos API sin cambios.
@@ -174,7 +182,69 @@ lint/TypeScript/build y auditoría de producción aprobados. Estos son controles
 locales: la CI remota se verifica por SHA en el acta externa de publicación.
 [Contrato de agenda](reactivacion_single_user/AGENDA_FUTBOL_2026-10-26.md).
 
+## Fútbol Américas — datos aplicados, código local 2026-10-26
+
+MLS/Argentina/Colombia/Brasil disponibles en `/futbol`, ocho competiciones
+separadas: 13.790 finales válidos + 123 fixtures, 13.913 registros cotejados.
+Tres respaldos restaurados, ensayos con rollback, aplicación única y repetición
+READ ONLY con cero DML. Colombia finalizó 94/94 meses con tres pendientes
+estadísticos explícitos; un final sin desglose de tanda y un abandonado apartados.
+Calendario consultado hasta 26-dic, horas confirmadas solo hasta 2–9 noviembre
+según liga; no integridad oficial acreditada. Históricos con corte anterior al
+kickoff, sin registrar emisiones reconstruidas ni heredar ML/calibración de otra
+liga. Estimador RAW `heuristico-americas::1.0.0`, evaluación 3.686 encuentros sin
+superioridad general. 1.709 backend/122 frontend, lint/build correctos.
+**Sin commit/push ni CI remota nueva**; artefactos y scrapers ajenos preservados.
+[Contrato, operación y límites](reactivacion_single_user/FUTBOL_AMERICAS_2026-10-26.md).
+
+## Resultados NBA al 26 de octubre — actualización aplicada
+
+30 fixtures existentes completados con Q1–Q4/OT/FT, sin altas ni cambio de IDs.
+Octubre: 109 finales NBA cotejados (43 REG y 66 PRE), 79 ya correctos; nueve
+encuentros del 26 aún programados al corte, sin resultados inventados. Una
+exhibición ajena excluida. Respaldo completo restaurado/6 pruebas, ensayo real
+revertido y cotejo independiente109/109; 49 huellas fuera del lote iguales.
+Modelo activo2123/corte14jun y apuestas intactos; sin entrenamiento ni publicación.
+[Operación y límites](reactivacion_single_user/RESULTADOS_NBA_2026-10-26.md).
+
+## Concurrencia HTTP y temporadas — corrección local 2026-10-26
+
+Operaciones síncronas fuera del bucle HTTP; lecturas idénticas compartidas solo
+mientras están en curso, sin caché de respuestas ni aumento del pool. Estadísticas
+sin N+1 (81→2 consultas), con resultados idénticos en dos temporadas. IDs y
+cancelación de temporadas corregidos. 7 pestañas reales y carga de 20 ventanas
+simuladas (100/100 GET, máximo 1,31 s); 1669 backend/116 frontend aprobados.
+Aplicado al servicio local, sin commit/push ni CI remota nueva. Sin ingestas,
+modelos ni análisis productivos de prueba.
+[Contrato, pruebas y límites](reactivacion_single_user/CONCURRENCIA_HTTP_2026-10-26.md).
+
 Este archivo es el punto de entrada oficial para trabajo operativo y técnico.
+
+## Reparación histórica analítica autorizada — 2026-10-25
+
+Aplicadas y verificadas 99 correcciones de valores reales en tres tablas
+analíticas, con 45 cambios de outcome. Plan fijo, respaldo/restauración probados,
+ensayo rollback y postflight independiente; idempotencia cero. Apuestas, probabilidades emitidas,
+modelos y filas fuera del lote preservados. No publicar ni repetir la operación.
+[Alcance y controles](reactivacion_single_user/REPARACION_ANALITICA_99_2026-10-25.md).
+
+## Resolución analítica por objetivo — implementación local 2026-10-25
+
+Outcomes exactos por mercado/periodo/lado; sin FT por mitades, placeholders ni
+cruce de ligas. Emisiones fútbol inmutables, diagnóstico READ ONLY y evidencia de
+resolución separada. Los históricos discrepantes no se repararon automáticamente.
+**Entrega inicial de código sin publicar ni nuevos modelos.** La reparación
+posterior autorizada se documenta arriba; no fue una reescritura automática.
+[Contrato, diagnóstico y límites](reactivacion_single_user/RESOLUCION_ANALITICA_2026-10-25.md).
+
+## Elegibilidad de fútbol — implementación local 2026-10-25
+
+Observado/ausente/inválido/estimado por mercado, periodo y lado; conserva ceros y
+mercados independientes. Estado muestra denominadores por temporada y el análisis
+sus muestras efectivas. Historial sin NULL→0 y forma vacía sin promedios inventados;
+frescura NBA por alcance, PRE separada. Sin ingestas ni cambios de modelos.
+**Diff local sin publicar**, no validado por la CI anterior de HEAD.
+[Contrato, operación y límites](reactivacion_single_user/ELEGIBILIDAD_FUTBOL_2026-10-25.md).
 
 ## Muestra WNBA por mercado — 2026-10-25
 

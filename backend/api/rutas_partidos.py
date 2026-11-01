@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from psycopg.rows import dict_row
 
 from db import obtener_pool
+from servicios.lecturas_concurrentes import compartir_lectura
 
 router = APIRouter(prefix="/api/partidos", tags=["Partidos"])
 logger = logging.getLogger(__name__)
@@ -272,7 +273,7 @@ def agenda_baloncesto(
     - Buscar partidos históricos
     """,
 )
-async def listar_partidos(
+def listar_partidos(
     fecha_desde: Optional[date] = QueryParam(
         None, description="Fecha inicio (YYYY-MM-DD). Default: hoy"
     ),
@@ -309,7 +310,7 @@ async def listar_partidos(
     summary="Partidos del día",
     description="Obtiene todos los partidos programados para hoy.",
 )
-async def partidos_hoy() -> RespuestaPartidos:
+def partidos_hoy() -> RespuestaPartidos:
     """Obtiene partidos de hoy."""
     hoy = obtener_fecha_nba_hoy()
     return _consultar_partidos(fecha_desde=hoy, fecha_hasta=hoy)
@@ -321,7 +322,8 @@ async def partidos_hoy() -> RespuestaPartidos:
     summary="Partidos próximos",
     description="Obtiene partidos futuros sin resultado (para apostar).",
 )
-async def partidos_proximos(
+@compartir_lectura
+def partidos_proximos(
     dias: int = QueryParam(7, ge=1, le=30, description="Días hacia adelante"),
     limite: int = QueryParam(50, ge=1, le=500, description="Máximo de resultados"),
     competicion: Optional[Literal["nba", "euroleague"]] = None,
@@ -348,7 +350,7 @@ async def partidos_proximos(
     pero necesita obtener el partido_id.
     """,
 )
-async def buscar_partido(
+def buscar_partido(
     equipo_local: str = QueryParam(..., min_length=2, description="Nombre del equipo local"),
     equipo_visitante: str = QueryParam(
         ..., min_length=2, description="Nombre del equipo visitante"
@@ -466,7 +468,7 @@ async def buscar_partido(
     summary="Obtener partido por ID",
     description="Obtiene los detalles de un partido específico.",
 )
-async def obtener_partido(partido_id: str):
+def obtener_partido(partido_id: str):
     """Obtiene un partido por su ID."""
     pool = obtener_pool()
 

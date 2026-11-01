@@ -31,7 +31,7 @@ router = APIRouter(prefix="/api/combinadas", tags=["Combinadas"])
 
 
 @router.post("", summary="Crear combinada", response_model=RespuestaCombinada)
-async def crear_combinada(
+def crear_combinada(
     peticion: PeticionCrearCombinada,
 ) -> RespuestaCombinada:
     if len(peticion.selecciones) < 2:
@@ -48,7 +48,7 @@ async def crear_combinada(
 
 
 @router.get("", summary="Listar combinadas", response_model=RespuestaListaCombinadas)
-async def listar_combinadas(
+def listar_combinadas(
     pagina: int = Query(1, ge=1),
     tamano: int = Query(20, ge=1, le=100),
     resultado: Optional[str] = None,
@@ -68,7 +68,7 @@ async def listar_combinadas(
 
 
 @router.get("/{combinada_id}", summary="Detalle combinada", response_model=RespuestaCombinada)
-async def obtener_combinada(
+def obtener_combinada(
     combinada_id: UUID,
 ) -> RespuestaCombinada:
     try:
@@ -80,7 +80,7 @@ async def obtener_combinada(
 
 
 @router.patch("/{combinada_id}/resultado", summary="Actualizar resultado combinada", response_model=RespuestaCombinada)
-async def actualizar_resultado_combinada(
+def actualizar_resultado_combinada(
     combinada_id: UUID,
     peticion: PeticionActualizarResultadoCombinada,
 ) -> RespuestaCombinada:
@@ -100,7 +100,7 @@ async def actualizar_resultado_combinada(
 
 
 @router.delete("/{combinada_id}", summary="Eliminar combinada")
-async def eliminar_combinada(
+def eliminar_combinada(
     combinada_id: UUID,
 ) -> dict:
     try:

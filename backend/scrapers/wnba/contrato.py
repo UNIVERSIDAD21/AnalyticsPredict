@@ -11,6 +11,7 @@ VERSION_CONTRATO = "espn_wnba_v1"
 LIMITE = 500
 BOGOTA = ZoneInfo("America/Bogota")
 FASES = {1: "PRE", 2: "REG", 3: "POST"}
+RONDAS_POST = {("14", "RD16"), ("15", "QTR"), ("16", "SEMI"), ("17", "FINAL")}
 ESTADOS = {
     "STATUS_SCHEDULED": ("pre", False, "PROGRAMADO"),
     "STATUS_IN_PROGRESS": ("in", False, "EN_VIVO"),
@@ -131,7 +132,13 @@ def estado(comp: dict, evento: dict) -> tuple[str, dict]:
     exigir(isinstance(tipo.get("name"), str), "ESTADO_DESCONOCIDO", "status.type.name")
     esperado = ESTADOS.get(tipo.get("name"))
     exigir(esperado is not None, "ESTADO_DESCONOCIDO", "status.type.name")
-    exigir(tipo.get("state") == esperado[0] and tipo.get("completed") is esperado[1],
+    # ESPN también archiva aplazados/cancelados como post, sin estar completados.
+    # No confundir ese estado administrativo con un resultado final.
+    estados_fuente = {esperado[0]}
+    if tipo["name"] in {"STATUS_POSTPONED", "STATUS_CANCELED"}:
+        estados_fuente.add("post")
+    exigir(isinstance(tipo.get("state"), str) and tipo["state"] in estados_fuente
+           and tipo.get("completed") is esperado[1],
            "ESTADO_CONTRADICTORIO", "status.type")
     return esperado[2], status
 
@@ -203,7 +210,7 @@ SHOOT_KEYS = {"campo": "fieldGoalsMade-fieldGoalsAttempted",
               "libres": "freeThrowsMade-freeThrowsAttempted"}
 
 
-def estadisticas(summary: dict | None, teams: dict[str, dict], totals: dict) -> dict:
+def estadisticas(summary: dict | None, teams: dict[str, dict], totals: dict, *, incidencias=None) -> dict:
     result = {}
     source = {} if summary is None else objeto(summary.get("boxscore", {}), "boxscore")
     items = source.get("teams", [])
@@ -226,8 +233,27 @@ def estadisticas(summary: dict | None, teams: dict[str, dict], totals: dict) -> 
     exigir(set(by_id).issubset(expected), "ESTADISTICAS_OTROS_EQUIPOS", "boxscore")
     for side, team in teams.items():
         values = by_id.get(str(team["team"]["id"]), {})
-        stats = {dest: None if values.get(key) in (None, "", "--", "N/A") else entero(values[key], key)
-                 for dest, key in STAT_KEYS.items()}
+        stats = {}
+        for dest, key in STAT_KEYS.items():
+            raw = values.get(key)
+            try:
+                stats[dest] = None if raw in (None, "", "--", "N/A") else entero(raw, key)
+            except ContratoError as exc:
+                if incidencias is None:
+                    raise
+                stats[dest] = None
+                incidencias.append({"lado": side, "campo": dest, "campo_fuente": key,
+                                    "valor_fuente": raw, "codigo": exc.codigo})
+        players, team_to, total_to = (stats[k] for k in
+                                     ("perdidas_jugadoras", "perdidas_equipo", "perdidas_totales"))
+        if incidencias is not None and players is not None and total_to is not None:
+            if total_to < players or (team_to is not None and players + team_to != total_to):
+                for dest in ("perdidas_equipo", "perdidas_totales"):
+                    if stats[dest] is not None:
+                        incidencias.append({"lado": side, "campo": dest, "campo_fuente": STAT_KEYS[dest],
+                                            "valor_fuente": values.get(STAT_KEYS[dest]),
+                                            "codigo": "PERDIDAS_INCONSISTENTES"})
+                        stats[dest] = None
         for dest, key in SHOOT_KEYS.items():
             raw = values.get(key)
             made = attempted = None
@@ -248,7 +274,8 @@ def estadisticas(summary: dict | None, teams: dict[str, dict], totals: dict) -> 
     return result
 
 
-def normalizar(evento: dict, summary: dict | None = None) -> dict:
+def normalizar(evento: dict, summary: dict | None = None, *, incluir_estadisticas=True,
+               aislar_estadisticas_invalidas=False) -> dict:
     objeto(evento, "event")
     eid = identificador(evento.get("id"), "event.id")
     exigir(evento.get("uid") == f"s:40~l:59~e:{eid}", "OTRA_LIGA", "event.uid")
@@ -265,8 +292,11 @@ def normalizar(evento: dict, summary: dict | None = None) -> dict:
     phase = entero(season.get("type"), "season.type")
     exigir(phase in FASES, "FASE_NO_SOPORTADA", "season.type")
     kind = objeto(comp.get("type"), "competition.type")
-    exigir((str(kind.get("id")), kind.get("abbreviation")) in {("1", "STD"), ("39", "CC")},
+    exigir(isinstance(kind.get("abbreviation"), str), "TIPO_COMPETICION_NO_SOPORTADO", "competition.type")
+    tipo = (str(kind.get("id")), kind.get("abbreviation"))
+    exigir(tipo in {("1", "STD"), ("39", "CC")} | RONDAS_POST,
            "TIPO_COMPETICION_NO_SOPORTADO", "competition.type")
+    exigir(tipo not in RONDAS_POST or phase == 3, "RONDA_FUERA_POSTEMPORADA", "season.type")
     phase_name = "COPA" if kind["abbreviation"] == "CC" else FASES[phase]
     sides = lados(comp)
     originales = sides
@@ -285,6 +315,7 @@ def normalizar(evento: dict, summary: dict | None = None) -> dict:
               "sede_neutral": neutral, "duracion_regulacion_minutos": 40,
               "final_completo": state == "FINALIZADO", "numero_prorrogas": None,
               "ganador_id_fuente": None, "estadisticas": None,
+              "incidencias_estadisticas": [],
               "url_fuente": f"https://www.espn.com/wnba/game/_/gameId/{eid}"}
     points, totals = {}, {}
     for side, label in (("home", "local"), ("away", "visitante")):
@@ -318,5 +349,7 @@ def normalizar(evento: dict, summary: dict | None = None) -> dict:
         winner = "home" if totals["home"] > totals["away"] else "away"
         result["ganador_id_fuente"] = str(sides[winner]["team"]["id"])
         result["numero_prorrogas"] = n - 4
-        result["estadisticas"] = estadisticas(summary, sides, totals)
+        result["estadisticas"] = estadisticas(summary if incluir_estadisticas else None, sides, totals,
+                                             incidencias=result["incidencias_estadisticas"]
+                                             if aislar_estadisticas_invalidas else None)
     return result

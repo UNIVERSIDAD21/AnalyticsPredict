@@ -485,6 +485,7 @@ def test_reprogramacion_conflictiva_fuera_ventana_no_conserva_final_viejo(tmp_pa
 @pytest.mark.parametrize("mutation", [
     lambda e: sides(e)[0].update(homeAway=[]),
     lambda e: e["competitions"][0]["status"]["type"].update(name=[]),
+    lambda e: e["competitions"][0]["status"]["type"].update(state=[]),
     lambda e: e["status"].update(period=5),
 ])
 def test_cambios_de_esquema_se_apartan_sin_error_interno(tmp_path, mutation):
@@ -493,3 +494,274 @@ def test_cambios_de_esquema_se_apartan_sin_error_interno(tmp_path, mutation):
     c, _, _ = client(tmp_path, Response(payload=scoreboard(e)))
     _, report, code = run(c)
     assert code == 2 and report["incidencias_cuarentena"] == 1
+
+# Regresiones de la descarga histórica real y tolerancia a fallos de WNBA v2.
+@pytest.mark.parametrize('tid,abbr', [('14','RD16'), ('15','QTR'), ('16','SEMI'), ('17','FINAL')])
+def test_rondas_postseason_conservan_fase_y_etiqueta(tid, abbr):
+    e = evento()
+    e['season']['type'] = 3
+    e['competitions'][0]['type'] = {'id': tid, 'abbreviation': abbr}
+    record = normalizar(e)
+    assert record['fase'] == 'POST'
+    assert record['tipo_competicion_fuente'] == abbr
+    e['season']['type'] = 2
+    with pytest.raises(ContratoError, match='RONDA_FUERA_POSTEMPORADA'):
+        normalizar(e)
+
+
+def test_allstar_permanece_apartado_de_partidos_wnba_estandar():
+    e = evento()
+    e['competitions'][0]['type'] = {'id': '4', 'abbreviation': 'ALLSTAR'}
+    with pytest.raises(ContratoError, match='TIPO_COMPETICION_NO_SOPORTADO'):
+        normalizar(e)
+
+
+def test_404_summary_conserva_resultado_y_continua_otros_partidos_y_dias(tmp_path):
+    a, b = evento(), evento('124')
+    c, session, _ = client(tmp_path, Response(payload=scoreboard(a, b)), Response(404),
+                            Response(payload=summary(b)), Response(payload=scoreboard()))
+    folder, report, code = ejecutar(c, desde=date(2025,7,3), hasta=date(2025,7,3), con_estadisticas=True)
+    assert code == 2 and report['estado'] == 'COMPLETO_CON_INCIDENCIAS'
+    assert report['recorrido_completo'] and report['resultados_pendientes'] == 0
+    assert report['partidos_exportados'] == 2 and report['finales_completos'] == 2
+    assert report['ventanas_pendientes'] == [] and report['detalles_pendientes'] == 1
+    pending = [json.loads(x) for x in (folder / 'pendientes.jsonl').read_text().splitlines()]
+    assert pending[0]['source_game_id'] == '123' and pending[0]['http_status'] == 404
+    assert not pending[0]['reintentar']
+    assert len(session.calls) == 4
+    for line in (folder / 'SHA256SUMS').read_text().splitlines():
+        digest, name = line.split('  ')
+        assert hashlib.sha256((folder / name).read_bytes()).hexdigest() == digest
+
+
+def test_sin_periodos_y_summary_404_no_fabrica_final_y_continua(tmp_path):
+    a, b = evento(), evento('124')
+    sides(a)[0].pop('linescores')
+    c, _, _ = client(tmp_path, Response(payload=scoreboard(a, b)), Response(404))
+    folder, report, code = run(c)
+    rows = [json.loads(x) for x in (folder / 'partidos.jsonl').read_text().splitlines()]
+    assert code == 3 and [x['source_game_id'] for x in rows] == ['124']
+    assert report['ids_cuarentena'] == [] and report['detalles_pendientes'] == 1
+
+
+@pytest.mark.parametrize('response', [Response(404), Response(503), requests.ConnectionError(),
+                                     Response(raw=b'broken'), Response(payload={})])
+def test_dia_fallido_no_impide_descargar_dia_siguiente(tmp_path, response):
+    c, _, _ = client(tmp_path, response, Response(payload=scoreboard()), intentos=1)
+    _, report, code = ejecutar(c, desde=date(2025,7,3), hasta=date(2025,7,3))
+    assert code == 3
+    assert report['ventanas_verificadas'] == ['2025-07-04']
+    assert report['ventanas_pendientes'] == ['2025-07-03']
+    assert report['ventanas_sin_eventos'] == ['2025-07-04']
+
+
+def test_ronda_recupera_dia_transitorio_sin_repetir_dias_correctos(tmp_path):
+    c, session, clock = client(tmp_path, Response(503), Response(payload=scoreboard()),
+                              Response(payload=scoreboard(evento())), intentos=1)
+    _, report, code = ejecutar(c, desde=date(2025,7,3), hasta=date(2025,7,3), rondas=3, espera_rondas=7)
+    assert code == 0 and report['partidos_exportados'] == 1
+    assert report['rondas_ejecutadas'] == 2 and report['consultas_pendientes'] == 0
+    assert [x[0].split('dates=')[1][:8] for x in session.calls] == ['20250703', '20250704', '20250703']
+    assert 7 in clock.waits
+
+
+def test_ronda_recupera_estadisticas_sin_confundir_mejora_con_duplicado(tmp_path):
+    e = evento()
+    s = summary(e)
+    s['boxscore']['teams'] = [{'team': {'id': '1'}, 'statistics': [{'name': 'assists', 'displayValue': '12'}]}]
+    c, session, _ = client(tmp_path, Response(payload=scoreboard(e)), Response(503), Response(payload=s), intentos=1)
+    folder, report, code = run(c, con_estadisticas=True, rondas=2, espera_rondas=0)
+    record = json.loads((folder / 'partidos.jsonl').read_text())
+    assert code == 0 and report['consultas_pendientes'] == 0
+    assert record['estadisticas']['home']['asistencias'] == 12
+    assert len(record['evidencia']) == 2 and report['duplicados_identicos'] == 0
+    assert len(session.calls) == 3
+    assert len((folder / 'incidencias.jsonl').read_text().splitlines()) == 1
+
+
+def test_estadistica_negativa_no_elimina_resultado_ni_se_convierte_a_cero(tmp_path):
+    e = evento()
+    s = summary(e)
+    s['boxscore']['teams'] = [{'team': {'id': '1'}, 'statistics': [{'name': 'teamTurnovers', 'displayValue': '-13'}]}]
+    c, _, _ = client(tmp_path, Response(payload=scoreboard(e)), Response(payload=s))
+    folder, report, code = run(c, con_estadisticas=True)
+    record = json.loads((folder / 'partidos.jsonl').read_text())
+    assert code == 2 and report['partidos_exportados'] == 1 and report['detalles_pendientes'] == 0
+    assert report['partidos_con_advertencias_estadisticas'] == 1
+    assert record['incidencias_estadisticas'][0]['valor_fuente'] == '-13'
+    assert record['local_total'] == 81 and record['estadisticas']['home']['perdidas_equipo'] is None
+    assert report['incidencias_cuarentena'] == 0
+
+
+def test_summary_con_otro_marcador_no_sobrescribe_resultado_valido(tmp_path):
+    e = evento()
+    s = summary(e)
+    sides(s['header'])[0]['score'] = '999'
+    c, _, _ = client(tmp_path, Response(payload=scoreboard(e)), Response(payload=s))
+    folder, report, code = run(c, con_estadisticas=True)
+    record = json.loads((folder / 'partidos.jsonl').read_text())
+    assert code == 2 and record['local_total'] == 81 and len(record['evidencia']) == 2
+    assert report['detalles_pendientes'] == 1
+
+
+def test_offline_incompleto_recorre_todo_y_no_intenta_red(tmp_path):
+    Archivo(tmp_path).guardar(url_consulta('scoreboard','20250704'), bytes_json(scoreboard()), NOW.isoformat())
+    c, session, _ = client(tmp_path, offline=True)
+    _, report, code = ejecutar(c, desde=date(2025,7,3), hasta=date(2025,7,3), rondas=3)
+    assert code == 3 and report['ventanas_verificadas'] == ['2025-07-04']
+    assert report['rondas_ejecutadas'] == 1 and not session.calls
+
+
+def test_reanudacion_historica_dias_despues_no_redescarga_respuestas(tmp_path):
+    first, _, _ = client(tmp_path, Response(payload=scoreboard(evento())))
+    folder, _, code = run(first)
+    assert code == 0
+    resumed, session, _ = client(tmp_path)
+    resumed.ahora = lambda: NOW + timedelta(days=180)
+    again, report, code = run(resumed)
+    assert code == 0 and not session.calls and report['contadores_http']['cache_hits'] == 1
+    assert (folder / 'partidos.jsonl').read_bytes() == (again / 'partidos.jsonl').read_bytes()
+
+
+@pytest.mark.parametrize('code', [401, 403, 302, 429])
+def test_bloqueos_globales_no_se_ocultan_como_partidos_pendientes(tmp_path, code):
+    c, session, _ = client(tmp_path, Response(payload=scoreboard(evento())), Response(code))
+    _, report, result = run(c, con_estadisticas=True, rondas=3)
+    assert result == 3 and report['estado'] == 'INCOMPLETO' and len(session.calls) == 2
+    assert report['ventanas_pendientes'] == ['2025-07-03']
+
+
+def test_checkpoint_exporta_resultados_antes_de_interrupcion_abrupta(tmp_path):
+    c, _, _ = client(tmp_path, Response(payload=scoreboard(evento())))
+    inspected = []
+    def inspect(progress):
+        folder = Path(progress['ejecucion'])
+        state = json.loads((folder / 'reporte.json').read_text())
+        assert state['estado'] == 'EN_CURSO' and state['partidos_exportados'] == 1
+        assert (folder / 'partidos.jsonl').read_text()
+        inspected.append(True)
+        raise KeyboardInterrupt
+    folder, report, code = run(c, checkpoint_cada=1, progreso=inspect)
+    assert inspected and code == 130 and report['partidos_exportados'] == 1
+    assert json.loads((folder / 'reporte.json').read_text())['estado'] == 'INTERRUMPIDO'
+
+
+def test_presupuesto_global_entre_dos_partidos_conserva_primero(tmp_path):
+    a, b = evento(), evento('124')
+    c, session, _ = client(tmp_path, Response(payload=scoreboard(a,b)), Response(payload=summary(a)), max_requests=2)
+    _, report, code = run(c, con_estadisticas=True, rondas=3)
+    assert code == 3 and report['partidos_exportados'] == 1 and len(session.calls) == 2
+    assert 'Presupuesto' in report['error']
+
+
+@pytest.mark.parametrize('kwargs', [{'rondas': 0}, {'rondas': 11}, {'espera_rondas': float('nan')},
+                                     {'espera_rondas': 61}, {'checkpoint_cada': 0}])
+def test_configuracion_reintentos_invalida_no_crea_ejecucion(tmp_path, kwargs):
+    c, _, _ = client(tmp_path)
+    with pytest.raises(ValueError):
+        run(c, **kwargs)
+    assert not (tmp_path / 'ejecuciones').exists()
+
+@pytest.mark.parametrize('mode,expected', [('term',130), ('kill',9)])
+def test_proceso_interrumpido_recupera_desde_archivo_durable(tmp_path, mode, expected):
+    # Proceso separado: comprueba señales reales y terminación sin ejecutar finally.
+    program = r'''
+import os, signal, sys
+from pathlib import Path
+from datetime import date
+sys.path.insert(0, sys.argv[1])
+sys.path.insert(0, str(Path(sys.argv[1]).parents[1]))
+from test_wnba import client, Response, scoreboard, evento
+from scrapers.wnba.pipeline import ejecutar
+from scripts.scraper_wnba import guardar_al_terminar
+folder = Path(sys.argv[2])
+c, _, _ = client(folder, Response(payload=scoreboard(evento())))
+def stop(progress):
+    if sys.argv[3] == 'kill':
+        os._exit(9)
+    os.kill(os.getpid(), signal.SIGTERM)
+with guardar_al_terminar():
+    _, _, code = ejecutar(c, desde=date(2025,7,3), hasta=date(2025,7,3), zona='America/New_York',
+                         progreso=stop, checkpoint_cada=1000)
+sys.exit(code)
+'''
+    result = subprocess.run([sys.executable, '-c', program, str(Path(__file__).parent), str(tmp_path), mode],
+                            capture_output=True, text=True, timeout=20)
+    # Windows SIGTERM termina el proceso con 15, sin ejecutar el handler POSIX.
+    # El replay durable se verifica igual tras esa terminaci?n forzada.
+    esperado_nativo = 15 if sys.platform == "win32" and mode == "term" else expected
+    assert result.returncode == esperado_nativo, result.stderr
+    replay, session, _ = client(tmp_path, offline=True)
+    folder, report, code = run(replay)
+    assert code == 0 and report['partidos_exportados'] == 1 and not session.calls
+    assert json.loads((folder / 'partidos.jsonl').read_text())['local_total'] == 81
+
+
+def test_tipo_competicion_con_cambio_de_esquema_se_aparta(tmp_path):
+    e = evento()
+    e['competitions'][0]['type']['abbreviation'] = []
+    c, _, _ = client(tmp_path, Response(payload=scoreboard(e,evento('124'))))
+    _, report, code = run(c)
+    assert code == 2 and report['ids_cuarentena'] == ['123'] and report['partidos_exportados'] == 1
+
+@pytest.mark.parametrize('name,label', [('STATUS_POSTPONED','POSPUESTO'), ('STATUS_CANCELED','CANCELADO')])
+@pytest.mark.parametrize('source_state', ['pre','post'])
+def test_pospuestos_y_cancelados_archivados_no_se_confunden_con_finales(name, label, source_state):
+    e = evento(state='PROGRAMADO')
+    for status in (e['status'],e['competitions'][0]['status']):
+        status['type'] = {'name': name, 'state': source_state, 'completed': False}
+    record = normalizar(e)
+    assert record['estado'] == label and not record['final_completo']
+    assert record['local_total'] is None and record['ganador_id_fuente'] is None
+    for status in (e['status'],e['competitions'][0]['status']):
+        status['type']['completed'] = True
+    with pytest.raises(ContratoError, match='ESTADO_CONTRADICTORIO'):
+        normalizar(e)
+
+
+def test_campo_estadistico_invalido_conserva_las_otras_metricas_y_ambos_equipos(tmp_path):
+    e = evento()
+    s = summary(e)
+    s['boxscore']['teams'] = [
+        {'team': {'id': '1'}, 'statistics': [
+            {'name': 'teamTurnovers', 'displayValue': '-13'},
+            {'name': 'turnovers', 'displayValue': '16'},
+            {'name': 'totalTurnovers', 'displayValue': '3'},
+            {'name': 'assists', 'displayValue': '25'},
+            {'name': 'totalRebounds', 'displayValue': '39'}]},
+        {'team': {'id': '2'}, 'statistics': [{'name': 'steals', 'displayValue': '0'}]}]
+    c, _, _ = client(tmp_path, Response(payload=scoreboard(e)), Response(payload=s))
+    folder, report, code = run(c, con_estadisticas=True)
+    r = json.loads((folder/'partidos.jsonl').read_text())
+    stats = r['estadisticas']['home']
+    assert stats['asistencias'] == 25 and stats['rebotes'] == 39 and stats['perdidas_jugadoras'] == 16
+    assert stats['perdidas_equipo'] is None and stats['perdidas_totales'] is None
+    assert r['estadisticas']['away']['robos'] == 0
+    assert code == 2 and report['estado'] == 'COMPLETO_CON_INCIDENCIAS' and report['error'] is None
+    assert report['consultas_pendientes'] == report['resultados_pendientes'] == 0
+    assert report['campos_estadisticos_apartados'] == 2
+    warnings = [json.loads(x) for x in (folder/'advertencias_estadisticas.jsonl').read_text().splitlines()]
+    assert len(warnings) == 2 and warnings[0]['source_game_id'] == '123'
+    with pytest.raises(ContratoError):
+        normalizar(e,s)  # El modo estricto sigue disponible.
+
+
+@pytest.mark.parametrize('value',[True, '-1', '3.2', 'bad'])
+def test_aislamiento_estadistico_no_inventa_enteros(value):
+    e = evento()
+    s = summary(e)
+    s['boxscore']['teams'] = [{'team': {'id':'1'},'statistics':[
+        {'name':'assists','displayValue':value},{'name':'steals','displayValue':'2'}]}]
+    r = normalizar(e,s,aislar_estadisticas_invalidas=True)
+    assert r['estadisticas']['home']['asistencias'] is None
+    assert r['estadisticas']['home']['robos'] == 2
+    assert r['incidencias_estadisticas'][0]['valor_fuente'] == value
+
+
+def test_nombres_de_estado_distinguen_recorrido_completo_de_resultado_faltante(tmp_path):
+    e = evento()
+    sides(e)[0].pop('linescores')
+    c, _, _ = client(tmp_path,Response(payload=scoreboard(e)),Response(404))
+    _, report, code = run(c)
+    assert report['recorrido_completo'] and report['resultados_pendientes'] == 1
+    assert code == 3 and report['estado'] == 'INCOMPLETO'

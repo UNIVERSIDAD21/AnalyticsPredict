@@ -177,7 +177,7 @@ def test_endpoint_calibracion_usa_columna_raw_real_y_muestra_sin_procedencia(mon
     monkeypatch.setattr(rutas_metricas_futbol, "_tabla_existe", lambda _cursor, tabla: tabla == "predicciones_futbol")
     monkeypatch.setattr(rutas_metricas_futbol, "_columna_existe", lambda _cursor, _tabla, columna: columna in {"prob_over", "prob_over_calibrada", "calibrador_id"})
 
-    resultado = asyncio.run(rutas_metricas_futbol.obtener_metricas_calibracion(mercado=None, periodo="todo"))
+    resultado = rutas_metricas_futbol.obtener_metricas_calibracion(mercado=None, periodo="todo")
     assert "p.prob_over AS p_raw" in cursor.sql
     assert "p.calibrador_id IS NOT NULL" in cursor.sql
     metrica = resultado.metricas[0]

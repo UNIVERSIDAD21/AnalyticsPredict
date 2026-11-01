@@ -40,7 +40,7 @@ router = APIRouter(prefix="/api/backtest", tags=["Backtest"])
     5. Trazabilidad completa
     """,
 )
-async def obtener_reporte_backtest(
+def obtener_reporte_backtest(
     backtest_id: str,
     formato: str = Query("json", pattern="^(json|csv)$"),
     incluir_predicciones: bool = Query(

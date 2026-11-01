@@ -1,3 +1,3 @@
 """Extracción WNBA aislada: archivos verificables, sin BD ni entrenamiento."""
 
-VERSION = "1.0.0"
+VERSION = "2.1.0"

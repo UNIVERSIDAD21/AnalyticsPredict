@@ -121,7 +121,7 @@ def test_consumidores_no_convierten_fallo_en_exito_vacio(monkeypatch, ruta):
     def fallo():
         raise RuntimeError('CONFIGURACION_PRIVADA_FICTICIA')
     for modulo in list(sys.modules.values()):
-        archivo = getattr(modulo, '__file__', '') or ''
+        archivo = (getattr(modulo, '__file__', '') or '').replace('\\', '/')
         if '/backend/' in archivo and '/tests/' not in archivo and hasattr(modulo,'obtener_pool'):
             monkeypatch.setattr(modulo,'obtener_pool',fallo)
     client = TestClient(app,raise_server_exceptions=False)

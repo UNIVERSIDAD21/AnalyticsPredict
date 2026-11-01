@@ -35,7 +35,7 @@ class _Pool:
 
 def test_endpoint_resumen_calidad_1x2(monkeypatch):
     monkeypatch.setattr(rutas_metricas_futbol, 'obtener_pool', lambda: _Pool())
-    data = asyncio.run(rutas_metricas_futbol.resumen_calidad_1x2())
+    data = rutas_metricas_futbol.resumen_calidad_1x2()
     assert data['exito'] is True
     assert data['resumen']['total'] == 50
     assert data['resumen']['ganadas'] == 21

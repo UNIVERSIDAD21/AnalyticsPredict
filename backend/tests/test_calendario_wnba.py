@@ -170,7 +170,7 @@ def test_guardado_api_wnba_fixture_sin_resultado_y_revision_obsoleta(base,tmp_pa
                     'incluye_ot':True,'fixture_revision_sha256':digest}])
     with ConnectionPool(base,min_size=1,max_size=2,open=True) as pool:
         pool.wait();monkeypatch.setattr(rutas_bitacora,'obtener_pool',lambda:pool)
-        out=asyncio.run(rutas_bitacora.guardar_apuesta(pet))
+        out=rutas_bitacora.guardar_apuesta(pet)
         assert out.apuesta.competicion_nombre=='WNBA' and out.apuesta.confianza_sistema is None
         with pool.connection() as c:
             assert c.execute('SELECT partido_id,fixture_wnba_id,probabilidad_sistema FROM apuestas').fetchone()==(None,fid,__import__('decimal').Decimal('.61'))
@@ -178,6 +178,6 @@ def test_guardado_api_wnba_fixture_sin_resultado_y_revision_obsoleta(base,tmp_pa
             c.execute("UPDATE fixtures_wnba SET revision_sha256='cambio' WHERE id=%s",(fid,))
         from fastapi import HTTPException
         with pytest.raises(HTTPException,match='calendario WNBA cambió'):
-            asyncio.run(rutas_bitacora.guardar_apuesta(pet))
+            rutas_bitacora.guardar_apuesta(pet)
         with pool.connection() as c:
             assert c.execute('SELECT count(*) FROM apuestas').fetchone()[0]==1

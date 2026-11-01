@@ -344,7 +344,7 @@ class FakeCursor:
         self._updates = []
 
     def execute(self, query, params=None):
-        if "UPDATE" in query:
+        if query.strip().upper().startswith("UPDATE"):
             if not self._updates_ok:
                 raise RuntimeError("UPDATE failed")
             self._updates.append(params)
@@ -370,6 +370,9 @@ class FakeConnection:
 
     def commit(self):
         pass
+
+    def transaction(self):
+        return self
 
     def __enter__(self):
         return self
@@ -780,6 +783,12 @@ def datos_resolucion_integracion(pool_real):
     equipo_visitante_id = uuid4()
     fecha_partido = date(2024, 1, 1)
     with pool_real.connection() as conn:
+        conn.execute('CREATE TABLE IF NOT EXISTS competiciones_baloncesto(id uuid PRIMARY KEY,codigo text)')
+        existente = conn.execute("SELECT id FROM competiciones_baloncesto WHERE codigo='nba' LIMIT 1").fetchone()
+        if existente:
+            competicion_id = existente[0]
+        else:
+            conn.execute("INSERT INTO competiciones_baloncesto(id,codigo) VALUES(%s,'nba')",(competicion_id,))
         modelo_version_id = conn.execute(
             "INSERT INTO modelo_versiones (version, partidos_entrenamiento) "
             "VALUES (%s, %s) RETURNING id", ("test-resolucion", 100),
@@ -821,6 +830,8 @@ def datos_resolucion_integracion(pool_real):
             conn.execute("DELETE FROM predicciones_registradas WHERE id = %s", (pred_id,))
             conn.execute("DELETE FROM partidos_baloncesto WHERE id = %s", (partido_id,))
             conn.execute("DELETE FROM modelo_versiones WHERE id = %s", (modelo_version_id,))
+            if not existente:
+                conn.execute('DELETE FROM competiciones_baloncesto WHERE id=%s',(competicion_id,))
 
 
 @pytest.mark.integracion

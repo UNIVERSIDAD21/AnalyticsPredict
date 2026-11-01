@@ -189,7 +189,7 @@ class ResumenDeportesResponse(BaseModel):
         404: {"description": "No hay predicciones para el periodo"},
     },
 )
-async def obtener_metricas_calibracion(
+def obtener_metricas_calibracion(
     origen: str = Query(
         ...,
         pattern="^(API_USUARIO|BACKTEST_SINTETICO|BACKTEST_BATCH)$",
@@ -357,7 +357,7 @@ async def obtener_metricas_calibracion(
     summary="Resumen operativo por deporte",
     description="Retorna conteos rápidos de predicciones en baloncesto y fútbol.",
 )
-async def obtener_resumen_deportes() -> ResumenDeportesResponse:
+def obtener_resumen_deportes() -> ResumenDeportesResponse:
     pool = obtener_pool()
 
     query_nba = """
@@ -422,7 +422,7 @@ async def obtener_resumen_deportes() -> ResumenDeportesResponse:
     - `cuantiles`: Cada bin con ~mismo número de muestras.
     """,
 )
-async def obtener_curva_calibracion(
+def obtener_curva_calibracion(
     mercado: str = Path(
         ..., pattern="^(Q1|Q2|Q3|Q4|COMPLETO)$", description="Mercado objetivo"
     ),
@@ -891,7 +891,7 @@ def _score_salud(
     summary="Tablero profesional de salud de predicción",
     description="Incluye accuracy, Brier por deporte, deriva reciente y estado de modelos.",
 )
-async def obtener_tablero_salud() -> TableroSaludResponse:
+def obtener_tablero_salud() -> TableroSaludResponse:
     pool = obtener_pool()
     alertas: List[str] = []
 
@@ -1100,7 +1100,7 @@ class CalidadMercadosResponse(BaseModel):
     summary="Ranking profesional de calidad por mercado",
     description="Consolida accuracy/Brier por mercado en baloncesto y fútbol para priorizar mejoras.",
 )
-async def obtener_calidad_mercados(
+def obtener_calidad_mercados(
     min_muestras: int = Query(30, ge=10, le=500),
     limite: int = Query(20, ge=5, le=100),
 ) -> CalidadMercadosResponse:
@@ -1260,12 +1260,12 @@ def _normalizar_acciones(acciones: List[AccionSugerida], max_acciones: int) -> L
     summary="Recomendaciones automáticas de acción",
     description="Genera plan de acción priorizado según salud global y calidad por mercado.",
 )
-async def obtener_recomendaciones_accion(
+def obtener_recomendaciones_accion(
     min_muestras: int = Query(30, ge=10, le=500),
     max_acciones: int = Query(15, ge=1, le=50),
 ) -> RecomendacionesAccionResponse:
-    tablero = await obtener_tablero_salud()
-    calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=30)
+    tablero = obtener_tablero_salud()
+    calidad = obtener_calidad_mercados(min_muestras=min_muestras, limite=30)
 
     acciones: List[AccionSugerida] = []
 
@@ -1388,7 +1388,7 @@ def _severidad_drift(drift_pct: Optional[float]) -> str:
     summary="Drift de calidad por mercado",
     description="Compara Brier de 7 días vs 30 días previos para detectar degradación por mercado.",
 )
-async def obtener_drift_mercados(
+def obtener_drift_mercados(
     min_muestras: int = Query(20, ge=10, le=500),
     limite: int = Query(50, ge=5, le=200),
 ) -> DriftMercadosResponse:
@@ -1569,7 +1569,7 @@ def _ultima_fecha_columna(cursor, tabla: str, columnas_candidatas: List[str]):
     summary="Alertas de ingestión stale",
     description="Detecta fuentes sin actualización reciente para prevenir degradación silenciosa.",
 )
-async def obtener_alertas_ingestion(
+def obtener_alertas_ingestion(
     max_horas_sin_actualizar: int = Query(24, ge=1, le=240),
 ) -> AlertasIngestionResponse:
     pool = obtener_pool()
@@ -1678,12 +1678,12 @@ class PoliticaMercadosResponse(BaseModel):
     summary="Policy-as-code para habilitar/bloquear mercados",
     description="Clasifica mercados en verde/amarillo/rojo y marca bloqueados según umbrales de riesgo.",
 )
-async def obtener_politica_mercados(
+def obtener_politica_mercados(
     min_muestras: int = Query(30, ge=10, le=500),
     bloquear_brier: float = Query(0.28, ge=0.18, le=0.40),
     warning_brier: float = Query(0.24, ge=0.18, le=0.40),
 ) -> PoliticaMercadosResponse:
-    calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=200)
+    calidad = obtener_calidad_mercados(min_muestras=min_muestras, limite=200)
 
     mercados: List[MercadoPolicyItem] = []
     for m in calidad.ranking:
@@ -1776,10 +1776,10 @@ class ResumenEjecutivoCompactoResponse(BaseModel):
     summary="Sugerencias automáticas de umbrales por deporte",
     description="Propone umbrales warning/bloqueo según desempeño histórico de mercados.",
 )
-async def obtener_sugerencias_umbrales(
+def obtener_sugerencias_umbrales(
     min_muestras: int = Query(30, ge=10, le=500),
 ) -> SugerenciasUmbralesResponse:
-    calidad = await obtener_calidad_mercados(min_muestras=min_muestras, limite=500)
+    calidad = obtener_calidad_mercados(min_muestras=min_muestras, limite=500)
 
     por_deporte: Dict[str, List[float]] = {}
     muestras: Dict[str, int] = {}
@@ -1837,12 +1837,12 @@ async def obtener_sugerencias_umbrales(
     summary="Gate global de operación en modo producción estricto",
     description="Determina si el sistema debe permitir recomendaciones según score, drift e ingestión.",
 )
-async def obtener_modo_estricto(
+def obtener_modo_estricto(
     score_minimo: int = Query(75, ge=40, le=95),
     max_fuentes_stale_criticas: int = Query(0, ge=0, le=10),
 ) -> ModoEstrictoResponse:
-    tablero = await obtener_tablero_salud()
-    ingest = await obtener_alertas_ingestion(max_horas_sin_actualizar=24)
+    tablero = obtener_tablero_salud()
+    ingest = obtener_alertas_ingestion(max_horas_sin_actualizar=24)
 
     semaforo = _semaforo_por_score(tablero.score_global)
     criticas_ingestion = sum(1 for a in ingest.alertas if a.severidad == "critica")
@@ -1882,15 +1882,15 @@ async def obtener_modo_estricto(
     summary="Resumen ejecutivo compacto (30 segundos)",
     description="Salida breve con GO/NO-GO, score, severidad y acciones top.",
 )
-async def obtener_resumen_ejecutivo_compacto(
+def obtener_resumen_ejecutivo_compacto(
     min_muestras: int = Query(30, ge=10, le=500),
 ) -> ResumenEjecutivoCompactoResponse:
-    tablero = await obtener_tablero_salud()
-    modo = await obtener_modo_estricto(
+    tablero = obtener_tablero_salud()
+    modo = obtener_modo_estricto(
         score_minimo=75,
         max_fuentes_stale_criticas=0,
     )
-    recomendaciones = await obtener_recomendaciones_accion(min_muestras=min_muestras, max_acciones=15)
+    recomendaciones = obtener_recomendaciones_accion(min_muestras=min_muestras, max_acciones=15)
 
     alertas_criticas = sum(1 for a in tablero.alertas if "crít" in a.lower() or "crit" in a.lower())
     top_acciones = [f"[{a.prioridad}/{a.semaforo}] {a.accion}" for a in recomendaciones.acciones[:5]]

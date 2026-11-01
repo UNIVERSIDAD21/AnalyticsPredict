@@ -1,3 +1,7 @@
+import json
+import os
+import subprocess
+
 import pytest
 from scripts.auditar_catalogo_pitchapi import _guardar_sin_sobrescribir, main
 
@@ -142,7 +146,29 @@ def test_evidencia_se_escribe_con_modo_privado_y_no_sobrescribe(tmp_path):
     destino = tmp_path / "subdir" / "evidencia.json"
     _guardar_sin_sobrescribir(destino, {"sample": 1})
     antes = destino.read_text(encoding="utf-8")
-    assert destino.stat().st_mode & 0o777 == 0o600
+    if os.name == 'nt':
+        path_ps = str(destino).replace("'", "''")
+        command = ("$a=Get-Acl -LiteralPath '" + path_ps + "';"
+                   "[pscustomobject]@{protected=$a.AreAccessRulesProtected;"
+                   "user=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value;"
+                   "allowed=@($a.Access | ForEach-Object {"
+                   "$_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value})}"
+                   "|ConvertTo-Json -Compress")
+        acl = json.loads(subprocess.check_output(['powershell', '-NoProfile', '-Command', command]))
+        assert acl['protected']
+        assert set(acl['allowed']) == {acl['user'], 'S-1-5-18'}
+    else:
+        assert destino.stat().st_mode & 0o777 == 0o600
     with pytest.raises(FileExistsError):
         _guardar_sin_sobrescribir(destino, {"sample": 2})
     assert destino.read_text(encoding="utf-8") == antes
+
+
+def test_fallo_al_proteger_no_escribe_ni_deja_temporales(tmp_path, monkeypatch):
+    from scripts import auditar_catalogo_pitchapi as auditor
+    def denegado(path):
+        raise PermissionError('Permisos no disponibles')
+    monkeypatch.setattr(auditor, 'proteger_privado', denegado)
+    with pytest.raises(PermissionError):
+        auditor._guardar_sin_sobrescribir(tmp_path / 'privado.json', {'sample': 1})
+    assert list(tmp_path.iterdir()) == []
