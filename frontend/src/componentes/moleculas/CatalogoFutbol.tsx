@@ -35,12 +35,15 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
   const [competiciones, setCompeticiones] = useState<Competicion[]>([]);
   const [errorFiltros, setErrorFiltros] = useState(false);
   const [agenda, setAgenda] = useState<AgendaFutbol | null>(null);
+  const [claveRespuesta, setClaveRespuesta] = useState('');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [recarga, setRecarga] = useState(0);
   const [inicializado, setInicializado] = useState(() => !new URLSearchParams(window.location.search).has('partidoId'));
   const ultimaConsulta = useRef('');
   const idsGuardados = useMemo(() => [...guardadosIds].sort(), [guardadosIds]);
+  const claveConsulta = JSON.stringify([filtros, soloGuardados, soloGuardados ? idsGuardados : []]);
+  const esperandoAgenda = cargando || textoBuscar !== filtros.buscar || (!error && claveRespuesta !== claveConsulta);
   const paises = useMemo(() => [...new Set(competiciones.map(c => c.pais))].sort(), [competiciones]);
   useEffect(() => { const id = window.setInterval(() => setAhora(Date.now()), 15000); return () => window.clearInterval(id); }, []);
   useEffect(() => {
@@ -65,17 +68,17 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
   }, [textoBuscar]);
   useEffect(() => {
     if (!inicializado) return;
-    const ctl = new AbortController(), clave = JSON.stringify([filtros, soloGuardados]);
+    const ctl = new AbortController(), clave = claveConsulta;
     if (ultimaConsulta.current !== clave) { onInicio(); ultimaConsulta.current = clave; }
     setCargando(true); onCargando(true); setError(''); onError(null);
     const consulta = soloGuardados && !idsGuardados.length
       ? Promise.resolve({ fecha: filtros.fecha, total: 0, consultadoEn: new Date().toISOString(), datosActualizadosEn: null, partidos: [] })
       : listarAgenda({ ...filtros, guardados: soloGuardados ? idsGuardados : undefined }, ctl.signal);
-    consulta.then(data => { if (!ctl.signal.aborted) { setAgenda(data); onDatos(data.partidos); } })
+    consulta.then(data => { if (!ctl.signal.aborted) { setAgenda(data); setClaveRespuesta(clave); onDatos(data.partidos); } })
       .catch(err => { if (!ctl.signal.aborted) { const msg = extraerMensajeError(err); setError(msg); onError(msg); } })
       .finally(() => { if (!ctl.signal.aborted) { setCargando(false); onCargando(false); } });
     return () => ctl.abort();
-  }, [filtros, soloGuardados, idsGuardados, revision, recarga, inicializado, onInicio, onCargando, onError, onDatos]);
+  }, [filtros, soloGuardados, idsGuardados, claveConsulta, revision, recarga, inicializado, onInicio, onCargando, onError, onDatos]);
   const cambiar = (cambios: Partial<FiltrosAgenda>) => {
     const nuevos = { ...filtros, ...cambios, pagina: cambios.pagina ?? 1 }; setFiltros(nuevos);
     const url = new URL(window.location.href);
@@ -84,7 +87,7 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
     window.history.replaceState({}, '', url);
   };
   const elegir = (p: PartidoAgendaFutbol) => {
-    if (!puedeAnalizarPartido(p)) return;
+    if (esperandoAgenda || error || !puedeAnalizarPartido(p)) return;
     onSeleccionar(p); const url = new URL(window.location.href); url.searchParams.set('partidoId', p.id); window.history.replaceState({}, '', url);
     window.requestAnimationFrame(() => document.getElementById('configuracion-futbol')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
@@ -120,14 +123,14 @@ export function CatalogoFutbol({ revision, onInicio, onCargando, onError, onDato
     <div aria-live="polite" className="flex flex-wrap justify-between gap-2 text-xs text-texto-secundario"><span>{cargando ? 'Cargando partidos…' : error ? 'Datos no disponibles' : `${agenda?.total ?? 0} partidos registrados`}</span>{agenda && <span>Consulta: {hora(agenda.consultadoEn)} COT · {agenda.datosActualizadosEn ? `último cambio guardado ${new Date(agenda.datosActualizadosEn).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'short', timeStyle: 'short' })}` : 'sin fecha de actualización acreditada'}</span>}</div>
     {error && <div role="alert" className="rounded-xl border border-neon-amarillo/30 p-4 text-sm text-neon-amarillo">No se pudo actualizar la agenda. {error}<button type="button" onClick={() => setRecarga(n => n + 1)} className="ml-2 underline">Reintentar</button></div>}
     {!cargando && !error && agenda?.partidos.length === 0 && <div className="rounded-xl border border-dashed border-white/15 px-5 py-9 text-center"><CalendarDays className="mx-auto mb-3 h-8 w-8 text-texto-terciario" /><p className="text-texto-principal">No hay partidos registrados para esta fecha y estos filtros.</p><p className="mt-2 text-sm text-texto-secundario">Prueba Mañana, elige otra fecha o quita los filtros.</p></div>}
-    <div aria-busy={cargando} className={`grid gap-3 md:grid-cols-2 xl:grid-cols-3 ${cargando || error ? 'pointer-events-none opacity-45' : ''}`}>
+    <div aria-busy={esperandoAgenda} className={`grid gap-3 md:grid-cols-2 xl:grid-cols-3 ${esperandoAgenda || error ? 'pointer-events-none opacity-45' : ''}`}>
       {agenda?.partidos.map(p => {
         const permitido = p.analizable && puedeAnalizarPartido(p, ahora), seleccionado = seleccionadoId === p.id;
         return <article key={p.id} className={`min-w-0 rounded-2xl border p-4 transition-colors ${seleccionado ? 'border-neon-cyan bg-neon-cyan/5' : 'border-white/10 bg-futurista-negro/30 hover:border-neon-cyan/40'}`}>
           <div className="mb-3 flex items-center justify-between gap-2"><time dateTime={p.fechaPartido} className="text-sm font-semibold text-texto-principal">{p.precisionFecha === 'DIA' ? 'Hora por confirmar' : hora(p.fechaPartido)}</time><span className={`rounded-full px-2 py-1 text-[11px] ${estadoVisible(p, ahora) === 'Estado por verificar' ? 'bg-neon-amarillo/10 text-neon-amarillo' : p.estadoAgenda === 'EN_JUEGO' ? 'bg-neon-verde/10 text-neon-verde' : 'bg-white/5 text-texto-secundario'}`}>{estadoVisible(p, ahora)}</span></div>
           <p className="mb-3 truncate text-xs text-texto-secundario" title={`${p.competicionNombre} · ${p.pais}`}>{p.competicionNombre} · {p.pais}</p>
           {[{ nombre: p.equipoLocalNombre, logo: p.equipoLocalLogo, goles: p.golesLocal }, { nombre: p.equipoVisitanteNombre, logo: p.equipoVisitanteLogo, goles: p.golesVisitante }].map((e, i) => <div key={i} className="mb-2 flex min-w-0 items-center gap-2.5"><Escudo nombre={e.nombre} url={e.logo} /><span className="min-w-0 flex-1 break-words text-sm font-medium text-texto-principal">{e.nombre}</span>{e.goles != null && <span className="text-lg font-semibold text-texto-principal">{e.goles}</span>}</div>)}
-          <button type="button" aria-label={`${p.estado === 'FINALIZADO' ? 'Ver histórico' : 'Analizar'} ${p.equipoLocalNombre} vs ${p.equipoVisitanteNombre}`} disabled={!permitido || cargando || Boolean(error)} onClick={() => elegir(p)} className="mt-3 w-full rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 px-3 py-2 text-sm font-semibold text-neon-cyan hover:bg-neon-cyan/20 disabled:border-white/10 disabled:bg-white/5 disabled:text-texto-terciario">{seleccionado ? 'Seleccionado' : permitido ? p.estado === 'FINALIZADO' ? 'Ver resultado / Histórico' : requiereReconstruccion(p, ahora) ? 'Analizar con corte al inicio' : 'Analizar partido' : 'No disponible para prepartido'}</button>
+          <button type="button" aria-label={`${p.estado === 'FINALIZADO' ? 'Ver histórico' : 'Analizar'} ${p.equipoLocalNombre} vs ${p.equipoVisitanteNombre}`} disabled={!permitido || esperandoAgenda || Boolean(error)} onClick={() => elegir(p)} className="mt-3 w-full rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 px-3 py-2 text-sm font-semibold text-neon-cyan hover:bg-neon-cyan/20 disabled:border-white/10 disabled:bg-white/5 disabled:text-texto-terciario">{seleccionado ? 'Seleccionado' : permitido ? p.estado === 'FINALIZADO' ? 'Ver resultado / Histórico' : requiereReconstruccion(p, ahora) ? 'Analizar con corte al inicio' : 'Analizar partido' : 'No disponible para prepartido'}</button>
           {requiereReconstruccion(p, ahora) && p.estado !== 'FINALIZADO' && <p className="mt-2 text-[11px] leading-relaxed text-texto-secundario">Puedes analizarlo con datos anteriores al inicio, aunque su estado aún no esté actualizado.</p>}
         </article>;
       })}

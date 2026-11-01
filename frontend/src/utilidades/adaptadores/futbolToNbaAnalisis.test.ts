@@ -62,6 +62,28 @@ const contexto: { h2h: PartidoFutbolEstadistico[]; historialLocal: PartidoFutbol
 };
 
 describe('futbolToNbaAnalisis market-aware contexto', () => {
+  it('no transforma una reconstrucción histórica en un registro previo al partido', () => {
+    const resultado = adaptarAnalisisFutbolAResultadoAnalisis({ ...baseAnalisis,
+      modeloVersion: 'heuristico-americas::1.0.0', modo: 'HISTORICO_RECONSTRUIDO',
+    });
+    const html = renderToStaticMarkup(createElement(ResultadoAnalisis, { resultado,
+      seleccionUsuario: { lado: 'UNDER', linea: 2.5 }, onGuardar: () => undefined,
+      permitirRegistroManualFutbol: true,
+    }));
+    expect(html).not.toContain('Guardar en Seguimiento');
+  });
+  it.each(['MLS', 'Liga Profesional Argentina'])('permite registrar una selección manual exploratoria de %s', liga => {
+    const resultado = adaptarAnalisisFutbolAResultadoAnalisis({ ...baseAnalisis,
+      partido: { ...baseAnalisis.partido, competicionNombre: liga },
+      modeloVersion: 'heuristico-americas::1.0.0', modo: 'PREPARTIDO', recomendaciones: [],
+    });
+    const html = renderToStaticMarkup(createElement(ResultadoAnalisis, { resultado,
+      seleccionUsuario: { lado: 'UNDER', linea: 2.5 }, onGuardar: () => undefined,
+      permitirRegistroManualFutbol: true,
+    }));
+    expect(html).toContain('Guardar en Seguimiento');
+    expect(html).toContain('Selección manual');
+  });
   it('conserva solo líneas originales y no inventa push entero ni calibrador', () => {
     const a = { ...baseAnalisis, mercadosGoles: { GOLES_FT: { ...baseAnalisis.mercadosGoles.GOLES_FT,
       probabilidades: [

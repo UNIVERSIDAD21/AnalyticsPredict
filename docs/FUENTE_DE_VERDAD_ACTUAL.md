@@ -1,5 +1,13 @@
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
+## Seguimiento y configuración de fútbol — 2026-11-01
+
+Registro manual prepartido disponible también en MLS/Argentina exploratorias,
+con cuota real y analítica ausente N/D. Marcador de partidos visible. Se conservan
+configuraciones por encuentro durante la sesión de la pestaña y sus recargas,
+sin reutilizar resultados ni cuotas entre partidos. No cambia modelos, BD,
+calibración o el control maestro. [Alcance y límites](reactivacion_single_user/CORRECCION_SEGUIMIENTO_CONFIGURACION_FUTBOL_2026-11-01.md).
+
 ## Cierre ejecutable del plan maestro — 2026-11-01 (parcial)
 
 Los75 checks originales quedan en66 HECHO,8 BLOQUEADO y1 NO_APLICA;

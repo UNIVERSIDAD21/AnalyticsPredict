@@ -11,7 +11,7 @@ import { ETIQUETAS_MERCADOS } from '../../tipos/futbol';
 interface Props {
   mostrar: boolean;
   onCerrar: () => void;
-  onGuardar: (stake: number) => void;
+  onGuardar: (stake: number, cuota: number) => void;
   cargando?: boolean;
   partidoInfo: {
     equipoLocal: string;
@@ -38,11 +38,14 @@ export function ModalGuardarApuestaFutbol({
   recomendacion,
 }: Props) {
   const [stake, setStake] = useState('');
+  const [cuotaManual, setCuotaManual] = useState('');
+  const requiereCuota = !Number.isFinite(recomendacion.cuota) || (recomendacion.cuota ?? 0) <= 1;
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (mostrar) {
       setStake('');
+      setCuotaManual('');
       setError(null);
     }
   }, [mostrar]);
@@ -50,12 +53,17 @@ export function ModalGuardarApuestaFutbol({
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const stakeNum = Number(stake);
-    if (!stake || Number.isNaN(stakeNum) || stakeNum <= 0) {
+    if (!stake || !Number.isFinite(stakeNum) || stakeNum <= 0) {
       setError('Ingresa un monto valido.');
       return;
     }
+    const cuota = requiereCuota ? Number(cuotaManual) : recomendacion.cuota!;
+    if (!Number.isFinite(cuota) || cuota <= 1) {
+      setError('Ingresa la cuota decimal real, mayor que 1.');
+      return;
+    }
     setError(null);
-    onGuardar(stakeNum);
+    onGuardar(stakeNum, cuota);
   };
 
   if (!mostrar) return null;
@@ -65,8 +73,8 @@ export function ModalGuardarApuestaFutbol({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg rounded-xl border border-neon-cyan/30 bg-futurista-oscuro p-6">
-        <h2 className="text-xl font-bold text-texto-principal mb-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="titulo-guardar-futbol" className="w-full max-w-lg rounded-xl border border-neon-cyan/30 bg-futurista-oscuro p-6">
+        <h2 id="titulo-guardar-futbol" className="text-xl font-bold text-texto-principal mb-4">
           Guardar Apuesta
         </h2>
 
@@ -115,11 +123,18 @@ export function ModalGuardarApuestaFutbol({
         </div>
 
         <form onSubmit={handleSubmit}>
+          {requiereCuota && <div className="mb-4">
+            <label htmlFor="cuota-manual-futbol" className="block text-sm text-texto-secundario mb-2">Cuota decimal real</label>
+            <input id="cuota-manual-futbol" type="number" min="1.01" step="any" required value={cuotaManual}
+              onChange={event => setCuotaManual(event.target.value)} className="w-full px-4 py-2 bg-futurista-oscuro border border-neon-cyan/30 rounded-lg text-texto-principal" />
+            <p className="mt-1 text-xs text-texto-terciario">Esta competición no aportó una cuota para tu selección. Introduce la que utilizaste; no se inventa una cuota.</p>
+          </div>}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-texto-secundario mb-2">
+            <label htmlFor="stake-futbol" className="block text-sm font-medium text-texto-secundario mb-2">
               Monto a Apostar
             </label>
             <input
+              id="stake-futbol"
               type="number"
               step="0.01"
               min="0.01"

@@ -1,5 +1,13 @@
 # Estado vigente — AnalyticsPredict
 
+## Seguimiento y configuración de fútbol — 2026-11-01
+
+Corregida la ocultación del registro personal para fútbol exploratorio de MLS y
+Argentina, sin presentar la selección como recomendación ni inventar cuotas.
+Configuraciones conservadas por ID durante la sesión de la pestaña; búsqueda y
+cambio de liga no mezclan cuotas, temporadas o resultados. Sin cambios de BD,
+modelos o campaña prospectiva. [Contrato](../reactivacion_single_user/CORRECCION_SEGUIMIENTO_CONFIGURACION_FUTBOL_2026-11-01.md).
+
 ## Cierre ejecutable del plan maestro — 2026-11-01 (parcial)
 
 Los75 checks originales quedan en66 HECHO,8 BLOQUEADO y1 NO_APLICA;

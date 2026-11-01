@@ -35,6 +35,7 @@ import { buscarEquipo, obtenerTemporadasEquipos, validarPeticionAnalisis } from 
 import { esCuotaValida } from '../../utilidades/validadores';
 import type { PeticionEuro } from '../../servicios/euroliga';
 import { obtenerTemporadasWnba, type FormularioWnba } from '../../servicios/wnba';
+import type { BorradorFormularioAnalisis } from '../../utilidades/configuracionAnalisisFutbol';
 
 // ══════════════════════════════════════════════════════════════
 // TIPOS
@@ -46,6 +47,8 @@ interface OpcionMercadoCustom {
 }
 
 interface PropsBaseFormularioAnalisis {
+  borradorInicial?: BorradorFormularioAnalisis;
+  onCambiarBorrador?: (borrador: BorradorFormularioAnalisis) => void;
   valoresIniciales?: { id: string; equipoLocal:string; equipoVisitante:string; mercado:Mercado; linea:string; ladoApuesta:LadoApuesta;
     cuotaOver:string; cuotaUnder:string; temporadas:string[]; parciales:[number,number][] };
   /** Lista de equipos disponibles */
@@ -129,6 +132,8 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
     onCambiarModo,
     estadoCalendario,
     valoresIniciales,
+    borradorInicial,
+    onCambiarBorrador,
   } = props;
   const esEuroliga = deporte === 'EUROLIGA';
   const [cuartos, setCuartos] = useState(0);
@@ -137,7 +142,11 @@ export function FormularioAnalisis(props: PropsFormularioAnalisis) {
   const [parciales, setParciales] = useState<[string, string][]>([['', ''], ['', ''], ['', '']]);
   useEffect(() => { onCambiarModo?.(cuartos); }, [cuartos, onCambiarModo]);
   // Estado del formulario
-  const [formulario, setFormulario] = useState<EstadoFormulario>(ESTADO_INICIAL);
+  const [formulario, setFormulario] = useState<EstadoFormulario>(() => ({ ...ESTADO_INICIAL, ...borradorInicial }));
+  useEffect(() => {
+    onCambiarBorrador?.({ mercado: formulario.mercado, linea: formulario.linea,
+      ladoApuesta: formulario.ladoApuesta, cuotaOver: formulario.cuotaOver, cuotaUnder: formulario.cuotaUnder });
+  }, [formulario, onCambiarBorrador]);
   const [errores, setErrores] = useState<string[]>([]);
   const [temporadasDisponibles, setTemporadasDisponibles] = useState<TemporadaDisponible[]>([]);
   const [temporadasSeleccionadas, setTemporadasSeleccionadas] = useState<string[]>([]);

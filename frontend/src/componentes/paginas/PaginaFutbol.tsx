@@ -20,6 +20,8 @@ import { analizarPartido, crearApuesta, obtenerH2HPartidos, obtenerPartido, obte
 import { useToasts } from '../../contextos/Toasts';
 import { adaptarAnalisisFutbolAResultadoAnalisis } from '../../utilidades/adaptadores/futbolToNbaAnalisis';
 import { prepararApuestaGuardableFutbol } from '../../utilidades/seleccionApuestaFutbol';
+import { leerConfiguracionFutbol, recordarConfiguracionFutbol, olvidarConfiguracionFutbol,
+  type BorradorFormularioAnalisis } from '../../utilidades/configuracionAnalisisFutbol';
 import { archivarPartidoGuardado, guardarPartidoParaRevisar, listarPartidosGuardados } from '../../servicios/bitacora';
 import type {
   AnalisisFutbolResponse,
@@ -145,6 +147,26 @@ export function PaginaFutbol() {
   const [errorPartidos, setErrorPartidos] = useState<string | null>(null);
   const [revisionCatalogo, setRevisionCatalogo] = useState(0);
   const [configuracionHistorico, setConfiguracionHistorico] = useState<{ competicionId: string; ids: string[] }>({ competicionId: '', ids: [] });
+  const borradorInicial = useMemo(() => leerConfiguracionFutbol(partidoSeleccionadoId).formulario, [partidoSeleccionadoId]);
+  const recordarBorrador = useCallback((formulario: BorradorFormularioAnalisis) => {
+    recordarConfiguracionFutbol(partidoSeleccionadoId, { formulario });
+  }, [partidoSeleccionadoId]);
+  const restaurarConfiguracion = useCallback((id: string, competicionId?: string) => {
+    const config = leerConfiguracionFutbol(id);
+    setCategoriaMercadoFutbol(config.categoria); setAlcanceMercadoFutbol(config.alcance);
+    setLimiteH2h(config.limiteH2h); setLimiteLocal(config.limiteLocal); setLimiteVisitante(config.limiteVisitante);
+    setUbicacionLocal(config.ubicacionLocal); setUbicacionVisitante(config.ubicacionVisitante);
+    const competicion = competicionId ?? config.competicionId;
+    setConfiguracionHistorico({ competicionId: competicion,
+      ids: competicion === config.competicionId ? config.temporadas : [] });
+  }, []);
+  useEffect(() => {
+    if (!partidoSeleccionadoId) return;
+    recordarConfiguracionFutbol(partidoSeleccionadoId, { categoria: categoriaMercadoFutbol,
+      alcance: alcanceMercadoFutbol, competicionId: configuracionHistorico.competicionId,
+      temporadas: configuracionHistorico.ids, limiteH2h, limiteLocal, limiteVisitante, ubicacionLocal, ubicacionVisitante });
+  }, [partidoSeleccionadoId, categoriaMercadoFutbol, alcanceMercadoFutbol, configuracionHistorico,
+    limiteH2h, limiteLocal, limiteVisitante, ubicacionLocal, ubicacionVisitante]);
   const analisisSecuencia = useRef(0);
   const analisisControlador = useRef<AbortController | null>(null);
   const contextoSecuencia = useRef(0);
@@ -152,6 +174,7 @@ export function PaginaFutbol() {
     analisisSecuencia.current += 1;
     analisisControlador.current?.abort();
     setAnalisis(null); setSeleccionCanonicaActiva(null); setErrorAnalisis(null); setCargandoAnalisis(false);
+    setMostrarGuardar(false);
   }, []);
   const cambiarTemporadas = useCallback((competicionId: string, ids: string[]) => {
     limpiarResultado(); setConfiguracionHistorico({ competicionId, ids });
@@ -195,6 +218,7 @@ export function PaginaFutbol() {
     const porQuery = qs.get('partidoId');
     if (porQuery) {
       seleccionInicialAplicada.current = true;
+      restaurarConfiguracion(porQuery);
       setPartidoSeleccionadoId(porQuery);
       if (!partidos.some((p) => p.id === porQuery)) {
         void obtenerPartido(porQuery, false)
@@ -208,7 +232,7 @@ export function PaginaFutbol() {
       return;
     }
     seleccionInicialAplicada.current = true;
-  }, [agregarToast, cargandoPartidos, partidoSeleccionadoId, partidos]);
+  }, [agregarToast, cargandoPartidos, partidoSeleccionadoId, partidos, restaurarConfiguracion]);
 
   useEffect(() => {
     void listarPartidosGuardados()
@@ -244,22 +268,24 @@ export function PaginaFutbol() {
   ), [partidosVista]);
 
   const seleccionarPartidoFormulario = useCallback((partido: PartidoResumen | null) => {
+    if (!partido) olvidarConfiguracionFutbol(partidoSeleccionadoId);
+    else restaurarConfiguracion(partido.id);
     limpiarResultado();
     contextoSecuencia.current += 1;
     setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
     setEquipoLocalIdReal(''); setEquipoVisitanteIdReal('');
     setPartidoSeleccionadoId(partido?.id ?? '');
-    setConfiguracionHistorico({ competicionId: '', ids: [] });
-  }, [limpiarResultado]);
+    if (!partido) setConfiguracionHistorico({ competicionId: '', ids: [] });
+  }, [limpiarResultado, partidoSeleccionadoId, restaurarConfiguracion]);
 
   const seleccionarDesdeAgenda = useCallback((partido: PartidoFutbolResumen) => {
     if (!puedeAnalizarPartido(partido)) return;
+    restaurarConfiguracion(partido.id, partido.competicion);
     limpiarResultado(); contextoSecuencia.current += 1;
     setH2hPartidos([]); setHistorialLocal([]); setHistorialVisitante([]);
     setEquipoLocalIdReal(''); setEquipoVisitanteIdReal(''); setErrorContexto(null);
     setPartidoFueraDeLista(partido); setPartidoSeleccionadoId(partido.id);
-    setConfiguracionHistorico({ competicionId: partido.competicion, ids: [] });
-  }, [limpiarResultado]);
+  }, [limpiarResultado, restaurarConfiguracion]);
 
   const manejarGuardarPartido = useCallback(async () => {
     if (!partidoSeleccionado) return;
@@ -545,8 +571,9 @@ export function PaginaFutbol() {
     }
   }, [cargarContexto, partidoSeleccionado, recargar]);
 
-  const guardarApuesta = useCallback(async (stake: number) => {
+  const guardarApuesta = useCallback(async (stake: number, cuota: number) => {
     if (!partidoSeleccionado || !renderCanonico?.guardar || requiereReconstruccion(partidoSeleccionado)) return;
+    if (!Number.isFinite(cuota) || cuota <= 1 || !Number.isFinite(stake) || stake <= 0 || guardandoApuesta) return;
     try {
       setGuardandoApuesta(true);
       await crearApuesta({
@@ -554,11 +581,11 @@ export function PaginaFutbol() {
         mercado: renderCanonico.guardar.mercado,
         lado: renderCanonico.guardar.lado,
         linea: renderCanonico.guardar.linea,
-        cuota: renderCanonico.guardar.cuota,
+        cuota,
         stake,
         probabilidadSistema: renderCanonico.guardar.probabilidad,
         confianzaSistema: renderCanonico.guardar.confianza,
-        valorEsperado: renderCanonico.guardar.valorEsperado,
+        valorEsperado: cuota === renderCanonico.guardar.cuota ? renderCanonico.guardar.valorEsperado : null,
         notas: `${renderCanonico.guardar.tieneRecomendacion ? 'Recomendación exacta' : 'Selección manual'} desde análisis fútbol (${renderCanonico.guardar.trazabilidad})`,
       });
       setMostrarGuardar(false);
@@ -568,7 +595,7 @@ export function PaginaFutbol() {
     } finally {
       setGuardandoApuesta(false);
     }
-  }, [agregarToast, partidoSeleccionado, renderCanonico]);
+  }, [agregarToast, partidoSeleccionado, renderCanonico, guardandoApuesta]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -611,19 +638,19 @@ export function PaginaFutbol() {
                   {seleccionRetrospectiva && <p className="mt-2 text-xs leading-relaxed text-neon-cyan">Consulta con datos anteriores al inicio. {partidoSeleccionado.estado !== 'FINALIZADO' ? 'El estado y resultado del encuentro aún pueden estar pendientes de actualizar.' : 'El resultado de este partido no interviene en el cálculo.'}</p>}
                   <button type="button" className="my-3 text-xs text-neon-cyan" onClick={() => { setAgendaAbierta(true); requestAnimationFrame(() => { const resumen = document.getElementById('resumen-agenda-futbol'); resumen?.focus(); resumen?.scrollIntoView({ behavior: 'instant', block: 'start' }); }); }}>← Elegir otro partido en la agenda</button>
                   <div className="flex flex-wrap gap-x-5"><BotonFavorito favorito={{ tipo: 'competicion', liga: 'futbol', id: partidoSeleccionado.competicion, nombre: partidoSeleccionado.competicionNombre }} />{[[partidoSeleccionado.equipoLocal, partidoSeleccionado.equipoLocalNombre], [partidoSeleccionado.equipoVisitante, partidoSeleccionado.equipoVisitanteNombre]].map(([id, nombre]) => <BotonFavorito key={id} favorito={favoritoEquipo('futbol', id, nombre)} />)}</div>
-                  <details className="mt-3"><summary className="cursor-pointer text-sm">Seguimiento en Seguimiento</summary><div className="pt-3">
+                  <div className="mt-3 pt-3">
                   {partidosGuardadosIds.has(partidoSeleccionado.id) ? (
                     <Boton variante="secundario" anchoCompleto onClick={manejarQuitarPartido} disabled={guardandoPartido}>
                       {guardandoPartido ? 'Actualizando…' : 'Quitar de Seguimiento'}
                     </Boton>
                   ) : (
                     <Boton variante="secundario" anchoCompleto onClick={manejarGuardarPartido} disabled={guardandoPartido}>
-                      {guardandoPartido ? 'Guardando…' : 'Guardar para revisar'}
+                      {guardandoPartido ? 'Guardando…' : 'Guardar partido en Seguimiento'}
                     </Boton>
                   )}
                   <p className="mt-2 text-xs text-texto-secundario">
                     Guardar aquí solo marca el partido en la BD para volver a consultarlo; no crea apuesta ni pick.
-                  </p></div></details>
+                  </p></div>
                   <p className="mt-2 text-xs text-neon-amarillo">Análisis exploratorio · probabilidades sin calibrar.</p>
                 </Tarjeta>
               )}
@@ -663,6 +690,8 @@ export function PaginaFutbol() {
 
               <FormularioAnalisis
                 key={`formulario-${partidoSeleccionado.id}`}
+                borradorInicial={borradorInicial}
+                onCambiarBorrador={recordarBorrador}
                 deporte="FUTBOL"
                 ocultarSelectorPartido
                 onCambiarParametros={limpiarResultado}
@@ -708,6 +737,7 @@ export function PaginaFutbol() {
                   equipoLocalId={equipoLocalIdReal || undefined}
                   equipoVisitanteId={equipoVisitanteIdReal || undefined}
                   onGuardar={seleccionRetrospectiva ? undefined : () => setMostrarGuardar(true)}
+                  permitirRegistroManualFutbol={!seleccionRetrospectiva}
                 />
 
                 {cargandoContexto && (

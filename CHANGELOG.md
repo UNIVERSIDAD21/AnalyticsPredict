@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Seguimiento y configuración por partido de fútbol — 2026-11-01
+
+- Registro personal explícito en MLS/Argentina aunque el motor sea exploratorio; cuota real obligatoria cuando no hay proveedor, sin inventar analítica.
+- Marcador de Seguimiento visible y separado del registro de una apuesta.
+- Configuración por ID de encuentro conservada durante la sesión de la pestaña, sin cruzar cuotas, temporadas ni resultados al buscar otro partido.
+- Regresiones de ambos flujos y de los límites históricos, de datos ausentes y de almacenamiento.
+- [Alcance y conservación](docs/reactivacion_single_user/CORRECCION_SEGUIMIENTO_CONFIGURACION_FUTBOL_2026-11-01.md).
+
 ## Cierre ejecutable del plan maestro (parcial) — 2026-11-01
 
 - Documentados migración local, persistencia personal, actualizaciónNBA45 y ensayos por dominio con sus límites.

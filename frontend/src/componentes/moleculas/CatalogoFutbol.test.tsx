@@ -23,6 +23,19 @@ beforeEach(() => {
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { cb(0); return 1; });
 });
 describe('agenda global de fútbol', () => {
+  it('no permite seleccionar tarjetas anteriores mientras la búsqueda está pendiente', async () => {
+    const p = props(); render(<CatalogoFutbol {...p} />);
+    const boton = await screen.findByRole('button', { name: 'Analizar Atlanta vs Chicago' });
+    await waitFor(() => expect(boton).toBeEnabled());
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Atlanta' } });
+    expect(boton).toBeDisabled();
+    fireEvent.click(boton);
+    expect(p.onSeleccionar).not.toHaveBeenCalled();
+    await waitFor(() => expect(listarAgenda).toHaveBeenLastCalledWith(expect.objectContaining({ buscar: 'Atlanta' }), expect.any(AbortSignal)));
+    await waitFor(() => expect(boton).toBeEnabled());
+    fireEvent.click(boton);
+    expect(p.onSeleccionar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'p1' }));
+  });
   it('abre Hoy con todas las ligas, y selecciona un partido sin elegir competición', async () => {
     vi.mocked(listarAgenda).mockResolvedValue(agenda([partido(), partido({ id: 'p2', competicion: 'bra', competicionNombre: 'Brasileirão', pais: 'Brasil', equipoLocalNombre: 'Flamengo' })]));
     const p = props(); render(<CatalogoFutbol {...p} />);

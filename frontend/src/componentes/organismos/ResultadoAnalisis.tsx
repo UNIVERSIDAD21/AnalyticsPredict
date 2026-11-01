@@ -69,6 +69,8 @@ interface PropsResultadoAnalisis {
 
   /** Acción para guardar en seguimiento */
   onGuardar?: () => void;
+  /** Registro personal explícito, no una recomendación del motor exploratorio. */
+  permitirRegistroManualFutbol?: boolean;
 
   /** Acción para configurar bankroll (Fase 4 placeholder) */
   onConfigurarBankroll?: () => void;
@@ -170,6 +172,7 @@ export function ResultadoAnalisis({
   equipoLocalId,
   equipoVisitanteId,
   onGuardar,
+  permitirRegistroManualFutbol = false,
   onConfigurarBankroll,
   onNavegarlEquipo,
 }: PropsResultadoAnalisis) {
@@ -262,7 +265,10 @@ export function ResultadoAnalisis({
   const probabilidadesNulas = probabilidadOver === null || probabilidadUnder === null;
   const probabilidadesCero = (probabilidadOver ?? 0) <= 0 && (probabilidadUnder ?? 0) <= 0;
   const metricaObjetivoInvalida = mediaTotal === null || desviacion === null || probabilidadesNulas || probabilidadesCero;
-  const puedeGuardar = Boolean(!consultaExploratoria && seleccionUsuario && linea > 0 && onGuardar && !principalNba?.motivo && !sinPushFutbol && !metricaObjetivoInvalida);
+  const registroManualFutbol = esFutbol && permitirRegistroManualFutbol && modo !== 'HISTORICO_RECONSTRUIDO';
+  const esRegistroManual = registroManualFutbol && (consultaExploratoria || !tieneRecomendacionSistema);
+  const puedeGuardar = Boolean(seleccionUsuario && Number.isFinite(linea) && linea > 0 && onGuardar
+    && !sinPushFutbol && (registroManualFutbol || (!consultaExploratoria && !principalNba?.motivo && !metricaObjetivoInvalida)));
 
   const objetivoMeta = resultado.metadata?.objetivo as { calidad_datos?: { muestra_insuficiente?: boolean; datos_incompletos?: boolean; penalizaciones_aplicadas?: string[] }; trazabilidad?: { estado_operativo_mercado?: string; motivos_estado_operativo?: string[] } } | undefined;
   const penalizacionesObjetivo = objetivoMeta?.calidad_datos?.penalizaciones_aplicadas || [];
@@ -698,9 +704,11 @@ export function ResultadoAnalisis({
       {puedeGuardar && (
         <div className="tarjeta p-4 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-texto-secundario">Guarda esta apuesta en tu seguimiento</p>
+            <p className="text-sm text-texto-secundario">{esRegistroManual ? 'Selección manual para tu seguimiento' : 'Guarda esta apuesta en tu seguimiento'}</p>
             <p className="text-xs text-texto-terciario">
-              {noApto
+              {esRegistroManual
+                ? 'Registro personal, no recomendación. Los datos analíticos no disponibles permanecen N/D.'
+                : noApto
                 ? 'Se guardará el análisis aunque no haya candidatos aptos'
                 : 'Se guardará el snapshot del análisis'}
             </p>
