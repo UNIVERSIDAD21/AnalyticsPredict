@@ -28,8 +28,9 @@ corresponde a fase 3 y a la activación posterior del plan maestro.
 - `backend/tests/test_agenda_multiliga.py`: controles sin proveedores reales.
 
 La extensión no modifica los archivos del candidato de fase 1. La publicación
-Git contiene seis archivos nuevos y materializa dos dependencias de la base
-ya instalada: `fuentes_agenda.py` y `sincronizacion_agendas.py`, con sus bytes
+Git contiene seis archivos propios nuevos y materializa cuatro dependencias de la base
+sellada: `fuentes_agenda.py`, `sincronizacion_agendas.py`,
+`transporte_agenda.py` y `locks_archivo.py`, con sus bytes
 sellados, que aún diferían del HEAD publicado. No se atribuyen esos cambios
 previos a esta fase ni se publica el resto del trabajo de Codex. El ZIP externo contiene los 581
 archivos sellados de fase 1 para reproducir las pruebas contra una base exacta;

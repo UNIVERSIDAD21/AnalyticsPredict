@@ -6,7 +6,6 @@ La caché y el turno entre procesos se conservan fuera del repositorio.
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-import fcntl
 import hashlib
 import json
 import os
@@ -15,6 +14,7 @@ import time
 from urllib.parse import urlencode, urlsplit
 
 import requests
+from servicios.locks_archivo import adquirir
 
 HOSTS = {"site.api.espn.com", "api-live.euroleague.net", "live.euroleague.net"}
 MAX_BYTES = 8 * 1024 * 1024
@@ -55,21 +55,24 @@ class ClienteAgenda:
         self.bloqueados = set()
 
     @contextmanager
-    def turno(self):
+    def turno(self, origen=None):
         fd = os.open(self.cache / "red.lock", os.O_CREAT | os.O_RDWR, 0o600)
         try:
             plazo = self.reloj() + 30
             while True:
                 try:
-                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    adquirir(fd)
                     break
                 except BlockingIOError:
                     if self.reloj() >= plazo:
                         raise FuenteNoDisponible("Turno HTTP ocupado; reanudar en próximo ciclo")
                     self.dormir(0.2)
             estado_path = self.cache / "red.json"
-            estado = json.loads(estado_path.read_text()) if estado_path.exists() else {}
-            if estado.get("pausa_hasta", 0) > self.reloj():
+            estado = json.loads(estado_path.read_text(encoding="utf-8")) if estado_path.exists() else {}
+            # Conserva la pausa global de las cachés anteriores. Las respuestas
+            # nuevas detienen su origen y el ritmo global sigue compartido.
+            pausa_origen = estado.get("pausas_por_origen", {}).get(origen, 0)
+            if max(estado.get("pausa_hasta", 0), pausa_origen) > self.reloj():
                 raise FuenteNoDisponible("Fuente en pausa por 429; no se elude el límite")
             self.dormir(max(0, estado.get("siguiente", 0) - self.reloj()))
             estado["siguiente"] = self.reloj() + self.intervalo
@@ -86,7 +89,7 @@ class ClienteAgenda:
         clave = hashlib.sha256(direccion.encode()).hexdigest()
         raw, meta = self.cache / (clave + ".raw"), self.cache / (clave + ".json")
         if meta.exists() and raw.exists():
-            anterior = json.loads(meta.read_text())
+            anterior = json.loads(meta.read_text(encoding="utf-8"))
             contenido = raw.read_bytes()
             if hashlib.sha256(contenido).hexdigest() != anterior["sha256"]:
                 raise FuenteNoDisponible("Caché alterada: conservar e investigar")
@@ -107,7 +110,7 @@ class ClienteAgenda:
         for intento in range(2):
             if self.http >= self.presupuesto:
                 raise FuenteNoDisponible("Presupuesto HTTP agotado")
-            with self.turno() as estado:
+            with self.turno(u.hostname) as estado:
                 self.http += 1
                 try:
                     r = self.session.get(direccion, timeout=(5, 20), allow_redirects=False,
@@ -125,7 +128,7 @@ class ClienteAgenda:
                         segundos = max(0, float(espera))
                     except ValueError:
                         segundos = max(0, parsedate_to_datetime(espera).timestamp() - self.reloj())
-                    estado["pausa_hasta"] = self.reloj() + max(60, segundos)
+                    estado.setdefault("pausas_por_origen", {})[u.hostname] = self.reloj() + max(60, segundos)
                     guardar(self.cache / "red.json", estado)
                     raise FuenteNoDisponible("HTTP 429: pausa persistida; datos previos conservados")
                 if r.status_code >= 500 and intento == 0:
