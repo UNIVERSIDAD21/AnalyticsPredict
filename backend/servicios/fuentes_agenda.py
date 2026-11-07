@@ -140,7 +140,7 @@ def puntos_final(e):
     return r
 
 
-def espn(e, code, feed, evidencia, hoy, detalle=None):
+def espn(e, code, feed, evidencia, hoy, detalle=None, desde=None):
     c = e['competitions']
     if len(c)!=1 or len(c[0]['competitors'])!=2:
         raise ValueError('Competición/localía ambigua')
@@ -153,7 +153,7 @@ def espn(e, code, feed, evidencia, hoy, detalle=None):
         raise ValueError('Estado final contradictorio')
     inicio, fecha = hora_espn(e)
     dia = instante(inicio).astimezone(BOGOTA).date() if inicio else date.fromisoformat(fecha)
-    if not hoy-timedelta(days=8) <= dia <= meses(hoy, 3 if code=='wnba' else 2):
+    if not (desde or hoy-timedelta(days=8)) <= dia <= meses(hoy, 3 if code=='wnba' else 2):
         return None
     r = {'deporte':'baloncesto' if code in ('nba','wnba') else 'futbol',
          'codigo':code, 'feed':feed, 'proveedor':'ESPN', 'id_fuente':str(e['id']),
@@ -167,9 +167,9 @@ def espn(e, code, feed, evidencia, hoy, detalle=None):
     if r['local_fuente']==r['visitante_fuente']:
         raise ValueError('Equipo repetido')
     if code in ('nba','wnba'):
-        r['fase'] = {1:'PRE',2:'REG',3:'POST'}[e['season']['type']]
+        r['fase'] = {1:'PRE',2:'REG',3:'POST',5:'POST'}[e['season']['type']]
         if code=='wnba':
-            r['fixture_wnba'] = normalizar_evento(e, hoy-timedelta(days=8), meses(hoy,3))
+            r['fixture_wnba'] = normalizar_evento(e, desde or hoy-timedelta(days=8), meses(hoy,3))
             r['fase'] = r['fixture_wnba']['fase']
         if estado=='FINALIZADO':
             if not inicio or instante(inicio)>instante(evidencia['observado_en']):
@@ -199,7 +199,7 @@ def espn(e, code, feed, evidencia, hoy, detalle=None):
     return r
 
 
-def euro(e, evidencia, hoy):
+def euro(e, evidencia, hoy, desde=None):
     if e['season']['competitionCode']!='E' or e['identifier']!=f"{e['season']['code']}_{e['gameCode']}":
         raise ValueError('Identidad Euroliga incompatible')
     fecha = e['date'][:10]
@@ -210,7 +210,7 @@ def euro(e, evidencia, hoy):
         if offset != e['localTimeZone']:
             raise ValueError('UTC/hora local oficial contradictorios')
     dia = instante(inicio).astimezone(BOGOTA).date() if inicio else date.fromisoformat(fecha)
-    if not hoy-timedelta(days=8) <= dia <= meses(hoy,2):
+    if not (desde or hoy-timedelta(days=8)) <= dia <= meses(hoy,2):
         return None
     estados = {'Confirmed':'PROGRAMADO','Postponed':'POSPUESTO', 'Cancelled':'CANCELADO',
                'Canceled':'CANCELADO','Suspended':'SUSPENDIDO','InProgress':'EN_VIVO'}

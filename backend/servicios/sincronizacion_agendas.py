@@ -49,7 +49,7 @@ def identidad(p, r, season):
         r['local_id'],r['visitante_id'],r['competicion_id'],season)
 
 
-def planificar(conn, registros, incidencias, fuentes, hoy):
+def planificar(conn, registros, incidencias, fuentes, hoy, desde=None):
     compsb = {r['codigo']:r['id'] for r in filas(conn,'SELECT id,codigo FROM competiciones_baloncesto')}
     compsf = {r['codigo']:r['id'] for r in filas(conn,'SELECT id,codigo FROM competiciones_futbol')}
     seasonsb = filas(conn,'SELECT id,competicion_id,anio_inicio,anio_fin FROM temporadas_baloncesto')
@@ -58,12 +58,12 @@ def planificar(conn, registros, incidencias, fuentes, hoy):
     mapsf = {r['id_fuente']:r['equipo_id'] for r in filas(conn,'SELECT id_fuente,equipo_id FROM equipos_fuente_espn_futbol')}
     mapsw = {str(r['espn_team_id']):r['id'] for r in filas(conn,"SELECT id,espn_team_id FROM equipos_baloncesto WHERE competicion_principal_id=%s",(compsb['wnba'],)) if r['espn_team_id']}
     pb = filas(conn,'SELECT * FROM partidos_baloncesto WHERE fecha_partido BETWEEN %s AND %s',
-               (hoy-timedelta(days=12),hoy+timedelta(days=96)))
+               (desde or hoy-timedelta(days=12),hoy+timedelta(days=96)))
     # Vínculo global por ID para detectar reprogramaciones fuera del día previo.
     ids = list({r['id_fuente'] for r in registros if r['deporte']=='baloncesto'})
     pb_extra = filas(conn,'SELECT * FROM partidos_baloncesto WHERE source_game_id=ANY(%s) OR espn_game_id=ANY(%s)',(ids,ids))
     pb = list({r['id']:r for r in pb+pb_extra}.values())
-    pf = filas(conn,'SELECT * FROM partidos_futbol WHERE fecha_partido BETWEEN %s::date-interval \'3 days\' AND %s::date+interval \'96 days\'',(hoy,hoy))
+    pf = filas(conn,'SELECT * FROM partidos_futbol WHERE fecha_partido BETWEEN %s::date-interval \'3 days\' AND %s::date+interval \'96 days\'',(desde or hoy,hoy))
     links = filas(conn,'SELECT * FROM partidos_fuente_espn_futbol')
     source_keys = {(x.get('feed'),x['id_fuente']) for x in registros}
     linked_ids = list({r['partido_id'] for r in links if (r['liga'],r['id_fuente']) in source_keys})
@@ -247,7 +247,9 @@ def planificar(conn, registros, incidencias, fuentes, hoy):
         except (ValueError,KeyError,TypeError) as exc:
             del plan['operaciones'][n0:]
             claves.clear();claves.update(claves0)
-            plan['incidencias'].append({'grupo':r['codigo'],'id':r['id_fuente'],'motivo':str(exc)})
+            motivo = (f"Identidad o temporada sin equivalencia revisada ({exc}): "
+                      f"{r.get('local_nombre', '')} — {r.get('visitante_nombre', '')}") if isinstance(exc, KeyError) else str(exc)
+            plan['incidencias'].append({'grupo':r['codigo'],'id':r['id_fuente'],'motivo':motivo})
     plan['sha256'] = huella(plan)
     return plan
 
