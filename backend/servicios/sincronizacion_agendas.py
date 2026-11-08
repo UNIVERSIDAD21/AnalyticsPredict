@@ -14,6 +14,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from servicios.fuentes_agenda import instante
+from servicios.calidad_agenda_colombia import conflictos, confirmacion_oficial, puede_reactivar
 from scripts.sincronizar_euroleague_futuros import TEAM_ALIASES
 from scripts.scraper_partidos_futuros import ESPN_NAME_ALIASES
 
@@ -83,6 +84,16 @@ def planificar(conn, registros, incidencias, fuentes, hoy, desde=None):
             'fuentes':fuentes,'aceptados':[], 'sin_cambios':0}
     claves = set()
 
+    # Resolver IDs antes de comprobar el conjunto; un feed mensual puede traer
+    # dos jornadas para el mismo club en el mismo instante con timeValid=true.
+    mapped = []
+    for registro in registros:
+        if registro['deporte']=='futbol':
+            registro = {**registro, 'local_id':mapsf.get(registro['local_fuente']),
+                        'visitante_id':mapsf.get(registro['visitante_fuente'])}
+        mapped.append(registro)
+    conflictos_col = conflictos(mapped,pf,metas['horarios_futbol'],links)
+
     def op(tabla, pid, old, values, r, clave='id'):
         changes = {k:plano(v) for k,v in values.items() if old is None or plano(v)!=old.get(k)}
         if old is not None and not changes:
@@ -146,7 +157,30 @@ def planificar(conn, registros, incidencias, fuentes, hoy, desde=None):
                     raise ValueError('ID fuente duplicado')
                 old = matched[0] if matched else None
                 source = None
-            if old and (not identidad(old,r,season) or old.get('valido') is not True or
+            horario = metas['horarios_futbol'].get(old['id']) if old and r['deporte']=='futbol' else None
+            oficial = confirmacion_oficial(horario)
+            if oficial and (not r['inicio_utc'] or instante(oficial['inicio_utc'])!=instante(r['inicio_utc'])):
+                raise ValueError('Horario oficial DIMAYOR protegido ante contradicción de ESPN')
+            if oficial:
+                r['evidencia'] = {**r['evidencia'],'confirmacion_agenda':oficial}
+            if r['deporte']=='futbol' and r['codigo']=='COL_PRIMERAA' and sourceid in conflictos_col:
+                # Conserva IDs y todos los valores, excepto su elegibilidad.
+                # La cuarentena es reversible y no equivale a cancelar el juego.
+                if old and identidad(old,r,season) and old['estado']=='PROGRAMADO' and old.get('valido'):
+                    if any(old.get(k) is not None for k in ('local_goles_total','visitante_goles_total')):
+                        raise ValueError('Conflicto con resultado existente: requiere revisión sin invalidación automática')
+                    op('partidos_futbol',old['id'],old,{'valido':False},r)
+                    if horario:
+                        evidence = {**horario['evidencia'],'cuarentena_agenda':{
+                            **conflictos_col[sourceid],'rechazado_en':r['evidencia']['observado_en']}}
+                        op('horarios_futbol',old['id'],horario,{'evidencia':evidence,
+                            'revision_sha256':huella([horario['revision_sha256'],conflictos_col[sourceid]])},r,clave='partido_id')
+                plan['incidencias'].append({'grupo':code,'id':sourceid,'motivo':
+                    'AGENDA_EN_CUARENTENA: equipo con partidos incompatibles en menos de 24 horas',
+                    'detalle':conflictos_col[sourceid]})
+                continue
+            reactivar = r['codigo']=='COL_PRIMERAA' and puede_reactivar(old,horario,r)
+            if old and (not identidad(old,r,season) or (old.get('valido') is not True and not reactivar) or
                     (r['deporte']=='baloncesto' and old['tipo_partido']!=r['fase'])):
                 raise ValueError('Cambio de identidad/fase o fila inválida protegida')
             results = r['resultados']
@@ -210,6 +244,8 @@ def planificar(conn, registros, incidencias, fuentes, hoy, desde=None):
                 if old:
                     pid = old['id']
                     vals = dict(results)
+                    if reactivar:
+                        vals['valido'] = True
                     if not final_old:
                         # El enum legacy no tiene DEMORADO. Su estado exacto
                         # vive en metadatos; no se inventa otra transición.
@@ -239,7 +275,13 @@ def planificar(conn, registros, incidencias, fuentes, hoy, desde=None):
                         'sha256_evento':huella({k:v for k,v in r.items() if k!='evidencia'}),
                         'observado_en':r['evidencia']['observado_en'],'evidencia':r['evidencia']}
                     op('partidos_fuente_espn_futbol',pid,None,link,r,clave='partido_id')
-                _meta(op,metas['horarios_futbol'],'horarios_futbol',pid,r)
+                if final_old and code=='COL_PRIMERAA' and instante(old['fecha_partido'])!=instante(r['inicio_utc']):
+                    # El final puede completar campos NULL, pero un calendario
+                    # genérico posterior no puede reescribir su corte horario.
+                    plan['incidencias'].append({'grupo':code,'id':sourceid,
+                        'motivo':'Horario del final canónico protegido ante fecha fuente contradictoria'})
+                else:
+                    _meta(op,metas['horarios_futbol'],'horarios_futbol',pid,r)
             plan['aceptados'].append({'codigo':code,'id_fuente':sourceid,'partido_id':pid,
                 'estado':r['estado'],'inicio_utc':r['inicio_utc'],'precision_fecha':r['precision_fecha']})
             if len(plan['operaciones'])==n0:
