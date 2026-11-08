@@ -151,6 +151,7 @@ def listar_partidos_proximos(
         JOIN equipos_futbol ev ON pf.equipo_visitante_id = ev.id
         WHERE pf.fecha_partido >= %s
           AND pf.fecha_partido < %s
+          AND pf.valido IS TRUE
           AND (pf.estado = ANY(%s) OR pf.estado IS NULL)
     """
     count_query = """
@@ -158,6 +159,7 @@ def listar_partidos_proximos(
         FROM partidos_futbol pf
         WHERE pf.fecha_partido >= %s
           AND pf.fecha_partido < %s
+          AND pf.valido IS TRUE
           AND (pf.estado = ANY(%s) OR pf.estado IS NULL)
     """
     params = [fecha_inicio, fecha_fin_exclusiva, estados_visibles]

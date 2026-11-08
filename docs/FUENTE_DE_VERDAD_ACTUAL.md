@@ -1,3 +1,15 @@
+## Agenda colombiana conciliada — 2026-11-08
+
+Corregidos los diez cruces superpuestos de ESPN: conservados en cuarentena
+reversible, fuera de la agenda utilizable. DIMAYOR confirma cuatro partidos
+el 8 de noviembre y Junior–Cúcuta el día 9. Tolima–Millonarios: 18:10 COT del
+día 8. El planificador detecta choques de un club en menos de 24 horas,
+protege confirmaciones oficiales y no reactiva una captura idéntica.
+La lista de próximos ahora respeta la validez en filas y totales.
+74 pruebas aprobadas, clon y rollback exactos, API habitual verificada;
+sin cambios en resultados, estadísticas, modelos ni registros personales.
+[Contrato y límites](reactivacion_single_user/CORRECCION_AGENDA_COLOMBIA_2026-11-08.md).
+
 # FUENTE_DE_VERDAD_ACTUAL — AnalyticsPredict
 
 ## Error de carga y respuestas de base de datos — 2026-10-27
