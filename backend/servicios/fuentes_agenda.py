@@ -16,7 +16,7 @@ from scripts.auditar_fuente_espn_soccer import interpretar_evento
 BOGOTA = ZoneInfo('America/Bogota')
 FUTBOL = {**CODIGOS, 'usa.1':'USA_MLS', 'arg.1':'ARG_PRIMERA',
           'arg.copa_lpf':'ARG_COPA_LPF', 'arg.copa_de_la_superliga':'ARG_SUPERLIGA',
-          'col.1':'COL_PRIMERAA', 'bra.1':'BRA_SERIEA'}
+          'col.1':'COL_PRIMERAA', 'col.copa':'COL_COPA', 'bra.1':'BRA_SERIEA'}
 ESTADOS = {'STATUS_SCHEDULED':'PROGRAMADO', 'STATUS_POSTPONED':'POSPUESTO',
            'STATUS_CANCELED':'CANCELADO', 'STATUS_CANCELLED':'CANCELADO',
            'STATUS_DELAYED':'DEMORADO', 'STATUS_SUSPENDED':'SUSPENDIDO',

@@ -1,3 +1,11 @@
+## Copa BetPlay incorporada — 2026-11-10
+
+Añadida Copa BetPlay al catálogo 2026 y al actualizador manual (`col.copa`),
+sin mezclarla con Primera A. Reparados los dos encuentros del día10 y
+comprobada su selección en API/UI escritorio/móvil. 32pruebas, migración
+idempotente, restore59tablas y rollback exacto; sin históricos/modelos nuevos.
+[Contrato y límites](docs/reactivacion_single_user/AGENDA_COPA_COLOMBIA_2026-11-10.md).
+
 ## Agenda colombiana conciliada — 2026-11-08
 
 Corregidos los diez cruces superpuestos de ESPN: conservados en cuarentena
