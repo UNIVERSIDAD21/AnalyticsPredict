@@ -121,7 +121,7 @@ def test_horizonte_solicitado_no_es_publicado(tmp_path):
     assert c['ultima_fecha_publicada']=='2026-11-06'
 
 
-def test_veintitres_competiciones_y_presupuesto():
+def test_competiciones_con_fuente_y_presupuesto():
     ligas=[{'codigo':v,'deporte':'futbol'} for v in set(FUTBOL.values())]
     ligas += [NBA,{'codigo':'wnba','deporte':'baloncesto'},{'codigo':'euroleague','deporte':'baloncesto'}]
     jobs=pedidos(ligas,HOY)
@@ -130,6 +130,34 @@ def test_veintitres_competiciones_y_presupuesto():
     assert len({q['liga']['codigo'] for q in jobs[:len(ligas)]})==len(ligas)
     archived={'codigo':'SIN_FUENTE_ARCHIVADA','deporte':'futbol'}
     assert not pedidos([archived],HOY)
+
+
+def test_copa_colombia_se_consulta_separada_de_la_liga():
+    ligas = [{'codigo': code, 'deporte': 'futbol'} for code in ('COL_PRIMERAA', 'COL_COPA')]
+    jobs = pedidos(ligas, date(2026, 11, 10), horizonte=1)
+    assert {(j['liga']['codigo'], j['feed']) for j in jobs} == {
+        ('COL_PRIMERAA', 'col.1'), ('COL_COPA', 'col.copa')}
+    assert all('/' + j['feed'] + '/scoreboard' in j['url'] for j in jobs)
+
+
+def test_copa_colombia_conserva_el_partido_nocturno_del_dia_cot(tmp_path):
+    liga = {'codigo': 'COL_COPA', 'deporte': 'futbol'}
+    task = {**pedidos([liga], date(2026, 11, 10), horizonte=1)[0],
+            'desde': '2026-11-10', 'hasta': '2026-11-10'}
+    events = [evento(start=start, ident=str(i), year=2026) for i, start in enumerate([
+        '2026-11-10T23:30:00Z', '2026-11-11T01:30:00Z', '2026-11-11T05:00:00Z'])]
+    r = recolectar_agenda(CapturasSinteticas(tmp_path, [payload(events, 'col.copa')]), [task])
+    assert not r['consultas'][0]['incidencias']
+    assert len(r['registros']) == 2
+    assert all(x['codigo'] == 'COL_COPA' and x['resultados'] == {} for x in r['registros'])
+    assert [x['id_fuente'] for x in r['registros']] == ['0', '1']
+
+
+def test_respuesta_de_liga_no_se_importa_como_copa_colombia(tmp_path):
+    task = pedidos([{'codigo': 'COL_COPA', 'deporte': 'futbol'}], HOY, horizonte=1)[0]
+    r = recolectar_agenda(CapturasSinteticas(tmp_path, [payload([evento(year=2026)], 'col.1')]), [task])
+    assert not r['registros']
+    assert r['consultas'][0]['estado'] == 'ERROR'
 
 
 def test_wnba_condicional_conservado_sin_final(tmp_path):

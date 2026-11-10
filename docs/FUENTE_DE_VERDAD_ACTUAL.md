@@ -1,3 +1,12 @@
+## Copa BetPlay incorporada — 2026-11-10
+
+Copa colombiana separada de Primera A: catálogo 2026, adaptador `col.copa` y
+dos semifinales de hoy cargadas en la instalación personal. Internacional–América
+18:30 y Once Caldas–Nacional 20:30 COT, seleccionables en escritorio/móvil.
+32 pruebas, respaldo restaurado59tablas, ensayo/rollback y replay0 acreditados.
+No se incorpora histórico ni se entrena/certifica modelo. Liga y cuarentena
+previas intactas. [Alcance](reactivacion_single_user/AGENDA_COPA_COLOMBIA_2026-11-10.md).
+
 ## Agenda colombiana conciliada — 2026-11-08
 
 Corregidos los diez cruces superpuestos de ESPN: conservados en cuarentena
