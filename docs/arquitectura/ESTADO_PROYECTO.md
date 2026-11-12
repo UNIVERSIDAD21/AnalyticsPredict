@@ -1,3 +1,15 @@
+## Actualizador multiliga por lotes — 2026-11-12
+
+Se conserva el scraping existente y se amplía la coordinación manual: lotes
+secuenciales de 48 turnos hasta un máximo de 200, sin repetir URL/parámetros
+dentro del ciclo ni perder el lock, respaldo o recibos idempotentes. La UI
+distingue consultas, eventos, partidos y campos; informa la cola acumulada y
+separa dos torneos históricos sin adaptador de la revisión diaria. No acredita
+una cobertura oficial completa ni reentrena o promueve modelos.
+La recuperación personal de datos se ensaya y acredita por separado, sin
+convertir una alternativa web en scraper permanente.
+[Contrato y continuidad](../reactivacion_single_user/ACTUALIZADOR_LOTES_2026-11-12.md).
+
 ## Copa BetPlay incorporada — 2026-11-10
 
 Copa colombiana separada de Primera A: catálogo 2026, adaptador `col.copa` y

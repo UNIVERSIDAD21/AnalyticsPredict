@@ -1,7 +1,6 @@
 """Operación local: exclusión mutua, respaldos y evidencia sin secretos."""
 from contextlib import contextmanager
 from datetime import datetime, timezone
-import fcntl
 import hashlib
 import json
 import os
@@ -12,6 +11,7 @@ import subprocess
 from psycopg.conninfo import conninfo_to_dict
 
 from servicios.transporte_agenda import guardar
+from servicios.locks_archivo import adquirir
 
 
 def directorio_estado():
@@ -24,7 +24,7 @@ def exclusion(raiz):
     fd=os.open(raiz/'ejecucion.lock',os.O_CREAT|os.O_RDWR,0o600)
     try:
         try:
-            fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            adquirir(fd)
         except BlockingIOError as exc:
             raise RuntimeError('Ya hay una sincronización en curso') from exc
         yield
@@ -47,13 +47,14 @@ def respaldar(url, destino):
         if k in ('host','port','dbname','user','password','sslmode','channel_binding'):
             env['PGDATABASE' if k=='dbname' else 'PG'+k.upper().replace('_','')]=v
     result=subprocess.run([binary,'-Fc','--no-owner','--no-acl','-f',str(destino)],
-        env=env,capture_output=True,timeout=180,check=False)
+        env=env,capture_output=True,timeout=180,check=False,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if result.returncode or not destino.exists() or destino.stat().st_size<100:
         # No expone stderr de libpq, que podría incluir configuración sensible.
         raise RuntimeError('Falló pg_dump; no se aplica el lote')
     destino.chmod(0o600)
-    restore=os.environ.get('AP_PG_RESTORE') or str(Path(binary).with_name('pg_restore'))
-    check=subprocess.run([restore,'--list',str(destino)],env=env,capture_output=True,timeout=30,check=False)
+    restore=os.environ.get('AP_PG_RESTORE') or str(Path(binary).with_name('pg_restore.exe' if os.name == 'nt' else 'pg_restore'))
+    check=subprocess.run([restore,'--list',str(destino)],env=env,capture_output=True,timeout=30,check=False,
+        creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if check.returncode:
         raise RuntimeError('Archivo de respaldo inválido; no se aplica el lote')
     receipt={'archivo':str(destino),'sha256':hashlib.sha256(destino.read_bytes()).hexdigest(),
@@ -67,12 +68,12 @@ def estado_local():
     p=directorio_estado()/'estado.json'
     if not p.exists():
         return {'estado':'SIN_SINCRONIZAR','detalle':'Consultar la agenda sólo lee la BD. No se verificó aún este mecanismo de fuentes.'}
-    estado=json.loads(p.read_text())
+    estado=json.loads(p.read_text(encoding="utf-8"))
     if estado.get('estado')=='EN_CURSO':
         fd=os.open(p.parent/'ejecucion.lock',os.O_CREAT|os.O_RDWR,0o600)
         try:
             try:
-                fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                adquirir(fd)
                 estado={**estado,'estado':'INTERRUMPIDA','detalle':'La ejecución no está activa. Puede reanudarse conservando caché y datos previos; revisar recibos si alcanzó el commit.'}
             except BlockingIOError:
                 pass

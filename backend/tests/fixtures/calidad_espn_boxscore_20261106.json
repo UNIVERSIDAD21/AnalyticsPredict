@@ -1,0 +1,3830 @@
+[
+  {
+    "evento": "401928493",
+    "sha256_raw_original": "e4120eb2050219b2c94783b31d77712450b26ab360058d2cb34e620b42a91d95",
+    "esperado": {
+      "id_fuente": "401928493",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T17:30Z",
+      "local_id_fuente": "22432",
+      "visitante_id_fuente": "9812",
+      "local_goles": 0,
+      "visitante_goles": 2
+    },
+    "payload": {
+      "header": {
+        "id": "401928493",
+        "competitions": [
+          {
+            "id": "401928493",
+            "date": "2026-10-27T17:30Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "22432"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "2",
+                "team": {
+                  "id": "9812"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "9812"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 1380.0,
+                  "displayValue": "23'"
+                }
+              },
+              {
+                "team": {
+                  "id": "9812"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3600.0,
+                  "displayValue": "60'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "22432"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "9812"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "9812"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 1380.0,
+            "displayValue": "23'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "9812"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3600.0,
+            "displayValue": "60'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:16.233034+00:00"
+  },
+  {
+    "evento": "401928520",
+    "sha256_raw_original": "6a550413909f3c41d93cbd10a9f92eb8a5eb7d661507652893294b0179e4110d",
+    "esperado": {
+      "id_fuente": "401928520",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T18:00Z",
+      "local_id_fuente": "133839",
+      "visitante_id_fuente": "21290",
+      "local_goles": 0,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928520",
+        "competitions": [
+          {
+            "id": "401928520",
+            "date": "2026-10-27T18:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "133839"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "21290"
+                }
+              }
+            ],
+            "details": []
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "133839"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "21290"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": []
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:19.272663+00:00"
+  },
+  {
+    "evento": "401928521",
+    "sha256_raw_original": "6af6f1887a92eac3a21f3fb54eac174e112dda53332cd03e771e1f16798de072",
+    "esperado": {
+      "id_fuente": "401928521",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T18:45Z",
+      "local_id_fuente": "133845",
+      "visitante_id_fuente": "6832",
+      "local_goles": 1,
+      "visitante_goles": 2
+    },
+    "payload": {
+      "header": {
+        "id": "401928521",
+        "competitions": [
+          {
+            "id": "401928521",
+            "date": "2026-10-27T18:45Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "133845"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "2",
+                "team": {
+                  "id": "6832"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "133845"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5580.0,
+                  "displayValue": "93'"
+                }
+              },
+              {
+                "team": {
+                  "id": "6832"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 6720.0,
+                  "displayValue": "112'"
+                }
+              },
+              {
+                "team": {
+                  "id": "6832"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 7200.0,
+                  "displayValue": "120'+2'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "133845"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "6832"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "133845"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5580.0,
+            "displayValue": "93'"
+          },
+          "period": {
+            "number": 3
+          }
+        },
+        {
+          "team": {
+            "id": "6832"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 6720.0,
+            "displayValue": "112'"
+          },
+          "period": {
+            "number": 4
+          }
+        },
+        {
+          "team": {
+            "id": "6832"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 7200.0,
+            "displayValue": "120'+2'"
+          },
+          "period": {
+            "number": 4
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:28.604214+00:00"
+  },
+  {
+    "evento": "401928508",
+    "sha256_raw_original": "1cbc8e913f4e733a3a8a6a64758cce17e42c64db9c06635bf04f279f7aa45599",
+    "esperado": {
+      "id_fuente": "401928508",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T19:00Z",
+      "local_id_fuente": "6825",
+      "visitante_id_fuente": "10629",
+      "local_goles": 0,
+      "visitante_goles": 1
+    },
+    "payload": {
+      "header": {
+        "id": "401928508",
+        "competitions": [
+          {
+            "id": "401928508",
+            "date": "2026-10-27T19:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "6825"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "1",
+                "team": {
+                  "id": "10629"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "10629"
+                },
+                "scoringPlay": true,
+                "ownGoal": true,
+                "clock": {
+                  "value": 1860.0,
+                  "displayValue": "31'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "6825"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "10629"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "10629"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 1860.0,
+            "displayValue": "31'"
+          },
+          "period": {
+            "number": 1
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:22.354598+00:00"
+  },
+  {
+    "evento": "401928509",
+    "sha256_raw_original": "dbd7e4de2de292329c371a4e6c9535dcbc9e87d3121cd288d6b87a17bab3db6f",
+    "esperado": {
+      "id_fuente": "401928509",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T19:00Z",
+      "local_id_fuente": "131465",
+      "visitante_id_fuente": "4515",
+      "local_goles": 3,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928509",
+        "competitions": [
+          {
+            "id": "401928509",
+            "date": "2026-10-27T19:00Z",
+            "status": {
+              "type": {
+                "id": "47",
+                "name": "STATUS_FINAL_PEN",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Penalties",
+                "detail": "FT-Pens",
+                "shortDetail": "FT-Pens"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "3",
+                "team": {
+                  "id": "131465"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "4515"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "131465"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 300.0,
+                  "displayValue": "5'"
+                }
+              },
+              {
+                "team": {
+                  "id": "131465"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 1740.0,
+                  "displayValue": "29'"
+                }
+              },
+              {
+                "team": {
+                  "id": "131465"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2880.0,
+                  "displayValue": "48'"
+                }
+              },
+              {
+                "team": {
+                  "id": "4515"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4140.0,
+                  "displayValue": "69'"
+                }
+              },
+              {
+                "team": {
+                  "id": "4515"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4860.0,
+                  "displayValue": "81'"
+                }
+              },
+              {
+                "team": {
+                  "id": "4515"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5400.0,
+                  "displayValue": "90'+5'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "131465"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "4515"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "131465"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 300.0,
+            "displayValue": "5'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "131465"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 1740.0,
+            "displayValue": "29'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "131465"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2880.0,
+            "displayValue": "48'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "4515"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4140.0,
+            "displayValue": "69'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "4515"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4860.0,
+            "displayValue": "81'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "4515"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5400.0,
+            "displayValue": "90'+5'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:34.601971+00:00"
+  },
+  {
+    "evento": "401928510",
+    "sha256_raw_original": "aafa74dc55c8dbb7ab2f44b719d0f7c91b15940e8cc78c4bd384419790671b45",
+    "esperado": {
+      "id_fuente": "401928510",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T19:00Z",
+      "local_id_fuente": "20824",
+      "visitante_id_fuente": "5463",
+      "local_goles": 1,
+      "visitante_goles": 1
+    },
+    "payload": {
+      "header": {
+        "id": "401928510",
+        "competitions": [
+          {
+            "id": "401928510",
+            "date": "2026-10-27T19:00Z",
+            "status": {
+              "type": {
+                "id": "47",
+                "name": "STATUS_FINAL_PEN",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Penalties",
+                "detail": "FT-Pens",
+                "shortDetail": "FT-Pens"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "20824"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "1",
+                "team": {
+                  "id": "5463"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "5463"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2300.0,
+                  "displayValue": "39'"
+                }
+              },
+              {
+                "team": {
+                  "id": "20824"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4906.0,
+                  "displayValue": "82'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "20824"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "5463"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "5463"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2300.0,
+            "displayValue": "39'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "20824"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4906.0,
+            "displayValue": "82'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:37.593076+00:00"
+  },
+  {
+    "evento": "401928534",
+    "sha256_raw_original": "38fa858f7129a163f9b621db8a99e5f32f3c08d20cfb200e86000d5eb2e1e76c",
+    "esperado": {
+      "id_fuente": "401928534",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T19:00Z",
+      "local_id_fuente": "133834",
+      "visitante_id_fuente": "9028",
+      "local_goles": 0,
+      "visitante_goles": 1
+    },
+    "payload": {
+      "header": {
+        "id": "401928534",
+        "competitions": [
+          {
+            "id": "401928534",
+            "date": "2026-10-27T19:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "133834"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "1",
+                "team": {
+                  "id": "9028"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "9028"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5400.0,
+                  "displayValue": "90'+2'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "133834"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "9028"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "9028"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5400.0,
+            "displayValue": "90'+2'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:25.265179+00:00"
+  },
+  {
+    "evento": "401928549",
+    "sha256_raw_original": "4c2152898aaf28198b2deef65548bf82045e8e2b97103a3357099480e99597d4",
+    "esperado": {
+      "id_fuente": "401928549",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T19:00Z",
+      "local_id_fuente": "131463",
+      "visitante_id_fuente": "98",
+      "local_goles": 1,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928549",
+        "competitions": [
+          {
+            "id": "401928549",
+            "date": "2026-10-27T19:00Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "131463"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "98"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "98"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2881.0,
+                  "displayValue": "49'"
+                }
+              },
+              {
+                "team": {
+                  "id": "131463"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4080.0,
+                  "displayValue": "68'"
+                }
+              },
+              {
+                "team": {
+                  "id": "98"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5700.0,
+                  "displayValue": "95'"
+                }
+              },
+              {
+                "team": {
+                  "id": "98"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 6300.0,
+                  "displayValue": "105'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "131463"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "98"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "98"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2881.0,
+            "displayValue": "49'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "131463"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4080.0,
+            "displayValue": "68'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "98"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5700.0,
+            "displayValue": "95'"
+          },
+          "period": {
+            "number": 3
+          }
+        },
+        {
+          "team": {
+            "id": "98"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 6300.0,
+            "displayValue": "105'"
+          },
+          "period": {
+            "number": 3
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:31.610234+00:00"
+  },
+  {
+    "evento": "401928553",
+    "sha256_raw_original": "9444d3b174f6b23e535c53fc1b5692b06ff8c4c1ac6b5363e44c173a9145cdf7",
+    "esperado": {
+      "id_fuente": "401928553",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T19:30Z",
+      "local_id_fuente": "9141",
+      "visitante_id_fuente": "22430",
+      "local_goles": 2,
+      "visitante_goles": 4
+    },
+    "payload": {
+      "header": {
+        "id": "401928553",
+        "competitions": [
+          {
+            "id": "401928553",
+            "date": "2026-10-27T19:30Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "2",
+                "team": {
+                  "id": "9141"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "4",
+                "team": {
+                  "id": "22430"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "9141"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2100.0,
+                  "displayValue": "35'"
+                }
+              },
+              {
+                "team": {
+                  "id": "9141"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2640.0,
+                  "displayValue": "44'"
+                }
+              },
+              {
+                "team": {
+                  "id": "22430"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4500.0,
+                  "displayValue": "75'"
+                }
+              },
+              {
+                "team": {
+                  "id": "22430"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4860.0,
+                  "displayValue": "81'"
+                }
+              },
+              {
+                "team": {
+                  "id": "22430"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5820.0,
+                  "displayValue": "97'"
+                }
+              },
+              {
+                "team": {
+                  "id": "22430"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 7200.0,
+                  "displayValue": "120'+2'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "9141"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "22430"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "9141"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2100.0,
+            "displayValue": "35'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "9141"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2640.0,
+            "displayValue": "44'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "22430"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4500.0,
+            "displayValue": "75'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "22430"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4860.0,
+            "displayValue": "81'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "22430"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5820.0,
+            "displayValue": "97'"
+          },
+          "period": {
+            "number": 3
+          }
+        },
+        {
+          "team": {
+            "id": "22430"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 7200.0,
+            "displayValue": "120'+2'"
+          },
+          "period": {
+            "number": 4
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:40.603776+00:00"
+  },
+  {
+    "evento": "401928488",
+    "sha256_raw_original": "2a06ba46f370795420a1a6b28fa7b424f8bbfee216108228ab43c57dd7c5e2a5",
+    "esperado": {
+      "id_fuente": "401928488",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T20:00Z",
+      "local_id_fuente": "22080",
+      "visitante_id_fuente": "3748",
+      "local_goles": 2,
+      "visitante_goles": 0
+    },
+    "payload": {
+      "header": {
+        "id": "401928488",
+        "competitions": [
+          {
+            "id": "401928488",
+            "date": "2026-10-27T20:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "2",
+                "team": {
+                  "id": "22080"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "0",
+                "team": {
+                  "id": "3748"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "22080"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3300.0,
+                  "displayValue": "55'"
+                }
+              },
+              {
+                "team": {
+                  "id": "22080"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3960.0,
+                  "displayValue": "66'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "22080"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "3748"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "22080"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3300.0,
+            "displayValue": "55'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "22080"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3960.0,
+            "displayValue": "66'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:28.282768+00:00"
+  },
+  {
+    "evento": "401928533",
+    "sha256_raw_original": "77c332ceb185b36940ae1363b5be927a10f67022151569aa7c2df7c4516bc102",
+    "esperado": {
+      "id_fuente": "401928533",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-27T20:00Z",
+      "local_id_fuente": "2571",
+      "visitante_id_fuente": "101",
+      "local_goles": 2,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928533",
+        "competitions": [
+          {
+            "id": "401928533",
+            "date": "2026-10-27T20:00Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "2",
+                "team": {
+                  "id": "2571"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "101"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "2571"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 1322.0,
+                  "displayValue": "23'"
+                }
+              },
+              {
+                "team": {
+                  "id": "101"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2563.0,
+                  "displayValue": "43'"
+                }
+              },
+              {
+                "team": {
+                  "id": "101"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5804.0,
+                  "displayValue": "97'"
+                }
+              },
+              {
+                "team": {
+                  "id": "101"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5896.0,
+                  "displayValue": "99'"
+                }
+              },
+              {
+                "team": {
+                  "id": "2571"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 6521.0,
+                  "displayValue": "109'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "2571"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "33.4"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "13"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "6"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "396"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "101"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "15"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "66.6"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "35"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "8"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "789"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "2571"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 1322.0,
+            "displayValue": "23'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "101"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2563.0,
+            "displayValue": "43'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "101"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5804.0,
+            "displayValue": "97'"
+          },
+          "period": {
+            "number": 3
+          }
+        },
+        {
+          "team": {
+            "id": "101"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5896.0,
+            "displayValue": "99'"
+          },
+          "period": {
+            "number": 3
+          }
+        },
+        {
+          "team": {
+            "id": "2571"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 6521.0,
+            "displayValue": "109'"
+          },
+          "period": {
+            "number": 4
+          }
+        }
+      ]
+    },
+    "rechazado": false,
+    "observado_en": "2026-11-07T02:37:46.626951+00:00"
+  },
+  {
+    "evento": "401928525",
+    "sha256_raw_original": "cedee6a1d2448f0e6072eed84f85f7c930e0efa5dee6682e9ed35befd9cfe791",
+    "esperado": {
+      "id_fuente": "401928525",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T18:00Z",
+      "local_id_fuente": "9414",
+      "visitante_id_fuente": "5404",
+      "local_goles": 1,
+      "visitante_goles": 2
+    },
+    "payload": {
+      "header": {
+        "id": "401928525",
+        "competitions": [
+          {
+            "id": "401928525",
+            "date": "2026-10-29T18:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "9414"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "2",
+                "team": {
+                  "id": "5404"
+                }
+              }
+            ],
+            "details": []
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "9414"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "5404"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": []
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:31.260218+00:00"
+  },
+  {
+    "evento": "401928529",
+    "sha256_raw_original": "a742397fd8bd34e9c259378fdad9e5d546f1ccbe237b20e47937d80104ceecb7",
+    "esperado": {
+      "id_fuente": "401928529",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T18:00Z",
+      "local_id_fuente": "14263",
+      "visitante_id_fuente": "7320",
+      "local_goles": 0,
+      "visitante_goles": 1
+    },
+    "payload": {
+      "header": {
+        "id": "401928529",
+        "competitions": [
+          {
+            "id": "401928529",
+            "date": "2026-10-29T18:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "14263"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "1",
+                "team": {
+                  "id": "7320"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "7320"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3480.0,
+                  "displayValue": "58'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "14263"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "7320"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "7320"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3480.0,
+            "displayValue": "58'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:34.255436+00:00"
+  },
+  {
+    "evento": "401928535",
+    "sha256_raw_original": "917ff453b4c106cfaa2f689bdacbbda2545804a63324180bff24364a00348c65",
+    "esperado": {
+      "id_fuente": "401928535",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T18:00Z",
+      "local_id_fuente": "18342",
+      "visitante_id_fuente": "20821",
+      "local_goles": 1,
+      "visitante_goles": 2
+    },
+    "payload": {
+      "header": {
+        "id": "401928535",
+        "competitions": [
+          {
+            "id": "401928535",
+            "date": "2026-10-29T18:00Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "18342"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "2",
+                "team": {
+                  "id": "20821"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "20821"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 2040.0,
+                  "displayValue": "34'"
+                }
+              },
+              {
+                "team": {
+                  "id": "18342"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3780.0,
+                  "displayValue": "63'"
+                }
+              },
+              {
+                "team": {
+                  "id": "20821"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 7140.0,
+                  "displayValue": "119'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "18342"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "20821"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "20821"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2040.0,
+            "displayValue": "34'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "18342"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3780.0,
+            "displayValue": "63'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "20821"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 7140.0,
+            "displayValue": "119'"
+          },
+          "period": {
+            "number": 4
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:52.590743+00:00"
+  },
+  {
+    "evento": "401928530",
+    "sha256_raw_original": "a90cc814a87f27d3d9cabdba70f31544e190ce1aa3d283f26afd32b648ff9801",
+    "esperado": {
+      "id_fuente": "401928530",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T18:30Z",
+      "local_id_fuente": "131466",
+      "visitante_id_fuente": "3747",
+      "local_goles": 0,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928530",
+        "competitions": [
+          {
+            "id": "401928530",
+            "date": "2026-10-29T18:30Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "131466"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "3747"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "3747"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 600.0,
+                  "displayValue": "10'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3747"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3660.0,
+                  "displayValue": "61'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3747"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5040.0,
+                  "displayValue": "84'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "131466"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "3747"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "3747"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 600.0,
+            "displayValue": "10'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "3747"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3660.0,
+            "displayValue": "61'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "3747"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5040.0,
+            "displayValue": "84'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:37.349483+00:00"
+  },
+  {
+    "evento": "401928492",
+    "sha256_raw_original": "9aaa46684b1be6fff2c713d61d055af7ce7c777fe1715b77c95d03a0ea924458",
+    "esperado": {
+      "id_fuente": "401928492",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T19:00Z",
+      "local_id_fuente": "6858",
+      "visitante_id_fuente": "3788",
+      "local_goles": 1,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928492",
+        "competitions": [
+          {
+            "id": "401928492",
+            "date": "2026-10-29T19:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "6858"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "3788"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "6858"
+                },
+                "scoringPlay": true,
+                "ownGoal": true,
+                "clock": {
+                  "value": 2160.0,
+                  "displayValue": "36'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3788"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3660.0,
+                  "displayValue": "61'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3788"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3720.0,
+                  "displayValue": "62'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3788"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5400.0,
+                  "displayValue": "90'+3'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "6858"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "3788"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "6858"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 2160.0,
+            "displayValue": "36'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "3788"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3660.0,
+            "displayValue": "61'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "3788"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3720.0,
+            "displayValue": "62'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "3788"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5400.0,
+            "displayValue": "90'+3'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:40.305515+00:00"
+  },
+  {
+    "evento": "401928511",
+    "sha256_raw_original": "3f476b790d6afad0e05b66e974e0713807b2c526daffd0afb0890581ad626d3b",
+    "esperado": {
+      "id_fuente": "401928511",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T19:00Z",
+      "local_id_fuente": "22084",
+      "visitante_id_fuente": "95",
+      "local_goles": 0,
+      "visitante_goles": 1
+    },
+    "payload": {
+      "header": {
+        "id": "401928511",
+        "competitions": [
+          {
+            "id": "401928511",
+            "date": "2026-10-29T19:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "0",
+                "team": {
+                  "id": "22084"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "1",
+                "team": {
+                  "id": "95"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "95"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 661.0,
+                  "displayValue": "12'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "22084"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "95"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "95"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 661.0,
+            "displayValue": "12'"
+          },
+          "period": {
+            "number": 1
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:43.307560+00:00"
+  },
+  {
+    "evento": "401928512",
+    "sha256_raw_original": "4a64e7b3f04afdbf52fc0bfe083a65fe09b5d3e9dc7bc64721fee5fd04e7ebf4",
+    "esperado": {
+      "id_fuente": "401928512",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T19:00Z",
+      "local_id_fuente": "22439",
+      "visitante_id_fuente": "19294",
+      "local_goles": 1,
+      "visitante_goles": 0
+    },
+    "payload": {
+      "header": {
+        "id": "401928512",
+        "competitions": [
+          {
+            "id": "401928512",
+            "date": "2026-10-29T19:00Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "22439"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "0",
+                "team": {
+                  "id": "19294"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "22439"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 6600.0,
+                  "displayValue": "110'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "22439"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "19294"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "22439"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 6600.0,
+            "displayValue": "110'"
+          },
+          "period": {
+            "number": 4
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:55.609612+00:00"
+  },
+  {
+    "evento": "401928523",
+    "sha256_raw_original": "9f21c0b331691cf6a09460777e38e90ed90331d1f89bcd3293489d70f72ae78a",
+    "esperado": {
+      "id_fuente": "401928523",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T19:00Z",
+      "local_id_fuente": "9449",
+      "visitante_id_fuente": "21299",
+      "local_goles": 2,
+      "visitante_goles": 0
+    },
+    "payload": {
+      "header": {
+        "id": "401928523",
+        "competitions": [
+          {
+            "id": "401928523",
+            "date": "2026-10-29T19:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "2",
+                "team": {
+                  "id": "9449"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "0",
+                "team": {
+                  "id": "21299"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "9449"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 1260.0,
+                  "displayValue": "21'"
+                }
+              },
+              {
+                "team": {
+                  "id": "9449"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4080.0,
+                  "displayValue": "68'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "9449"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "21299"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "9449"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 1260.0,
+            "displayValue": "21'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "9449"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4080.0,
+            "displayValue": "68'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:46.266283+00:00"
+  },
+  {
+    "evento": "401928517",
+    "sha256_raw_original": "5f0da6fb371711e4996db67cd3b544bf26667c11687fc191d334e727082af830",
+    "esperado": {
+      "id_fuente": "401928517",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T19:30Z",
+      "local_id_fuente": "17570",
+      "visitante_id_fuente": "131474",
+      "local_goles": 3,
+      "visitante_goles": 1
+    },
+    "payload": {
+      "header": {
+        "id": "401928517",
+        "competitions": [
+          {
+            "id": "401928517",
+            "date": "2026-10-29T19:30Z",
+            "status": {
+              "type": {
+                "id": "45",
+                "name": "STATUS_FINAL_AET",
+                "state": "post",
+                "completed": true,
+                "description": "Final Score - After Extra Time",
+                "detail": "AET",
+                "shortDetail": "AET"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "3",
+                "team": {
+                  "id": "17570"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "1",
+                "team": {
+                  "id": "131474"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "17570"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 480.0,
+                  "displayValue": "8'"
+                }
+              },
+              {
+                "team": {
+                  "id": "131474"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5400.0,
+                  "displayValue": "90'+3'"
+                }
+              },
+              {
+                "team": {
+                  "id": "17570"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 5760.0,
+                  "displayValue": "96'"
+                }
+              },
+              {
+                "team": {
+                  "id": "17570"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 6960.0,
+                  "displayValue": "116'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "17570"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "131474"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "17570"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 480.0,
+            "displayValue": "8'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "131474"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5400.0,
+            "displayValue": "90'+3'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "17570"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 5760.0,
+            "displayValue": "96'"
+          },
+          "period": {
+            "number": 3
+          }
+        },
+        {
+          "team": {
+            "id": "17570"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 6960.0,
+            "displayValue": "116'"
+          },
+          "period": {
+            "number": 4
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:37:58.667652+00:00"
+  },
+  {
+    "evento": "401928548",
+    "sha256_raw_original": "b6eb0e39d13009272b4efd0a4bc2bbf8810864b8baf48781bb513070618a4908",
+    "esperado": {
+      "id_fuente": "401928548",
+      "liga": "esp.copa_del_rey",
+      "inicio_utc": "2026-10-29T20:00Z",
+      "local_id_fuente": "3835",
+      "visitante_id_fuente": "3842",
+      "local_goles": 1,
+      "visitante_goles": 3
+    },
+    "payload": {
+      "header": {
+        "id": "401928548",
+        "competitions": [
+          {
+            "id": "401928548",
+            "date": "2026-10-29T20:00Z",
+            "status": {
+              "type": {
+                "id": "28",
+                "name": "STATUS_FULL_TIME",
+                "state": "post",
+                "completed": true,
+                "description": "Full Time",
+                "detail": "FT",
+                "shortDetail": "FT"
+              }
+            },
+            "boxscoreAvailable": true,
+            "boxscoreSource": "full",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": "1",
+                "team": {
+                  "id": "3835"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": "3",
+                "team": {
+                  "id": "3842"
+                }
+              }
+            ],
+            "details": [
+              {
+                "team": {
+                  "id": "3835"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 120.0,
+                  "displayValue": "2'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3842"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 1500.0,
+                  "displayValue": "25'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3842"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 3540.0,
+                  "displayValue": "59'"
+                }
+              },
+              {
+                "team": {
+                  "id": "3842"
+                },
+                "scoringPlay": true,
+                "ownGoal": false,
+                "clock": {
+                  "value": 4980.0,
+                  "displayValue": "83'"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "boxscore": {
+        "teams": [
+          {
+            "team": {
+              "id": "3835"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "3842"
+            },
+            "statistics": [
+              {
+                "name": "wonCorners",
+                "displayValue": "0"
+              },
+              {
+                "name": "possessionPct",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalShots",
+                "displayValue": "0"
+              },
+              {
+                "name": "shotsOnTarget",
+                "displayValue": "0"
+              },
+              {
+                "name": "totalPasses",
+                "displayValue": "0"
+              }
+            ]
+          }
+        ]
+      },
+      "keyEvents": [
+        {
+          "team": {
+            "id": "3835"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 120.0,
+            "displayValue": "2'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "3842"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 1500.0,
+            "displayValue": "25'"
+          },
+          "period": {
+            "number": 1
+          }
+        },
+        {
+          "team": {
+            "id": "3842"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 3540.0,
+            "displayValue": "59'"
+          },
+          "period": {
+            "number": 2
+          }
+        },
+        {
+          "team": {
+            "id": "3842"
+          },
+          "scoringPlay": true,
+          "shootout": false,
+          "clock": {
+            "value": 4980.0,
+            "displayValue": "83'"
+          },
+          "period": {
+            "number": 2
+          }
+        }
+      ]
+    },
+    "rechazado": true,
+    "observado_en": "2026-11-07T02:39:49.281080+00:00"
+  }
+]
