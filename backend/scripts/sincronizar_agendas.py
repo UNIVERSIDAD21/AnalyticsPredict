@@ -10,6 +10,7 @@ from collections import Counter
 from datetime import datetime, timezone
 import json
 import os
+import subprocess
 from pathlib import Path
 import sys
 from uuid import uuid4
@@ -51,7 +52,7 @@ def ejecutar(a):
         hoy=iniciado.astimezone(BOGOTA).date()
         state=raiz/'estado.json'
         if state.exists() and not a.fuentes:
-            prev=json.loads(state.read_text())
+            prev=json.loads(state.read_text(encoding="utf-8"))
             if prev.get('estado') in ('COMPLETO','PARCIAL') and prev.get('iniciado_en') and (iniciado-datetime.fromisoformat(prev['iniciado_en'])).total_seconds()<1800:
                 print('Fuentes verificadas hace menos de 30 minutos; no se repiten consultas.')
                 return 0
@@ -59,7 +60,7 @@ def ejecutar(a):
         estado={'estado':'EN_CURSO','iniciado_en':iniciado.isoformat(),'directorio':str(run)}
         guardar(state,estado)
         try:
-            sources=json.loads(a.fuentes.read_text()) if a.fuentes else recopilar(raiz/'cache',run/'fuentes.json',hoy)
+            sources=json.loads(a.fuentes.read_text(encoding="utf-8")) if a.fuentes else recopilar(raiz/'cache',run/'fuentes.json',hoy)
             # Replay operativo sólo de la fecha declarada: no afirmar ventana
             # móvil nueva con una captura antigua. Los ensayos tienen otro CLI.
             if sources.get('fecha_cot') and sources['fecha_cot']!=str(hoy):
@@ -79,7 +80,7 @@ def ejecutar(a):
                     c.execute("SET LOCAL lock_timeout='5s'")
                     c.execute("SET LOCAL statement_timeout='60s'")
                     if a.migrar:
-                        c.execute(MIGRACION.read_text())
+                        c.execute(MIGRACION.read_text(encoding="utf-8"))
                     if not existe(c,'sincronizaciones_agenda'):
                         raise ValueError('Falta migración aditiva: ensayar y ejecutar --migrar')
                     aplicar(c,plan)
@@ -112,13 +113,44 @@ def ejecutar(a):
             return 1
 
 
+def ejecutar_actualizacion_personal():
+    """El supervisor conserva el contrato de estado del backend Windows en ejecución."""
+    backend = Path(__file__).resolve().parents[1]
+    if os.name != 'nt' or not (backend.parents[1]/'RUNTIME_LOCAL.json').is_file():
+        from scripts.actualizar_partidos_local import main as actualizar
+        return actualizar(['--aplicar'])
+    result = subprocess.run([sys.executable, '-X','utf8','-B',
+        str(backend/'scripts/actualizar_partidos_local.py'),'--aplicar'],
+        cwd=backend, creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    if result.returncode not in (0,2):
+        from scripts.actualizar_partidos_local import configuracion, conectar
+        from servicios.cola_actualizador import estado_compatible
+        _, params, _, root = configuracion(backend/'.env')
+        try:
+            with exclusion(root), conectar(params) as conn, conn.transaction():
+                conn.execute('SET TRANSACTION READ ONLY')
+                path = root/'estado.json'
+                old = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
+                recovered = estado_compatible(conn, old, datetime.now(timezone.utc))
+                if recovered.get('ejecucion_id') == old.get('ejecucion_id') and recovered != old:
+                    guardar(path, recovered)
+        except (OSError, RuntimeError, psycopg.Error, ValueError):
+            # Otro trabajador o la lectura SQL pueden estar activos. No tapar
+            # el código de salida ni sobrescribir su estado.
+            pass
+    return result.returncode
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--aplicar',action='store_true');p.add_argument('--migrar',action='store_true')
     p.add_argument('--fuentes',type=Path);p.add_argument('--estado',type=Path)
+    p.add_argument('--solo-agenda',action='store_true',help='Conserva el flujo anterior de calendarios sin completar estadísticas')
     a=p.parse_args()
     if a.migrar and not a.aplicar:
         p.error('--migrar requiere --aplicar')
+    if a.aplicar and not a.migrar and not a.fuentes and not a.estado and not a.solo_agenda:
+        return ejecutar_actualizacion_personal()
     return ejecutar(a)
 
 

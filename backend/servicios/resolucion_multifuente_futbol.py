@@ -755,6 +755,7 @@ def extraer_evidencia_espn(
     *,
     observado_en: datetime,
     mapeo_metricas: Mapping[str, tuple[str, str]] | None = None,
+    rechazos_calidad: list[dict[str, Any]] | None = None,
 ) -> tuple[EvidenciaCampo, ...]:
     """Extrae cada campo ESPN presente tras conciliar evento, lados, fecha y FT.
 
@@ -882,12 +883,17 @@ def extraer_evidencia_espn(
         raise EvidenciaNoValida("IDs de boxscore ESPN no concilian con el evento")
 
     payload_hash = sha256_json(payload)
+    from servicios.calidad_boxscore_espn import evaluar, CONTRATO_CALIDAD
+    rechazados = evaluar(payload, expected_ids, key_to_field)
+    if rechazos_calidad is not None:
+        rechazos_calidad.extend({'campo': campo, 'motivo': motivo, 'sha256_payload': payload_hash,
+            'contrato_calidad': CONTRATO_CALIDAD} for campo, motivo in rechazados.items())
     salida: list[EvidenciaCampo] = []
     for provider_key, (campo_local, campo_visitante) in key_to_field.items():
         for lado, campo in (("home", campo_local), ("away", campo_visitante)):
             team_id = expected_ids[lado]
             valor = stats_por_equipo[team_id].get(provider_key)
-            if valor is None:
+            if valor is None or campo in rechazados:
                 continue
             salida.append(
                 EvidenciaCampo(
@@ -1161,6 +1167,23 @@ def aplicar_plan_resolucion(
             fuente_proveedor=fuente,
             fuente_canonica=identidad.get("canonical_source"),
         )
+
+    # La cuarentena es aditiva; instalaciones anteriores y fixtures sintéticos
+    # siguen siendo compatibles. Se bloquea el mismo dato aunque cambie la
+    # versión del contrato de extracción, preservando una futura captura nueva.
+    cuarentena = connection.execute(
+        "SELECT to_regclass('cuarentena_observaciones_estadisticas_futbol') IS NOT NULL AS existe"
+    ).fetchone() if plan.procedencia else (False,)
+    existe_cuarentena = cuarentena['existe'] if isinstance(cuarentena, Mapping) else cuarentena[0]
+    if existe_cuarentena:
+        for observaciones in plan.procedencia.values():
+            for ev in observaciones:
+                if connection.execute("""SELECT 1 FROM cuarentena_observaciones_estadisticas_futbol
+                    WHERE fuente=%s AND id_evento_fuente=%s AND campo=%s AND clave_proveedor=%s
+                    AND periodo_proveedor=%s AND sha256_payload=%s LIMIT 1""",
+                    (ev.fuente.upper(), ev.evento_id, ev.campo, ev.clave_proveedor,
+                     ev.periodo_proveedor, ev.sha256_payload)).fetchone() is not None:
+                    raise EvidenciaNoValida('Observación en cuarentena de calidad; no se puede aplicar')
 
     vinculos_nuevos = 0
     for fuente, evento_id in identidades_limpias:

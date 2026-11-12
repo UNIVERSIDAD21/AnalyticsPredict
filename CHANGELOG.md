@@ -1,3 +1,12 @@
+## 2026-11-12 — Actualización manual multiliga
+
+- Coordinación por lotes acotados y deduplicación de turnos HTTP del ciclo.
+- Cobertura explícita por consultas, eventos, partidos y campos; archivadas aparte.
+- Cierre de deuda de agenda sólo tras reconciliar el mismo resultado sin conflicto.
+- Lector puro de evidencia web personal con identidad/FT/UTC y NULL-only.
+- Se publican las dependencias locales existentes necesarias del actualizador;
+  esto no activa modelos ni acredita trabajos ajenos al alcance.
+
 ## Copa BetPlay incorporada — 2026-11-10
 
 Añadida Copa BetPlay al catálogo 2026 y al actualizador manual (`col.copa`),
