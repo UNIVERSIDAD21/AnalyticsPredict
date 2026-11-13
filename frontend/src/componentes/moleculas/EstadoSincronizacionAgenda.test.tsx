@@ -56,16 +56,17 @@ it('separa contadores de ventana, cola, consultas y archivadas', async () => {
   expect(screen.getByLabelText('Estadísticas ausentes en ventana')).toHaveTextContent('1 partido guardado');
   const france = abrirLiga('Coupe de France');
   expect(france).toHaveTextContent('12 campos estadísticos en 2 partidos');
-  expect(france).toHaveTextContent('En la ventana: 6 campos ausentes en 1 partidos guardados');
+  expect(france).toHaveTextContent('En la ventana: 6 campos ausentes en 1 partido guardado');
   expect(france).toHaveTextContent('no se ejecuta automáticamente');
   expect(clienteAPI.post).not.toHaveBeenCalled();
 });
 it('focaliza agenda y cola aunque no haya campos ausentes en ventana', async () => {
   await abrirTablero();
+  fireEvent.click(screen.getByRole('button', { name: /Competiciones con pendientes/ }));
   expect(screen.getByText('Ver detalle de NBA')).toBeInTheDocument();
   expect(screen.getByText('Ver detalle de Copa BetPlay')).toBeInTheDocument();
   expect(screen.queryByText('Ver detalle de WNBA')).toBeNull();
-  expect(screen.getByRole('button', { name: /Con pendientes/ })).toHaveTextContent('3');
+  expect(screen.getByRole('button', { name: /Competiciones con pendientes/ })).toHaveTextContent('3');
 });
 it('une códigos exactos sin duplicar NBA y no archiva un feed vacío', async () => {
   await abrirTablero(); fireEvent.click(screen.getByRole('button', { name: /Todas las diarias/ }));
@@ -89,11 +90,46 @@ it('filtra por búsqueda y deporte sin disparar solicitudes de red', async () =>
 });
 it('conserva los cortes y motivos sin prometer reentrenamiento', async () => {
   await abrirTablero(); expect(abrirLiga('NBA')).toHaveTextContent('Resultados hasta: 2026-11-12');
-  abrirLiga('Copa BetPlay'); expect(screen.getAllByText(/Todavía faltan estadísticas publicadas/).length).toBeGreaterThan(0);
+  abrirLiga('Copa BetPlay'); expect(screen.getAllByText(/Consultar una fuente que publique los campos/).length).toBeGreaterThan(0);
   fireEvent.click(screen.getByText('Modelos y cortes de entrenamiento'));
   expect(screen.getByText('51 finales guardados posteriores.')).toBeInTheDocument();
   expect(screen.getByText(/Preparar un candidato es una operación separada/)).toBeInTheDocument();
   expect(screen.getByLabelText('Última actualización completa de todas las ligas')).toHaveTextContent('Sin acreditar');
+});
+
+it('muestra desde el inicio Inglaterra, Brasil, Italia y Argentina y permite buscarlas por país', async () => {
+  const d = datos();
+  for (const [codigo, nombre] of [['ENG_PREMIER', 'Premier League'], ['BRA_SERIEA', 'Brasileirão Série A'], ['ITA_SERIEA', 'Serie A'], ['ARG_PRIMERA', 'Primera División Argentina']]) {
+    d.ligas_resultado!.push({ ...d.ligas_resultado![0], codigo, nombre, estado: 'COMPLETA_EN_VENTANA', incidencias: [],
+      pendientes_cola: { resultados: 0, eventos_agenda: 0, campos_estadisticas: 0, partidos_estadisticas: 0, campos_estadisticas_elegibles: 0, proximo_reintento_en: null },
+      estadisticas_ventana: { campos_estadisticas_ausentes: 0, partidos_estadisticas_pendientes: 0 } });
+  }
+  await abrirTablero(d);
+  expect(screen.getByRole('button', { name: /Todas las diarias/ })).toHaveAttribute('aria-pressed', 'true');
+  for (const nombre of ['Premier League', 'Brasileirão Série A', 'Serie A', 'Primera División Argentina']) expect(screen.getByText(`Ver detalle de ${nombre}`)).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Buscar competición'), { target: { value: 'Inglaterra' } });
+  expect(screen.getByText('Ver detalle de Premier League')).toBeInTheDocument();
+  expect(screen.queryByText('Ver detalle de Serie A')).toBeNull();
+  expect(clienteAPI.get).toHaveBeenCalledTimes(1); expect(clienteAPI.post).not.toHaveBeenCalled();
+});
+
+it('explica el contador de competiciones y los motivos de agenda sin perder los originales', async () => {
+  const d = datos();
+  d.ligas_resultado![0].pendientes_cola!.motivos = [
+    { motivo: "Identidad o temporada sin equivalencia revisada ('12'): Club A — Club B", obligaciones: 2 },
+    { motivo: "Identidad o temporada sin equivalencia revisada ('13'): Club C — Club D", obligaciones: 1 },
+    { motivo: 'ESTADISTICAS_AUSENTES', obligaciones: 12 },
+  ];
+  await abrirTablero(d);
+  expect(screen.getByLabelText('Qué cuenta el filtro de pendientes')).toHaveTextContent('3 competiciones con algún pendiente, no 3 partidos');
+  expect(screen.getByLabelText('Qué cuenta el filtro de pendientes')).toHaveTextContent('2 con incidencias de resultados/estadísticas y 1 adicionales');
+  const fila = abrirLiga('Coupe de France');
+  expect(fila.querySelector('summary')).toHaveTextContent('Equipo o temporada sin vincular al catálogo');
+  expect(fila).toHaveTextContent('3 registros de cola');
+  expect(fila).toHaveTextContent('12 registros de cola');
+  expect(fila).toHaveTextContent('Club A — Club B'); expect(fila).toHaveTextContent('Club C — Club D');
+  expect(fila).toHaveTextContent('Qué falta resolver y cómo');
+  expect(clienteAPI.post).not.toHaveBeenCalled();
 });
 it('ofrece un resumen compacto con enlace al tablero en las agendas', async () => {
   vi.mocked(clienteAPI.get).mockResolvedValue({ data: datos() }); render(<EstadoSincronizacionAgenda />);

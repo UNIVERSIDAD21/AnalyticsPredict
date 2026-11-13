@@ -1,3 +1,9 @@
+## 2026-11-13 — Competiciones visibles y pendientes explicados
+
+- Todas las ligas diarias visibles inicialmente, país identificable y búsqueda por país/código.
+- El contador de pendientes identifica competiciones, no partidos, y separa agenda/cola de incidencias diarias.
+- Causas concretas, acciones y motivos originales de cola por liga; sin resolver ficticiamente los datos faltantes.
+
 ## 2026-11-13 — Tablero de actualización de ligas
 
 - Resumen compacto en agendas y pantalla con filtros, detalle por liga, fuentes y cortes de modelos.

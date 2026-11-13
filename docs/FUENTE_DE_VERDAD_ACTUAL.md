@@ -1,3 +1,12 @@
+## Corrección de visibilidad y motivos del tablero — 2026-11-13
+
+El tablero abre con todas las competiciones diarias, permite buscar por país
+y explica el número de competiciones con pendientes frente a las incidencias
+de resultados/estadísticas. Cada fila anticipa causas y ofrece acciones y
+motivos originales de la cola, sin confundir registros con partidos únicos.
+Sin ingestas ni cambios de pendientes deportivos por esta entrega.
+[Contrato](reactivacion_single_user/DASHBOARD_ACTUALIZACION_LIGAS_2026-11-13.md).
+
 ## Tablero de actualización de ligas — 2026-11-13
 
 La pantalla `/actualizaciones` sustituye el listado extenso por un resumen de

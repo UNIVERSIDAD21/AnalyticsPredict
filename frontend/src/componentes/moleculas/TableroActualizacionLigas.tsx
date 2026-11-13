@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { AlertCircle, Archive, CalendarDays, ChevronDown, Database, Layers3, Search, ShieldCheck } from 'lucide-react';
 import type { EstadoActualizacion } from '../../tipos/actualizacionLigas';
 import { corteActualizacion as corte, fechaActualizacion as fecha, estadoActualizacionLegible as legible,
-  motivoActualizacionLegible, unirLigasActualizacion, eventosPendientesActualizacion, tienePendientesActualizacion,
+  unirLigasActualizacion, eventosPendientesActualizacion, tienePendientesActualizacion,
+  paisActualizacion, motivosPendientesActualizacion,
   type LigaActualizacion } from '../../utilidades/actualizacionLigas';
 
 export function ResumenActualizacion({ estado }: { estado: EstadoActualizacion | null }) {
@@ -15,10 +16,10 @@ export function ResumenActualizacion({ estado }: { estado: EstadoActualizacion |
       <small>{c ? `${c.competiciones_archivadas} torneos archivados, aparte` : 'Esperando cobertura acreditada'}</small>
     </article>
     <article className="actualizacion-metrica" aria-label="Eventos de agenda pendientes">
-      <span><CalendarDays size={17} aria-hidden="true" /> Agenda por revisar</span>
+      <span><CalendarDays size={17} aria-hidden="true" /> Agenda sin resolver</span>
       <strong>{c?.eventos_agenda_pendientes ?? 'N/D'}</strong>
       <p>eventos en la cola acumulada</p>
-      <small>{c ? `${c.consultas_agenda_pendientes} consultas pendientes · ${c.consultas_agenda_error} con error` : 'No equivale a partidos ausentes'}</small>
+      <small>{c ? `${c.consultas_agenda_pendientes} consultas pendientes · ${c.consultas_agenda_error} con error. Motivos por competición abajo.` : 'No equivale a partidos ausentes'}</small>
     </article>
     <article className="actualizacion-metrica" aria-label="Estadísticas ausentes en ventana">
       <span><Layers3 size={17} aria-hidden="true" /> Campos ausentes</span>
@@ -37,7 +38,17 @@ export function ResumenActualizacion({ estado }: { estado: EstadoActualizacion |
 
 function DetalleLiga({ liga }: { liga: LigaActualizacion }) {
   const r = liga.resultado, a = liga.agenda, f = liga.frescura, cola = r?.pendientes_cola;
+  const motivos = motivosPendientesActualizacion(liga);
   return <div className="actualizacion-detalle">
+    {motivos.length > 0 && <div className="actualizacion-motivos">
+      <h3>Qué falta resolver y cómo</h3>
+      <ul>{motivos.map(m => <li key={m.titulo}>
+        <strong>{m.titulo}</strong>{m.registros != null && <span> · {m.registros} registros de cola</span>}
+        <p>{m.accion}</p>
+        {m.detalles.length > 0 && <details className="actualizacion-motivo-original"><summary>Ver {m.detalles.length === 1 ? 'motivo original' : `${m.detalles.length} motivos originales`}</summary><ul>{m.detalles.map(d => <li key={d}>{d}</li>)}</ul></details>}
+      </li>)}</ul>
+      <p>Los registros de cola pueden corresponder a campos o eventos; no son partidos únicos ni se suman a los campos ausentes de la ventana.</p>
+    </div>}
     <div className="actualizacion-detalle-grid">
       <div>
         <h3>Agenda publicada</h3>
@@ -47,7 +58,7 @@ function DetalleLiga({ liga }: { liga: LigaActualizacion }) {
           <p>{a.eventos_enumerados} eventos observados · {a.horas_confirmadas} con hora.</p>
           <p>Última fecha publicada: {corte(a.ultima_fecha_publicada)}.</p>
         </> : <p>Sin captura de agenda en este informe.</p>}
-        <p>Eventos pendientes de revisión: {eventosPendientesActualizacion(liga) ?? 'N/D'}.</p>
+        <p>Eventos de agenda sin resolver: {eventosPendientesActualizacion(liga) ?? 'N/D'}.</p>
       </div>
       <div>
         <h3>Resultados del ciclo</h3>
@@ -60,7 +71,7 @@ function DetalleLiga({ liga }: { liga: LigaActualizacion }) {
       </div>
       <div>
         <h3>Estadísticas: ventana y cola</h3>
-        {r?.estadisticas_ventana ? <p>En la ventana: <strong>{r.estadisticas_ventana.campos_estadisticas_ausentes} campos ausentes en {r.estadisticas_ventana.partidos_estadisticas_pendientes} partidos guardados.</strong></p> : <p>Campos de fútbol en ventana: N/D; no se aplica este contador a baloncesto.</p>}
+        {r?.estadisticas_ventana ? <p>En la ventana: <strong>{r.estadisticas_ventana.campos_estadisticas_ausentes} campos ausentes en {r.estadisticas_ventana.partidos_estadisticas_pendientes} {r.estadisticas_ventana.partidos_estadisticas_pendientes === 1 ? 'partido guardado' : 'partidos guardados'}.</strong></p> : <p>Campos de fútbol en ventana: N/D; no se aplica este contador a baloncesto.</p>}
         {cola ? <>
           <p>Cola acumulada: {cola.resultados} resultados, {cola.eventos_agenda} eventos de agenda y <strong>{cola.campos_estadisticas} campos estadísticos en {cola.partidos_estadisticas} partidos.</strong></p>
           <p>{cola.campos_estadisticas_elegibles} campos habilitados para reconsulta.</p>
@@ -79,10 +90,6 @@ function DetalleLiga({ liga }: { liga: LigaActualizacion }) {
         </> : <p>Fechas de frescura no acreditadas en este informe.</p>}
       </div>
     </div>
-    {!!r?.incidencias?.length && <div className="actualizacion-motivos">
-      <h3>{r.incidencias.length} pendientes o incidencias de resultados/estadísticas</h3>
-      <ul>{r.incidencias.map((incidencia, i) => <li key={i}>{motivoActualizacionLegible(incidencia.motivo)}</li>)}</ul>
-    </div>}
   </div>;
 }
 
@@ -90,20 +97,22 @@ function FilaLiga({ liga }: { liga: LigaActualizacion }) {
   const pendiente = tienePendientesActualizacion(liga), r = liga.resultado, a = liga.agenda;
   const eventos = eventosPendientesActualizacion(liga);
   const ventana = r?.estadisticas_ventana;
+  const motivos = motivosPendientesActualizacion(liga), pais = paisActualizacion(liga.codigo);
   return <details className={`actualizacion-fila ${pendiente ? 'actualizacion-fila-pendiente' : ''}`}>
     <summary>
-      <div className="actualizacion-liga-nombre"><strong>{liga.nombre}</strong><span>{liga.deporte === 'baloncesto' ? 'Baloncesto' : liga.deporte === 'futbol' ? 'Fútbol' : 'Deporte N/D'} · {liga.archivada ? 'Archivada' : 'Revisión diaria'}</span></div>
-      <div className="actualizacion-celda"><small>Agenda</small><strong>{eventos == null ? 'N/D' : `${eventos} por revisar`}</strong><span>{a ? legible(a.estado) : 'Sin revisión de agenda'}</span></div>
+      <div className="actualizacion-liga-nombre"><strong>{liga.nombre}</strong><span>{pais && `${pais} · `}{liga.deporte === 'baloncesto' ? 'Baloncesto' : liga.deporte === 'futbol' ? 'Fútbol' : 'Deporte N/D'} · {liga.archivada ? 'Archivada' : 'Revisión diaria'}</span></div>
+      <div className="actualizacion-celda"><small>Agenda</small><strong>{eventos == null ? 'Pendientes N/D' : eventos === 0 ? 'Sin pendientes de agenda' : `${eventos} eventos sin resolver`}</strong><span>{a ? legible(a.estado) : 'Sin revisión de agenda'}</span></div>
       <div className="actualizacion-celda"><small>Resultados</small><strong>{corte(liga.frescura?.resultados_hasta)}</strong><span>{legible(r?.estado)}</span></div>
       <div className="actualizacion-celda"><small>Estadísticas en ventana</small><strong>{ventana ? `${ventana.campos_estadisticas_ausentes} campos ausentes` : r ? legible(r.estado) : 'N/D'}</strong><span>{ventana ? `${ventana.partidos_estadisticas_pendientes} partidos guardados` : 'Campos objetivo de su liga'}</span></div>
       <div className="actualizacion-fila-estado"><span className={`actualizacion-insignia ${pendiente ? 'aviso' : ''}`}>{liga.archivada ? 'Archivada' : pendiente ? 'Con pendientes' : r?.estado === 'COMPLETA_EN_VENTANA' ? 'Revisada en ventana' : 'Ver detalle'}</span><ChevronDown aria-hidden="true" size={18} /><span className="sr-only">Ver detalle de {liga.nombre}</span></div>
+      {pendiente && !liga.archivada && <div className="actualizacion-causas"><strong>Qué falta:</strong> {motivos.map(m => m.titulo).join(' · ')}. <span>Abre para ver el desglose y la acción necesaria.</span></div>}
     </summary>
     <DetalleLiga liga={liga} />
   </details>;
 }
 
 export function TableroActualizacionLigas({ estado }: { estado: EstadoActualizacion | null }) {
-  const [filtro, setFiltro] = useState<'pendientes' | 'diarias' | 'archivadas'>('pendientes');
+  const [filtro, setFiltro] = useState<'pendientes' | 'diarias' | 'archivadas'>('diarias');
   const [busqueda, setBusqueda] = useState('');
   const [deporte, setDeporte] = useState('');
   const ligas = unirLigasActualizacion(estado);
@@ -111,21 +120,24 @@ export function TableroActualizacionLigas({ estado }: { estado: EstadoActualizac
   const pendientes = diarias.filter(tienePendientesActualizacion);
   const grupo = filtro === 'archivadas' ? archivadas : filtro === 'pendientes' ? pendientes : diarias;
   const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
-  const visibles = grupo.filter(l => (!deporte || l.deporte === deporte) && normalizar(l.nombre).includes(normalizar(busqueda.trim())));
+  const visibles = grupo.filter(l => (!deporte || l.deporte === deporte) && normalizar(`${l.nombre} ${paisActualizacion(l.codigo)} ${l.codigo}`).includes(normalizar(busqueda.trim())));
+  const incidenciasDiarias = pendientes.filter(l => (l.resultado?.incidencias?.length ?? 0) > 0).length;
+  const soloAgendaCola = pendientes.length - incidenciasDiarias;
   const agenda = estado?.agenda_multiliga;
   return <>
     <section className="actualizacion-competiciones" aria-label="Cobertura por competición">
       <div className="actualizacion-titulo-seccion"><div><p className="actualizacion-eyebrow">Del resumen al detalle</p><h2>Competiciones</h2></div><span className="actualizacion-ayuda">Abre una fila para ver fuentes, cola y motivos.</span></div>
       <div className="actualizacion-filtros">
         <div role="group" aria-label="Ámbito de competiciones" className="actualizacion-segmentos">
-          {([{ valor: 'pendientes', texto: 'Con pendientes', total: pendientes.length }, { valor: 'diarias', texto: 'Todas las diarias', total: diarias.length }, { valor: 'archivadas', texto: 'Archivadas', total: archivadas.length }] as const).map(f => <button type="button" key={f.valor} aria-pressed={filtro === f.valor} onClick={() => setFiltro(f.valor)}>{f.texto} <span>{estado ? f.total : '—'}</span></button>)}
+          {([{ valor: 'diarias', texto: 'Todas las diarias', total: diarias.length }, { valor: 'pendientes', texto: 'Competiciones con pendientes', total: pendientes.length }, { valor: 'archivadas', texto: 'Archivadas', total: archivadas.length }] as const).map(f => <button type="button" key={f.valor} aria-pressed={filtro === f.valor} onClick={() => setFiltro(f.valor)}>{f.texto} <span>{estado ? f.total : '—'}</span></button>)}
         </div>
         <div className="actualizacion-busqueda">
-          <label><span>Buscar competición</span><div><Search size={16} aria-hidden="true" /><input type="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Nombre de la liga…" maxLength={100} /></div></label>
+          <label><span>Buscar competición</span><div><Search size={16} aria-hidden="true" /><input type="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Liga o país…" maxLength={100} /></div></label>
           <label><span>Deporte</span><select value={deporte} onChange={e => setDeporte(e.target.value)}><option value="">Todos los deportes</option><option value="baloncesto">Baloncesto</option><option value="futbol">Fútbol</option></select></label>
         </div>
       </div>
-      <p className="actualizacion-nota">{filtro === 'archivadas' ? 'Torneos archivados: fuera del contador diario; el histórico se conserva.' : 'El filtro incluye pendientes de agenda, resultados o estadísticas. No equivale al contador de incidencias diarias de resultados y estadísticas.'}</p>
+      <p className="actualizacion-nota">{filtro === 'archivadas' ? 'Torneos archivados: fuera del contador diario; el histórico se conserva.' : 'Se muestran todas las competiciones diarias al abrir. Puedes buscar por liga o país; las archivadas tienen su propio filtro.'}</p>
+      {estado && diarias.length > 0 && <p className="actualizacion-nota" aria-label="Qué cuenta el filtro de pendientes"><strong>{pendientes.length} competiciones con algún pendiente, no {pendientes.length} partidos:</strong> {incidenciasDiarias} con incidencias de resultados/estadísticas y {soloAgendaCola} adicionales solo de agenda o cola acumulada. Los motivos aparecen en cada fila.</p>}
       {agenda && <p className="actualizacion-nota">Agenda solicitada: <strong>{agenda.desde} → {agenda.hasta}</strong> · {agenda.ejecucion_lotes?.lotes?.length ?? 'N/D'} lotes recorridos. Cobertura oficial desconocida.</p>}
       <p className="actualizacion-conteo" aria-live="polite">Mostrando {visibles.length} de {grupo.length} competiciones de este filtro.</p>
       <div className="actualizacion-lista" aria-label="Detalle por liga">

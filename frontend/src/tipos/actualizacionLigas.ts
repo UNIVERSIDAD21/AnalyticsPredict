@@ -31,7 +31,8 @@ export interface EstadoActualizacion {
     campos_escritos?: number; campos_acreditados?: number; campos_no_acreditados?: number;
     ambito?: string; afecta_cobertura_diaria?: boolean;
     pendientes_cola?: { resultados: number; eventos_agenda: number; campos_estadisticas: number;
-      partidos_estadisticas: number; campos_estadisticas_elegibles: number; proximo_reintento_en: string | null };
+      partidos_estadisticas: number; campos_estadisticas_elegibles: number; proximo_reintento_en: string | null;
+      consultas_resultados?: number; motivos?: { motivo: string; obligaciones: number }[] };
     estadisticas_ventana?: { partidos_estadisticas_pendientes: number; campos_estadisticas_ausentes: number } | null;
     incidencias: { motivo: string }[] }[];
   correccion_calidad?: { campos_escritos: number; campos_acreditados: number;

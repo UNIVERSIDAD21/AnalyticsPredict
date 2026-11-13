@@ -1,3 +1,11 @@
+## Corrección de visibilidad y motivos del tablero — 2026-11-13
+
+Todas las competiciones diarias aparecen al abrir, con búsqueda por país.
+El filtro de pendientes cuenta competiciones y explica sus distintos alcances;
+las causas y acciones concretas se muestran por liga, con originales conservados.
+Sin escrituras deportivas, ingestas, cambios de modelos ni reinicios.
+[Contrato](../reactivacion_single_user/DASHBOARD_ACTUALIZACION_LIGAS_2026-11-13.md).
+
 ## Tablero de actualización de ligas — 2026-11-13
 
 La pantalla `/actualizaciones` sustituye el listado extenso por un resumen de
