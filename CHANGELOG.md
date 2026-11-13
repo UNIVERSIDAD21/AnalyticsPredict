@@ -1,3 +1,9 @@
+## 2026-11-13 — Tablero de actualización de ligas
+
+- Resumen compacto en agendas y pantalla con filtros, detalle por liga, fuentes y cortes de modelos.
+- Separación explícita de ventana estadística, cola acumulada, consultas y eventos; sin nuevas ingestas ni cambios de modelos.
+- Acciones manuales conservadas, N/D ante lecturas ausentes y bloqueo de solicitudes simultáneas.
+
 ## 2026-11-12 — Actualización manual multiliga
 
 - Coordinación por lotes acotados y deduplicación de turnos HTTP del ciclo.

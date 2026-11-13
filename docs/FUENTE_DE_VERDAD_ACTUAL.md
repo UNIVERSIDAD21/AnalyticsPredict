@@ -1,3 +1,13 @@
+## Tablero de actualización de ligas — 2026-11-13
+
+La pantalla `/actualizaciones` sustituye el listado extenso por un resumen de
+incidencias, agenda pendiente y campos ausentes, con filtros y detalle por liga.
+Se conservan los contadores de ventana y cola acumulada, torneos archivados,
+fechas sin acreditar y cortes de modelos separados. Las agendas muestran un
+resumen compacto; el actualizador sigue siendo manual. Sin ingestas, cambios
+analíticos o reentrenamiento por abrir el tablero.
+[Contrato y alcance](reactivacion_single_user/DASHBOARD_ACTUALIZACION_LIGAS_2026-11-13.md).
+
 ## Actualizador multiliga por lotes — 2026-11-12
 
 Se conserva el scraping existente y se amplía la coordinación manual: lotes

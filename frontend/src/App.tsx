@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import type { LigaBaloncesto } from './utilidades/ligasBaloncesto';
 const PaginaBaloncesto = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBaloncesto')).PaginaBaloncesto }));
 const PaginaOperacion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaOperacion')).PaginaOperacion }));
+const PaginaActualizaciones = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaActualizaciones')).PaginaActualizaciones }));
 const PaginaDashboardUsuario = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaDashboardUsuario')).PaginaDashboardUsuario }));
 const PaginaBitacora = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaBitacora')).PaginaBitacora }));
 const PaginaConfiguracion = lazy(async () => ({ default: (await import('./componentes/paginas/PaginaConfiguracion')).PaginaConfiguracion }));
@@ -28,6 +29,7 @@ export function RutasAplicacion() {
           <Route path="/centro-analitico" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<PaginaDashboardUsuario />} />
           <Route path="/operacion" element={<PaginaOperacion />} />
+          <Route path="/actualizaciones" element={<PaginaActualizaciones />} />
           <Route path="/baloncesto" element={<PaginaBaloncesto />} />
           <Route path="/app" element={<RedireccionBaloncesto liga="nba" />} />
           <Route path="/euroliga" element={<RedireccionBaloncesto liga="euroliga" />} />

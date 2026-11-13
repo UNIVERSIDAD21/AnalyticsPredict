@@ -1,5 +1,5 @@
 /** Navegación directa de la plataforma personal. */
-import { Activity, BarChart3, BookOpen, Settings, Target } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, Settings, Target, Database } from 'lucide-react';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDeporte } from '../../contextos/DeporteContext';
@@ -13,6 +13,7 @@ const enlaces = [
   { ruta: '/bitacora', etiqueta: 'Bitácora', Icono: BookOpen },
   { ruta: '/configuracion', etiqueta: 'Configuración', Icono: Settings },
   { ruta: '/operacion', etiqueta: 'Estado', Icono: Activity },
+  { ruta: '/actualizaciones', etiqueta: 'Datos', Icono: Database },
 ];
 
 export function Encabezado() {
