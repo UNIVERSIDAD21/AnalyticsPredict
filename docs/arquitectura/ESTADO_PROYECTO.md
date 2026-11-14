@@ -1,3 +1,9 @@
+## Acceso de escritorio con servicios parciales — 2026-11-13
+
+Recuperación de PostgreSQL antes de la API si queda una interfaz activa.
+Sin detener servicios válidos, cambiar modelos o crear arranque automático.
+[Contrato](../reactivacion_single_user/ARRANQUE_PARCIAL_WINDOWS_2026-11-13.md).
+
 ## Corrección de visibilidad y motivos del tablero — 2026-11-13
 
 Todas las competiciones diarias aparecen al abrir, con búsqueda por país.

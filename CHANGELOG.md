@@ -1,3 +1,9 @@
+## 2026-11-13 — Acceso de escritorio con servicios parciales
+
+- Recupera PostgreSQL antes de la API si la interfaz continúa encendida.
+- Conserva identidad local, lock diario y servicios existentes; sin reinicios ajenos ni ingestas.
+- Nueve pruebas sintéticas de dependencias, errores y límites del lanzador manual.
+
 ## 2026-11-13 — Competiciones visibles y pendientes explicados
 
 - Todas las ligas diarias visibles inicialmente, país identificable y búsqueda por país/código.

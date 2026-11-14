@@ -1,3 +1,10 @@
+## Acceso de escritorio con servicios parciales — 2026-11-13
+
+El lanzador manual recupera PostgreSQL local antes de la API cuando la interfaz
+sigue encendida. Exige identidad local, conserva servicios válidos y registra
+la operación sin ingestas, migraciones, entrenamiento ni arranque automático.
+[Contrato y validación](reactivacion_single_user/ARRANQUE_PARCIAL_WINDOWS_2026-11-13.md).
+
 ## Corrección de visibilidad y motivos del tablero — 2026-11-13
 
 El tablero abre con todas las competiciones diarias, permite buscar por país
